@@ -1,42 +1,46 @@
 /*
  * Copyright 2021 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/optimization.hpp>
+
+#include <type_traits>
 
 namespace jlm::llvm::aa
 {
 
-/** \brief Steensgaard alias analysis with agnostic memory state encoding
+/** Applies alias analysis and memory state encoding.
+ * Uses the information collected during alias analysis and
+ * the memory nodes provided by the memory node provider
+ * to reencode memory state edges between the operations touching memory.
+ *
+ * The type of alias analysis and memory node provider is specified by the template parameters.
+ *
+ * @tparam AliasAnalysisPass the subclass of AliasAnalysis to use
+ * @tparam MemoryNodeProviderPass the subclass of MemoryNodeProvider to use
  *
  * @see Steensgaard
+ * @see Andersen
  * @see AgnosticMemoryNodeProvider
- */
-class SteensgaardAgnostic final : public optimization
-{
-public:
-  ~SteensgaardAgnostic() noexcept override;
-
-  void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
-};
-
-/** \brief Steensgaard alias analysis with region-aware memory state encoding
- *
- * @see Steensgaard
  * @see RegionAwareMemoryNodeProvider
  */
-class SteensgaardRegionAware final : public optimization
+template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
+class AliasAnalysisStateEncoder final : public optimization
 {
+  static_assert(std::is_base_of_v<AliasAnalysis, AliasAnalysisPass>);
+  static_assert(std::is_base_of_v<MemoryNodeProvider, MemoryNodeProviderPass>);
+
 public:
-  ~SteensgaardRegionAware() noexcept override;
+  ~AliasAnalysisStateEncoder() noexcept override;
 
   void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

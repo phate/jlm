@@ -3,7 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -113,7 +117,11 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
     const std::string & commandLineArgument)
 {
   static std::unordered_map<std::string, OptimizationId> map(
-      { { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
+      { { OptimizationCommandLineArgument::AaAndersenAgnostic_,
+          OptimizationId::AAAndersenAgnostic },
+        { OptimizationCommandLineArgument::AaAndersenRegionAware_,
+          OptimizationId::AAAndersenRegionAware },
+        { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
           OptimizationId::AASteensgaardAgnostic },
         { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
           OptimizationId::AASteensgaardRegionAware },
@@ -141,7 +149,11 @@ const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 {
   static std::unordered_map<OptimizationId, const char *> map(
-      { { OptimizationId::AASteensgaardAgnostic,
+      { { OptimizationId::AAAndersenAgnostic,
+          OptimizationCommandLineArgument::AaAndersenAgnostic_ },
+        { OptimizationId::AAAndersenRegionAware,
+          OptimizationCommandLineArgument::AaAndersenRegionAware_ },
+        { OptimizationId::AASteensgaardAgnostic,
           OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
         { OptimizationId::AASteensgaardRegionAware,
           OptimizationCommandLineArgument::AaSteensgaardRegionAware_ },
@@ -269,8 +281,14 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 llvm::optimization *
 JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
 {
-  static llvm::aa::SteensgaardAgnostic steensgaardAgnostic;
-  static llvm::aa::SteensgaardRegionAware steensgaardRegionAware;
+  using Andersen = llvm::aa::Andersen;
+  using Steensgaard = llvm::aa::Steensgaard;
+  using AgnosticMNP = llvm::aa::AgnosticMemoryNodeProvider;
+  using RegionAwareMNP = llvm::aa::RegionAwareMemoryNodeProvider;
+  static llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMNP> andersenAgnostic;
+  static llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMNP> andersenRegionAware;
+  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMNP> steensgaardAgnostic;
+  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
   static llvm::cne commonNodeElimination;
   static llvm::DeadNodeElimination deadNodeElimination;
   static llvm::fctinline functionInlining;
@@ -282,7 +300,9 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
   static llvm::nodereduction nodeReduction;
 
   static std::unordered_map<OptimizationId, llvm::optimization *> map(
-      { { OptimizationId::AASteensgaardAgnostic, &steensgaardAgnostic },
+      { { OptimizationId::AAAndersenAgnostic, &andersenAgnostic },
+        { OptimizationId::AAAndersenRegionAware, &andersenRegionAware },
+        { OptimizationId::AASteensgaardAgnostic, &steensgaardAgnostic },
         { OptimizationId::AASteensgaardRegionAware, &steensgaardRegionAware },
         { OptimizationId::CommonNodeElimination, &commonNodeElimination },
         { OptimizationId::DeadNodeElimination, &deadNodeElimination },
@@ -863,6 +883,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::init(llvmOutputFormat),
       cl::desc("Select output format"));
 
+  auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
+  auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
   auto aASteensgaardRegionAware =
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
@@ -879,6 +901,14 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
+          ::clEnumValN(
+              aAAndersenAgnostic,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenAgnostic),
+              "Andersen alias analysis with agnostic memory state encoding"),
+          ::clEnumValN(
+              aAAndersenRegionAware,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
+              "Andersen alias analysis with region-aware memory state encoding"),
           ::clEnumValN(
               aASteensgaardAgnostic,
               JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),

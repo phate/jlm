@@ -1,9 +1,11 @@
 /*
  * Copyright 2021 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
@@ -12,38 +14,29 @@
 namespace jlm::llvm::aa
 {
 
-SteensgaardAgnostic::~SteensgaardAgnostic() noexcept = default;
+template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
+AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::
+    ~AliasAnalysisStateEncoder() noexcept = default;
 
+template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
 void
-SteensgaardAgnostic::run(
-    RvsdgModule & rvsdgModule,
-    jlm::util::StatisticsCollector & statisticsCollector)
-{
-  Steensgaard steensgaard;
-  auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
-
-  auto provisioning =
-      AgnosticMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
-
-  MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
-}
-
-SteensgaardRegionAware::~SteensgaardRegionAware() noexcept = default;
-
-void
-SteensgaardRegionAware::run(
+AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  Steensgaard steensgaard;
-  auto pointsToGraph = steensgaard.Analyze(rvsdgModule, statisticsCollector);
-
+  AliasAnalysisPass aaPass;
+  auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);
   auto provisioning =
-      RegionAwareMemoryNodeProvider::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+      MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
+
+// Explicitly initialize all combinations
+template class AliasAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
 
 }

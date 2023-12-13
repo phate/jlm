@@ -50,6 +50,8 @@ public:
   {
     FirstEnumValue, // must always be the first enum value, used for iteration
 
+    AAAndersenAgnostic,
+    AAAndersenRegionAware,
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
     CommonNodeElimination,
@@ -157,6 +159,8 @@ private:
 
   struct OptimizationCommandLineArgument
   {
+    inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
+    inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
