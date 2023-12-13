@@ -117,35 +117,27 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
     const std::string & commandLineArgument)
 {
   static std::unordered_map<std::string, OptimizationId> map(
-      { { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
-          OptimizationId::AASteensgaardAgnostic },
-        { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
-          OptimizationId::AASteensgaardRegionAware },
-        { OptimizationCommandLineArgument::AaAndersenAgnostic_,
+      { { OptimizationCommandLineArgument::AaAndersenAgnostic_,
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
+        { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
+          OptimizationId::AASteensgaardAgnostic },
+        { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
+          OptimizationId::AASteensgaardRegionAware },
         { OptimizationCommandLineArgument::CommonNodeElimination_,
           OptimizationId::CommonNodeElimination },
-        { OptimizationCommandLineArgument::CommonNodeEliminationDeprecated_, OptimizationId::cne },
         { OptimizationCommandLineArgument::DeadNodeElimination_,
           OptimizationId::DeadNodeElimination },
-        { OptimizationCommandLineArgument::DeadNodeEliminationDeprecated_, OptimizationId::dne },
         { OptimizationCommandLineArgument::FunctionInlining_, OptimizationId::FunctionInlining },
-        { OptimizationCommandLineArgument::FunctionInliningDeprecated_, OptimizationId::iln },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
           OptimizationId::InvariantValueRedirection },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
-        { OptimizationCommandLineArgument::NodePushOutDeprecated_, OptimizationId::psh },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
-        { OptimizationCommandLineArgument::NodePullInDeprecated_, OptimizationId::pll },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
-        { OptimizationCommandLineArgument::NodeReductionDeprecated_, OptimizationId::red },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
           OptimizationId::ThetaGammaInversion },
-        { OptimizationCommandLineArgument::ThetaGammaInversionDeprecated_, OptimizationId::ivt },
-        { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling },
-        { OptimizationCommandLineArgument::LoopUnrollingDeprecated_, OptimizationId::url } });
+        { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
 
   if (map.find(commandLineArgument) != map.end())
     return map[commandLineArgument];
@@ -157,33 +149,25 @@ const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
 {
   static std::unordered_map<OptimizationId, const char *> map(
-      { { OptimizationId::AASteensgaardAgnostic,
-          OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
-        { OptimizationId::AASteensgaardRegionAware,
-          OptimizationCommandLineArgument::AaSteensgaardRegionAware_ },
-        { OptimizationId::AAAndersenAgnostic,
+      { { OptimizationId::AAAndersenAgnostic,
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
           OptimizationCommandLineArgument::AaAndersenRegionAware_ },
-        { OptimizationId::cne, OptimizationCommandLineArgument::CommonNodeEliminationDeprecated_ },
+        { OptimizationId::AASteensgaardAgnostic,
+          OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
+        { OptimizationId::AASteensgaardRegionAware,
+          OptimizationCommandLineArgument::AaSteensgaardRegionAware_ },
         { OptimizationId::CommonNodeElimination,
           OptimizationCommandLineArgument::CommonNodeElimination_ },
         { OptimizationId::DeadNodeElimination,
           OptimizationCommandLineArgument::DeadNodeElimination_ },
-        { OptimizationId::dne, OptimizationCommandLineArgument::DeadNodeEliminationDeprecated_ },
         { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
-        { OptimizationId::iln, OptimizationCommandLineArgument::FunctionInliningDeprecated_ },
         { OptimizationId::InvariantValueRedirection,
           OptimizationCommandLineArgument::InvariantValueRedirection_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
-        { OptimizationId::psh, OptimizationCommandLineArgument::NodePushOutDeprecated_ },
-        { OptimizationId::pll, OptimizationCommandLineArgument::NodePullInDeprecated_ },
-        { OptimizationId::red, OptimizationCommandLineArgument::NodeReductionDeprecated_ },
-        { OptimizationId::ivt, OptimizationCommandLineArgument::ThetaGammaInversionDeprecated_ },
-        { OptimizationId::url, OptimizationCommandLineArgument::LoopUnrollingDeprecated_ },
         { OptimizationId::ThetaGammaInversion,
           OptimizationCommandLineArgument::ThetaGammaInversion_ } });
 
@@ -297,14 +281,14 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 llvm::optimization *
 JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
 {
-  using Steensgaard = llvm::aa::Steensgaard;
   using Andersen = llvm::aa::Andersen;
+  using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMNP = llvm::aa::AgnosticMemoryNodeProvider;
   using RegionAwareMNP = llvm::aa::RegionAwareMemoryNodeProvider;
-  static llvm::aa::MemoryStateEncodingPass<Steensgaard, AgnosticMNP> steensgaardAgnostic;
-  static llvm::aa::MemoryStateEncodingPass<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
   static llvm::aa::MemoryStateEncodingPass<Andersen, AgnosticMNP> andersenAgnostic;
   static llvm::aa::MemoryStateEncodingPass<Andersen, RegionAwareMNP> andersenRegionAware;
+  static llvm::aa::MemoryStateEncodingPass<Steensgaard, AgnosticMNP> steensgaardAgnostic;
+  static llvm::aa::MemoryStateEncodingPass<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
   static llvm::cne commonNodeElimination;
   static llvm::DeadNodeElimination deadNodeElimination;
   static llvm::fctinline functionInlining;
@@ -316,26 +300,18 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
   static llvm::nodereduction nodeReduction;
 
   static std::unordered_map<OptimizationId, llvm::optimization *> map(
-      { { OptimizationId::AASteensgaardAgnostic, &steensgaardAgnostic },
-        { OptimizationId::AASteensgaardRegionAware, &steensgaardRegionAware },
-        { OptimizationId::AAAndersenAgnostic, &andersenAgnostic },
+      { { OptimizationId::AAAndersenAgnostic, &andersenAgnostic },
         { OptimizationId::AAAndersenRegionAware, &andersenRegionAware },
-        { OptimizationId::cne, &commonNodeElimination },
+        { OptimizationId::AASteensgaardAgnostic, &steensgaardAgnostic },
+        { OptimizationId::AASteensgaardRegionAware, &steensgaardRegionAware },
         { OptimizationId::CommonNodeElimination, &commonNodeElimination },
         { OptimizationId::DeadNodeElimination, &deadNodeElimination },
-        { OptimizationId::dne, &deadNodeElimination },
         { OptimizationId::FunctionInlining, &functionInlining },
-        { OptimizationId::iln, &functionInlining },
         { OptimizationId::InvariantValueRedirection, &invariantValueRedirection },
         { OptimizationId::LoopUnrolling, &loopUnrolling },
         { OptimizationId::NodePullIn, &nodePullIn },
         { OptimizationId::NodePushOut, &nodePushOut },
         { OptimizationId::NodeReduction, &nodeReduction },
-        { OptimizationId::pll, &nodePullIn },
-        { OptimizationId::psh, &nodePushOut },
-        { OptimizationId::ivt, &thetaGammaInversion },
-        { OptimizationId::url, &loopUnrolling },
-        { OptimizationId::red, &nodeReduction },
         { OptimizationId::ThetaGammaInversion, &thetaGammaInversion } });
 
   if (map.find(id) != map.end())
@@ -907,29 +883,21 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::init(llvmOutputFormat),
       cl::desc("Select output format"));
 
+  auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
+  auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
   auto aASteensgaardRegionAware =
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
-  auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
-  auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
-  auto commonNodeEliminationDeprecated = JlmOptCommandLineOptions::OptimizationId::cne;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
-  auto deadNodeEliminationDeprecated = JlmOptCommandLineOptions::OptimizationId::dne;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
-  auto functionInliningDeprecated = JlmOptCommandLineOptions::OptimizationId::iln;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
-  auto nodePushOutDeprecated = JlmOptCommandLineOptions::OptimizationId::psh;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
-  auto nodePullInDeprecated = JlmOptCommandLineOptions::OptimizationId::pll;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
-  auto nodeReductionDeprecated = JlmOptCommandLineOptions::OptimizationId::red;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
-  auto thetaGammaInversionDeprecated = JlmOptCommandLineOptions::OptimizationId::ivt;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
-  auto loopUnrollingDeprecated = JlmOptCommandLineOptions::OptimizationId::url;
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
@@ -954,25 +922,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeElimination),
               "Common Node Elimination"),
           ::clEnumValN(
-              commonNodeEliminationDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeEliminationDeprecated),
-              "[Deprecated] Use --CommonNodeElimination flag instead"),
-          ::clEnumValN(
               deadNodeElimination,
               JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeElimination),
               "Dead Node Elimination"),
           ::clEnumValN(
-              deadNodeEliminationDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeEliminationDeprecated),
-              "[Deprecated] Use --DeadNodeElimination flag instead"),
-          ::clEnumValN(
               functionInlining,
               JlmOptCommandLineOptions::ToCommandLineArgument(functionInlining),
               "Function Inlining"),
-          ::clEnumValN(
-              functionInliningDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(functionInliningDeprecated),
-              "[Deprecated] Use --FunctionInlining flag instead"),
           ::clEnumValN(
               invariantValueRedirection,
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
@@ -982,41 +938,21 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
               "Node Push Out"),
           ::clEnumValN(
-              nodePushOutDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOutDeprecated),
-              "[Deprecated] Use --NodePushOut flag instead"),
-          ::clEnumValN(
               nodePullIn,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePullIn),
               "Node Pull In"),
-          ::clEnumValN(
-              nodePullInDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(nodePullInDeprecated),
-              "[Deprecated] Use --NodePullIn flag instead"),
           ::clEnumValN(
               nodeReduction,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodeReduction),
               "Node Reduction"),
           ::clEnumValN(
-              nodeReductionDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(nodeReductionDeprecated),
-              "[Deprecated] Use --NodeReduction flag instead"),
-          ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
               "Theta-Gamma Inversion"),
           ::clEnumValN(
-              thetaGammaInversionDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionDeprecated),
-              "[Deprecated] Use --ThetaGammaInversion flag instead"),
-          ::clEnumValN(
               loopUnrolling,
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
-              "Loop Unrolling"),
-          ::clEnumValN(
-              loopUnrollingDeprecated,
-              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingDeprecated),
-              "[Deprecated] Use --LoopUnrolling flag instead")),
+              "Loop Unrolling")),
       cl::desc("Perform optimization"));
 
   cl::ParseCommandLineOptions(argc, argv);
