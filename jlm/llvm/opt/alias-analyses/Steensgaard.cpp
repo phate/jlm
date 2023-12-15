@@ -1791,13 +1791,6 @@ Steensgaard::Analyze(
 PointsToGraph::MemoryNode &
 Steensgaard::CreatePointsToGraphMemoryNode(const Location & location, PointsToGraph & pointsToGraph)
 {
-#if 0
-  if (auto registerLocation = dynamic_cast<const RegisterLocation *>(&location))
-    return PointsToGraph::RegisterSetNode::Create(
-        pointsToGraph,
-        { &registerLocation->GetOutput() });
-#endif
-
   if (auto allocaLocation = dynamic_cast<const AllocaLocation *>(&location))
     return PointsToGraph::AllocaNode::Create(pointsToGraph, allocaLocation->GetNode());
 
