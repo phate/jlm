@@ -1766,7 +1766,7 @@ Steensgaard::Analyze(
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());
   AnalyzeRvsdg(module.Rvsdg());
-  std::cout << LocationSet_->ToDot() << std::flush;
+  // std::cout << LocationSet_->ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
   // Construct PointsTo graph
