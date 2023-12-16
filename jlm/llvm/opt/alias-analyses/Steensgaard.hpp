@@ -97,6 +97,15 @@ private:
   AnalyzeCall(const CallNode & callNode);
 
   void
+  AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode);
+
+  void
+  AnalyzeExternalCall(const CallNode & callNode);
+
+  void
+  AnalyzeIndirectCall(const CallNode & callNode);
+
+  void
   AnalyzeGep(const jlm::rvsdg::simple_node & node);
 
   void
