@@ -514,6 +514,10 @@ private:
   const jlm::rvsdg::output * Output_;
 };
 
+/**
+ * Represents a set of registers from the RVSDG that all point to the same
+ * PointsToGraph::MemoryNode%s.
+ */
 class PointsToGraph::RegisterSetNode final : public PointsToGraph::Node
 {
 public:
