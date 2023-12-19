@@ -259,6 +259,12 @@ node::ComputeCallSummary() const
       continue;
     }
 
+    if (auto lambdaResult = dynamic_cast<lambda::result *>(input))
+    {
+      otherUsers.emplace_back(lambdaResult);
+      continue;
+    }
+
     if (auto gamma_input = dynamic_cast<rvsdg::gamma_input *>(input))
     {
       for (auto & argument : *gamma_input)
