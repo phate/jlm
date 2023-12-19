@@ -1143,10 +1143,21 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
-  // FIXME: What about varargs
+  auto & lambdaFunctionType = lambdaNode.operation().type();
+  auto & callFunctionType = callNode.GetOperation().GetFunctionType();
+  if (callFunctionType != lambdaFunctionType)
+  {
+    // LLVM permits code where it can happen that the number and type of the arguments handed in to
+    // the call node do not agree with the number and type of lambda parameters, even though it is a
+    // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. We handle this case
+    // the same as an indirect call, as it is impossible to join the call argument/result locations
+    // with the corresponding lambda argument/result locations.
+    AnalyzeIndirectCall(callNode);
+    return;
+  }
 
+  // FIXME: What about varargs
   // Handle call node operands
-  JLM_ASSERT(lambdaNode.nfctarguments() == callNode.ninputs() - 1);
   for (size_t n = 1; n < callNode.ninputs(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
