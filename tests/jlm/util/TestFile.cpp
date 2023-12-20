@@ -23,4 +23,4 @@ test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/test-file", test)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestFile", test)
