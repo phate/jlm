@@ -1122,7 +1122,7 @@ TestLambdaCallArgumentMismatch()
   // Assert
   assert(pointsToGraph->NumAllocaNodes() == 1);
   assert(pointsToGraph->NumLambdaNodes() == 2);
-  assert(pointsToGraph->NumRegisterNodes() == 4);
+  assert(pointsToGraph->NumRegisterSetNodes() == 3);
 }
 
 static void
