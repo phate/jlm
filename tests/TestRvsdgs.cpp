@@ -3303,4 +3303,89 @@ EscapingLocalFunctionTest::SetupRvsdg()
   return module;
 }
 
+std::unique_ptr<llvm::RvsdgModule>
+LambdaCallArgumentMismatch::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+  rvsdg.node_normal_form(typeid(rvsdg::operation))->set_mutable(false);
+
+  auto setupLambdaG = [&]()
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+        { &iOStateType, &memoryStateType, &loopStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+
+    auto lambda = lambda::node::create(rvsdg.root(), functionType, "g", linkage::internal_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+
+    auto five = rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
+
+    return lambda->finalize({ five, iOStateArgument, memoryStateArgument, loopStateArgument });
+  };
+
+  auto setupLambdaMain = [&](lambda::output & lambdaG)
+  {
+    PointerType pointerType;
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    varargtype variableArgumentType;
+    FunctionType functionTypeMain(
+        { &iOStateType, &memoryStateType, &loopStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+    FunctionType functionTypeCall(
+        { &rvsdg::bit32, &variableArgumentType, &iOStateType, &memoryStateType, &loopStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+
+    auto lambda =
+        lambda::node::create(rvsdg.root(), functionTypeMain, "main", linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+    auto loopStateArgument = lambda->fctargument(2);
+    auto lambdaGArgument = lambda->add_ctxvar(&lambdaG);
+
+    auto one = rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
+    auto six = rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
+
+    auto vaList = valist_op::Create(*lambda->subregion(), {});
+
+    auto allocaResults = alloca_op::create(rvsdg::bit32, one, 4);
+
+    auto memoryState = MemStateMergeOperator::Create(
+        std::vector<rvsdg::output *>{ memoryStateArgument, allocaResults[1] });
+
+    auto storeResults = StoreNode::Create(allocaResults[0], six, { memoryState }, 4);
+
+    auto loadResults = LoadNode::Create(allocaResults[0], storeResults, rvsdg::bit32, 4);
+
+    auto callResults = CallNode::Create(
+        lambdaGArgument,
+        functionTypeCall,
+        { loadResults[0], vaList, iOStateArgument, loadResults[1], loopStateArgument });
+
+    auto lambdaOutput = lambda->finalize(callResults);
+
+    rvsdg.add_export(lambdaOutput, { PointerType(), "main" });
+
+    return std::make_tuple(
+        lambdaOutput,
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+  };
+
+  LambdaG_ = setupLambdaG()->node();
+  auto [lambdaMainOutput, call] = setupLambdaMain(*LambdaG_->output());
+  LambdaMain_ = lambdaMainOutput->node();
+  Call_ = call;
+
+  return rvsdgModule;
+}
+
 }
