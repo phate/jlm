@@ -206,8 +206,6 @@ public:
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)
   {
-    JLM_ASSERT(directory.Exists() && directory.IsDirectory());
-
     auto randomString = CreateRandomString(6);
     filepath filePath(directory.to_str() + "/" + fileNamePrefix + randomString + fileNameSuffix);
 
