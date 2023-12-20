@@ -1113,6 +1113,19 @@ TestLinkedList()
 }
 
 static void
+TestLambdaCallArgumentMismatch()
+{
+  // Arrange and Act
+  jlm::tests::LambdaCallArgumentMismatch test;
+  auto pointsToGraph = RunSteensgaard(test.module());
+
+  // Assert
+  assert(pointsToGraph->NumAllocaNodes() == 1);
+  assert(pointsToGraph->NumLambdaNodes() == 2);
+  assert(pointsToGraph->NumRegisterNodes() == 4);
+}
+
+static void
 TestStatistics()
 {
   // Arrange
@@ -1176,6 +1189,8 @@ TestSteensgaardAnalysis()
   TestMemcpy();
 
   TestLinkedList();
+
+  TestLambdaCallArgumentMismatch();
 
   TestStatistics();
 
