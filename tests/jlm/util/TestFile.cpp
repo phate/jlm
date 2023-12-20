@@ -7,10 +7,10 @@
 
 #include <jlm/util/file.hpp>
 
-#include <assert.h>
+#include <cassert>
 
-static int
-test()
+static void
+TestFilePathMethods()
 {
   jlm::util::filepath f("/tmp/archive.tar.gz");
 
@@ -19,8 +19,14 @@ test()
   assert(f.suffix() == "gz");
   assert(f.complete_suffix() == "tar.gz");
   assert(f.path() == "/tmp/");
+}
+
+static int
+TestFile()
+{
+  TestFilePathMethods();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestFile", test)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestFile", TestFile)
