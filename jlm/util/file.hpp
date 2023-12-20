@@ -201,7 +201,7 @@ public:
    * @return A unique file
    */
   static jlm::util::filepath
-  CreateUniqueFile(
+  CreateUniqueFileName(
       const jlm::util::filepath & directory,
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)
