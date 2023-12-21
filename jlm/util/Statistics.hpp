@@ -131,7 +131,7 @@ public:
   static filepath
   CreateUniqueStatisticsFile(const filepath & directory, const filepath & inputFile)
   {
-    return filepath::CreateUniqueFile(directory, inputFile.base() + "-", "-statistics.log");
+    return filepath::CreateUniqueFileName(directory, inputFile.base() + "-", "-statistics.log");
   }
 
 private:
