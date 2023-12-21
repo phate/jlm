@@ -2543,9 +2543,6 @@ public:
       const std::vector<const variable *> & memstates,
       const variable * iostate)
   {
-    if (memstates.empty())
-      throw jlm::util::error("Number of memory states cannot be zero.");
-
     std::vector<const variable *> operands;
     operands.push_back(pointer);
     operands.insert(operands.end(), memstates.begin(), memstates.end());
@@ -2561,9 +2558,6 @@ public:
       const std::vector<jlm::rvsdg::output *> & memstates,
       jlm::rvsdg::output * iostate)
   {
-    if (memstates.empty())
-      throw jlm::util::error("Number of memory states cannot be zero.");
-
     std::vector<jlm::rvsdg::output *> operands;
     operands.push_back(pointer);
     operands.insert(operands.end(), memstates.begin(), memstates.end());
