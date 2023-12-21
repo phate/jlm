@@ -170,7 +170,7 @@ test_free_call()
 
     auto bb = dynamic_cast<const basic_block *>(cfg->entry()->outedge(0)->sink());
     assert(is<assignment_op>(*bb->rbegin()));
-    assert(is<free_op>(*std::next(bb->rbegin())));
+    assert(is<FreeOperation>(*std::next(bb->rbegin())));
   };
 
   llvm::LLVMContext ctx;

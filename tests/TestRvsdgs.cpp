@@ -650,7 +650,7 @@ CallTest2::SetupRvsdg()
     auto loopStateArgument = lambda->fctargument(3);
 
     auto cast = bitcast_op::create(pointerArgument, pointerType);
-    auto freeResults = free_op::create(cast, { memoryStateArgument }, iOStateArgument);
+    auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
     lambda->finalize({ freeResults[1], freeResults[0], loopStateArgument });
 

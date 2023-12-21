@@ -831,7 +831,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const free_op & op,
+    const FreeOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -991,7 +991,7 @@ convert_operation(
             { typeid(ExtractValue), convert<ExtractValue> },
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
-            { typeid(free_op), convert<free_op> },
+            { typeid(FreeOperation), convert<FreeOperation> },
             { typeid(Memcpy), convert<Memcpy> },
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },

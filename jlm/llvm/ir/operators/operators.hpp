@@ -2512,72 +2512,72 @@ public:
 
 /* free operator */
 
-class free_op final : public jlm::rvsdg::simple_op
+class FreeOperation final : public jlm::rvsdg::simple_op
 {
 public:
-  virtual ~free_op();
+  ~FreeOperation() noexcept override;
 
-  free_op(size_t nmemstates)
-      : simple_op(create_operand_portvector(nmemstates), create_result_portvector(nmemstates))
+  explicit FreeOperation(size_t numMemoryStates)
+      : simple_op(CreateOperandPorts(numMemoryStates), CreateResultPorts(numMemoryStates))
   {}
 
-  virtual bool
+  bool
   operator==(const operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
-  create(
+  Create(
       const variable * pointer,
-      const std::vector<const variable *> & memstates,
-      const variable * iostate)
+      const std::vector<const variable *> & memoryStates,
+      const variable * iOState)
   {
     std::vector<const variable *> operands;
     operands.push_back(pointer);
-    operands.insert(operands.end(), memstates.begin(), memstates.end());
-    operands.push_back(iostate);
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+    operands.push_back(iOState);
 
-    free_op op(memstates.size());
-    return tac::create(op, operands);
+    FreeOperation operation(memoryStates.size());
+    return tac::create(operation, operands);
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(
+  Create(
       jlm::rvsdg::output * pointer,
-      const std::vector<jlm::rvsdg::output *> & memstates,
-      jlm::rvsdg::output * iostate)
+      const std::vector<jlm::rvsdg::output *> & memoryStates,
+      jlm::rvsdg::output * iOState)
   {
     std::vector<jlm::rvsdg::output *> operands;
     operands.push_back(pointer);
-    operands.insert(operands.end(), memstates.begin(), memstates.end());
-    operands.push_back(iostate);
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+    operands.push_back(iOState);
 
-    free_op op(memstates.size());
-    return jlm::rvsdg::simple_node::create_normalized(pointer->region(), op, operands);
+    FreeOperation operation(memoryStates.size());
+    return jlm::rvsdg::simple_node::create_normalized(pointer->region(), operation, operands);
   }
 
 private:
   static std::vector<jlm::rvsdg::port>
-  create_operand_portvector(size_t nmemstates)
+  CreateOperandPorts(size_t numMemoryStates)
   {
-    std::vector<jlm::rvsdg::port> memstates(nmemstates, { MemoryStateType::Create() });
+    std::vector<jlm::rvsdg::port> memoryStates(numMemoryStates, { MemoryStateType::Create() });
 
     std::vector<jlm::rvsdg::port> ports({ PointerType() });
-    ports.insert(ports.end(), memstates.begin(), memstates.end());
-    ports.push_back(iostatetype::instance());
+    ports.insert(ports.end(), memoryStates.begin(), memoryStates.end());
+    ports.emplace_back(iostatetype::instance());
 
     return ports;
   }
 
   static std::vector<jlm::rvsdg::port>
-  create_result_portvector(size_t nmemstates)
+  CreateResultPorts(size_t numMemoryStates)
   {
-    std::vector<jlm::rvsdg::port> ports(nmemstates, { MemoryStateType::Create() });
-    ports.push_back(iostatetype::instance());
+    std::vector<jlm::rvsdg::port> ports(numMemoryStates, { MemoryStateType::Create() });
+    ports.emplace_back(iostatetype::instance());
 
     return ports;
   }

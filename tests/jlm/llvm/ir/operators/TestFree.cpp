@@ -13,8 +13,8 @@ TestFreeConstructor()
   using namespace jlm::llvm;
 
   // Arrange and Act
-  free_op free0(0);
-  free_op free2(2);
+  FreeOperation free0(0);
+  FreeOperation free2(2);
 
   // Assert
   assert(free0.narguments() == 2);
@@ -30,9 +30,9 @@ TestEqualityOperator()
   using namespace jlm::llvm;
 
   // Arrange
-  free_op free0(0);
-  free_op free1(1);
-  free_op free2(1);
+  FreeOperation free0(0);
+  FreeOperation free1(1);
+  FreeOperation free2(1);
 
   // Act and Assert
   assert(free0 != free1);
@@ -53,8 +53,8 @@ TestThreeAddressCodeCreator()
   auto iOState = ipgModule.create_variable(iostatetype(), "io");
 
   // Act
-  auto free0 = free_op::create(address, {}, iOState);
-  auto free1 = free_op::create(address, { memoryState }, iOState);
+  auto free0 = FreeOperation::Create(address, {}, iOState);
+  auto free1 = FreeOperation::Create(address, { memoryState }, iOState);
 
   // Assert
   assert(free0->nresults() == 1);
@@ -74,8 +74,8 @@ TestRvsdgCreator()
   auto iOState = rvsdg.add_import({ iostatetype(), "io" });
 
   // Act
-  auto freeResults0 = free_op::create(address, {}, iOState);
-  auto freeResults1 = free_op::create(address, { memoryState }, iOState);
+  auto freeResults0 = FreeOperation::Create(address, {}, iOState);
+  auto freeResults1 = FreeOperation::Create(address, { memoryState }, iOState);
 
   // Assert
   assert(freeResults0.size() == 1);

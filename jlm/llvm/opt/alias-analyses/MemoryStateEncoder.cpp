@@ -575,7 +575,7 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
               { typeid(LoadOperation), EncodeLoad },
               { typeid(StoreOperation), EncodeStore },
               { typeid(CallOperation), EncodeCall },
-              { typeid(free_op), EncodeFree },
+              { typeid(FreeOperation), EncodeFree },
               { typeid(Memcpy), EncodeMemcpy } });
 
   auto & operation = be.operation();
@@ -663,7 +663,7 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
 void
 MemoryStateEncoder::EncodeFree(const jlm::rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(is<free_op>(&freeNode));
+  JLM_ASSERT(is<FreeOperation>(&freeNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto address = freeNode.input(0)->origin();
@@ -671,7 +671,7 @@ MemoryStateEncoder::EncodeFree(const jlm::rvsdg::simple_node & freeNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outputs = free_op::create(address, inStates, iostate);
+  auto outputs = FreeOperation::Create(address, inStates, iostate);
   freeNode.output(freeNode.noutputs() - 1)->divert_users(outputs.back());
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
