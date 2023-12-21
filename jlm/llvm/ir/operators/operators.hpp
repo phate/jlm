@@ -2510,8 +2510,11 @@ public:
   }
 };
 
-/* free operator */
-
+/**
+ * Represents the standard C library call free() used for freeing dynamically allocated memory.
+ *
+ * This operation has no equivalent LLVM instruction.
+ */
 class FreeOperation final : public jlm::rvsdg::simple_op
 {
 public:
