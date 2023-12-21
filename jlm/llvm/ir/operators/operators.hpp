@@ -2530,13 +2530,6 @@ public:
   virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  const FunctionType
-  fcttype() const
-  {
-    JLM_ASSERT(narguments() == 3 && nresults() == 2);
-    return FunctionType({ &argument(0).type() }, { &result(0).type(), &result(1).type() });
-  }
-
   static std::unique_ptr<llvm::tac>
   create(
       const variable * pointer,
