@@ -2088,4 +2088,35 @@ private:
   jlm::llvm::lambda::node * ExportedFunc_ = {};
 };
 
+/** \brief RVSDG module with a call to free(NULL).
+ *
+ * The class sets up an RVSDG module corresponding to the code:
+ *
+ * \code{.c}
+ *   int
+ *   main()
+ *   {
+ *     int* x = NULL;
+ *     free(x);
+ *     return 0;
+ *   }
+ * \endcode
+ *
+ */
+class FreeNullTest final : public RvsdgTest
+{
+public:
+  [[nodiscard]] llvm::lambda::node &
+  LambdaMain() const noexcept
+  {
+    return *LambdaMain_;
+  }
+
+private:
+  std::unique_ptr<llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  llvm::lambda::node * LambdaMain_;
+};
+
 }
