@@ -9,6 +9,12 @@
 int
 main(int argc, char ** argv)
 {
+#ifndef CIRCT
+  ::llvm::outs() << "jhls has not been compiled with the CIRCT backend enabled.\n";
+  ::llvm::outs() << "Recompile jlm with -DCIRCT=1 if you want to use jhls.\n";
+  exit(EXIT_SUCCESS);
+#endif
+
   using namespace jlm::tooling;
 
   auto & commandLineOptions = JhlsCommandLineParser::Parse(argc, argv);
