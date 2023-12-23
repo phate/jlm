@@ -2088,6 +2088,58 @@ private:
   jlm::llvm::lambda::node * ExportedFunc_ = {};
 };
 
+/** \brief RVSDG module containing a static function that is called with the wrong number of
+ * arguments.
+ *
+ * LLVM permits such code, albeit with issuing the warning: too many arguments in call to 'g'
+ *
+ * The class sets up an RVSDG module corresponding to the following code:
+ *
+ * \code{.c}
+ *   static unsigned int
+ *   g()
+ *   {
+ *     return 5;
+ *   }
+ *
+ *   int
+ *   main()
+ *   {
+ *     unsigned int x = 6;
+ *     return g(x);
+ *   }
+ * \endcode
+ */
+class LambdaCallArgumentMismatch final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const llvm::lambda::node &
+  GetLambdaMain() const noexcept
+  {
+    return *LambdaMain_;
+  }
+
+  [[nodiscard]] const llvm::lambda::node &
+  GetLambdaG() const noexcept
+  {
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] const llvm::CallNode &
+  GetCall() const noexcept
+  {
+    return *Call_;
+  }
+
+private:
+  std::unique_ptr<llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  llvm::lambda::node * LambdaG_ = {};
+  llvm::lambda::node * LambdaMain_ = {};
+  llvm::CallNode * Call_ = {};
+};
+
 /** \brief RVSDG module with a call to free(NULL).
  *
  * The class sets up an RVSDG module corresponding to the code:

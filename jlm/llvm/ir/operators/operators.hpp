@@ -1382,6 +1382,18 @@ public:
     return tac::create(op, arguments);
   }
 
+  static rvsdg::output *
+  Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
+  {
+    std::vector<std::unique_ptr<rvsdg::type>> operandTypes;
+    operandTypes.reserve(operands.size());
+    for (auto & operand : operands)
+      operandTypes.emplace_back(operand->type().copy());
+
+    valist_op operation(std::move(operandTypes));
+    return jlm::rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+  }
+
 private:
   static inline std::vector<jlm::rvsdg::port>
   create_srcports(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)

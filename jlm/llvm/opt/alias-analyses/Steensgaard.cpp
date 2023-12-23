@@ -1122,100 +1122,6 @@ Steensgaard::AnalyzeStore(const StoreNode & storeNode)
 void
 Steensgaard::AnalyzeCall(const CallNode & callNode)
 {
-  auto AnalyzeDirectCall = [&](const CallNode & callNode, const lambda::node & lambda)
-  {
-    /*
-      FIXME: What about varargs
-    */
-
-    /* handle call node arguments */
-    JLM_ASSERT(lambda.nfctarguments() == callNode.ninputs() - 1);
-    for (size_t n = 1; n < callNode.ninputs(); n++)
-    {
-      auto & callArgument = *callNode.input(n)->origin();
-      auto & lambdaArgument = *lambda.fctargument(n - 1);
-
-      if (!is<PointerType>(callArgument.type()))
-        continue;
-
-      auto & callArgumentLocation = LocationSet_->Find(callArgument);
-      auto & lambdaArgumentLocation =
-          LocationSet_->FindOrInsertRegisterLocation(lambdaArgument, PointsToFlags::PointsToNone);
-
-      LocationSet_->Join(callArgumentLocation, lambdaArgumentLocation);
-    }
-
-    /* handle call node results */
-    auto subregion = lambda.subregion();
-    JLM_ASSERT(subregion->nresults() == callNode.noutputs());
-    for (size_t n = 0; n < callNode.noutputs(); n++)
-    {
-      auto & callResult = *callNode.output(n);
-      auto & lambdaResult = *subregion->result(n)->origin();
-
-      if (!is<PointerType>(callResult.type()))
-        continue;
-
-      auto & callResultLocation =
-          LocationSet_->FindOrInsertRegisterLocation(callResult, PointsToFlags::PointsToNone);
-      auto & lambdaResultLocation =
-          LocationSet_->FindOrInsertRegisterLocation(lambdaResult, PointsToFlags::PointsToNone);
-
-      LocationSet_->Join(callResultLocation, lambdaResultLocation);
-    }
-  };
-
-  auto AnalyzeExternalCall = [&](const CallNode & callNode)
-  {
-    /*
-      FIXME: What about varargs
-    */
-    for (size_t n = 1; n < callNode.NumArguments(); n++)
-    {
-      auto & callArgument = *callNode.input(n)->origin();
-
-      if (is<PointerType>(callArgument.type()))
-      {
-        auto registerLocation = LocationSet_->LookupRegisterLocation(callArgument);
-        registerLocation->SetIsEscapingModule(true);
-      }
-    }
-
-    for (size_t n = 0; n < callNode.NumResults(); n++)
-    {
-      auto & callResult = *callNode.Result(n);
-
-      if (is<PointerType>(callResult.type()))
-      {
-        LocationSet_->FindOrInsertRegisterLocation(
-            callResult,
-            PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
-      }
-    }
-  };
-
-  auto AnalyzeIndirectCall = [&](const CallNode & call)
-  {
-    /*
-      Nothing can be done for the call/lambda arguments, as it is
-      an indirect call and the lambda node cannot be retrieved.
-    */
-
-    /* handle call node results */
-    for (size_t n = 0; n < call.noutputs(); n++)
-    {
-      auto & callResult = *call.output(n);
-
-      if (is<PointerType>(callResult.type()))
-      {
-        LocationSet_->FindOrInsertRegisterLocation(
-            callResult,
-            PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory
-                | PointsToFlags::PointsToEscapedMemory);
-      }
-    }
-  };
-
   auto callTypeClassifier = CallNode::ClassifyCall(callNode);
   switch (callTypeClassifier->GetCallType())
   {
@@ -1231,6 +1137,108 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
     break;
   default:
     JLM_UNREACHABLE("Unhandled call type.");
+  }
+}
+
+void
+Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
+{
+  auto & lambdaFunctionType = lambdaNode.operation().type();
+  auto & callFunctionType = callNode.GetOperation().GetFunctionType();
+  if (callFunctionType != lambdaFunctionType)
+  {
+    // LLVM permits code where it can happen that the number and type of the arguments handed in to
+    // the call node do not agree with the number and type of lambda parameters, even though it is a
+    // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. We handle this case
+    // the same as an indirect call, as it is impossible to join the call argument/result locations
+    // with the corresponding lambda argument/result locations.
+    AnalyzeIndirectCall(callNode);
+    return;
+  }
+
+  // FIXME: What about varargs
+  // Handle call node operands
+  for (size_t n = 1; n < callNode.ninputs(); n++)
+  {
+    auto & callArgument = *callNode.input(n)->origin();
+    auto & lambdaArgument = *lambdaNode.fctargument(n - 1);
+
+    if (!is<PointerType>(callArgument.type()))
+      continue;
+
+    auto & callArgumentLocation = LocationSet_->Find(callArgument);
+    auto & lambdaArgumentLocation =
+        LocationSet_->FindOrInsertRegisterLocation(lambdaArgument, PointsToFlags::PointsToNone);
+
+    LocationSet_->Join(callArgumentLocation, lambdaArgumentLocation);
+  }
+
+  // Handle call node results
+  auto subregion = lambdaNode.subregion();
+  JLM_ASSERT(subregion->nresults() == callNode.noutputs());
+  for (size_t n = 0; n < callNode.noutputs(); n++)
+  {
+    auto & callResult = *callNode.output(n);
+    auto & lambdaResult = *subregion->result(n)->origin();
+
+    if (!is<PointerType>(callResult.type()))
+      continue;
+
+    auto & callResultLocation =
+        LocationSet_->FindOrInsertRegisterLocation(callResult, PointsToFlags::PointsToNone);
+    auto & lambdaResultLocation =
+        LocationSet_->FindOrInsertRegisterLocation(lambdaResult, PointsToFlags::PointsToNone);
+
+    LocationSet_->Join(callResultLocation, lambdaResultLocation);
+  }
+}
+
+void
+Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
+{
+  // FIXME: What about varargs
+  for (size_t n = 1; n < callNode.NumArguments(); n++)
+  {
+    auto & callArgument = *callNode.input(n)->origin();
+
+    if (is<PointerType>(callArgument.type()))
+    {
+      auto registerLocation = LocationSet_->LookupRegisterLocation(callArgument);
+      registerLocation->SetIsEscapingModule(true);
+    }
+  }
+
+  for (size_t n = 0; n < callNode.NumResults(); n++)
+  {
+    auto & callResult = *callNode.Result(n);
+
+    if (is<PointerType>(callResult.type()))
+    {
+      LocationSet_->FindOrInsertRegisterLocation(
+          callResult,
+          PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
+    }
+  }
+}
+
+void
+Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
+{
+  // Nothing can be done for the call/lambda arguments, as it is
+  // an indirect call and the lambda node cannot be retrieved.
+
+  // Handle call node results
+  for (size_t n = 0; n < callNode.noutputs(); n++)
+  {
+    auto & callResult = *callNode.output(n);
+
+    if (is<PointerType>(callResult.type()))
+    {
+      LocationSet_->FindOrInsertRegisterLocation(
+          callResult,
+          PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory
+              | PointsToFlags::PointsToEscapedMemory);
+    }
   }
 }
 
