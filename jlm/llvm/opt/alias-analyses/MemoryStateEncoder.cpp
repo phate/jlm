@@ -672,6 +672,8 @@ MemoryStateEncoder::EncodeFree(const jlm::rvsdg::simple_node & freeNode)
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   auto outputs = FreeOperation::Create(address, inStates, iostate);
+
+  // Redirect IO state edge
   freeNode.output(freeNode.noutputs() - 1)->divert_users(outputs.back());
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
