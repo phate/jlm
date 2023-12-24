@@ -37,6 +37,8 @@ class RvsdgModule;
  */
 class InvariantValueRedirection final : public optimization
 {
+  class Statistics;
+  
 public:
   ~InvariantValueRedirection() override;
 

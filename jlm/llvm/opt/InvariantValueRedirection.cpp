@@ -14,23 +14,23 @@
 namespace jlm::llvm
 {
 
-class InvariantValueRedirectionStatistics final : public util::Statistics
+class InvariantValueRedirection::Statistics final : public util::Statistics
 {
 public:
-  ~InvariantValueRedirectionStatistics() override = default;
+  ~Statistics() override = default;
 
-  InvariantValueRedirectionStatistics()
-      : Statistics(Statistics::Id::InvariantValueRedirection)
+  Statistics()
+      : util::Statistics(Statistics::Id::InvariantValueRedirection)
   {}
 
   void
-  Start(const jlm::rvsdg::graph & graph) noexcept
+  Start() noexcept
   {
     Timer_.start();
   }
 
   void
-  Stop(const jlm::rvsdg::graph & graph) noexcept
+  Stop() noexcept
   {
     Timer_.stop();
   }
@@ -41,10 +41,10 @@ public:
     return util::strfmt("InvariantValueRedirection ", "Time[ns]:", Timer_.ns());
   }
 
-  static std::unique_ptr<InvariantValueRedirectionStatistics>
+  static std::unique_ptr<Statistics>
   Create()
   {
-    return std::make_unique<InvariantValueRedirectionStatistics>();
+    return std::make_unique<Statistics>();
   }
 
 private:
@@ -59,11 +59,11 @@ InvariantValueRedirection::run(
     util::StatisticsCollector & statisticsCollector)
 {
   auto & rvsdg = rvsdgModule.Rvsdg();
-  auto statistics = InvariantValueRedirectionStatistics::Create();
+  auto statistics = Statistics::Create();
 
-  statistics->Start(rvsdg);
+  statistics->Start();
   RedirectInvariantValues(*rvsdg.root());
-  statistics->Stop(rvsdg);
+  statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
