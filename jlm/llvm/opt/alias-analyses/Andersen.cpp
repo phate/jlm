@@ -47,7 +47,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValue>(op))
     AnalyzeExtractValue(node);
-  else if (is<free_op>(op))
+  else if (is<FreeOperation>(op))
   {
     // A free does not affect any Points-to-sets
   }

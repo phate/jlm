@@ -104,6 +104,20 @@ PointsToGraph::RegisterNodes() const
            RegisterNodeConstIterator(RegisterNodes_.end()) };
 }
 
+PointsToGraph::RegisterSetNodeRange
+PointsToGraph::RegisterSetNodes()
+{
+  return { RegisterSetNodeIterator(RegisterSetNodeMap_.begin()),
+           RegisterSetNodeIterator(RegisterSetNodeMap_.end()) };
+}
+
+PointsToGraph::RegisterSetNodeConstRange
+PointsToGraph::RegisterSetNodes() const
+{
+  return { RegisterSetNodeConstIterator(RegisterSetNodeMap_.begin()),
+           RegisterSetNodeConstIterator(RegisterSetNodeMap_.end()) };
+}
+
 PointsToGraph::AllocaNode &
 PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
 {
@@ -149,6 +163,18 @@ PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node
   return *tmp;
 }
 
+PointsToGraph::RegisterSetNode &
+PointsToGraph::AddRegisterSetNode(std::unique_ptr<PointsToGraph::RegisterSetNode> node)
+{
+  auto tmp = node.get();
+  for (auto output : node->GetOutputs().Items())
+    RegisterSetNodeMap_[output] = tmp;
+
+  RegisterSetNodes_.emplace_back(std::move(node));
+
+  return *tmp;
+}
+
 PointsToGraph::ImportNode &
 PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
 {
@@ -181,6 +207,7 @@ PointsToGraph::ToDot(
           { typeid(LambdaNode), "box" },
           { typeid(MallocNode), "box" },
           { typeid(RegisterNode), "oval" },
+          { typeid(RegisterSetNode), "oval" },
           { typeid(UnknownMemoryNode), "box" },
           { typeid(ExternalMemoryNode), "box" } });
 
@@ -310,25 +337,49 @@ PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
 
 PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 
-std::string
-PointsToGraph::RegisterNode::DebugString() const
+static std::string
+CreateDotString(const rvsdg::output & output)
 {
-  auto node = jlm::rvsdg::node_output::node(&GetOutput());
+  auto node = jlm::rvsdg::node_output::node(&output);
 
   if (node != nullptr)
-    return util::strfmt(node->operation().debug_string(), ":o", GetOutput().index());
+    return util::strfmt(node->operation().debug_string(), ":o", output.index());
 
-  node = GetOutput().region()->node();
+  node = output.region()->node();
   if (node != nullptr)
-    return util::strfmt(node->operation().debug_string(), ":a", GetOutput().index());
+    return util::strfmt(node->operation().debug_string(), ":a", output.index());
 
-  if (is_import(&GetOutput()))
+  if (is_import(&output))
   {
-    auto port = util::AssertedCast<const impport>(&GetOutput().port());
+    auto port = util::AssertedCast<const impport>(&output.port());
     return util::strfmt("import:", port->name());
   }
 
   return "RegisterNode";
+}
+
+std::string
+PointsToGraph::RegisterNode::DebugString() const
+{
+  return CreateDotString(GetOutput());
+}
+
+PointsToGraph::RegisterSetNode::~RegisterSetNode() noexcept = default;
+
+std::string
+PointsToGraph::RegisterSetNode::DebugString() const
+{
+  auto lastOutput = *std::prev(GetOutputs().Items().end());
+
+  std::string debugString("{");
+  for (auto output : GetOutputs().Items())
+  {
+    debugString += CreateDotString(*output);
+    debugString += output != lastOutput ? ", " : "";
+  }
+  debugString += "}";
+
+  return debugString;
 }
 
 PointsToGraph::MemoryNode::~MemoryNode() noexcept = default;

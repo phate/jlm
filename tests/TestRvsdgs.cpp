@@ -650,7 +650,7 @@ CallTest2::SetupRvsdg()
     auto loopStateArgument = lambda->fctargument(3);
 
     auto cast = bitcast_op::create(pointerArgument, pointerType);
-    auto freeResults = free_op::create(cast, { memoryStateArgument }, iOStateArgument);
+    auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
     lambda->finalize({ freeResults[1], freeResults[0], loopStateArgument });
 
@@ -3299,6 +3299,39 @@ EscapingLocalFunctionTest::SetupRvsdg()
   ExportedFunc_->finalize({ localFuncCtxVar, ExportedFunc_->fctargument(0) });
 
   graph->add_export(ExportedFunc_->output(), { pointerType, "exportedFunc" });
+
+  return module;
+}
+
+std::unique_ptr<llvm::RvsdgModule>
+FreeNullTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  iostatetype iOStateType;
+  MemoryStateType memoryType;
+  FunctionType functionType({ &memoryType, &iOStateType }, { &memoryType, &iOStateType });
+
+  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &module->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  LambdaMain_ =
+      lambda::node::create(graph->root(), functionType, "main", linkage::external_linkage);
+  auto memoryStateArgument = LambdaMain_->fctargument(0);
+  auto iOStateArgument = LambdaMain_->fctargument(1);
+
+  auto constantPointerNullResult =
+      ConstantPointerNullOperation::Create(LambdaMain_->subregion(), PointerType());
+
+  auto FreeResults =
+      FreeOperation::Create(constantPointerNullResult, { memoryStateArgument }, iOStateArgument);
+
+  LambdaMain_->finalize(FreeResults);
+
+  graph->add_export(LambdaMain_->output(), { PointerType(), "main" });
 
   return module;
 }

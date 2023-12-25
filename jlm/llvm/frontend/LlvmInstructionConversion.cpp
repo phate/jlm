@@ -681,8 +681,11 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx
 
   auto pointer = ConvertValue(i->getArgOperand(0), tacs, ctx);
 
-  tacs.push_back(free_op::create(pointer, { memstate }, iostate));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  tacs.push_back(FreeOperation::Create(pointer, { memstate }, iostate));
+  auto & freeThreeAddressCode = *tacs.back().get();
+
+  tacs.push_back(assignment_op::create(freeThreeAddressCode.result(0), memstate));
+  tacs.push_back(assignment_op::create(freeThreeAddressCode.result(1), iostate));
 
   return nullptr;
 }

@@ -299,13 +299,15 @@ public:
   GetOutputNodes(const jlm::rvsdg::output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.type()));
-    auto & registerNode = PointsToGraph_.GetRegisterNode(output);
 
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-    for (auto & memoryNode : registerNode.Targets())
-      memoryNodes.Insert(&memoryNode);
+    if (GetOutputNodesFromRegisterNode(output, memoryNodes))
+      return memoryNodes;
 
-    return memoryNodes;
+    if (GetOutputNodesFromRegisterSetNode(output, memoryNodes))
+      return memoryNodes;
+
+    throw util::error("Cannot find register in points-to graph.");
   }
 
   RegionSummaryConstRange
@@ -462,6 +464,48 @@ public:
   }
 
 private:
+  [[nodiscard]] bool
+  GetOutputNodesFromRegisterNode(
+      const rvsdg::output & output,
+      util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes) const
+  {
+    const PointsToGraph::RegisterNode * registerNode;
+    try
+    {
+      registerNode = &PointsToGraph_.GetRegisterNode(output);
+    }
+    catch (...)
+    {
+      return false;
+    }
+
+    for (auto & memoryNode : registerNode->Targets())
+      memoryNodes.Insert(&memoryNode);
+
+    return true;
+  }
+
+  [[nodiscard]] bool
+  GetOutputNodesFromRegisterSetNode(
+      const rvsdg::output & output,
+      util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes) const
+  {
+    const PointsToGraph::RegisterSetNode * registerSetNode;
+    try
+    {
+      registerSetNode = &PointsToGraph_.GetRegisterSetNode(output);
+    }
+    catch (...)
+    {
+      return false;
+    }
+
+    for (auto & memoryNode : registerSetNode->Targets())
+      memoryNodes.Insert(&memoryNode);
+
+    return true;
+  }
+
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetIndirectCallNodes(const CallNode & callNode) const
   {
@@ -612,7 +656,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jlm::rvsdg::simple_node 
               { typeid(StoreOperation), annotateStore },
               { typeid(alloca_op), annotateAlloca },
               { typeid(malloc_op), annotateMalloc },
-              { typeid(free_op), annotateFree },
+              { typeid(FreeOperation), annotateFree },
               { typeid(CallOperation), annotateCall },
               { typeid(Memcpy), annotateMemcpy } });
 
@@ -662,7 +706,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const jlm::rvsdg::simple_node & ma
 void
 RegionAwareMemoryNodeProvider::AnnotateFree(const jlm::rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<free_op>(freeNode.operation()));
+  JLM_ASSERT(jlm::rvsdg::is<FreeOperation>(freeNode.operation()));
 
   auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());

@@ -1192,6 +1192,21 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
   }
 }
 
+static void
+ValidateFreeNullTestSteensgaardAgnostic(const jlm::tests::FreeNullTest & test)
+{
+  using namespace jlm::llvm;
+
+  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaMain().fctresult(0)->origin());
+  assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
+
+  auto free = jlm::rvsdg::node_output::node(test.LambdaMain().fctresult(1)->origin());
+  assert(is<FreeOperation>(*free, 2, 1));
+
+  auto lambdaEntrySplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
+  assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
+}
+
 static int
 test()
 {
@@ -1276,6 +1291,9 @@ test()
       ValidateMemcpySteensgaardAgnostic);
   ValidateTest<jlm::tests::MemcpyTest, Steensgaard, RegionAwareMemoryNodeProvider>(
       ValidateMemcpySteensgaardRegionAware);
+
+  ValidateTest<jlm::tests::FreeNullTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateFreeNullTestSteensgaardAgnostic);
 
   return 0;
 }

@@ -91,7 +91,7 @@ test_free()
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
 
-    bb->append_last(free_op::create(arg0, { arg1 }, arg2));
+    bb->append_last(FreeOperation::Create(arg0, { arg1 }, arg2));
 
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));

@@ -1275,28 +1275,25 @@ malloc_op::copy() const
 
 /* free operator */
 
-free_op::~free_op()
-{}
+FreeOperation::~FreeOperation() noexcept = default;
 
 bool
-free_op::operator==(const operation & other) const noexcept
+FreeOperation::operator==(const operation & other) const noexcept
 {
-  /*
-    Avoid CNE for free operator
-  */
+  // Avoid CNE for free operator
   return this == &other;
 }
 
 std::string
-free_op::debug_string() const
+FreeOperation::debug_string() const
 {
   return "FREE";
 }
 
 std::unique_ptr<rvsdg::operation>
-free_op::copy() const
+FreeOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new free_op(*this));
+  return std::unique_ptr<rvsdg::operation>(new FreeOperation(*this));
 }
 
 /* memcpy operator */
