@@ -656,7 +656,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jlm::rvsdg::simple_node 
               { typeid(StoreOperation), annotateStore },
               { typeid(alloca_op), annotateAlloca },
               { typeid(malloc_op), annotateMalloc },
-              { typeid(free_op), annotateFree },
+              { typeid(FreeOperation), annotateFree },
               { typeid(CallOperation), annotateCall },
               { typeid(Memcpy), annotateMemcpy } });
 
@@ -706,7 +706,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const jlm::rvsdg::simple_node & ma
 void
 RegionAwareMemoryNodeProvider::AnnotateFree(const jlm::rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<free_op>(freeNode.operation()));
+  JLM_ASSERT(jlm::rvsdg::is<FreeOperation>(freeNode.operation()));
 
   auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
