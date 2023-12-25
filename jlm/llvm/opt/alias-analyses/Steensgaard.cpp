@@ -116,6 +116,17 @@ public:
     PointsToFlags_ = pointsToFlags;
   }
 
+  template<typename L>
+  static bool
+  Is(const Location & location) noexcept
+  {
+    static_assert(
+        std::is_base_of<Location, L>::value,
+        "Template parameter L must be derived from Location.");
+
+    return dynamic_cast<const L *>(&location) != nullptr;
+  }
+
 private:
   PointsToFlags PointsToFlags_;
   Location * PointsTo_;
@@ -1763,12 +1774,12 @@ Steensgaard::Analyze(
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());
   AnalyzeRvsdg(module.Rvsdg());
-  // std::cout << LocationSet_.ToDot() << std::flush;
+  // std::cout << LocationSet_->ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics(*LocationSet_);
-  auto pointsToGraph = ConstructPointsToGraph(*LocationSet_);
+  auto pointsToGraph = ConstructPointsToGraph();
   // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
@@ -1785,148 +1796,174 @@ Steensgaard::Analyze(
   return pointsToGraph;
 }
 
-std::unique_ptr<PointsToGraph>
-Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
+PointsToGraph::MemoryNode &
+Steensgaard::CreatePointsToGraphMemoryNode(const Location & location, PointsToGraph & pointsToGraph)
 {
-  auto pointsToGraph = PointsToGraph::Create();
+  if (auto allocaLocation = dynamic_cast<const AllocaLocation *>(&location))
+    return PointsToGraph::AllocaNode::Create(pointsToGraph, allocaLocation->GetNode());
 
-  auto CreatePointsToGraphNode = [](const Location & location,
-                                    PointsToGraph & pointsToGraph) -> PointsToGraph::Node &
+  if (auto mallocLocation = dynamic_cast<const MallocLocation *>(&location))
+    return PointsToGraph::MallocNode::Create(pointsToGraph, mallocLocation->GetNode());
+
+  if (auto lambdaLocation = dynamic_cast<const LambdaLocation *>(&location))
+    return PointsToGraph::LambdaNode::Create(pointsToGraph, lambdaLocation->GetNode());
+
+  if (auto deltaLocation = dynamic_cast<const DeltaLocation *>(&location))
+    return PointsToGraph::DeltaNode::Create(pointsToGraph, deltaLocation->GetNode());
+
+  if (auto importLocation = dynamic_cast<const ImportLocation *>(&location))
+    return PointsToGraph::ImportNode::Create(pointsToGraph, importLocation->GetArgument());
+
+  JLM_UNREACHABLE("Unhandled location type.");
+}
+
+util::HashSet<PointsToGraph::MemoryNode *>
+Steensgaard::CollectEscapedMemoryNodes(
+    const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
+    const std::unordered_map<
+        const util::disjointset<Location *>::set *,
+        std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const
+{
+  // Initialize working set
+  util::HashSet<Location *> toVisit;
+  for (auto registerLocation : escapingRegisterLocations.Items())
   {
-    if (auto registerLocation = dynamic_cast<const RegisterLocation *>(&location))
-      return PointsToGraph::RegisterNode::Create(pointsToGraph, registerLocation->GetOutput());
-
-    if (auto allocaLocation = dynamic_cast<const AllocaLocation *>(&location))
-      return PointsToGraph::AllocaNode::Create(pointsToGraph, allocaLocation->GetNode());
-
-    if (auto mallocLocation = dynamic_cast<const MallocLocation *>(&location))
-      return PointsToGraph::MallocNode::Create(pointsToGraph, mallocLocation->GetNode());
-
-    if (auto lambdaLocation = dynamic_cast<const LambdaLocation *>(&location))
-      return PointsToGraph::LambdaNode::Create(pointsToGraph, lambdaLocation->GetNode());
-
-    if (auto deltaLocation = dynamic_cast<const DeltaLocation *>(&location))
-      return PointsToGraph::DeltaNode::Create(pointsToGraph, deltaLocation->GetNode());
-
-    if (auto importLocation = dynamic_cast<const ImportLocation *>(&location))
-      return PointsToGraph::ImportNode::Create(pointsToGraph, importLocation->GetArgument());
-
-    JLM_UNREACHABLE("Unhandled location type.");
-  };
-
-  /*
-   * We marked all register locations that escape the module throughout the analysis using
-   * RegisterLocation::SetIsEscapingModule(). This function uses these as starting point for
-   * computing all module escaping memory locations.
-   */
-  auto FindModuleEscapingMemoryNodes =
-      [](std::unordered_set<RegisterLocation *> & moduleEscapingRegisterLocations,
-         const LocationSet & locationSets,
-         const std::unordered_map<
-             const jlm::util::disjointset<Location *>::set *,
-             std::vector<PointsToGraph::MemoryNode *>> & memoryNodeMap)
-  {
-    /*
-     * Initialize our working set.
-     */
-    std::unordered_set<Location *> toVisit;
-    while (!moduleEscapingRegisterLocations.empty())
+    auto & set = LocationSet_->GetSet(*registerLocation);
+    if (auto pointsToLocation = set.value()->GetPointsTo())
     {
-      auto registerLocation = *moduleEscapingRegisterLocations.begin();
-      moduleEscapingRegisterLocations.erase(registerLocation);
-
-      auto & set = locationSets.GetSet(*registerLocation);
-      auto pointsToLocation = set.value()->GetPointsTo();
-      if (pointsToLocation)
-        toVisit.insert(pointsToLocation);
-    }
-
-    /*
-     * Collect escaping memory nodes.
-     */
-    jlm::util::HashSet<const LocationSet::DisjointLocationSet::set *> visitedSets;
-    std::unordered_set<PointsToGraph::MemoryNode *> escapedMemoryNodes;
-    while (!toVisit.empty())
-    {
-      auto moduleEscapingLocation = *toVisit.begin();
-      toVisit.erase(moduleEscapingLocation);
-
-      auto & set = locationSets.GetSet(*moduleEscapingLocation);
-      /*
-       * Check if we already visited this set to avoid an endless loop.
-       */
-      if (visitedSets.Contains(&set))
-      {
-        continue;
-      }
-      visitedSets.Insert(&set);
-
-      auto & memoryNodes = memoryNodeMap.at(&set);
-      for (auto & memoryNode : memoryNodes)
-      {
-        memoryNode->MarkAsModuleEscaping();
-        escapedMemoryNodes.insert(memoryNode);
-      }
-
-      auto pointsToLocation = set.value()->GetPointsTo();
-      if (pointsToLocation)
-        toVisit.insert(pointsToLocation);
-    }
-
-    return escapedMemoryNodes;
-  };
-
-  std::unordered_map<const Location *, PointsToGraph::Node *> locationMap;
-  std::unordered_map<
-      const jlm::util::disjointset<Location *>::set *,
-      std::vector<PointsToGraph::MemoryNode *>>
-      memoryNodeMap;
-  std::unordered_set<RegisterLocation *> moduleEscapingRegisterLocations;
-
-  /*
-   * Create points-to graph nodes
-   */
-  for (auto & locationSet : locationSets)
-  {
-    memoryNodeMap[&locationSet] = {};
-    for (auto & location : locationSet)
-    {
-      /*
-       * We can ignore dummy nodes. They only exist for structural purposes and have no equivalent
-       * in the RVSDG.
-       */
-      if (dynamic_cast<const DummyLocation *>(location))
-        continue;
-
-      auto pointsToGraphNode = &CreatePointsToGraphNode(*location, *pointsToGraph);
-      locationMap[location] = pointsToGraphNode;
-
-      if (auto memoryNode = dynamic_cast<PointsToGraph::MemoryNode *>(pointsToGraphNode))
-        memoryNodeMap[&locationSet].push_back(memoryNode);
-
-      if (RegisterLocation::IsEscapingModule(*location))
-        moduleEscapingRegisterLocations.insert(jlm::util::AssertedCast<RegisterLocation>(location));
+      toVisit.Insert(pointsToLocation);
     }
   }
 
-  auto escapedMemoryNodes =
-      FindModuleEscapingMemoryNodes(moduleEscapingRegisterLocations, locationSets, memoryNodeMap);
-
-  /*
-   * Create points-to graph edges
-   */
-  for (auto & set : locationSets)
+  // Collect escaped memory nodes
+  util::HashSet<PointsToGraph::MemoryNode *> escapedMemoryNodes;
+  util::HashSet<const LocationSet::DisjointLocationSet::set *> visited;
+  while (!toVisit.IsEmpty())
   {
-    bool pointsToUnknown = locationSets.GetSet(**set.begin()).value()->PointsToUnknownMemory();
-    bool pointsToExternalMemory =
-        locationSets.GetSet(**set.begin()).value()->PointsToExternalMemory();
-    bool pointsToEscapedMemory =
-        locationSets.GetSet(**set.begin()).value()->PointsToEscapedMemory();
+    auto moduleEscapingLocation = *toVisit.Items().begin();
+    toVisit.Remove(moduleEscapingLocation);
 
+    auto & set = LocationSet_->GetSet(*moduleEscapingLocation);
+
+    // Check if we already visited this set to avoid an endless loop
+    if (visited.Contains(&set))
+    {
+      continue;
+    }
+    visited.Insert(&set);
+
+    auto & memoryNodes = memoryNodesInSet.at(&set);
+    for (auto & memoryNode : memoryNodes)
+    {
+      memoryNode->MarkAsModuleEscaping();
+      escapedMemoryNodes.Insert(memoryNode);
+    }
+
+    if (auto pointsToLocation = set.value()->GetPointsTo())
+    {
+      toVisit.Insert(pointsToLocation);
+    }
+  }
+
+  return escapedMemoryNodes;
+}
+
+std::unique_ptr<PointsToGraph>
+Steensgaard::ConstructPointsToGraph() const
+{
+  auto pointsToGraph = PointsToGraph::Create();
+
+  // All the memory nodes within a LocationSet
+  std::unordered_map<
+      const util::disjointset<Location *>::set *,
+      std::vector<PointsToGraph::MemoryNode *>>
+      memoryNodesInSet;
+
+  // All register locations that are marked as RegisterLocation::IsEscapingModule()
+  util::HashSet<RegisterLocation *> escapingRegisterLocations;
+
+  // Mapping between locations and points-to graph nodes
+  std::unordered_map<const Location *, PointsToGraph::Node *> locationMap;
+
+  // Create points-to graph nodes
+  for (auto & locationSet : *LocationSet_)
+  {
+    memoryNodesInSet[&locationSet] = {};
+
+    util::HashSet<const rvsdg::output *> registers;
+    util::HashSet<RegisterLocation *> registerLocations;
+    for (auto & location : locationSet)
+    {
+      if (auto registerLocation = dynamic_cast<RegisterLocation *>(location))
+      {
+        registers.Insert(&registerLocation->GetOutput());
+        registerLocations.Insert(registerLocation);
+
+        if (registerLocation->IsEscapingModule())
+          escapingRegisterLocations.Insert(registerLocation);
+      }
+      else if (Location::Is<MemoryLocation>(*location))
+      {
+        auto & pointsToGraphNode = CreatePointsToGraphMemoryNode(*location, *pointsToGraph);
+        memoryNodesInSet[&locationSet].push_back(&pointsToGraphNode);
+        locationMap[location] = &pointsToGraphNode;
+      }
+      else if (Location::Is<ImportLocation>(*location))
+      {
+        auto & pointsToGraphNode = CreatePointsToGraphMemoryNode(*location, *pointsToGraph);
+        memoryNodesInSet[&locationSet].push_back(&pointsToGraphNode);
+        locationMap[location] = &pointsToGraphNode;
+      }
+      else if (Location::Is<DummyLocation>(*location))
+      {
+        // We can ignore dummy nodes. They only exist for structural purposes in the Steensgaard
+        // analysis and have no equivalent in the points-to graph.
+      }
+      else
+      {
+        JLM_UNREACHABLE("Unhandled location type.");
+      }
+    }
+
+    // We found register locations in this set.
+    // Create a single points-to graph register-set node for all of them.
+    if (!registerLocations.IsEmpty())
+    {
+      auto & pointsToGraphNode = PointsToGraph::RegisterSetNode::Create(*pointsToGraph, registers);
+      for (auto registerLocation : registerLocations.Items())
+        locationMap[registerLocation] = &pointsToGraphNode;
+    }
+  }
+
+  auto escapedMemoryNodes = CollectEscapedMemoryNodes(escapingRegisterLocations, memoryNodesInSet);
+
+  // Create points-to graph edges
+  for (auto & set : *LocationSet_)
+  {
+    bool pointsToUnknown = LocationSet_->GetSet(**set.begin()).value()->PointsToUnknownMemory();
+    bool pointsToExternalMemory =
+        LocationSet_->GetSet(**set.begin()).value()->PointsToExternalMemory();
+    bool pointsToEscapedMemory =
+        LocationSet_->GetSet(**set.begin()).value()->PointsToEscapedMemory();
+
+    bool handledRegisterLocations = false;
     for (auto & location : set)
     {
-      if (dynamic_cast<DummyLocation *>(location))
+      // We can ignore dummy nodes. They only exist for structural purposes in the Steensgaard
+      // analysis and have no equivalent in the points-to graph.
+      if (Location::Is<DummyLocation>(*location))
         continue;
+
+      if (Location::Is<RegisterLocation>(*location))
+      {
+        // All register locations in a set are mapped to a single points-to graph register-set node.
+        // For the sake of performance, we would like to ony insert points-graph edges for this
+        // register-set node once, rather than redo the work for each register (location) in the
+        // set.
+        if (handledRegisterLocations)
+          continue;
+        handledRegisterLocations = true;
+      }
 
       auto & pointsToGraphNode = *locationMap[location];
 
@@ -1938,19 +1975,19 @@ Steensgaard::ConstructPointsToGraph(const LocationSet & locationSets)
 
       if (pointsToEscapedMemory)
       {
-        for (auto & escapedMemoryNode : escapedMemoryNodes)
+        for (auto & escapedMemoryNode : escapedMemoryNodes.Items())
           pointsToGraphNode.AddEdge(*escapedMemoryNode);
       }
 
-      auto pointsToLocation = set.value()->GetPointsTo();
-      if (pointsToLocation == nullptr)
-        continue;
+      // Add edges to all memory nodes the location points to
+      if (auto pointsToLocation = set.value()->GetPointsTo())
+      {
+        auto & pointsToSet = LocationSet_->GetSet(*pointsToLocation);
+        auto & memoryNodes = memoryNodesInSet[&pointsToSet];
 
-      auto & pointsToSet = locationSets.GetSet(*pointsToLocation);
-      auto & memoryNodes = memoryNodeMap[&pointsToSet];
-
-      for (auto & memoryNode : memoryNodes)
-        pointsToGraphNode.AddEdge(*memoryNode);
+        for (auto & memoryNode : memoryNodes)
+          pointsToGraphNode.AddEdge(*memoryNode);
+      }
     }
   }
 
