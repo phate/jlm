@@ -31,6 +31,8 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
     - name: "Build MLIR RVSDG Dialect"
       uses: ./.github/actions/BuildMlirDialect
 
