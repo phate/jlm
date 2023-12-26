@@ -25,8 +25,8 @@ include $(JLM_ROOT)/Makefile.sub
 
 # LLVM related variables
 CLANG_BIN=$(shell $(LLVMCONFIG) --bindir)
-CC=$(CLANG)
-CXX=$(CLANG_BIN)/clang++
+#CC=$(CLANG)
+#CXX=$(CLANG_BIN)/clang++
 
 .PHONY: all
 all: jlm-release check
