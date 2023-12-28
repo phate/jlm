@@ -8,14 +8,8 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-#include <jlm/util/disjointset.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
-
-/*
-  FIXME: to be removed again
-*/
-#include <iostream>
 
 namespace jlm::llvm::aa
 {
@@ -132,6 +126,9 @@ private:
   Location * PointsTo_;
 };
 
+/**
+ * Represents a single RVSDG register location, i.e., an RVSDG output.
+ */
 class RegisterLocation final : public Location
 {
 public:
@@ -283,7 +280,7 @@ class AllocaLocation final : public MemoryLocation
 
   ~AllocaLocation() override = default;
 
-  constexpr explicit AllocaLocation(const jlm::rvsdg::node & node)
+  explicit AllocaLocation(const jlm::rvsdg::node & node)
       : MemoryLocation(),
         Node_(node)
   {
@@ -319,10 +316,9 @@ private:
  */
 class MallocLocation final : public MemoryLocation
 {
-
   ~MallocLocation() override = default;
 
-  constexpr explicit MallocLocation(const jlm::rvsdg::node & node)
+  explicit MallocLocation(const jlm::rvsdg::node & node)
       : MemoryLocation(),
         Node_(node)
   {
@@ -358,7 +354,6 @@ private:
  */
 class LambdaLocation final : public MemoryLocation
 {
-
   ~LambdaLocation() override = default;
 
   constexpr explicit LambdaLocation(const lambda::node & lambda)
@@ -396,7 +391,6 @@ private:
  */
 class DeltaLocation final : public MemoryLocation
 {
-
   ~DeltaLocation() override = default;
 
   constexpr explicit DeltaLocation(const delta::node & delta)
@@ -434,7 +428,6 @@ private:
  */
 class ImportLocation final : public Location
 {
-public:
   ~ImportLocation() override = default;
 
   ImportLocation(const jlm::rvsdg::argument & argument, PointsToFlags pointsToFlags)
@@ -444,6 +437,7 @@ public:
     JLM_ASSERT(dynamic_cast<const llvm::impport *>(&argument.port()));
   }
 
+public:
   [[nodiscard]] const jlm::rvsdg::argument &
   GetArgument() const noexcept
   {
@@ -478,13 +472,13 @@ private:
  */
 class DummyLocation final : public Location
 {
-public:
   ~DummyLocation() override = default;
 
   DummyLocation()
       : Location(PointsToFlags::PointsToNone)
   {}
 
+public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
@@ -494,7 +488,7 @@ public:
   static std::unique_ptr<Location>
   Create()
   {
-    return std::make_unique<DummyLocation>();
+    return std::unique_ptr<Location>(new DummyLocation());
   }
 };
 
@@ -932,100 +926,74 @@ Steensgaard::Steensgaard() = default;
 void
 Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
 {
-  auto AnalyzeCall = [](auto & s, auto & n)
+  if (is<alloca_op>(&node))
   {
-    s.AnalyzeCall(*util::AssertedCast<const CallNode>(&n));
-  };
-  auto AnalyzeLoad = [](auto & s, auto & n)
-  {
-    s.AnalyzeLoad(*util::AssertedCast<const LoadNode>(&n));
-  };
-  auto AnalyzeStore = [](auto & s, auto & n)
-  {
-    s.AnalyzeStore(*util::AssertedCast<const StoreNode>(&n));
-  };
-
-  static std::unordered_map<
-      std::type_index,
-      std::function<void(Steensgaard &, const jlm::rvsdg::simple_node &)>>
-      nodes({ { typeid(alloca_op),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeAlloca(n);
-                } },
-              { typeid(malloc_op),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeMalloc(n);
-                } },
-              { typeid(LoadOperation), AnalyzeLoad },
-              { typeid(StoreOperation), AnalyzeStore },
-              { typeid(CallOperation), AnalyzeCall },
-              { typeid(GetElementPtrOperation),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeGep(n);
-                } },
-              { typeid(bitcast_op),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeBitcast(n);
-                } },
-              { typeid(bits2ptr_op),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeBits2ptr(n);
-                } },
-              { typeid(ConstantPointerNullOperation),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeConstantPointerNull(n);
-                } },
-              { typeid(UndefValueOperation),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeUndef(n);
-                } },
-              { typeid(Memcpy),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeMemcpy(n);
-                } },
-              { typeid(ConstantArray),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeConstantArray(n);
-                } },
-              { typeid(ConstantStruct),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeConstantStruct(n);
-                } },
-              { typeid(ConstantAggregateZero),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeConstantAggregateZero(n);
-                } },
-              { typeid(ExtractValue),
-                [](auto & s, auto & n)
-                {
-                  s.AnalyzeExtractValue(n);
-                } } });
-
-  auto & op = node.operation();
-  if (nodes.find(typeid(op)) != nodes.end())
-  {
-    nodes[typeid(op)](*this, node);
-    return;
+    AnalyzeAlloca(node);
   }
-
-  /*
-    Ensure that we really took care of all pointer-producing instructions
-  */
-  for (size_t n = 0; n < node.noutputs(); n++)
+  else if (is<malloc_op>(&node))
   {
-    if (jlm::rvsdg::is<PointerType>(node.output(n)->type()))
-      JLM_UNREACHABLE("We should have never reached this statement.");
+    AnalyzeMalloc(node);
+  }
+  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  {
+    AnalyzeLoad(*loadNode);
+  }
+  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  {
+    AnalyzeStore(*storeNode);
+  }
+  else if (auto callNode = dynamic_cast<const CallNode *>(&node))
+  {
+    AnalyzeCall(*callNode);
+  }
+  else if (is<GetElementPtrOperation>(&node))
+  {
+    AnalyzeGep(node);
+  }
+  else if (is<bitcast_op>(&node))
+  {
+    AnalyzeBitcast(node);
+  }
+  else if (is<bits2ptr_op>(&node))
+  {
+    AnalyzeBits2ptr(node);
+  }
+  else if (is<ConstantPointerNullOperation>(&node))
+  {
+    AnalyzeConstantPointerNull(node);
+  }
+  else if (is<UndefValueOperation>(&node))
+  {
+    AnalyzeUndef(node);
+  }
+  else if (is<Memcpy>(&node))
+  {
+    AnalyzeMemcpy(node);
+  }
+  else if (is<ConstantArray>(&node))
+  {
+    AnalyzeConstantArray(node);
+  }
+  else if (is<ConstantStruct>(&node))
+  {
+    AnalyzeConstantStruct(node);
+  }
+  else if (is<ConstantAggregateZero>(&node))
+  {
+    AnalyzeConstantAggregateZero(node);
+  }
+  else if (is<ExtractValue>(&node))
+  {
+    AnalyzeExtractValue(node);
+  }
+  else
+  {
+    // Ensure that we really took care of all pointer-producing instructions
+    for (size_t n = 0; n < node.noutputs(); n++)
+    {
+      if (rvsdg::is<PointerType>(node.output(n)->type()))
+        JLM_UNREACHABLE("We should have never reached this statement.");
+    }
   }
 }
 
@@ -1065,15 +1033,12 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
   allocaOutputLocation.SetPointsTo(allocaLocation);
 
   auto & op = *dynamic_cast<const alloca_op *>(&node.operation());
-  /*
-    FIXME: We should discover such an alloca already at construction time
-    and not by traversing the type here.
-  */
+
+  // FIXME: We should discover such an alloca already at construction time and not by traversing the
+  // type here.
   if (IsVaListAlloca(op.value_type()))
   {
-    /*
-      FIXME: We should be able to do better than just pointing to unknown.
-    */
+    // FIXME: We should be able to do better than just pointing to unknown.
     allocaLocation.SetPointsToFlags(PointsToFlags::PointsToUnknownMemory);
   }
 }
@@ -1288,10 +1253,8 @@ Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node)
 
   LocationSet_->FindOrInsertRegisterLocation(
       *node.output(0),
-      /*
-       * The register location already points to unknown memory. Unknown memory is a superset of
-       * escaped memory and therefore we can simply set escaped memory to false.
-       */
+      // The register location already points to unknown memory. Unknown memory is a superset of
+      // escaped memory, and therefore we can simply set escaped memory to false.
       PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory);
 }
 
@@ -1304,9 +1267,7 @@ Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
   if (!is<PointerType>(result.type()))
     return;
 
-  /*
-   * FIXME: Have a look at this operation again to ensure that the flags add up.
-   */
+  // FIXME: Have a look at this operation again to ensure that the flags add up.
   LocationSet_->FindOrInsertRegisterLocation(
       result,
       PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory);
@@ -1317,10 +1278,8 @@ Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
 
-  /*
-   * ConstantPointerNull cannot point to any memory location. We therefore only insert a register
-   * node for it, but let this node not point to anything.
-   */
+  // ConstantPointerNull cannot point to any memory location. We therefore only insert a register
+  // node for it, but let this node not point to anything.
   LocationSet_->FindOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
 }
 
@@ -1333,10 +1292,8 @@ Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node)
   if (!IsOrContains<PointerType>(output->type()))
     return;
 
-  /*
-   * ConstantAggregateZero cannot point to any memory location. We therefore only insert a register
-   * node for it, but let this node not point to anything.
-   */
+  // ConstantAggregateZero cannot point to any memory location. We therefore only insert a register
+  // node for it, but let this node not point to anything.
   LocationSet_->FindOrInsertRegisterLocation(*output, PointsToFlags::PointsToNone);
 }
 
@@ -1349,10 +1306,8 @@ Steensgaard::AnalyzeUndef(const jlm::rvsdg::simple_node & node)
   if (!is<PointerType>(output->type()))
     return;
 
-  /*
-   * UndefValue cannot point to any memory location. We therefore only insert a register node for
-   * it, but let this node not point to anything.
-   */
+  // UndefValue cannot point to any memory location. We therefore only insert a register node for
+  // it, but let this node not point to anything.
   LocationSet_->FindOrInsertRegisterLocation(*output, PointsToFlags::PointsToNone);
 }
 
@@ -1399,33 +1354,25 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<Memcpy>(&node));
 
-  /*
-    FIXME: handle unknown
-  */
+  // FIXME: handle unknown
 
-  /*
-    FIXME: write some documentation about the implementation
-  */
+  // FIXME: write some documentation about the implementation
 
   auto & dstAddress = LocationSet_->Find(*node.input(0)->origin());
   auto & srcAddress = LocationSet_->Find(*node.input(1)->origin());
 
   if (srcAddress.GetPointsTo() == nullptr)
   {
-    /*
-      If we do not know where the source address points to yet(!),
-      insert a dummy location so we have something to work with.
-    */
+    // If we do not know where the source address points to yet(!),
+    // insert a dummy location such that we have something to work with.
     auto & dummyLocation = LocationSet_->InsertDummyLocation();
     srcAddress.SetPointsTo(dummyLocation);
   }
 
   if (dstAddress.GetPointsTo() == nullptr)
   {
-    /*
-      If we do not know where the destination address points to yet(!),
-      insert a dummy location so we have somehting to work with.
-    */
+    // If we do not know where the destination address points to yet(!),
+    // insert a dummy location such that we have something to work with.
     auto & dummyLocation = LocationSet_->InsertDummyLocation();
     dstAddress.SetPointsTo(dummyLocation);
   }
@@ -1451,12 +1398,10 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 {
-  /*
-   * Handle context variables
-   */
+  // Handle context variables
   for (auto & cv : lambda.ctxvars())
   {
-    if (!jlm::rvsdg::is<PointerType>(cv.type()))
+    if (!rvsdg::is<PointerType>(cv.type()))
       continue;
 
     auto & originLocation = LocationSet_->Find(*cv.origin());
@@ -1465,15 +1410,13 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     LocationSet_->Join(originLocation, argumentLocation);
   }
 
-  /*
-   * Handle function arguments
-   */
+  // Handle function arguments
   auto callSummary = lambda.ComputeCallSummary();
   if (callSummary->HasOnlyDirectCalls())
   {
     for (auto & argument : lambda.fctarguments())
     {
-      if (jlm::rvsdg::is<PointerType>(argument.type()))
+      if (rvsdg::is<PointerType>(argument.type()))
       {
         LocationSet_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
       }
@@ -1481,12 +1424,10 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   }
   else
   {
-    /*
-     * FIXME: We also end up in this case when the lambda has only direct calls, but is exported.
-     */
+    // FIXME: We also end up in this case when the lambda has only direct calls, but is exported.
     for (auto & argument : lambda.fctarguments())
     {
-      if (jlm::rvsdg::is<PointerType>(argument.type()))
+      if (rvsdg::is<PointerType>(argument.type()))
         LocationSet_->FindOrInsertRegisterLocation(
             argument,
             PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
@@ -1495,9 +1436,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 
   AnalyzeRegion(*lambda.subregion());
 
-  /*
-   * Handle function results
-   */
+  // Handle function results
   for (auto & result : lambda.fctresults())
   {
     if (jlm::rvsdg::is<PointerType>(result.type()))
@@ -1509,9 +1448,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     }
   }
 
-  /*
-   * Handle function
-   */
+  // Handle function
   auto & lambdaOutputLocation =
       LocationSet_->FindOrInsertRegisterLocation(*lambda.output(), PointsToFlags::PointsToNone);
   auto & lambdaLocation = LocationSet_->InsertLambdaLocation(lambda);
@@ -1521,9 +1458,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 void
 Steensgaard::AnalyzeDelta(const delta::node & delta)
 {
-  /*
-    Handle context variables
-  */
+  // Handle context variables
   for (auto & input : delta.ctxvars())
   {
     if (!is<PointerType>(input.type()))
@@ -1554,7 +1489,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
 void
 Steensgaard::AnalyzePhi(const phi::node & phi)
 {
-  /* handle context variables */
+  // Handle context variables
   for (auto cv = phi.begin_cv(); cv != phi.end_cv(); cv++)
   {
     if (!is<PointerType>(cv->type()))
@@ -1566,7 +1501,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
     LocationSet_->Join(origin, argument);
   }
 
-  /* handle recursion variable arguments */
+  // Handle recursion variable arguments
   for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++)
   {
     if (!is<PointerType>(rv->type()))
@@ -1577,7 +1512,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 
   AnalyzeRegion(*phi.subregion());
 
-  /* handle recursion variable outputs */
+  // Handle recursion variable outputs
   for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++)
   {
     if (!is<PointerType>(rv->type()))
@@ -1596,7 +1531,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 void
 Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
 {
-  /* handle entry variables */
+  // Handle entry variables
   for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++)
   {
     if (!jlm::rvsdg::is<PointerType>(ev->type()))
@@ -1611,11 +1546,11 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
     }
   }
 
-  /* handle subregions */
+  // Handle subregions
   for (size_t n = 0; n < node.nsubregions(); n++)
     AnalyzeRegion(*node.subregion(n));
 
-  /* handle exit variables */
+  // Handle exit variables
   for (auto ex = node.begin_exitvar(); ex != node.end_exitvar(); ex++)
   {
     if (!jlm::rvsdg::is<PointerType>(ex->type()))
@@ -1667,39 +1602,30 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
 void
 Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
 {
-  auto analyzeLambda = [](auto & s, auto & n)
+  if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
   {
-    s.AnalyzeLambda(*util::AssertedCast<const lambda::node>(&n));
-  };
-  auto analyzeDelta = [](auto & s, auto & n)
+    AnalyzeLambda(*lambdaNode);
+  }
+  else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
   {
-    s.AnalyzeDelta(*util::AssertedCast<const delta::node>(&n));
-  };
-  auto analyzeGamma = [](auto & s, auto & n)
+    AnalyzeDelta(*deltaNode);
+  }
+  else if (auto gammaNode = dynamic_cast<const rvsdg::gamma_node *>(&node))
   {
-    s.AnalyzeGamma(*util::AssertedCast<const rvsdg::gamma_node>(&n));
-  };
-  auto analyzeTheta = [](auto & s, auto & n)
+    AnalyzeGamma(*gammaNode);
+  }
+  else if (auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
   {
-    s.AnalyzeTheta(*util::AssertedCast<const rvsdg::theta_node>(&n));
-  };
-  auto analyzePhi = [](auto & s, auto & n)
+    AnalyzeTheta(*thetaNode);
+  }
+  else if (auto phiNode = dynamic_cast<const phi::node *>(&node))
   {
-    s.AnalyzePhi(*util::AssertedCast<const phi::node>(&n));
-  };
-
-  static std::unordered_map<
-      std::type_index,
-      std::function<void(Steensgaard &, const jlm::rvsdg::structural_node &)>>
-      nodes({ { typeid(lambda::operation), analyzeLambda },
-              { typeid(delta::operation), analyzeDelta },
-              { typeid(rvsdg::gamma_op), analyzeGamma },
-              { typeid(rvsdg::theta_op), analyzeTheta },
-              { typeid(phi::operation), analyzePhi } });
-
-  auto & op = node.operation();
-  JLM_ASSERT(nodes.find(typeid(op)) != nodes.end());
-  nodes[typeid(op)](*this, node);
+    AnalyzePhi(*phiNode);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled node type!");
+  }
 }
 
 void
@@ -1723,37 +1649,40 @@ Steensgaard::AnalyzeRegion(jlm::rvsdg::region & region)
 void
 Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 {
-  auto add_imports = [](const jlm::rvsdg::graph & graph, LocationSet & lset)
-  {
-    auto region = graph.root();
-    for (size_t n = 0; n < region->narguments(); n++)
-    {
-      auto & argument = *region->argument(n);
-      if (!jlm::rvsdg::is<PointerType>(argument.type()))
-        continue;
-      /* FIXME: we should not add function imports */
-      auto & importLocation = lset.InsertImportLocation(argument);
-      auto & importArgumentLocation =
-          lset.FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
-      importArgumentLocation.SetPointsTo(importLocation);
-    }
-  };
-
-  auto MarkExportsAsEscaping = [](const jlm::rvsdg::graph & graph, LocationSet & locationSet)
-  {
-    auto rootRegion = graph.root();
-
-    for (size_t n = 0; n < rootRegion->nresults(); n++)
-    {
-      auto & result = *rootRegion->result(n);
-      auto registerLocation = locationSet.LookupRegisterLocation(*result.origin());
-      registerLocation->SetIsEscapingModule(true);
-    }
-  };
-
-  add_imports(graph, *LocationSet_);
+  AnalyzeImports(graph);
   AnalyzeRegion(*graph.root());
-  MarkExportsAsEscaping(graph, *LocationSet_);
+  AnalyzeExports(graph);
+}
+
+void
+Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
+{
+  auto region = graph.root();
+  for (size_t n = 0; n < region->narguments(); n++)
+  {
+    auto & argument = *region->argument(n);
+    if (!rvsdg::is<PointerType>(argument.type()))
+      continue;
+
+    // FIXME: we should not add function imports
+    auto & importLocation = LocationSet_->InsertImportLocation(argument);
+    auto & importArgumentLocation =
+        LocationSet_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
+    importArgumentLocation.SetPointsTo(importLocation);
+  }
+}
+
+void
+Steensgaard::AnalyzeExports(const rvsdg::graph & graph)
+{
+  auto rootRegion = graph.root();
+
+  for (size_t n = 0; n < rootRegion->nresults(); n++)
+  {
+    auto & result = *rootRegion->result(n);
+    auto registerLocation = LocationSet_->LookupRegisterLocation(*result.origin());
+    registerLocation->SetIsEscapingModule(true);
+  }
 }
 
 std::unique_ptr<PointsToGraph>
