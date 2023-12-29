@@ -1666,17 +1666,17 @@ Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 void
 Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
 {
-  auto region = graph.root();
-  for (size_t n = 0; n < region->narguments(); n++)
+  auto rootRegion = graph.root();
+  for (size_t n = 0; n < rootRegion->narguments(); n++)
   {
-    auto & argument = *region->argument(n);
+    auto & argument = *rootRegion->argument(n);
     if (!rvsdg::is<PointerType>(argument.type()))
       continue;
 
     auto & importLocation = LocationSet_->InsertImportLocation(argument);
-    auto & importArgumentLocation =
+    auto & registerLocation =
         LocationSet_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
-    importArgumentLocation.SetPointsTo(importLocation);
+    registerLocation.SetPointsTo(importLocation);
   }
 }
 
