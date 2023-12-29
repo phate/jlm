@@ -423,18 +423,17 @@ private:
 
 /** \brief FIXME: write documentation
  *
- * FIXME: This class should be derived from a meloc, but we do not
- * have a node to hand in.
  */
-class ImportLocation final : public Location
+class ImportLocation final : public MemoryLocation
 {
   ~ImportLocation() override = default;
 
   ImportLocation(const jlm::rvsdg::argument & argument, PointsToFlags pointsToFlags)
-      : Location(pointsToFlags),
+      : MemoryLocation(),
         Argument_(argument)
   {
     JLM_ASSERT(dynamic_cast<const llvm::impport *>(&argument.port()));
+    SetPointsToFlags(pointsToFlags);
   }
 
 public:
@@ -1832,12 +1831,6 @@ Steensgaard::ConstructPointsToGraph() const
           escapingRegisterLocations.Insert(registerLocation);
       }
       else if (Location::Is<MemoryLocation>(*location))
-      {
-        auto & pointsToGraphNode = CreatePointsToGraphMemoryNode(*location, *pointsToGraph);
-        memoryNodesInSet[&locationSet].push_back(&pointsToGraphNode);
-        locationMap[location] = &pointsToGraphNode;
-      }
-      else if (Location::Is<ImportLocation>(*location))
       {
         auto & pointsToGraphNode = CreatePointsToGraphMemoryNode(*location, *pointsToGraph);
         memoryNodesInSet[&locationSet].push_back(&pointsToGraphNode);
