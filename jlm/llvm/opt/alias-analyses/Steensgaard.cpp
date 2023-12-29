@@ -421,8 +421,7 @@ private:
   const delta::node & Delta_;
 };
 
-/** \brief ImportLocation class
- *
+/**
  * This class represents all global variable and function locations that are imported to the
  * translation unit.
  *
@@ -474,7 +473,9 @@ private:
   const rvsdg::argument & Argument_;
 };
 
-/** \brief FIXME: write documentation
+/**
+ * This class represents a location that only exists for structural purposes of the algorithm. It
+ * has no equivalent in the RVSDG.
  */
 class DummyLocation final : public Location
 {
