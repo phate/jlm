@@ -459,6 +459,8 @@ public:
   {
     JLM_ASSERT(is<PointerType>(argument.type()));
 
+    // If the imported memory location is a pointer type or contains a pointer type, then these
+    // pointers can point to values that escaped this module.
     auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
     bool isOrContainsPointerType = IsOrContains<PointerType>(rvsdgImport.GetValueType());
 
