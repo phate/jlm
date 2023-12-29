@@ -425,6 +425,10 @@ private:
  *
  * This class represents all global variable and function locations that are imported to the
  * translation unit.
+ *
+ * FIXME: We should be able to further distinguish imported locations between function and data
+ * locations. Function locations cannot point to any other memory locations, helping us to
+ * potentially improve analysis precision.
  */
 class ImportLocation final : public MemoryLocation
 {
@@ -1666,7 +1670,6 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
     if (!rvsdg::is<PointerType>(argument.type()))
       continue;
 
-    // FIXME: we should not add function imports
     auto & importLocation = LocationSet_->InsertImportLocation(argument);
     auto & importArgumentLocation =
         LocationSet_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
