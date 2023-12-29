@@ -421,8 +421,10 @@ private:
   const delta::node & Delta_;
 };
 
-/** \brief FIXME: write documentation
+/** \brief ImportLocation class
  *
+ * This class represents all global variable and function locations that are imported to the
+ * translation unit.
  */
 class ImportLocation final : public MemoryLocation
 {
