@@ -430,7 +430,7 @@ class ImportLocation final : public MemoryLocation
 {
   ~ImportLocation() override = default;
 
-  ImportLocation(const jlm::rvsdg::argument & argument, PointsToFlags pointsToFlags)
+  ImportLocation(const rvsdg::argument & argument, PointsToFlags pointsToFlags)
       : MemoryLocation(),
         Argument_(argument)
   {
@@ -439,7 +439,7 @@ class ImportLocation final : public MemoryLocation
   }
 
 public:
-  [[nodiscard]] const jlm::rvsdg::argument &
+  [[nodiscard]] const rvsdg::argument &
   GetArgument() const noexcept
   {
     return Argument_;
@@ -452,21 +452,22 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jlm::rvsdg::argument & argument)
+  Create(const rvsdg::argument & argument)
   {
-    auto & rvsdgImport = *jlm::util::AssertedCast<const impport>(&argument.port());
-    bool pointsToUnknownMemory = is<PointerType>(rvsdgImport.GetValueType());
-    /**
-     * FIXME: We use pointsToUnknownMemory for pointsToExternalMemory
-     */
-    auto flags = PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory
-               | PointsToFlags::PointsToEscapedMemory;
-    return std::unique_ptr<Location>(
-        new ImportLocation(argument, pointsToUnknownMemory ? flags : PointsToFlags::PointsToNone));
+    JLM_ASSERT(is<PointerType>(argument.type()));
+
+    auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
+    bool isOrContainsPointerType = IsOrContains<PointerType>(rvsdgImport.GetValueType());
+
+    return std::unique_ptr<Location>(new ImportLocation(
+        argument,
+        isOrContainsPointerType
+            ? PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory
+            : PointsToFlags::PointsToNone));
   }
 
 private:
-  const jlm::rvsdg::argument & Argument_;
+  const rvsdg::argument & Argument_;
 };
 
 /** \brief FIXME: write documentation
