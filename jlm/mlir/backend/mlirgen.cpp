@@ -98,6 +98,12 @@ MLIRGen::convertSubregion(rvsdg::region & region, mlir::Block & block)
   std::unordered_map<rvsdg::node *, mlir::Value> nodes;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
+    // TODO
+    // Get the inputs of the node
+    //for (size_t i=0; i < rvsdgNode->ninputs(); i++)
+    //{
+    //  ::llvm::outs() << rvsdgNode->input(i) << "\n";
+    //}
     nodes[rvsdgNode] = convertNode(*rvsdgNode, block);
   }
 

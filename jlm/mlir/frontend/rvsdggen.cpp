@@ -224,15 +224,15 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
   }
 
   // Creat the RVSDG function signature
-  std::vector<const jlm::rvsdg::type *> arguments;
-  std::vector<const jlm::rvsdg::type *> results;
   mlir::rvsdg::LambdaRefType * lambdaRefType = static_cast<mlir::rvsdg::LambdaRefType *>(&result);
+  std::vector<const jlm::rvsdg::type *> arguments;
   for (auto argumentType : lambdaRefType->getParameterTypes())
   {
     auto argument = convertType(argumentType);
     ::llvm::outs() << "  - Argument: '" << argument->debug_string() << "\n";
     arguments.push_back(argument);
   }
+  std::vector<const jlm::rvsdg::type *> results;
   for (auto returnType : lambdaRefType->getReturnTypes())
   {
     auto result = convertType(returnType);
