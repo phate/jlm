@@ -58,10 +58,16 @@ public:
 
 private:
   void
-  AnalyzeRvsdg(const jlm::rvsdg::graph & graph);
+  AnalyzeRvsdg(const rvsdg::graph & graph);
 
   void
-  AnalyzeRegion(jlm::rvsdg::region & region);
+  AnalyzeImports(const rvsdg::graph & graph);
+
+  void
+  AnalyzeExports(const rvsdg::graph & graph);
+
+  void
+  AnalyzeRegion(rvsdg::region & region);
 
   void
   AnalyzeLambda(const lambda::node & node);
@@ -73,22 +79,22 @@ private:
   AnalyzePhi(const phi::node & node);
 
   void
-  AnalyzeGamma(const jlm::rvsdg::gamma_node & node);
+  AnalyzeGamma(const rvsdg::gamma_node & node);
 
   void
-  AnalyzeTheta(const jlm::rvsdg::theta_node & node);
+  AnalyzeTheta(const rvsdg::theta_node & node);
 
   void
-  AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node);
+  AnalyzeSimpleNode(const rvsdg::simple_node & node);
 
   void
-  AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node);
+  AnalyzeStructuralNode(const rvsdg::structural_node & node);
 
   void
-  AnalyzeAlloca(const jlm::rvsdg::simple_node & node);
+  AnalyzeAlloca(const rvsdg::simple_node & node);
 
   void
-  AnalyzeMalloc(const jlm::rvsdg::simple_node & node);
+  AnalyzeMalloc(const rvsdg::simple_node & node);
 
   void
   AnalyzeLoad(const LoadNode & loadNode);
@@ -109,34 +115,34 @@ private:
   AnalyzeIndirectCall(const CallNode & callNode);
 
   void
-  AnalyzeGep(const jlm::rvsdg::simple_node & node);
+  AnalyzeGep(const rvsdg::simple_node & node);
 
   void
-  AnalyzeBitcast(const jlm::rvsdg::simple_node & node);
+  AnalyzeBitcast(const rvsdg::simple_node & node);
 
   void
-  AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node);
+  AnalyzeBits2ptr(const rvsdg::simple_node & node);
 
   void
-  AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node);
+  AnalyzeConstantPointerNull(const rvsdg::simple_node & node);
 
   void
-  AnalyzeUndef(const jlm::rvsdg::simple_node & node);
+  AnalyzeUndef(const rvsdg::simple_node & node);
 
   void
-  AnalyzeMemcpy(const jlm::rvsdg::simple_node & node);
+  AnalyzeMemcpy(const rvsdg::simple_node & node);
 
   void
-  AnalyzeConstantArray(const jlm::rvsdg::simple_node & node);
+  AnalyzeConstantArray(const rvsdg::simple_node & node);
 
   void
-  AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node);
+  AnalyzeConstantStruct(const rvsdg::simple_node & node);
 
   void
-  AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node);
+  AnalyzeConstantAggregateZero(const rvsdg::simple_node & node);
 
   void
-  AnalyzeExtractValue(const jlm::rvsdg::simple_node & node);
+  AnalyzeExtractValue(const rvsdg::simple_node & node);
 
   /**
    * Construct a points-to graph from the Steensgaard analysis result.
