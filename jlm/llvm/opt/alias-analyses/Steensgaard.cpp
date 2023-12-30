@@ -421,24 +421,28 @@ private:
   const delta::node & Delta_;
 };
 
-/** \brief FIXME: write documentation
+/**
+ * This class represents all global variable and function locations that are imported to the
+ * translation unit.
  *
- * FIXME: This class should be derived from a meloc, but we do not
- * have a node to hand in.
+ * FIXME: We should be able to further distinguish imported locations between function and data
+ * locations. Function locations cannot point to any other memory locations, helping us to
+ * potentially improve analysis precision.
  */
-class ImportLocation final : public Location
+class ImportLocation final : public MemoryLocation
 {
   ~ImportLocation() override = default;
 
-  ImportLocation(const jlm::rvsdg::argument & argument, PointsToFlags pointsToFlags)
-      : Location(pointsToFlags),
+  ImportLocation(const rvsdg::argument & argument, PointsToFlags pointsToFlags)
+      : MemoryLocation(),
         Argument_(argument)
   {
     JLM_ASSERT(dynamic_cast<const llvm::impport *>(&argument.port()));
+    SetPointsToFlags(pointsToFlags);
   }
 
 public:
-  [[nodiscard]] const jlm::rvsdg::argument &
+  [[nodiscard]] const rvsdg::argument &
   GetArgument() const noexcept
   {
     return Argument_;
@@ -451,24 +455,29 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jlm::rvsdg::argument & argument)
+  Create(const rvsdg::argument & argument)
   {
-    auto & rvsdgImport = *jlm::util::AssertedCast<const impport>(&argument.port());
-    bool pointsToUnknownMemory = is<PointerType>(rvsdgImport.GetValueType());
-    /**
-     * FIXME: We use pointsToUnknownMemory for pointsToExternalMemory
-     */
-    auto flags = PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory
-               | PointsToFlags::PointsToEscapedMemory;
-    return std::unique_ptr<Location>(
-        new ImportLocation(argument, pointsToUnknownMemory ? flags : PointsToFlags::PointsToNone));
+    JLM_ASSERT(is<PointerType>(argument.type()));
+
+    // If the imported memory location is a pointer type or contains a pointer type, then these
+    // pointers can point to values that escaped this module.
+    auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
+    bool isOrContainsPointerType = IsOrContains<PointerType>(rvsdgImport.GetValueType());
+
+    return std::unique_ptr<Location>(new ImportLocation(
+        argument,
+        isOrContainsPointerType
+            ? PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory
+            : PointsToFlags::PointsToNone));
   }
 
 private:
-  const jlm::rvsdg::argument & Argument_;
+  const rvsdg::argument & Argument_;
 };
 
-/** \brief FIXME: write documentation
+/**
+ * This class represents a location that only exists for structural purposes of the algorithm. It
+ * has no equivalent in the RVSDG.
  */
 class DummyLocation final : public Location
 {
@@ -1657,18 +1666,17 @@ Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 void
 Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
 {
-  auto region = graph.root();
-  for (size_t n = 0; n < region->narguments(); n++)
+  auto rootRegion = graph.root();
+  for (size_t n = 0; n < rootRegion->narguments(); n++)
   {
-    auto & argument = *region->argument(n);
+    auto & argument = *rootRegion->argument(n);
     if (!rvsdg::is<PointerType>(argument.type()))
       continue;
 
-    // FIXME: we should not add function imports
     auto & importLocation = LocationSet_->InsertImportLocation(argument);
-    auto & importArgumentLocation =
+    auto & registerLocation =
         LocationSet_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
-    importArgumentLocation.SetPointsTo(importLocation);
+    registerLocation.SetPointsTo(importLocation);
   }
 }
 
@@ -1832,12 +1840,6 @@ Steensgaard::ConstructPointsToGraph() const
           escapingRegisterLocations.Insert(registerLocation);
       }
       else if (Location::Is<MemoryLocation>(*location))
-      {
-        auto & pointsToGraphNode = CreatePointsToGraphMemoryNode(*location, *pointsToGraph);
-        memoryNodesInSet[&locationSet].push_back(&pointsToGraphNode);
-        locationMap[location] = &pointsToGraphNode;
-      }
-      else if (Location::Is<ImportLocation>(*location))
       {
         auto & pointsToGraphNode = CreatePointsToGraphMemoryNode(*location, *pointsToGraph);
         memoryNodesInSet[&locationSet].push_back(&pointsToGraphNode);
