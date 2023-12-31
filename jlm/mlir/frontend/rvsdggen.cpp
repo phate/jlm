@@ -62,13 +62,26 @@ RVSDGGen::convertMlir(std::unique_ptr<mlir::Block> & block)
   return rvsdgModule;
 }
 
-void
+std::unique_ptr<std::vector<jlm::rvsdg::output *>>
+RVSDGGen::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
+{
+  ::llvm::outs() << "  - Converting region\n";
+  // MLIR use blocks as the innermost "container"
+  // In the RVSDG Dialect a region should contain one and only one block
+  JLM_ASSERT(region.getBlocks().size() == 1);
+  return convertBlock(region.front(), rvsdgRegion);
+}
+
+std::unique_ptr<std::vector<jlm::rvsdg::output *>>
 RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
 {
   for (mlir::BlockArgument & arg : block.getArguments())
   {
     ::llvm::outs() << "Block argument: " << arg << "\n";
   }
+
+  ::llvm::outs() << "RVDSG arguments: " << rvsdgRegion.narguments() << "\n";
+  ::llvm::outs() << "RVDSG results: " << rvsdgRegion.nresults() << "\n";
 
   // Transform the block such that operations are in topological order
   mlir::sortTopologically(&block);
@@ -152,9 +165,6 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
     }
   }
 
-  // All nodes in the region have been created, so all that's left to do is to connect
-  // the results of the regions to their producers.
-
   auto terminator = block.getTerminator();
   ::llvm::outs() << "Terminator: " << terminator->getName();
   ::llvm::outs() << " with " << terminator->getOperands().size() << " operands\n";
@@ -163,41 +173,36 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
   //  ::llvm::outs() << "  # RVSDG region with " << rvsdgRegion.node()->noutputs() << " outputs\n";
   //  ::llvm::outs() << "  # RVSDG region with " << rvsdgRegion.node()->ninputs() << " inputs\n";
   // Print information about the producer of each of the operands.
+
+  // Get all the results of the region
+  std::unique_ptr<std::vector<jlm::rvsdg::output *>> results = std::make_unique<std::vector<jlm::rvsdg::output *>>();
   for (mlir::Value operand : terminator->getOperands())
   {
     if (mlir::Operation * producer = operand.getDefiningOp())
     {
-      //      rvsdgRegion.append_result(operations[producer]->output(0));
       ::llvm::outs() << "  - Operand produced by operation '" << producer->getName() << "'\n";
+      results->push_back(operations[producer]->output(0));
     }
     else
     {
       // If there is no defining op, the Value is necessarily a Block argument.
       auto blockArg = operand.cast<mlir::BlockArgument>();
-      //    rvsdgRegion.append_result(rvsdgRegion.argument(blockArg.getArgNumber()));
       ::llvm::outs() << "  - Operand produced by Block argument, number " << blockArg.getArgNumber()
                      << "\n";
+      results->push_back(rvsdgRegion.argument(blockArg.getArgNumber()));
     }
   }
+
+  return results;
 }
 
 void
-RVSDGGen::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
-{
-  ::llvm::outs() << "  - Converting region\n";
-  // MLIR use blocks as the innermost "container"
-  // In the RVSDG Dialect a region should contain one and only one block
-  JLM_ASSERT(region.getBlocks().size() == 1);
-  convertBlock(region.front(), rvsdgRegion);
-}
-
-void
-RVSDGGen::convertOmega(mlir::Operation & omega, rvsdg::region & rvsdgRegion)
+RVSDGGen::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 {
   ::llvm::outs() << "  ** Converting Omega **\n";
   // The Omega consists of a single region
-  JLM_ASSERT(omega.getRegions().size() == 1);
-  convertRegion(omega.getRegion(0), rvsdgRegion);
+  JLM_ASSERT(mlirOmega.getRegions().size() == 1);
+  convertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
 jlm::rvsdg::node *
@@ -240,6 +245,9 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
     results.push_back(result);
   }
   llvm::FunctionType functionType(arguments, results);
+  ::llvm::outs() << "    FunctionType: " << functionType.debug_string() << "\n";
+  ::llvm::outs() << "      - Arguments: " << functionType.NumArguments() << "\n";
+  ::llvm::outs() << "      - Results: " << functionType.NumResults() << "\n";
 
   auto rvsdgLambda = llvm::lambda::node::create(
       &rvsdgRegion,
@@ -247,40 +255,14 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
       functionName->getValue().str(),
       llvm::linkage::external_linkage);
 
-  // Add all the inputs, i.e., function arguments of the lambda,
-  ::llvm::outs() << "  - Function arguments: '" << rvsdgLambda->nfctarguments() << "\n";
-  std::vector<const jlm::rvsdg::argument *> functionArguments;
-  for (size_t i = 0; i < rvsdgLambda->nfctarguments(); i++)
-  {
-    functionArguments.push_back(rvsdgLambda->fctargument(i));
-  }
-
-  // Add all the outputs of the lambda,
-  // which have the same types as the results
-  std::vector<const jlm::rvsdg::structural_output *> outputs;
-  for (auto outputType : results)
-  {
-    rvsdg::port port(*outputType);
-    outputs.push_back(rvsdg::structural_output::create(rvsdgLambda, port));
-  }
-
   // Get the region and convert it
   JLM_ASSERT(mlirLambda.getRegions().size() == 1);
   auto lambdaRegion = rvsdgLambda->subregion();
-  convertRegion(mlirLambda.getRegion(0), *lambdaRegion);
+  auto regionResults = convertRegion(mlirLambda.getRegion(0), *lambdaRegion);
+
+  rvsdgLambda->finalize(*regionResults);
 
   return rvsdgLambda;
-
-  /*
-    FunctionType functionType({&vt}, {&vt});
-
-    auto lambda = lambda::node::create(rvsdgRegion, functionType, "f", linkage::external_linkage);
-    lambda->finalize({lambda->fctargument(0)});
-
-    std::vector<jlm::rvsdg::argument*> functionArguments;
-    for (auto & argument : lambda->fctarguments())
-      functionArguments.push_back(&argument);
-  */
 }
 
 rvsdg::type *

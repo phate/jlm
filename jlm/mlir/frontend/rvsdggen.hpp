@@ -59,21 +59,50 @@ public:
   convertMlir(std::unique_ptr<mlir::Block> & block);
 
 private:
-  void
+  /**
+   * Converts the MLIR region and all operations in it
+   * MLIR uses blocks as the innermost "container" so this function gets the
+   * block of the region and converts it.
+   * \param region The MLIR region to the converted
+   * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents of the MLIR region.
+   * \return The results of the region are returned as a std::vector
+   */
+  std::unique_ptr<std::vector<jlm::rvsdg::output *>>
+  convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion);
+
+  /**
+   * Converts the MLIR block and all operations in it
+   * \param block The MLIR block to the converted
+   * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents of the MLIR region.
+   * \return The results of the region are returned as a std::vector
+   */
+  std::unique_ptr<std::vector<jlm::rvsdg::output *>>
   convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion);
 
   rvsdg::node *
   convertOperation(mlir::Operation & operation, rvsdg::region & rvsdgRegion);
 
+  /**
+   * Converts an MLIR omega operation and insterst it into an RVSDG region.
+   * \param omega The MLIR omega opeation to the converted
+   * \param rvsdgRegion The RVSDG region that the omega node will reside in.
+   */
   void
-  convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion);
+  convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion);
 
-  void
-  convertOmega(mlir::Operation & omega, rvsdg::region & rvsdgRegion);
-
+  /**
+   * Converts an MLIR lambda operation and inserts it into an RVSDG region.
+   * \param mlirLambda The MLIR lambda opeation to the converted
+   * \param rvsdgRegion The RVSDG region that the lambda node will reside in.
+   */
   rvsdg::node *
-  convertLambda(mlir::Operation & lambda, rvsdg::region & rvsdgRegion);
+  convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion);
 
+  /**
+   * Converts an MLIR type into an RVSDG type.
+   * \param type The MLIR type to be converted.
+   * \result The converted RVSDG type.
+   */
   rvsdg::type *
   convertType(mlir::Type & type);
 
