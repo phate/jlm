@@ -175,7 +175,8 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
   // Print information about the producer of each of the operands.
 
   // Get all the results of the region
-  std::unique_ptr<std::vector<jlm::rvsdg::output *>> results = std::make_unique<std::vector<jlm::rvsdg::output *>>();
+  std::unique_ptr<std::vector<jlm::rvsdg::output *>> results =
+      std::make_unique<std::vector<jlm::rvsdg::output *>>();
   for (mlir::Value operand : terminator->getOperands())
   {
     if (mlir::Operation * producer = operand.getDefiningOp())

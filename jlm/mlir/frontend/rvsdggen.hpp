@@ -64,8 +64,8 @@ private:
    * MLIR uses blocks as the innermost "container" so this function gets the
    * block of the region and converts it.
    * \param region The MLIR region to the converted
-   * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents of the MLIR region.
-   * \return The results of the region are returned as a std::vector
+   * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents
+   * of the MLIR region. \return The results of the region are returned as a std::vector
    */
   std::unique_ptr<std::vector<jlm::rvsdg::output *>>
   convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion);
@@ -73,8 +73,8 @@ private:
   /**
    * Converts the MLIR block and all operations in it
    * \param block The MLIR block to the converted
-   * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents of the MLIR region.
-   * \return The results of the region are returned as a std::vector
+   * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents
+   * of the MLIR region. \return The results of the region are returned as a std::vector
    */
   std::unique_ptr<std::vector<jlm::rvsdg::output *>>
   convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion);

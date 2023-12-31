@@ -100,7 +100,7 @@ MLIRGen::convertSubregion(rvsdg::region & region, mlir::Block & block)
   {
     // TODO
     // Get the inputs of the node
-    //for (size_t i=0; i < rvsdgNode->ninputs(); i++)
+    // for (size_t i=0; i < rvsdgNode->ninputs(); i++)
     //{
     //  ::llvm::outs() << rvsdgNode->input(i) << "\n";
     //}
