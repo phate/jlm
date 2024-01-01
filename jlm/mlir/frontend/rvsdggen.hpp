@@ -80,7 +80,7 @@ private:
   convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion);
 
   rvsdg::node *
-  convertOperation(mlir::Operation & operation, rvsdg::region & rvsdgRegion);
+  convertOperation(mlir::Operation & mlirOperation, rvsdg::region & rvsdgRegion, std::vector<const rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.

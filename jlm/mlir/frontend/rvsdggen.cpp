@@ -65,7 +65,6 @@ RVSDGGen::convertMlir(std::unique_ptr<mlir::Block> & block)
 std::unique_ptr<std::vector<jlm::rvsdg::output *>>
 RVSDGGen::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
 {
-  ::llvm::outs() << "  - Converting region\n";
   // MLIR use blocks as the innermost "container"
   // In the RVSDG Dialect a region should contain one and only one block
   JLM_ASSERT(region.getBlocks().size() == 1);
@@ -75,14 +74,6 @@ RVSDGGen::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
 std::unique_ptr<std::vector<jlm::rvsdg::output *>>
 RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
 {
-  for (mlir::BlockArgument & arg : block.getArguments())
-  {
-    ::llvm::outs() << "Block argument: " << arg << "\n";
-  }
-
-  ::llvm::outs() << "RVDSG arguments: " << rvsdgRegion.narguments() << "\n";
-  ::llvm::outs() << "RVDSG results: " << rvsdgRegion.nresults() << "\n";
-
   // Transform the block such that operations are in topological order
   mlir::sortTopologically(&block);
 
@@ -91,15 +82,12 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
   std::unordered_map<mlir::Operation *, rvsdg::node *> operations;
   for (mlir::Operation & mlirOp : block.getOperations())
   {
-    ::llvm::outs() << "- Current operation " << mlirOp.getName() << "\n";
-
     // Get the inputs of the MLIR operation
     std::vector<const jlm::rvsdg::output *> inputs;
     for (mlir::Value operand : mlirOp.getOperands())
     {
       if (mlir::Operation * producer = operand.getDefiningOp())
       {
-        ::llvm::outs() << "  - Operand produced by operation '" << producer->getName() << "'\n";
         // TODO
         // Is there a more elegant way of getting the index of the
         // result that is the operand of the current operation?
@@ -121,75 +109,30 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
       {
         // If there is no defining op, the Value is necessarily a Block argument.
         auto blockArg = operand.cast<mlir::BlockArgument>();
-        ::llvm::outs() << "  - Operand produced by Block argument, number "
-                       << blockArg.getArgNumber() << "\n";
         inputs.push_back(rvsdgRegion.argument(blockArg.getArgNumber()));
       }
     }
 
-    if (mlirOp.getName().getStringRef() == mlir::rvsdg::OmegaNode::getOperationName())
+    if (rvsdg::node * node = convertOperation(mlirOp, rvsdgRegion, inputs))
     {
-      ::llvm::outs() << "- Current operation " << mlirOp.getName() << "\n";
-      convertOmega(mlirOp, rvsdgRegion);
-    }
-    else if (mlirOp.getName().getStringRef() == mlir::rvsdg::LambdaNode::getOperationName())
-    {
-      operations[&mlirOp] = convertLambda(mlirOp, rvsdgRegion);
-    }
-    else if (mlirOp.getName().getStringRef() == mlir::arith::ConstantIntOp::getOperationName())
-    {
-      auto constant = static_cast<mlir::arith::ConstantIntOp>(&mlirOp);
-
-      // Need the type to know the width of the constant
-      auto type = constant.getType();
-      JLM_ASSERT(type.getTypeID() == mlir::IntegerType::getTypeID());
-      auto * integerType = static_cast<mlir::IntegerType *>(&type);
-
-      operations[&mlirOp] = rvsdg::node_output::node(
-          rvsdg::create_bitconstant(&rvsdgRegion, integerType->getWidth(), constant.value()));
-    }
-    else if (mlirOp.getName().getStringRef() == mlir::rvsdg::LambdaResult::getOperationName())
-    {
-      ::llvm::outs() << "- This is a terminating operation, so do nothing: " << mlirOp.getName()
-                     << "\n";
-    }
-    else if (mlirOp.getName().getStringRef() == mlir::rvsdg::OmegaResult::getOperationName())
-    {
-      ::llvm::outs() << "- This is a terminating operation, so do nothing: " << mlirOp.getName()
-                     << "\n";
-    }
-    else
-    {
-      throw util::error(
-          "Operation is not implemented:" + mlirOp.getName().getStringRef().str() + "\n");
+      operations[&mlirOp] = node;
     }
   }
 
-  auto terminator = block.getTerminator();
-  ::llvm::outs() << "Terminator: " << terminator->getName();
-  ::llvm::outs() << " with " << terminator->getOperands().size() << " operands\n";
-  ::llvm::outs() << "  # RVSDG region with " << rvsdgRegion.nresults() << " arguments\n";
-  ::llvm::outs() << "  # RVSDG region with " << rvsdgRegion.nresults() << " results\n";
-  //  ::llvm::outs() << "  # RVSDG region with " << rvsdgRegion.node()->noutputs() << " outputs\n";
-  //  ::llvm::outs() << "  # RVSDG region with " << rvsdgRegion.node()->ninputs() << " inputs\n";
-  // Print information about the producer of each of the operands.
-
   // Get all the results of the region
+  auto terminator = block.getTerminator();
   std::unique_ptr<std::vector<jlm::rvsdg::output *>> results =
       std::make_unique<std::vector<jlm::rvsdg::output *>>();
   for (mlir::Value operand : terminator->getOperands())
   {
     if (mlir::Operation * producer = operand.getDefiningOp())
     {
-      ::llvm::outs() << "  - Operand produced by operation '" << producer->getName() << "'\n";
       results->push_back(operations[producer]->output(0));
     }
     else
     {
       // If there is no defining op, the Value is necessarily a Block argument.
       auto blockArg = operand.cast<mlir::BlockArgument>();
-      ::llvm::outs() << "  - Operand produced by Block argument, number " << blockArg.getArgNumber()
-                     << "\n";
       results->push_back(rvsdgRegion.argument(blockArg.getArgNumber()));
     }
   }
@@ -197,10 +140,51 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
   return results;
 }
 
+rvsdg::node *
+RVSDGGen::convertOperation(mlir::Operation & mlirOperation, rvsdg::region & rvsdgRegion, std::vector<const rvsdg::output *> & inputs)
+{
+    if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaNode::getOperationName())
+    {
+      convertOmega(mlirOperation, rvsdgRegion);
+      // Omega doesn't have a corresponding RVSDG node so we return NULL
+      return NULL;
+    }
+    else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaNode::getOperationName())
+    {
+      return convertLambda(mlirOperation, rvsdgRegion);
+    }
+    else if (mlirOperation.getName().getStringRef() == mlir::arith::ConstantIntOp::getOperationName())
+    {
+      auto constant = static_cast<mlir::arith::ConstantIntOp>(&mlirOperation);
+
+      // Need the type to know the width of the constant
+      auto type = constant.getType();
+      JLM_ASSERT(type.getTypeID() == mlir::IntegerType::getTypeID());
+      auto * integerType = static_cast<mlir::IntegerType *>(&type);
+
+      return rvsdg::node_output::node(
+          rvsdg::create_bitconstant(&rvsdgRegion, integerType->getWidth(), constant.value()));
+    }
+    else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaResult::getOperationName())
+    {
+      // This is a terminating operation, so do nothing
+      return NULL;
+    }
+    else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaResult::getOperationName())
+    {
+      // This is a terminating operation, so do nothing
+      return NULL;
+    }
+    else
+    {
+      throw util::error(
+          "Operation is not implemented:" + mlirOperation.getName().getStringRef().str() + "\n");
+    } 
+}
+
 void
 RVSDGGen::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 {
-  ::llvm::outs() << "  ** Converting Omega **\n";
   // The Omega consists of a single region
   JLM_ASSERT(mlirOmega.getRegions().size() == 1);
   convertRegion(mlirOmega.getRegion(0), rvsdgRegion);
@@ -209,20 +193,16 @@ RVSDGGen::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 jlm::rvsdg::node *
 RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion)
 {
-  ::llvm::outs() << "  ** Converting Lambda **\n";
-
   // Get the name of the function
   auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));
   JLM_ASSERT(functionNameAttribute != NULL);
   mlir::StringAttr * functionName = static_cast<mlir::StringAttr *>(&functionNameAttribute);
-  ::llvm::outs() << "Function name: " << functionName->getValue().str() << "\n";
 
   // A lambda node has only the function signature as the result
   JLM_ASSERT(mlirLambda.getNumResults() == 1);
 
   // Get the MLIR function signature
   auto result = mlirLambda.getResult(0).getType();
-  ::llvm::outs() << "  - Function signature: '" << result << "'\n";
 
   if (result.getTypeID() != mlir::rvsdg::LambdaRefType::getTypeID())
   {
@@ -235,20 +215,15 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
   for (auto argumentType : lambdaRefType->getParameterTypes())
   {
     auto argument = convertType(argumentType);
-    ::llvm::outs() << "  - Argument: '" << argument->debug_string() << "\n";
     arguments.push_back(argument);
   }
   std::vector<const jlm::rvsdg::type *> results;
   for (auto returnType : lambdaRefType->getReturnTypes())
   {
     auto result = convertType(returnType);
-    ::llvm::outs() << "  - Result: '" << result->debug_string() << "\n";
     results.push_back(result);
   }
   llvm::FunctionType functionType(arguments, results);
-  ::llvm::outs() << "    FunctionType: " << functionType.debug_string() << "\n";
-  ::llvm::outs() << "      - Arguments: " << functionType.NumArguments() << "\n";
-  ::llvm::outs() << "      - Results: " << functionType.NumResults() << "\n";
 
   auto rvsdgLambda = llvm::lambda::node::create(
       &rvsdgRegion,
