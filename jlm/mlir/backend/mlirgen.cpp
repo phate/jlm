@@ -52,10 +52,6 @@ mlir::rvsdg::OmegaNode
 MLIRGen::convertModule(const llvm::RvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
-
-  // TODO
-  // Add assert checking that the graph consists of a single omega node
-
   return convertOmega(graph);
 }
 

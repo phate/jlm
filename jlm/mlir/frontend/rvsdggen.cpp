@@ -88,21 +88,7 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
     {
       if (mlir::Operation * producer = operand.getDefiningOp())
       {
-        // TODO
-        // Is there a more elegant way of getting the index of the
-        // result that is the operand of the current operation?
-        size_t index = 0;
-        if (producer->getNumResults() > 1)
-        {
-          for (mlir::Value tmp : producer->getResults())
-          {
-            if (tmp == operand)
-            {
-              break;
-            }
-            index++;
-          }
-        }
+        size_t index = getOperandIndex(producer, operand);
         inputs.push_back(operations[producer]->output(index));
       }
       else
@@ -119,7 +105,7 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
     }
   }
 
-  // Get all the results of the region
+  // The results of the block are encoded in the terminator operation
   auto terminator = block.getTerminator();
   std::unique_ptr<std::vector<jlm::rvsdg::output *>> results =
       std::make_unique<std::vector<jlm::rvsdg::output *>>();
@@ -127,7 +113,8 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
   {
     if (mlir::Operation * producer = operand.getDefiningOp())
     {
-      results->push_back(operations[producer]->output(0));
+      size_t index = getOperandIndex(producer, operand);
+      results->push_back(operations[producer]->output(index));
     }
     else
     {
@@ -141,45 +128,48 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
 }
 
 rvsdg::node *
-RVSDGGen::convertOperation(mlir::Operation & mlirOperation, rvsdg::region & rvsdgRegion, std::vector<const rvsdg::output *> & inputs)
+RVSDGGen::convertOperation(
+    mlir::Operation & mlirOperation,
+    rvsdg::region & rvsdgRegion,
+    std::vector<const rvsdg::output *> & inputs)
 {
-    if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaNode::getOperationName())
-    {
-      convertOmega(mlirOperation, rvsdgRegion);
-      // Omega doesn't have a corresponding RVSDG node so we return NULL
-      return NULL;
-    }
-    else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaNode::getOperationName())
-    {
-      return convertLambda(mlirOperation, rvsdgRegion);
-    }
-    else if (mlirOperation.getName().getStringRef() == mlir::arith::ConstantIntOp::getOperationName())
-    {
-      auto constant = static_cast<mlir::arith::ConstantIntOp>(&mlirOperation);
+  if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaNode::getOperationName())
+  {
+    convertOmega(mlirOperation, rvsdgRegion);
+    // Omega doesn't have a corresponding RVSDG node so we return NULL
+    return NULL;
+  }
+  else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaNode::getOperationName())
+  {
+    return convertLambda(mlirOperation, rvsdgRegion);
+  }
+  else if (mlirOperation.getName().getStringRef() == mlir::arith::ConstantIntOp::getOperationName())
+  {
+    auto constant = static_cast<mlir::arith::ConstantIntOp>(&mlirOperation);
 
-      // Need the type to know the width of the constant
-      auto type = constant.getType();
-      JLM_ASSERT(type.getTypeID() == mlir::IntegerType::getTypeID());
-      auto * integerType = static_cast<mlir::IntegerType *>(&type);
+    // Need the type to know the width of the constant
+    auto type = constant.getType();
+    JLM_ASSERT(type.getTypeID() == mlir::IntegerType::getTypeID());
+    auto * integerType = static_cast<mlir::IntegerType *>(&type);
 
-      return rvsdg::node_output::node(
-          rvsdg::create_bitconstant(&rvsdgRegion, integerType->getWidth(), constant.value()));
-    }
-    else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaResult::getOperationName())
-    {
-      // This is a terminating operation, so do nothing
-      return NULL;
-    }
-    else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaResult::getOperationName())
-    {
-      // This is a terminating operation, so do nothing
-      return NULL;
-    }
-    else
-    {
-      throw util::error(
-          "Operation is not implemented:" + mlirOperation.getName().getStringRef().str() + "\n");
-    } 
+    return rvsdg::node_output::node(
+        rvsdg::create_bitconstant(&rvsdgRegion, integerType->getWidth(), constant.value()));
+  }
+  else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaResult::getOperationName())
+  {
+    // This is a terminating operation that doesn't have a corresponding RVSDG node
+    return NULL;
+  }
+  else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaResult::getOperationName())
+  {
+    // This is a terminating operation that doesn't have a corresponding RVSDG node
+    return NULL;
+  }
+  else
+  {
+    throw util::error(
+        "Operation is not implemented:" + mlirOperation.getName().getStringRef().str() + "\n");
+  }
 }
 
 void
@@ -267,6 +257,27 @@ RVSDGGen::convertType(mlir::Type & type)
   {
     throw util::error("Type conversion not implemented\n");
   }
+}
+
+size_t
+RVSDGGen::getOperandIndex(mlir::Operation * producer, mlir::Value & operand)
+{
+  // TODO
+  // Is there a more elegant way of getting the index of the
+  // operand of an operation?
+  size_t index = 0;
+  if (producer->getNumResults() > 1)
+  {
+    for (mlir::Value tmp : producer->getResults())
+    {
+      if (tmp == operand)
+      {
+        break;
+      }
+      index++;
+    }
+  }
+  return index;
 }
 
 } // jlm::mlirrvsdg

@@ -52,9 +52,19 @@ public:
   RVSDGGen &
   operator=(RVSDGGen &&) = delete;
 
+  /**
+   * Reads RVSDG MLIR from a file,
+   * \param filePath The path to the file containing RVSDG MLIR IR.
+   * \return An MLIR block containing the read RVSDG MLIR graph.
+   */
   std::unique_ptr<mlir::Block>
   readRvsdgMlir(const util::filepath & filePath);
 
+  /**
+   * Converts the MLIR block and all operations in it, including their respective regions.
+   * \param block The RVSDG MLIR block to be converted.
+   * \return The converted RVSDG graph.
+   */
   std::unique_ptr<llvm::RvsdgModule>
   convertMlir(std::unique_ptr<mlir::Block> & block);
 
@@ -65,7 +75,8 @@ private:
    * block of the region and converts it.
    * \param region The MLIR region to the converted
    * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents
-   * of the MLIR region. \return The results of the region are returned as a std::vector
+   * of the MLIR region.
+   * \return The results of the region are returned as a std::vector
    */
   std::unique_ptr<std::vector<jlm::rvsdg::output *>>
   convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion);
@@ -74,13 +85,24 @@ private:
    * Converts the MLIR block and all operations in it
    * \param block The MLIR block to the converted
    * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents
-   * of the MLIR region. \return The results of the region are returned as a std::vector
+   * of the MLIR region.
+   * \return The results of the region are returned as a std::vector
    */
   std::unique_ptr<std::vector<jlm::rvsdg::output *>>
   convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion);
 
+  /**
+   * Converts an MLIR operation into an RVSDG node.
+   * \param mlirOperation The MLIR operation to be converted.
+   * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
+   * \param inputs The inputs for the RVSDG node.
+   * \result The converted RVSDG node.
+   */
   rvsdg::node *
-  convertOperation(mlir::Operation & mlirOperation, rvsdg::region & rvsdgRegion, std::vector<const rvsdg::output *> & inputs);
+  convertOperation(
+      mlir::Operation & mlirOperation,
+      rvsdg::region & rvsdgRegion,
+      std::vector<const rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
@@ -94,6 +116,7 @@ private:
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.
    * \param mlirLambda The MLIR lambda opeation to the converted
    * \param rvsdgRegion The RVSDG region that the lambda node will reside in.
+   * \result The converted Lambda node.
    */
   rvsdg::node *
   convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion);
@@ -105,6 +128,15 @@ private:
    */
   rvsdg::type *
   convertType(mlir::Type & type);
+
+  /**
+   * Returns the index of the operand of the producing MLIR operation
+   * \param producer The MLIR operation producing the operand.
+   * \param operand An operand that must be from the producing MLIR operation.
+   * \result The index of the operand.
+   */
+  size_t
+  getOperandIndex(mlir::Operation * producer, mlir::Value & operand);
 
   std::unique_ptr<mlir::MLIRContext> Context_;
 };
