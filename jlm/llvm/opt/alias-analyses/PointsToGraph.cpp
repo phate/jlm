@@ -357,6 +357,9 @@ PointsToGraph::ToDot(
   for (auto & registerNode : pointsToGraph.RegisterNodes())
     dot += printNodeAndEdges(registerNode);
 
+  for (auto & registerSetNode : pointsToGraph.RegisterSetNodes())
+    dot += printNodeAndEdges(registerSetNode);
+
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
   dot += "label=\"Yellow = Escaping memory node\"\n";
