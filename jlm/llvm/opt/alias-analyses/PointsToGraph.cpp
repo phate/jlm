@@ -448,13 +448,15 @@ PointsToGraph::RegisterSetNode::~RegisterSetNode() noexcept = default;
 std::string
 PointsToGraph::RegisterSetNode::DebugString() const
 {
-  auto lastOutput = *std::prev(GetOutputs().Items().end());
+  auto & outputs = GetOutputs();
 
+  size_t n = 0;
   std::string debugString("{");
-  for (auto output : GetOutputs().Items())
+  for (auto output : outputs.Items())
   {
     debugString += CreateDotString(*output);
-    debugString += output != lastOutput ? ", " : "";
+    debugString += n != (outputs.Size() - 1) ? ", " : "";
+    n++;
   }
   debugString += "}";
 
