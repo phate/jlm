@@ -824,15 +824,18 @@ public:
 private:
   friend PointsToGraph;
 
-  explicit NodeIterator(const ITERATORTYPE & it)
-      : it_(it)
+  explicit NodeIterator(
+      const ITERATORTYPE & it,
+      const std::function<DATATYPE *(const ITERATORTYPE &)> & mapToPointer)
+      : it_(it),
+        MapToPointer_(mapToPointer)
   {}
 
 public:
   [[nodiscard]] DATATYPE *
   Node() const noexcept
   {
-    return it_->second.get();
+    return MapToPointer_(it_);
   }
 
   DATATYPE &
@@ -877,6 +880,7 @@ public:
 
 private:
   ITERATORTYPE it_;
+  std::function<DATATYPE *(const ITERATORTYPE &)> MapToPointer_;
 };
 
 /** \brief Points-to graph node const iterator
@@ -894,15 +898,18 @@ public:
 private:
   friend PointsToGraph;
 
-  explicit NodeConstIterator(const ITERATORTYPE & it)
-      : it_(it)
+  explicit NodeConstIterator(
+      const ITERATORTYPE & it,
+      const std::function<DATATYPE *(const ITERATORTYPE &)> & mapToPointer)
+      : it_(it),
+        MapToPointer_(mapToPointer)
   {}
 
 public:
   [[nodiscard]] const DATATYPE *
   Node() const noexcept
   {
-    return it_->second.get();
+    return MapToPointer_(it_);
   }
 
   const DATATYPE &
@@ -947,6 +954,7 @@ public:
 
 private:
   ITERATORTYPE it_;
+  std::function<DATATYPE *(const ITERATORTYPE &)> MapToPointer_;
 };
 
 /** \brief Points-to graph edge iterator
