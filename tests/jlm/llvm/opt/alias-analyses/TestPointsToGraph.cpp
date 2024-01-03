@@ -197,7 +197,7 @@ TestRegisterSetNodeIteration()
   test.InitializeTest();
 
   auto pointsToGraph = aa::PointsToGraph::Create();
-  
+
   jlm::util::HashSet<const jlm::rvsdg::output *> registers(
       { test.alloca_a->output(0), test.alloca_b->output(0) });
   aa::PointsToGraph::RegisterSetNode::Create(*pointsToGraph, registers);
