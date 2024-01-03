@@ -451,14 +451,13 @@ PointsToGraph::RegisterSetNode::DebugString() const
   auto & outputs = GetOutputs();
 
   size_t n = 0;
-  std::string debugString("{");
+  std::string debugString;
   for (auto output : outputs.Items())
   {
     debugString += CreateDotString(*output);
-    debugString += n != (outputs.Size() - 1) ? ", " : "";
+    debugString += n != (outputs.Size() - 1) ? "\n" : "";
     n++;
   }
-  debugString += "}";
 
   return debugString;
 }
