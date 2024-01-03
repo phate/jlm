@@ -1,2 +1,3 @@
 TESTS += \
     jlm/mlir/backend/TestMlirGen \
+    jlm/mlir/frontend/TestRvsdgGen \
