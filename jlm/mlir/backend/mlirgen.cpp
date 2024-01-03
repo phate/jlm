@@ -26,44 +26,44 @@ namespace jlm::rvsdgmlir
 {
 
 void
-MLIRGen::print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
+MLIRGen::print(std::unique_ptr<mlir::rvsdg::OmegaNode> & omega, const util::filepath & filePath)
 {
   // Verify the module
-  if (failed(mlir::verify(omega)))
+  if (failed(mlir::verify(*omega)))
   {
-    omega.emitError("module verification error");
+    omega->emitError("module verification error");
     throw util::error("Verification of RVSDG-MLIR failed");
   }
   // Print the module
   if (filePath == "")
   {
     ::llvm::raw_os_ostream os(std::cout);
-    omega.print(os);
+    omega->print(os);
   }
   else
   {
     std::error_code ec;
     ::llvm::raw_fd_ostream os(filePath.to_str(), ec);
-    omega.print(os);
+    omega->print(os);
   }
 }
 
-mlir::rvsdg::OmegaNode
+std::unique_ptr<mlir::rvsdg::OmegaNode>
 MLIRGen::convertModule(const llvm::RvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
   return convertOmega(graph);
 }
 
-mlir::rvsdg::OmegaNode
+std::unique_ptr<mlir::rvsdg::OmegaNode>
 MLIRGen::convertOmega(const rvsdg::graph & graph)
 {
   // Create the MLIR omega node
-  mlir::rvsdg::OmegaNode omega =
-      Builder_->create<mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
+  std::unique_ptr<mlir::rvsdg::OmegaNode> omega =
+      std::make_unique<mlir::rvsdg::OmegaNode>(Builder_->create<mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc()));
 
   // Create a block for the region as this is currently not done automatically
-  mlir::Region & region = omega.getRegion();
+  mlir::Region & region = omega->getRegion();
   mlir::Block * omegaBlock = new mlir::Block;
   region.push_back(omegaBlock);
 
