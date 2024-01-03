@@ -187,10 +187,35 @@ TestNodeIterators()
   }
 }
 
+static void
+TestRegisterSetNodeIteration()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  jlm::tests::StoreTest2 test;
+  test.InitializeTest();
+
+  auto pointsToGraph = aa::PointsToGraph::Create();
+  
+  jlm::util::HashSet<const jlm::rvsdg::output *> registers(
+      { test.alloca_a->output(0), test.alloca_b->output(0) });
+  aa::PointsToGraph::RegisterSetNode::Create(*pointsToGraph, registers);
+
+  // Act
+  size_t numIteratedRegisterSetNodes = 0;
+  for ([[maybe_unused]] auto & registerSetNode : pointsToGraph->RegisterSetNodes())
+    numIteratedRegisterSetNodes++;
+
+  // Assert
+  assert(numIteratedRegisterSetNodes == pointsToGraph->NumRegisterSetNodes());
+}
+
 static int
 TestPointsToGraph()
 {
   TestNodeIterators();
+  TestRegisterSetNodeIteration();
 
   return 0;
 }

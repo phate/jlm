@@ -173,25 +173,25 @@ PointsToGraph::RegisterNodes() const
 PointsToGraph::RegisterSetNodeRange
 PointsToGraph::RegisterSetNodes()
 {
-  auto mapToPointer = [](const RegisterSetNodeMap::iterator & it)
+  auto mapToPointer = [](const RegisterSetNodeVector::iterator & it)
   {
-    return it->second;
+    return it->get();
   };
 
-  return { RegisterSetNodeIterator(RegisterSetNodeMap_.begin(), mapToPointer),
-           RegisterSetNodeIterator(RegisterSetNodeMap_.end(), mapToPointer) };
+  return { RegisterSetNodeIterator(RegisterSetNodes_.begin(), mapToPointer),
+           RegisterSetNodeIterator(RegisterSetNodes_.end(), mapToPointer) };
 }
 
 PointsToGraph::RegisterSetNodeConstRange
 PointsToGraph::RegisterSetNodes() const
 {
-  auto mapToPointer = [](const RegisterSetNodeMap::const_iterator & it)
+  auto mapToPointer = [](const RegisterSetNodeVector::const_iterator & it)
   {
-    return it->second;
+    return it->get();
   };
 
-  return { RegisterSetNodeConstIterator(RegisterSetNodeMap_.begin(), mapToPointer),
-           RegisterSetNodeConstIterator(RegisterSetNodeMap_.end(), mapToPointer) };
+  return { RegisterSetNodeConstIterator(RegisterSetNodes_.begin(), mapToPointer),
+           RegisterSetNodeConstIterator(RegisterSetNodes_.end(), mapToPointer) };
 }
 
 PointsToGraph::AllocaNode &

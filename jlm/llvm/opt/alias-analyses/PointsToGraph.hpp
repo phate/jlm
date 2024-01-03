@@ -64,6 +64,7 @@ public:
       std::unordered_map<const jlm::rvsdg::output *, std::unique_ptr<PointsToGraph::RegisterNode>>;
   using RegisterSetNodeMap =
       std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterSetNode *>;
+  using RegisterSetNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterSetNode>>;
 
   using AllocaNodeIterator = NodeIterator<AllocaNode, AllocaNodeMap::iterator>;
   using AllocaNodeConstIterator = NodeConstIterator<AllocaNode, AllocaNodeMap::const_iterator>;
@@ -96,9 +97,9 @@ public:
   using RegisterNodeRange = jlm::util::iterator_range<RegisterNodeIterator>;
   using RegisterNodeConstRange = jlm::util::iterator_range<RegisterNodeConstIterator>;
 
-  using RegisterSetNodeIterator = NodeIterator<RegisterSetNode, RegisterSetNodeMap::iterator>;
+  using RegisterSetNodeIterator = NodeIterator<RegisterSetNode, RegisterSetNodeVector::iterator>;
   using RegisterSetNodeConstIterator =
-      NodeConstIterator<RegisterSetNode, RegisterSetNodeMap::const_iterator>;
+      NodeConstIterator<RegisterSetNode, RegisterSetNodeVector::const_iterator>;
   using RegisterSetNodeRange = util::iterator_range<RegisterSetNodeIterator>;
   using RegisterSetNodeConstRange = util::iterator_range<RegisterSetNodeConstIterator>;
 
@@ -377,7 +378,7 @@ private:
   RegisterNodeMap RegisterNodes_;
 
   RegisterSetNodeMap RegisterSetNodeMap_;
-  std::vector<std::unique_ptr<PointsToGraph::RegisterSetNode>> RegisterSetNodes_;
+  RegisterSetNodeVector RegisterSetNodes_;
 
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
