@@ -12,10 +12,11 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
-test_load_mux_reduction()
+TestSuccess()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
@@ -38,6 +39,7 @@ test_load_mux_reduction()
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
   graph.normalize();
@@ -45,6 +47,7 @@ test_load_mux_reduction()
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   auto load = jlm::rvsdg::node_output::node(ex1->origin());
   assert(is<LoadOperation>(load));
   assert(load->ninputs() == 4);
@@ -63,11 +66,9 @@ test_load_mux_reduction()
 }
 
 static void
-test_load_mux_reduction2()
+TestWrongNumberOfOperands()
 {
-  /*
-   * Arrange
-   */
+  // Arrange
   using namespace jlm::llvm;
 
   jlm::tests::valuetype vt;
@@ -92,9 +93,7 @@ test_load_mux_reduction2()
 
   jlm::rvsdg::view(graph.root(), stdout);
 
-  /*
-   * Act
-   */
+  // Act
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
   graph.normalize();
@@ -102,12 +101,10 @@ test_load_mux_reduction2()
 
   jlm::rvsdg::view(graph.root(), stdout);
 
-  /*
-   * Assert
-   *
-   * The LoadMux reduction should not be performed, as the current implementation does not correctly
-   * take care of the two identical load state operands originating from the merge node.
-   */
+  // Assert
+  
+  // The LoadMux reduction should not be performed, as the current implementation does not correctly
+  // take care of the two identical load state operands originating from the merge node.
   assert(ld.size() == 3);
   assert(ex1->origin() == ld[0]);
   assert(ex2->origin() == ld[1]);
@@ -115,12 +112,12 @@ test_load_mux_reduction2()
 }
 
 static int
-test()
+TestLoadMuxReduction()
 {
-  test_load_mux_reduction();
-  test_load_mux_reduction2();
+  TestSuccess();
+  TestWrongNumberOfOperands();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestLoadMuxReduction", test)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestLoadMuxReduction", TestLoadMuxReduction)
