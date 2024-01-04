@@ -59,8 +59,8 @@ std::unique_ptr<mlir::rvsdg::OmegaNode>
 MLIRGen::convertOmega(const rvsdg::graph & graph)
 {
   // Create the MLIR omega node
-  std::unique_ptr<mlir::rvsdg::OmegaNode> omega =
-      std::make_unique<mlir::rvsdg::OmegaNode>(Builder_->create<mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc()));
+  std::unique_ptr<mlir::rvsdg::OmegaNode> omega = std::make_unique<mlir::rvsdg::OmegaNode>(
+      Builder_->create<mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc()));
 
   // Create a block for the region as this is currently not done automatically
   mlir::Region & region = omega->getRegion();
