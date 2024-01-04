@@ -29,169 +29,93 @@ PointsToGraph::AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode)
 PointsToGraph::AllocaNodeRange
 PointsToGraph::AllocaNodes()
 {
-  auto mapToPointer = [](const AllocaNodeMap::iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { AllocaNodeIterator(AllocaNodes_.begin(), mapToPointer),
-           AllocaNodeIterator(AllocaNodes_.end(), mapToPointer) };
+  return { AllocaNodeIterator(AllocaNodes_.begin()), AllocaNodeIterator(AllocaNodes_.end()) };
 }
 
 PointsToGraph::AllocaNodeConstRange
 PointsToGraph::AllocaNodes() const
 {
-  auto mapToPointer = [](const AllocaNodeMap::const_iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { AllocaNodeConstIterator(AllocaNodes_.begin(), mapToPointer),
-           AllocaNodeConstIterator(AllocaNodes_.end(), mapToPointer) };
+  return { AllocaNodeConstIterator(AllocaNodes_.begin()),
+           AllocaNodeConstIterator(AllocaNodes_.end()) };
 }
 
 PointsToGraph::DeltaNodeRange
 PointsToGraph::DeltaNodes()
 {
-  auto mapToPointer = [](const DeltaNodeMap::iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { DeltaNodeIterator(DeltaNodes_.begin(), mapToPointer),
-           DeltaNodeIterator(DeltaNodes_.end(), mapToPointer) };
+  return { DeltaNodeIterator(DeltaNodes_.begin()), DeltaNodeIterator(DeltaNodes_.end()) };
 }
 
 PointsToGraph::DeltaNodeConstRange
 PointsToGraph::DeltaNodes() const
 {
-  auto mapToPointer = [](const DeltaNodeMap::const_iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { DeltaNodeConstIterator(DeltaNodes_.begin(), mapToPointer),
-           DeltaNodeConstIterator(DeltaNodes_.end(), mapToPointer) };
+  return { DeltaNodeConstIterator(DeltaNodes_.begin()), DeltaNodeConstIterator(DeltaNodes_.end()) };
 }
 
 PointsToGraph::LambdaNodeRange
 PointsToGraph::LambdaNodes()
 {
-  auto mapToPointer = [](const LambdaNodeMap::iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { LambdaNodeIterator(LambdaNodes_.begin(), mapToPointer),
-           LambdaNodeIterator(LambdaNodes_.end(), mapToPointer) };
+  return { LambdaNodeIterator(LambdaNodes_.begin()), LambdaNodeIterator(LambdaNodes_.end()) };
 }
 
 PointsToGraph::LambdaNodeConstRange
 PointsToGraph::LambdaNodes() const
 {
-  auto mapToPointer = [](const LambdaNodeMap::const_iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { LambdaNodeConstIterator(LambdaNodes_.begin(), mapToPointer),
-           LambdaNodeConstIterator(LambdaNodes_.end(), mapToPointer) };
+  return { LambdaNodeConstIterator(LambdaNodes_.begin()),
+           LambdaNodeConstIterator(LambdaNodes_.end()) };
 }
 
 PointsToGraph::MallocNodeRange
 PointsToGraph::MallocNodes()
 {
-  auto mapToPointer = [](const MallocNodeMap::iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { MallocNodeIterator(MallocNodes_.begin(), mapToPointer),
-           MallocNodeIterator(MallocNodes_.end(), mapToPointer) };
+  return { MallocNodeIterator(MallocNodes_.begin()), MallocNodeIterator(MallocNodes_.end()) };
 }
 
 PointsToGraph::MallocNodeConstRange
 PointsToGraph::MallocNodes() const
 {
-  auto mapToPointer = [](const MallocNodeMap::const_iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { MallocNodeConstIterator(MallocNodes_.begin(), mapToPointer),
-           MallocNodeConstIterator(MallocNodes_.end(), mapToPointer) };
+  return { MallocNodeConstIterator(MallocNodes_.begin()),
+           MallocNodeConstIterator(MallocNodes_.end()) };
 }
 
 PointsToGraph::ImportNodeRange
 PointsToGraph::ImportNodes()
 {
-  auto mapToPointer = [](const ImportNodeMap::iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { ImportNodeIterator(ImportNodes_.begin(), mapToPointer),
-           ImportNodeIterator(ImportNodes_.end(), mapToPointer) };
+  return { ImportNodeIterator(ImportNodes_.begin()), ImportNodeIterator(ImportNodes_.end()) };
 }
 
 PointsToGraph::ImportNodeConstRange
 PointsToGraph::ImportNodes() const
 {
-  auto mapToPointer = [](const ImportNodeMap::const_iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { ImportNodeConstIterator(ImportNodes_.begin(), mapToPointer),
-           ImportNodeConstIterator(ImportNodes_.end(), mapToPointer) };
+  return { ImportNodeConstIterator(ImportNodes_.begin()),
+           ImportNodeConstIterator(ImportNodes_.end()) };
 }
 
 PointsToGraph::RegisterNodeRange
 PointsToGraph::RegisterNodes()
 {
-  auto mapToPointer = [](const RegisterNodeMap::iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { RegisterNodeIterator(RegisterNodes_.begin(), mapToPointer),
-           RegisterNodeIterator(RegisterNodes_.end(), mapToPointer) };
+  return { RegisterNodeIterator(RegisterNodes_.begin()),
+           RegisterNodeIterator(RegisterNodes_.end()) };
 }
 
 PointsToGraph::RegisterNodeConstRange
 PointsToGraph::RegisterNodes() const
 {
-  auto mapToPointer = [](const RegisterNodeMap::const_iterator & it)
-  {
-    return it->second.get();
-  };
-
-  return { RegisterNodeConstIterator(RegisterNodes_.begin(), mapToPointer),
-           RegisterNodeConstIterator(RegisterNodes_.end(), mapToPointer) };
+  return { RegisterNodeConstIterator(RegisterNodes_.begin()),
+           RegisterNodeConstIterator(RegisterNodes_.end()) };
 }
 
 PointsToGraph::RegisterSetNodeRange
 PointsToGraph::RegisterSetNodes()
 {
-  auto mapToPointer = [](const RegisterSetNodeVector::iterator & it)
-  {
-    return it->get();
-  };
-
-  return { RegisterSetNodeIterator(RegisterSetNodes_.begin(), mapToPointer),
-           RegisterSetNodeIterator(RegisterSetNodes_.end(), mapToPointer) };
+  return { RegisterSetNodeIterator(RegisterSetNodes_.begin()),
+           RegisterSetNodeIterator(RegisterSetNodes_.end()) };
 }
 
 PointsToGraph::RegisterSetNodeConstRange
 PointsToGraph::RegisterSetNodes() const
 {
-  auto mapToPointer = [](const RegisterSetNodeVector::const_iterator & it)
-  {
-    return it->get();
-  };
-
-  return { RegisterSetNodeConstIterator(RegisterSetNodes_.begin(), mapToPointer),
-           RegisterSetNodeConstIterator(RegisterSetNodes_.end(), mapToPointer) };
+  return { RegisterSetNodeConstIterator(RegisterSetNodes_.begin()),
+           RegisterSetNodeConstIterator(RegisterSetNodes_.end()) };
 }
 
 PointsToGraph::AllocaNode &
