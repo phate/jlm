@@ -67,19 +67,9 @@ public:
   using RegisterSetNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterSetNode>>;
 
   template<class DataType, class IteratorType>
-  struct NodeIteratorFunctor
+  struct IteratorToPointerFunctor
   {
     DataType *
-    operator()(const IteratorType & it) const
-    {
-      return it->second.get();
-    }
-  };
-
-  template<class DataType, class IteratorType>
-  struct NodeConstIteratorFunctor
-  {
-    const DataType *
     operator()(const IteratorType & it) const
     {
       return it->second.get();
@@ -89,82 +79,74 @@ public:
   using AllocaNodeIterator = NodeIterator<
       AllocaNode,
       AllocaNodeMap::iterator,
-      NodeIteratorFunctor<AllocaNode, AllocaNodeMap::iterator>>;
+      IteratorToPointerFunctor<AllocaNode, AllocaNodeMap::iterator>>;
   using AllocaNodeConstIterator = NodeConstIterator<
       AllocaNode,
       AllocaNodeMap::const_iterator,
-      NodeConstIteratorFunctor<AllocaNode, AllocaNodeMap::const_iterator>>;
+      IteratorToPointerFunctor<AllocaNode, AllocaNodeMap::const_iterator>>;
   using AllocaNodeRange = jlm::util::iterator_range<AllocaNodeIterator>;
   using AllocaNodeConstRange = jlm::util::iterator_range<AllocaNodeConstIterator>;
 
   using DeltaNodeIterator = NodeIterator<
       DeltaNode,
       DeltaNodeMap::iterator,
-      NodeIteratorFunctor<DeltaNode, DeltaNodeMap::iterator>>;
+      IteratorToPointerFunctor<DeltaNode, DeltaNodeMap::iterator>>;
   using DeltaNodeConstIterator = NodeConstIterator<
       DeltaNode,
       DeltaNodeMap::const_iterator,
-      NodeConstIteratorFunctor<DeltaNode, DeltaNodeMap::const_iterator>>;
+      IteratorToPointerFunctor<DeltaNode, DeltaNodeMap::const_iterator>>;
   using DeltaNodeRange = jlm::util::iterator_range<DeltaNodeIterator>;
   using DeltaNodeConstRange = jlm::util::iterator_range<DeltaNodeConstIterator>;
 
   using ImportNodeIterator = NodeIterator<
       ImportNode,
       ImportNodeMap::iterator,
-      NodeIteratorFunctor<ImportNode, ImportNodeMap::iterator>>;
+      IteratorToPointerFunctor<ImportNode, ImportNodeMap::iterator>>;
   using ImportNodeConstIterator = NodeConstIterator<
       ImportNode,
       ImportNodeMap::const_iterator,
-      NodeConstIteratorFunctor<ImportNode, ImportNodeMap::const_iterator>>;
+      IteratorToPointerFunctor<ImportNode, ImportNodeMap::const_iterator>>;
   using ImportNodeRange = jlm::util::iterator_range<ImportNodeIterator>;
   using ImportNodeConstRange = jlm::util::iterator_range<ImportNodeConstIterator>;
 
   using LambdaNodeIterator = NodeIterator<
       LambdaNode,
       LambdaNodeMap::iterator,
-      NodeIteratorFunctor<LambdaNode, LambdaNodeMap::iterator>>;
+      IteratorToPointerFunctor<LambdaNode, LambdaNodeMap::iterator>>;
   using LambdaNodeConstIterator = NodeConstIterator<
       LambdaNode,
       LambdaNodeMap::const_iterator,
-      NodeConstIteratorFunctor<LambdaNode, LambdaNodeMap::const_iterator>>;
+      IteratorToPointerFunctor<LambdaNode, LambdaNodeMap::const_iterator>>;
   using LambdaNodeRange = jlm::util::iterator_range<LambdaNodeIterator>;
   using LambdaNodeConstRange = jlm::util::iterator_range<LambdaNodeConstIterator>;
 
   using MallocNodeIterator = NodeIterator<
       MallocNode,
       MallocNodeMap::iterator,
-      NodeIteratorFunctor<MallocNode, MallocNodeMap::iterator>>;
+      IteratorToPointerFunctor<MallocNode, MallocNodeMap::iterator>>;
   using MallocNodeConstIterator = NodeConstIterator<
       MallocNode,
       MallocNodeMap::const_iterator,
-      NodeConstIteratorFunctor<MallocNode, MallocNodeMap::const_iterator>>;
+      IteratorToPointerFunctor<MallocNode, MallocNodeMap::const_iterator>>;
   using MallocNodeRange = jlm::util::iterator_range<MallocNodeIterator>;
   using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
 
   using RegisterNodeIterator = NodeIterator<
       RegisterNode,
       RegisterNodeMap::iterator,
-      NodeIteratorFunctor<RegisterNode, RegisterNodeMap::iterator>>;
+      IteratorToPointerFunctor<RegisterNode, RegisterNodeMap::iterator>>;
   using RegisterNodeConstIterator = NodeConstIterator<
       RegisterNode,
       RegisterNodeMap::const_iterator,
-      NodeConstIteratorFunctor<RegisterNode, RegisterNodeMap::const_iterator>>;
+      IteratorToPointerFunctor<RegisterNode, RegisterNodeMap::const_iterator>>;
   using RegisterNodeRange = jlm::util::iterator_range<RegisterNodeIterator>;
   using RegisterNodeConstRange = jlm::util::iterator_range<RegisterNodeConstIterator>;
 
-  struct RegisterSetNodeIteratorFunctor
+  template<class IteratorType>
+  struct RegisterSetNodeIteratorToPointerFunctor
   {
     RegisterSetNode *
-    operator()(const RegisterSetNodeVector::iterator & it) const
-    {
-      return it->get();
-    }
-  };
-
-  struct RegisterSetNodeConstIteratorFunctor
-  {
-    const RegisterSetNode *
-    operator()(const RegisterSetNodeVector::const_iterator & it) const
+    operator()(const IteratorType & it) const
     {
       return it->get();
     }
@@ -173,11 +155,11 @@ public:
   using RegisterSetNodeIterator = NodeIterator<
       RegisterSetNode,
       RegisterSetNodeVector::iterator,
-      RegisterSetNodeIteratorFunctor>;
+      RegisterSetNodeIteratorToPointerFunctor<RegisterSetNodeVector::iterator>>;
   using RegisterSetNodeConstIterator = NodeConstIterator<
       RegisterSetNode,
       RegisterSetNodeVector::const_iterator,
-      RegisterSetNodeConstIteratorFunctor>;
+      RegisterSetNodeIteratorToPointerFunctor<RegisterSetNodeVector::const_iterator>>;
   using RegisterSetNodeRange = util::iterator_range<RegisterSetNodeIterator>;
   using RegisterSetNodeConstRange = util::iterator_range<RegisterSetNodeConstIterator>;
 
