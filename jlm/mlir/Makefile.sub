@@ -7,11 +7,14 @@ ifneq (, $(shell command -v $(MLIR_ROOT)/lib/libMLIRRVSDG.a 2> /dev/null))
   CPPFLAGS += \
 	-DMLIR_ENABLED=1
 
-  LDFLAGS += \
+  MLIR_LDFLAGS = \
+        -lmlir \
         -L$(MLIR_ROOT)/lib \
         -lMLIR \
         -lMLIRJLM \
         -lMLIRRVSDG
+
+  LDFLAGS += $(MLIR_LDFLAGS)
 endif
 
 LIBMLIR_SRC = \
