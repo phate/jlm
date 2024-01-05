@@ -59,7 +59,7 @@ is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
   auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
   if (!is<MemStateMergeOperator>(memStateMergeNode))
     return false;
-  
+
   return true;
 }
 
