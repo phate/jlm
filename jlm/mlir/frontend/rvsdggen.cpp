@@ -199,21 +199,19 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
     throw util::error("The result from lambda node is not a LambdaRefType\n");
   }
 
-  // Creat the RVSDG function signature
+  // Create the RVSDG function signature
   mlir::rvsdg::LambdaRefType * lambdaRefType = static_cast<mlir::rvsdg::LambdaRefType *>(&result);
-  std::vector<const jlm::rvsdg::type *> arguments;
+  std::vector<std::unique_ptr<rvsdg::type>> argumentTypes;
   for (auto argumentType : lambdaRefType->getParameterTypes())
   {
-    auto argument = convertType(argumentType);
-    arguments.push_back(argument);
+    argumentTypes.push_back(convertType(argumentType));
   }
-  std::vector<const jlm::rvsdg::type *> results;
+  std::vector<std::unique_ptr<rvsdg::type>> resultTypes;
   for (auto returnType : lambdaRefType->getReturnTypes())
   {
-    auto result = convertType(returnType);
-    results.push_back(result);
+    resultTypes.push_back(convertType(returnType));
   }
-  llvm::FunctionType functionType(arguments, results);
+  llvm::FunctionType functionType(std::move(argumentTypes), std::move(resultTypes));
 
   auto rvsdgLambda = llvm::lambda::node::create(
       &rvsdgRegion,
@@ -231,27 +229,25 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
   return rvsdgLambda;
 }
 
-rvsdg::type *
+std::unique_ptr<rvsdg::type>
 RVSDGGen::convertType(mlir::Type & type)
 {
-  // TODO
-  // Fix memory leak
   if (type.getTypeID() == mlir::IntegerType::getTypeID())
   {
     auto * intType = static_cast<mlir::IntegerType *>(&type);
-    return new rvsdg::bittype(intType->getWidth());
+    return std::make_unique<rvsdg::bittype>(intType->getWidth());
   }
   else if (type.getTypeID() == mlir::rvsdg::LoopStateEdgeType::getTypeID())
   {
-    return new llvm::loopstatetype();
+    return std::make_unique<llvm::loopstatetype>();
   }
   else if (type.getTypeID() == mlir::rvsdg::MemStateEdgeType::getTypeID())
   {
-    return new llvm::MemoryStateType();
+    return std::make_unique<llvm::MemoryStateType>();
   }
   else if (type.getTypeID() == mlir::rvsdg::IOStateEdgeType::getTypeID())
   {
-    return new llvm::iostatetype();
+    return std::make_unique<llvm::iostatetype>();
   }
   else
   {
