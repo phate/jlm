@@ -47,7 +47,7 @@ TestLambda()
     auto omega = mlirgen.convertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    mlir::Region & omegaRegion = omega->getRegion();
+    mlir::Region & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
     mlir::Block & omegaBlock = omegaRegion.front();
     // Lamda + terminating operation
@@ -90,6 +90,8 @@ TestLambda()
     assert(
         lambdaBlock.front().getName().getStringRef()
         == mlir::arith::ConstantIntOp::getOperationName());
+
+    free(omega);
   }
 
 #endif // MLIR_ENABLED

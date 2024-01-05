@@ -49,13 +49,13 @@ public:
   operator=(MLIRGen &&) = delete;
 
   void
-  print(std::unique_ptr<mlir::rvsdg::OmegaNode> & omega, const util::filepath & filePath);
+  print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);
 
-  std::unique_ptr<mlir::rvsdg::OmegaNode>
+  mlir::rvsdg::OmegaNode
   convertModule(const llvm::RvsdgModule & rvsdgModule);
 
 private:
-  std::unique_ptr<mlir::rvsdg::OmegaNode>
+  mlir::rvsdg::OmegaNode
   convertOmega(const rvsdg::graph & graph);
 
   ::llvm::SmallVector<mlir::Value>
