@@ -122,11 +122,10 @@ TestLambda()
     auto & graph = rvsdgModule->Rvsdg();
     auto region = graph.root();
 
-    std::vector<jlm::rvsdg::node *> nodes;
-    for (jlm::rvsdg::node * rvsdgNode : jlm::rvsdg::topdown_traverser(region))
-    {
-      nodes.push_back(rvsdgNode);
-    }
+    assert(region->nnodes() == 1);
+    assert(jlm::rvsdg::region::Contains<jlm::llvm::lambda::operation>(*region, false));
+    assert(!jlm::rvsdg::region::Contains<jlm::rvsdg::bitconstant_op>(*region, false));
+    assert(jlm::rvsdg::region::Contains<jlm::rvsdg::bitconstant_op>(*region, true));
   }
 
 #endif // MLIR_ENABLED
