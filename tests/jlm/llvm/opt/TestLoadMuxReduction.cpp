@@ -102,7 +102,7 @@ TestWrongNumberOfOperands()
   jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  
+
   // The LoadMux reduction should not be performed, as the current implementation does not correctly
   // take care of the two identical load state operands originating from the merge node.
   assert(ld.size() == 3);
@@ -111,11 +111,48 @@ TestWrongNumberOfOperands()
   assert(ex3->origin() == ld[2]);
 }
 
+static void
+TestLoadWithoutStates()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  jlm::tests::valuetype valueType;
+  PointerType pointerType;
+
+  jlm::rvsdg::graph graph;
+  auto nf = LoadOperation::GetNormalForm(&graph);
+  nf->set_mutable(false);
+  nf->set_load_mux_reducible(false);
+
+  auto address = graph.add_import({ pointerType, "address" });
+
+  auto loadResults = LoadNode::Create(address, {}, valueType, 4);
+
+  auto ex = graph.add_export(loadResults[0], { valueType, "v" });
+
+  jlm::rvsdg::view(graph.root(), stdout);
+
+  // Act
+  nf->set_mutable(true);
+  nf->set_load_mux_reducible(true);
+  graph.normalize();
+  graph.prune();
+
+  jlm::rvsdg::view(graph.root(), stdout);
+
+  // Assert
+  auto load = jlm::rvsdg::node_output::node(ex->origin());
+  assert(is<LoadOperation>(load));
+  assert(load->ninputs() == 1);
+}
+
 static int
 TestLoadMuxReduction()
 {
   TestSuccess();
   TestWrongNumberOfOperands();
+  TestLoadWithoutStates();
 
   return 0;
 }
