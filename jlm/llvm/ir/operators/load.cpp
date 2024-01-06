@@ -48,13 +48,16 @@ LoadOperation::copy() const
 static bool
 is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
 {
-  JLM_ASSERT(operands.size() >= 2);
-
-  auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
-  if (!is<MemStateMergeOperator>(memStateMergeNode))
+  // Ignore loads that have no state edge.
+  // This can happen when the compiler can statically show that the address of a load is NULL.
+  if (operands.size() == 1)
     return false;
 
   if (operands.size() != 2)
+    return false;
+
+  auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
+  if (!is<MemStateMergeOperator>(memStateMergeNode))
     return false;
 
   return true;
