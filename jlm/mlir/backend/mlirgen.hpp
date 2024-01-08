@@ -75,6 +75,7 @@ private:
 
   std::unique_ptr<mlir::OpBuilder> Builder_;
   std::unique_ptr<mlir::MLIRContext> Context_;
+  std::vector<std::unique_ptr<mlir::Block>> BlockList_;
 };
 
 } // namespace jlm::rvsdgmlir
