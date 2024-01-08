@@ -3022,6 +3022,108 @@ MemcpyTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
+MemcpyTest2::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  arraytype arrayType(pointerType, 32);
+  auto structBDeclaration = rvsdg::rcddeclaration::create({ &arrayType });
+  auto structTypeB = StructType::Create("structTypeB", false, *structBDeclaration);
+
+  auto SetupFunctionG = [&]()
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+        { &iOStateType, &memoryStateType, &loopStateType });
+
+    auto lambda = lambda::node::create(rvsdg->root(), functionType, "g", linkage::internal_linkage);
+    auto s1Argument = lambda->fctargument(0);
+    auto s2Argument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+
+    auto cFalse = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
+    auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
+    auto c128 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 128);
+
+    auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType, pointerType);
+    auto ldS2 = LoadNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
+
+    auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
+    auto ldS1 = LoadNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
+
+    auto memcpyResults = Memcpy::create(ldS2[0], ldS1[0], c128, cFalse, { ldS1[1] });
+
+    auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0], loopStateArgument });
+
+    return std::make_tuple(lambdaOutput, jlm::rvsdg::node_output::node(memcpyResults[0]));
+  };
+
+  auto SetupFunctionF = [&](lambda::output & functionF)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+        { &iOStateType, &memoryStateType, &loopStateType });
+
+    auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
+    auto s1Argument = lambda->fctargument(0);
+    auto s2Argument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+
+    auto functionFArgument = lambda->add_ctxvar(&functionF);
+
+    auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
+
+    auto gepS1 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto ldS1 = LoadNode::Create(gepS1, { memoryStateArgument }, pointerType, 8);
+
+    auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto ldS2 = LoadNode::Create(gepS2, { ldS1[1] }, pointerType, 8);
+
+    auto callResults = CallNode::Create(
+        functionFArgument,
+        functionF.node()->type(),
+        { ldS1[0], ldS2[0], iOStateArgument, ldS2[1], loopStateArgument });
+
+    auto lambdaOutput = lambda->finalize(callResults);
+
+    rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
+
+    return std::make_tuple(
+        lambdaOutput,
+        util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+  };
+
+  auto [lambdaG, memcpyNode] = SetupFunctionG();
+  auto [lambdaF, callG] = SetupFunctionF(*lambdaG);
+
+  this->LambdaF_ = lambdaF->node();
+  this->LambdaG_ = lambdaG->node();
+  this->CallG_ = callG;
+  this->Memcpy_ = memcpyNode;
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
 LinkedListTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
