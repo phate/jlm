@@ -11,9 +11,6 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/Statistics.hpp>
 
-// TODO: Remove
-#include <jlm/rvsdg/view.hpp>
-
 #include <cassert>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
