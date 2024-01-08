@@ -430,7 +430,7 @@ Andersen::AnalyzePhi(const phi::node & phi)
 
     // Map the output register to the recursion result's pointer object
     auto & outputRegister = *rv;
-    Set_->MapRegisterToExistingPointerObject(outputRegister, argumentRegisterPO);
+    Set_->MapRegisterToExistingPointerObject(outputRegister, resultRegisterPO);
   }
 }
 
@@ -659,12 +659,18 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     }
   };
 
-  // Now add register nodes last. While adding them, also add any edges from them to the previously
-  // created memoryNodes
+  // First group RVSDG registers by the PointerObject they are mapped to
+  std::unordered_map<PointerObject::Index, util::HashSet<const rvsdg::output *>> outputsInRegister;
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
-    auto & registerNode = PointsToGraph::RegisterNode::Create(*pointsToGraph, *outputNode);
-    applyPointsToSet(registerNode, registerIdx);
+    outputsInRegister[registerIdx].Insert(outputNode);
+  }
+
+  // Create PointsToGraph::RegisterSetNodes for each PointerObject of register kind, and add edges
+  for (auto & [registerIdx, outputNodes] : outputsInRegister)
+  {
+    auto & node = PointsToGraph::RegisterSetNode::Create(*pointsToGraph, std::move(outputNodes));
+    applyPointsToSet(node, registerIdx);
   }
 
   // Now add all edges from memory node to memory node.
