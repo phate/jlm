@@ -107,15 +107,15 @@ PointsToGraph::RegisterNodes() const
 PointsToGraph::RegisterSetNodeRange
 PointsToGraph::RegisterSetNodes()
 {
-  return { RegisterSetNodeIterator(RegisterSetNodeMap_.begin()),
-           RegisterSetNodeIterator(RegisterSetNodeMap_.end()) };
+  return { RegisterSetNodeIterator(RegisterSetNodes_.begin()),
+           RegisterSetNodeIterator(RegisterSetNodes_.end()) };
 }
 
 PointsToGraph::RegisterSetNodeConstRange
 PointsToGraph::RegisterSetNodes() const
 {
-  return { RegisterSetNodeConstIterator(RegisterSetNodeMap_.begin()),
-           RegisterSetNodeConstIterator(RegisterSetNodeMap_.end()) };
+  return { RegisterSetNodeConstIterator(RegisterSetNodes_.begin()),
+           RegisterSetNodeConstIterator(RegisterSetNodes_.end()) };
 }
 
 PointsToGraph::AllocaNode &
@@ -281,6 +281,9 @@ PointsToGraph::ToDot(
   for (auto & registerNode : pointsToGraph.RegisterNodes())
     dot += printNodeAndEdges(registerNode);
 
+  for (auto & registerSetNode : pointsToGraph.RegisterSetNodes())
+    dot += printNodeAndEdges(registerSetNode);
+
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
   dot += "label=\"Yellow = Escaping memory node\"\n";
@@ -369,15 +372,16 @@ PointsToGraph::RegisterSetNode::~RegisterSetNode() noexcept = default;
 std::string
 PointsToGraph::RegisterSetNode::DebugString() const
 {
-  auto lastOutput = *std::prev(GetOutputs().Items().end());
+  auto & outputs = GetOutputs();
 
-  std::string debugString("{");
-  for (auto output : GetOutputs().Items())
+  size_t n = 0;
+  std::string debugString;
+  for (auto output : outputs.Items())
   {
     debugString += CreateDotString(*output);
-    debugString += output != lastOutput ? ", " : "";
+    debugString += n != (outputs.Size() - 1) ? "\n" : "";
+    n++;
   }
-  debugString += "}";
 
   return debugString;
 }
