@@ -301,8 +301,8 @@ public:
     JLM_ASSERT(is<PointerType>(output.type()));
 
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-    auto registerSetNode = &PointsToGraph_.GetRegisterSetNode(output);
-    for (auto & memoryNode : registerSetNode->Targets())
+    auto registerNode = &PointsToGraph_.GetRegisterNode(output);
+    for (auto & memoryNode : registerNode->Targets())
       memoryNodes.Insert(&memoryNode);
 
     return memoryNodes;

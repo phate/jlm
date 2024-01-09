@@ -45,7 +45,7 @@ public:
   class MallocNode;
   class MemoryNode;
   class Node;
-  class RegisterSetNode;
+  class RegisterNode;
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
@@ -59,9 +59,8 @@ public:
       std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap =
       std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::MallocNode>>;
-  using RegisterSetNodeMap =
-      std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterSetNode *>;
-  using RegisterSetNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterSetNode>>;
+  using RegisterNodeMap = std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterNode *>;
+  using RegisterNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterNode>>;
 
   template<class DataType, class IteratorType>
   struct IteratorToPointerFunctor
@@ -129,25 +128,25 @@ public:
   using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
 
   template<class IteratorType>
-  struct RegisterSetNodeIteratorToPointerFunctor
+  struct RegisterNodeIteratorToPointerFunctor
   {
-    RegisterSetNode *
+    RegisterNode *
     operator()(const IteratorType & it) const
     {
       return it->get();
     }
   };
 
-  using RegisterSetNodeIterator = NodeIterator<
-      RegisterSetNode,
-      RegisterSetNodeVector::iterator,
-      RegisterSetNodeIteratorToPointerFunctor<RegisterSetNodeVector::iterator>>;
-  using RegisterSetNodeConstIterator = NodeConstIterator<
-      RegisterSetNode,
-      RegisterSetNodeVector::const_iterator,
-      RegisterSetNodeIteratorToPointerFunctor<RegisterSetNodeVector::const_iterator>>;
-  using RegisterSetNodeRange = util::iterator_range<RegisterSetNodeIterator>;
-  using RegisterSetNodeConstRange = util::iterator_range<RegisterSetNodeConstIterator>;
+  using RegisterNodeIterator = NodeIterator<
+      RegisterNode,
+      RegisterNodeVector::iterator,
+      RegisterNodeIteratorToPointerFunctor<RegisterNodeVector::iterator>>;
+  using RegisterNodeConstIterator = NodeConstIterator<
+      RegisterNode,
+      RegisterNodeVector::const_iterator,
+      RegisterNodeIteratorToPointerFunctor<RegisterNodeVector::const_iterator>>;
+  using RegisterNodeRange = util::iterator_range<RegisterNodeIterator>;
+  using RegisterNodeConstRange = util::iterator_range<RegisterNodeConstIterator>;
 
 private:
   PointsToGraph();
@@ -193,11 +192,11 @@ public:
   MallocNodeConstRange
   MallocNodes() const;
 
-  RegisterSetNodeRange
-  RegisterSetNodes();
+  RegisterNodeRange
+  RegisterNodes();
 
-  RegisterSetNodeConstRange
-  RegisterSetNodes() const;
+  RegisterNodeConstRange
+  RegisterNodes() const;
 
   size_t
   NumAllocaNodes() const noexcept
@@ -230,9 +229,9 @@ public:
   }
 
   [[nodiscard]] size_t
-  NumRegisterSetNodes() const noexcept
+  NumRegisterNodes() const noexcept
   {
-    return RegisterSetNodes_.size();
+    return RegisterNodes_.size();
   }
 
   size_t
@@ -245,7 +244,7 @@ public:
   size_t
   NumNodes() const noexcept
   {
-    return NumMemoryNodes() + NumRegisterSetNodes();
+    return NumMemoryNodes() + NumRegisterNodes();
   }
 
   PointsToGraph::UnknownMemoryNode &
@@ -310,11 +309,11 @@ public:
     return *it->second;
   }
 
-  const PointsToGraph::RegisterSetNode &
-  GetRegisterSetNode(const rvsdg::output & output) const
+  const PointsToGraph::RegisterNode &
+  GetRegisterNode(const rvsdg::output & output) const
   {
-    auto it = RegisterSetNodeMap_.find(&output);
-    if (it == RegisterSetNodeMap_.end())
+    auto it = RegisterNodeMap_.find(&output);
+    if (it == RegisterNodeMap_.end())
       throw util::error("Cannot find register set node in points-to graph.");
 
     return *it->second;
@@ -345,8 +344,8 @@ public:
   PointsToGraph::MallocNode &
   AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node);
 
-  PointsToGraph::RegisterSetNode &
-  AddRegisterSetNode(std::unique_ptr<PointsToGraph::RegisterSetNode> node);
+  PointsToGraph::RegisterNode &
+  AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
   PointsToGraph::ImportNode &
   AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
@@ -397,8 +396,8 @@ private:
   LambdaNodeMap LambdaNodes_;
   MallocNodeMap MallocNodes_;
 
-  RegisterSetNodeMap RegisterSetNodeMap_;
-  RegisterSetNodeVector RegisterSetNodes_;
+  RegisterNodeMap RegisterNodeMap_;
+  RegisterNodeVector RegisterNodes_;
 
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
@@ -503,13 +502,13 @@ private:
  * Represents a set of registers from the RVSDG that all point to the same
  * PointsToGraph::MemoryNode%s.
  */
-class PointsToGraph::RegisterSetNode final : public PointsToGraph::Node
+class PointsToGraph::RegisterNode final : public PointsToGraph::Node
 {
 public:
-  ~RegisterSetNode() noexcept override;
+  ~RegisterNode() noexcept override;
 
 private:
-  RegisterSetNode(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::output *> outputs)
+  RegisterNode(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::output *> outputs)
       : Node(pointsToGraph),
         Outputs_(std::move(outputs))
   {}
@@ -527,12 +526,12 @@ public:
   static std::string
   ToString(const rvsdg::output & output);
 
-  static PointsToGraph::RegisterSetNode &
+  static PointsToGraph::RegisterNode &
   Create(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::output *> outputs)
   {
-    auto node = std::unique_ptr<PointsToGraph::RegisterSetNode>(
-        new RegisterSetNode(pointsToGraph, std::move(outputs)));
-    return pointsToGraph.AddRegisterSetNode(std::move(node));
+    auto node = std::unique_ptr<PointsToGraph::RegisterNode>(
+        new RegisterNode(pointsToGraph, std::move(outputs)));
+    return pointsToGraph.AddRegisterNode(std::move(node));
   }
 
 private:

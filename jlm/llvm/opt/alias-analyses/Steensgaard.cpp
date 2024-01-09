@@ -795,7 +795,7 @@ public:
         NumLambdaNodes_(0),
         NumMallocNodes_(0),
         NumMemoryNodes_(0),
-        NumRegisterSetNodes_(0),
+        NumRegisterNodes_(0),
         NumUnknownMemorySources_(0)
   {}
 
@@ -831,7 +831,7 @@ public:
     NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
     NumMallocNodes_ = pointsToGraph.NumMallocNodes();
     NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
-    NumRegisterSetNodes_ = pointsToGraph.NumRegisterSetNodes();
+    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
     NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
 
@@ -887,8 +887,8 @@ public:
         "#MemoryNodes:",
         NumMemoryNodes_,
         " ",
-        "#RegisterSetNodes:",
-        NumRegisterSetNodes_,
+        "#RegisterNodes:",
+        NumRegisterNodes_,
         " ",
         "#UnknownMemorySources:",
         NumUnknownMemorySources_,
@@ -920,7 +920,7 @@ private:
   size_t NumLambdaNodes_;
   size_t NumMallocNodes_;
   size_t NumMemoryNodes_;
-  size_t NumRegisterSetNodes_;
+  size_t NumRegisterNodes_;
   size_t NumUnknownMemorySources_;
 
   util::timer AnalysisTimer_;
@@ -1857,10 +1857,10 @@ Steensgaard::ConstructPointsToGraph() const
     }
 
     // We found register locations in this set.
-    // Create a single points-to graph register-set node for all of them.
+    // Create a single points-to graph register node for all of them.
     if (!registerLocations.IsEmpty())
     {
-      auto & pointsToGraphNode = PointsToGraph::RegisterSetNode::Create(*pointsToGraph, registers);
+      auto & pointsToGraphNode = PointsToGraph::RegisterNode::Create(*pointsToGraph, registers);
       for (auto registerLocation : registerLocations.Items())
         locationMap[registerLocation] = &pointsToGraphNode;
     }

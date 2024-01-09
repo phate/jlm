@@ -68,20 +68,20 @@ TestStore1()
 
   assert(ptg->NumAllocaNodes() == 4);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 5);
+  assert(ptg->NumRegisterNodes() == 5);
 
   auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
   auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
   auto & alloca_c = ptg->GetAllocaNode(*test.alloca_c);
   auto & alloca_d = ptg->GetAllocaNode(*test.alloca_d);
 
-  auto & palloca_a = ptg->GetRegisterSetNode(*test.alloca_a->output(0));
-  auto & palloca_b = ptg->GetRegisterSetNode(*test.alloca_b->output(0));
-  auto & palloca_c = ptg->GetRegisterSetNode(*test.alloca_c->output(0));
-  auto & palloca_d = ptg->GetRegisterSetNode(*test.alloca_d->output(0));
+  auto & palloca_a = ptg->GetRegisterNode(*test.alloca_a->output(0));
+  auto & palloca_b = ptg->GetRegisterNode(*test.alloca_b->output(0));
+  auto & palloca_c = ptg->GetRegisterNode(*test.alloca_c->output(0));
+  auto & palloca_d = ptg->GetRegisterNode(*test.alloca_d->output(0));
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & plambda = ptg->GetRegisterSetNode(*test.lambda->output());
+  auto & plambda = ptg->GetRegisterNode(*test.lambda->output());
 
   assert(TargetsExactly(alloca_a, { &alloca_b }));
   assert(TargetsExactly(alloca_b, { &alloca_c }));
@@ -107,7 +107,7 @@ TestStore2()
 
   assert(ptg->NumAllocaNodes() == 5);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 6);
+  assert(ptg->NumRegisterNodes() == 6);
 
   auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
   auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
@@ -115,14 +115,14 @@ TestStore2()
   auto & alloca_y = ptg->GetAllocaNode(*test.alloca_y);
   auto & alloca_p = ptg->GetAllocaNode(*test.alloca_p);
 
-  auto & palloca_a = ptg->GetRegisterSetNode(*test.alloca_a->output(0));
-  auto & palloca_b = ptg->GetRegisterSetNode(*test.alloca_b->output(0));
-  auto & palloca_x = ptg->GetRegisterSetNode(*test.alloca_x->output(0));
-  auto & palloca_y = ptg->GetRegisterSetNode(*test.alloca_y->output(0));
-  auto & palloca_p = ptg->GetRegisterSetNode(*test.alloca_p->output(0));
+  auto & palloca_a = ptg->GetRegisterNode(*test.alloca_a->output(0));
+  auto & palloca_b = ptg->GetRegisterNode(*test.alloca_b->output(0));
+  auto & palloca_x = ptg->GetRegisterNode(*test.alloca_x->output(0));
+  auto & palloca_y = ptg->GetRegisterNode(*test.alloca_y->output(0));
+  auto & palloca_p = ptg->GetRegisterNode(*test.alloca_p->output(0));
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & plambda = ptg->GetRegisterSetNode(*test.lambda->output());
+  auto & plambda = ptg->GetRegisterNode(*test.lambda->output());
 
   assert(TargetsExactly(alloca_a, {}));
   assert(TargetsExactly(alloca_b, {}));
@@ -149,13 +149,13 @@ TestLoad1()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 3);
+  assert(ptg->NumRegisterNodes() == 3);
 
-  auto & loadResult = ptg->GetRegisterSetNode(*test.load_p->output(0));
+  auto & loadResult = ptg->GetRegisterNode(*test.load_p->output(0));
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & lambdaOutput = ptg->GetRegisterSetNode(*test.lambda->output());
-  auto & lambdaArgument0 = ptg->GetRegisterSetNode(*test.lambda->fctargument(0));
+  auto & lambdaOutput = ptg->GetRegisterNode(*test.lambda->output());
+  auto & lambdaArgument0 = ptg->GetRegisterNode(*test.lambda->fctargument(0));
 
   assert(TargetsExactly(loadResult, { &lambda, &ptg->GetExternalMemoryNode() }));
 
@@ -173,7 +173,7 @@ TestLoad2()
 
   assert(ptg->NumAllocaNodes() == 5);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 8);
+  assert(ptg->NumRegisterNodes() == 8);
 
   auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
   auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
@@ -181,8 +181,8 @@ TestLoad2()
   auto & alloca_y = ptg->GetAllocaNode(*test.alloca_y);
   auto & alloca_p = ptg->GetAllocaNode(*test.alloca_p);
 
-  auto & pload_x = ptg->GetRegisterSetNode(*test.load_x->output(0));
-  auto & pload_a = ptg->GetRegisterSetNode(*test.load_a->output(0));
+  auto & pload_x = ptg->GetRegisterNode(*test.load_x->output(0));
+  auto & pload_a = ptg->GetRegisterNode(*test.load_a->output(0));
 
   auto & lambdaMemoryNode = ptg->GetLambdaNode(*test.lambda);
 
@@ -203,10 +203,10 @@ TestLoadFromUndef()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 2);
 
   auto & lambdaMemoryNode = ptg->GetLambdaNode(test.Lambda());
-  auto & undefValueNode = ptg->GetRegisterSetNode(*test.UndefValueNode()->output(0));
+  auto & undefValueNode = ptg->GetRegisterNode(*test.UndefValueNode()->output(0));
 
   assert(TargetsExactly(undefValueNode, {}));
   assert(EscapedIsExactly(*ptg, { &lambdaMemoryNode }));
@@ -219,14 +219,14 @@ TestGetElementPtr()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 2);
 
   // We only care about the getelemenptr's in this test, skipping the validation for all other nodes
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & gepX = ptg->GetRegisterSetNode(*test.getElementPtrX->output(0));
-  auto & gepY = ptg->GetRegisterSetNode(*test.getElementPtrY->output(0));
+  auto & gepX = ptg->GetRegisterNode(*test.getElementPtrX->output(0));
+  auto & gepY = ptg->GetRegisterNode(*test.getElementPtrY->output(0));
 
-  // The RegisterSetNode is the same
+  // The RegisterNode is the same
   assert(&gepX == &gepY);
 
   assert(TargetsExactly(gepX, { &lambda, &ptg->GetExternalMemoryNode() }));
@@ -241,12 +241,12 @@ TestBitCast()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 2);
+  assert(ptg->NumRegisterNodes() == 2);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & lambdaOut = ptg->GetRegisterSetNode(*test.lambda->output());
-  auto & lambdaArg = ptg->GetRegisterSetNode(*test.lambda->fctargument(0));
-  auto & bitCast = ptg->GetRegisterSetNode(*test.bitCast->output(0));
+  auto & lambdaOut = ptg->GetRegisterNode(*test.lambda->output());
+  auto & lambdaArg = ptg->GetRegisterNode(*test.lambda->fctargument(0));
+  auto & bitCast = ptg->GetRegisterNode(*test.bitCast->output(0));
 
   assert(TargetsExactly(lambdaOut, { &lambda }));
   assert(TargetsExactly(lambdaArg, { &lambda, &ptg->GetExternalMemoryNode() }));
@@ -262,13 +262,13 @@ TestConstantPointerNull()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 3);
+  assert(ptg->NumRegisterNodes() == 3);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & lambdaOut = ptg->GetRegisterSetNode(*test.lambda->output());
-  auto & lambdaArg = ptg->GetRegisterSetNode(*test.lambda->fctargument(0));
+  auto & lambdaOut = ptg->GetRegisterNode(*test.lambda->output());
+  auto & lambdaArg = ptg->GetRegisterNode(*test.lambda->fctargument(0));
 
-  auto & constantPointerNull = ptg->GetRegisterSetNode(*test.constantPointerNullNode->output(0));
+  auto & constantPointerNull = ptg->GetRegisterNode(*test.constantPointerNullNode->output(0));
 
   assert(TargetsExactly(lambdaOut, { &lambda }));
   assert(TargetsExactly(lambdaArg, { &lambda, &ptg->GetExternalMemoryNode() }));
@@ -284,13 +284,13 @@ TestBits2Ptr()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 4);
+  assert(ptg->NumRegisterNodes() == 4);
 
   auto & lambdaTestMemoryNode = ptg->GetLambdaNode(test.GetLambdaTest());
   auto & externalMemoryNode = ptg->GetExternalMemoryNode();
 
-  auto & callOutput0 = ptg->GetRegisterSetNode(*test.GetCallNode().output(0));
-  auto & bits2ptr = ptg->GetRegisterSetNode(*test.GetBitsToPtrNode().output(0));
+  auto & callOutput0 = ptg->GetRegisterNode(*test.GetCallNode().output(0));
+  auto & bits2ptr = ptg->GetRegisterNode(*test.GetBitsToPtrNode().output(0));
 
   assert(TargetsExactly(callOutput0, { &lambdaTestMemoryNode, &externalMemoryNode }));
   assert(TargetsExactly(bits2ptr, { &lambdaTestMemoryNode, &externalMemoryNode }));
@@ -306,32 +306,32 @@ TestCall1()
 
   assert(ptg->NumAllocaNodes() == 3);
   assert(ptg->NumLambdaNodes() == 3);
-  assert(ptg->NumRegisterSetNodes() == 10);
+  assert(ptg->NumRegisterNodes() == 10);
 
   auto & alloca_x = ptg->GetAllocaNode(*test.alloca_x);
   auto & alloca_y = ptg->GetAllocaNode(*test.alloca_y);
   auto & alloca_z = ptg->GetAllocaNode(*test.alloca_z);
 
-  auto & palloca_x = ptg->GetRegisterSetNode(*test.alloca_x->output(0));
-  auto & palloca_y = ptg->GetRegisterSetNode(*test.alloca_y->output(0));
-  auto & palloca_z = ptg->GetRegisterSetNode(*test.alloca_z->output(0));
+  auto & palloca_x = ptg->GetRegisterNode(*test.alloca_x->output(0));
+  auto & palloca_y = ptg->GetRegisterNode(*test.alloca_y->output(0));
+  auto & palloca_z = ptg->GetRegisterNode(*test.alloca_z->output(0));
 
   auto & lambda_f = ptg->GetLambdaNode(*test.lambda_f);
   auto & lambda_g = ptg->GetLambdaNode(*test.lambda_g);
   auto & lambda_h = ptg->GetLambdaNode(*test.lambda_h);
 
-  auto & plambda_f = ptg->GetRegisterSetNode(*test.lambda_f->output());
-  auto & plambda_g = ptg->GetRegisterSetNode(*test.lambda_g->output());
-  auto & plambda_h = ptg->GetRegisterSetNode(*test.lambda_h->output());
+  auto & plambda_f = ptg->GetRegisterNode(*test.lambda_f->output());
+  auto & plambda_g = ptg->GetRegisterNode(*test.lambda_g->output());
+  auto & plambda_h = ptg->GetRegisterNode(*test.lambda_h->output());
 
-  auto & lambda_f_arg0 = ptg->GetRegisterSetNode(*test.lambda_f->fctargument(0));
-  auto & lambda_f_arg1 = ptg->GetRegisterSetNode(*test.lambda_f->fctargument(1));
+  auto & lambda_f_arg0 = ptg->GetRegisterNode(*test.lambda_f->fctargument(0));
+  auto & lambda_f_arg1 = ptg->GetRegisterNode(*test.lambda_f->fctargument(1));
 
-  auto & lambda_g_arg0 = ptg->GetRegisterSetNode(*test.lambda_g->fctargument(0));
-  auto & lambda_g_arg1 = ptg->GetRegisterSetNode(*test.lambda_g->fctargument(1));
+  auto & lambda_g_arg0 = ptg->GetRegisterNode(*test.lambda_g->fctargument(0));
+  auto & lambda_g_arg1 = ptg->GetRegisterNode(*test.lambda_g->fctargument(1));
 
-  auto & lambda_h_cv0 = ptg->GetRegisterSetNode(*test.lambda_h->cvargument(0));
-  auto & lambda_h_cv1 = ptg->GetRegisterSetNode(*test.lambda_h->cvargument(1));
+  auto & lambda_h_cv0 = ptg->GetRegisterNode(*test.lambda_h->cvargument(0));
+  auto & lambda_h_cv1 = ptg->GetRegisterNode(*test.lambda_h->cvargument(1));
 
   assert(TargetsExactly(palloca_x, { &alloca_x }));
   assert(TargetsExactly(palloca_y, { &alloca_y }));
@@ -362,25 +362,25 @@ TestCall2()
   assert(ptg->NumLambdaNodes() == 3);
   assert(ptg->NumMallocNodes() == 1);
   assert(ptg->NumImportNodes() == 0);
-  assert(ptg->NumRegisterSetNodes() == 7);
+  assert(ptg->NumRegisterNodes() == 7);
 
   auto & lambda_create = ptg->GetLambdaNode(*test.lambda_create);
-  auto & lambda_create_out = ptg->GetRegisterSetNode(*test.lambda_create->output());
+  auto & lambda_create_out = ptg->GetRegisterNode(*test.lambda_create->output());
 
   auto & lambda_destroy = ptg->GetLambdaNode(*test.lambda_destroy);
-  auto & lambda_destroy_out = ptg->GetRegisterSetNode(*test.lambda_destroy->output());
-  auto & lambda_destroy_arg = ptg->GetRegisterSetNode(*test.lambda_destroy->fctargument(0));
+  auto & lambda_destroy_out = ptg->GetRegisterNode(*test.lambda_destroy->output());
+  auto & lambda_destroy_arg = ptg->GetRegisterNode(*test.lambda_destroy->fctargument(0));
 
   auto & lambda_test = ptg->GetLambdaNode(*test.lambda_test);
-  auto & lambda_test_out = ptg->GetRegisterSetNode(*test.lambda_test->output());
-  auto & lambda_test_cv1 = ptg->GetRegisterSetNode(*test.lambda_test->cvargument(0));
-  auto & lambda_test_cv2 = ptg->GetRegisterSetNode(*test.lambda_test->cvargument(1));
+  auto & lambda_test_out = ptg->GetRegisterNode(*test.lambda_test->output());
+  auto & lambda_test_cv1 = ptg->GetRegisterNode(*test.lambda_test->cvargument(0));
+  auto & lambda_test_cv2 = ptg->GetRegisterNode(*test.lambda_test->cvargument(1));
 
-  auto & call_create1_out = ptg->GetRegisterSetNode(*test.CallCreate1().output(0));
-  auto & call_create2_out = ptg->GetRegisterSetNode(*test.CallCreate2().output(0));
+  auto & call_create1_out = ptg->GetRegisterNode(*test.CallCreate1().output(0));
+  auto & call_create2_out = ptg->GetRegisterNode(*test.CallCreate2().output(0));
 
   auto & malloc = ptg->GetMallocNode(*test.malloc);
-  auto & malloc_out = ptg->GetRegisterSetNode(*test.malloc->output(0));
+  auto & malloc_out = ptg->GetRegisterNode(*test.malloc->output(0));
 
   assert(TargetsExactly(lambda_create_out, { &lambda_create }));
 
@@ -407,23 +407,23 @@ TestIndirectCall1()
 
   assert(ptg->NumLambdaNodes() == 4);
   assert(ptg->NumImportNodes() == 0);
-  assert(ptg->NumRegisterSetNodes() == 5);
+  assert(ptg->NumRegisterNodes() == 5);
 
   auto & lambda_three = ptg->GetLambdaNode(test.GetLambdaThree());
-  auto & lambda_three_out = ptg->GetRegisterSetNode(*test.GetLambdaThree().output());
+  auto & lambda_three_out = ptg->GetRegisterNode(*test.GetLambdaThree().output());
 
   auto & lambda_four = ptg->GetLambdaNode(test.GetLambdaFour());
-  auto & lambda_four_out = ptg->GetRegisterSetNode(*test.GetLambdaFour().output());
+  auto & lambda_four_out = ptg->GetRegisterNode(*test.GetLambdaFour().output());
 
   auto & lambda_indcall = ptg->GetLambdaNode(test.GetLambdaIndcall());
-  auto & lambda_indcall_out = ptg->GetRegisterSetNode(*test.GetLambdaIndcall().output());
-  auto & lambda_indcall_arg = ptg->GetRegisterSetNode(*test.GetLambdaIndcall().fctargument(0));
+  auto & lambda_indcall_out = ptg->GetRegisterNode(*test.GetLambdaIndcall().output());
+  auto & lambda_indcall_arg = ptg->GetRegisterNode(*test.GetLambdaIndcall().fctargument(0));
 
   auto & lambda_test = ptg->GetLambdaNode(test.GetLambdaTest());
-  auto & lambda_test_out = ptg->GetRegisterSetNode(*test.GetLambdaTest().output());
-  auto & lambda_test_cv0 = ptg->GetRegisterSetNode(*test.GetLambdaTest().cvargument(0));
-  auto & lambda_test_cv1 = ptg->GetRegisterSetNode(*test.GetLambdaTest().cvargument(1));
-  auto & lambda_test_cv2 = ptg->GetRegisterSetNode(*test.GetLambdaTest().cvargument(2));
+  auto & lambda_test_out = ptg->GetRegisterNode(*test.GetLambdaTest().output());
+  auto & lambda_test_cv0 = ptg->GetRegisterNode(*test.GetLambdaTest().cvargument(0));
+  auto & lambda_test_cv1 = ptg->GetRegisterNode(*test.GetLambdaTest().cvargument(1));
+  auto & lambda_test_cv2 = ptg->GetRegisterNode(*test.GetLambdaTest().cvargument(2));
 
   assert(TargetsExactly(lambda_three_out, { &lambda_three }));
 
@@ -449,13 +449,13 @@ TestIndirectCall2()
   assert(ptg->NumAllocaNodes() == 3);
   assert(ptg->NumLambdaNodes() == 7);
   assert(ptg->NumDeltaNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 15);
+  assert(ptg->NumRegisterNodes() == 15);
 
   auto & lambdaThree = ptg->GetLambdaNode(test.GetLambdaThree());
-  auto & lambdaThreeOutput = ptg->GetRegisterSetNode(*test.GetLambdaThree().output());
+  auto & lambdaThreeOutput = ptg->GetRegisterNode(*test.GetLambdaThree().output());
 
   auto & lambdaFour = ptg->GetLambdaNode(test.GetLambdaFour());
-  auto & lambdaFourOutput = ptg->GetRegisterSetNode(*test.GetLambdaFour().output());
+  auto & lambdaFourOutput = ptg->GetRegisterNode(*test.GetLambdaFour().output());
 
   assert(TargetsExactly(lambdaThreeOutput, { &lambdaThree }));
   assert(TargetsExactly(lambdaFourOutput, { &lambdaFour }));
@@ -470,14 +470,14 @@ TestExternalCall()
   assert(ptg->NumAllocaNodes() == 2);
   assert(ptg->NumLambdaNodes() == 1);
   assert(ptg->NumImportNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 9);
+  assert(ptg->NumRegisterNodes() == 9);
 
   auto & lambdaF = ptg->GetLambdaNode(test.LambdaF());
-  auto & lambdaFArgument0 = ptg->GetRegisterSetNode(*test.LambdaF().fctargument(0));
-  auto & lambdaFArgument1 = ptg->GetRegisterSetNode(*test.LambdaF().fctargument(1));
+  auto & lambdaFArgument0 = ptg->GetRegisterNode(*test.LambdaF().fctargument(0));
+  auto & lambdaFArgument1 = ptg->GetRegisterNode(*test.LambdaF().fctargument(1));
   auto & importG = ptg->GetImportNode(test.ExternalGArgument());
 
-  auto & callResult = ptg->GetRegisterSetNode(*test.CallG().Result(0));
+  auto & callResult = ptg->GetRegisterNode(*test.CallG().Result(0));
 
   auto & externalMemory = ptg->GetExternalMemoryNode();
 
@@ -493,20 +493,20 @@ TestGamma()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 7);
+  assert(ptg->NumRegisterNodes() == 7);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
 
   for (size_t n = 1; n < 5; n++)
   {
-    auto & lambdaArgument = ptg->GetRegisterSetNode(*test.lambda->fctargument(n));
+    auto & lambdaArgument = ptg->GetRegisterNode(*test.lambda->fctargument(n));
     assert(TargetsExactly(lambdaArgument, { &lambda, &ptg->GetExternalMemoryNode() }));
   }
 
   for (size_t n = 0; n < 4; n++)
   {
-    auto & argument0 = ptg->GetRegisterSetNode(*test.gamma->entryvar(n)->argument(0));
-    auto & argument1 = ptg->GetRegisterSetNode(*test.gamma->entryvar(n)->argument(1));
+    auto & argument0 = ptg->GetRegisterNode(*test.gamma->entryvar(n)->argument(0));
+    auto & argument1 = ptg->GetRegisterNode(*test.gamma->entryvar(n)->argument(1));
 
     assert(TargetsExactly(argument0, { &lambda, &ptg->GetExternalMemoryNode() }));
     assert(TargetsExactly(argument1, { &lambda, &ptg->GetExternalMemoryNode() }));
@@ -514,7 +514,7 @@ TestGamma()
 
   for (size_t n = 0; n < 4; n++)
   {
-    auto & gammaOutput = ptg->GetRegisterSetNode(*test.gamma->exitvar(0));
+    auto & gammaOutput = ptg->GetRegisterNode(*test.gamma->exitvar(0));
     assert(TargetsExactly(gammaOutput, { &lambda, &ptg->GetExternalMemoryNode() }));
   }
 
@@ -528,16 +528,16 @@ TestTheta()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 3);
+  assert(ptg->NumRegisterNodes() == 3);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
-  auto & lambdaArgument1 = ptg->GetRegisterSetNode(*test.lambda->fctargument(1));
-  auto & lambdaOutput = ptg->GetRegisterSetNode(*test.lambda->output());
+  auto & lambdaArgument1 = ptg->GetRegisterNode(*test.lambda->fctargument(1));
+  auto & lambdaOutput = ptg->GetRegisterNode(*test.lambda->output());
 
-  auto & gepOutput = ptg->GetRegisterSetNode(*test.gep->output(0));
+  auto & gepOutput = ptg->GetRegisterNode(*test.gep->output(0));
 
-  auto & thetaArgument2 = ptg->GetRegisterSetNode(*test.theta->output(2)->argument());
-  auto & thetaOutput2 = ptg->GetRegisterSetNode(*test.theta->output(2));
+  auto & thetaArgument2 = ptg->GetRegisterNode(*test.theta->output(2)->argument());
+  auto & thetaOutput2 = ptg->GetRegisterNode(*test.theta->output(2));
 
   assert(TargetsExactly(lambdaArgument1, { &lambda, &ptg->GetExternalMemoryNode() }));
   assert(TargetsExactly(lambdaOutput, { &lambda }));
@@ -558,19 +558,19 @@ TestDelta1()
 
   assert(ptg->NumDeltaNodes() == 1);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 4);
+  assert(ptg->NumRegisterNodes() == 4);
 
   auto & delta_f = ptg->GetDeltaNode(*test.delta_f);
-  auto & pdelta_f = ptg->GetRegisterSetNode(*test.delta_f->output());
+  auto & pdelta_f = ptg->GetRegisterNode(*test.delta_f->output());
 
   auto & lambda_g = ptg->GetLambdaNode(*test.lambda_g);
-  auto & plambda_g = ptg->GetRegisterSetNode(*test.lambda_g->output());
-  auto & lambda_g_arg0 = ptg->GetRegisterSetNode(*test.lambda_g->fctargument(0));
+  auto & plambda_g = ptg->GetRegisterNode(*test.lambda_g->output());
+  auto & lambda_g_arg0 = ptg->GetRegisterNode(*test.lambda_g->fctargument(0));
 
   auto & lambda_h = ptg->GetLambdaNode(*test.lambda_h);
-  auto & plambda_h = ptg->GetRegisterSetNode(*test.lambda_h->output());
-  auto & lambda_h_cv0 = ptg->GetRegisterSetNode(*test.lambda_h->cvargument(0));
-  auto & lambda_h_cv1 = ptg->GetRegisterSetNode(*test.lambda_h->cvargument(1));
+  auto & plambda_h = ptg->GetRegisterNode(*test.lambda_h->output());
+  auto & lambda_h_cv0 = ptg->GetRegisterNode(*test.lambda_h->cvargument(0));
+  auto & lambda_h_cv1 = ptg->GetRegisterNode(*test.lambda_h->cvargument(1));
 
   assert(TargetsExactly(pdelta_f, { &delta_f }));
 
@@ -593,23 +593,23 @@ TestDelta2()
 
   assert(ptg->NumDeltaNodes() == 2);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 4);
+  assert(ptg->NumRegisterNodes() == 4);
 
   auto & delta_d1 = ptg->GetDeltaNode(*test.delta_d1);
-  auto & delta_d1_out = ptg->GetRegisterSetNode(*test.delta_d1->output());
+  auto & delta_d1_out = ptg->GetRegisterNode(*test.delta_d1->output());
 
   auto & delta_d2 = ptg->GetDeltaNode(*test.delta_d2);
-  auto & delta_d2_out = ptg->GetRegisterSetNode(*test.delta_d2->output());
+  auto & delta_d2_out = ptg->GetRegisterNode(*test.delta_d2->output());
 
   auto & lambda_f1 = ptg->GetLambdaNode(*test.lambda_f1);
-  auto & lambda_f1_out = ptg->GetRegisterSetNode(*test.lambda_f1->output());
-  auto & lambda_f1_cvd1 = ptg->GetRegisterSetNode(*test.lambda_f1->cvargument(0));
+  auto & lambda_f1_out = ptg->GetRegisterNode(*test.lambda_f1->output());
+  auto & lambda_f1_cvd1 = ptg->GetRegisterNode(*test.lambda_f1->cvargument(0));
 
   auto & lambda_f2 = ptg->GetLambdaNode(*test.lambda_f2);
-  auto & lambda_f2_out = ptg->GetRegisterSetNode(*test.lambda_f2->output());
-  auto & lambda_f2_cvd1 = ptg->GetRegisterSetNode(*test.lambda_f2->cvargument(0));
-  auto & lambda_f2_cvd2 = ptg->GetRegisterSetNode(*test.lambda_f2->cvargument(1));
-  auto & lambda_f2_cvf1 = ptg->GetRegisterSetNode(*test.lambda_f2->cvargument(2));
+  auto & lambda_f2_out = ptg->GetRegisterNode(*test.lambda_f2->output());
+  auto & lambda_f2_cvd1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(0));
+  auto & lambda_f2_cvd2 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(1));
+  auto & lambda_f2_cvf1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(2));
 
   assert(TargetsExactly(delta_d1_out, { &delta_d1 }));
   assert(TargetsExactly(delta_d2_out, { &delta_d2 }));
@@ -633,23 +633,23 @@ TestImports()
 
   assert(ptg->NumLambdaNodes() == 2);
   assert(ptg->NumImportNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 4);
+  assert(ptg->NumRegisterNodes() == 4);
 
   auto & d1 = ptg->GetImportNode(*test.import_d1);
-  auto & import_d1 = ptg->GetRegisterSetNode(*test.import_d1);
+  auto & import_d1 = ptg->GetRegisterNode(*test.import_d1);
 
   auto & d2 = ptg->GetImportNode(*test.import_d2);
-  auto & import_d2 = ptg->GetRegisterSetNode(*test.import_d2);
+  auto & import_d2 = ptg->GetRegisterNode(*test.import_d2);
 
   auto & lambda_f1 = ptg->GetLambdaNode(*test.lambda_f1);
-  auto & lambda_f1_out = ptg->GetRegisterSetNode(*test.lambda_f1->output());
-  auto & lambda_f1_cvd1 = ptg->GetRegisterSetNode(*test.lambda_f1->cvargument(0));
+  auto & lambda_f1_out = ptg->GetRegisterNode(*test.lambda_f1->output());
+  auto & lambda_f1_cvd1 = ptg->GetRegisterNode(*test.lambda_f1->cvargument(0));
 
   auto & lambda_f2 = ptg->GetLambdaNode(*test.lambda_f2);
-  auto & lambda_f2_out = ptg->GetRegisterSetNode(*test.lambda_f2->output());
-  auto & lambda_f2_cvd1 = ptg->GetRegisterSetNode(*test.lambda_f2->cvargument(0));
-  auto & lambda_f2_cvd2 = ptg->GetRegisterSetNode(*test.lambda_f2->cvargument(1));
-  auto & lambda_f2_cvf1 = ptg->GetRegisterSetNode(*test.lambda_f2->cvargument(2));
+  auto & lambda_f2_out = ptg->GetRegisterNode(*test.lambda_f2->output());
+  auto & lambda_f2_cvd1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(0));
+  auto & lambda_f2_cvd2 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(1));
+  auto & lambda_f2_cvf1 = ptg->GetRegisterNode(*test.lambda_f2->cvargument(2));
 
   assert(TargetsExactly(import_d1, { &d1 }));
   assert(TargetsExactly(import_d2, { &d2 }));
@@ -673,23 +673,23 @@ TestPhi1()
 
   assert(ptg->NumAllocaNodes() == 1);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 5);
+  assert(ptg->NumRegisterNodes() == 5);
 
   auto & lambda_fib = ptg->GetLambdaNode(*test.lambda_fib);
-  auto & lambda_fib_out = ptg->GetRegisterSetNode(*test.lambda_fib->output());
-  auto & lambda_fib_arg1 = ptg->GetRegisterSetNode(*test.lambda_fib->fctargument(1));
+  auto & lambda_fib_out = ptg->GetRegisterNode(*test.lambda_fib->output());
+  auto & lambda_fib_arg1 = ptg->GetRegisterNode(*test.lambda_fib->fctargument(1));
 
   auto & lambda_test = ptg->GetLambdaNode(*test.lambda_test);
-  auto & lambda_test_out = ptg->GetRegisterSetNode(*test.lambda_test->output());
+  auto & lambda_test_out = ptg->GetRegisterNode(*test.lambda_test->output());
 
-  auto & phi_rv = ptg->GetRegisterSetNode(*test.phi->begin_rv().output());
-  auto & phi_rv_arg = ptg->GetRegisterSetNode(*test.phi->begin_rv().output()->argument());
+  auto & phi_rv = ptg->GetRegisterNode(*test.phi->begin_rv().output());
+  auto & phi_rv_arg = ptg->GetRegisterNode(*test.phi->begin_rv().output()->argument());
 
-  auto & gamma_result = ptg->GetRegisterSetNode(*test.gamma->subregion(0)->argument(1));
-  auto & gamma_fib = ptg->GetRegisterSetNode(*test.gamma->subregion(0)->argument(2));
+  auto & gamma_result = ptg->GetRegisterNode(*test.gamma->subregion(0)->argument(1));
+  auto & gamma_fib = ptg->GetRegisterNode(*test.gamma->subregion(0)->argument(2));
 
   auto & alloca = ptg->GetAllocaNode(*test.alloca);
-  auto & alloca_out = ptg->GetRegisterSetNode(*test.alloca->output(0));
+  auto & alloca_out = ptg->GetRegisterNode(*test.alloca->output(0));
 
   assert(TargetsExactly(lambda_fib_out, { &lambda_fib }));
   assert(TargetsExactly(lambda_fib_arg1, { &alloca }));
@@ -714,11 +714,11 @@ TestExternalMemory()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 3);
+  assert(ptg->NumRegisterNodes() == 3);
 
   auto & lambdaF = ptg->GetLambdaNode(*test.LambdaF);
-  auto & lambdaFArgument0 = ptg->GetRegisterSetNode(*test.LambdaF->fctargument(0));
-  auto & lambdaFArgument1 = ptg->GetRegisterSetNode(*test.LambdaF->fctargument(1));
+  auto & lambdaFArgument0 = ptg->GetRegisterNode(*test.LambdaF->fctargument(0));
+  auto & lambdaFArgument1 = ptg->GetRegisterNode(*test.LambdaF->fctargument(1));
 
   assert(TargetsExactly(lambdaFArgument0, { &lambdaF, &ptg->GetExternalMemoryNode() }));
   assert(TargetsExactly(lambdaFArgument1, { &lambdaF, &ptg->GetExternalMemoryNode() }));
@@ -734,11 +734,11 @@ TestEscapedMemory1()
 
   assert(ptg->NumDeltaNodes() == 4);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 7);
+  assert(ptg->NumRegisterNodes() == 7);
 
-  auto & lambdaTestArgument0 = ptg->GetRegisterSetNode(*test.LambdaTest->fctargument(0));
-  auto & lambdaTestCv0 = ptg->GetRegisterSetNode(*test.LambdaTest->cvargument(0));
-  auto & loadNode1Output = ptg->GetRegisterSetNode(*test.LoadNode1->output(0));
+  auto & lambdaTestArgument0 = ptg->GetRegisterNode(*test.LambdaTest->fctargument(0));
+  auto & lambdaTestCv0 = ptg->GetRegisterNode(*test.LambdaTest->cvargument(0));
+  auto & loadNode1Output = ptg->GetRegisterNode(*test.LoadNode1->output(0));
 
   auto deltaA = &ptg->GetDeltaNode(*test.DeltaA);
   auto deltaB = &ptg->GetDeltaNode(*test.DeltaB);
@@ -764,7 +764,7 @@ TestEscapedMemory2()
   assert(ptg->NumImportNodes() == 2);
   assert(ptg->NumLambdaNodes() == 3);
   assert(ptg->NumMallocNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 8);
+  assert(ptg->NumRegisterNodes() == 8);
 
   auto returnAddressFunction = &ptg->GetLambdaNode(*test.ReturnAddressFunction);
   auto callExternalFunction1 = &ptg->GetLambdaNode(*test.CallExternalFunction1);
@@ -775,8 +775,7 @@ TestEscapedMemory2()
   auto externalFunction1Import = &ptg->GetImportNode(*test.ExternalFunction1Import);
   auto externalFunction2Import = &ptg->GetImportNode(*test.ExternalFunction2Import);
 
-  auto & externalFunction2CallResult =
-      ptg->GetRegisterSetNode(*test.ExternalFunction2Call->Result(0));
+  auto & externalFunction2CallResult = ptg->GetRegisterNode(*test.ExternalFunction2Call->Result(0));
 
   assert(TargetsExactly(
       externalFunction2CallResult,
@@ -809,15 +808,14 @@ TestEscapedMemory3()
   assert(ptg->NumDeltaNodes() == 1);
   assert(ptg->NumImportNodes() == 1);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterSetNodes() == 4);
+  assert(ptg->NumRegisterNodes() == 4);
 
   auto lambdaTest = &ptg->GetLambdaNode(*test.LambdaTest);
   auto deltaGlobal = &ptg->GetDeltaNode(*test.DeltaGlobal);
   auto importExternalFunction = &ptg->GetImportNode(*test.ImportExternalFunction);
   auto externalMemory = &ptg->GetExternalMemoryNode();
 
-  auto & callExternalFunctionResult =
-      ptg->GetRegisterSetNode(*test.CallExternalFunction->Result(0));
+  auto & callExternalFunctionResult = ptg->GetRegisterNode(*test.CallExternalFunction->Result(0));
 
   assert(TargetsExactly(
       callExternalFunctionResult,
@@ -834,13 +832,13 @@ TestMemcpy()
 
   assert(ptg->NumDeltaNodes() == 2);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterSetNodes() == 4);
+  assert(ptg->NumRegisterNodes() == 4);
 
   auto localArray = &ptg->GetDeltaNode(test.LocalArray());
   auto globalArray = &ptg->GetDeltaNode(test.GlobalArray());
 
-  auto & memCpyDest = ptg->GetRegisterSetNode(*test.Memcpy().input(0)->origin());
-  auto & memCpySrc = ptg->GetRegisterSetNode(*test.Memcpy().input(1)->origin());
+  auto & memCpyDest = ptg->GetRegisterNode(*test.Memcpy().input(0)->origin());
+  auto & memCpySrc = ptg->GetRegisterNode(*test.Memcpy().input(1)->origin());
 
   auto lambdaF = &ptg->GetLambdaNode(test.LambdaF());
   auto lambdaG = &ptg->GetLambdaNode(test.LambdaG());

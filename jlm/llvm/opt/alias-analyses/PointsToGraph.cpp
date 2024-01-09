@@ -90,18 +90,18 @@ PointsToGraph::ImportNodes() const
            ImportNodeConstIterator(ImportNodes_.end()) };
 }
 
-PointsToGraph::RegisterSetNodeRange
-PointsToGraph::RegisterSetNodes()
+PointsToGraph::RegisterNodeRange
+PointsToGraph::RegisterNodes()
 {
-  return { RegisterSetNodeIterator(RegisterSetNodes_.begin()),
-           RegisterSetNodeIterator(RegisterSetNodes_.end()) };
+  return { RegisterNodeIterator(RegisterNodes_.begin()),
+           RegisterNodeIterator(RegisterNodes_.end()) };
 }
 
-PointsToGraph::RegisterSetNodeConstRange
-PointsToGraph::RegisterSetNodes() const
+PointsToGraph::RegisterNodeConstRange
+PointsToGraph::RegisterNodes() const
 {
-  return { RegisterSetNodeConstIterator(RegisterSetNodes_.begin()),
-           RegisterSetNodeConstIterator(RegisterSetNodes_.end()) };
+  return { RegisterNodeConstIterator(RegisterNodes_.begin()),
+           RegisterNodeConstIterator(RegisterNodes_.end()) };
 }
 
 PointsToGraph::AllocaNode &
@@ -140,14 +140,14 @@ PointsToGraph::AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node)
   return *tmp;
 }
 
-PointsToGraph::RegisterSetNode &
-PointsToGraph::AddRegisterSetNode(std::unique_ptr<PointsToGraph::RegisterSetNode> node)
+PointsToGraph::RegisterNode &
+PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node)
 {
   auto tmp = node.get();
   for (auto output : node->GetOutputs().Items())
-    RegisterSetNodeMap_[output] = tmp;
+    RegisterNodeMap_[output] = tmp;
 
-  RegisterSetNodes_.emplace_back(std::move(node));
+  RegisterNodes_.emplace_back(std::move(node));
 
   return *tmp;
 }
@@ -183,7 +183,7 @@ PointsToGraph::ToDot(
           { typeid(ImportNode), "box" },
           { typeid(LambdaNode), "box" },
           { typeid(MallocNode), "box" },
-          { typeid(RegisterSetNode), "oval" },
+          { typeid(RegisterNode), "oval" },
           { typeid(UnknownMemoryNode), "box" },
           { typeid(ExternalMemoryNode), "box" } });
 
@@ -196,18 +196,18 @@ PointsToGraph::ToDot(
   auto nodeLabel = [&](const PointsToGraph::Node & node)
   {
     // If the node is NOT a register node, then the label is just the DebugString
-    auto registerSetNode = dynamic_cast<const RegisterSetNode *>(&node);
-    if (registerSetNode == nullptr)
+    auto registerNode = dynamic_cast<const RegisterNode *>(&node);
+    if (registerNode == nullptr)
     {
       return node.DebugString();
     }
 
     // Otherwise, include the mapped name (if any) to its rvsdg::outputs.
     std::string label;
-    auto outputs = registerSetNode->GetOutputs();
+    auto outputs = registerNode->GetOutputs();
     for (auto output : outputs.Items())
     {
-      label += RegisterSetNode::ToString(*output);
+      label += RegisterNode::ToString(*output);
       if (auto it = outputMap.find(output); it != outputMap.end())
       {
         label += util::strfmt(" (", it->second, ")");
@@ -268,8 +268,8 @@ PointsToGraph::ToDot(
   for (auto & mallocNode : pointsToGraph.MallocNodes())
     dot += printNodeAndEdges(mallocNode);
 
-  for (auto & registerSetNode : pointsToGraph.RegisterSetNodes())
-    dot += printNodeAndEdges(registerSetNode);
+  for (auto & registerNode : pointsToGraph.RegisterNodes())
+    dot += printNodeAndEdges(registerNode);
 
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
@@ -325,10 +325,10 @@ PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
   Targets_.erase(&target);
 }
 
-PointsToGraph::RegisterSetNode::~RegisterSetNode() noexcept = default;
+PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 
 std::string
-PointsToGraph::RegisterSetNode::ToString(const rvsdg::output & output)
+PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
 {
   auto node = jlm::rvsdg::node_output::node(&output);
 
@@ -349,7 +349,7 @@ PointsToGraph::RegisterSetNode::ToString(const rvsdg::output & output)
 }
 
 std::string
-PointsToGraph::RegisterSetNode::DebugString() const
+PointsToGraph::RegisterNode::DebugString() const
 {
   auto & outputs = GetOutputs();
 

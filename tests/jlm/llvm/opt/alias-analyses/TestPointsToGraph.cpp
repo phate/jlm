@@ -55,21 +55,21 @@ private:
       {
         auto & allocaNode = aa::PointsToGraph::AllocaNode::Create(*PointsToGraph_, node);
         auto & registerNode =
-            aa::PointsToGraph::RegisterSetNode::Create(*PointsToGraph_, { node.output(0) });
+            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(allocaNode);
       }
       else if (jlm::rvsdg::is<malloc_op>(&node))
       {
         auto & mallocNode = aa::PointsToGraph::MallocNode::Create(*PointsToGraph_, node);
         auto & registerNode =
-            aa::PointsToGraph::RegisterSetNode::Create(*PointsToGraph_, { node.output(0) });
+            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(mallocNode);
       }
       else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
       {
         auto & deltaPtgNode = aa::PointsToGraph::DeltaNode::Create(*PointsToGraph_, *deltaNode);
         auto & registerNode =
-            aa::PointsToGraph::RegisterSetNode::Create(*PointsToGraph_, { deltaNode->output() });
+            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { deltaNode->output() });
         registerNode.AddEdge(deltaPtgNode);
 
         AnalyzeRegion(*deltaNode->subregion());
@@ -78,7 +78,7 @@ private:
       {
         auto & lambdaPtgNode = aa::PointsToGraph::LambdaNode::Create(*PointsToGraph_, *lambdaNode);
         auto & registerNode =
-            aa::PointsToGraph::RegisterSetNode::Create(*PointsToGraph_, { lambdaNode->output() });
+            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { lambdaNode->output() });
         registerNode.AddEdge(lambdaPtgNode);
 
         AnalyzeRegion(*lambdaNode->subregion());
@@ -97,8 +97,7 @@ private:
       auto & argument = *rootRegion.argument(n);
 
       auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, argument);
-      auto & registerNode =
-          aa::PointsToGraph::RegisterSetNode::Create(*PointsToGraph_, { &argument });
+      auto & registerNode = aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &argument });
       registerNode.AddEdge(importNode);
     }
   }
@@ -165,20 +164,20 @@ TestNodeIterators()
     assert(&mallocNode.GetMallocNode() == &test.GetMallocNode());
   }
 
-  assert(pointsToGraph->NumRegisterSetNodes() == 5);
+  assert(pointsToGraph->NumRegisterNodes() == 5);
   jlm::util::HashSet<const jlm::rvsdg::output *> expectedRegisters({ &test.GetImportOutput(),
                                                                      &test.GetLambdaOutput(),
                                                                      &test.GetDeltaOutput(),
                                                                      &test.GetAllocaOutput(),
                                                                      &test.GetMallocOutput() });
-  for (auto & registerNode : pointsToGraph->RegisterSetNodes())
+  for (auto & registerNode : pointsToGraph->RegisterNodes())
   {
     for (auto & output : registerNode.GetOutputs().Items())
     {
       assert(expectedRegisters.Contains(output));
     }
   }
-  for (auto & registerNode : constPointsToGraph->RegisterSetNodes())
+  for (auto & registerNode : constPointsToGraph->RegisterNodes())
   {
     for (auto & output : registerNode.GetOutputs().Items())
     {
@@ -188,7 +187,7 @@ TestNodeIterators()
 }
 
 static void
-TestRegisterSetNodeIteration()
+TestRegisterNodeIteration()
 {
   using namespace jlm::llvm;
 
@@ -200,22 +199,22 @@ TestRegisterSetNodeIteration()
 
   jlm::util::HashSet<const jlm::rvsdg::output *> registers(
       { test.alloca_a->output(0), test.alloca_b->output(0) });
-  aa::PointsToGraph::RegisterSetNode::Create(*pointsToGraph, registers);
+  aa::PointsToGraph::RegisterNode::Create(*pointsToGraph, registers);
 
   // Act
-  size_t numIteratedRegisterSetNodes = 0;
-  for ([[maybe_unused]] auto & registerSetNode : pointsToGraph->RegisterSetNodes())
-    numIteratedRegisterSetNodes++;
+  size_t numIteratedRegisterNodes = 0;
+  for ([[maybe_unused]] auto & registerNode : pointsToGraph->RegisterNodes())
+    numIteratedRegisterNodes++;
 
   // Assert
-  assert(numIteratedRegisterSetNodes == pointsToGraph->NumRegisterSetNodes());
+  assert(numIteratedRegisterNodes == pointsToGraph->NumRegisterNodes());
 }
 
 static int
 TestPointsToGraph()
 {
   TestNodeIterators();
-  TestRegisterSetNodeIteration();
+  TestRegisterNodeIteration();
 
   return 0;
 }
