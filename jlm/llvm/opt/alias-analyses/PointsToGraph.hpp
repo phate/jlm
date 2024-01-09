@@ -45,7 +45,6 @@ public:
   class MallocNode;
   class MemoryNode;
   class Node;
-  class RegisterNode;
   class RegisterSetNode;
   class UnknownMemoryNode;
   class ExternalMemoryNode;
@@ -60,8 +59,6 @@ public:
       std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap =
       std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::MallocNode>>;
-  using RegisterNodeMap =
-      std::unordered_map<const jlm::rvsdg::output *, std::unique_ptr<PointsToGraph::RegisterNode>>;
   using RegisterSetNodeMap =
       std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterSetNode *>;
   using RegisterSetNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterSetNode>>;
@@ -131,17 +128,6 @@ public:
   using MallocNodeRange = jlm::util::iterator_range<MallocNodeIterator>;
   using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
 
-  using RegisterNodeIterator = NodeIterator<
-      RegisterNode,
-      RegisterNodeMap::iterator,
-      IteratorToPointerFunctor<RegisterNode, RegisterNodeMap::iterator>>;
-  using RegisterNodeConstIterator = NodeConstIterator<
-      RegisterNode,
-      RegisterNodeMap::const_iterator,
-      IteratorToPointerFunctor<RegisterNode, RegisterNodeMap::const_iterator>>;
-  using RegisterNodeRange = jlm::util::iterator_range<RegisterNodeIterator>;
-  using RegisterNodeConstRange = jlm::util::iterator_range<RegisterNodeConstIterator>;
-
   template<class IteratorType>
   struct RegisterSetNodeIteratorToPointerFunctor
   {
@@ -207,12 +193,6 @@ public:
   MallocNodeConstRange
   MallocNodes() const;
 
-  RegisterNodeRange
-  RegisterNodes();
-
-  RegisterNodeConstRange
-  RegisterNodes() const;
-
   RegisterSetNodeRange
   RegisterSetNodes();
 
@@ -249,12 +229,6 @@ public:
     return MallocNodes_.size();
   }
 
-  size_t
-  NumRegisterNodes() const noexcept
-  {
-    return RegisterNodes_.size();
-  }
-
   [[nodiscard]] size_t
   NumRegisterSetNodes() const noexcept
   {
@@ -271,7 +245,7 @@ public:
   size_t
   NumNodes() const noexcept
   {
-    return NumMemoryNodes() + NumRegisterNodes() + NumRegisterSetNodes();
+    return NumMemoryNodes() + NumRegisterSetNodes();
   }
 
   PointsToGraph::UnknownMemoryNode &
@@ -336,16 +310,6 @@ public:
     return *it->second;
   }
 
-  const PointsToGraph::RegisterNode &
-  GetRegisterNode(const jlm::rvsdg::output & output) const
-  {
-    auto it = RegisterNodes_.find(&output);
-    if (it == RegisterNodes_.end())
-      throw jlm::util::error("Cannot find register node in points-to graph.");
-
-    return *it->second;
-  }
-
   const PointsToGraph::RegisterSetNode &
   GetRegisterSetNode(const rvsdg::output & output) const
   {
@@ -380,9 +344,6 @@ public:
 
   PointsToGraph::MallocNode &
   AddMallocNode(std::unique_ptr<PointsToGraph::MallocNode> node);
-
-  PointsToGraph::RegisterNode &
-  AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node);
 
   PointsToGraph::RegisterSetNode &
   AddRegisterSetNode(std::unique_ptr<PointsToGraph::RegisterSetNode> node);
@@ -435,7 +396,6 @@ private:
   ImportNodeMap ImportNodes_;
   LambdaNodeMap LambdaNodes_;
   MallocNodeMap MallocNodes_;
-  RegisterNodeMap RegisterNodes_;
 
   RegisterSetNodeMap RegisterSetNodeMap_;
   RegisterSetNodeVector RegisterSetNodes_;
@@ -539,42 +499,6 @@ private:
   std::unordered_set<PointsToGraph::Node *> Sources_;
 };
 
-/** \brief PointsTo graph register node
- *
- */
-class PointsToGraph::RegisterNode final : public PointsToGraph::Node
-{
-public:
-  ~RegisterNode() noexcept override;
-
-private:
-  RegisterNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::output & output)
-      : Node(pointsToGraph),
-        Output_(&output)
-  {}
-
-public:
-  const jlm::rvsdg::output &
-  GetOutput() const noexcept
-  {
-    return *Output_;
-  }
-
-  std::string
-  DebugString() const override;
-
-  static PointsToGraph::RegisterNode &
-  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::output & output)
-  {
-    auto node =
-        std::unique_ptr<PointsToGraph::RegisterNode>(new RegisterNode(pointsToGraph, output));
-    return pointsToGraph.AddRegisterNode(std::move(node));
-  }
-
-private:
-  const jlm::rvsdg::output * Output_;
-};
-
 /**
  * Represents a set of registers from the RVSDG that all point to the same
  * PointsToGraph::MemoryNode%s.
@@ -599,6 +523,9 @@ public:
 
   std::string
   DebugString() const override;
+
+  static std::string
+  ToString(const rvsdg::output & output);
 
   static PointsToGraph::RegisterSetNode &
   Create(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::output *> outputs)

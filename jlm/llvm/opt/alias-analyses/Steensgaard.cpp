@@ -795,7 +795,7 @@ public:
         NumLambdaNodes_(0),
         NumMallocNodes_(0),
         NumMemoryNodes_(0),
-        NumRegisterNodes_(0),
+        NumRegisterSetNodes_(0),
         NumUnknownMemorySources_(0)
   {}
 
@@ -831,7 +831,7 @@ public:
     NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
     NumMallocNodes_ = pointsToGraph.NumMallocNodes();
     NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
-    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
+    NumRegisterSetNodes_ = pointsToGraph.NumRegisterSetNodes();
     NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }
 
@@ -887,8 +887,8 @@ public:
         "#MemoryNodes:",
         NumMemoryNodes_,
         " ",
-        "#RegisterNodes:",
-        NumRegisterNodes_,
+        "#RegisterSetNodes:",
+        NumRegisterSetNodes_,
         " ",
         "#UnknownMemorySources:",
         NumUnknownMemorySources_,
@@ -920,7 +920,7 @@ private:
   size_t NumLambdaNodes_;
   size_t NumMallocNodes_;
   size_t NumMemoryNodes_;
-  size_t NumRegisterNodes_;
+  size_t NumRegisterSetNodes_;
   size_t NumUnknownMemorySources_;
 
   util::timer AnalysisTimer_;
