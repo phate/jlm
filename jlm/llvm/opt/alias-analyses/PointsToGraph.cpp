@@ -104,20 +104,6 @@ PointsToGraph::RegisterNodes() const
            RegisterNodeConstIterator(RegisterNodes_.end()) };
 }
 
-PointsToGraph::RegisterSetNodeRange
-PointsToGraph::RegisterSetNodes()
-{
-  return { RegisterSetNodeIterator(RegisterSetNodes_.begin()),
-           RegisterSetNodeIterator(RegisterSetNodes_.end()) };
-}
-
-PointsToGraph::RegisterSetNodeConstRange
-PointsToGraph::RegisterSetNodes() const
-{
-  return { RegisterSetNodeConstIterator(RegisterSetNodes_.begin()),
-           RegisterSetNodeConstIterator(RegisterSetNodes_.end()) };
-}
-
 PointsToGraph::AllocaNode &
 PointsToGraph::AddAllocaNode(std::unique_ptr<PointsToGraph::AllocaNode> node)
 {
@@ -158,19 +144,10 @@ PointsToGraph::RegisterNode &
 PointsToGraph::AddRegisterNode(std::unique_ptr<PointsToGraph::RegisterNode> node)
 {
   auto tmp = node.get();
-  RegisterNodes_[&node->GetOutput()] = std::move(node);
-
-  return *tmp;
-}
-
-PointsToGraph::RegisterSetNode &
-PointsToGraph::AddRegisterSetNode(std::unique_ptr<PointsToGraph::RegisterSetNode> node)
-{
-  auto tmp = node.get();
   for (auto output : node->GetOutputs().Items())
-    RegisterSetNodeMap_[output] = tmp;
+    RegisterNodeMap_[output] = tmp;
 
-  RegisterSetNodes_.emplace_back(std::move(node));
+  RegisterNodes_.emplace_back(std::move(node));
 
   return *tmp;
 }
@@ -207,7 +184,6 @@ PointsToGraph::ToDot(
           { typeid(LambdaNode), "box" },
           { typeid(MallocNode), "box" },
           { typeid(RegisterNode), "oval" },
-          { typeid(RegisterSetNode), "oval" },
           { typeid(UnknownMemoryNode), "box" },
           { typeid(ExternalMemoryNode), "box" } });
 
@@ -219,13 +195,27 @@ PointsToGraph::ToDot(
 
   auto nodeLabel = [&](const PointsToGraph::Node & node)
   {
-    // If the node is a RegisterNode, and has a name mapped to its rvsdg::output, include that name
-    if (const auto registerNode = dynamic_cast<const RegisterNode *>(&node))
-      if (const auto it = outputMap.find(&registerNode->GetOutput()); it != outputMap.end())
-        return util::strfmt(node.DebugString(), " (", it->second, ")");
+    // If the node is NOT a register node, then the label is just the DebugString
+    auto registerNode = dynamic_cast<const RegisterNode *>(&node);
+    if (registerNode == nullptr)
+    {
+      return node.DebugString();
+    }
 
-    // Otherwise the label is just the DebugString.
-    return node.DebugString();
+    // Otherwise, include the mapped name (if any) to its rvsdg::outputs.
+    std::string label;
+    auto outputs = registerNode->GetOutputs();
+    for (auto output : outputs.Items())
+    {
+      label += RegisterNode::ToString(*output);
+      if (auto it = outputMap.find(output); it != outputMap.end())
+      {
+        label += util::strfmt(" (", it->second, ")");
+      }
+      label += "\\n";
+    }
+
+    return label;
   };
 
   auto nodeString = [&](const PointsToGraph::Node & node)
@@ -280,9 +270,6 @@ PointsToGraph::ToDot(
 
   for (auto & registerNode : pointsToGraph.RegisterNodes())
     dot += printNodeAndEdges(registerNode);
-
-  for (auto & registerSetNode : pointsToGraph.RegisterSetNodes())
-    dot += printNodeAndEdges(registerSetNode);
 
   dot += nodeString(pointsToGraph.GetUnknownMemoryNode());
   dot += nodeString(pointsToGraph.GetExternalMemoryNode());
@@ -340,8 +327,8 @@ PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
 
 PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 
-static std::string
-CreateDotString(const rvsdg::output & output)
+std::string
+PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
 {
   auto node = jlm::rvsdg::node_output::node(&output);
 
@@ -364,21 +351,13 @@ CreateDotString(const rvsdg::output & output)
 std::string
 PointsToGraph::RegisterNode::DebugString() const
 {
-  return CreateDotString(GetOutput());
-}
-
-PointsToGraph::RegisterSetNode::~RegisterSetNode() noexcept = default;
-
-std::string
-PointsToGraph::RegisterSetNode::DebugString() const
-{
   auto & outputs = GetOutputs();
 
   size_t n = 0;
   std::string debugString;
   for (auto output : outputs.Items())
   {
-    debugString += CreateDotString(*output);
+    debugString += ToString(*output);
     debugString += n != (outputs.Size() - 1) ? "\n" : "";
     n++;
   }

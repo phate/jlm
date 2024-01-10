@@ -666,10 +666,10 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     outputsInRegister[registerIdx].Insert(outputNode);
   }
 
-  // Create PointsToGraph::RegisterSetNodes for each PointerObject of register kind, and add edges
+  // Create PointsToGraph::RegisterNodes for each PointerObject of register kind, and add edges
   for (auto & [registerIdx, outputNodes] : outputsInRegister)
   {
-    auto & node = PointsToGraph::RegisterSetNode::Create(*pointsToGraph, std::move(outputNodes));
+    auto & node = PointsToGraph::RegisterNode::Create(*pointsToGraph, std::move(outputNodes));
     applyPointsToSet(node, registerIdx);
   }
 
