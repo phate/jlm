@@ -437,7 +437,7 @@ JlmOptCommand::PrintRvsdgModule(
     jlm::rvsdgmlir::MLIRGen mlirgen;
     auto omega = mlirgen.convertModule(rvsdgModule);
     mlirgen.print(omega, outputFile);
-    free(omega);
+    omega->destroy();
 #else
     throw util::error(
         "This version of jlm-opt has not been compiled with support for the MLIR backend\n");

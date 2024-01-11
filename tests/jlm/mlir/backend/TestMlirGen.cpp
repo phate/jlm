@@ -91,7 +91,7 @@ TestLambda()
         lambdaBlock.front().getName().getStringRef()
         == mlir::arith::ConstantIntOp::getOperationName());
 
-    free(omega);
+    omega->destroy();
   }
 
 #endif // MLIR_ENABLED
