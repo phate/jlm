@@ -170,9 +170,10 @@ Andersen::AnalyzeGep(const rvsdg::simple_node & node)
   // The analysis is field insensitive, so ignoring the offset and mapping the output
   // to the same PointerObject as the input is sufficient.
   const auto & baseRegister = *node.input(0)->origin();
-  const auto & outputRegister = *node.output(0);
+  JLM_ASSERT(is<PointerType>(baseRegister.type()));
 
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
   Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
 }
 
@@ -216,7 +217,7 @@ Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
   const auto & inputRegister = *node.input(0)->origin();
   JLM_ASSERT(is<PointerType>(inputRegister.type()));
 
-  // This operation converts a pointer to bytes, exposing it to the world of integers, which we do not track.
+  // This operation converts a pointer to bytes, exposing it as an integer, which we can't track.
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
   Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
 }
