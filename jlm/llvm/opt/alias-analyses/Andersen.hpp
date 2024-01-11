@@ -105,6 +105,9 @@ private:
   AnalyzeBits2ptr(const rvsdg::simple_node & node);
 
   void
+  AnalyzePtr2bits(const rvsdg::simple_node & node);
+
+  void
   AnalyzeConstantPointerNull(const rvsdg::simple_node & node);
 
   void
@@ -124,6 +127,9 @@ private:
 
   void
   AnalyzeExtractValue(const rvsdg::simple_node & node);
+
+  void
+  AnalyzeValist(const rvsdg::simple_node & node);
 
   void
   AnalyzeStructuralNode(const rvsdg::structural_node & node);
