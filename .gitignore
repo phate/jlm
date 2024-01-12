@@ -1,9 +1,9 @@
 utests.log
 ctests.log
 check.log
-/bin
-/build
-.Makefile.override
-jlm/tooling/CommandPaths.hpp
+Makefile.config
 .idea
 docs/html
+build
+build-debug
+build-release

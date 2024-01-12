@@ -11,6 +11,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install dependencies
       run: sudo apt-get install graphviz doxygen
+    - name: Configure jlm
+      run: ./configure.sh
     - name: Generate documentation
       run: make docs
 
@@ -37,10 +39,12 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: Configure jlm
+      run: ./configure.sh CXX=clang++-16
     - name: Compile jlm
-      run: make jlm-release -j `nproc`
+      run: make -O -j `nproc`
     - name: Run unit and C tests
-      run: make check -j `nproc`
+      run: make check -O -j `nproc`
 
   gcc:
     runs-on: ubuntu-22.04
@@ -48,8 +52,10 @@ jobs:
     - uses: actions/checkout@v3
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: Configure jlm
+      run: ./configure.sh CXX=g++
     - name: Compile jlm
-      run: make CXX=g++ jlm-release -j `nproc`
+      run: make -O -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
@@ -64,11 +70,9 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
-    - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
       run: sudo apt-get install valgrind
-    - name: Valgrind Check 
+    - name: Valgrind Check
       run: make -C ${{ github.workspace }} valgrind-check
 
   polybench:
@@ -83,7 +87,7 @@ jobs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -101,7 +105,7 @@ jobs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules
