@@ -28,6 +28,9 @@ rvsdg2rhls(llvm::RvsdgModule & rm);
 void
 dump_ref(llvm::RvsdgModule & rhls);
 
+const rvsdg::output *
+trace_call(rvsdg::input *input);
+
 std::unique_ptr<llvm::RvsdgModule>
 split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name);
 
