@@ -1857,10 +1857,10 @@ Steensgaard::ConstructPointsToGraph() const
     }
 
     // We found register locations in this set.
-    // Create a single points-to graph register-set node for all of them.
+    // Create a single points-to graph register node for all of them.
     if (!registerLocations.IsEmpty())
     {
-      auto & pointsToGraphNode = PointsToGraph::RegisterSetNode::Create(*pointsToGraph, registers);
+      auto & pointsToGraphNode = PointsToGraph::RegisterNode::Create(*pointsToGraph, registers);
       for (auto registerLocation : registerLocations.Items())
         locationMap[registerLocation] = &pointsToGraphNode;
     }

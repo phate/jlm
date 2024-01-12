@@ -301,13 +301,11 @@ public:
     JLM_ASSERT(is<PointerType>(output.type()));
 
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-    if (GetOutputNodesFromRegisterNode(output, memoryNodes))
-      return memoryNodes;
+    auto registerNode = &PointsToGraph_.GetRegisterNode(output);
+    for (auto & memoryNode : registerNode->Targets())
+      memoryNodes.Insert(&memoryNode);
 
-    if (GetOutputNodesFromRegisterSetNode(output, memoryNodes))
-      return memoryNodes;
-
-    throw util::error("Cannot find register in points-to graph.");
+    return memoryNodes;
   }
 
   RegionSummaryConstRange
@@ -464,48 +462,6 @@ public:
   }
 
 private:
-  [[nodiscard]] bool
-  GetOutputNodesFromRegisterNode(
-      const rvsdg::output & output,
-      util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes) const
-  {
-    const PointsToGraph::RegisterNode * registerNode;
-    try
-    {
-      registerNode = &PointsToGraph_.GetRegisterNode(output);
-    }
-    catch (...)
-    {
-      return false;
-    }
-
-    for (auto & memoryNode : registerNode->Targets())
-      memoryNodes.Insert(&memoryNode);
-
-    return true;
-  }
-
-  [[nodiscard]] bool
-  GetOutputNodesFromRegisterSetNode(
-      const rvsdg::output & output,
-      util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes) const
-  {
-    const PointsToGraph::RegisterSetNode * registerSetNode;
-    try
-    {
-      registerSetNode = &PointsToGraph_.GetRegisterSetNode(output);
-    }
-    catch (...)
-    {
-      return false;
-    }
-
-    for (auto & memoryNode : registerSetNode->Targets())
-      memoryNodes.Insert(&memoryNode);
-
-    return true;
-  }
-
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetIndirectCallNodes(const CallNode & callNode) const
   {
