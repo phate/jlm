@@ -4,6 +4,7 @@
 LIBUTIL_SRC = \
 	jlm/util/callbacks.cpp \
 	jlm/util/common.cpp \
+	jlm/util/GraphWriter.cpp \
 	jlm/util/Statistics.cpp \
 
 .PHONY: libutil-debug
