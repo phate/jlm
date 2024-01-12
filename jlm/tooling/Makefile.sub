@@ -1,16 +1,9 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LIBTOOLING_SRC = \
-    jlm/tooling/Command.cpp \
-    jlm/tooling/CommandGraph.cpp \
-    jlm/tooling/CommandGraphGenerator.cpp \
-    jlm/tooling/CommandLine.cpp \
-
 # Default verilator for Ubuntu 22.04
 VERILATOR_BIN ?= verilator_bin
 VERILATOR_PATH ?= /usr/share/verilator
-
 FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
 
 COMMANDPATHS = \
@@ -32,24 +25,50 @@ namespace jlm::tooling {\n \
 \n \
 \#endif \
 "
-COMMANDPATHSFILE = $(JLM_ROOT)/jlm/tooling/CommandPaths.hpp
+
+# A generated header file will have the paths to be compiled into the binary.
+# Since it is a generated file, create it within the build output directory
+# (to avoid polluting the source directory with generated files). Set up
+# search path and compile dependencies to include the generated file.
+COMMANDPATHSFILE = $(BUILD_OUT_PREFIX)jlm/tooling/CommandPaths.hpp
+$(BUILD_OUT_PREFIX)jlm/tooling/Command.la: $(COMMANDPATHSFILE)
+$(BUILD_OUT_PREFIX)jlm/tooling/Command.coverage.la: $(COMMANDPATHSFILE)
+$(BUILD_OUT_PREFIX)jlm/tooling/Command.lo: $(COMMANDPATHSFILE)
+$(BUILD_OUT_PREFIX)jlm/tooling/Command.la: CPPFLAGS+=-I$(BUILD_OUT_PREFIX)
+$(BUILD_OUT_PREFIX)jlm/tooling/Command.coverage.la: CPPFLAGS+=-I$(BUILD_OUT_PREFIX)
+$(BUILD_OUT_PREFIX)jlm/tooling/Command.lo: CPPFLAGS+=-I$(BUILD_OUT_PREFIX)
 
 $(COMMANDPATHSFILE):
+	@mkdir -p $(dir $@)
+	@echo creating $(COMMANDPATHSFILE)
 	@printf $(COMMANDPATHS) > $@
 
-.PHONY: libtooling-debug
-libtooling-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-libtooling-debug: $(JLM_BUILD)/libtooling.a
+GENERATED_FILES += $(COMMANDPATHSFILE)
 
-.PHONY: libtooling-release
-libtooling-release: CXXFLAGS += -O3
-libtooling-release: $(JLM_BUILD)/libtooling.a
+libtooling_SOURCES = \
+    jlm/tooling/Command.cpp \
+    jlm/tooling/CommandGraph.cpp \
+    jlm/tooling/CommandGraphGenerator.cpp \
+    jlm/tooling/CommandLine.cpp \
 
-$(JLM_BUILD)/libtooling.a: CPPFLAGS += -I$(JLM_ROOT)
-$(JLM_BUILD)/libtooling.a: $(COMMANDPATHSFILE) $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBTOOLING_SRC))
+libtooling_HEADERS = \
+    jlm/tooling/Command.hpp \
+    jlm/tooling/CommandGraph.hpp \
+    jlm/tooling/CommandGraphGenerator.hpp \
+    jlm/tooling/CommandLine.hpp \
 
-.PHONY: libtooling-clean
-libtooling-clean:
-	@rm -f $(COMMANDPATHSFILE)
-	@rm -rf $(JLM_BUILD)/jlm/tooling
-	@rm -rf $(JLM_BUILD)/libtooling.a
+libtooling_TESTS = \
+	tests/jlm/tooling/TestJlcCommandGraphGenerator \
+	tests/jlm/tooling/TestJlcCommandLineParser \
+
+libtooling_TEST_LIBS = \
+	libtooling \
+	libhls \
+	libllvm \
+	librvsdg \
+	libutil \
+	libjlmtest \
+
+libtooling_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+
+$(eval $(call common_library,libtooling))

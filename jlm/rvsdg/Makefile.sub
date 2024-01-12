@@ -1,4 +1,4 @@
-LIBRVSDG_SRC = \
+librvsdg_SOURCES = \
 	jlm/rvsdg/binary.cpp \
 	jlm/rvsdg/control.cpp \
 	jlm/rvsdg/gamma.cpp \
@@ -31,22 +31,58 @@ LIBRVSDG_SRC = \
 	jlm/rvsdg/bitstring/type.cpp \
 	jlm/rvsdg/bitstring/value-representation.cpp \
 
-SOURCES += $(LIBRVSDG_SRC)
+librvsdg_HEADERS = \
+	jlm/rvsdg/operation.hpp \
+	jlm/rvsdg/gamma.hpp \
+	jlm/rvsdg/notifiers.hpp \
+	jlm/rvsdg/bitstring/constant.hpp \
+	jlm/rvsdg/bitstring/slice.hpp \
+	jlm/rvsdg/bitstring/arithmetic.hpp \
+	jlm/rvsdg/bitstring/type.hpp \
+	jlm/rvsdg/bitstring/value-representation.hpp \
+	jlm/rvsdg/bitstring/concat.hpp \
+	jlm/rvsdg/bitstring/bitoperation-classes.hpp \
+	jlm/rvsdg/bitstring/comparison.hpp \
+	jlm/rvsdg/view.hpp \
+	jlm/rvsdg/traverser.hpp \
+	jlm/rvsdg/statemux.hpp \
+	jlm/rvsdg/graph.hpp \
+	jlm/rvsdg/substitution.hpp \
+	jlm/rvsdg/unary.hpp \
+	jlm/rvsdg/tracker.hpp \
+	jlm/rvsdg/simple-node.hpp \
+	jlm/rvsdg/type.hpp \
+	jlm/rvsdg/binary.hpp \
+	jlm/rvsdg/theta.hpp \
+	jlm/rvsdg/record.hpp \
+	jlm/rvsdg/structural-normal-form.hpp \
+	jlm/rvsdg/reduction-helpers.hpp \
+	jlm/rvsdg/bitstring.hpp \
+	jlm/rvsdg/node.hpp \
+	jlm/rvsdg/node-normal-form.hpp \
+	jlm/rvsdg/nullary.hpp \
+	jlm/rvsdg/structural-node.hpp \
+	jlm/rvsdg/control.hpp \
+	jlm/rvsdg/simple-normal-form.hpp \
+	jlm/rvsdg/region.hpp \
 
-HEADERS = $(shell find 	$(JLM_ROOT)/jlm/rvsdg -name "*.h")
+librvsdg_TESTS = \
+	tests/jlm/rvsdg/test-binary \
+	tests/jlm/rvsdg/test-bottomup \
+	tests/jlm/rvsdg/test-cse \
+	tests/jlm/rvsdg/test-gamma \
+	tests/jlm/rvsdg/test-graph \
+	tests/jlm/rvsdg/test-nodes \
+	tests/jlm/rvsdg/test-statemux \
+	tests/jlm/rvsdg/test-theta \
+	tests/jlm/rvsdg/test-topdown \
+	tests/jlm/rvsdg/test-typemismatch \
+	tests/jlm/rvsdg/TestRegion \
+	tests/jlm/rvsdg/TestStructuralNode \
 
-.PHONY: rvsdg-debug
-rvsdg-debug: CXXFLAGS += -g
-rvsdg-debug: $(JLM_BUILD)/librvsdg.a
+librvsdg_TEST_LIBS = \
+	libjlmtest \
+	librvsdg \
+	libutil \
 
-.PHONY: rvsdg-release
-rvsdg-release: CXXFLAGS += -O3
-rvsdg-release: $(JLM_BUILD)/librvsdg.a
-
-$(JLM_BUILD)/librvsdg.a: CPPFLAGS+=-I$(JLM_ROOT)
-$(JLM_BUILD)/librvsdg.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBRVSDG_SRC))
-
-.PHONY: rvsdg-clean
-rvsdg-clean:
-	@rm -rf $(JLM_BUILD)/jlm/rvsdg
-	@rm -rf $(JLM_BUILD)/librvsdg.a
+$(eval $(call common_library,librvsdg))

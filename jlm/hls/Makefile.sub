@@ -1,7 +1,7 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LIBHLS_SRC = \
+libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
@@ -22,18 +22,34 @@ LIBHLS_SRC = \
     \
     jlm/hls/ir/hls.cpp \
 
-.PHONY: libhls-debug
-libhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-libhls-debug: $(JLM_BUILD)/libhls.a
+libhls_HEADERS = \
+	jlm/hls/ir/hls.hpp \
+	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/mlirgen.hpp \
+	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-prints.hpp \
+	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-buffers.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
+	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
+	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
+	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-forks.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-sinks.hpp \
 
-.PHONY: libhls-release
-libhls-release: CXXFLAGS += -O3
-libhls-release: $(JLM_BUILD)/libhls.a
+libhls_TESTS += \
+	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
+	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 
-$(JLM_BUILD)/libhls.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/libhls.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBHLS_SRC))
+libhls_TEST_LIBS += \
+	libhls \
+	libllvm \
+	librvsdg \
+	libutil \
+	libjlmtest \
 
-.PHONY: libhls-clean
-libhls-clean:
-	@rm -rf $(JLM_BUILD)/jlm/hls
-	@rm -rf $(JLM_BUILD)/libhls.a
+libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+
+$(eval $(call common_library,libhls))
