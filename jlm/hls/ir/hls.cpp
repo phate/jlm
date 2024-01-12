@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/types.hpp"
 #include <jlm/hls/ir/hls.hpp>
 
 namespace jlm::hls
@@ -19,16 +20,26 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
 
   auto mux =
       hls::mux_op::create(*predicate_buffer(), { argument_in, argument_loop }, false, true)[0];
-  auto buf = hls::buffer_op::create(*mux, 2)[0];
-  auto branch = hls::branch_op::create(*predicate()->origin(), *buf, true);
+  auto branch = hls::branch_op::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
-    *buffer = buf;
+    *buffer = mux;
   }
   jlm::rvsdg::result::create(subregion(), branch[0], output, origin->type());
   auto result_loop = argument_loop->result();
-  result_loop->divert_to(branch[1]);
+  auto buf = hls::buffer_op::create(*branch[1], 2)[0];
+  result_loop->divert_to(buf);
   return output;
+}
+
+jlm::rvsdg::output *
+loop_node::add_loopconst(jlm::rvsdg::output * origin)
+{
+  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->type());
+
+  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->type());
+  auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), *argument_in)[0];
+  return buffer;
 }
 
 loop_node *
@@ -107,7 +118,10 @@ loop_node::create(jlm::rvsdg::region * parent, bool init)
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
     auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype(2));
     pred_arg->result()->divert_to(predicate);
-    ln->_predicate_buffer = hls::predicate_buffer_op::create(*pred_arg)[0];
+    // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
+    // signals
+    auto pre_buffer = hls::buffer_op::create(*pred_arg, 2)[0];
+    ln->_predicate_buffer = hls::predicate_buffer_op::create(*pre_buffer)[0];
   }
   return ln;
 }
@@ -121,4 +135,27 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
     remove(node);
 }
 
+std::unique_ptr<bundletype>
+get_mem_req_type(const rvsdg::valuetype & elementType, bool write)
+{
+  auto elements = new std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>>();
+  elements->emplace_back("addr", llvm::PointerType::Create());
+  elements->emplace_back("size", std::make_unique<jlm::rvsdg::bittype>(4));
+  elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
+  if (write)
+  {
+    elements->emplace_back("data", elementType.copy());
+    elements->emplace_back("write", std::make_unique<jlm::rvsdg::bittype>(1));
+  }
+  return std::make_unique<bundletype>(elements);
+}
+
+std::unique_ptr<bundletype>
+get_mem_res_type(const jlm::rvsdg::valuetype & dataType)
+{
+  auto elements = new std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>>();
+  elements->emplace_back("data", dataType.copy());
+  elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
+  return std::make_unique<bundletype>(elements);
+}
 }
