@@ -10,6 +10,20 @@
 int
 main(int argc, char ** argv)
 {
-  assert(argc == 2);
-  return jlm::tests::run_unit_test(argv[1]);
+  if (argc < 2)
+  {
+    return jlm::tests::RunAllUnitTests();
+  }
+  else
+  {
+    int fail = 0;
+    for (int n = 1; n < argc; ++n)
+    {
+      if (jlm::tests::run_unit_test(argv[n]))
+      {
+        fail = 1;
+      }
+    }
+    return fail;
+  }
 }

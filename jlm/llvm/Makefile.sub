@@ -1,7 +1,7 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LIBLLVM_SRC = \
+libllvm_SOURCES = \
     jlm/llvm/backend/jlm2llvm/instruction.cpp \
     jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/jlm2llvm/type.cpp \
@@ -61,18 +61,130 @@ LIBLLVM_SRC = \
     jlm/llvm/opt/reduction.cpp \
     jlm/llvm/opt/unroll.cpp \
 
-.PHONY: libllvm-debug
-libllvm-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-libllvm-debug: $(JLM_BUILD)/libllvm.a
+libllvm_HEADERS = \
+	jlm/llvm/opt/unroll.hpp \
+	jlm/llvm/opt/DeadNodeElimination.hpp \
+	jlm/llvm/opt/inlining.hpp \
+	jlm/llvm/opt/cne.hpp \
+	jlm/llvm/opt/push.hpp \
+	jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/Optimization.hpp \
+	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
+	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
+	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/Operators.hpp \
+	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
+	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
+	jlm/llvm/opt/pull.hpp \
+	jlm/llvm/opt/optimization.hpp \
+	jlm/llvm/opt/reduction.hpp \
+	jlm/llvm/opt/InvariantValueRedirection.hpp \
+	jlm/llvm/opt/inversion.hpp \
+	jlm/llvm/frontend/LlvmModuleConversion.hpp \
+	jlm/llvm/frontend/LlvmTypeConversion.hpp \
+	jlm/llvm/frontend/ControlFlowRestructuring.hpp \
+	jlm/llvm/frontend/LlvmConversionContext.hpp \
+	jlm/llvm/frontend/LlvmInstructionConversion.hpp \
+	jlm/llvm/frontend/InterProceduralGraphConversion.hpp \
+	jlm/llvm/ir/operators.hpp \
+	jlm/llvm/ir/ipgraph-module.hpp \
+	jlm/llvm/ir/RvsdgModule.hpp \
+	jlm/llvm/ir/linkage.hpp \
+	jlm/llvm/ir/Annotation.hpp \
+	jlm/llvm/ir/attribute.hpp \
+	jlm/llvm/ir/tac.hpp \
+	jlm/llvm/ir/domtree.hpp \
+	jlm/llvm/ir/cfg-node.hpp \
+	jlm/llvm/ir/ipgraph.hpp \
+	jlm/llvm/ir/cfg.hpp \
+	jlm/llvm/ir/ssa.hpp \
+	jlm/llvm/ir/variable.hpp \
+	jlm/llvm/ir/basic-block.hpp \
+	jlm/llvm/ir/print.hpp \
+	jlm/llvm/ir/types.hpp \
+	jlm/llvm/ir/cfg-structure.hpp \
+	jlm/llvm/ir/operators/operators.hpp \
+	jlm/llvm/ir/operators/Phi.hpp \
+	jlm/llvm/ir/operators/load.hpp \
+	jlm/llvm/ir/operators/gamma.hpp \
+	jlm/llvm/ir/operators/GetElementPtr.hpp \
+	jlm/llvm/ir/operators/theta.hpp \
+	jlm/llvm/ir/operators/delta.hpp \
+	jlm/llvm/ir/operators/store.hpp \
+	jlm/llvm/ir/operators/alloca.hpp \
+	jlm/llvm/ir/operators/call.hpp \
+	jlm/llvm/ir/operators/sext.hpp \
+	jlm/llvm/ir/operators/lambda.hpp \
+	jlm/llvm/ir/aggregation.hpp \
+	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
+	jlm/llvm/backend/rvsdg2jlm/context.hpp \
+	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
+	jlm/llvm/backend/jlm2llvm/type.hpp \
+	jlm/llvm/backend/jlm2llvm/instruction.hpp \
+	jlm/llvm/backend/jlm2llvm/context.hpp \
 
-.PHONY: libllvm-release
-libllvm-release: CXXFLAGS += -O3
-libllvm-release: $(JLM_BUILD)/libllvm.a
+libllvm_TESTS += \
+	tests/jlm/llvm/backend/llvm/r2j/test-empty-gamma \
+	tests/jlm/llvm/backend/llvm/r2j/test-partial-gamma \
+	tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
+	tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
+	tests/jlm/llvm/frontend/llvm/test-endless-loop \
+	tests/jlm/llvm/frontend/llvm/test-export \
+	tests/jlm/llvm/frontend/llvm/TestFNeg \
+	tests/jlm/llvm/frontend/llvm/test-function-call \
+	tests/jlm/llvm/frontend/llvm/test-recursive-data \
+	tests/jlm/llvm/frontend/llvm/test-restructuring \
+	tests/jlm/llvm/frontend/llvm/test-select \
+	tests/jlm/llvm/ir/operators/TestCall \
+	tests/jlm/llvm/ir/operators/test-ConstantFP \
+	tests/jlm/llvm/ir/operators/test-delta \
+	tests/jlm/llvm/ir/operators/TestFree \
+	tests/jlm/llvm/ir/operators/TestGetElementPtr \
+	tests/jlm/llvm/ir/operators/TestLambda \
+	tests/jlm/llvm/ir/operators/test-load \
+	tests/jlm/llvm/ir/operators/TestPhi \
+	tests/jlm/llvm/ir/operators/test-sext \
+	tests/jlm/llvm/ir/operators/test-store \
+	tests/jlm/llvm/ir/test-aggregation \
+	tests/jlm/llvm/ir/test-cfg \
+	tests/jlm/llvm/ir/test-cfg-node \
+	tests/jlm/llvm/ir/test-cfg-orderings \
+	tests/jlm/llvm/ir/test-cfg-prune \
+	tests/jlm/llvm/ir/test-cfg-purge \
+	tests/jlm/llvm/ir/test-cfg-structure \
+	tests/jlm/llvm/ir/test-cfg-validity \
+	tests/jlm/llvm/ir/test-domtree \
+	tests/jlm/llvm/ir/test-ssa-destruction \
+	tests/jlm/llvm/ir/TestAnnotation \
+	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
+	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
+	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
+	tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
+	tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
+	tests/jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
+	tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
+	tests/jlm/llvm/opt/test-cne \
+	tests/jlm/llvm/opt/TestDeadNodeElimination \
+	tests/jlm/llvm/opt/test-inlining \
+	tests/jlm/llvm/opt/TestInvariantValueRedirection \
+	tests/jlm/llvm/opt/test-inversion \
+	tests/jlm/llvm/opt/TestLoadMuxReduction \
+	tests/jlm/llvm/opt/test-pull \
+	tests/jlm/llvm/opt/test-push \
+	tests/jlm/llvm/opt/test-unroll \
 
-$(JLM_BUILD)/libllvm.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/libllvm.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBLLVM_SRC))
+libllvm_TEST_LIBS = \
+	libjlmtest \
+	libllvm \
+	librvsdg \
+	libutil \
 
-.PHONY: libllvm-clean
-libllvm-clean:
-	@rm -rf $(JLM_BUILD)/jlm/llvm
-	@rm -rf $(JLM_BUILD)/libllvm.a
+libllvm_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+
+$(eval $(call common_library,libllvm))

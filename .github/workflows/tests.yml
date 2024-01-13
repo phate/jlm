@@ -11,6 +11,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install dependencies
       run: sudo apt-get install graphviz doxygen
+    - name: Configure jlm
+      run: ./configure.sh
     - name: Generate documentation
       run: make docs
 
@@ -25,20 +27,8 @@ jobs:
       - name: Check format
         run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
 
-  build-mlir:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: '0'
-    - name: "Install LLVM and Clang"
-      uses: ./.github/actions/InstallLlvmDependencies
-    - name: "Build MLIR RVSDG Dialect"
-      uses: ./.github/actions/BuildMlirDialect
-
   build:
     runs-on: ubuntu-22.04
-    needs: build-mlir
     steps:
     - uses: actions/checkout@v3
     - name: Cache build
@@ -49,24 +39,23 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
-    - name: "Build MLIR RVSDG Dialect"
-      uses: ./.github/actions/BuildMlirDialect
+    - name: Configure jlm
+      run: ./configure.sh CXX=clang++-16
     - name: Compile jlm
-      run: CPPFLAGS=-DMLIR_ENABLED=1 make jlm-release -j `nproc`
+      run: make -O -j `nproc`
     - name: Run unit and C tests
-      run: make check -j `nproc`
+      run: make check -O -j `nproc`
 
   gcc:
     runs-on: ubuntu-22.04
-    needs: build-mlir
     steps:
     - uses: actions/checkout@v3
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
-    - name: "Build MLIR RVSDG Dialect"
-      uses: ./.github/actions/BuildMlirDialect
+    - name: Configure jlm
+      run: ./configure.sh CXX=g++
     - name: Compile jlm
-      run: CPPFLAGS=-DMLIR_ENABLED=1 make CXX=g++ jlm-release -j `nproc`
+      run: make -O -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
 
@@ -81,11 +70,9 @@ jobs:
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
-    - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
       run: sudo apt-get install valgrind
-    - name: Valgrind Check 
+    - name: Valgrind Check
       run: make -C ${{ github.workspace }} valgrind-check
 
   polybench:
@@ -100,7 +87,7 @@ jobs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -118,7 +105,7 @@ jobs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules

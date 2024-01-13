@@ -19,6 +19,9 @@ register_unit_test(const std::string & name, int (*verify)());
 int
 run_unit_test(const std::string & name);
 
+int
+RunAllUnitTests();
+
 }
 
 #define JLM_UNIT_TEST_REGISTER(name, verify)                       \

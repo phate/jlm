@@ -1,58 +1,68 @@
-TESTS = \
-
-include $(JLM_ROOT)/tests/jlm/Makefile.sub
-
-TEST_SOURCES = \
+libjlmtest_SOURCES = \
 	tests/test-operation.cpp \
 	tests/test-registry.cpp \
 	tests/test-runner.cpp \
 	tests/test-types.cpp \
 	tests/TestRvsdgs.cpp \
-	$(patsubst %, tests/%.cpp, $(TESTS))
 
-$(JLM_BUILD)/tests/test-runner: rvsdg-debug
-$(JLM_BUILD)/tests/test-runner: CXXFLAGS += $(CXXFLAGS_DEBUG)
-$(JLM_BUILD)/tests/test-runner: CPPFLAGS += -I$(JLM_ROOT)/tests -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/tests/test-runner: LDFLAGS=-L$(JLM_BUILD) $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) -ltooling -lhls -lllvm -lrvsdg -lutil $(MLIR_LDFLAGS)
-$(JLM_BUILD)/tests/test-runner: %: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(TEST_SOURCES)) $(JLM_BUILD)/libtooling.a $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libhls.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a $(JLM_BUILD)/libmlir.a
-	mkdir -p ${dir $@}
-	$(CXX) -o $@ $(filter %.la, $^) $(LDFLAGS)
+$(eval $(call common_library,libjlmtest))
 
-$(patsubst %, %(JLM_BUILD)/tests/%.la, $(TESTS)): CPPFLAGS += -Itests -I$(shell $(LLVMCONFIG) --includedir)
+################################################################################
+# Rules to compile test cases with jlc and run them
 
-TESTLOG = true
+JLC_COMPILE_TESTS = \
+	tests/c-tests/test-array-struct \
+	tests/c-tests/test-assertion \
+	tests/c-tests/test-binary \
+	tests/c-tests/test-call-by-value \
+	tests/c-tests/test-casts \
+	tests/c-tests/test-complex \
+	tests/c-tests/test-conditional \
+	tests/c-tests/test-constant-array \
+	tests/c-tests/test-do-while \
+	tests/c-tests/test-extractvalue \
+	tests/c-tests/test-factorial \
+	tests/c-tests/test-fctarray \
+	tests/c-tests/test-fctptr \
+	tests/c-tests/test-fibonacci \
+	tests/c-tests/test-fp-arithmetic \
+	tests/c-tests/test-fp-comparison \
+	tests/c-tests/test-fprintf \
+	tests/c-tests/test-gblfctarray \
+	tests/c-tests/test-global-variable \
+	tests/c-tests/test-irreducible \
+	tests/c-tests/test-long-double \
+	tests/c-tests/test-loop-return \
+	tests/c-tests/test-main \
+	tests/c-tests/test-memcpy \
+	tests/c-tests/test-printf \
+	tests/c-tests/test-ptr-comparison \
+	tests/c-tests/test-recfct \
+	tests/c-tests/test-struct2 \
+	tests/c-tests/test-struct \
+	tests/c-tests/test-switch \
+	tests/c-tests/test-valist \
+	tests/c-tests/test-zeroinitialization
 
-jlm-check: jlm-check-utests jlm-check-ctests
+$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS)): $(BUILD_OUT_PREFIX)%.jlm : %.c $(BUILD_OUT_PREFIX)jlc
+	@mkdir -p $(dir $@)
+	@cp $< $$(dirname $@)/$$(basename $<)
+	$(BUILD_OUT_PREFIX)jlc -Wall -Werror -O3 -o $@ $$(dirname $@)/$$(basename $<)
 
-jlm-check-ctests: jlc-debug jlm-opt-debug
-	@rm -rf $(JLM_ROOT)/ctests.log
-	@FAILED_TESTS="" ; \
-	for TEST in `ls $(JLM_ROOT)/tests/c-tests`; do \
-		$(TESTLOG) -n "$$TEST: " ; if $(JLM_ROOT)/tests/test-jlc.sh ${JLM_ROOT} tests/c-tests/$$TEST >>$(JLM_ROOT)/ctests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
-	done ; \
-	set -e ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed c-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All c-tests passed" ; fi ; \
+GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS))
+GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.c, $(JLC_COMPILE_TESTS))
+GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS))
+GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.o, $(JLC_COMPILE_TESTS))
 
-jlm-check-utests: $(JLM_BUILD)/tests/test-runner
-	@rm -rf $(JLM_ROOT)/utests.log
-	@FAILED_TESTS="" ; \
-	for TEST in $(TESTS); do \
-		$(TESTLOG) -n "$$TEST: " ; if $(JLM_BUILD)/tests/test-runner $$TEST >>$(JLM_ROOT)/utests.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$FAILED_TESTS $$TEST" ; fi ; \
-	done ; \
-	set -e ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed u-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All u-tests passed" ; fi ; \
+$(patsubst %, run-%, $(JLC_COMPILE_TESTS)): run-%: $(BUILD_OUT_PREFIX)%.jlm
+	@echo -n "Running ctest $^ ... " ; \
+	if $^ >$^.log 2>&1 ; then \
+		echo "success" ; \
+	else \
+		echo "failed. See $^.log:" ; cat $^.log ; \
+	fi
 
-jlm-valgrind-check: $(JLM_BUILD)/tests/test-runner
-	@rm -rf $(JLM_ROOT)/check.log
-	@FAILED_TESTS="" ; \
-	for TEST in $(TESTS); do \
-		$(TESTLOG) -n "$$TEST: " ; if valgrind --leak-check=full --error-exitcode=1 $(JLM_BUILD)/tests/test-runner $$TEST >>$(JLM_ROOT)/check.log 2>&1 ; then $(TESTLOG) pass ; else $(TESTLOG) FAIL ; FAILED_TESTS="$$UNEXPECTED_FAILED_TESTS $$TEST" ; fi ; \
-	done ; \
-	set -e ; \
-	if [ "x$$FAILED_TESTS" != x ] ; then printf '\033[0;31m%s\033[0m%s\n' "Failed valgrind-tests:" "$$FAILED_TESTS" ; exit 1 ; else printf '\033[0;32m%s\n\033[0m' "All valgrind-tests passed" ; fi ; \
-
-jlm-check-clean:
-	rm -rf $(JLM_BUILD)/tests
-	rm -f $(JLM_ROOT)/ctests.log
-	rm -f $(JLM_ROOT)/utests.log
-	rm -f $(JLM_ROOT)/check.log
+# Run the jlc-compiled binaries as part of tests. This may
+# be problematic when cross-compiling for foreign targets,
+# but leave this to be addressed another day.
+check: $(patsubst %, run-%, $(JLC_COMPILE_TESTS))
