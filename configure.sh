@@ -85,7 +85,7 @@ else
 fi
 
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
-	CPPFLAGS_CIRCT="-DCIRCT=1 -I${CIRCT_PATH}/include"
+	CPPFLAGS_CIRCT="-DCIRCT=1 -I${CIRCT_PATH}/include -Wno-error=comment"
 fi
 
 CLANG_BIN=$(${LLVM_CONFIG_BIN} --bindir)
