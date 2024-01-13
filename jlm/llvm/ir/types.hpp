@@ -602,7 +602,7 @@ public:
 };
 
 template<class ELEMENTYPE>
-static inline bool
+inline bool
 IsOrContains(const jlm::rvsdg::type & type)
 {
   if (jlm::rvsdg::is<ELEMENTYPE>(type))
@@ -624,6 +624,18 @@ IsOrContains(const jlm::rvsdg::type & type)
     return IsOrContains<ELEMENTYPE>(vectorType->type());
 
   return false;
+}
+
+/**
+ * Given a type, determines if it is one of LLVM's aggregate types.
+ * Vectors are not considered to be aggregate types, despite being based on a subtype.
+ * @param type the type to check
+ * @return true if the type is an aggreate type, false otherwise
+ */
+inline bool
+IsAggregateType(const jlm::rvsdg::type & type)
+{
+  return jlm::rvsdg::is<arraytype>(type) || jlm::rvsdg::is<StructType>(type);
 }
 
 }
