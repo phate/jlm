@@ -22,6 +22,8 @@ include tools/Makefile.sub
 
 ifdef CIRCT_PATH
 include jlm/hls/Makefile.sub
+include tools/jhls/Makefile.sub
+include tools/jlm-hls/Makefile.sub
 endif
 
 include Makefile.rules

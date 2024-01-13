@@ -1,0 +1,19 @@
+# Copyright 2022 Magnus Sjaladner <work@sjalander.com>
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+# See COPYING for terms of redistribution.
+
+jhls_SOURCES = \
+	tools/jhls/jhls.cpp \
+
+jhls_LIBS = \
+	libtooling \
+	libhls \
+	libllvm \
+	librvsdg \
+	libutil \
+
+jhls_EXTRA_CPPFLAGS = -I$(shell $(LLVMCONFIG) --includedir)
+
+jhls_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
+
+$(eval $(call common_executable,jhls))

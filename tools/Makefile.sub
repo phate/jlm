@@ -2,22 +2,6 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-jhls_SOURCES = \
-	tools/jhls/jhls.cpp \
-
-jhls_LIBS = \
-	libtooling \
-	libhls \
-	libllvm \
-	librvsdg \
-	libutil \
-
-jhls_EXTRA_CPPFLAGS = -I$(shell $(LLVMCONFIG) --includedir)
-
-jhls_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
-
-$(eval $(call common_executable,jhls))
-
 jlc_SOURCES = \
 	tools/jlc/jlc.cpp \
 
@@ -32,47 +16,6 @@ jlc_EXTRA_CPPFLAGS += -I$(shell $(LLVMCONFIG) --includedir)
 jlc_LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
 
 $(eval $(call common_executable,jlc))
-
-jlm-hls_SOURCES = \
-    tools/jlm-hls/jlm-hls.cpp \
-
-jlm-hls_EXTRA_CPPFLAGS = -I$(shell $(LLVMCONFIG) --includedir)
-
-jlm-hls_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
-
-jlm-hls_LIBS = \
-	libtooling \
-	libhls \
-	libllvm \
-	librvsdg \
-	libutil \
-
-ifdef CIRCT_PATH
-  CIRCT = 1
-  CIRCT_INC = $(shell $(LLVMCONFIG) --includedir)
-  CIRCT_LIB = $(shell $(LLVMCONFIG) --libdir)
-
-  jlm-hls_EXTRA_CPPFLAGS += \
-        -DCIRCT=1 \
-        -I$(CIRCT_PATH)/include \
-
-  jlm-hls_LDFLAGS += \
-        -L$(CIRCT_PATH)/lib \
-        -lMLIR \
-        -lCIRCTAnalysisTestPasses \
-        -lCIRCTDependenceAnalysis \
-        -lCIRCTExportFIRRTL \
-        -lCIRCTFIRRTL \
-        -lCIRCTFIRRTLTransforms \
-        -lCIRCTScheduling \
-        -lCIRCTSchedulingAnalysis \
-        -lCIRCTSeq \
-        -lCIRCTSupport \
-        -lCIRCTTransforms \
-        -lCIRCTHW
-endif
-
-$(eval $(call common_executable,jlm-hls))
 
 jlm-opt_SOURCES = \
 	tools/jlm-opt/jlm-opt.cpp \
