@@ -72,8 +72,6 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     // This node operation is unknown, make sure it doesn't consume any pointers
     for (size_t i = 0; i < node.ninputs(); i++)
     {
-      if (IsOrContainsPointerType(node.input(i)->type()))
-        std::cerr << node.operation().debug_string() << std::endl;
       JLM_ASSERT(!IsOrContainsPointerType(node.input(i)->type()));
     }
   }
