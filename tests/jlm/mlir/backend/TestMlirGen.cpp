@@ -13,8 +13,6 @@
 static void
 TestLambda()
 {
-#ifdef MLIR_ENABLED
-
   using namespace jlm::llvm;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -93,8 +91,6 @@ TestLambda()
 
     omega->destroy();
   }
-
-#endif // MLIR_ENABLED
 }
 
 static int

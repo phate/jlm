@@ -5,8 +5,6 @@
 
 #include "jlm/mlir/backend/mlirgen.hpp"
 
-#ifdef MLIR_ENABLED
-
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
@@ -283,5 +281,3 @@ MLIRGen::convertType(const rvsdg::type & type)
 }
 
 } // namespace jlm::rvsdgmlir
-
-#endif // MLIR_ENABLED

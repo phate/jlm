@@ -65,10 +65,20 @@ libtooling_TEST_LIBS = \
 	libtooling \
 	libhls \
 	libllvm \
+	libmlir \
 	librvsdg \
 	libutil \
 	libjlmtest \
 
-libtooling_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+libtooling_TEST_EXTRA_LDFLAGS = \
+	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
+
+ifdef MLIR_PATH
+libtooling_TEST_EXTRA_LDFLAGS += \
+	-L$(MLIR_PATH)/lib \
+	-lMLIR \
+	-lMLIRJLM \
+	-lMLIRRVSDG
+endif
 
 $(eval $(call common_library,libtooling))

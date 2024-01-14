@@ -3,8 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifdef MLIR_ENABLED
-
 #include "jlm/mlir/frontend/rvsdggen.hpp"
 
 #include <jlm/rvsdg/bitstring/comparison.hpp>
@@ -277,5 +275,3 @@ RVSDGGen::getOperandIndex(mlir::Operation * producer, mlir::Value & operand)
 }
 
 } // jlm::mlirrvsdg
-
-#endif // MLIR_ENABLED

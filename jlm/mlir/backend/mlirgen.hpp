@@ -6,8 +6,6 @@
 #ifndef JLM_MLIR_BACKEND_MLIRGEN_HPP
 #define JLM_MLIR_BACKEND_MLIRGEN_HPP
 
-#ifdef MLIR_ENABLED
-
 // JLM
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -78,7 +76,5 @@ private:
 };
 
 } // namespace jlm::rvsdgmlir
-
-#endif // MLIR_ENABLED
 
 #endif // JLM_MLIR_BACKEND_MLIRGEN_HPP

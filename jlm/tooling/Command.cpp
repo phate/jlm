@@ -10,11 +10,14 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/OptimizationSequence.hpp>
-#include <jlm/mlir/backend/mlirgen.hpp>
-#include <jlm/mlir/frontend/rvsdggen.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
+
+#ifdef MLIR_ENABLED
+#include <jlm/mlir/backend/mlirgen.hpp>
+#include <jlm/mlir/frontend/rvsdggen.hpp>
+#endif
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>

@@ -6,8 +6,6 @@
 #ifndef JLM_MLIR_FRONTEND_RVSDGGEN_HPP
 #define JLM_MLIR_FRONTEND_RVSDGGEN_HPP
 
-#ifdef MLIR_ENABLED
-
 // #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 // #include <jlm/llvm/ir/operators/load.hpp>
 // #include <jlm/llvm/ir/operators/operators.hpp>
@@ -142,7 +140,5 @@ private:
 };
 
 } // namespace jlm::mlirrvsdg
-
-#endif // MLIR_ENABLED
 
 #endif // JLM_MLIR_FRONTEND_RVSDGGEN_HPP

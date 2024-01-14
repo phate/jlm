@@ -8,12 +8,17 @@ jlc_SOURCES = \
 jlc_LIBS += \
 	libtooling \
 	libllvm \
+	libmlir \
 	librvsdg \
 	libutil \
 
 jlc_EXTRA_CPPFLAGS += -I$(shell $(LLVMCONFIG) --includedir)
 
-jlc_LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
+jlc_LDFLAGS += \
+	       $(shell $(LLVMCONFIG) --libs core irReader) \
+	       $(shell $(LLVMCONFIG) --ldflags) \
+	       $(shell $(LLVMCONFIG) --system-libs) \
+	       ${MLIR_LDFLAGS} \
 
 $(eval $(call common_executable,jlc))
 
@@ -23,11 +28,17 @@ jlm-opt_SOURCES = \
 jlm-opt_LIBS = \
 	libtooling \
 	libllvm \
+	libmlir \
 	librvsdg \
 	libutil \
 
-jlm-opt_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
+jlm-opt_LDFLAGS = \
+	$(shell $(LLVMCONFIG) --libs core irReader) \
+	$(shell $(LLVMCONFIG) --ldflags) \
+	$(shell $(LLVMCONFIG) --system-libs) \
+	${MLIR_LDFLAGS} \
 
-jlm-opt_CPPFLAGS = -I$(shell $(LLVMCONFIG) --includedir)
+jlm-opt_CPPFLAGS = \
+	-I$(shell $(LLVMCONFIG) --includedir) \
 
 $(eval $(call common_executable,jlm-opt))

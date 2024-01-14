@@ -1,37 +1,30 @@
-# Copyright 2023 Magnus Sjalander <work@sjalander.com>
+# Copyright 2024 Magnus Sjalander <work@sjalander.com>
 # See COPYING for terms of redistribution.
 
-# Check if the MLIR RVSDG Dialect has been compiled by looking for the compile library
-ifneq (, $(shell command -v $(MLIR_ROOT)/lib/libMLIRRVSDG.a 2> /dev/null))
-  $(info Found the MLIR RVSDG Dialect)
-  CPPFLAGS += \
-	-DMLIR_ENABLED=1
+libmlir_SOURCES = \
+	jlm/mlir/backend/mlirgen.cpp \
+	jlm/mlir/frontend/rvsdggen.cpp \
 
-  MLIR_LDFLAGS = \
-        -lmlir \
-        -L$(MLIR_ROOT)/lib \
+libmlir_HEADERS = \
+	jlm/mlir/backend/mlirgen.hpp \
+	jlm/mlir/frontend/rvsdggen.hpp \
+
+libmlir_TESTS += \
+	tests/jlm/mlir/backend/TestMlirGen \
+	tests/jlm/mlir/frontend/TestRvsdgGen \
+
+libmlir_TEST_LIBS += \
+	libmlir \
+	libllvm \
+	librvsdg \
+	libutil \
+	libjlmtest \
+
+libmlir_TEST_EXTRA_LDFLAGS = \
+	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
+	-L$(MLIR_PATH)/lib \
         -lMLIR \
         -lMLIRJLM \
-        -lMLIRRVSDG
+        -lMLIRRVSDG \
 
-  LDFLAGS += $(MLIR_LDFLAGS)
-endif
-
-LIBMLIR_SRC = \
-    jlm/mlir/backend/mlirgen.cpp \
-    jlm/mlir/frontend/rvsdggen.cpp \
-
-.PHONY: libmlir-debug
-libmlir-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-libmlir-debug: $(JLM_BUILD)/libmlir.a
-
-.PHONY: libmlir-release
-libmlir-release: CXXFLAGS += -O3
-libmlir-release: $(JLM_BUILD)/libmlir.a
-
-$(JLM_BUILD)/libmlir.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/libmlir.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBMLIR_SRC))
-
-.PHONY: libmlir-clean
-libmlir-clean:
-	@rm -rf $(JLM_BUILD)/libmlir.a
+$(eval $(call common_library,libmlir))

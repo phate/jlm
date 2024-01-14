@@ -15,8 +15,6 @@
 static void
 TestLambda()
 {
-#ifdef MLIR_ENABLED
-
   {
     auto context = std::make_unique<mlir::MLIRContext>();
     // Load the RVSDG dialect
@@ -127,8 +125,6 @@ TestLambda()
     assert(!jlm::rvsdg::region::Contains<jlm::rvsdg::bitconstant_op>(*region, false));
     assert(jlm::rvsdg::region::Contains<jlm::rvsdg::bitconstant_op>(*region, true));
   }
-
-#endif // MLIR_ENABLED
 }
 
 static int
