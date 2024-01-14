@@ -82,7 +82,7 @@ public:
  *
  * The statistics collected when running the agnostic memory node provider.
  *
- * @See AgnosticMemoryNodeProvider
+ * @see AgnosticMemoryNodeProvider
  */
 class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {

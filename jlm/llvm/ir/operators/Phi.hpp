@@ -47,7 +47,7 @@ class rvoutput;
 
 class node final : public jlm::rvsdg::structural_node
 {
-  friend phi::builder;
+  friend class phi::builder;
 
   class cvconstiterator final
   {
@@ -59,7 +59,7 @@ class node final : public jlm::rvsdg::structural_node
     using reference = const cvinput *&;
 
   private:
-    friend phi::node;
+    friend class phi::node;
 
     cvconstiterator(const cvinput * input)
         : input_(input)
@@ -122,7 +122,7 @@ class node final : public jlm::rvsdg::structural_node
     using reference = cvinput *&;
 
   private:
-    friend phi::node;
+    friend class phi::node;
 
     cviterator(cvinput * input)
         : input_(input)
@@ -184,7 +184,7 @@ class node final : public jlm::rvsdg::structural_node
     using pointer = const rvoutput **;
     using reference = const rvoutput *&;
 
-    friend phi::node;
+    friend class phi::node;
 
     rvconstiterator(const rvoutput * output)
         : output_(output)
@@ -247,7 +247,7 @@ class node final : public jlm::rvsdg::structural_node
     using reference = rvoutput *&;
 
   private:
-    friend phi::node;
+    friend class phi::node;
 
     rviterator(rvoutput * output)
         : output_(output)
@@ -549,7 +549,7 @@ private:
 
 class cvinput final : public jlm::rvsdg::structural_input
 {
-  friend phi::node;
+  friend class phi::node;
 
 public:
   ~cvinput() override;
@@ -594,7 +594,7 @@ class rvresult;
 
 class rvoutput final : public jlm::rvsdg::structural_output
 {
-  friend phi::builder;
+  friend class phi::builder;
 
 public:
   ~rvoutput() override;
@@ -647,8 +647,8 @@ class rvresult;
 
 class rvargument final : public jlm::rvsdg::argument
 {
-  friend phi::builder;
-  friend phi::rvoutput;
+  friend class phi::builder;
+  friend class phi::rvoutput;
 
 public:
   ~rvargument() override;
@@ -702,7 +702,7 @@ class node;
 
 class cvargument final : public jlm::rvsdg::argument
 {
-  friend phi::node;
+  friend class phi::node;
 
 public:
   ~cvargument() override;
@@ -742,7 +742,7 @@ public:
 
 class rvresult final : public jlm::rvsdg::result
 {
-  friend phi::builder;
+  friend class phi::builder;
 
 public:
   ~rvresult() override;

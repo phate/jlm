@@ -49,7 +49,7 @@ public:
   /**
    * \brief Analyze RVSDG module
    *
-   * \param module RVSDG module the analysis is performed on.
+   * \param rvsdgModule RVSDG module the analysis is performed on.
    *
    * \return A PointsTo graph.
    */
