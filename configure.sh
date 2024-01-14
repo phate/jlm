@@ -85,7 +85,7 @@ else
 fi
 
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
-	CPPFLAGS_CIRCT="-DCIRCT=1 -I${CIRCT_PATH}/include"
+	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_CIRCT="-Wno-error=comment"
 fi
 
