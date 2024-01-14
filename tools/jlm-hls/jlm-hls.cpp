@@ -44,13 +44,6 @@ llvmToFile(jlm::llvm::RvsdgModule & module, std::string fileName)
 int
 main(int argc, char ** argv)
 {
-
-#ifndef CIRCT
-  ::llvm::outs() << "jlm-hls has not been compiled with the CIRCT backend enabled.\n";
-  ::llvm::outs() << "Recompile jlm with -DCIRCT=1 if you want to use jlm-hls.\n";
-  exit(EXIT_SUCCESS);
-#endif
-
   auto & commandLineOptions = jlm::tooling::JlmHlsCommandLineParser::Parse(argc, argv);
 
   llvm::LLVMContext ctx;

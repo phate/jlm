@@ -1,4 +1,4 @@
-# Copyright 2022 Magnus Sjaladner <work@sjalander.com>
+# Copyright 2022 Magnus Sjalander <work@sjalander.com>
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
@@ -16,12 +16,7 @@ jlm-hls_LIBS = \
 	librvsdg \
 	libutil \
 
-CIRCT = 1
-CIRCT_INC = $(shell $(LLVMCONFIG) --includedir)
-CIRCT_LIB = $(shell $(LLVMCONFIG) --libdir)
-
 jlm-hls_EXTRA_CPPFLAGS += \
-        -DCIRCT=1 \
         -I$(CIRCT_PATH)/include \
 
 jlm-hls_LDFLAGS += \
