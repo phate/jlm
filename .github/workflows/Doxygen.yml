@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get install graphviz doxygen
+        run: sudo apt-get install graphviz doxygen llvm-16-dev
       - name: Configure jlm
         run: ./configure.sh
       - name: Generate documentation
