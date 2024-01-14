@@ -6,8 +6,6 @@
 
 #include "jlm/hls/backend/rhls2firrtl/mlirgen.hpp"
 
-#ifdef CIRCT
-
 namespace jlm::hls
 {
 
@@ -2571,5 +2569,3 @@ MLIRGenImpl::toString(const circt::firrtl::CircuitOp circuit)
 }
 
 }
-
-#endif // CIRCT

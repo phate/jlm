@@ -17,8 +17,6 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-#ifdef CIRCT
-
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
@@ -280,7 +278,5 @@ private:
 };
 
 } // namespace jlm
-
-#endif // CIRCT
 
 #endif // JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP
