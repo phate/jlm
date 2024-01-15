@@ -940,7 +940,6 @@ Convert(
   }
 }
 
-template<class NODE>
 static void
 ConvertAggregationNode(
     const aggnode & aggregationNode,
@@ -948,31 +947,34 @@ ConvertAggregationNode(
     lambda::node & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  JLM_ASSERT(dynamic_cast<const NODE *>(&aggregationNode));
-  auto & castedNode = *static_cast<const NODE *>(&aggregationNode);
-  Convert(castedNode, demandMap, lambdaNode, regionalizedVariableMap);
-}
-
-static void
-ConvertAggregationNode(
-    const aggnode & aggregationNode,
-    const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
-    RegionalizedVariableMap & regionalizedVariableMap)
-{
-  static std::unordered_map<
-      std::type_index,
-      std::function<
-          void(const aggnode &, const AnnotationMap &, lambda::node &, RegionalizedVariableMap &)>>
-      map({ { typeid(entryaggnode), ConvertAggregationNode<entryaggnode> },
-            { typeid(exitaggnode), ConvertAggregationNode<exitaggnode> },
-            { typeid(blockaggnode), ConvertAggregationNode<blockaggnode> },
-            { typeid(linearaggnode), ConvertAggregationNode<linearaggnode> },
-            { typeid(branchaggnode), ConvertAggregationNode<branchaggnode> },
-            { typeid(loopaggnode), ConvertAggregationNode<loopaggnode> } });
-
-  JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
-  map[typeid(aggregationNode)](aggregationNode, demandMap, lambdaNode, regionalizedVariableMap);
+  if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
+  {
+    Convert(*entryNode, demandMap, lambdaNode, regionalizedVariableMap);
+  }
+  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  {
+    Convert(*exitNode, demandMap, lambdaNode, regionalizedVariableMap);
+  }
+  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  {
+    Convert(*blockNode, demandMap, lambdaNode, regionalizedVariableMap);
+  }
+  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  {
+    Convert(*linearNode, demandMap, lambdaNode, regionalizedVariableMap);
+  }
+  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  {
+    Convert(*branchNode, demandMap, lambdaNode, regionalizedVariableMap);
+  }
+  else if (auto loopNode = dynamic_cast<const loopaggnode *>(&aggregationNode))
+  {
+    Convert(*loopNode, demandMap, lambdaNode, regionalizedVariableMap);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled aggregation node type");
+  }
 }
 
 static void

@@ -5,17 +5,6 @@ on:
     branches: [ master ]
 
 jobs:
-  docs:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies
-      run: sudo apt-get install graphviz doxygen
-    - name: Configure jlm
-      run: ./configure.sh
-    - name: Generate documentation
-      run: make docs
-
   ClangFormat:
     runs-on: ubuntu-22.04
     steps:

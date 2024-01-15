@@ -329,30 +329,40 @@ AnnotateReadWrite(const loopaggnode & loopAggregationNode, AnnotationMap & deman
   demandMap.Insert(loopAggregationNode, std::move(demandSet));
 }
 
-template<class T>
-static void
-AnnotateReadWrite(const aggnode & aggregationNode, AnnotationMap & DemandMap)
-{
-  JLM_ASSERT(is<T>(&aggregationNode));
-  AnnotateReadWrite(*static_cast<const T *>(&aggregationNode), DemandMap);
-}
-
 static void
 AnnotateReadWrite(const aggnode & aggregationNode, AnnotationMap & demandMap)
 {
-  static std::unordered_map<std::type_index, void (*)(const aggnode &, AnnotationMap &)> map(
-      { { typeid(entryaggnode), AnnotateReadWrite<entryaggnode> },
-        { typeid(exitaggnode), AnnotateReadWrite<exitaggnode> },
-        { typeid(blockaggnode), AnnotateReadWrite<blockaggnode> },
-        { typeid(linearaggnode), AnnotateReadWrite<linearaggnode> },
-        { typeid(branchaggnode), AnnotateReadWrite<branchaggnode> },
-        { typeid(loopaggnode), AnnotateReadWrite<loopaggnode> } });
-
   for (size_t n = 0; n < aggregationNode.nchildren(); n++)
     AnnotateReadWrite(*aggregationNode.child(n), demandMap);
 
-  JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
-  return map[typeid(aggregationNode)](aggregationNode, demandMap);
+  if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
+  {
+    AnnotateReadWrite(*entryNode, demandMap);
+  }
+  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  {
+    AnnotateReadWrite(*exitNode, demandMap);
+  }
+  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  {
+    AnnotateReadWrite(*blockNode, demandMap);
+  }
+  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  {
+    AnnotateReadWrite(*linearNode, demandMap);
+  }
+  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  {
+    AnnotateReadWrite(*branchNode, demandMap);
+  }
+  else if (auto loopNode = dynamic_cast<const loopaggnode *>(&aggregationNode))
+  {
+    AnnotateReadWrite(*loopNode, demandMap);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled aggregation node type");
+  }
 }
 
 static void

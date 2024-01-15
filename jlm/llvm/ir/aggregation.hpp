@@ -533,7 +533,7 @@ public:
  *
  * 2. Branch subgraphs, such as:
  * \dot
- * 	\digraph branches {
+ *   digraph branches {
  * 		Split -> A;
  * 		Split -> B;
  * 		Split -> C;

@@ -274,7 +274,7 @@ public:
    * \param type The delta node's type.
    * \param name The delta node's name.
    * \param linkage The delta node's linkage.
-   * \param Section The delta node's section.
+   * \param section The delta node's section.
    * \param constant True, if the delta node is constant, otherwise false.
    *
    * \return A delta node without inputs or outputs.
