@@ -951,7 +951,7 @@ public:
   using reference = NODETYPE *&;
 
 private:
-  friend PointsToGraph::Node;
+  friend class PointsToGraph::Node;
 
   explicit Iterator(const typename std::unordered_set<NODETYPE *>::iterator & it)
       : It_(it)

@@ -34,8 +34,8 @@ class substitution_map;
 
 class input
 {
-  friend jlm::rvsdg::node;
-  friend jlm::rvsdg::region;
+  friend class jlm::rvsdg::node;
+  friend class jlm::rvsdg::region;
 
 public:
   virtual ~input() noexcept;
@@ -290,8 +290,8 @@ is(const jlm::rvsdg::input & input) noexcept
 class output
 {
   friend input;
-  friend jlm::rvsdg::node;
-  friend jlm::rvsdg::region;
+  friend class jlm::rvsdg::node;
+  friend class jlm::rvsdg::region;
 
   typedef std::unordered_set<jlm::rvsdg::input *>::const_iterator user_iterator;
 
