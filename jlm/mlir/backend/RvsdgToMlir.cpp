@@ -3,19 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/mlir/backend/mlirgen.hpp"
+#include "jlm/mlir/backend/RvsdgToMlir.hpp"
 
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-
-// #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-// #include <jlm/llvm/ir/operators/load.hpp>
-// #include <jlm/llvm/ir/operators/operators.hpp>
-// #include <jlm/llvm/ir/operators/sext.hpp>
-// #include <jlm/llvm/ir/operators/store.hpp>
-// #include <jlm/rvsdg/bitstring/type.hpp>
 
 #include "llvm/Support/raw_os_ostream.h"
 #include "mlir/IR/Verifier.h"
@@ -24,7 +17,7 @@ namespace jlm::rvsdgmlir
 {
 
 void
-MLIRGen::print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
+RvsdgToMlir::print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
 {
   // Verify the module
   if (failed(mlir::verify(omega)))
@@ -47,14 +40,14 @@ MLIRGen::print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
 }
 
 mlir::rvsdg::OmegaNode
-MLIRGen::convertModule(const llvm::RvsdgModule & rvsdgModule)
+RvsdgToMlir::convertModule(const llvm::RvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
   return convertOmega(graph);
 }
 
 mlir::rvsdg::OmegaNode
-MLIRGen::convertOmega(const rvsdg::graph & graph)
+RvsdgToMlir::convertOmega(const rvsdg::graph & graph)
 {
   // Create the MLIR omega node
   auto omega = Builder_->create<mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
@@ -76,7 +69,7 @@ MLIRGen::convertOmega(const rvsdg::graph & graph)
 }
 
 ::llvm::SmallVector<mlir::Value>
-MLIRGen::convertSubregion(rvsdg::region & region, mlir::Block & block)
+RvsdgToMlir::convertSubregion(rvsdg::region & region, mlir::Block & block)
 {
   // Handle arguments of the region
   for (size_t i = 0; i < region.narguments(); ++i)
@@ -125,7 +118,7 @@ MLIRGen::convertSubregion(rvsdg::region & region, mlir::Block & block)
 }
 
 mlir::Value
-MLIRGen::convertNode(const rvsdg::node & node, mlir::Block & block)
+RvsdgToMlir::convertNode(const rvsdg::node & node, mlir::Block & block)
 {
   if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
   {
@@ -152,7 +145,7 @@ MLIRGen::convertNode(const rvsdg::node & node, mlir::Block & block)
 }
 
 mlir::Value
-MLIRGen::convertSimpleNode(const rvsdg::simple_node & node, mlir::Block & block)
+RvsdgToMlir::convertSimpleNode(const rvsdg::simple_node & node, mlir::Block & block)
 {
   if (auto bitsOp = dynamic_cast<const rvsdg::bitconstant_op *>(&(node.operation())))
   {
@@ -172,7 +165,7 @@ MLIRGen::convertSimpleNode(const rvsdg::simple_node & node, mlir::Block & block)
 }
 
 mlir::Value
-MLIRGen::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & block)
+RvsdgToMlir::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & block)
 {
 
   // Handle function arguments
@@ -244,7 +237,7 @@ MLIRGen::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & bloc
 }
 
 mlir::Type
-MLIRGen::convertType(const rvsdg::type & type)
+RvsdgToMlir::convertType(const rvsdg::type & type)
 {
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&type))
   {

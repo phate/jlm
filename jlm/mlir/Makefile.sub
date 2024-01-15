@@ -2,16 +2,16 @@
 # See COPYING for terms of redistribution.
 
 libmlir_SOURCES = \
-	jlm/mlir/backend/mlirgen.cpp \
-	jlm/mlir/frontend/rvsdggen.cpp \
+	jlm/mlir/backend/RvsdgToMlir.cpp \
+	jlm/mlir/frontend/MlirToRvsdg.cpp \
 
 libmlir_HEADERS = \
-	jlm/mlir/backend/mlirgen.hpp \
-	jlm/mlir/frontend/rvsdggen.hpp \
+	jlm/mlir/backend/RvsdgToMlir.hpp \
+	jlm/mlir/frontend/MlirToRvsdg.hpp \
 
 libmlir_TESTS += \
-	tests/jlm/mlir/backend/TestMlirGen \
-	tests/jlm/mlir/frontend/TestRvsdgGen \
+	tests/jlm/mlir/backend/TestRvsdgToMlir \
+	tests/jlm/mlir/frontend/TestMlirToRvsdg \
 
 libmlir_TEST_LIBS += \
 	libmlir \

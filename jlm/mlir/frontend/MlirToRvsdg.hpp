@@ -6,14 +6,6 @@
 #ifndef JLM_MLIR_FRONTEND_RVSDGGEN_HPP
 #define JLM_MLIR_FRONTEND_RVSDGGEN_HPP
 
-// #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-// #include <jlm/llvm/ir/operators/load.hpp>
-// #include <jlm/llvm/ir/operators/operators.hpp>
-// #include <jlm/llvm/ir/operators/sext.hpp>
-// #include <jlm/llvm/ir/operators/store.hpp>
-// #include <jlm/rvsdg/bitstring/comparison.hpp>
-// #include <jlm/rvsdg/bitstring/type.hpp>
-
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 
@@ -26,10 +18,10 @@
 namespace jlm::mlirrvsdg
 {
 
-class RVSDGGen final
+class MlirToRvsdg final
 {
 public:
-  RVSDGGen()
+  MlirToRvsdg()
   {
     Context_ = std::make_unique<mlir::MLIRContext>();
     // Load the RVSDG dialect
@@ -40,15 +32,15 @@ public:
     Context_->getOrLoadDialect<mlir::arith::ArithDialect>();
   }
 
-  RVSDGGen(const RVSDGGen &) = delete;
+  MlirToRvsdg(const MlirToRvsdg &) = delete;
 
-  RVSDGGen(RVSDGGen &&) = delete;
+  MlirToRvsdg(MlirToRvsdg &&) = delete;
 
-  RVSDGGen &
-  operator=(const RVSDGGen &) = delete;
+  MlirToRvsdg &
+  operator=(const MlirToRvsdg &) = delete;
 
-  RVSDGGen &
-  operator=(RVSDGGen &&) = delete;
+  MlirToRvsdg &
+  operator=(MlirToRvsdg &&) = delete;
 
   /**
    * Reads RVSDG MLIR from a file,

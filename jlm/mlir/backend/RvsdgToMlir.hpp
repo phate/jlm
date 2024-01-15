@@ -21,10 +21,10 @@
 namespace jlm::rvsdgmlir
 {
 
-class MLIRGen final
+class RvsdgToMlir final
 {
 public:
-  MLIRGen()
+  RvsdgToMlir()
   {
     Context_ = std::make_unique<mlir::MLIRContext>();
     // Load the RVSDG dialect
@@ -36,15 +36,15 @@ public:
     Builder_ = std::make_unique<mlir::OpBuilder>(Context_.get());
   }
 
-  MLIRGen(const MLIRGen &) = delete;
+  RvsdgToMlir(const RvsdgToMlir &) = delete;
 
-  MLIRGen(MLIRGen &&) = delete;
+  RvsdgToMlir(RvsdgToMlir &&) = delete;
 
-  MLIRGen &
-  operator=(const MLIRGen &) = delete;
+  RvsdgToMlir &
+  operator=(const RvsdgToMlir &) = delete;
 
-  MLIRGen &
-  operator=(MLIRGen &&) = delete;
+  RvsdgToMlir &
+  operator=(RvsdgToMlir &&) = delete;
 
   void
   print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);

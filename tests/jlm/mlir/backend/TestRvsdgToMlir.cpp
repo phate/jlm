@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/mlir/backend/mlirgen.hpp>
+#include <jlm/mlir/backend/RvsdgToMlir.hpp>
 
 static void
 TestLambda()
@@ -41,7 +41,7 @@ TestLambda()
     lambda->finalize({ constant, iOStateArgument, memoryStateArgument, loopStateArgument });
 
     // Convert the RVSDG to MLIR
-    jlm::rvsdgmlir::MLIRGen mlirgen;
+    jlm::rvsdgmlir::RvsdgToMlir mlirgen;
     auto omega = mlirgen.convertModule(*rvsdgModule);
 
     // Validate the generated MLIR

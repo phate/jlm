@@ -8,8 +8,8 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/mlir/backend/mlirgen.hpp>
-#include <jlm/mlir/frontend/rvsdggen.hpp>
+#include <jlm/mlir/backend/RvsdgToMlir.hpp>
+#include <jlm/mlir/frontend/MlirToRvsdg.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
@@ -114,7 +114,7 @@ TestLambda()
     rootBlock->push_back(omega);
 
     // Convert the MLIR to RVSDG
-    jlm::mlirrvsdg::RVSDGGen rvsdggen;
+    jlm::mlirrvsdg::MlirToRvsdg rvsdggen;
     auto rvsdgModule = rvsdggen.convertMlir(rootBlock);
 
     auto & graph = rvsdgModule->Rvsdg();

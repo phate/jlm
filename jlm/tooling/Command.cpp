@@ -15,8 +15,8 @@
 #include <jlm/tooling/CommandPaths.hpp>
 
 #ifdef MLIR_ENABLED
-#include <jlm/mlir/backend/mlirgen.hpp>
-#include <jlm/mlir/frontend/rvsdggen.hpp>
+#include <jlm/mlir/backend/RvsdgToMlir.hpp>
+#include <jlm/mlir/frontend/MlirToRvsdg.hpp>
 #endif
 
 #include <llvm/IR/LLVMContext.h>
@@ -371,7 +371,7 @@ JlmOptCommand::ParseInputFile(
          util::StatisticsCollector & statisticsCollector) -> std::unique_ptr<llvm::RvsdgModule>
   {
 #ifdef MLIR_ENABLED
-    jlm::mlirrvsdg::RVSDGGen rvsdggen;
+    jlm::mlirrvsdg::MlirToRvsdg rvsdggen;
     auto block = rvsdggen.readRvsdgMlir(mlirIrFile);
     return rvsdggen.convertMlir(block);
 #else
@@ -437,7 +437,7 @@ JlmOptCommand::PrintRvsdgModule(
                         util::StatisticsCollector &)
   {
 #ifdef MLIR_ENABLED
-    jlm::rvsdgmlir::MLIRGen mlirgen;
+    jlm::rvsdgmlir::RvsdgToMlir mlirgen;
     auto omega = mlirgen.convertModule(rvsdgModule);
     mlirgen.print(omega, outputFile);
     omega->destroy();

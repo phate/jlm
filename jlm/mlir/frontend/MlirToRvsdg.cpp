@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/mlir/frontend/rvsdggen.hpp"
+#include "jlm/mlir/frontend/MlirToRvsdg.hpp"
 
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -26,7 +26,7 @@ namespace jlm::mlirrvsdg
 {
 
 std::unique_ptr<mlir::Block>
-RVSDGGen::readRvsdgMlir(const util::filepath & filePath)
+MlirToRvsdg::readRvsdgMlir(const util::filepath & filePath)
 {
   // Configer the parser
   mlir::ParserConfig config = mlir::ParserConfig(Context_.get());
@@ -42,7 +42,7 @@ RVSDGGen::readRvsdgMlir(const util::filepath & filePath)
 }
 
 std::unique_ptr<llvm::RvsdgModule>
-RVSDGGen::convertMlir(std::unique_ptr<mlir::Block> & block)
+MlirToRvsdg::convertMlir(std::unique_ptr<mlir::Block> & block)
 {
   // Create RVSDG module
   std::string dataLayout;
@@ -61,7 +61,7 @@ RVSDGGen::convertMlir(std::unique_ptr<mlir::Block> & block)
 }
 
 std::unique_ptr<std::vector<jlm::rvsdg::output *>>
-RVSDGGen::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
+MlirToRvsdg::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
 {
   // MLIR use blocks as the innermost "container"
   // In the RVSDG Dialect a region should contain one and only one block
@@ -70,7 +70,7 @@ RVSDGGen::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
 }
 
 std::unique_ptr<std::vector<jlm::rvsdg::output *>>
-RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
+MlirToRvsdg::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
 {
   // Transform the block such that operations are in topological order
   mlir::sortTopologically(&block);
@@ -126,7 +126,7 @@ RVSDGGen::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
 }
 
 rvsdg::node *
-RVSDGGen::convertOperation(
+MlirToRvsdg::convertOperation(
     mlir::Operation & mlirOperation,
     rvsdg::region & rvsdgRegion,
     std::vector<const rvsdg::output *> & inputs)
@@ -171,7 +171,7 @@ RVSDGGen::convertOperation(
 }
 
 void
-RVSDGGen::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
+MlirToRvsdg::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 {
   // The Omega consists of a single region
   JLM_ASSERT(mlirOmega.getRegions().size() == 1);
@@ -179,7 +179,7 @@ RVSDGGen::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 }
 
 jlm::rvsdg::node *
-RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion)
+MlirToRvsdg::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion)
 {
   // Get the name of the function
   auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));
@@ -228,7 +228,7 @@ RVSDGGen::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegio
 }
 
 std::unique_ptr<rvsdg::type>
-RVSDGGen::convertType(mlir::Type & type)
+MlirToRvsdg::convertType(mlir::Type & type)
 {
   if (type.getTypeID() == mlir::IntegerType::getTypeID())
   {
@@ -254,7 +254,7 @@ RVSDGGen::convertType(mlir::Type & type)
 }
 
 size_t
-RVSDGGen::getOperandIndex(mlir::Operation * producer, mlir::Value & operand)
+MlirToRvsdg::getOperandIndex(mlir::Operation * producer, mlir::Value & operand)
 {
   // TODO
   // Is there a more elegant way of getting the index of the
