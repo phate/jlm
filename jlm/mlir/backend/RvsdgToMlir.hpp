@@ -46,28 +46,76 @@ public:
   RvsdgToMlir &
   operator=(RvsdgToMlir &&) = delete;
 
+  /**
+   * Prints MLIR RVSDG to a file.
+   * \param omega The MLIR RVSDG Omega node to be printed.
+   * \param filePath The path to the file to print the MLIR to.
+   */
   void
   print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);
 
+  /**
+   * Converts an RVSDG module to MLIR RVSDG.
+   * \param rvsdgModule The RVSDG module to be converted.
+   * \return An MLIR RVSDG OmegaNode containing the whole graph of the rvsdgModule. It is
+   * the responsibility of the caller to call ->destroy() on the returned omega, once it is no
+   * longer needed.
+   */
   mlir::rvsdg::OmegaNode
   convertModule(const llvm::RvsdgModule & rvsdgModule);
 
 private:
+  /**
+   * Converts an omega and all nodes in its (sub)region(s) to an MLIR RVSDG OmegaNode.
+   * \param graph The root RVSDG graph.
+   * \return An MLIR RVSDG OmegaNode.
+   */
   mlir::rvsdg::OmegaNode
   convertOmega(const rvsdg::graph & graph);
 
+  /**
+   * Converts all nodes in an RVSDG region. Conversion of structural nodes cause their regions to
+   * also be converted.
+   * \param region The RVSDG region to be converted
+   * \param block The MLIR RVSDG block that corresponds to this RVSDG region, and to which
+   *              converted nodes are insterted.
+   * \return A list of outputs of the converted region/block.
+   */
   ::llvm::SmallVector<mlir::Value>
-  convertSubregion(rvsdg::region & region, mlir::Block & block);
+  convertRegion(rvsdg::region & region, mlir::Block & block);
 
+  /**
+   * Converts an RVSDG node to an MLIR RVSDG operation
+   * \param node The RVSDG node to be converted
+   * \param block The MLIR RVSDG block to insert the converted node.
+   * \return The converted MLIR RVSDG operation.
+   */
   mlir::Value
   convertNode(const rvsdg::node & node, mlir::Block & block);
 
+  /**
+   * Converts an RVSDG simple_node to an MLIR RVSDG operation
+   * \param node The RVSDG node to be converted
+   * \param block The MLIR RVSDG block to insert the converted node.
+   * \return The converted MLIR RVSDG operation.
+   */
   mlir::Value
   convertSimpleNode(const rvsdg::simple_node & node, mlir::Block & block);
 
+  /**
+   * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode..
+   * \param node The RVSDG lambda node to be converted
+   * \param block The MLIR RVSDG block to insert the lambda node.
+   * \return The converted MLIR RVSDG LambdaNode.
+   */
   mlir::Value
   convertLambda(const llvm::lambda::node & node, mlir::Block & block);
 
+  /**
+   * Converts an RVSDG type to and MLIR RVSDG type
+   * \param type The RVSDG type to be converted.
+   * \result The corresponding MLIR RVSDG type.
+   */
   mlir::Type
   convertType(const rvsdg::type & type);
 

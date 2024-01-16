@@ -19,13 +19,11 @@ namespace jlm::rvsdgmlir
 void
 RvsdgToMlir::print(mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
 {
-  // Verify the module
   if (failed(mlir::verify(omega)))
   {
     omega.emitError("module verification error");
     throw util::error("Verification of RVSDG-MLIR failed");
   }
-  // Print the module
   if (filePath == "")
   {
     ::llvm::raw_os_ostream os(std::cout);
@@ -49,18 +47,13 @@ RvsdgToMlir::convertModule(const llvm::RvsdgModule & rvsdgModule)
 mlir::rvsdg::OmegaNode
 RvsdgToMlir::convertOmega(const rvsdg::graph & graph)
 {
-  // Create the MLIR omega node
   auto omega = Builder_->create<mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
-
-  // Create a block for the region
   mlir::Region & region = omega.getRegion();
   auto & omegaBlock = region.emplaceBlock();
 
-  // Convert the region of the omega
   auto subregion = graph.root();
-  ::llvm::SmallVector<mlir::Value> regionResults = convertSubregion(*subregion, omegaBlock);
+  ::llvm::SmallVector<mlir::Value> regionResults = convertRegion(*subregion, omegaBlock);
 
-  // Handle the result of the omega
   auto omegaResult =
       Builder_->create<mlir::rvsdg::OmegaResult>(Builder_->getUnknownLoc(), regionResults);
   omegaBlock.push_back(omegaResult);
@@ -69,9 +62,8 @@ RvsdgToMlir::convertOmega(const rvsdg::graph & graph)
 }
 
 ::llvm::SmallVector<mlir::Value>
-RvsdgToMlir::convertSubregion(rvsdg::region & region, mlir::Block & block)
+RvsdgToMlir::convertRegion(rvsdg::region & region, mlir::Block & block)
 {
-  // Handle arguments of the region
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto type = convertType(region.argument(i)->type());
@@ -92,15 +84,11 @@ RvsdgToMlir::convertSubregion(rvsdg::region & region, mlir::Block & block)
     nodes[rvsdgNode] = convertNode(*rvsdgNode, block);
   }
 
-  // Handle results of the region
   ::llvm::SmallVector<mlir::Value> results;
   for (size_t i = 0; i < region.nresults(); ++i)
   {
-    // Get the result of the RVSDG region
     auto result = region.result(i);
-    // Get the output of the RVSDG node driving the result
     auto output = result->origin();
-    // Get the RVSDG node that generates the output
     rvsdg::node * outputNode = rvsdg::node_output::node(output);
     if (outputNode == nullptr)
     {
@@ -127,16 +115,6 @@ RvsdgToMlir::convertNode(const rvsdg::node & node, mlir::Block & block)
   else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
   {
     return convertLambda(*lambda, block);
-    /*
-    } else if (auto gamma = dynamic_cast<llvm::gamma_node *>(&node)) {
-      convertGamma(*gamma, block);
-    }  else if (auto theta = dynamic_cast<llvm::theta_node *>(&node)) {
-      convertTheta(*theta, block);
-    } else if (auto delta = dynamic_cast<llvm::delta::node *>(&node)) {
-      convertDelta(*delta, block);
-    } else if (auto phi = dynamic_cast<llvm::phi::node *>(&node)) {
-      convertPhi(*phi, block);
-    */
   }
   else
   {
@@ -167,8 +145,6 @@ RvsdgToMlir::convertSimpleNode(const rvsdg::simple_node & node, mlir::Block & bl
 mlir::Value
 RvsdgToMlir::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & block)
 {
-
-  // Handle function arguments
   ::llvm::SmallVector<mlir::Type> arguments;
   for (size_t i = 0; i < lambdaNode.nfctarguments(); ++i)
   {
@@ -176,7 +152,6 @@ RvsdgToMlir::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & 
   }
   ::llvm::ArrayRef argumentsArray(arguments);
 
-  // Handle function results
   ::llvm::SmallVector<mlir::Type> results;
   for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
   {
@@ -184,30 +159,13 @@ RvsdgToMlir::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & 
   }
   ::llvm::ArrayRef resultsArray(results);
 
-  /*
-    // Context arguments
-    for (size_t i = 0; i < node->ncvarguments(); ++i) {
-      // s << print_input_origin(node.cvargument(i)->input()) << ": " <<
-    print_type(&ln.cvargument(i)->type()); throw util::error("Context arguments in convertLambda()
-    has not been implemented");
-    }
-  */
-  // TODO
-  // Consider replacing the lambda ref creation with
-  // mlir::rvsdg::LambdaRefTyp::get();
-  // static LambdaRefType get(::mlir::MLIRContext *context, ::llvm::ArrayRef<mlir::Type>
-  // parameterTypes, ::llvm::ArrayRef<mlir::Type> returnTypes);
-
-  // LambdaNodes return a LambdaRefType
   ::llvm::SmallVector<mlir::Type> lambdaRef;
   auto refType = Builder_->getType<::mlir::rvsdg::LambdaRefType>(argumentsArray, resultsArray);
   lambdaRef.push_back(refType);
 
-  // TODO
-  // Add the inputs to the function
   ::llvm::SmallVector<mlir::Value> inputs;
 
-  // Add function attributes
+  // Add function attributes, e.g., the function name
   ::llvm::SmallVector<mlir::NamedAttribute> attributes;
   auto attributeName = Builder_->getStringAttr("sym_name");
   auto attributeValue = Builder_->getStringAttr(lambdaNode.name());
@@ -215,7 +173,6 @@ RvsdgToMlir::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & 
   attributes.push_back(symbolName);
   ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
-  // Create the lambda node and add it to the region/block it resides in
   auto lambda = Builder_->create<mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
       lambdaRef,
@@ -223,12 +180,10 @@ RvsdgToMlir::convertLambda(const llvm::lambda::node & lambdaNode, mlir::Block & 
       attributesRef);
   block.push_back(lambda);
 
-  // Create a block for the region
   mlir::Region & region = lambda.getRegion();
   auto & lambdaBlock = region.emplaceBlock();
 
-  // Convert the region and get all the results generated by the region
-  auto regionResults = convertSubregion(*lambdaNode.subregion(), lambdaBlock);
+  auto regionResults = convertRegion(*lambdaNode.subregion(), lambdaBlock);
   auto lambdaResult =
       Builder_->create<mlir::rvsdg::LambdaResult>(Builder_->getUnknownLoc(), regionResults);
   lambdaBlock.push_back(lambdaResult);
@@ -254,18 +209,6 @@ RvsdgToMlir::convertType(const rvsdg::type & type)
   else if (dynamic_cast<const llvm::MemoryStateType *>(&type))
   {
     return Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
-    /*
-    } else if (auto varargType =dynamic_cast<const jlm::varargtype*>(&type)) {
-      s << "!jlm.varargList";
-    } else if (auto pointerType = dynamic_cast<const jlm::PointerType*>(&type)){
-      s << print_pointer_type(pointer_type);
-    } else if (auto arrayType = dynamic_cast<const jlm::arraytype*>(&type)){
-      s << print_array_type(array_type);
-    } else if (auto structType = dynamic_cast<const jlm::structtype*>(&type)){
-      s << print_struct_type(struct_type);
-    } else if (auto controlType = dynamic_cast<const jive::ctltype*>(&type)){
-      s << "!rvsdg.ctrl<" << control_type->nalternatives() << ">";
-    */
   }
   else
   {

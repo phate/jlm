@@ -10,13 +10,6 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-// #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-// #include <jlm/llvm/ir/operators/load.hpp>
-// #include <jlm/llvm/ir/operators/operators.hpp>
-// #include <jlm/llvm/ir/operators/sext.hpp>
-// #include <jlm/llvm/ir/operators/store.hpp>
-// #include <jlm/rvsdg/bitstring/type.hpp>
-
 #include "llvm/Support/raw_os_ostream.h"
 #include "mlir/IR/Verifier.h"
 #include "mlir/Parser/Parser.h"
@@ -28,11 +21,8 @@ namespace jlm::mlirrvsdg
 std::unique_ptr<mlir::Block>
 MlirToRvsdg::readRvsdgMlir(const util::filepath & filePath)
 {
-  // Configer the parser
   mlir::ParserConfig config = mlir::ParserConfig(Context_.get());
-  // Variable for storing the result
   std::unique_ptr<mlir::Block> block = std::make_unique<mlir::Block>();
-  // Read the input file
   auto result = mlir::parseSourceFile(filePath.to_str(), block.get(), config);
   if (result.failed())
   {
@@ -44,17 +34,13 @@ MlirToRvsdg::readRvsdgMlir(const util::filepath & filePath)
 std::unique_ptr<llvm::RvsdgModule>
 MlirToRvsdg::convertMlir(std::unique_ptr<mlir::Block> & block)
 {
-  // Create RVSDG module
   std::string dataLayout;
   std::string targetTriple;
   util::filepath sourceFileName("");
   auto rvsdgModule = llvm::RvsdgModule::Create(sourceFileName, targetTriple, dataLayout);
-
-  // Get the root region
   auto & graph = rvsdgModule->Rvsdg();
   auto root = graph.root();
 
-  // Convert the MLIR into an RVSDG graph
   convertBlock(*block.get(), *root);
 
   return rvsdgModule;
@@ -72,7 +58,6 @@ MlirToRvsdg::convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion)
 std::unique_ptr<std::vector<jlm::rvsdg::output *>>
 MlirToRvsdg::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
 {
-  // Transform the block such that operations are in topological order
   mlir::sortTopologically(&block);
 
   // Create an RVSDG node for each MLIR operation and store each pair in a
@@ -80,7 +65,6 @@ MlirToRvsdg::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
   std::unordered_map<mlir::Operation *, rvsdg::node *> operations;
   for (mlir::Operation & mlirOp : block.getOperations())
   {
-    // Get the inputs of the MLIR operation
     std::vector<const jlm::rvsdg::output *> inputs;
     for (mlir::Value operand : mlirOp.getOperands())
     {
@@ -103,7 +87,7 @@ MlirToRvsdg::convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion)
     }
   }
 
-  // The results of the block are encoded in the terminator operation
+  // The results of the region/block are encoded in the terminator operation
   auto terminator = block.getTerminator();
   std::unique_ptr<std::vector<jlm::rvsdg::output *>> results =
       std::make_unique<std::vector<jlm::rvsdg::output *>>();
@@ -134,8 +118,8 @@ MlirToRvsdg::convertOperation(
   if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaNode::getOperationName())
   {
     convertOmega(mlirOperation, rvsdgRegion);
-    // Omega doesn't have a corresponding RVSDG node so we return NULL
-    return NULL;
+    // Omega doesn't have a corresponding RVSDG node so we return nullptr
+    return nullptr;
   }
   else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaNode::getOperationName())
   {
@@ -144,8 +128,6 @@ MlirToRvsdg::convertOperation(
   else if (mlirOperation.getName().getStringRef() == mlir::arith::ConstantIntOp::getOperationName())
   {
     auto constant = static_cast<mlir::arith::ConstantIntOp>(&mlirOperation);
-
-    // Need the type to know the width of the constant
     auto type = constant.getType();
     JLM_ASSERT(type.getTypeID() == mlir::IntegerType::getTypeID());
     auto * integerType = static_cast<mlir::IntegerType *>(&type);
@@ -156,12 +138,12 @@ MlirToRvsdg::convertOperation(
   else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::LambdaResult::getOperationName())
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node
-    return NULL;
+    return nullptr;
   }
   else if (mlirOperation.getName().getStringRef() == mlir::rvsdg::OmegaResult::getOperationName())
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node
-    return NULL;
+    return nullptr;
   }
   else
   {
@@ -173,7 +155,7 @@ MlirToRvsdg::convertOperation(
 void
 MlirToRvsdg::convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 {
-  // The Omega consists of a single region
+  // The Omega has a single region
   JLM_ASSERT(mlirOmega.getRegions().size() == 1);
   convertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
@@ -183,13 +165,11 @@ MlirToRvsdg::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRe
 {
   // Get the name of the function
   auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));
-  JLM_ASSERT(functionNameAttribute != NULL);
-  mlir::StringAttr * functionName = static_cast<mlir::StringAttr *>(&functionNameAttribute);
+  JLM_ASSERT(functionNameAttribute != nullptr);
+  auto * functionName = static_cast<mlir::StringAttr *>(&functionNameAttribute);
 
   // A lambda node has only the function signature as the result
   JLM_ASSERT(mlirLambda.getNumResults() == 1);
-
-  // Get the MLIR function signature
   auto result = mlirLambda.getResult(0).getType();
 
   if (result.getTypeID() != mlir::rvsdg::LambdaRefType::getTypeID())
@@ -198,7 +178,7 @@ MlirToRvsdg::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRe
   }
 
   // Create the RVSDG function signature
-  mlir::rvsdg::LambdaRefType * lambdaRefType = static_cast<mlir::rvsdg::LambdaRefType *>(&result);
+  auto * lambdaRefType = static_cast<mlir::rvsdg::LambdaRefType *>(&result);
   std::vector<std::unique_ptr<rvsdg::type>> argumentTypes;
   for (auto argumentType : lambdaRefType->getParameterTypes())
   {
@@ -217,7 +197,6 @@ MlirToRvsdg::convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRe
       functionName->getValue().str(),
       llvm::linkage::external_linkage);
 
-  // Get the region and convert it
   JLM_ASSERT(mlirLambda.getRegions().size() == 1);
   auto lambdaRegion = rvsdgLambda->subregion();
   auto regionResults = convertRegion(mlirLambda.getRegion(0), *lambdaRegion);

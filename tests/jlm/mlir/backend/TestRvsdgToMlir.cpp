@@ -14,6 +14,7 @@ static void
 TestLambda()
 {
   using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
@@ -45,41 +46,41 @@ TestLambda()
     auto omega = mlirgen.convertModule(*rvsdgModule);
 
     // Validate the generated MLIR
-    mlir::Region & omegaRegion = omega.getRegion();
+    auto & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
-    mlir::Block & omegaBlock = omegaRegion.front();
+    auto & omegaBlock = omegaRegion.front();
     // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
     auto & mlirLambda = omegaBlock.front();
-    assert(mlirLambda.getName().getStringRef() == mlir::rvsdg::LambdaNode::getOperationName());
+    assert(mlirLambda.getName().getStringRef() == LambdaNode::getOperationName());
 
     // Verify function name
     auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));
-    mlir::StringAttr * functionName = static_cast<mlir::StringAttr *>(&functionNameAttribute);
-    std::string string = functionName->getValue().str();
+    auto * functionName = static_cast<mlir::StringAttr *>(&functionNameAttribute);
+    auto string = functionName->getValue().str();
     assert(string == "test");
 
     // Verify function signature
     auto result = mlirLambda.getResult(0).getType();
-    assert(result.getTypeID() == mlir::rvsdg::LambdaRefType::getTypeID());
-    mlir::rvsdg::LambdaRefType * lambdaRefType = static_cast<mlir::rvsdg::LambdaRefType *>(&result);
+    assert(result.getTypeID() == LambdaRefType::getTypeID());
+    auto * lambdaRefType = static_cast<LambdaRefType *>(&result);
     std::vector<mlir::Type> arguments;
     for (auto argumentType : lambdaRefType->getParameterTypes())
     {
       arguments.push_back(argumentType);
     }
-    assert(arguments[0].getTypeID() == mlir::rvsdg::IOStateEdgeType::getTypeID());
-    assert(arguments[1].getTypeID() == mlir::rvsdg::MemStateEdgeType::getTypeID());
-    assert(arguments[2].getTypeID() == mlir::rvsdg::LoopStateEdgeType::getTypeID());
+    assert(arguments[0].getTypeID() == IOStateEdgeType::getTypeID());
+    assert(arguments[1].getTypeID() == MemStateEdgeType::getTypeID());
+    assert(arguments[2].getTypeID() == LoopStateEdgeType::getTypeID());
     std::vector<mlir::Type> results;
     for (auto returnType : lambdaRefType->getReturnTypes())
     {
       results.push_back(returnType);
     }
     assert(results[0].getTypeID() == mlir::IntegerType::getTypeID());
-    assert(results[1].getTypeID() == mlir::rvsdg::IOStateEdgeType::getTypeID());
-    assert(results[2].getTypeID() == mlir::rvsdg::MemStateEdgeType::getTypeID());
-    assert(results[3].getTypeID() == mlir::rvsdg::LoopStateEdgeType::getTypeID());
+    assert(results[1].getTypeID() == IOStateEdgeType::getTypeID());
+    assert(results[2].getTypeID() == MemStateEdgeType::getTypeID());
+    assert(results[3].getTypeID() == LoopStateEdgeType::getTypeID());
 
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
