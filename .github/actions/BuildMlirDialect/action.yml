@@ -1,0 +1,49 @@
+name: "Build MLIR RVSDG Dialect"
+description: "Builds the MLIR RVSDG Dialect"
+
+runs:
+  using: "composite"
+  steps:
+    # --------
+    # Restore MLIR RVSDG Dialect from cache and build if it's not in there
+    # --------
+
+    # Clone MLIR RVSDG Dialect
+    - name: Clone MLIR RVSDG dialect
+      run: git clone https://github.com/Riphiphip/mlir_rvsdg.git ${{ github.workspace }}/mlir-rvsdg
+      shell: bash
+
+    # Extract the hash for latest commit for use in the cache key
+    - name: Get  hash
+      id: get-mlir-hash
+      run: |
+        cd ${{ github.workspace }}/mlir-rvsdg
+        echo "hash=$(git rev-parse main)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    # Try to fetch Dialect from the cache
+    - name: Cache RVSDG Dialect
+      id: cache-mlir
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ github.workspace }}/lib/mlir-rvsdg
+        key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}
+
+    # Build MLIR RVSDG Dialect if we didn't hit in the cache
+    - name: Rebuild and Install MLIR RVSDG Dialect
+      if: steps.cache-mlir.outputs.cache-hit != 'true'
+      run: |
+        cd ${{ github.workspace }}/mlir-rvsdg
+        mkdir build
+        cd build
+        cmake -G Ninja .. \
+           -DCMAKE_C_COMPILER=clang-16 \
+           -DCMAKE_CXX_COMPILER=clang++-16 \
+           -DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
+           -DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
+           -DCMAKE_INSTALL_PREFIX=../../lib/mlir-rvsdg
+        cmake --build .
+        ninja install
+      shell: bash
+

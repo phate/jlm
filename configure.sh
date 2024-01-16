@@ -2,6 +2,8 @@
 
 # Default values for all tunables.
 CIRCT_PATH=
+MLIR_PATH=
+MLIR_LDFLAGS=
 TARGET="release"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
@@ -18,6 +20,8 @@ function usage()
 	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
+	echo "  --mlir-path PATH     Sets the path for the MLIR RVSDG Dialect"
+	echo "                        building the MLIR backend and frontend. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
 	echo "  --help                Prints this message and stops."
 	echo
@@ -42,6 +46,12 @@ while [[ "$#" -ge 1 ]] ; do
 		--llvm-config)
 			shift
 			LLVM_CONFIG_BIN="$1"
+			shift
+			;;
+		--mlir-path)
+			shift
+			MLIR_PATH="$1"
+			MLIR_ENABLED="yes"
 			shift
 			;;
 		--enable-coverage)
@@ -86,7 +96,13 @@ fi
 
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
-	CXXFLAGS_CIRCT="-Wno-error=comment"
+	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
+fi
+
+if [ "${MLIR_ENABLED}" == "yes" ] ; then
+	CPPFLAGS_MLIR="-DMLIR_ENABLED=1 -I${MLIR_PATH}/include"
+	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
+	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
 fi
 
 CLANG_BIN=$(${LLVM_CONFIG_BIN} --bindir)
@@ -102,9 +118,11 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 
 (
 	cat <<EOF
-CXXFLAGS=${CXXFLAGS} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
-CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT}
+CXXFLAGS=${CXXFLAGS} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMENT}
+CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT} ${CPPFLAGS_MLIR}
 CIRCT_PATH=${CIRCT_PATH}
+MLIR_PATH=${MLIR_PATH}
+MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 CLANG_BIN=${CLANG_BIN}
