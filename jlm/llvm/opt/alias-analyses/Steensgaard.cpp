@@ -813,10 +813,22 @@ public:
   }
 
   void
+  StartPointsToFlagsPropagationStatistics(const LocationSet & disjointLocationSet) noexcept
+  {
+    NumDisjointSets_ = disjointLocationSet.NumDisjointSets();
+    NumLocations_ = disjointLocationSet.NumLocations();
+    PointsToFlagsPropagationTimer_.start();
+  }
+
+  void
+  StopPointsToFlagsPropagationStatistics() noexcept
+  {
+    PointsToFlagsPropagationTimer_.stop();
+  }
+
+  void
   StartPointsToGraphConstructionStatistics(const LocationSet & locationSet)
   {
-    NumDisjointSets_ = locationSet.NumDisjointSets();
-    NumLocations_ = locationSet.NumLocations();
     PointsToGraphConstructionTimer_.start();
   }
 
@@ -893,6 +905,9 @@ public:
         "#UnknownMemorySources:",
         NumUnknownMemorySources_,
         " ",
+        "PointsToFlagsPropagationTime[ns]:",
+        PointsToFlagsPropagationTimer_.ns(),
+        " ",
         "PointsToGraphConstructionTime[ns]:",
         PointsToGraphConstructionTimer_.ns(),
         " ",
@@ -924,6 +939,7 @@ private:
   size_t NumUnknownMemorySources_;
 
   util::timer AnalysisTimer_;
+  util::timer PointsToFlagsPropagationTimer_;
   util::timer PointsToGraphConstructionTimer_;
   util::timer UnknownMemoryNodeSourcesRedirectionTimer_;
 };
@@ -1714,6 +1730,11 @@ Steensgaard::Analyze(
   // std::cout << LocationSet_->ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
+  // Propagate points-to flags in disjoint location set
+  statistics->StartPointsToFlagsPropagationStatistics(*LocationSet_);
+  PropagatePointsToFlags();
+  statistics->StopPointsToFlagsPropagationStatistics();
+
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics(*LocationSet_);
   auto pointsToGraph = ConstructPointsToGraph();
@@ -1731,6 +1752,37 @@ Steensgaard::Analyze(
   LocationSet_.reset();
 
   return pointsToGraph;
+}
+
+void
+Steensgaard::PropagatePointsToFlags()
+{
+  bool pointsToFlagsChanged;
+  do
+  {
+    pointsToFlagsChanged = false;
+
+    for (auto & set : *LocationSet_)
+    {
+      auto location = set.value();
+
+      // Nothing needs to be done if this set does not point to another set
+      if (!location->GetPointsTo())
+      {
+        continue;
+      }
+      auto & pointsToLocation = LocationSet_->GetRootLocation(*location->GetPointsTo());
+
+      auto locationFlags = location->GetPointsToFlags();
+      auto pointsToLocationFlags = pointsToLocation.GetPointsToFlags();
+      auto combinedFlags = locationFlags | pointsToLocationFlags;
+      if (pointsToLocationFlags != combinedFlags)
+      {
+        pointsToLocation.SetPointsToFlags(combinedFlags);
+        pointsToFlagsChanged = true;
+      }
+    }
+  } while (pointsToFlagsChanged);
 }
 
 PointsToGraph::MemoryNode &
