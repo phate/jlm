@@ -147,7 +147,7 @@ private:
   /**
    * Propagates the points-to flags throughout the disjoint set location graph.
    *
-   * AnalyzeRvsdg builds a disjoint set location graph, where each set is annotated with points-to
+   * AnalyzeRvsdg() builds a disjoint set location graph, where each set is annotated with points-to
    * flags. This method propagates these points-to flags throughout the graph as all of these flags
    * are contagious. An example would be a set A that is marked as PointsToEscapedMemory and points
    * to another set B. As set B would "originate" from a load operation from "set A", the
