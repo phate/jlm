@@ -145,7 +145,7 @@ private:
   AnalyzeExtractValue(const rvsdg::simple_node & node);
 
   /**
-   * \brief Propagates the points-to flags throughout the disjoint set location graph.
+   * Propagates the points-to flags throughout the disjoint set location graph.
    *
    * AnalyzeRvsdg builds a disjoint set location graph, where each set is annotated with points-to
    * flags. This method propagates these points-to flags throughout the graph as all of these flags
