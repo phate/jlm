@@ -1730,7 +1730,7 @@ Steensgaard::Analyze(
   // std::cout << LocationSet_->ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
-  // Propagate points-to flags in disjoint location set
+  // Propagate points-to flags in disjoint location set graph
   statistics->StartPointsToFlagsPropagationStatistics(*LocationSet_);
   PropagatePointsToFlags();
   statistics->StopPointsToFlagsPropagationStatistics();
