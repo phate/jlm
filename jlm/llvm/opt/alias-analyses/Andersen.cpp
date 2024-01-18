@@ -81,16 +81,14 @@ public:
             using ConstraintType = std::decay_t<decltype(c)>;
             if constexpr (std::is_same_v<ConstraintType, SupersetConstraint>)
               NumSupersetConstraints_++;
-            else if constexpr (std::is_same_v<ConstraintType, AllPointeesPointToSupersetConstraint>)
+            if constexpr (std::is_same_v<ConstraintType, AllPointeesPointToSupersetConstraint>)
               NumAllPointeesPointToSupersetConstraints_++;
-            else if constexpr (std::is_same_v<ConstraintType, SupersetOfAllPointeesConstraint>)
+            if constexpr (std::is_same_v<ConstraintType, SupersetOfAllPointeesConstraint>)
               NumSupersetOfAllPointeesConstraints_++;
-            else if constexpr (std::is_same_v<ConstraintType, HandleEscapingFunctionConstraint>)
+            if constexpr (std::is_same_v<ConstraintType, HandleEscapingFunctionConstraint>)
               NumHandleEscapingFunctionConstraints_++;
-            else if constexpr (std::is_same_v<ConstraintType, FunctionCallConstraint>)
+            if constexpr (std::is_same_v<ConstraintType, FunctionCallConstraint>)
               NumFunctionCallConstraints_++;
-            else
-              static_assert(false, "Unknown ConstraintType");
           },
           constraint);
     }
