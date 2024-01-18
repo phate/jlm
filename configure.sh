@@ -13,7 +13,7 @@ function usage()
 	echo ""
 	echo "The following options can be set, with defaults specified in brackets:"
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
-	echo "                        'debug' and 'release'. [${TARGET}]"
+	echo "                        'debug', 'release-safe' and 'release'. [${TARGET}]"
 	echo "  --circt-path PATH     Sets the path for the CIRCT tools and enables"
 	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
@@ -66,7 +66,7 @@ while [[ "$#" -ge 1 ]] ; do
 done
 
 
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g -fPIC"
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -fPIC"
 
 CPPFLAGS_COMMON="-I. -Itests"
 
@@ -76,11 +76,14 @@ CPPFLAGS_CIRCT=""
 
 if [ "${TARGET}" == "release" ] ; then
 	CXXFLAGS_TARGET="-O3"
+elif [ "${TARGET}" == "release-safe" ] ; then
+  CXXFLAGS_TARGET="-O3"
+  CPPFLAGS_TARGET="-DJLM_ENABLE_ASSERTS"
 elif [ "${TARGET}" == "debug" ] ; then
 	CXXFLAGS_TARGET="-O0"
-	CPPFLAGS_TARGET="-DJLM_DEBUG -DJLM_ENABLE_ASSERTS"
+	CPPFLAGS_TARGET="-DJLM_DEBUG -DJLM_ENABLE_ASSERTS -gdwarf-4 -g"
 else
-	echo "No build type set. Please select either 'debug' or 'release'." >&2
+	echo "No build type set. Please select either 'debug', 'release' or 'release-safe'." >&2
 	exit 1
 fi
 
