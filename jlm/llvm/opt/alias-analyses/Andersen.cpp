@@ -1,13 +1,14 @@
 /*
- * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * Copyright 2023, 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
+#include <jlm/util/time.hpp>
+#include <variant>
 
 namespace jlm::llvm::aa
 {
@@ -23,6 +24,250 @@ IsOrContainsPointerType(const rvsdg::type & type)
 {
   return IsOrContains<PointerType>(type);
 }
+
+/**
+ * Class collecting statistics from a pass of Andersen's alias analysis
+ */
+class Andersen::Statistics final : public jlm::util::Statistics
+{
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(jlm::util::filepath sourceFile)
+      : jlm::util::Statistics(Statistics::Id::AndersenAnalysis),
+        SourceFile_(std::move(sourceFile)),
+        NumRvsdgNodes_(0),
+        NumRegistersMappedToPointerObject_(0),
+        NumSupersetConstraints_(0),
+        NumAllPointeesPointToSupersetConstraints_(0),
+        NumSupersetOfAllPointeesConstraints_(0),
+        NumHandleEscapingFunctionConstraints_(0),
+        NumFunctionCallConstraints_(0),
+        ConstraintSolvingIterations_(0),
+        NumPointsToGraphNodes_(0),
+        NumRegisterNodes_(0),
+        NumAllocaNodes_(0),
+        NumDeltaNodes_(0),
+        NumImportNodes_(0),
+        NumLambdaNodes_(0),
+        NumMallocNodes_(0),
+        NumMemoryNodes_(0),
+        NumEscapedNodes_(0),
+        NumExternalMemorySources_(0)
+  {}
+
+  void
+  StartAndersenStatistics(const jlm::rvsdg::graph & graph) noexcept
+  {
+    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
+    AnalysisTimer_.start();
+    SetAndConstraintBuildingTimer_.start();
+  }
+
+  void
+  StartConstraintSolvingStatistics(
+      const PointerObjectSet & set,
+      const PointerObjectConstraintSet & constraints) noexcept
+  {
+    SetAndConstraintBuildingTimer_.stop();
+
+    NumRegistersMappedToPointerObject_ = set.GetRegisterMap().size();
+    for (const auto & constraint : constraints.GetConstraints())
+    {
+      std::visit(
+          [&](const auto & c)
+          {
+            using ConstraintType = std::decay_t<decltype(c)>;
+            if constexpr (std::is_same_v<ConstraintType, SupersetConstraint>)
+              NumSupersetConstraints_++;
+            else if constexpr (std::is_same_v<ConstraintType, AllPointeesPointToSupersetConstraint>)
+              NumAllPointeesPointToSupersetConstraints_++;
+            else if constexpr (std::is_same_v<ConstraintType, SupersetOfAllPointeesConstraint>)
+              NumSupersetOfAllPointeesConstraints_++;
+            else if constexpr (std::is_same_v<ConstraintType, HandleEscapingFunctionConstraint>)
+              NumHandleEscapingFunctionConstraints_++;
+            else if constexpr (std::is_same_v<ConstraintType, FunctionCallConstraint>)
+              NumFunctionCallConstraints_++;
+            else
+              static_assert(false, "Unknown ConstraintType");
+          },
+          constraint);
+    }
+
+    ConstraintSolvingTimer_.start();
+  }
+
+  void
+  StartPointsToGraphConstructionStatistics(
+      const PointerObjectSet & set,
+      size_t constraintSolvingIterations)
+  {
+    ConstraintSolvingTimer_.stop();
+    ConstraintSolvingIterations_ = constraintSolvingIterations;
+
+    PointsToGraphConstructionTimer_.start();
+  }
+
+  void
+  StartExternalToAllEscapedStatistics()
+  {
+    PointsToGraphConstructionExternalToEscapedTimer_.start();
+  }
+
+  void
+  StopExternalToAllEscapedStatistics()
+  {
+    PointsToGraphConstructionExternalToEscapedTimer_.stop();
+  }
+
+  void
+  StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
+  {
+    PointsToGraphConstructionTimer_.stop();
+    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
+    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
+    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
+    NumImportNodes_ = pointsToGraph.NumImportNodes();
+    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
+    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
+    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
+    NumEscapedNodes_ = pointsToGraph.GetEscapedMemoryNodes().Size();
+    NumExternalMemorySources_ = pointsToGraph.GetExternalMemoryNode().NumSources();
+  }
+
+  void
+  StopAndersenStatistics() noexcept
+  {
+    AnalysisTimer_.stop();
+  }
+
+  [[nodiscard]] std::string
+  ToString() const override
+  {
+    return jlm::util::strfmt(
+        "AndersenAnalysis ",
+        SourceFile_.to_str(),
+        " ",
+        "#RvsdgNodes:",
+        NumRvsdgNodes_,
+        " ",
+        "AliasAnalysisTime[ns]:",
+        AnalysisTimer_.ns(),
+        " ",
+        "#RegistersMappedToPointerObject:",
+        NumRegistersMappedToPointerObject_,
+        " ",
+        "#SupersetConstraints:",
+        NumSupersetConstraints_,
+        " ",
+        "#NumAllPointeesPointToSupersetConstraints:",
+        NumAllPointeesPointToSupersetConstraints_,
+        " ",
+        "#SupersetOfAllPointeesConstraints:",
+        NumSupersetOfAllPointeesConstraints_,
+        " ",
+        "#HandleEscapingFunctionConstraints:",
+        NumHandleEscapingFunctionConstraints_,
+        " ",
+        "#FunctionCallConstraints:",
+        NumFunctionCallConstraints_,
+        " ",
+        "#ConstraintSolvingIterations:",
+        ConstraintSolvingIterations_,
+        " ",
+        "#PointsToGraphNodes:",
+        NumPointsToGraphNodes_,
+        " ",
+        "#RegisterNodes:",
+        NumRegisterNodes_,
+        " ",
+        "#AllocaNodes:",
+        NumAllocaNodes_,
+        " ",
+        "#DeltaNodes:",
+        NumDeltaNodes_,
+        " ",
+        "#ImportNodes:",
+        NumImportNodes_,
+        " ",
+        "#LambdaNodes:",
+        NumLambdaNodes_,
+        " ",
+        "#MallocNodes:",
+        NumMallocNodes_,
+        " ",
+        "#MemoryNodes:",
+        NumMemoryNodes_,
+        " ",
+        "#EscapedNodes:",
+        NumEscapedNodes_,
+        " ",
+        "#ExternalMemorySources:",
+        NumExternalMemorySources_,
+        " ",
+        "SetAndConstraintBuildingTime[ns]:",
+        SetAndConstraintBuildingTimer_.ns(),
+        " ",
+        "ConstraintSolvingTime[ns]:",
+        ConstraintSolvingTimer_.ns(),
+        " ",
+        "PointsToGraphConstructionTime[ns]:",
+        PointsToGraphConstructionTimer_.ns(),
+        " ",
+        "PointsToGraphConstructionExternalToEscapedTime[ns]:",
+        PointsToGraphConstructionExternalToEscapedTimer_.ns());
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(const jlm::util::filepath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+
+private:
+  jlm::util::filepath SourceFile_;
+  size_t NumRvsdgNodes_;
+
+  // The number of RVSDG outputs and arguments that are associated with a PointerObject
+  size_t NumRegistersMappedToPointerObject_;
+
+  // Counts of each different type of constraint
+  size_t NumSupersetConstraints_;
+  size_t NumAllPointeesPointToSupersetConstraints_;
+  size_t NumSupersetOfAllPointeesConstraints_;
+  size_t NumHandleEscapingFunctionConstraints_;
+  size_t NumFunctionCallConstraints_;
+
+  // How many iterations constraint solving used before a fixed point was established
+  size_t ConstraintSolvingIterations_;
+
+  // Counts of nodes in the final PointsToGraph
+  size_t NumPointsToGraphNodes_;
+  size_t NumRegisterNodes_;
+  size_t NumAllocaNodes_;
+  size_t NumDeltaNodes_;
+  size_t NumImportNodes_;
+  size_t NumLambdaNodes_;
+  size_t NumMallocNodes_;
+  size_t NumMemoryNodes_;
+  // How many of the memory nodes in the PointsToGraph are marked as escaped
+  size_t NumEscapedNodes_;
+  // How many of the nodes in the PointsToGraph point to the "external" node
+  size_t NumExternalMemorySources_;
+
+  // Total time spent at analysis, start to finish
+  util::timer AnalysisTimer_;
+  // Time spent traversing RVSDG and creating PointerObjects and constraints
+  util::timer SetAndConstraintBuildingTimer_;
+  // Time spent solving points-to sets until all constraints are satisfied
+  util::timer ConstraintSolvingTimer_;
+  // Total time spent converting PointerObjects and points-to sets into PointsToGraph
+  util::timer PointsToGraphConstructionTimer_;
+  // The subset of PointsToGraph construction time that was spent specifically
+  // to attach all nodes pointing to external, to all nodes marked as escaped.
+  util::timer PointsToGraphConstructionExternalToEscapedTimer_;
+};
 
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
@@ -656,18 +901,26 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
 std::unique_ptr<PointsToGraph>
 Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
+  auto statistics = Statistics::Create(module.SourceFileName());
+  statistics->StartAndersenStatistics(module.Rvsdg());
+
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
 
   AnalyzeRvsdg(module.Rvsdg());
 
-  Constraints_->Solve();
+  statistics->StartConstraintSolvingStatistics(*Set_, *Constraints_);
+  size_t iterations = Constraints_->Solve();
 
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_);
+  statistics->StartPointsToGraphConstructionStatistics(*Set_, iterations);
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+  statistics->StopPointsToGraphConstructionStatistics(*result);
+
+  statistics->StopAndersenStatistics();
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   Constraints_.reset();
   Set_.reset();
-
   return result;
 }
 
@@ -679,7 +932,9 @@ Andersen::Analyze(const RvsdgModule & module)
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
+Andersen::ConstructPointsToGraphFromPointerObjectSet(
+    const PointerObjectSet & set,
+    Statistics & statistics)
 {
   auto pointsToGraph = PointsToGraph::Create();
 
@@ -767,8 +1022,8 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     }
   }
 
-  // Finally make all nodes marked as pointing to external, point to all escaped memory nodes in the
-  // graph
+  // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
+  statistics.StartExternalToAllEscapedStatistics();
   for (const auto source : pointsToExternal)
   {
     for (const auto target : escapedMemoryNodes)
@@ -778,6 +1033,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     // Add an edge to the special PointsToGraph node called "external" as well
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
+  statistics.StopExternalToAllEscapedStatistics();
 
   return pointsToGraph;
 }

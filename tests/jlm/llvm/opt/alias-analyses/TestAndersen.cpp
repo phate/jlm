@@ -869,6 +869,24 @@ TestLinkedList()
       TargetsExactly(deltaMyListNode, { &deltaMyListNode, &lambdaNextNode, &externalMemoryNode }));
 }
 
+static void
+TestStatistics()
+{
+  // Arrange
+  jlm::tests::LoadTest1 test;
+  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
+      jlm::util::filepath("/tmp/stats.txt"),
+      { jlm::util::Statistics::Id::AndersenAnalysis });
+  jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+
+  // Act
+  jlm::llvm::aa::Andersen andersen;
+  andersen.Analyze(test.module(), statisticsCollector);
+
+  // Assert
+  assert(statisticsCollector.NumCollectedStatistics() == 1);
+}
+
 static int
 TestAndersen()
 {
@@ -898,6 +916,7 @@ TestAndersen()
   TestEscapedMemory3();
   TestMemcpy();
   TestLinkedList();
+  TestStatistics();
 
   return 0;
 }
