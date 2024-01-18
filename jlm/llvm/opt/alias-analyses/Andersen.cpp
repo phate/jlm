@@ -37,6 +37,7 @@ public:
       : jlm::util::Statistics(Statistics::Id::AndersenAnalysis),
         SourceFile_(std::move(sourceFile)),
         NumRvsdgNodes_(0),
+        NumPointerObjects_(0),
         NumRegistersMappedToPointerObject_(0),
         NumSupersetConstraints_(0),
         NumAllPointeesPointToSupersetConstraints_(0),
@@ -71,6 +72,7 @@ public:
   {
     SetAndConstraintBuildingTimer_.stop();
 
+    NumPointerObjects_ = set.NumPointerObjects();
     NumRegistersMappedToPointerObject_ = set.GetRegisterMap().size();
     for (const auto & constraint : constraints.GetConstraints())
     {
@@ -155,6 +157,9 @@ public:
         "AliasAnalysisTime[ns]:",
         AnalysisTimer_.ns(),
         " ",
+        "#PointerObjects:",
+        NumPointerObjects_,
+        " ",
         "#RegistersMappedToPointerObject:",
         NumRegistersMappedToPointerObject_,
         " ",
@@ -229,6 +234,7 @@ private:
   jlm::util::filepath SourceFile_;
   size_t NumRvsdgNodes_;
 
+  size_t NumPointerObjects_;
   // The number of RVSDG outputs and arguments that are associated with a PointerObject
   size_t NumRegistersMappedToPointerObject_;
 
