@@ -452,14 +452,14 @@ PointerObjectConstraintSet::GetConstraints() const noexcept
 size_t
 PointerObjectConstraintSet::Solve()
 {
-  size_t iterations = 0;
+  size_t numIterations = 0;
 
   // Keep applying constraints until no sets are modified
   bool modified = true;
 
   while (modified)
   {
-    iterations++;
+    numIterations++;
     modified = false;
 
     for (auto & constraint : Constraints_)
@@ -475,7 +475,7 @@ PointerObjectConstraintSet::Solve()
     modified |= PropagateEscapedFlag();
   }
 
-  return iterations;
+  return numIterations;
 }
 
 bool

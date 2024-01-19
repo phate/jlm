@@ -43,7 +43,7 @@ public:
         NumSupersetOfAllPointeesConstraints_(0),
         NumHandleEscapingFunctionConstraints_(0),
         NumFunctionCallConstraints_(0),
-        ConstraintSolvingIterations_(0),
+        NumConstraintSolvingIterations_(0),
         NumPointsToGraphNodes_(0),
         NumRegisterNodes_(0),
         NumAllocaNodes_(0),
@@ -97,13 +97,15 @@ public:
   }
 
   void
-  StartPointsToGraphConstructionStatistics(
-      const PointerObjectSet & set,
-      size_t constraintSolvingIterations)
+  StopConstraintSolvingStatistics(size_t numConstraintSolvingIterations) noexcept
   {
     ConstraintSolvingTimer_.stop();
-    ConstraintSolvingIterations_ = constraintSolvingIterations;
+    NumConstraintSolvingIterations_ = numConstraintSolvingIterations;
+  }
 
+  void
+  StartPointsToGraphConstructionStatistics()
+  {
     PointsToGraphConstructionTimer_.start();
   }
 
@@ -176,7 +178,7 @@ public:
         NumFunctionCallConstraints_,
         " ",
         "#ConstraintSolvingIterations:",
-        ConstraintSolvingIterations_,
+        NumConstraintSolvingIterations_,
         " ",
         "#PointsToGraphNodes:",
         NumPointsToGraphNodes_,
@@ -243,7 +245,7 @@ private:
   size_t NumFunctionCallConstraints_;
 
   // How many iterations constraint solving used before a fixed point was established
-  size_t ConstraintSolvingIterations_;
+  size_t NumConstraintSolvingIterations_;
 
   // Counts of nodes in the final PointsToGraph
   size_t NumPointsToGraphNodes_;
@@ -913,9 +915,10 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   AnalyzeRvsdg(module.Rvsdg());
 
   statistics->StartConstraintSolvingStatistics(*Set_, *Constraints_);
-  size_t iterations = Constraints_->Solve();
+  size_t numIterations = Constraints_->Solve();
+  statistics->StopConstraintSolvingStatistics(numIterations);
 
-  statistics->StartPointsToGraphConstructionStatistics(*Set_, iterations);
+  statistics->StartPointsToGraphConstructionStatistics();
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
   statistics->StopPointsToGraphConstructionStatistics(*result);
 
