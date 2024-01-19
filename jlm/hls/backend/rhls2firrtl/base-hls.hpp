@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/hls/ir/hls.hpp>
 
 #include <fstream>
 
@@ -61,6 +62,67 @@ protected:
 
   static std::string
   get_base_file_name(const llvm::RvsdgModule & rm);
+
+  std::vector<jlm::rvsdg::argument *>
+  get_mem_resps(const llvm::lambda::node * lambda)
+  {
+    std::vector<jlm::rvsdg::argument *> mem_resps;
+    for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
+    {
+      auto arg = lambda->subregion()->argument(i);
+      if (dynamic_cast<const jlm::hls::bundletype *>(&arg->type()))
+      {
+        mem_resps.push_back(lambda->subregion()->argument(i));
+      }
+    }
+    return mem_resps;
+  }
+
+  std::vector<jlm::rvsdg::result *>
+  get_mem_reqs(const llvm::lambda::node * lambda)
+  {
+    std::vector<jlm::rvsdg::result *> mem_resps;
+    for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
+    {
+      if (dynamic_cast<const jlm::hls::bundletype *>(&lambda->subregion()->result(i)->type()))
+      {
+        mem_resps.push_back(lambda->subregion()->result(i));
+      }
+    }
+    return mem_resps;
+  }
+
+  std::vector<jlm::rvsdg::argument *>
+  get_reg_args(const llvm::lambda::node * lambda)
+  {
+    std::vector<jlm::rvsdg::argument *> args;
+    for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
+    {
+      auto argtype = &lambda->subregion()->argument(i)->type();
+      if (!dynamic_cast<const jlm::hls::bundletype *>(
+              argtype) /*&& !dynamic_cast<const jlm::rvsdg::statetype *>(argtype)*/)
+      {
+        args.push_back(lambda->subregion()->argument(i));
+      }
+    }
+    return args;
+  }
+
+  std::vector<jlm::rvsdg::result *>
+  get_reg_results(const llvm::lambda::node * lambda)
+  {
+    std::vector<jlm::rvsdg::result *> results;
+    for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
+    {
+      auto argtype = &lambda->subregion()->result(i)->type();
+      if (!dynamic_cast<const jlm::hls::bundletype *>(
+              argtype) /*&& !dynamic_cast<const jlm::rvsdg::statetype *>(argtype)*/)
+      {
+        results.push_back(lambda->subregion()->result(i));
+      }
+    }
+    return results;
+  }
 };
 
 }
