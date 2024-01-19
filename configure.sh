@@ -35,10 +35,10 @@ while [[ "$#" -ge 1 ]] ; do
 			TARGET="$1"
 			shift
 			;;
-	  --enable-asserts)
-	    ENABLE_ASSERTS="yes"
-	    shift
-	    ;;
+		--enable-asserts)
+			ENABLE_ASSERTS="yes"
+			shift
+		;;
 		--circt-path)
 			shift
 			CIRCT_PATH="$1"
@@ -91,14 +91,14 @@ fi
 CPPFLAGS_EXTRA=""
 
 if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
-  CPPFLAGS_EXTRA="${CPPFLAGS_EXTRA} -DJLM_ENABLE_ASSERTS"
+	CPPFLAGS_EXTRA="${CPPFLAGS_EXTRA} -DJLM_ENABLE_ASSERTS"
 fi
 
 CXXFLAGS_CIRCT=""
 CPPFLAGS_CIRCT=""
 
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
-  CXXFLAGS_CIRCT="-Wno-error=comment"
+	CXXFLAGS_CIRCT="-Wno-error=comment"
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 fi
 
