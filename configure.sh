@@ -3,6 +3,7 @@
 # Default values for all tunables.
 CIRCT_PATH=
 TARGET="release"
+ENABLE_ASSERTS="no"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
 CIRCT_ENABLED="no"
@@ -13,7 +14,8 @@ function usage()
 	echo ""
 	echo "The following options can be set, with defaults specified in brackets:"
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
-	echo "                        'debug', 'release-safe' and 'release'. [${TARGET}]"
+	echo "                        'debug' and 'release'. [${TARGET}]"
+	echo "  --enable-asserts      Enable asserts."
 	echo "  --circt-path PATH     Sets the path for the CIRCT tools and enables"
 	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
@@ -33,6 +35,10 @@ while [[ "$#" -ge 1 ]] ; do
 			TARGET="$1"
 			shift
 			;;
+	  --enable-asserts)
+	    ENABLE_ASSERTS="yes"
+	    shift
+	    ;;
 		--circt-path)
 			shift
 			CIRCT_PATH="$1"
@@ -66,33 +72,35 @@ while [[ "$#" -ge 1 ]] ; do
 done
 
 
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -fPIC"
-
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -fPIC -g"
 CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
 
-CPPFLAGS_CIRCT=""
-
 if [ "${TARGET}" == "release" ] ; then
 	CXXFLAGS_TARGET="-O3"
-elif [ "${TARGET}" == "release-safe" ] ; then
-  CXXFLAGS_TARGET="-O3"
-  CPPFLAGS_TARGET="-DJLM_ENABLE_ASSERTS"
+	CPPFLAGS_TARGET=""
 elif [ "${TARGET}" == "debug" ] ; then
 	CXXFLAGS_TARGET="-O0"
-	CPPFLAGS_TARGET="-DJLM_DEBUG -DJLM_ENABLE_ASSERTS -gdwarf-4 -g"
+	CPPFLAGS_TARGET=""
 else
-	echo "No build type set. Please select either 'debug', 'release' or 'release-safe'." >&2
+	echo "No build type set. Please select either 'debug' or 'release'." >&2
 	exit 1
 fi
 
-if [ "${CIRCT_ENABLED}" == "yes" ] ; then
-	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
-	CXXFLAGS_CIRCT="-Wno-error=comment"
+CPPFLAGS_EXTRA=""
+
+if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
+  CPPFLAGS_EXTRA="${CPPFLAGS_EXTRA} -DJLM_ENABLE_ASSERTS"
 fi
 
-CLANG_BIN=$(${LLVM_CONFIG_BIN} --bindir)
+CXXFLAGS_CIRCT=""
+CPPFLAGS_CIRCT=""
+
+if [ "${CIRCT_ENABLED}" == "yes" ] ; then
+  CXXFLAGS_CIRCT="-Wno-error=comment"
+	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
+fi
 
 if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
 	if ! which gcovr >/dev/null ; then
@@ -106,11 +114,10 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 (
 	cat <<EOF
 CXXFLAGS=${CXXFLAGS} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
-CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT}
+CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT} ${CPPFLAGS_EXTRA}
 CIRCT_PATH=${CIRCT_PATH}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
-CLANG_BIN=${CLANG_BIN}
 EOF
 	if [ "${CXX}" != "" ] ; then
 		echo "CXX=${CXX}"
