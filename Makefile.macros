@@ -102,7 +102,7 @@ endef
 #   - foo_LIBS:
 #     extra libraries built in this project linked into the binary
 #     (just specify the name without extension)
-#   - foo_EXTRA_LDFLAGS:
+#   - foo_LDFLAGS:
 #     additional LDFLAGS to be passed to link the executable
 #     use this to pull in external libraries (not built in this project)
 define common_executable
