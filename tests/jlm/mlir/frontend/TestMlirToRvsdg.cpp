@@ -96,12 +96,9 @@ TestLambda()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
 
-    // Convert the MLIR to RVSDG
-    jlm::mlirrvsdg::MlirToRvsdg rvsdggen;
-    auto rvsdgModule = rvsdggen.convertMlir(rootBlock);
-    auto & graph = rvsdgModule->Rvsdg();
-    auto region = graph.root();
-
+    // Convert the MLIR to RVSDG and check the result
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = rvsdgModule->Rvsdg().root();
     {
       using namespace jlm::rvsdg;
 

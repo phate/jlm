@@ -3,52 +3,54 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_MLIR_FRONTEND_RVSDGGEN_HPP
-#define JLM_MLIR_FRONTEND_RVSDGGEN_HPP
+#ifndef JLM_MLIR_MLIRTOJLMCONVERTER_HPP
+#define JLM_MLIR_MLIRTOJLMCONVERTER_HPP
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/bitstring/comparison.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
-#include "mlir/Dialect/Arith/IR/Arith.h"
+#include <mlir/Dialect/Arith/IR/Arith.h>
 
-namespace jlm::mlirrvsdg
+namespace jlm::mlir
 {
 
-class MlirToRvsdg final
+class MlirToJlmConverter final
 {
 public:
-  MlirToRvsdg()
+  MlirToJlmConverter()
+      : Context_(std::make_unique<::mlir::MLIRContext>())
   {
-    Context_ = std::make_unique<mlir::MLIRContext>();
     // Load the RVSDG dialect
-    Context_->getOrLoadDialect<mlir::rvsdg::RVSDGDialect>();
+    Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
     // Load the JLM dialect
-    Context_->getOrLoadDialect<mlir::jlm::JLMDialect>();
+    Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     // Load the Arith dialect
-    Context_->getOrLoadDialect<mlir::arith::ArithDialect>();
+    Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
   }
 
-  MlirToRvsdg(const MlirToRvsdg &) = delete;
+  MlirToJlmConverter(const MlirToJlmConverter &) = delete;
 
-  MlirToRvsdg(MlirToRvsdg &&) = delete;
+  MlirToJlmConverter(MlirToJlmConverter &&) = delete;
 
-  MlirToRvsdg &
-  operator=(const MlirToRvsdg &) = delete;
+  MlirToJlmConverter &
+  operator=(const MlirToJlmConverter &) = delete;
 
-  MlirToRvsdg &
-  operator=(MlirToRvsdg &&) = delete;
+  MlirToJlmConverter &
+  operator=(MlirToJlmConverter &&) = delete;
 
   /**
    * Reads RVSDG MLIR from a file,
    * \param filePath The path to the file containing RVSDG MLIR IR.
    * \return An MLIR block containing the read RVSDG MLIR graph.
    */
-  std::unique_ptr<mlir::Block>
-  readRvsdgMlir(const util::filepath & filePath);
+  std::unique_ptr<::mlir::Block>
+  ReadRvsdgMlir(const util::filepath & filePath);
 
   /**
    * Converts the MLIR block and all operations in it, including their respective regions.
@@ -56,7 +58,20 @@ public:
    * \return The converted RVSDG graph.
    */
   std::unique_ptr<llvm::RvsdgModule>
-  convertMlir(std::unique_ptr<mlir::Block> & block);
+  ConvertMlir(std::unique_ptr<::mlir::Block> & block);
+
+  /**
+   * Temporarily creates an MlirToJlmConverter that is used to convert an MLIR block to an RVSDG
+   * graph.
+   * \param block The RVSDG MLIR block to be converted.
+   * \return The converted RVSDG graph.
+   */
+  static std::unique_ptr<llvm::RvsdgModule>
+  CreateAndConvert(std::unique_ptr<::mlir::Block> & block)
+  {
+    jlm::mlir::MlirToJlmConverter converter;
+    return converter.ConvertMlir(block);
+  }
 
 private:
   /**
@@ -68,8 +83,8 @@ private:
    * of the MLIR region.
    * \return The results of the region are returned as a std::vector
    */
-  std::unique_ptr<std::vector<jlm::rvsdg::output *>>
-  convertRegion(mlir::Region & region, rvsdg::region & rvsdgRegion);
+  std::vector<jlm::rvsdg::output *>
+  ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdgRegion);
 
   /**
    * Converts the MLIR block and all operations in it
@@ -78,8 +93,8 @@ private:
    * of the MLIR region.
    * \return The results of the region are returned as a std::vector
    */
-  std::unique_ptr<std::vector<jlm::rvsdg::output *>>
-  convertBlock(mlir::Block & block, rvsdg::region & rvsdgRegion);
+  std::vector<jlm::rvsdg::output *>
+  ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion);
 
   /**
    * Converts an MLIR operation into an RVSDG node.
@@ -89,18 +104,18 @@ private:
    * \result The converted RVSDG node.
    */
   rvsdg::node *
-  convertOperation(
-      mlir::Operation & mlirOperation,
+  ConvertOperation(
+      ::mlir::Operation & mlirOperation,
       rvsdg::region & rvsdgRegion,
       std::vector<const rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
-   * \param omega The MLIR omega opeation to the converted
+   * \param mlirOmega The MLIR omega opeation to the converted
    * \param rvsdgRegion The RVSDG region that the omega node will reside in.
    */
   void
-  convertOmega(mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion);
+  ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion);
 
   /**
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.
@@ -109,7 +124,7 @@ private:
    * \result The converted Lambda node.
    */
   rvsdg::node *
-  convertLambda(mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion);
+  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion);
 
   /**
    * Converts an MLIR type into an RVSDG type.
@@ -117,7 +132,7 @@ private:
    * \result The converted RVSDG type.
    */
   std::unique_ptr<rvsdg::type>
-  convertType(mlir::Type & type);
+  ConvertType(::mlir::Type & type);
 
   /**
    * Returns the index of the operand of the producing MLIR operation
@@ -126,11 +141,11 @@ private:
    * \result The index of the operand.
    */
   size_t
-  getOperandIndex(mlir::Operation * producer, mlir::Value & operand);
+  GetOperandIndex(::mlir::Operation * producer, ::mlir::Value & operand);
 
-  std::unique_ptr<mlir::MLIRContext> Context_;
+  std::unique_ptr<::mlir::MLIRContext> Context_;
 };
 
-} // namespace jlm::mlirrvsdg
+} // namespace jlm::mlir
 
-#endif // JLM_MLIR_FRONTEND_RVSDGGEN_HPP
+#endif // JLM_MLIR_MLIRTOJLMCONVERTER_HPP

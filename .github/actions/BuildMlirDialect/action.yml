@@ -1,28 +1,21 @@
 name: "Build MLIR RVSDG Dialect"
-description: "Builds the MLIR RVSDG Dialect"
+description: "Restore MLIR RVSDG Dialect from cache and build if it's not in there"
 
 runs:
   using: "composite"
   steps:
-    # --------
-    # Restore MLIR RVSDG Dialect from cache and build if it's not in there
-    # --------
-
-    # Clone MLIR RVSDG Dialect
     - name: Clone MLIR RVSDG dialect
-      run: git clone https://github.com/Riphiphip/mlir_rvsdg.git ${{ github.workspace }}/mlir-rvsdg
+      run: git clone https://github.com/EECS-NTNU/mlir_rvsdg.git ${{ github.workspace }}/mlir-rvsdg
       shell: bash
 
-    # Extract the hash for latest commit for use in the cache key
-    - name: Get  hash
+    - name: Extract the hash for latest commit for use in the cache key
       id: get-mlir-hash
       run: |
         cd ${{ github.workspace }}/mlir-rvsdg
         echo "hash=$(git rev-parse main)" >> $GITHUB_OUTPUT
       shell: bash
 
-    # Try to fetch Dialect from the cache
-    - name: Cache RVSDG Dialect
+    - name: Try to fetch Dialect from the cache
       id: cache-mlir
       uses: actions/cache@v3
       with:
@@ -30,11 +23,14 @@ runs:
           ${{ github.workspace }}/lib/mlir-rvsdg
         key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}
 
-    # Build MLIR RVSDG Dialect if we didn't hit in the cache
-    - name: Rebuild and Install MLIR RVSDG Dialect
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
+
+    - name: Build MLIR RVSDG Dialect if we didn't hit in the cache
       if: steps.cache-mlir.outputs.cache-hit != 'true'
       run: |
         cd ${{ github.workspace }}/mlir-rvsdg
+        git checkout 6bfb270607f35b787bc849182f184e83548aa404
         mkdir build
         cd build
         cmake -G Ninja .. \

@@ -20,7 +20,7 @@ function usage()
 	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
-	echo "  --mlir-path PATH     Sets the path for the MLIR RVSDG Dialect"
+	echo "  --enable-mlir PATH    Sets the path to the MLIR RVSDG Dialect and enables"
 	echo "                        building the MLIR backend and frontend. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
 	echo "  --help                Prints this message and stops."
@@ -48,7 +48,7 @@ while [[ "$#" -ge 1 ]] ; do
 			LLVM_CONFIG_BIN="$1"
 			shift
 			;;
-		--mlir-path)
+		--enable-mlir)
 			shift
 			MLIR_PATH="$1"
 			MLIR_ENABLED="yes"
@@ -123,6 +123,7 @@ CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CP
 CIRCT_PATH=${CIRCT_PATH}
 MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
+MLIR_ENABLED=${MLIR_ENABLED}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 CLANG_BIN=${CLANG_BIN}

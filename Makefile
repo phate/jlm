@@ -26,7 +26,7 @@ include tools/jhls/Makefile.sub
 include tools/jlm-hls/Makefile.sub
 endif
 
-ifdef MLIR_PATH
+ifdef MLIR_ENABLED
 include jlm/mlir/Makefile.sub
 endif
 
