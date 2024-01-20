@@ -11,8 +11,6 @@ jlc_LIBS += \
 	librvsdg \
 	libutil \
 
-jlc_EXTRA_CPPFLAGS += -I$(shell $(LLVMCONFIG) --includedir)
-
 jlc_LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
 
 $(eval $(call common_executable,jlc))
@@ -27,7 +25,5 @@ jlm-opt_LIBS = \
 	libutil \
 
 jlm-opt_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
-
-jlm-opt_CPPFLAGS = -I$(shell $(LLVMCONFIG) --includedir)
 
 $(eval $(call common_executable,jlm-opt))
