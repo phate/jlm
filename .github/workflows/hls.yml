@@ -8,53 +8,35 @@ on:
 
 jobs:
 
-  # --------
-  # We build CIRCT in a separate job.
-  # This makes it more likely that when rerunning failed jobs it's
-  # not necessary to rebuild CIRCT.
-  # --------
-
-  circt:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: '0'
-    - name: "Build CIRCT"
-      uses: ./.github/actions/BuildCirct
-
   hls-test-suite:
     runs-on: ubuntu-22.04
-    needs: circt
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
 
-    - name: "Install LLVM, Clang, MLIR, and Ninja"
-      uses: ./.github/actions/InstallLlvmDependencies
+    # --------
+    # Compile jlm with the HLS backend enabled
+    # --------
 
     - name: "Build CIRCT"
       uses: ./.github/actions/BuildCirct
-
-    # --------
-    # Compile MLIR version of jlm
-    # --------
-
-    - name: Configure jlm
-      run: ./configure.sh --circt-path $(pwd)/jlm-eval-suite/circt/local CXX=clang++-16
-    - name: Compile jlm
+    - name: "Configure jlm"
+      run: ./configure.sh --enable-hls ${{ github.workspace }}/build-circt/circt CXX=clang++-15
+    - name: "Compile jlm"
       run: make -j `nproc` -O
-    - name: Link the build output directory to where it is expected by jlm-eval-suite
-      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/bin
 
     # --------
     # Run HLS test suite
     # --------
 
-    - name: Install verilator
+    - name: "Install verilator"
       run: sudo apt-get install verilator
-    - name: Run hls-test-suite
+    - name: "Clone jlm-test-suite"
+      run: git clone https://github.com/phate/jlm-eval-suite.git
+    - name: "Link the build output directory to where it is expected by jlm-eval-suite"
+      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/bin
+    - name: "Run hls-test-suite"
       run: |
         cd jlm-eval-suite
         make hls-test-run
