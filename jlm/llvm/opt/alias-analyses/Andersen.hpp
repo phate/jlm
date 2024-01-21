@@ -71,7 +71,7 @@ public:
    * @return the newly created PointsToGraph
    */
   static std::unique_ptr<PointsToGraph>
-  ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set);
+  ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set, Statistics & statistics);
 
 private:
   void
