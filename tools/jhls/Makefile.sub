@@ -12,6 +12,6 @@ jhls_LIBS = \
 	librvsdg \
 	libutil \
 
-jhls_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
+jhls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
 
 $(eval $(call common_executable,jhls))
