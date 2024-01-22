@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default values for all tunables.
-CIRCT_PATH=
+CIRCT_PATH=${PWD}/build-circt/circt
 TARGET="release"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
@@ -13,9 +13,9 @@ function usage()
 	echo "The following options can be set, with defaults specified in brackets:"
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
 	echo "                        'debug' and 'release'. [${TARGET}]"
-	echo "  --enable-hls PATH     Sets the path for the CIRCT tools and enables"
-	echo "                        building the HLS backend. [${CIRCT_PATH}]"
-	echo "                        The PATH should be absolut, i.e., not relative."
+	echo "  --enable-hls          Enable the HLS backend, which depends on CIRCT."
+	echo "  --circt-path PATH     Sets the path for the CIRCT tools."
+	echo "                        [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
@@ -34,9 +34,12 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--enable-hls)
+			HLS_ENABLED="yes"
+			shift
+			;;
+		--circt-path)
 			shift
 			CIRCT_PATH="$1"
-			CIRCT_ENABLED="yes"
 			shift
 			;;
 		--llvm-config)
@@ -84,7 +87,7 @@ else
 	exit 1
 fi
 
-if [ "${CIRCT_ENABLED}" == "yes" ] ; then
+if [ "${HLS_ENABLED}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_CIRCT="-Wno-error=comment"
 fi
@@ -105,7 +108,7 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 CXXFLAGS=${CXXFLAGS} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
 CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT}
 CIRCT_PATH=${CIRCT_PATH}
-CIRCT_ENABLED=${CIRCT_ENABLED}
+HLS_ENABLED=${HLS_ENABLED}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 CLANG_BIN=${CLANG_BIN}
