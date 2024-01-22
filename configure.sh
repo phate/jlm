@@ -15,7 +15,7 @@ function usage()
 	echo "The following options can be set, with defaults specified in brackets:"
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
 	echo "                        'debug' and 'release'. [${TARGET}]"
-	echo "  --enable-asserts      Enable asserts."
+	echo "  --enable-asserts      Enables asserts."
 	echo "  --circt-path PATH     Sets the path for the CIRCT tools and enables"
 	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
