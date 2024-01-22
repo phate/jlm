@@ -335,13 +335,13 @@ public:
 
   ~StructType() override;
 
-  StructType(bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  StructType(bool isPacked, const Declaration & declaration)
       : jlm::rvsdg::valuetype(),
         IsPacked_(isPacked),
         Declaration_(declaration)
   {}
 
-  StructType(std::string name, bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  StructType(std::string name, bool isPacked, const Declaration & declaration)
       : jlm::rvsdg::valuetype(),
         IsPacked_(isPacked),
         Name_(std::move(name)),
@@ -376,7 +376,7 @@ public:
     return IsPacked_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::rcddeclaration &
+  [[nodiscard]] const Declaration &
   GetDeclaration() const noexcept
   {
     return Declaration_;
@@ -392,13 +392,13 @@ public:
   debug_string() const override;
 
   static std::unique_ptr<StructType>
-  Create(const std::string & name, bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  Create(const std::string & name, bool isPacked, const Declaration & declaration)
   {
     return std::make_unique<StructType>(name, isPacked, declaration);
   }
 
   static std::unique_ptr<StructType>
-  Create(bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  Create(bool isPacked, const Declaration & declaration)
   {
     return std::make_unique<StructType>(isPacked, declaration);
   }
@@ -406,7 +406,7 @@ public:
 private:
   bool IsPacked_;
   std::string Name_;
-  const jlm::rvsdg::rcddeclaration & Declaration_;
+  const Declaration & Declaration_;
 };
 
 class StructType::Declaration final

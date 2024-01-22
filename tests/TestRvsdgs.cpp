@@ -3034,7 +3034,7 @@ MemcpyTest2::SetupRvsdg()
 
   PointerType pointerType;
   arraytype arrayType(pointerType, 32);
-  auto structBDeclaration = rvsdg::rcddeclaration::create({ &arrayType });
+  auto structBDeclaration = StructType::Declaration::Create({ &arrayType });
   auto structTypeB = StructType::Create("structTypeB", false, *structBDeclaration);
 
   auto SetupFunctionG = [&]()
@@ -3134,10 +3134,10 @@ LinkedListTest::SetupRvsdg()
   auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto declaration = jlm::rvsdg::rcddeclaration::create({});
+  auto declaration = StructType::Declaration::Create();
   auto structType = StructType::Create("list", false, *declaration);
   PointerType pointerType;
-  declaration->append(pointerType);
+  declaration->Append(pointerType);
 
   auto SetupDeltaMyList = [&]()
   {
