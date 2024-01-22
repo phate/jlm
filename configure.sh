@@ -77,6 +77,8 @@ CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
 
+CPPFLAGS_TARGET=""
+CXXFLAGS_TARGET=""
 if [ "${TARGET}" == "release" ] ; then
 	CXXFLAGS_TARGET="-O3"
 elif [ "${TARGET}" == "debug" ] ; then
@@ -86,10 +88,13 @@ else
 	exit 1
 fi
 
+CPPFLAGS_ASSERTS=""
 if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
 	CPPFLAGS_ASSERTS="-DJLM_ENABLE_ASSERTS"
 fi
 
+CPPFLAGS_CIRCT=""
+CXXFLAGS_CIRCT=""
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_CIRCT="-Wno-error=comment"
