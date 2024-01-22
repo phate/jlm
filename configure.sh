@@ -38,7 +38,7 @@ while [[ "$#" -ge 1 ]] ; do
 		--enable-asserts)
 			ENABLE_ASSERTS="yes"
 			shift
-		;;
+			;;
 		--circt-path)
 			shift
 			CIRCT_PATH="$1"
@@ -72,34 +72,27 @@ while [[ "$#" -ge 1 ]] ; do
 done
 
 
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -fPIC -gdwarf-4 -g"
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g"
 CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
 
 if [ "${TARGET}" == "release" ] ; then
 	CXXFLAGS_TARGET="-O3"
-	CPPFLAGS_TARGET=""
 elif [ "${TARGET}" == "debug" ] ; then
 	CXXFLAGS_TARGET="-O0"
-	CPPFLAGS_TARGET=""
 else
 	echo "No build type set. Please select either 'debug' or 'release'." >&2
 	exit 1
 fi
 
-CPPFLAGS_EXTRA=""
-
 if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
-	CPPFLAGS_EXTRA="${CPPFLAGS_EXTRA} -DJLM_ENABLE_ASSERTS"
+	CPPFLAGS_ASSERTS="-DJLM_ENABLE_ASSERTS"
 fi
 
-CXXFLAGS_CIRCT=""
-CPPFLAGS_CIRCT=""
-
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
-	CXXFLAGS_CIRCT="-Wno-error=comment"
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
+	CXXFLAGS_CIRCT="-Wno-error=comment"
 fi
 
 if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
@@ -114,7 +107,7 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 (
 	cat <<EOF
 CXXFLAGS=${CXXFLAGS} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
-CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT} ${CPPFLAGS_EXTRA}
+CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT}
 CIRCT_PATH=${CIRCT_PATH}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
