@@ -12,7 +12,7 @@ function commit()
 
 function usage()
 {
-	echo "Usage: ./configure [OPTION] [VAR=VALUE]"
+	echo "Usage: ./build-circt.sh [OPTION] [VAR=VALUE]"
 	echo ""
 	echo "  --build-path PATH     The path where to build CIRCT."
 	echo "                        [${CIRCT_BUILD}]"
