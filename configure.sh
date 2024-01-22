@@ -9,7 +9,7 @@ CIRCT_ENABLED="no"
 
 function usage()
 {
-	echo "Usage: ./configure [OPTION] [VAR=VALUE]"
+	echo "Usage: ./configure.sh [OPTION] [VAR=VALUE]"
 	echo ""
 	echo "The following options can be set, with defaults specified in brackets:"
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
