@@ -137,7 +137,6 @@ MlirToJlmConverter::ConvertOperation(
 void
 MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
 {
-  // The Omega has a single region
   JLM_ASSERT(mlirOmega.getRegions().size() == 1);
   ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
@@ -173,6 +172,8 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region 
   }
   llvm::FunctionType functionType(std::move(argumentTypes), std::move(resultTypes));
 
+  // FIXME
+  // The linkage should be part of the MLIR attributes so it can be extracted here
   auto rvsdgLambda = llvm::lambda::node::create(
       &rvsdgRegion,
       functionType,
