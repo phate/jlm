@@ -669,8 +669,8 @@ IsOrContains(const jlm::rvsdg::type & type)
   if (auto structType = dynamic_cast<const StructType *>(&type))
   {
     auto & structDeclaration = structType->GetDeclaration();
-    for (size_t n = 0; n < structDeclaration.nelements(); n++)
-      return IsOrContains<ELEMENTYPE>(structDeclaration.element(n));
+    for (size_t n = 0; n < structDeclaration.NumElements(); n++)
+      return IsOrContains<ELEMENTYPE>(structDeclaration.GetElement(n));
 
     return false;
   }
