@@ -92,6 +92,8 @@ is_export(const jlm::rvsdg::input * input)
 class RvsdgModule final : public rvsdg::RvsdgModule
 {
 public:
+  ~RvsdgModule() noexcept override = default;
+
   RvsdgModule(jlm::util::filepath sourceFileName, std::string targetTriple, std::string dataLayout)
       : DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple)),

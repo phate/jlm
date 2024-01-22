@@ -17,6 +17,8 @@ namespace jlm::rvsdg
 class RvsdgModule
 {
 public:
+  virtual ~RvsdgModule() noexcept = default;
+
   RvsdgModule() = default;
 
   RvsdgModule(const RvsdgModule &) = delete;
