@@ -17,3 +17,8 @@ jobs:
         run: ./configure.sh
       - name: Generate documentation
         run: make docs
+      - name: "Deploy documentation to GitHub pages"
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/html
