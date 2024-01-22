@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_IR_TYPES_HPP
 #define JLM_LLVM_IR_TYPES_HPP
 
-#include <jlm/rvsdg/record.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>

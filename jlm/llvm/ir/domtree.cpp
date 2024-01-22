@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/domtree.hpp>
 
+#include <functional>
 #include <unordered_map>
 
 namespace jlm::llvm

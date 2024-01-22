@@ -258,8 +258,8 @@ GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
 
-  auto dcl = jlm::rvsdg::rcddeclaration::create({ &jlm::rvsdg::bit32, &jlm::rvsdg::bit32 });
-  jlm::rvsdg::rcdtype rt(dcl.get());
+  auto declaration = StructType::Declaration::Create({ &jlm::rvsdg::bit32, &jlm::rvsdg::bit32 });
+  StructType structType(false, *declaration);
 
   MemoryStateType mt;
   PointerType pointerType;
@@ -276,10 +276,12 @@ GetElementPtrTest::SetupRvsdg()
   auto zero = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 0);
   auto one = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
 
-  auto gepx = GetElementPtrOperation::Create(fct->fctargument(0), { zero, zero }, rt, pointerType);
+  auto gepx =
+      GetElementPtrOperation::Create(fct->fctargument(0), { zero, zero }, structType, pointerType);
   auto ldx = LoadNode::Create(gepx, { fct->fctargument(1) }, jlm::rvsdg::bit32, 4);
 
-  auto gepy = GetElementPtrOperation::Create(fct->fctargument(0), { zero, one }, rt, pointerType);
+  auto gepy =
+      GetElementPtrOperation::Create(fct->fctargument(0), { zero, one }, structType, pointerType);
   auto ldy = LoadNode::Create(gepy, { ldx[1] }, jlm::rvsdg::bit32, 4);
 
   auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);

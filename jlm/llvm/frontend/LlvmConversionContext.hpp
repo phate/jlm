@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
-#include <jlm/rvsdg/record.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 
