@@ -1,5 +1,7 @@
 # JLM: A research compiler based on the RVSDG IR
 [![Tests](https://github.com/phate/jlm/actions/workflows/tests.yml/badge.svg)](https://github.com/phate/jlm/actions/workflows/tests.yml)
+[![HLS](https://github.com/phate/jlm/actions/workflows/hls.yml/badge.svg)](https://github.com/phate/jlm/actions/workflows/hls.yml)
+[![Doxygen](https://github.com/phate/jlm/actions/workflows/Doxygen.yml/badge.svg)](https://github.com/phate/jlm/actions/workflows/Doxygen.yml)
 
 Jlm is an experimental compiler/optimizer that consumes and produces LLVM IR. It uses the
 Regionalized Value State Dependence Graph (RVSDG) as intermediate representation for optimizations.
@@ -9,7 +11,7 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 * Doxygen 1.9.1
 
 ### HLS dependencies
-* CIRCT
+* CIRCT that is built with LLVM/MLIR 16
 * Verilator 4.038
 
 ### Optional dependencies
@@ -76,44 +78,22 @@ A compatible installation of CIRCT is needed to compile jlm with the capability 
 and the build has to be configured accordingly. A change of build configuration may require cleaning
 stale intermediate files first, i.e., run 'make clean'.
 ```
-./configure --circt-path=<path-to-CIRCT-installation> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
+./configure --enable-hls --circt-path=<path-to-CIRCT-installation> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
 ```
 
-The LD_LIBRARY_PATH might also need to include CIRCT_LIB for the CIRCT tools to work.
-
-### Manual CIRCT setup
-Start by cloning the CIRCT git repository and checkout the compatible commit.
+### CIRCT setup
+A build script is provided for building a compatible CIRCT version for the HLS backend.
+When using the provided default paths:
 ```
-git clone git@github.com:circt/circt.git
-cd circt
-git checkout a0e883136331c4a05ac366d5b31962a9de8d803b
-git submodule init
-git submodule update
+./scripts/build-circt.sh
+./configure --enable-hls
 ```
 
-Then follow the instructions on "Setting this up" in circt/README.md, but skip 2) as it has already been performed with the above commands.
-
-### Automated CIRCT setup
-An automated CIRCT setup used to be provided by the jlm-eval-suite, but is temporarily broken
-due to changes in the build system setup. The notes below document the intent, but will
+If custom CIRCT build and install paths are wanted:
 ```
-git clone  git//github.com:phate/jlm-eval-suite.git
-cd jlm-eval-suite
-make submodule-circt
-make circt-build
+./scripts/build-circt.sh --build-path <path-to-build-directory> --install-path <path-to-install-directory>
+./configure --enable-hls --circt-path <path-to-install-directory>
 ```
-
-This will build llvm, mlir, and circt for you and install it in jlm-eval-suite/circt/local. The build of llvm requires at least 16 GiB of main memory (RAM), as well as ninja and cmake to be installed.
-A complete list of dependencies can be found in the [getting started instrutions for LLVM/MLIR](https://mlir.llvm.org/getting_started/).
-
-Not that the jlm-eval-suite has the jlm compiler as a submodule. To compile jlm with the newly installed CIRCT setup (assuming you are still in jlm-eval-suite):
-```
-make submodule
-make jlm-release -j `nproc`
-make jlm-check -j `nproc`
-```
-
-The jlm-eval-suite comes with a suite of HLS tests. The verilator simulator has to be installed To be able to run these. If the hls-test-suite is run using the provided make targets, e.g., 'make hls-test-run', then there is no need to set any of the environment variables mentioned above.
 
 ## Publications
 An introduction to the RVSDG and the optimizations supported by jlm can be found in the
