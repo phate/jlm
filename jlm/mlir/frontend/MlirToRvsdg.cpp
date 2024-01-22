@@ -64,8 +64,9 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgReg
       else
       {
         // If there is no defining op, the Value is necessarily a Block argument.
-        auto blockArg = operand.cast<::mlir::BlockArgument>();
-        inputs.push_back(rvsdgRegion.argument(blockArg.getArgNumber()));
+        JLM_ASSERT(::mlir::dyn_cast<::mlir::BlockArgument>(operand));
+        inputs.push_back(
+            rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
       }
     }
 
@@ -88,8 +89,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgReg
     else
     {
       // If there is no defining op, the Value is necessarily a Block argument.
-      auto blockArg = operand.cast<::mlir::BlockArgument>();
-      results.push_back(rvsdgRegion.argument(blockArg.getArgNumber()));
+      JLM_ASSERT(::mlir::dyn_cast<::mlir::BlockArgument>(operand));
+      results.push_back(rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
     }
   }
 
