@@ -443,14 +443,23 @@ PointerObjectConstraintSet::AddConstraint(ConstraintVariant c)
   Constraints_.push_back(c);
 }
 
-void
+const std::vector<PointerObjectConstraintSet::ConstraintVariant> &
+PointerObjectConstraintSet::GetConstraints() const noexcept
+{
+  return Constraints_;
+}
+
+size_t
 PointerObjectConstraintSet::Solve()
 {
+  size_t numIterations = 0;
+
   // Keep applying constraints until no sets are modified
   bool modified = true;
 
   while (modified)
   {
+    numIterations++;
     modified = false;
 
     for (auto & constraint : Constraints_)
@@ -465,6 +474,8 @@ PointerObjectConstraintSet::Solve()
 
     modified |= PropagateEscapedFlag();
   }
+
+  return numIterations;
 }
 
 bool

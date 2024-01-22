@@ -571,10 +571,17 @@ public:
   AddConstraint(ConstraintVariant c);
 
   /**
+   * Retrieves all added constraints that were not simple one-off flag changes
+   */
+  const std::vector<ConstraintVariant> &
+  GetConstraints() const noexcept;
+
+  /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
    * This operation potentially has a long runtime, with an upper bound of O(n^3).
+   * @return the number of iterations until a fixed solution was established. At least 1.
    */
-  void
+  size_t
   Solve();
 
 private:

@@ -227,9 +227,11 @@ JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statis
 {
   static std::unordered_map<util::Statistics::Id, const char *> map(
       { { util::Statistics::Id::Aggregation, StatisticsCommandLineArgument::Aggregation_ },
+        { util::Statistics::Id::AndersenAnalysis,
+          StatisticsCommandLineArgument::AndersenAnalysis_ },
+        { util::Statistics::Id::Annotation, StatisticsCommandLineArgument::Annotation_ },
         { util::Statistics::Id::BasicEncoderEncoding,
           StatisticsCommandLineArgument::BasicEncoderEncoding_ },
-        { util::Statistics::Id::Annotation, StatisticsCommandLineArgument::Annotation_ },
         { util::Statistics::Id::CommonNodeElimination,
           StatisticsCommandLineArgument::CommonNodeElimination_ },
         { util::Statistics::Id::ControlFlowRecovery,
@@ -508,6 +510,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::value_desc("value"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
   auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
   auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
@@ -535,6 +538,10 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               aggregationStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
               "Collect control flow graph aggregation pass statistics."),
+          ::clEnumValN(
+              andersenAnalysisStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
+              "Collect Andersen alias analysis pass statistics."),
           ::clEnumValN(
               annotationStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
@@ -762,6 +769,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::value_desc("dir"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
   auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
   auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
@@ -788,6 +796,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               aggregationStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
               "Write aggregation statistics to file."),
+          ::clEnumValN(
+              andersenAnalysisStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
+              "Collect Andersen alias analysis pass statistics."),
           ::clEnumValN(
               annotationStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),

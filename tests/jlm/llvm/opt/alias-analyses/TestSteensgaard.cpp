@@ -316,13 +316,14 @@ TestConstantPointerNull()
     auto & lambda = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & lambdaOut = pointsToGraph.GetRegisterNode(*test.lambda->output());
     auto & lambdaArg = pointsToGraph.GetRegisterNode(*test.lambda->fctargument(0));
+    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
     auto & constantPointerNull =
         pointsToGraph.GetRegisterNode(*test.constantPointerNullNode->output(0));
 
     assertTargets(lambdaOut, { &lambda });
-    assertTargets(lambdaArg, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
-    assertTargets(constantPointerNull, {});
+    assertTargets(lambdaArg, { &lambda, &externalMemoryNode });
+    assertTargets(constantPointerNull, { &lambda, &externalMemoryNode });
 
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
         { &lambda });
@@ -1087,6 +1088,43 @@ TestMemcpy()
 }
 
 static void
+TestMemcpy2()
+{
+  // Arrange
+  jlm::tests::MemcpyTest2 test;
+  // jlm::rvsdg::view(test.graph().root(), stdout);
+
+  // Act
+  auto pointsToGraph = RunSteensgaard(test.module());
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+
+  // Assert
+  assert(pointsToGraph->NumRegisterNodes() == 8);
+  assert(pointsToGraph->NumLambdaNodes() == 2);
+
+  auto & lambdaFNode = pointsToGraph->GetLambdaNode(test.LambdaF());
+  auto & lambdaFArgument0 = pointsToGraph->GetRegisterNode(*test.LambdaF().fctargument(0));
+  auto & lambdaFArgument1 = pointsToGraph->GetRegisterNode(*test.LambdaF().fctargument(1));
+
+  auto & lambdaGArgument0 = pointsToGraph->GetRegisterNode(*test.LambdaG().fctargument(0));
+  auto & lambdaGArgument1 = pointsToGraph->GetRegisterNode(*test.LambdaG().fctargument(1));
+
+  auto & memcpyOperand0 = pointsToGraph->GetRegisterNode(*test.Memcpy().input(0)->origin());
+  auto & memcpyOperand1 = pointsToGraph->GetRegisterNode(*test.Memcpy().input(1)->origin());
+
+  auto & externalMemoryNode = pointsToGraph->GetExternalMemoryNode();
+
+  assertTargets(lambdaFArgument0, { &lambdaFNode, &externalMemoryNode });
+  assertTargets(lambdaFArgument1, { &lambdaFNode, &externalMemoryNode });
+
+  assertTargets(lambdaGArgument0, { &lambdaFNode, &externalMemoryNode });
+  assertTargets(lambdaGArgument1, { &lambdaFNode, &externalMemoryNode });
+
+  assertTargets(memcpyOperand0, { &lambdaFNode, &externalMemoryNode });
+  assertTargets(memcpyOperand1, { &lambdaFNode, &externalMemoryNode });
+}
+
+static void
 TestLinkedList()
 {
   auto validatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph,
@@ -1187,6 +1225,7 @@ TestSteensgaardAnalysis()
   TestEscapedMemory3();
 
   TestMemcpy();
+  TestMemcpy2();
 
   TestLinkedList();
 
