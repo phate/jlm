@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_BACKEND_JLM2LLVM_CONTEXT_HPP
 #define JLM_LLVM_BACKEND_JLM2LLVM_CONTEXT_HPP
 
-#include <jlm/rvsdg/record.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/util/common.hpp>
 
 #include <memory>
@@ -109,14 +109,14 @@ public:
   }
 
   inline ::llvm::StructType *
-  structtype(const rvsdg::rcddeclaration * dcl)
+  structtype(const StructType::Declaration * dcl)
   {
     auto it = structtypes_.find(dcl);
     return it != structtypes_.end() ? it->second : nullptr;
   }
 
   inline void
-  add_structtype(const rvsdg::rcddeclaration * dcl, ::llvm::StructType * type)
+  add_structtype(const StructType::Declaration * dcl, ::llvm::StructType * type)
   {
     JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
     structtypes_[dcl] = type;
@@ -127,7 +127,7 @@ private:
   ipgraph_module & im_;
   std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
-  std::unordered_map<const rvsdg::rcddeclaration *, ::llvm::StructType *> structtypes_;
+  std::unordered_map<const StructType::Declaration *, ::llvm::StructType *> structtypes_;
 };
 
 }

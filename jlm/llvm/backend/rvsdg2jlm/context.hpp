@@ -9,6 +9,8 @@
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/rvsdg/node.hpp>
 
+#include <unordered_map>
+
 namespace jlm::llvm
 {
 
