@@ -105,8 +105,8 @@ convert(const StructType & type, context & ctx)
   ctx.add_structtype(&decl, st);
 
   std::vector<::llvm::Type *> elements;
-  for (size_t n = 0; n < decl.nelements(); n++)
-    elements.push_back(convert_type(decl.element(n), ctx));
+  for (size_t n = 0; n < decl.NumElements(); n++)
+    elements.push_back(convert_type(decl.GetElement(n), ctx));
 
   if (type.HasName())
     st->setName(type.GetName());

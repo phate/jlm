@@ -9,7 +9,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/record.hpp>
 #include <jlm/util/common.hpp>
 
 #include <llvm/IR/DerivedTypes.h>

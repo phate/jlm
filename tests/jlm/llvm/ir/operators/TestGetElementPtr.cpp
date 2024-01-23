@@ -14,9 +14,8 @@ TestOperationEquality()
 
   arraytype arrayType(jlm::rvsdg::bit8, 11);
 
-  auto declaration1 =
-      jlm::rvsdg::rcddeclaration::create({ &jlm::rvsdg::bit64, &jlm::rvsdg::bit64 });
-  auto declaration2 = jlm::rvsdg::rcddeclaration::create({ &arrayType, &jlm::rvsdg::bit32 });
+  auto declaration1 = StructType::Declaration::Create({ &jlm::rvsdg::bit64, &jlm::rvsdg::bit64 });
+  auto declaration2 = StructType::Declaration::Create({ &arrayType, &jlm::rvsdg::bit32 });
 
   StructType structType1(false, *declaration1);
   StructType structType2("myStructType", false, *declaration2);
