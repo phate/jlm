@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/util/file.hpp>
 
 namespace jlm::llvm
@@ -86,12 +86,14 @@ is_export(const jlm::rvsdg::input * input)
   return result && result->region() == graph->root();
 }
 
-/** \brief RVSDG module class
- *
+/**
+ * An LLVM module utilizing the RVSDG representation.
  */
-class RvsdgModule final
+class RvsdgModule final : public rvsdg::RvsdgModule
 {
 public:
+  ~RvsdgModule() noexcept override = default;
+
   RvsdgModule(jlm::util::filepath sourceFileName, std::string targetTriple, std::string dataLayout)
       : DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple)),
@@ -108,31 +110,19 @@ public:
   RvsdgModule &
   operator=(RvsdgModule &&) = delete;
 
-  jlm::rvsdg::graph &
-  Rvsdg() noexcept
-  {
-    return Rvsdg_;
-  }
-
-  const jlm::rvsdg::graph &
-  Rvsdg() const noexcept
-  {
-    return Rvsdg_;
-  }
-
-  const jlm::util::filepath &
+  [[nodiscard]] const jlm::util::filepath &
   SourceFileName() const noexcept
   {
     return SourceFileName_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   TargetTriple() const noexcept
   {
     return TargetTriple_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   DataLayout() const noexcept
   {
     return DataLayout_;
@@ -148,7 +138,6 @@ public:
   }
 
 private:
-  jlm::rvsdg::graph Rvsdg_;
   std::string DataLayout_;
   std::string TargetTriple_;
   const jlm::util::filepath SourceFileName_;
