@@ -7,7 +7,6 @@
 #define JLM_LLVM_FRONTEND_LLVMTYPECONVERSION_HPP
 
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/record.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>

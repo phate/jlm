@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
-#include <jlm/rvsdg/record.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 
@@ -196,20 +195,20 @@ public:
     vmap_[value] = variable;
   }
 
-  inline const rvsdg::rcddeclaration *
+  const StructType::Declaration *
   lookup_declaration(const ::llvm::StructType * type)
   {
     /* FIXME: They live as long as jlm is alive. */
-    static std::vector<std::unique_ptr<rvsdg::rcddeclaration>> dcls;
+    static std::vector<std::unique_ptr<StructType::Declaration>> dcls;
 
     auto it = declarations_.find(type);
     if (it != declarations_.end())
       return it->second;
 
-    auto dcl = rvsdg::rcddeclaration::create();
+    auto dcl = StructType::Declaration::Create();
     declarations_[type] = dcl.get();
     for (size_t n = 0; n < type->getNumElements(); n++)
-      dcl->append(*ConvertType(type->getElementType(n), *this));
+      dcl->Append(*ConvertType(type->getElementType(n), *this));
 
     dcls.push_back(std::move(dcl));
     return declarations_[type];
@@ -242,7 +241,7 @@ private:
   llvm::variable * loop_state_;
   llvm::variable * memory_state_;
   std::unordered_map<const ::llvm::Value *, const llvm::variable *> vmap_;
-  std::unordered_map<const ::llvm::StructType *, const rvsdg::rcddeclaration *> declarations_;
+  std::unordered_map<const ::llvm::StructType *, const StructType::Declaration *> declarations_;
 };
 
 }
