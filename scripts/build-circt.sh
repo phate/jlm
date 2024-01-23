@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 GIT_COMMIT=093cdfe482530623fea01e1d3242af93e533ba54
 

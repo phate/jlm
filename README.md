@@ -1,7 +1,5 @@
 # JLM: A research compiler based on the RVSDG IR
 [![Tests](https://github.com/phate/jlm/actions/workflows/tests.yml/badge.svg)](https://github.com/phate/jlm/actions/workflows/tests.yml)
-[![HLS](https://github.com/phate/jlm/actions/workflows/hls.yml/badge.svg)](https://github.com/phate/jlm/actions/workflows/hls.yml)
-[![Doxygen](https://github.com/phate/jlm/actions/workflows/Doxygen.yml/badge.svg)](https://github.com/phate/jlm/actions/workflows/Doxygen.yml)
 
 Jlm is an experimental compiler/optimizer that consumes and produces LLVM IR. It uses the
 Regionalized Value State Dependence Graph (RVSDG) as intermediate representation for optimizations.
