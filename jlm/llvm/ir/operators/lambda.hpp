@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/iterator_range.hpp>

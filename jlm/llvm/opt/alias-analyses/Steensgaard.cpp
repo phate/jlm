@@ -1039,9 +1039,9 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
     {
       auto & declaration = structType->GetDeclaration();
 
-      for (size_t n = 0; n < declaration.nelements(); n++)
+      for (size_t n = 0; n < declaration.NumElements(); n++)
       {
-        if (IsVaListAlloca(declaration.element(n)))
+        if (IsVaListAlloca(declaration.GetElement(n)))
           return true;
       }
     }
