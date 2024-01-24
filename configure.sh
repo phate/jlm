@@ -1,8 +1,10 @@
 #!/bin/bash
+set -eu
 
 # Default values for all tunables.
 CIRCT_PATH=
 TARGET="release"
+ENABLE_ASSERTS="no"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
 CIRCT_ENABLED="no"
@@ -14,6 +16,7 @@ function usage()
 	echo "The following options can be set, with defaults specified in brackets:"
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
 	echo "                        'debug' and 'release'. [${TARGET}]"
+	echo "  --enable-asserts      Enables asserts."
 	echo "  --circt-path PATH     Sets the path for the CIRCT tools and enables"
 	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
@@ -31,6 +34,10 @@ while [[ "$#" -ge 1 ]] ; do
 		--target)
 			shift
 			TARGET="$1"
+			shift
+			;;
+		--enable-asserts)
+			ENABLE_ASSERTS="yes"
 			shift
 			;;
 		--circt-path)
@@ -66,30 +73,32 @@ while [[ "$#" -ge 1 ]] ; do
 done
 
 
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g -fPIC"
-
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g"
 CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
 
-CPPFLAGS_CIRCT=""
-
+CXXFLAGS_TARGET=""
 if [ "${TARGET}" == "release" ] ; then
 	CXXFLAGS_TARGET="-O3"
 elif [ "${TARGET}" == "debug" ] ; then
 	CXXFLAGS_TARGET="-O0"
-	CPPFLAGS_TARGET="-DJLM_DEBUG -DJLM_ENABLE_ASSERTS"
 else
 	echo "No build type set. Please select either 'debug' or 'release'." >&2
 	exit 1
 fi
 
+CPPFLAGS_ASSERTS=""
+if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
+	CPPFLAGS_ASSERTS="-DJLM_ENABLE_ASSERTS"
+fi
+
+CPPFLAGS_CIRCT=""
+CXXFLAGS_CIRCT=""
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_CIRCT="-Wno-error=comment"
 fi
-
-CLANG_BIN=$(${LLVM_CONFIG_BIN} --bindir)
 
 if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
 	if ! which gcovr >/dev/null ; then
@@ -102,14 +111,13 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 
 (
 	cat <<EOF
-CXXFLAGS=${CXXFLAGS} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
-CPPFLAGS=${CPPFLAGS} ${CPPFLAGS_COMMON} ${CPPFLAGS_TARGET} ${CPPFLAGS_LLVM} ${CPPFLAGS_CIRCT}
+CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
+CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT}
 CIRCT_PATH=${CIRCT_PATH}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
-CLANG_BIN=${CLANG_BIN}
 EOF
-	if [ "${CXX}" != "" ] ; then
+	if [ ! -z "${CXX-}" ] ; then
 		echo "CXX=${CXX}"
 	fi
 ) > Makefile.config
