@@ -8,9 +8,9 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
@@ -349,7 +349,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   // rhls optimization
-  dne(rhls);
+  EliminateDeadNodes(rhls);
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
