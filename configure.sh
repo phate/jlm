@@ -4,6 +4,7 @@ set -eu
 # Default values for all tunables.
 CIRCT_PATH=
 MLIR_PATH=
+MLIR_ENABLED=
 MLIR_LDFLAGS=
 TARGET="release"
 ENABLE_ASSERTS="no"
@@ -105,11 +106,13 @@ fi
 
 CPPFLAGS_CIRCT=""
 CXXFLAGS_CIRCT=""
+CXXFLAGS_NO_COMMENT=""
 if [ "${CIRCT_ENABLED}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 fi
 
+CPPFLAGS_MLIR=""
 if [ "${MLIR_ENABLED}" == "yes" ] ; then
 	CPPFLAGS_MLIR="-DMLIR_ENABLED=1 -I${MLIR_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
