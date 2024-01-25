@@ -375,7 +375,7 @@ private:
 
   static void
   PrintRvsdgModule(
-      const llvm::RvsdgModule & rvsdgModule,
+      llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,
       const JlmOptCommandLineOptions::OutputFormat & outputFormat,
       util::StatisticsCollector & statisticsCollector);

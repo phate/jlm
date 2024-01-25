@@ -602,9 +602,13 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
 }
 
 static std::unique_ptr<ipgraph_module>
-convert_rvsdg(const RvsdgModule & rm)
+convert_rvsdg(RvsdgModule & rm)
 {
-  auto im = ipgraph_module::create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
+  auto im = ipgraph_module::Create(
+      rm.SourceFileName(),
+      rm.TargetTriple(),
+      rm.DataLayout(),
+      std::move(rm.ReleaseStructTypeDeclarations()));
 
   context ctx(*im);
   convert_imports(rm.Rvsdg(), *im, ctx);
@@ -614,7 +618,7 @@ convert_rvsdg(const RvsdgModule & rm)
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector)
+rvsdg2jlm(RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
 

@@ -95,9 +95,18 @@ public:
   ~RvsdgModule() noexcept override = default;
 
   RvsdgModule(jlm::util::filepath sourceFileName, std::string targetTriple, std::string dataLayout)
+      : RvsdgModule(std::move(sourceFileName), std::move(targetTriple), std::move(dataLayout), {})
+  {}
+
+  RvsdgModule(
+      jlm::util::filepath sourceFileName,
+      std::string targetTriple,
+      std::string dataLayout,
+      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
       : DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple)),
-        SourceFileName_(std::move(sourceFileName))
+        SourceFileName_(std::move(sourceFileName)),
+        StructTypeDeclarations_(std::move(declarations))
   {}
 
   RvsdgModule(const RvsdgModule &) = delete;
@@ -128,19 +137,47 @@ public:
     return DataLayout_;
   }
 
+  const StructType::Declaration &
+  AddStructTypeDeclaration(std::unique_ptr<StructType::Declaration> declaration)
+  {
+    StructTypeDeclarations_.emplace_back(std::move(declaration));
+    return *StructTypeDeclarations_.back();
+  }
+
+  std::vector<std::unique_ptr<StructType::Declaration>> &&
+  ReleaseStructTypeDeclarations()
+  {
+    return std::move(StructTypeDeclarations_);
+  }
+
   static std::unique_ptr<RvsdgModule>
   Create(
       const jlm::util::filepath & sourceFileName,
       const std::string & targetTriple,
       const std::string & dataLayout)
   {
-    return std::make_unique<RvsdgModule>(sourceFileName, targetTriple, dataLayout);
+    return Create(sourceFileName, targetTriple, dataLayout, {});
+  }
+
+  static std::unique_ptr<RvsdgModule>
+  Create(
+      const jlm::util::filepath & sourceFileName,
+      const std::string & targetTriple,
+      const std::string & dataLayout,
+      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
+  {
+    return std::make_unique<RvsdgModule>(
+        sourceFileName,
+        targetTriple,
+        dataLayout,
+        std::move(declarations));
   }
 
 private:
   std::string DataLayout_;
   std::string TargetTriple_;
   const jlm::util::filepath SourceFileName_;
+  std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
 }
