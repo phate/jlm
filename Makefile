@@ -20,10 +20,17 @@ include jlm/tooling/Makefile.sub
 include tests/Makefile.sub
 include tools/Makefile.sub
 
-ifdef HLS_ENABLED
+ifdef ENABLE_HLS
 include jlm/hls/Makefile.sub
 include tools/jhls/Makefile.sub
 include tools/jlm-hls/Makefile.sub
+
+.PHONY: build-circt
+build-circt: $(CIRCT_PATH)
+
+$(CIRCT_PATH):
+	./scripts/build-circt.sh --build-path ./build-circt --install-path $(CIRCT_PATH)
+
 endif
 
 include Makefile.rules

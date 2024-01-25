@@ -2,11 +2,12 @@
 set -eu
 
 # Default values for all tunables.
-CIRCT_PATH=${PWD}/build-circt/circt
 TARGET="release"
 ENABLE_ASSERTS="no"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
+ENABLE_HLS=
+CIRCT_PATH=
 
 function usage()
 {
@@ -16,9 +17,8 @@ function usage()
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
 	echo "                        'debug' and 'release'. [${TARGET}]"
 	echo "  --enable-asserts      Enables asserts."
-	echo "  --enable-hls          Enable the HLS backend, which depends on CIRCT."
-	echo "  --circt-path PATH     Sets the path for the CIRCT tools."
-	echo "                        [${CIRCT_PATH}]"
+	echo "  --enable-hls PATH     Enable the HLS backend, and sets the path to"
+	echo "                        CIRCT, which the backend depends on."
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
@@ -37,16 +37,13 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--enable-hls)
-			HLS_ENABLED="yes"
+			ENABLE_HLS="yes"
+			shift
+			CIRCT_PATH="$1"
 			shift
 			;;
 		--enable-asserts)
 			ENABLE_ASSERTS="yes"
-			shift
-			;;
-		--circt-path)
-			shift
-			CIRCT_PATH="$1"
 			shift
 			;;
 		--llvm-config)
@@ -98,7 +95,7 @@ fi
 
 CPPFLAGS_CIRCT=""
 CXXFLAGS_CIRCT=""
-if [ "${HLS_ENABLED}" == "yes" ] ; then
+if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_CIRCT="-Wno-error=comment"
 fi
@@ -116,8 +113,8 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 	cat <<EOF
 CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
 CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT}
+ENABLE_HLS=${ENABLE_HLS}
 CIRCT_PATH=${CIRCT_PATH}
-HLS_ENABLED=${HLS_ENABLED}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 EOF

@@ -3,9 +3,6 @@ set -eu
 
 GIT_COMMIT=093cdfe482530623fea01e1d3242af93e533ba54
 
-CIRCT_BUILD=${PWD}/build-circt
-CIRCT_INSTALL=${CIRCT_BUILD}/circt
-
 function commit()
 {
 	echo ${GIT_COMMIT}

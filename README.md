@@ -72,26 +72,19 @@ The report will be available in build/coverage/coverage.html.
 ## High-level synthesis (HLS) backend
 The HLS backend uses the MLIR FIRRTL dialect from CIRCT to convert llvm IR to FIRRTL code.
 
-A compatible installation of CIRCT is needed to compile jlm with the capability to generate FIRRTL code
+A compatible installation of CIRCT is needed to compile jlm with the capability to generate FIRRTL
 and the build has to be configured accordingly. A change of build configuration may require cleaning
 stale intermediate files first, i.e., run 'make clean'.
 ```
-./configure --enable-hls --circt-path=<path-to-CIRCT-installation> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
+./configure --enable-hls <path-to-CIRCT> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
 ```
 
-### CIRCT setup
-A build script is provided for building a compatible CIRCT version for the HLS backend.
-When using the provided default paths:
+The 'path-to-CIRCT' can be set to a compatible CIRCT installation or
 ```
-./scripts/build-circt.sh
-./configure --enable-hls
+make build-circt
 ```
-
-If custom CIRCT build and install paths are wanted:
-```
-./scripts/build-circt.sh --build-path <path-to-build-directory> --install-path <path-to-install-directory>
-./configure --enable-hls --circt-path <path-to-install-directory>
-```
+can be used after jlm has been configured with the HLS backend enabled to compile a compatible CIRCT
+version that is installed at the provided path.
 
 ## Publications
 An introduction to the RVSDG and the optimizations supported by jlm can be found in the
