@@ -5,6 +5,4 @@ Makefile.config
 .idea
 docs/html
 build
-build-debug
-build-release
-build-circt
+build-*

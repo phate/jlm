@@ -29,7 +29,7 @@ jobs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Configure jlm
-      run: ./configure.sh CXX=clang++-16
+      run: ./configure.sh --enable-asserts CXX=clang++-16
     - name: Compile jlm
       run: make -O -j `nproc`
     - name: Run unit and C tests
@@ -42,7 +42,7 @@ jobs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Configure jlm
-      run: ./configure.sh CXX=g++
+      run: ./configure.sh --enable-asserts CXX=g++
     - name: Compile jlm
       run: make -O -j `nproc`
     - name: Run unit and C tests

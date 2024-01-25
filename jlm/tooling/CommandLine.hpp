@@ -375,7 +375,7 @@ public:
 
   JlmHlsCommandLineOptions()
       : InputFile_(""),
-        OutputFolder_(""),
+        OutputFiles_(""),
         OutputFormat_(OutputFormat::Firrtl),
         ExtractHlsFunction_(false),
         UseCirct_(false)
@@ -385,7 +385,7 @@ public:
   Reset() noexcept override;
 
   util::filepath InputFile_;
-  util::filepath OutputFolder_;
+  util::filepath OutputFiles_;
   OutputFormat OutputFormat_;
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
