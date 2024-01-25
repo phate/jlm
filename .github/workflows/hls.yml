@@ -22,7 +22,7 @@ jobs:
     - name: "Build CIRCT"
       uses: ./.github/actions/BuildCirct
     - name: "Configure jlm"
-      run: ./configure.sh --enable-asserts --enable-hls --circt-path ${{ github.workspace }}/build-circt/circt CXX=clang++-16
+      run: ./configure.sh --enable-asserts --enable-hls ${{ github.workspace }}/build-circt/circt CXX=clang++-16
     - name: "Compile jlm"
       run: make -j `nproc` -O
 
