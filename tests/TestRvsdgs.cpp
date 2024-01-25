@@ -258,18 +258,19 @@ GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
 
-  auto declaration = StructType::Declaration::Create({ &jlm::rvsdg::bit32, &jlm::rvsdg::bit32 });
-  StructType structType(false, *declaration);
-
-  MemoryStateType mt;
-  PointerType pointerType;
-  FunctionType fcttype({ &pointerType, &mt }, { &jlm::rvsdg::bit32, &mt });
-
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
+
+  auto & declaration = module->AddStructTypeDeclaration(
+      StructType::Declaration::Create({ &jlm::rvsdg::bit32, &jlm::rvsdg::bit32 }));
+  StructType structType(false, declaration);
+
+  MemoryStateType mt;
+  PointerType pointerType;
+  FunctionType fcttype({ &pointerType, &mt }, { &jlm::rvsdg::bit32, &mt });
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
@@ -3036,8 +3037,9 @@ MemcpyTest2::SetupRvsdg()
 
   PointerType pointerType;
   arraytype arrayType(pointerType, 32);
-  auto structBDeclaration = StructType::Declaration::Create({ &arrayType });
-  auto structTypeB = StructType::Create("structTypeB", false, *structBDeclaration);
+  auto & structBDeclaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &arrayType }));
+  auto structTypeB = StructType::Create("structTypeB", false, structBDeclaration);
 
   auto SetupFunctionG = [&]()
   {
@@ -3136,10 +3138,10 @@ LinkedListTest::SetupRvsdg()
   auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto declaration = StructType::Declaration::Create();
-  auto structType = StructType::Create("list", false, *declaration);
   PointerType pointerType;
-  declaration->Append(pointerType);
+  auto & declaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &pointerType }));
+  auto structType = StructType::Create("list", false, declaration);
 
   auto SetupDeltaMyList = [&]()
   {
