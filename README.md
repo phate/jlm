@@ -75,13 +75,11 @@ The HLS backend uses the MLIR FIRRTL dialect from CIRCT to convert llvm IR to FI
 A compatible installation of CIRCT is needed to compile jlm with the capability to generate FIRRTL
 and the build has to be configured accordingly. A change of build configuration may require cleaning
 stale intermediate files first, i.e., run 'make clean'.
-```
-./configure --enable-hls <path-to-CIRCT> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
-```
-
-The 'path-to-CIRCT' can be set to a compatible CIRCT installation or the following command can be used to compile CIRCT that is installed at the provided path:
+CIRCT and the HLS backend can be setup with the following commands:
 ```
 ./scripts/build-circt.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
+
+./configure --enable-hls <path-to-CIRCT> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
 ```
 
 ## Publications
