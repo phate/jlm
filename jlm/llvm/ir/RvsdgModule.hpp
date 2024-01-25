@@ -137,6 +137,12 @@ public:
     return DataLayout_;
   }
 
+  /**
+   * Adds a struct type declaration to the module. The module becomes the owner of the declaration.
+   *
+   * @param declaration A declaration that is added to the module.
+   * @return A reference to the added documentation.
+   */
   const StructType::Declaration &
   AddStructTypeDeclaration(std::unique_ptr<StructType::Declaration> declaration)
   {
@@ -144,6 +150,12 @@ public:
     return *StructTypeDeclarations_.back();
   }
 
+  /**
+   * Releases all struct type declarations from the module to the caller. The caller is the new
+   * owner of the declarations.
+   *
+   * @return A vector of declarations.
+   */
   std::vector<std::unique_ptr<StructType::Declaration>> &&
   ReleaseStructTypeDeclarations()
   {
