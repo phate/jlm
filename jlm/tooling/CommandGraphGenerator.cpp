@@ -341,9 +341,9 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       *commandGraph,
       dynamic_cast<LlvmOptCommand *>(&m2r1.GetCommand())->OutputFile(),
       commandLineOptions.HlsFunctionRegex_,
-      tmp_folder.to_str());
+      commandLineOptions.OutputFile_);
   m2r1.AddEdge(extract);
-  util::filepath ll_m2r2(tmp_folder.to_str() + "function.m2r.ll");
+  util::filepath ll_m2r2(tmp_folder.to_str() + "function.hls.ll");
   auto & m2r2 = LlvmOptCommand::Create(
       *commandGraph,
       dynamic_cast<JlmHlsExtractCommand *>(&extract.GetCommand())->HlsFunctionFile(),
@@ -355,7 +355,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   auto & hls = JlmHlsCommand::Create(
       *commandGraph,
       dynamic_cast<LlvmOptCommand *>(&m2r2.GetCommand())->OutputFile(),
-      tmp_folder.to_str(),
+      commandLineOptions.OutputFile_,
       commandLineOptions.UseCirct_);
   m2r2.AddEdge(hls);
 
@@ -364,10 +364,10 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
     util::filepath verilogfile(tmp_folder.to_str() + "jlm_hls.v");
     auto & firrtl = FirtoolCommand::Create(
         *commandGraph,
-        dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->FirrtlFile(),
+        commandLineOptions.OutputFile_.to_str() + ".fir",
         verilogfile);
     hls.AddEdge(firrtl);
-    util::filepath assemblyFile(tmp_folder.to_str() + "hls.o");
+    util::filepath assemblyFile(commandLineOptions.OutputFile_.to_str() + ".o");
     auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
     auto & asmnode = LlcCommand::Create(
         *commandGraph,
