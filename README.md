@@ -79,12 +79,10 @@ stale intermediate files first, i.e., run 'make clean'.
 ./configure --enable-hls <path-to-CIRCT> --llvm-config <path-to-CIRCT-installation>/bin/llvm-config
 ```
 
-The 'path-to-CIRCT' can be set to a compatible CIRCT installation or
+The 'path-to-CIRCT' can be set to a compatible CIRCT installation or the following command can be used to compile CIRCT that is installed at the provided path:
 ```
-make build-circt
+./scripts/build-circt.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
 ```
-can be used after jlm has been configured with the HLS backend enabled to compile a compatible CIRCT
-version that is installed at the provided path.
 
 ## Publications
 An introduction to the RVSDG and the optimizations supported by jlm can be found in the
