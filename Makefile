@@ -20,7 +20,7 @@ include jlm/tooling/Makefile.sub
 include tests/Makefile.sub
 include tools/Makefile.sub
 
-ifdef CIRCT_PATH
+ifdef ENABLE_HLS
 include jlm/hls/Makefile.sub
 include tools/jhls/Makefile.sub
 include tools/jlm-hls/Makefile.sub
