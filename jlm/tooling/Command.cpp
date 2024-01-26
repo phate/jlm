@@ -356,7 +356,7 @@ JlmOptCommand::ParseLlvmIrFile(const util::filepath & llvmIrFile, ::llvm::LLVMCo
 
 void
 JlmOptCommand::PrintRvsdgModule(
-    const llvm::RvsdgModule & rvsdgModule,
+    llvm::RvsdgModule & rvsdgModule,
     const util::filepath & outputFile,
     const JlmOptCommandLineOptions::OutputFormat & outputFormat,
     util::StatisticsCollector & statisticsCollector)
@@ -373,7 +373,7 @@ JlmOptCommand::PrintRvsdgModule(
       fclose(fd);
   };
 
-  auto printAsLlvm = [](const llvm::RvsdgModule & rvsdgModule,
+  auto printAsLlvm = [](llvm::RvsdgModule & rvsdgModule,
                         const util::filepath & outputFile,
                         util::StatisticsCollector & statisticsCollector)
   {
@@ -397,8 +397,7 @@ JlmOptCommand::PrintRvsdgModule(
 
   static std::unordered_map<
       JlmOptCommandLineOptions::OutputFormat,
-      std::function<
-          void(const llvm::RvsdgModule &, const util::filepath &, util::StatisticsCollector &)>>
+      std::function<void(llvm::RvsdgModule &, const util::filepath &, util::StatisticsCollector &)>>
       printers({ { tooling::JlmOptCommandLineOptions::OutputFormat::Xml, printAsXml },
                  { tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm } });
 

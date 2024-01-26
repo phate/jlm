@@ -198,20 +198,21 @@ public:
   const StructType::Declaration *
   lookup_declaration(const ::llvm::StructType * type)
   {
-    /* FIXME: They live as long as jlm is alive. */
-    static std::vector<std::unique_ptr<StructType::Declaration>> dcls;
-
-    auto it = declarations_.find(type);
-    if (it != declarations_.end())
+    // Return declaration if we already created one for this type instance
+    if (auto it = declarations_.find(type); it != declarations_.end())
+    {
       return it->second;
+    }
 
-    auto dcl = StructType::Declaration::Create();
-    declarations_[type] = dcl.get();
+    // Otherwise create a new one and return it
+    auto declaration = StructType::Declaration::Create();
     for (size_t n = 0; n < type->getNumElements(); n++)
-      dcl->Append(*ConvertType(type->getElementType(n), *this));
+    {
+      declaration->Append(*ConvertType(type->getElementType(n), *this));
+    }
 
-    dcls.push_back(std::move(dcl));
-    return declarations_[type];
+    declarations_[type] = declaration.get();
+    return &module().AddStructTypeDeclaration(std::move(declaration));
   }
 
   inline ipgraph_module &

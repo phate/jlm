@@ -21,7 +21,7 @@ class RvsdgModule;
 
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    const ipgraph_module & im,
+    ipgraph_module & interProceduralGraphModule,
     jlm::util::StatisticsCollector & statisticsCollector);
 
 }
