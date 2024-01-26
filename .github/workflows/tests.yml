@@ -99,8 +99,6 @@ jobs:
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
-    - name: Install lit
-      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
     - name: Apply patch
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite
