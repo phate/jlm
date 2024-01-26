@@ -98,10 +98,7 @@ enable_load_reductions(jlm::rvsdg::graph & graph)
   auto nf = LoadOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
-  // set_load_store_reducible throws a type_error when the optimization
-  // is applied twice
-  // github issue #302
-  nf->set_load_store_reducible(false);
+  nf->set_load_store_reducible(true);
   nf->set_load_alloca_reducible(true);
   nf->set_multiple_origin_reducible(true);
   nf->set_load_store_state_reducible(true);
