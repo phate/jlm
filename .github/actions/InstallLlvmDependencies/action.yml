@@ -21,3 +21,7 @@ runs:
         sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/
         sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
       shell: bash
+
+    - name: "Install lit"
+      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+      shell: bash
