@@ -221,7 +221,7 @@ is_load_store_reducible(
     return false;
   }
 
-  // Check that all states to the load originate from the same store
+  // Check that all state edges to the load originate from the same store
   if (storeNode->NumStates() != loadOperation.NumStates())
   {
     return false;
