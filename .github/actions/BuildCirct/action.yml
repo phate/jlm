@@ -12,7 +12,7 @@ runs:
 
     - name: "Try to fetch CIRCT from the cache"
       id: cache-circt
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ github.workspace }}/build-circt/circt
