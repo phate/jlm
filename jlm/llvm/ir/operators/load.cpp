@@ -213,7 +213,7 @@ is_load_store_reducible(
     return false;
   }
 
-  // Check that the first state originates from a store
+  // Check that the first state edge originates from a store
   auto firstState = operands[1];
   auto storeNode = dynamic_cast<const StoreNode *>(rvsdg::node_output::node(firstState));
   if (!storeNode)
