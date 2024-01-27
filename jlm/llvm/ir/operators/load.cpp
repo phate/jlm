@@ -198,7 +198,7 @@ is_multiple_origin_reducible(const std::vector<rvsdg::output *> & operands)
 }
 
 // s2 = store_op a v1 s1
-// v2 = load_op a s2
+// v2 s3 = load_op a s2
 // ... = any_op v2
 // =>
 // ... = any_op v1
