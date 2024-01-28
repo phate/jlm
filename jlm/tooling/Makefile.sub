@@ -1,11 +1,6 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-# Default verilator for Ubuntu 22.04
-VERILATOR_BIN ?= verilator_bin
-VERILATOR_PATH ?= /usr/share/verilator
-FIRTOOL ?= $(CIRCT_PATH)/bin/firtool
-
 COMMANDPATHS = \
 " \
 \#ifndef JLM_TOOLING_COMMANDPATHS_HPP\n \
@@ -17,9 +12,6 @@ namespace jlm::tooling {\n \
 \n \
   static inline jlm::util::filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
   static inline jlm::util::filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
-  static inline jlm::util::filepath firtoolpath(\"$(FIRTOOL)\");\n \
-  static inline jlm::util::filepath verilatorpath(\"$(VERILATOR_BIN)\");\n \
-  static inline jlm::util::filepath verilatorrootpath(\"$(VERILATOR_PATH)\");\n \
 \n \
 }\n \
 \n \

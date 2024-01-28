@@ -39,4 +39,4 @@ jobs:
     - name: "Run hls-test-suite"
       run: |
         cd jlm-eval-suite
-        make hls-test-run
+        make CIRCT_PATH=${{ github.workspace }}/build-circt/circt hls-test-run

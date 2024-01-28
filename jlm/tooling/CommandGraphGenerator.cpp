@@ -359,46 +359,6 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       commandLineOptions.UseCirct_);
   m2r2.AddEdge(hls);
 
-  if (!commandLineOptions.GenerateFirrtl_)
-  {
-    util::filepath verilogfile(tmp_folder.to_str() + "jlm_hls.v");
-    auto & firrtl = FirtoolCommand::Create(
-        *commandGraph,
-        commandLineOptions.OutputFile_.to_str() + ".fir",
-        verilogfile);
-    hls.AddEdge(firrtl);
-    util::filepath assemblyFile(commandLineOptions.OutputFile_.to_str() + ".o");
-    auto inputFile = dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->LlvmFile();
-    auto & asmnode = LlcCommand::Create(
-        *commandGraph,
-        commandLineOptions.Hls_ ? inputFile
-                                : CreateJlmOptCommandOutputFile(tmp_folder, inputFile).to_str(),
-        assemblyFile,
-        ConvertOptimizationLevel(commandLineOptions.OptimizationLevel_),
-        commandLineOptions.Hls_ ? LlcCommand::RelocationModel::Pic
-                                : LlcCommand::RelocationModel::Static);
-    hls.AddEdge(asmnode);
-
-    std::vector<util::filepath> lnkifiles;
-    for (const auto & compilation : commandLineOptions.Compilations_)
-    {
-      if (compilation.RequiresLinking() && !compilation.RequiresParsing())
-        lnkifiles.push_back(compilation.OutputFile());
-    }
-    lnkifiles.push_back(assemblyFile);
-    auto & verilatorCommandNode = VerilatorCommand::Create(
-        *commandGraph,
-        verilogfile,
-        lnkifiles,
-        dynamic_cast<JlmHlsCommand *>(&hls.GetCommand())->HarnessFile(),
-        commandLineOptions.OutputFile_,
-        tmp_folder,
-        commandLineOptions.LibraryPaths_,
-        commandLineOptions.Libraries_);
-    firrtl.AddEdge(verilatorCommandNode);
-    verilatorCommandNode.AddEdge(commandGraph->GetExitNode());
-  }
-
   std::vector<util::filepath> lnkifiles;
   for (const auto & c : commandLineOptions.Compilations_)
   {
