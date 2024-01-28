@@ -2,15 +2,15 @@
 set -eu
 
 # Default values for all tunables.
-CIRCT_PATH=
-MLIR_PATH=
-ENABLE_MLIR=
-MLIR_LDFLAGS=
 TARGET="release"
 ENABLE_ASSERTS="no"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
-CIRCT_ENABLED="no"
+ENABLE_HLS=
+CIRCT_PATH=
+ENABLE_MLIR=
+MLIR_PATH=
+MLIR_LDFLAGS=
 
 function usage()
 {
@@ -20,8 +20,8 @@ function usage()
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
 	echo "                        'debug' and 'release'. [${TARGET}]"
 	echo "  --enable-asserts      Enables asserts."
-	echo "  --circt-path PATH     Sets the path for the CIRCT tools and enables"
-	echo "                        building with CIRCT support. [${CIRCT_PATH}]"
+	echo "  --enable-hls PATH     Enable the HLS backend, and sets the path to"
+	echo "                        CIRCT, which the backend depends on."
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
 	echo "  --enable-mlir PATH    Sets the path to the MLIR RVSDG Dialect and enables"
@@ -41,14 +41,14 @@ while [[ "$#" -ge 1 ]] ; do
 			TARGET="$1"
 			shift
 			;;
-		--enable-asserts)
-			ENABLE_ASSERTS="yes"
-			shift
-			;;
-		--circt-path)
+		--enable-hls)
+			ENABLE_HLS="yes"
 			shift
 			CIRCT_PATH="$1"
-			CIRCT_ENABLED="yes"
+			shift
+			;;
+		--enable-asserts)
+			ENABLE_ASSERTS="yes"
 			shift
 			;;
 		--llvm-config)
@@ -105,15 +105,14 @@ if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
 fi
 
 CPPFLAGS_CIRCT=""
-CXXFLAGS_CIRCT=""
 CXXFLAGS_NO_COMMENT=""
-if [ "${CIRCT_ENABLED}" == "yes" ] ; then
+if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 fi
 
 CPPFLAGS_MLIR=""
-if [ "${MLIR_ENABLED}" == "yes" ] ; then
+if [ "${ENABLE_MLIR}" == "yes" ] ; then
 	CPPFLAGS_MLIR="-I${MLIR_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
@@ -132,10 +131,11 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 	cat <<EOF
 CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMENT}
 CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT} ${CPPFLAGS_MLIR}
+ENABLE_HLS=${ENABLE_HLS}
 CIRCT_PATH=${CIRCT_PATH}
+ENABLE_MLIR=${ENABLE_MLIR}
 MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
-ENABLE_MLIR=${ENABLE_MLIR}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 EOF

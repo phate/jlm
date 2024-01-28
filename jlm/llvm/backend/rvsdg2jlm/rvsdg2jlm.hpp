@@ -23,7 +23,7 @@ namespace rvsdg2jlm
 {
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector);
+rvsdg2jlm(RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector);
 
 }
 }

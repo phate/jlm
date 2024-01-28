@@ -8,7 +8,7 @@ jobs:
   ClangFormat:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Install clang format"
         uses: ./.github/actions/InstallLlvmDependencies
       - name: Find source files
@@ -19,10 +19,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Cache build
       id: cache-build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
@@ -38,7 +38,7 @@ jobs:
   gcc:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Configure jlm
@@ -66,7 +66,7 @@ jobs:
     needs: build
     steps:
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
@@ -82,7 +82,7 @@ jobs:
     needs: build
     steps:
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
@@ -100,7 +100,7 @@ jobs:
     needs: build
     steps:
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
@@ -112,8 +112,6 @@ jobs:
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
-    - name: Install lit
-      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
     - name: Apply patch
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite

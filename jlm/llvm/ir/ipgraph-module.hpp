@@ -66,10 +66,19 @@ public:
   inline ipgraph_module(
       const jlm::util::filepath & source_filename,
       const std::string & target_triple,
-      const std::string & data_layout) noexcept
+      const std::string & data_layout,
+      std::vector<std::unique_ptr<StructType::Declaration>> declarations) noexcept
       : data_layout_(data_layout),
         target_triple_(target_triple),
-        source_filename_(source_filename)
+        source_filename_(source_filename),
+        StructTypeDeclarations_(std::move(declarations))
+  {}
+
+  ipgraph_module(
+      const jlm::util::filepath & source_filename,
+      const std::string & target_triple,
+      const std::string & data_layout) noexcept
+      : ipgraph_module(source_filename, target_triple, data_layout, {})
   {}
 
   inline llvm::ipgraph &
@@ -163,13 +172,52 @@ public:
     return data_layout_;
   }
 
+  /**
+   * Adds a struct type declaration to the module. The module becomes the owner of the declaration.
+   *
+   * @param declaration A declaration that is added to the module.
+   * @return A reference to the added documentation.
+   */
+  const StructType::Declaration &
+  AddStructTypeDeclaration(std::unique_ptr<StructType::Declaration> declaration)
+  {
+    StructTypeDeclarations_.emplace_back(std::move(declaration));
+    return *StructTypeDeclarations_.back();
+  }
+
+  /**
+   * Releases all struct type declarations from the module to the caller. The caller is the new
+   * owner of the declarations.
+   *
+   * @return A vector of declarations.
+   */
+  std::vector<std::unique_ptr<StructType::Declaration>> &&
+  ReleaseStructTypeDeclarations()
+  {
+    return std::move(StructTypeDeclarations_);
+  }
+
+  static std::unique_ptr<ipgraph_module>
+  Create(
+      const jlm::util::filepath & sourceFilename,
+      const std::string & targetTriple,
+      const std::string & dataLayout,
+      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
+  {
+    return std::make_unique<ipgraph_module>(
+        sourceFilename,
+        targetTriple,
+        dataLayout,
+        std::move(declarations));
+  }
+
   static std::unique_ptr<ipgraph_module>
   create(
       const jlm::util::filepath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout)
   {
-    return std::make_unique<ipgraph_module>(source_filename, target_triple, data_layout);
+    return Create(source_filename, target_triple, data_layout, {});
   }
 
 private:
@@ -180,6 +228,7 @@ private:
   std::unordered_set<const llvm::gblvalue *> globals_;
   std::unordered_set<std::unique_ptr<llvm::variable>> variables_;
   std::unordered_map<const ipgraph_node *, const llvm::variable *> functions_;
+  std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
 static inline size_t

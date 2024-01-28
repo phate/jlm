@@ -375,7 +375,7 @@ private:
 
   static void
   PrintRvsdgModule(
-      const llvm::RvsdgModule & rvsdgModule,
+      llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,
       const JlmOptCommandLineOptions::OutputFormat & outputFormat,
       util::StatisticsCollector & statisticsCollector);
@@ -555,19 +555,19 @@ public:
   [[nodiscard]] util::filepath
   FirrtlFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls.fir";
+    return OutputFolder_.to_str() + ".fir";
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
+    return OutputFolder_.to_str() + ".rest.ll";
   }
 
   [[nodiscard]] util::filepath
   HarnessFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_harness.cpp";
+    return OutputFolder_.to_str() + ".harness.cpp";
   }
 
   [[nodiscard]] const util::filepath &
@@ -620,13 +620,13 @@ public:
   [[nodiscard]] util::filepath
   HlsFunctionFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_function.ll";
+    return OutputFolder_.to_str() + ".function.ll";
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
+    return OutputFolder_.to_str() + ".rest.ll";
   }
 
   [[nodiscard]] const util::filepath &

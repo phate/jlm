@@ -568,9 +568,9 @@ public:
 
   std::unique_ptr<RvsdgModule>
   CollectInterProceduralGraphToRvsdgStatistics(
-      const std::function<std::unique_ptr<RvsdgModule>(const ipgraph_module &)> &
+      const std::function<std::unique_ptr<RvsdgModule>(ipgraph_module &)> &
           convertInterProceduralGraphModule,
-      const ipgraph_module & interProceduralGraphModule)
+      ipgraph_module & interProceduralGraphModule)
   {
     auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
 
@@ -1297,13 +1297,14 @@ ConvertStronglyConnectedComponent(
 
 static std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    const ipgraph_module & interProceduralGraphModule,
+    ipgraph_module & interProceduralGraphModule,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto rvsdgModule = RvsdgModule::Create(
       interProceduralGraphModule.source_filename(),
       interProceduralGraphModule.target_triple(),
-      interProceduralGraphModule.data_layout());
+      interProceduralGraphModule.data_layout(),
+      std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
   auto graph = &rvsdgModule->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(rvsdg::operation));
@@ -1327,14 +1328,14 @@ ConvertInterProceduralGraphModule(
 
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    const ipgraph_module & interProceduralGraphModule,
+    ipgraph_module & interProceduralGraphModule,
     jlm::util::StatisticsCollector & statisticsCollector)
 {
   InterProceduralGraphToRvsdgStatisticsCollector interProceduralGraphToRvsdgStatisticsCollector(
       statisticsCollector,
       interProceduralGraphModule.source_filename());
 
-  auto convertInterProceduralGraphModule = [&](const ipgraph_module & interProceduralGraphModule)
+  auto convertInterProceduralGraphModule = [&](ipgraph_module & interProceduralGraphModule)
   {
     return ConvertInterProceduralGraphModule(
         interProceduralGraphModule,

@@ -326,7 +326,7 @@ void
 JlmHlsCommandLineOptions::Reset() noexcept
 {
   InputFile_ = util::filepath("");
-  OutputFolder_ = util::filepath("");
+  OutputFiles_ = util::filepath("");
   OutputFormat_ = OutputFormat::Firrtl;
   HlsFunction_ = "";
   ExtractHlsFunction_ = false;
@@ -1064,7 +1064,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   CommandLineOptions_.InputFile_ = inputFile;
   CommandLineOptions_.HlsFunction_ = std::move(hlsFunction);
-  CommandLineOptions_.OutputFolder_ = outputFolder;
+  CommandLineOptions_.OutputFiles_ = outputFolder;
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.UseCirct_ = useCirct;
   CommandLineOptions_.OutputFormat_ = format;
