@@ -1379,25 +1379,39 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<Memcpy>(&node));
 
-  // FIXME: handle unknown
-
-  // FIXME: write some documentation about the implementation
-
   auto & dstAddress = LocationSet_->Find(*node.input(0)->origin());
   auto & srcAddress = LocationSet_->Find(*node.input(1)->origin());
 
+  // Handle flags
+  //
+  // The dst address needs to have at least the same flags as the src address, because memcpy copies
+  // over the memory from src to dst. Thus, if src is flagged as pointing to escaped memory, than
+  // dst needs also to be flagged as pointing to escaped memory as well.
+  auto dstAddressPointsToFlags = dstAddress.GetPointsToFlags();
+  auto srcAddressPointsToFlags = srcAddress.GetPointsToFlags();
+  dstAddress.SetPointsToFlags(srcAddressPointsToFlags | dstAddressPointsToFlags);
+
+  // Handle points-to sets
+  //
+  // The basic idea behind memcpy is that the memory where src is pointing to is copied(!)
+  // to dst. This means that src and dst do not point to the same memory in the end, but the
+  // points-to sets from both need to point to the same memory. The result is the following graph:
+  //
+  // src -> srcMemory
+  // dst -> dstMemory (which is a copy of srcMemory)
+  // srcMemory and dstMemory -> underlyingMemory
+  //
+  // It might be that we do not know the MemoryLocation(s) to which srcMemory, dstMemory, or
+  // underlyingMemory is pointing to yet(!), and we might never know. We therefore insert dummy
+  // locations (if necessary) such that we can express the above relationships.
   if (srcAddress.GetPointsTo() == nullptr)
   {
-    // If we do not know where the source address points to yet(!),
-    // insert a dummy location such that we have something to work with.
     auto & dummyLocation = LocationSet_->InsertDummyLocation();
     srcAddress.SetPointsTo(dummyLocation);
   }
 
   if (dstAddress.GetPointsTo() == nullptr)
   {
-    // If we do not know where the destination address points to yet(!),
-    // insert a dummy location such that we have something to work with.
     auto & dummyLocation = LocationSet_->InsertDummyLocation();
     dstAddress.SetPointsTo(dummyLocation);
   }
@@ -1405,19 +1419,29 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
   auto & srcMemory = LocationSet_->GetRootLocation(*srcAddress.GetPointsTo());
   auto & dstMemory = LocationSet_->GetRootLocation(*dstAddress.GetPointsTo());
 
-  if (srcMemory.GetPointsTo() == nullptr)
+  if (srcMemory.GetPointsTo() == nullptr && dstMemory.GetPointsTo() == nullptr)
   {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    srcMemory.SetPointsTo(dummyLocation);
+    auto & underlyingMemory = LocationSet_->InsertDummyLocation();
+    srcMemory.SetPointsTo(underlyingMemory);
+    dstMemory.SetPointsTo(underlyingMemory);
   }
-
-  if (dstMemory.GetPointsTo() == nullptr)
+  else
   {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    dstMemory.SetPointsTo(dummyLocation);
-  }
+    if (srcMemory.GetPointsTo() == nullptr)
+    {
+      auto & dummyLocation = LocationSet_->InsertDummyLocation();
+      srcMemory.SetPointsTo(dummyLocation);
+    }
 
-  LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
+    if (dstMemory.GetPointsTo() == nullptr)
+    {
+      auto & dummyLocation = LocationSet_->InsertDummyLocation();
+      dstMemory.SetPointsTo(dummyLocation);
+    }
+
+    // Unifies the underlying memory of srcMemory and dstMemory
+    LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
+  }
 }
 
 void
