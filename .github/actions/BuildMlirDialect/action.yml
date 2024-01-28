@@ -4,18 +4,18 @@ description: "Restore MLIR RVSDG Dialect from cache and build if it's not in the
 runs:
   using: "composite"
   steps:
-    - name: Clone MLIR RVSDG dialect
+    - name: "Clone MLIR RVSDG dialect"
       run: git clone https://github.com/EECS-NTNU/mlir_rvsdg.git ${{ github.workspace }}/mlir-rvsdg
       shell: bash
 
-    - name: Extract the hash for latest commit for use in the cache key
+    - name: "Extract the hash for latest commit for use in the cache key"
       id: get-mlir-hash
       run: |
         cd ${{ github.workspace }}/mlir-rvsdg
         echo "hash=$(git rev-parse main)" >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Try to fetch Dialect from the cache
+    - name: "Try to fetch Dialect from the cache"
       id: cache-mlir
       uses: actions/cache@v3
       with:
@@ -26,7 +26,7 @@ runs:
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
 
-    - name: Build MLIR RVSDG Dialect if we didn't hit in the cache
+    - name: "Build MLIR RVSDG Dialect if we didn't hit in the cache"
       if: steps.cache-mlir.outputs.cache-hit != 'true'
       run: |
         cd ${{ github.workspace }}/mlir-rvsdg

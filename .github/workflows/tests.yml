@@ -54,11 +54,11 @@ jobs:
     - uses: actions/checkout@v3
     - name: "Build MLIR RVSDG Dialect"
       uses: ./.github/actions/BuildMlirDialect
-    - name: Configure jlm
+    - name: "Configure jlm"
       run: ./configure.sh --enable-mlir ./lib/mlir-rvsdg CXX=clang++-16
-    - name: Compile jlm
+    - name: "Compile jlm"
       run: make -O -j `nproc`
-    - name: Run unit and C tests
+    - name: "Run unit and C tests"
       run: make check -O -j `nproc`
 
   valgrind:

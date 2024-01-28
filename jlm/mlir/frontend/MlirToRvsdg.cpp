@@ -12,8 +12,8 @@
 namespace jlm::mlir
 {
 
-std::unique_ptr<::mlir::Block>
-MlirToJlmConverter::ReadRvsdgMlir(const util::filepath & filePath)
+std::unique_ptr<llvm::RvsdgModule>
+MlirToJlmConverter::ReadAndConvertMlir(const util::filepath & filePath)
 {
   auto config = ::mlir::ParserConfig(Context_.get());
   std::unique_ptr<::mlir::Block> block = std::make_unique<::mlir::Block>();
@@ -22,7 +22,7 @@ MlirToJlmConverter::ReadRvsdgMlir(const util::filepath & filePath)
   {
     throw util::error("Parsing MLIR input file failed.");
   }
-  return block;
+  return ConvertMlir(block);
 }
 
 std::unique_ptr<llvm::RvsdgModule>
@@ -131,7 +131,9 @@ MlirToJlmConverter::ConvertOperation(
   }
   else
   {
-    JLM_UNREACHABLE("Operation is not implemented.\n");
+    std::string unreachable =
+        "Operation is not implemented:" + mlirOperation.getName().getStringRef().str() + "\n";
+    JLM_UNREACHABLE(unreachable.c_str());
   }
 }
 
@@ -194,8 +196,8 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
 {
   if (::mlir::isa<::mlir::IntegerType>(type))
   {
-    auto * intType = static_cast<::mlir::IntegerType *>(&type);
-    return std::make_unique<rvsdg::bittype>(intType->getWidth());
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return std::make_unique<rvsdg::bittype>(intType.getWidth());
   }
   else if (::mlir::isa<::mlir::rvsdg::LoopStateEdgeType>(type))
   {
@@ -220,6 +222,7 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
 size_t
 MlirToJlmConverter::GetOperandIndex(::mlir::Operation * producer, ::mlir::Value & operand)
 {
+  JLM_ASSERT(producer->getNumResults() >= 1);
   if (producer->getNumResults() == 1)
   {
     return 0;

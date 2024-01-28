@@ -4,7 +4,7 @@ set -eu
 # Default values for all tunables.
 CIRCT_PATH=
 MLIR_PATH=
-MLIR_ENABLED=
+ENABLE_MLIR=
 MLIR_LDFLAGS=
 TARGET="release"
 ENABLE_ASSERTS="no"
@@ -59,7 +59,7 @@ while [[ "$#" -ge 1 ]] ; do
 		--enable-mlir)
 			shift
 			MLIR_PATH="$1"
-			MLIR_ENABLED="yes"
+			ENABLE_MLIR="yes"
 			shift
 			;;
 		--enable-coverage)
@@ -114,7 +114,7 @@ fi
 
 CPPFLAGS_MLIR=""
 if [ "${MLIR_ENABLED}" == "yes" ] ; then
-	CPPFLAGS_MLIR="-DMLIR_ENABLED=1 -I${MLIR_PATH}/include"
+	CPPFLAGS_MLIR="-I${MLIR_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
 fi
@@ -135,7 +135,7 @@ CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${
 CIRCT_PATH=${CIRCT_PATH}
 MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
-MLIR_ENABLED=${MLIR_ENABLED}
+ENABLE_MLIR=${ENABLE_MLIR}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 EOF

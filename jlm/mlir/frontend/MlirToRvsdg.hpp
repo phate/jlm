@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_MLIR_MLIRTOJLMCONVERTER_HPP
-#define JLM_MLIR_MLIRTOJLMCONVERTER_HPP
+#ifndef JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
+#define JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -45,12 +45,12 @@ public:
   operator=(MlirToJlmConverter &&) = delete;
 
   /**
-   * Reads RVSDG MLIR from a file,
+   * Reads RVSDG MLIR from a file and converts it,
    * \param filePath The path to the file containing RVSDG MLIR IR.
-   * \return An MLIR block containing the read RVSDG MLIR graph.
+   * \return The converted RVSDG graph.
    */
-  std::unique_ptr<::mlir::Block>
-  ReadRvsdgMlir(const util::filepath & filePath);
+  std::unique_ptr<llvm::RvsdgModule>
+  ReadAndConvertMlir(const util::filepath & filePath);
 
   /**
    * Converts the MLIR block and all operations in it, including their respective regions.
@@ -148,4 +148,4 @@ private:
 
 } // namespace jlm::mlir
 
-#endif // JLM_MLIR_MLIRTOJLMCONVERTER_HPP
+#endif // JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
