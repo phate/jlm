@@ -35,7 +35,7 @@ jobs:
     - name: "Clone jlm-test-suite"
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: "Link the build output directory to where it is expected by jlm-eval-suite"
-      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/bin
+      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/build
     - name: "Run hls-test-suite"
       run: |
         cd jlm-eval-suite
