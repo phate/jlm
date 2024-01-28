@@ -690,7 +690,7 @@ public:
     };
 
     std::string str;
-    str.append("digraph PointsToGraph {\n");
+    str.append("digraph DisjointLocationSetGraph {\n");
 
     for (auto & set : DisjointLocationSet_)
     {
