@@ -1745,6 +1745,9 @@ Steensgaard::Analyze(
     const RvsdgModule & module,
     jlm::util::StatisticsCollector & statisticsCollector)
 {
+  // std::unordered_map<const rvsdg::output *, std::string> outputMap;
+  // std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
+
   LocationSet_ = LocationSet::Create();
   auto statistics = Statistics::Create(module.SourceFileName());
 
@@ -1762,7 +1765,7 @@ Steensgaard::Analyze(
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics(*LocationSet_);
   auto pointsToGraph = ConstructPointsToGraph();
-  // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  // std::cout << PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
   // Redirect unknown memory node sources

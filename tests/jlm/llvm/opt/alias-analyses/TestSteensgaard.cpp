@@ -9,6 +9,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
@@ -1125,6 +1126,39 @@ TestMemcpy2()
 }
 
 static void
+TestMemcpy3()
+{
+  // Arrange
+  jlm::tests::MemcpyTest3 test;
+  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::flush;
+
+  // Act
+  auto pointsToGraph = RunSteensgaard(test.module());
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
+
+  // Assert
+  assert(pointsToGraph->NumRegisterNodes() == 4);
+  assert(pointsToGraph->NumLambdaNodes() == 1);
+  assert(pointsToGraph->NumAllocaNodes() == 1);
+
+  auto & lambdaNode = pointsToGraph->GetLambdaNode(test.Lambda());
+  auto & lambdaArgument0 = pointsToGraph->GetRegisterNode(*test.Lambda().fctargument(0));
+
+  auto & allocaNode = pointsToGraph->GetAllocaNode(test.Alloca());
+
+  auto & memcpyOperand0 = pointsToGraph->GetRegisterNode(*test.Memcpy().input(0)->origin());
+  auto & memcpyOperand1 = pointsToGraph->GetRegisterNode(*test.Memcpy().input(1)->origin());
+
+  auto & externalMemoryNode = pointsToGraph->GetExternalMemoryNode();
+
+  assertTargets(lambdaArgument0, { &lambdaNode, &externalMemoryNode });
+
+  assertTargets(memcpyOperand0, { &lambdaNode, &externalMemoryNode });
+  assertTargets(memcpyOperand1, { &allocaNode, &lambdaNode, &externalMemoryNode });
+}
+
+static void
 TestLinkedList()
 {
   auto validatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph,
@@ -1226,6 +1260,8 @@ TestSteensgaardAnalysis()
 
   TestMemcpy();
   TestMemcpy2();
+
+  TestMemcpy3();
 
   TestLinkedList();
 
