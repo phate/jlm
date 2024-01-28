@@ -1868,6 +1868,60 @@ private:
   jlm::rvsdg::node * Memcpy_ = {};
 };
 
+/**
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *   #include <stdint.h>
+ *   #include <string.h>
+ *
+ *   typedef struct {
+ *     uint8_t * buf;
+ *   } myStruct;
+ *
+ *   void
+ *   f(myStruct * p)
+ *   {
+ *     myStruct s = *p;
+ *     memcpy(s.buf, s.buf - 5, 3);
+ *   }
+ * \endcode
+ */
+class MemcpyTest3 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  Lambda() const noexcept
+  {
+    JLM_ASSERT(Lambda_ != nullptr);
+    return *Lambda_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  Alloca() const noexcept
+  {
+    JLM_ASSERT(Alloca_ != nullptr);
+    return *Alloca_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  Memcpy() const noexcept
+  {
+    JLM_ASSERT(Memcpy_ != nullptr);
+    return *Memcpy_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::lambda::node * Lambda_ = {};
+
+  jlm::rvsdg::node * Alloca_ = {};
+
+  jlm::rvsdg::node * Memcpy_ = {};
+};
+
 /** \brief LinkedListTest class
  *
  * This class sets up an RVSDG representing the following code snippet:
