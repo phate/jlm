@@ -1049,10 +1049,10 @@ public:
   {}
 
   mem_req_op(
-      const std::vector<const llvm::PointerType *> & load_types,
+      std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
       : simple_op(CreateInPorts(load_types, store_types), CreateOutPorts(load_types, store_types)),
-        nloads(load_types.size())
+        load_types(load_types)
   {}
 
   bool
@@ -1068,13 +1068,13 @@ public:
 
   static std::vector<jlm::rvsdg::port>
   CreateInPorts(
-      const std::vector<const llvm::PointerType *> & load_types,
+      const std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
   {
     std::vector<jlm::rvsdg::port> ports;
     for (auto lt : load_types)
     {
-      ports.emplace_back(*lt); // addr
+      ports.emplace_back(llvm::PointerType()); // addr
     }
     for (auto st : store_types)
     {
@@ -1086,7 +1086,7 @@ public:
 
   static std::vector<jlm::rvsdg::port>
   CreateOutPorts(
-      const std::vector<const llvm::PointerType *> & load_types,
+      const std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
   {
     size_t max_width = 64;
@@ -1122,15 +1122,9 @@ public:
   create(
       const std::vector<jlm::rvsdg::output *> & load_operands,
       const std::vector<jlm::rvsdg::output *> & store_operands,
+      std::vector<const rvsdg::valuetype *> & load_types,
       jlm::rvsdg::region * region)
   {
-    std::vector<const llvm::PointerType *> load_types;
-    for (size_t i = 0; i < load_operands.size(); ++i)
-    {
-      auto pt = dynamic_cast<const llvm::PointerType *>(&load_operands[i]->type());
-      JLM_ASSERT(pt);
-      load_types.push_back(pt);
-    }
     JLM_ASSERT(store_operands.size() % 2 == 0);
     std::vector<const rvsdg::valuetype *> store_types;
     for (size_t i = 1; i < store_operands.size(); i += 2)
@@ -1149,11 +1143,10 @@ public:
   size_t
   get_nloads() const
   {
-    return nloads;
+    return load_types.size();
   }
 
-private:
-  size_t nloads;
+  const std::vector<const rvsdg::valuetype *> & load_types;
 };
 
 class store_op final : public jlm::rvsdg::simple_op
