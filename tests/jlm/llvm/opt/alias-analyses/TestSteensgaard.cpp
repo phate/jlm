@@ -1155,7 +1155,7 @@ TestMemcpy3()
   assertTargets(lambdaArgument0, { &lambdaNode, &externalMemoryNode });
 
   assertTargets(memcpyOperand0, { &lambdaNode, &externalMemoryNode });
-  assertTargets(memcpyOperand1, { &allocaNode, &lambdaNode, &externalMemoryNode });
+  assertTargets(memcpyOperand1, { &allocaNode });
 }
 
 static void

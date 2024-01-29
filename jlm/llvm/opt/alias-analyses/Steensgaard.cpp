@@ -1382,15 +1382,6 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
   auto & dstAddress = LocationSet_->Find(*node.input(0)->origin());
   auto & srcAddress = LocationSet_->Find(*node.input(1)->origin());
 
-  // Handle flags
-  //
-  // The dst address needs to have at least the same flags as the src address, because memcpy copies
-  // over the memory from src to dst. Thus, if src is flagged as pointing to escaped memory, than
-  // dst needs also to be flagged as pointing to escaped memory as well.
-  auto dstAddressPointsToFlags = dstAddress.GetPointsToFlags();
-  auto srcAddressPointsToFlags = srcAddress.GetPointsToFlags();
-  dstAddress.SetPointsToFlags(srcAddressPointsToFlags | dstAddressPointsToFlags);
-
   // Handle points-to sets
   //
   // The basic idea behind memcpy is that the memory where src is pointing to is copied(!)
@@ -1442,6 +1433,15 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
     // Unifies the underlying memory of srcMemory and dstMemory
     LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
   }
+
+  // Handle flags
+  //
+  // The dstMemory needs to have at least the same flags as the src address, because memcpy copies
+  // over the memory from src to dst. Thus, if src is flagged as pointing to escaped memory, than
+  // dstMemory needs also to be flagged as pointing to escaped memory as well.
+  auto dstMemoryPointsToFlags = dstAddress.GetPointsToFlags();
+  auto srcAddressPointsToFlags = srcAddress.GetPointsToFlags();
+  dstMemory.SetPointsToFlags(srcAddressPointsToFlags | dstMemoryPointsToFlags);
 }
 
 void
