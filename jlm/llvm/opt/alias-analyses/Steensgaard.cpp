@@ -1439,7 +1439,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
   // The dstMemory needs to have at least the same flags as the src address, because memcpy copies
   // over the memory from src to dst. Thus, if src is flagged as pointing to escaped memory, than
   // dstMemory needs also to be flagged as pointing to escaped memory as well.
-  auto dstMemoryPointsToFlags = dstAddress.GetPointsToFlags();
+  auto dstMemoryPointsToFlags = dstMemory.GetPointsToFlags();
   auto srcAddressPointsToFlags = srcAddress.GetPointsToFlags();
   dstMemory.SetPointsToFlags(srcAddressPointsToFlags | dstMemoryPointsToFlags);
 }
