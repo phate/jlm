@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/mlir/frontend/MlirToRvsdg.hpp>
+#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 static void

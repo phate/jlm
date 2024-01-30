@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/mlir/frontend/MlirToRvsdg.hpp>
+#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/Parser/Parser.h>

@@ -2,13 +2,13 @@
 # See COPYING for terms of redistribution.
 
 libmlir_SOURCES = \
-	jlm/mlir/frontend/MlirToRvsdg.cpp \
+	jlm/mlir/frontend/MlirToJlmConverter.cpp \
 
 libmlir_HEADERS = \
-	jlm/mlir/frontend/MlirToRvsdg.hpp \
+	jlm/mlir/frontend/MlirToJlmConverter.hpp \
 
 libmlir_TESTS += \
-	tests/jlm/mlir/frontend/TestMlirToRvsdg \
+	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
 
 libmlir_TEST_LIBS += \
 	libmlir \
