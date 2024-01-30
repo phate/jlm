@@ -1,0 +1,17 @@
+name: ClangFormat
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  CheckFormat:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install clang format"
+        uses: ./.github/actions/InstallLlvmDependencies
+      - name: "Find source files"
+        run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
+      - name: "Check format"
+        run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
