@@ -1382,66 +1382,36 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
   auto & dstAddress = LocationSet_->Find(*node.input(0)->origin());
   auto & srcAddress = LocationSet_->Find(*node.input(1)->origin());
 
-  // Handle points-to sets
+  // We implement memcpy by pointing srcAddress and dstAddress to the same underlying memory:
   //
-  // The basic idea behind memcpy is that the memory where src is pointing to is copied(!)
-  // to dst. This means that src and dst do not point to the same memory in the end, but the
-  // points-to sets from both need to point to the same memory. The result is the following graph:
+  // srcAddress -> underlyingMemory
+  // dstAddress -> underlyingMemory
   //
-  // src -> srcMemory
-  // dst -> dstMemory (which is a copy of srcMemory)
+  // Preferably, I would have liked to implement it as follows:
+  //
+  // srcAddress -> srcMemory
+  // dstAddress -> dstMemory (which is a copy of srcMemory)
   // srcMemory and dstMemory -> underlyingMemory
   //
-  // It might be that we do not know the MemoryLocation(s) to which srcMemory, dstMemory, or
-  // underlyingMemory is pointing to yet(!), and we might never know. We therefore insert dummy
-  // locations (if necessary) such that we can express the above relationships.
+  // However, this was not possible due to points-to flags propagation. We have no guarantee that
+  // srcAddress and dstAddress are annotated with the right flags BEFORE PropagatePointsToFlags()
+  // ran. In this scheme, dstMemory is a copy of srcMemory, which means that it should also get a
+  // copy of its flags (which again are the same as the points-to flags of srcAddress).
   if (srcAddress.GetPointsTo() == nullptr)
   {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    srcAddress.SetPointsTo(dummyLocation);
+    auto & underlyingMemory = LocationSet_->InsertDummyLocation();
+    srcAddress.SetPointsTo(underlyingMemory);
   }
 
   if (dstAddress.GetPointsTo() == nullptr)
   {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    dstAddress.SetPointsTo(dummyLocation);
-  }
-
-  auto & srcMemory = LocationSet_->GetRootLocation(*srcAddress.GetPointsTo());
-  auto & dstMemory = LocationSet_->GetRootLocation(*dstAddress.GetPointsTo());
-
-  if (srcMemory.GetPointsTo() == nullptr && dstMemory.GetPointsTo() == nullptr)
-  {
-    auto & underlyingMemory = LocationSet_->InsertDummyLocation();
-    srcMemory.SetPointsTo(underlyingMemory);
-    dstMemory.SetPointsTo(underlyingMemory);
+    dstAddress.SetPointsTo(*srcAddress.GetPointsTo());
   }
   else
   {
-    if (srcMemory.GetPointsTo() == nullptr)
-    {
-      auto & dummyLocation = LocationSet_->InsertDummyLocation();
-      srcMemory.SetPointsTo(dummyLocation);
-    }
-
-    if (dstMemory.GetPointsTo() == nullptr)
-    {
-      auto & dummyLocation = LocationSet_->InsertDummyLocation();
-      dstMemory.SetPointsTo(dummyLocation);
-    }
-
     // Unifies the underlying memory of srcMemory and dstMemory
-    LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
+    LocationSet_->Join(*srcAddress.GetPointsTo(), *dstAddress.GetPointsTo());
   }
-
-  // Handle flags
-  //
-  // The dstMemory needs to have at least the same flags as the src address, because memcpy copies
-  // over the memory from src to dst. Thus, if src is flagged as pointing to escaped memory, than
-  // dstMemory needs also to be flagged as pointing to escaped memory as well.
-  auto dstMemoryPointsToFlags = dstMemory.GetPointsToFlags();
-  auto srcAddressPointsToFlags = srcAddress.GetPointsToFlags();
-  dstMemory.SetPointsToFlags(srcAddressPointsToFlags | dstMemoryPointsToFlags);
 }
 
 void

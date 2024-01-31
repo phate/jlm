@@ -1102,10 +1102,10 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
     auto load = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
-    assert(is<LoadOperation>(*load, 2, 2));
+    assert(is<LoadOperation>(*load, 3, 3));
 
     auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-    assert(is<StoreOperation>(*store, 3, 1));
+    assert(is<StoreOperation>(*store, 4, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
@@ -1135,7 +1135,7 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
         memcpy = node;
     }
     assert(memcpy != nullptr);
-    assert(is<Memcpy>(*memcpy, 6, 2));
+    assert(is<Memcpy>(*memcpy, 8, 4));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpy->input(5)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
@@ -1152,16 +1152,16 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
    */
   {
     auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(2)->origin());
-    assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
+    assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
     auto load = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
-    assert(is<LoadOperation>(*load, 2, 2));
+    assert(is<LoadOperation>(*load, 3, 3));
 
     auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-    assert(is<StoreOperation>(*store, 3, 1));
+    assert(is<StoreOperation>(*store, 4, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
-    assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
+    assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
   }
 
   /*
@@ -1172,13 +1172,13 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
     assert(is<CallOperation>(*callNode, 4, 4));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(callNode->input(2)->origin());
-    assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
+    assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 2, 1));
 
     auto callExitSplit = input_node(*callNode->output(2)->begin());
-    assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 2));
 
     auto memcpyNode = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
-    assert(is<Memcpy>(*memcpyNode, 6, 2));
+    assert(is<Memcpy>(*memcpyNode, 8, 4));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpyNode->input(4)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
@@ -1186,9 +1186,6 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
 
     auto lambdaExitMerge = input_node(*callExitSplit->output(0)->begin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
-    assert(
-        jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin()) == memcpyNode
-        || jlm::rvsdg::node_output::node(lambdaExitMerge->input(1)->origin()) == memcpyNode);
   }
 }
 
