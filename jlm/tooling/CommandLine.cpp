@@ -892,6 +892,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               "Write theta-gamma inversion statistics to file.")),
       cl::desc("Write statistics"));
 
+#ifdef ENABLE_MLIR
   auto llvmInputFormat = JlmOptCommandLineOptions::InputFormat::Llvm;
   auto mlirInputFormat = JlmOptCommandLineOptions::InputFormat::Mlir;
 
@@ -908,10 +909,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(mlirInputFormat),
               "Input MLIR")),
       cl::init(llvmInputFormat));
+#endif
 
   auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
   auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
+#ifdef ENABLE_MLIR
   auto mlirOutputFormat = JlmOptCommandLineOptions::OutputFormat::Mlir;
+#endif
 
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
       "output-format",
@@ -921,10 +925,12 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               llvmOutputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(llvmOutputFormat),
               "Output LLVM IR [default]"),
+#ifdef ENABLE_MLIR
           ::clEnumValN(
               mlirOutputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(mlirOutputFormat),
               "Output MLIR"),
+#endif
           ::clEnumValN(
               xmlOutputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(xmlOutputFormat),
@@ -1027,7 +1033,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
+#ifdef ENABLE_MLIR
       inputFormat,
+#else
+      JlmOptCommandLineOptions::InputFormat::Llvm,
+#endif
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),

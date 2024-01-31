@@ -347,23 +347,25 @@ JlmOptCommand::ParseInputFile(
   {
     ::llvm::LLVMContext llvmContext;
     ::llvm::SMDiagnostic diagnostic;
-    if (auto llvmModule = ::llvm::parseIRFile(llvmIrFile.to_str(), diagnostic, llvmContext))
+    auto llvmModule = ::llvm::parseIRFile(llvmIrFile.to_str(), diagnostic, llvmContext);
+
+    if (llvmModule == nullptr)
     {
-      auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
-
-      // Dispose of Llvm module. It is no longer needed.
-      llvmModule.reset();
-
-      auto rvsdgModule =
-          llvm::ConvertInterProceduralGraphModule(*interProceduralGraphModule, statisticsCollector);
-
-      return rvsdgModule;
+      std::string errors;
+      ::llvm::raw_string_ostream os(errors);
+      diagnostic.print(ProgramName_.c_str(), os);
+      throw util::error(errors);
     }
 
-    std::string errors;
-    ::llvm::raw_string_ostream os(errors);
-    diagnostic.print(ProgramName_.c_str(), os);
-    throw util::error(errors);
+    auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
+
+    // Dispose of Llvm module. It is no longer needed.
+    llvmModule.reset();
+
+    auto rvsdgModule =
+        llvm::ConvertInterProceduralGraphModule(*interProceduralGraphModule, statisticsCollector);
+
+    return rvsdgModule;
   };
 
   auto parseMlirIrFile =
@@ -374,7 +376,7 @@ JlmOptCommand::ParseInputFile(
     jlm::mlir::MlirToJlmConverter rvsdggen;
     return rvsdggen.ReadAndConvertMlir(mlirIrFile);
 #else
-    throw util::error(
+    JLM_UNREACHABLE(
         "This version of jlm-opt has not been compiled with support for the MLIR backend\n");
 #endif
   };

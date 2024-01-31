@@ -376,16 +376,6 @@ private:
       const JlmOptCommandLineOptions::InputFormat & inputFormat,
       util::StatisticsCollector & statisticsCollector) const;
 
-  std::unique_ptr<llvm::RvsdgModule>
-  ParseLlvmIrFile(
-      const util::filepath & llvmIrFile,
-      util::StatisticsCollector & statisticsCollector) const;
-
-  std::unique_ptr<llvm::RvsdgModule>
-  ParseMlirIrFile(
-      const util::filepath & rvsdgIrFile,
-      util::StatisticsCollector & statisticsCollector) const;
-
   static void
   PrintRvsdgModule(
       llvm::RvsdgModule & rvsdgModule,

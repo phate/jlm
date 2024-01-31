@@ -13,8 +13,6 @@ jhls_LIBS = \
 	librvsdg \
 	libutil \
 
-jhls_EXTRA_CPPFLAGS = -I$(shell $(LLVMCONFIG) --includedir)
-
 jhls_EXTRA_LDFLAGS = \
 	$(shell $(LLVMCONFIG) --libs core irReader) \
 	$(shell $(LLVMCONFIG) --ldflags) \
