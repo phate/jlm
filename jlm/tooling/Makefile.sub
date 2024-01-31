@@ -64,5 +64,6 @@ libtooling_TEST_LIBS = \
 
 libtooling_TEST_EXTRA_LDFLAGS = \
 	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
+	$(MLIR_LDFLAGS) \
 
 $(eval $(call common_library,libtooling))
