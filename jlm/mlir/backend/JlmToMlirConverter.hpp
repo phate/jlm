@@ -48,7 +48,7 @@ public:
    * \param omega The MLIR RVSDG Omega node to be printed.
    * \param filePath The path to the file to print the MLIR to.
    */
-  void
+  static void
   Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);
 
   /**
