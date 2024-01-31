@@ -17,7 +17,7 @@ runs:
 
     - name: "Try to fetch Dialect from the cache"
       id: cache-mlir
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ github.workspace }}/lib/mlir-rvsdg
