@@ -131,7 +131,8 @@ MlirToJlmConverter::ConvertOperation(
   }
   else
   {
-    JLM_UNREACHABLE(util::strfmt("Operation is not implemented:" + mlirOperation.getName().getStringRef().str() + "\n"));
+    JLM_UNREACHABLE(
+      util::strfmt("Operation not implemented:" + mlirOperation.getName().getStringRef().str() + "\n"));
   }
 }
 
