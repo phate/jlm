@@ -25,13 +25,10 @@ class JlmToMlirConverter final
 {
 public:
   JlmToMlirConverter()
+      : Context_(std::make_unique<::mlir::MLIRContext>())
   {
-    Context_ = std::make_unique<::mlir::MLIRContext>();
-    // Load the RVSDG dialect
     Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
-    // Load the JLM dialect
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
-    // Load the Arith dialect
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
