@@ -114,8 +114,8 @@ JlmToMlirConverter::ConvertNode(const rvsdg::node & node, ::mlir::Block & block)
   }
   else
   {
-    JLM_UNREACHABLE(
-        util::strfmt("Unimplemented structural node: " + node.operation().debug_string()).c_str());
+    auto message = util::strfmt("Unimplemented structural node: ", node.operation().debug_string());
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
@@ -135,8 +135,8 @@ JlmToMlirConverter::ConvertSimpleNode(const rvsdg::simple_node & node, ::mlir::B
   }
   else
   {
-    JLM_UNREACHABLE(
-        util::strfmt("Unimplemented simple node: " + node.operation().debug_string()).c_str());
+    auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
@@ -213,8 +213,8 @@ JlmToMlirConverter::ConvertType(const rvsdg::type & type)
   }
   else
   {
-    JLM_UNREACHABLE(
-        util::strfmt("Type conversion not implemented: " + type.debug_string()).c_str());
+    auto message = util::strfmt("Type conversion not implemented: ", type.debug_string());
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 

@@ -38,7 +38,7 @@ is_externally_visible(const linkage & lnk)
 static inline std::string
 ToString(const linkage & lnk)
 {
-  std::unordered_map<linkage, std::string> strings = {
+  static std::unordered_map<linkage, std::string> strings = {
     { linkage::external_linkage, "external_linkage" },
     { linkage::available_externally_linkage, "available_externally_linkage" },
     { linkage::link_once_any_linkage, "link_once_any_linkage" },
