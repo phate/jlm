@@ -131,9 +131,11 @@ MlirToJlmConverter::ConvertOperation(
   }
   else
   {
-    std::string unreachable =
-        "Operation is not implemented:" + mlirOperation.getName().getStringRef().str() + "\n";
-    JLM_UNREACHABLE(unreachable.c_str());
+    auto message = util::strfmt(
+        "Operation not implemented:",
+        mlirOperation.getName().getStringRef().str(),
+        "\n");
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
@@ -156,10 +158,7 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region 
   JLM_ASSERT(mlirLambda.getNumResults() == 1);
   auto result = mlirLambda.getResult(0).getType();
 
-  if (result.getTypeID() != ::mlir::rvsdg::LambdaRefType::getTypeID())
-  {
-    JLM_ASSERT("The result from lambda node is not a LambdaRefType\n");
-  }
+  JLM_ASSERT(result.getTypeID() == ::mlir::rvsdg::LambdaRefType::getTypeID());
 
   // Create the RVSDG function signature
   auto lambdaRefType = ::mlir::cast<::mlir::rvsdg::LambdaRefType>(result);
@@ -194,9 +193,8 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region 
 std::unique_ptr<rvsdg::type>
 MlirToJlmConverter::ConvertType(::mlir::Type & type)
 {
-  if (::mlir::isa<::mlir::IntegerType>(type))
+  if (auto intType = ::mlir::dyn_cast<::mlir::IntegerType>(type))
   {
-    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
     return std::make_unique<rvsdg::bittype>(intType.getWidth());
   }
   else if (::mlir::isa<::mlir::rvsdg::LoopStateEdgeType>(type))
