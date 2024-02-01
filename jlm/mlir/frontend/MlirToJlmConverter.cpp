@@ -131,10 +131,11 @@ MlirToJlmConverter::ConvertOperation(
   }
   else
   {
-    JLM_UNREACHABLE(
-        util::strfmt(
-            "Operation not implemented:" + mlirOperation.getName().getStringRef().str() + "\n")
-            .c_str());
+    auto message = util::strfmt(
+        "Operation not implemented:",
+        mlirOperation.getName().getStringRef().str(),
+        "\n");
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
@@ -157,10 +158,7 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region 
   JLM_ASSERT(mlirLambda.getNumResults() == 1);
   auto result = mlirLambda.getResult(0).getType();
 
-  if (result.getTypeID() != ::mlir::rvsdg::LambdaRefType::getTypeID())
-  {
-    JLM_ASSERT(result.getTypeID() == ::mlir::rvsdg::LambdaRefType::getTypeID());
-  }
+  JLM_ASSERT(result.getTypeID() == ::mlir::rvsdg::LambdaRefType::getTypeID());
 
   // Create the RVSDG function signature
   auto lambdaRefType = ::mlir::cast<::mlir::rvsdg::LambdaRefType>(result);
