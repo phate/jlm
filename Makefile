@@ -26,4 +26,8 @@ include tools/jhls/Makefile.sub
 include tools/jlm-hls/Makefile.sub
 endif
 
+ifdef ENABLE_MLIR
+include jlm/mlir/Makefile.sub
+endif
+
 include Makefile.rules

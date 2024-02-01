@@ -8,6 +8,9 @@ LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
 ENABLE_HLS=
 CIRCT_PATH=
+ENABLE_MLIR=
+MLIR_PATH=
+MLIR_LDFLAGS=
 
 function usage()
 {
@@ -21,6 +24,8 @@ function usage()
 	echo "                        CIRCT, which the backend depends on."
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
+	echo "  --enable-mlir PATH    Sets the path to the MLIR RVSDG Dialect and enables"
+	echo "                        building the MLIR backend and frontend. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
 	echo "  --help                Prints this message and stops."
 	echo
@@ -49,6 +54,12 @@ while [[ "$#" -ge 1 ]] ; do
 		--llvm-config)
 			shift
 			LLVM_CONFIG_BIN="$1"
+			shift
+			;;
+		--enable-mlir)
+			shift
+			MLIR_PATH="$1"
+			ENABLE_MLIR="yes"
 			shift
 			;;
 		--enable-coverage)
@@ -94,10 +105,17 @@ if [ "${ENABLE_ASSERTS}" == "yes" ] ; then
 fi
 
 CPPFLAGS_CIRCT=""
-CXXFLAGS_CIRCT=""
+CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
-	CXXFLAGS_CIRCT="-Wno-error=comment"
+	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
+fi
+
+CPPFLAGS_MLIR=""
+if [ "${ENABLE_MLIR}" == "yes" ] ; then
+	CPPFLAGS_MLIR="-I${MLIR_PATH}/include"
+	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
+	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
 fi
 
 if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
@@ -111,10 +129,13 @@ rm -rf build ; ln -sf build-"${TARGET}" build
 
 (
 	cat <<EOF
-CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_CIRCT}
-CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT}
+CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMENT}
+CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT} ${CPPFLAGS_MLIR}
 ENABLE_HLS=${ENABLE_HLS}
 CIRCT_PATH=${CIRCT_PATH}
+ENABLE_MLIR=${ENABLE_MLIR}
+MLIR_PATH=${MLIR_PATH}
+MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
 EOF
