@@ -797,8 +797,8 @@ TestMemcpy()
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallFEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallFExitNodes == pointsToGraph.NumMemoryNodes());
-      assert(numMemcpyDestNodes == 1);
-      assert(numMemcpySrcNodes == 1);
+      assert(numMemcpyDestNodes == 2);
+      assert(numMemcpySrcNodes == 2);
     }
   };
 

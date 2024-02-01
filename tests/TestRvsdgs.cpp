@@ -3128,6 +3128,65 @@ MemcpyTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
+MemcpyTest3::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  auto & declaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &pointerType }));
+  auto structType = StructType::Create("myStruct", false, declaration);
+
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType functionType(
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+
+  Lambda_ = lambda::node::create(rvsdg->root(), functionType, "f", linkage::internal_linkage);
+  auto pArgument = Lambda_->fctargument(0);
+  auto iOStateArgument = Lambda_->fctargument(1);
+  auto memoryStateArgument = Lambda_->fctargument(2);
+  auto loopStateArgument = Lambda_->fctargument(3);
+
+  auto cFalse = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 1, 0);
+  auto eight = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 8);
+  auto zero = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 0);
+  auto minusFive = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, -5);
+  auto three = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 3);
+
+  auto allocaResults = alloca_op::create(*structType, eight, 8);
+  auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
+
+  auto memcpyResults = Memcpy::create(allocaResults[0], pArgument, eight, cFalse, { memoryState });
+
+  auto gep1 =
+      GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, *structType, pointerType);
+  auto ld = LoadNode::Create(gep1, { memcpyResults[0] }, pointerType, 8);
+
+  auto gep2 =
+      GetElementPtrOperation::Create(allocaResults[0], { minusFive }, *structType, pointerType);
+
+  memcpyResults = Memcpy::create(ld[0], gep2, three, cFalse, { ld[1] });
+
+  auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0], loopStateArgument });
+
+  rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
+
+  Alloca_ = rvsdg::node_output::node(allocaResults[0]);
+  Memcpy_ = rvsdg::node_output::node(memcpyResults[0]);
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
 LinkedListTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
