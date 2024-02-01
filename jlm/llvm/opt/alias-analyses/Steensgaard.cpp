@@ -690,7 +690,7 @@ public:
     };
 
     std::string str;
-    str.append("digraph PointsToGraph {\n");
+    str.append("digraph DisjointLocationSetGraph {\n");
 
     for (auto & set : DisjointLocationSet_)
     {
@@ -1379,45 +1379,39 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<Memcpy>(&node));
 
-  // FIXME: handle unknown
-
-  // FIXME: write some documentation about the implementation
-
   auto & dstAddress = LocationSet_->Find(*node.input(0)->origin());
   auto & srcAddress = LocationSet_->Find(*node.input(1)->origin());
 
+  // We implement memcpy by pointing srcAddress and dstAddress to the same underlying memory:
+  //
+  // srcAddress -> underlyingMemory
+  // dstAddress -> underlyingMemory
+  //
+  // Preferably, I would have liked to implement it as follows:
+  //
+  // srcAddress -> srcMemory
+  // dstAddress -> dstMemory (which is a copy of srcMemory)
+  // srcMemory and dstMemory -> underlyingMemory
+  //
+  // However, this was not possible due to points-to flags propagation. We have no guarantee that
+  // srcAddress and dstAddress are annotated with the right flags BEFORE PropagatePointsToFlags()
+  // ran. In this scheme, dstMemory is a copy of srcMemory, which means that it should also get a
+  // copy of its flags (which again are the same as the points-to flags of srcAddress).
   if (srcAddress.GetPointsTo() == nullptr)
   {
-    // If we do not know where the source address points to yet(!),
-    // insert a dummy location such that we have something to work with.
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    srcAddress.SetPointsTo(dummyLocation);
+    auto & underlyingMemory = LocationSet_->InsertDummyLocation();
+    srcAddress.SetPointsTo(underlyingMemory);
   }
 
   if (dstAddress.GetPointsTo() == nullptr)
   {
-    // If we do not know where the destination address points to yet(!),
-    // insert a dummy location such that we have something to work with.
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    dstAddress.SetPointsTo(dummyLocation);
+    dstAddress.SetPointsTo(*srcAddress.GetPointsTo());
   }
-
-  auto & srcMemory = LocationSet_->GetRootLocation(*srcAddress.GetPointsTo());
-  auto & dstMemory = LocationSet_->GetRootLocation(*dstAddress.GetPointsTo());
-
-  if (srcMemory.GetPointsTo() == nullptr)
+  else
   {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    srcMemory.SetPointsTo(dummyLocation);
+    // Unifies the underlying memory of srcMemory and dstMemory
+    LocationSet_->Join(*srcAddress.GetPointsTo(), *dstAddress.GetPointsTo());
   }
-
-  if (dstMemory.GetPointsTo() == nullptr)
-  {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    dstMemory.SetPointsTo(dummyLocation);
-  }
-
-  LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
 }
 
 void
@@ -1721,6 +1715,9 @@ Steensgaard::Analyze(
     const RvsdgModule & module,
     jlm::util::StatisticsCollector & statisticsCollector)
 {
+  // std::unordered_map<const rvsdg::output *, std::string> outputMap;
+  // std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
+
   LocationSet_ = LocationSet::Create();
   auto statistics = Statistics::Create(module.SourceFileName());
 
@@ -1738,7 +1735,7 @@ Steensgaard::Analyze(
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics(*LocationSet_);
   auto pointsToGraph = ConstructPointsToGraph();
-  // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  // std::cout << PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
   // Redirect unknown memory node sources

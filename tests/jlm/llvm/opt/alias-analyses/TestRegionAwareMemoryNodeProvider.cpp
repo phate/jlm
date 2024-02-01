@@ -1179,10 +1179,10 @@ TestMemcpy()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.LambdaF());
-      AssertMemoryNodes(lambdaEntryNodes, { &globalArrayMemoryNode });
+      AssertMemoryNodes(lambdaEntryNodes, { &globalArrayMemoryNode, &localArrayMemoryNode });
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.LambdaF());
-      AssertMemoryNodes(lambdaExitNodes, { &globalArrayMemoryNode });
+      AssertMemoryNodes(lambdaExitNodes, { &globalArrayMemoryNode, &localArrayMemoryNode });
     }
 
     /*
@@ -1193,10 +1193,10 @@ TestMemcpy()
       AssertMemoryNodes(lambdaEntryNodes, { &localArrayMemoryNode, &globalArrayMemoryNode });
 
       auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallF());
-      AssertMemoryNodes(callEntryNodes, { &globalArrayMemoryNode });
+      AssertMemoryNodes(callEntryNodes, { &globalArrayMemoryNode, &localArrayMemoryNode });
 
       auto & callExitNodes = provisioning.GetCallExitNodes(test.CallF());
-      AssertMemoryNodes(callExitNodes, { &globalArrayMemoryNode });
+      AssertMemoryNodes(callExitNodes, { &globalArrayMemoryNode, &localArrayMemoryNode });
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.LambdaG());
       AssertMemoryNodes(lambdaExitNodes, { &localArrayMemoryNode, &globalArrayMemoryNode });
