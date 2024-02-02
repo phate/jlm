@@ -101,7 +101,6 @@ public:
    *
    * @param rvsdgModule The RVSDG module on which the provisioning should be performed.
    * @param seedProvisioning A provisioning from which memory nodes will be eliminated.
-   * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
    * @return A new instance of MemoryNodeProvisioning.
    */
