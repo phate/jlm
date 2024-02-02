@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_LINKAGE_HPP
 #define JLM_LLVM_IR_LINKAGE_HPP
 
+#include <jlm/util/common.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -35,9 +36,9 @@ is_externally_visible(const linkage & lnk)
 }
 
 static inline std::string
-linkage_to_string(const linkage & lnk)
+ToString(const linkage & lnk)
 {
-  std::unordered_map<linkage, std::string> strings = {
+  static std::unordered_map<linkage, std::string> strings = {
     { linkage::external_linkage, "external_linkage" },
     { linkage::available_externally_linkage, "available_externally_linkage" },
     { linkage::link_once_any_linkage, "link_once_any_linkage" },
@@ -51,6 +52,7 @@ linkage_to_string(const linkage & lnk)
     { linkage::common_linkage, "common_linkage" }
   };
 
+  JLM_ASSERT(strings.find(lnk) != strings.end());
   return strings[lnk];
 }
 

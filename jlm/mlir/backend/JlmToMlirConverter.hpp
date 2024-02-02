@@ -25,13 +25,10 @@ class JlmToMlirConverter final
 {
 public:
   JlmToMlirConverter()
+      : Context_(std::make_unique<::mlir::MLIRContext>())
   {
-    Context_ = std::make_unique<::mlir::MLIRContext>();
-    // Load the RVSDG dialect
     Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
-    // Load the JLM dialect
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
-    // Load the Arith dialect
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
@@ -51,7 +48,7 @@ public:
    * \param omega The MLIR RVSDG Omega node to be printed.
    * \param filePath The path to the file to print the MLIR to.
    */
-  void
+  static void
   Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);
 
   /**

@@ -114,8 +114,8 @@ JlmToMlirConverter::ConvertNode(const rvsdg::node & node, ::mlir::Block & block)
   }
   else
   {
-    std::string unkown = "Unimplemented structural node: " + node.operation().debug_string();
-    JLM_UNREACHABLE(unkown.c_str());
+    auto message = util::strfmt("Unimplemented structural node: ", node.operation().debug_string());
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
@@ -135,8 +135,8 @@ JlmToMlirConverter::ConvertSimpleNode(const rvsdg::simple_node & node, ::mlir::B
   }
   else
   {
-    std::string unkown = "Unimplemented simple node: " + node.operation().debug_string();
-    JLM_UNREACHABLE(unkown.c_str());
+    auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
@@ -148,17 +148,17 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   {
     arguments.push_back(ConvertType(lambdaNode.fctargument(i)->type()));
   }
-  ::llvm::ArrayRef argumentsArray(arguments);
 
   ::llvm::SmallVector<::mlir::Type> results;
   for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
   {
     results.push_back(ConvertType(lambdaNode.fctresult(i)->type()));
   }
-  ::llvm::ArrayRef resultsArray(results);
 
   ::llvm::SmallVector<::mlir::Type> lambdaRef;
-  auto refType = Builder_->getType<::mlir::rvsdg::LambdaRefType>(argumentsArray, resultsArray);
+  auto refType = Builder_->getType<::mlir::rvsdg::LambdaRefType>(
+      ::llvm::ArrayRef(arguments),
+      ::llvm::ArrayRef(results));
   lambdaRef.push_back(refType);
 
   ::llvm::SmallVector<::mlir::Value> inputs;
@@ -173,15 +173,14 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(jlm::llvm::linkage_to_string(lambdaNode.linkage())));
+      Builder_->getStringAttr(llvm::ToString(lambdaNode.linkage())));
   attributes.push_back(linkage);
-  ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
       lambdaRef,
       inputs,
-      attributesRef);
+      ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
   block.push_back(lambda);
 
   auto & lambdaBlock = lambda.getRegion().emplaceBlock();
@@ -200,22 +199,22 @@ JlmToMlirConverter::ConvertType(const rvsdg::type & type)
   {
     return Builder_->getIntegerType(bt->nbits());
   }
-  else if (dynamic_cast<const llvm::loopstatetype *>(&type))
+  else if (rvsdg::is<llvm::loopstatetype>(type))
   {
     return Builder_->getType<::mlir::rvsdg::LoopStateEdgeType>();
   }
-  else if (dynamic_cast<const llvm::iostatetype *>(&type))
+  else if (rvsdg::is<llvm::iostatetype>(type))
   {
     return Builder_->getType<::mlir::rvsdg::IOStateEdgeType>();
   }
-  else if (dynamic_cast<const llvm::MemoryStateType *>(&type))
+  else if (rvsdg::is<llvm::MemoryStateType>(type))
   {
     return Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
   }
   else
   {
-    std::string unkown = "Type conversion not implemented: " + type.debug_string();
-    JLM_UNREACHABLE(unkown.c_str());
+    auto message = util::strfmt("Type conversion not implemented: ", type.debug_string());
+    JLM_UNREACHABLE(message.c_str());
   }
 }
 
