@@ -40,8 +40,8 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
       "Provider should be derived from MemoryNodeProvider class.");
 
   std::cout << "\n###\n";
-  std::cout << "### Performing Test " << typeid(Test).name()
-            << " using [" << typeid(Analysis).name() << ", " << typeid(Provider).name() << "]\n";
+  std::cout << "### Performing Test " << typeid(Test).name() << " using ["
+            << typeid(Analysis).name() << ", " << typeid(Provider).name() << "]\n";
   std::cout << "###\n";
 
   Test test;
@@ -753,7 +753,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
     auto lambda_exit_mux =
-          jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
+        jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
@@ -774,7 +774,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
     auto lambda_exit_mux =
-          jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+        jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
@@ -810,7 +810,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
     auto lambdaExitMerge =
-          jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
+        jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
@@ -831,7 +831,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
     auto lambdaExitMerge =
-          jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+        jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
@@ -867,7 +867,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
 
     auto lambda_exit_mux =
-          jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
+        jlm::rvsdg::node_output::node(test.GetLambdaIndcall().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
@@ -888,7 +888,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(test.GetLambdaTest().subregion()->nnodes() == 9);
 
     auto lambda_exit_mux =
-          jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+        jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
@@ -970,7 +970,8 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
   {
     assert(test.GetLambdaThree().subregion()->nnodes() == 2);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaThree().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaThree().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 0, 1));
   }
 
@@ -978,7 +979,8 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
   {
     assert(test.GetLambdaFour().subregion()->nnodes() == 2);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaFour().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaFour().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 0, 1));
   }
 
@@ -1009,7 +1011,8 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 6));
 
-    auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetCallIWithThree().input(3)->origin());
+    auto callEntryMerge =
+        jlm::rvsdg::node_output::node(test.GetCallIWithThree().input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 6, 1));
 
     const jlm::rvsdg::node * storeNode = nullptr;
@@ -1075,7 +1078,8 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
   {
     assert(test.GetLambdaTest().subregion()->nnodes() == 16);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 6, 1));
 
     auto loadG1 = input_node(*test.GetLambdaTest().cvargument(2)->begin());
@@ -1084,7 +1088,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     auto loadG2 = input_node(*test.GetLambdaTest().cvargument(3)->begin());
     assert(is<LoadOperation>(*loadG2, 2, 2));
 
-    auto lambdaEntrySplit= input_node(*test.GetLambdaTest().fctargument(1)->begin());
+    auto lambdaEntrySplit = input_node(*test.GetLambdaTest().fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 6));
   }
 
@@ -1092,10 +1096,11 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
   {
     assert(test.GetLambdaTest2().subregion()->nnodes() == 7);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaTest2().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaTest2().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 6, 1));
 
-    auto lambdaEntrySplit= input_node(*test.GetLambdaTest().fctargument(1)->begin());
+    auto lambdaEntrySplit = input_node(*test.GetLambdaTest().fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 6));
   }
 }
@@ -1109,7 +1114,8 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
   {
     assert(test.GetLambdaThree().subregion()->nnodes() == 3);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaThree().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaThree().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 13, 1));
 
     auto lambdaEntrySplit = input_node(*test.GetLambdaThree().fctargument(1)->begin());
@@ -1120,7 +1126,8 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
   {
     assert(test.GetLambdaFour().subregion()->nnodes() == 3);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaFour().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaFour().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 13, 1));
 
     auto lambdaEntrySplit = input_node(*test.GetLambdaFour().fctargument(1)->begin());
@@ -1154,7 +1161,8 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 13));
 
-    auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetCallIWithThree().input(3)->origin());
+    auto callEntryMerge =
+        jlm::rvsdg::node_output::node(test.GetCallIWithThree().input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 13, 1));
 
     const jlm::rvsdg::node * storeNode = nullptr;
@@ -1227,7 +1235,8 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
   {
     assert(test.GetLambdaTest().subregion()->nnodes() == 17);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaTest().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 10, 1));
 
     auto loadG1 = input_node(*test.GetLambdaTest().cvargument(2)->begin());
@@ -1255,7 +1264,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     auto loadG2 = input_node(*test.GetLambdaTest().cvargument(3)->begin());
     assert(is<LoadOperation>(*loadG2, 2, 2));
 
-    auto lambdaEntrySplit= input_node(*test.GetLambdaTest().fctargument(1)->begin());
+    auto lambdaEntrySplit = input_node(*test.GetLambdaTest().fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 10));
   }
 
@@ -1263,7 +1272,8 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
   {
     assert(test.GetLambdaTest2().subregion()->nnodes() == 8);
 
-    auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.GetLambdaTest2().fctresult(2)->origin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::node_output::node(test.GetLambdaTest2().fctresult(2)->origin());
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 10, 1));
 
     auto callXEntryMerge = jlm::rvsdg::node_output::node(test.GetTest2CallX().input(3)->origin());
@@ -1288,7 +1298,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
       assert(input_node(user) == callXEntryMerge);
     }
 
-    auto lambdaEntrySplit= input_node(*test.GetLambdaTest2().fctargument(1)->begin());
+    auto lambdaEntrySplit = input_node(*test.GetLambdaTest2().fctargument(1)->begin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 10));
   }
 }
@@ -1358,7 +1368,7 @@ ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
   assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 2, 1));
 
   auto thetaOutput =
-        jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
+      jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -1382,7 +1392,7 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 2, 1));
 
   auto thetaOutput =
-        jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambdaExitMerge->input(0)->origin());
+      jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambdaExitMerge->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -1406,7 +1416,7 @@ ValidateThetaTestSteensgaardAgnosticTopDown(const jlm::tests::ThetaTest & test)
   assert(is<aa::LambdaExitMemStateOperator>(*lambda_exit_mux, 2, 1));
 
   auto thetaOutput =
-        jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
+      jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -1828,7 +1838,7 @@ ValidatePhiTestSteensgaardAgnostic(const jlm::tests::PhiTest1 & test)
   auto gammaStateIndex = store->input(2)->origin()->index();
 
   auto load1 =
-        jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+      jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
   assert(is<LoadOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::node_output::node(load1->input(1)->origin());
@@ -1856,7 +1866,7 @@ ValidatePhiTestSteensgaardRegionAware(const jlm::tests::PhiTest1 & test)
   auto gammaStateIndex = store->input(2)->origin()->index();
 
   auto load1 =
-        jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+      jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
   assert(is<LoadOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::node_output::node(load1->input(1)->origin());
@@ -1898,7 +1908,7 @@ ValidatePhiTestSteensgaardAgnosticTopDown(const jlm::tests::PhiTest1 & test)
   auto gammaStateIndex = storeNode->input(2)->origin()->index();
 
   auto load1 =
-        jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+      jlm::rvsdg::node_output::node(test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
   assert(is<LoadOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::node_output::node(load1->input(1)->origin());
@@ -2074,276 +2084,124 @@ TestMemoryStateEncoder()
 {
   using namespace jlm::llvm::aa;
 
-  ValidateTest<
-    jlm::tests::StoreTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateStoreTest1SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::StoreTest1,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateStoreTest1SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::StoreTest1,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateStoreTest1SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateStoreTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::StoreTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateStoreTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateStoreTest1SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::StoreTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateStoreTest2SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::StoreTest2,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateStoreTest2SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::StoreTest2,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateStoreTest2SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateStoreTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::StoreTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateStoreTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateStoreTest2SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::LoadTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateLoadTest1SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::LoadTest1,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateLoadTest1SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::LoadTest1,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateLoadTest1SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateLoadTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::LoadTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateLoadTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateLoadTest1SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::LoadTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateLoadTest2SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::LoadTest2,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateLoadTest2SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::LoadTest2,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateLoadTest2SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateLoadTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::LoadTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateLoadTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateLoadTest2SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::LoadFromUndefTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateLoadFromUndefSteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::LoadFromUndefTest,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateLoadFromUndefSteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::LoadFromUndefTest,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateLoadFromUndefSteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateLoadFromUndefSteensgaardAgnostic);
+  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateLoadFromUndefSteensgaardRegionAware);
+  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateLoadFromUndefSteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::CallTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateCallTest1SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::CallTest1,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateCallTest1SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::CallTest1,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateCallTest1SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateCallTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::CallTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateCallTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateCallTest1SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::CallTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateCallTest2SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::CallTest2,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateCallTest2SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::CallTest2,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateCallTest2SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::CallTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateCallTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::CallTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateCallTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::CallTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateCallTest2SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::IndirectCallTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateIndirectCallTest1SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::IndirectCallTest1,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateIndirectCallTest1SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::IndirectCallTest1,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateIndirectCallTest1SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateIndirectCallTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateIndirectCallTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateIndirectCallTest1SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-      jlm::tests::IndirectCallTest2,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateIndirectCallTest2SteensgaardAgnostic);
-  ValidateTest<
-      jlm::tests::IndirectCallTest2,
-      Steensgaard,
-      RegionAwareMemoryNodeProvider
-      >(ValidateIndirectCallTest2SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::IndirectCallTest2,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateIndirectCallTest2SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateIndirectCallTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateIndirectCallTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateIndirectCallTest2SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::GammaTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateGammaTestSteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::GammaTest,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateGammaTestSteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::GammaTest,
-      Steensgaard,
-      AgnosticTopDownMemoryNodeProvider
-      >(ValidateGammaTestSteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateGammaTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::GammaTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateGammaTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
+      ValidateGammaTestSteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::ThetaTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateThetaTestSteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::ThetaTest,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateThetaTestSteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::ThetaTest,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateThetaTestSteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateThetaTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::ThetaTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateThetaTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateThetaTestSteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::DeltaTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateDeltaTest1SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::DeltaTest1,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateDeltaTest1SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::DeltaTest1,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateDeltaTest1SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateDeltaTest1SteensgaardAgnostic);
+  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateDeltaTest1SteensgaardRegionAware);
+  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateDeltaTest1SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::DeltaTest2,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateDeltaTest2SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::DeltaTest2,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateDeltaTest2SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::DeltaTest2,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateDeltaTest2SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateDeltaTest2SteensgaardAgnostic);
+  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateDeltaTest2SteensgaardRegionAware);
+  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateDeltaTest2SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::DeltaTest3,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateDeltaTest3SteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::DeltaTest3,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateDeltaTest3SteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::DeltaTest3,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateDeltaTest3SteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateDeltaTest3SteensgaardAgnostic);
+  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateDeltaTest3SteensgaardRegionAware);
+  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateDeltaTest3SteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::ImportTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider>(ValidateImportTestSteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::ImportTest,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateImportTestSteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::ImportTest,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateImportTestSteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::ImportTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateImportTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::ImportTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateImportTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::ImportTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateImportTestSteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::PhiTest1,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidatePhiTestSteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::PhiTest1,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidatePhiTestSteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::PhiTest1,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidatePhiTestSteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidatePhiTestSteensgaardAgnostic);
+  ValidateTest<jlm::tests::PhiTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidatePhiTestSteensgaardRegionAware);
+  ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidatePhiTestSteensgaardAgnosticTopDown);
 
-  ValidateTest<
-    jlm::tests::MemcpyTest,
-    Steensgaard,
-    AgnosticMemoryNodeProvider
-  >(ValidateMemcpySteensgaardAgnostic);
-  ValidateTest<
-    jlm::tests::MemcpyTest,
-    Steensgaard,
-    RegionAwareMemoryNodeProvider
-  >(ValidateMemcpySteensgaardRegionAware);
-  ValidateTest<
-      jlm::tests::MemcpyTest,
-      Steensgaard,
-      AgnosticMemoryNodeProvider
-      >(ValidateMemcpyTestSteensgaardAgnosticTopDown);
+  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateMemcpySteensgaardAgnostic);
+  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+      ValidateMemcpySteensgaardRegionAware);
+  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(
+      ValidateMemcpyTestSteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::FreeNullTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateFreeNullTestSteensgaardAgnostic);
