@@ -2016,10 +2016,10 @@ ValidateMemcpyTestSteensgaardAgnosticTopDown(const jlm::tests::MemcpyTest & test
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 5, 1));
 
     auto load = jlm::rvsdg::node_output::node(test.LambdaF().fctresult(0)->origin());
-    assert(is<LoadOperation>(*load, 2, 2));
+    assert(is<LoadOperation>(*load, 3, 3));
 
     auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-    assert(is<StoreOperation>(*store, 3, 1));
+    assert(is<StoreOperation>(*store, 4, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
@@ -2047,7 +2047,7 @@ ValidateMemcpyTestSteensgaardAgnosticTopDown(const jlm::tests::MemcpyTest & test
         memcpy = node;
     }
     assert(memcpy != nullptr);
-    assert(is<Memcpy>(*memcpy, 6, 2));
+    assert(is<Memcpy>(*memcpy, 8, 4));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpy->input(5)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));

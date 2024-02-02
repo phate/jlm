@@ -170,6 +170,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
 	tests/jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
+	tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
 	tests/jlm/llvm/opt/test-cne \
 	tests/jlm/llvm/opt/TestDeadNodeElimination \
 	tests/jlm/llvm/opt/test-inlining \
