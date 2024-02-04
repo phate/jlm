@@ -1,0 +1,43 @@
+Source: jlm
+Priority: optional
+Maintainer: Helge Bahmann <hcb@chaoticmind.net>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.8
+Section: libs
+
+Package: libjlmutil-dev
+Section: libdevel
+Architecture: any
+Depends: libjlmutil0 (= ${binary:Version}), ${misc:Depends}
+Description: Common utilities for jlm.
+ Common utilities for jlm.
+ .
+ Provides shared utility library for other jlm libraries.
+
+Package: libjlmutil0
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Common utilities for jlm.
+ Common utilities for jlm.
+ .
+ Provides shared utility library for other jlm libraries.
+
+Package: librvsdg-dev
+Section: libdevel
+Architecture: any
+Depends: librvsdg0 (= ${binary:Version}), ${misc:Depends}, libjlmutil-dev
+Description: RVSDG compiler IR library.
+ RVSDG compiler IR library.
+ .
+ Library that implements the RVSDG (regionalized value state dependence
+ graph) compiler intermediate representation.
+
+Package: librvsdg0
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: RVSDG compiler IR library.
+ RVSDG compiler IR library.
+ .
+ Library that implements the RVSDG (regionalized value state dependence
+ graph) compiler intermediate representation.
+

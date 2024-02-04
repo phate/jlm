@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+.PHONY: override_dh_strip override_dh_auto_configure
+
+override_dh_auto_clean:
+	rm -rf build build-* docs
+
+override_dh_auto_configure:
+	./configure.sh --enable-shared --prefix=/usr --libdir=/usr/lib/$(DEB_HOST_MULTIARCH)
+
+override_dh_strip:
+	dh_strip --automatic-dbgsym

@@ -1,0 +1,4 @@
+usr/include/jlm/util/*
+usr/lib/*/libjlmutil.so
+usr/lib/*/libjlmutil.a
+usr/lib/*/pkgconfig/libjlmutil.pc
