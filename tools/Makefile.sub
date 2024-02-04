@@ -7,9 +7,9 @@ jlc_SOURCES = \
 
 jlc_LIBS += \
 	libtooling \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 
 jlc_EXTRA_LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
 
@@ -20,9 +20,9 @@ jlm-opt_SOURCES = \
 
 jlm-opt_LIBS = \
 	libtooling \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 
 jlm-opt_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
 

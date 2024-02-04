@@ -82,6 +82,11 @@ librvsdg_TESTS = \
 librvsdg_TEST_LIBS = \
 	libjlmtest \
 	librvsdg \
-	libutil \
+	libjlmutil \
+
+librvsdg_VERSION = 0.0.1
+librvsdg_SOVERSION = 0
 
 $(eval $(call common_library,librvsdg))
+
+PKGCONFIG_FILES += $(BUILD_OUT_PREFIX)jlm/rvsdg/librvsdg.pc

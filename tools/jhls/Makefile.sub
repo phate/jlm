@@ -8,9 +8,9 @@ jhls_SOURCES = \
 jhls_LIBS = \
 	libtooling \
 	libhls \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 
 jhls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
 

@@ -4,6 +4,7 @@ set -eu
 # Default values for all tunables.
 TARGET="release"
 ENABLE_ASSERTS="no"
+ENABLE_SHARED="no"
 LLVM_CONFIG_BIN="llvm-config-16"
 ENABLE_COVERAGE="no"
 ENABLE_HLS=
@@ -11,6 +12,10 @@ CIRCT_PATH=
 ENABLE_MLIR=
 MLIR_PATH=
 MLIR_LDFLAGS=
+INSTALL=install
+prefix="/usr/local"
+includedir=""
+libdir=""
 
 function usage()
 {
@@ -27,6 +32,7 @@ function usage()
 	echo "  --enable-mlir PATH    Sets the path to the MLIR RVSDG Dialect and enables"
 	echo "                        building the MLIR backend and frontend. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
+	echo "  --enable-shared       Enable building shared libraries."
 	echo "  --help                Prints this message and stops."
 	echo
 	echo "Influential variables that can be set:"
@@ -51,6 +57,10 @@ while [[ "$#" -ge 1 ]] ; do
 			ENABLE_ASSERTS="yes"
 			shift
 			;;
+		--enable-shared)
+			ENABLE_SHARED="yes"
+			shift
+			;;
 		--llvm-config)
 			shift
 			LLVM_CONFIG_BIN="$1"
@@ -70,6 +80,18 @@ while [[ "$#" -ge 1 ]] ; do
 			usage >&2
 			exit 1
 			;;
+		--prefix=*)
+			prefix="${1#--prefix=}"
+			shift
+			;;
+		--includedir=*)
+			includedir="${1#--includedir=}"
+			shift
+			;;
+		--libdir=*)
+			libdir="${1#--libdir=}"
+			shift
+			;;
 		*=*)
 			VARNAME=${1%%=*}
 			VARVAL=${1#*=}
@@ -83,6 +105,13 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
+if [ "${includedir}" == "" ] ; then
+	includedir="${prefix}/include"
+fi
+
+if [ "${libdir}" == "" ] ; then
+	libdir="${prefix}/lib"
+fi
 
 CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g"
 CPPFLAGS_COMMON="-I. -Itests"
@@ -138,6 +167,12 @@ MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
+ENABLE_SHARED=${ENABLE_SHARED}
+
+INSTALL=${INSTALL}
+prefix=${prefix}
+libdir=${libdir}
+includedir=${includedir}
 EOF
 	if [ ! -z "${CXX-}" ] ; then
 		echo "CXX=${CXX}"

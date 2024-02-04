@@ -2680,7 +2680,7 @@ private:
 };
 
 /*
-  FIXME: This function should be in librvsdg and not in libllvm.
+  FIXME: This function should be in librvsdg and not in libjlmllvm.
 */
 static inline jlm::rvsdg::node *
 input_node(const jlm::rvsdg::input * input)

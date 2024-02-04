@@ -5,6 +5,9 @@ libjlmtest_SOURCES = \
 	tests/test-types.cpp \
 	tests/TestRvsdgs.cpp \
 
+libjlmtest_VERSION = 0.0.1
+libjlmtest_SOVERSION = 0
+
 $(eval $(call common_library,libjlmtest))
 
 ################################################################################

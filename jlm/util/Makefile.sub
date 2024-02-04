@@ -1,9 +1,9 @@
-libutil_SOURCES = \
+libjlmutil_SOURCES = \
 	jlm/util/callbacks.cpp \
 	jlm/util/common.cpp \
 	jlm/util/Statistics.cpp \
 
-libutil_TESTS += \
+libjlmutil_TESTS += \
 	tests/jlm/util/test-disjointset \
 	tests/jlm/util/test-intrusive-hash \
 	tests/jlm/util/test-intrusive-list \
@@ -13,12 +13,32 @@ libutil_TESTS += \
 	tests/jlm/util/TestMath \
 	tests/jlm/util/TestStatistics \
 
-libutil_TEST_LIBS = \
+libjlmutil_HEADERS += \
+	jlm/util/BijectiveMap.hpp\
+	jlm/util/HashSet.hpp\
+	jlm/util/Math.hpp\
+	jlm/util/Statistics.hpp \
+	jlm/util/callbacks.hpp \
+	jlm/util/common.hpp\
+	jlm/util/disjointset.hpp \
+	jlm/util/file.hpp\
+	jlm/util/intrusive-hash.hpp \
+	jlm/util/intrusive-list.hpp\
+	jlm/util/iterator_range.hpp\
+	jlm/util/strfmt.hpp\
+	jlm/util/time.hpp\
+
+libjlmutil_TEST_LIBS = \
 	libjlmtest \
-	libutil \
+	libjlmutil \
 
 # Not fully clear why this is required, but omitting this causes
 # linker errors.
-libutil_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+libjlmutil_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 
-$(eval $(call common_library,libutil))
+libjlmutil_VERSION = 0.0.1
+libjlmutil_SOVERSION = 0
+
+$(eval $(call common_library,libjlmutil))
+
+PKGCONFIG_FILES += $(BUILD_OUT_PREFIX)jlm/util/libjlmutil.pc
