@@ -98,10 +98,34 @@ jobs:
     - name: Add jlc to PATH
       run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
-      run: git clone https://github.com/phate/jlm-eval-suite.git
+      run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
     - name: Apply patch
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite
       run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
+
+
+  llvm-test-suite-andersen:
+    if: contains(github.event.pull_request.title, '[Andersen]')
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
+    - name: Add jlc to PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
+    - name: Clone jlm-test-suite
+      run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
+    - name: Update submodules
+      run: make -C jlm-eval-suite submodule
+    - name: Apply patch
+      run: cd jlm-eval-suite && make apply-llvm-git-patch
+    - name: Run llvm-test-suite-andersen
+      run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen
