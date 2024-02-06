@@ -183,6 +183,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
 {
   static std::unordered_map<std::string, util::Statistics::Id> map(
       { { StatisticsCommandLineArgument::Aggregation_, util::Statistics::Id::Aggregation },
+        { StatisticsCommandLineArgument::AgnosticMemoryNodeProvisioning_,
+          util::Statistics::Id::AgnosticMemoryNodeProvisioning },
         { StatisticsCommandLineArgument::Annotation_, util::Statistics::Id::Annotation },
         { StatisticsCommandLineArgument::CommonNodeElimination_,
           util::Statistics::Id::CommonNodeElimination },
@@ -227,6 +229,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statis
 {
   static std::unordered_map<util::Statistics::Id, const char *> map(
       { { util::Statistics::Id::Aggregation, StatisticsCommandLineArgument::Aggregation_ },
+        { util::Statistics::Id::AgnosticMemoryNodeProvisioning,
+          StatisticsCommandLineArgument::AgnosticMemoryNodeProvisioning_ },
         { util::Statistics::Id::AndersenAnalysis,
           StatisticsCommandLineArgument::AndersenAnalysis_ },
         { util::Statistics::Id::Annotation, StatisticsCommandLineArgument::Annotation_ },
@@ -510,6 +514,8 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::value_desc("value"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto agnosticMemoryNodeProvisioningStatisticsId =
+      util::Statistics::Id::AgnosticMemoryNodeProvisioning;
   auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
   auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
@@ -538,6 +544,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               aggregationStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
               "Collect control flow graph aggregation pass statistics."),
+          ::clEnumValN(
+              agnosticMemoryNodeProvisioningStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  agnosticMemoryNodeProvisioningStatisticsId),
+              "Collect agnostic memory node provisioning pass statistics."),
           ::clEnumValN(
               andersenAnalysisStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
@@ -769,6 +780,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::value_desc("dir"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto agnosticMemoryNodeProvisioningStatisticsId =
+      util::Statistics::Id::AgnosticMemoryNodeProvisioning;
   auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
   auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
@@ -796,6 +809,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               aggregationStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
               "Write aggregation statistics to file."),
+          ::clEnumValN(
+              agnosticMemoryNodeProvisioningStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  agnosticMemoryNodeProvisioningStatisticsId),
+              "Collect agnostic memory node provisioning pass statistics."),
           ::clEnumValN(
               andersenAnalysisStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),

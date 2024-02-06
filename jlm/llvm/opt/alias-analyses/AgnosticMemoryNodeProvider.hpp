@@ -91,7 +91,7 @@ public:
       util::filepath sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(Statistics::Id::MemoryNodeProvisioning),
+      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning),
         SourceFile_(std::move(sourceFile)),
         NumPointsToGraphMemoryNodes_(0),
         StatisticsCollector_(statisticsCollector)

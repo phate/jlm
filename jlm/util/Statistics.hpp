@@ -25,6 +25,7 @@ public:
     FirstEnumValue, // must always be the first enum value, used for iteration
 
     Aggregation,
+    AgnosticMemoryNodeProvisioning,
     Annotation,
     CommonNodeElimination,
     ControlFlowRecovery,

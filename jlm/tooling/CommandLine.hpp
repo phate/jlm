@@ -177,6 +177,8 @@ private:
   struct StatisticsCommandLineArgument
   {
     inline static const char * Aggregation_ = "print-aggregation-time";
+    inline static const char * AgnosticMemoryNodeProvisioning_ =
+        "print-agnostic-memory-node-provisioning";
     inline static const char * AndersenAnalysis_ = "print-andersen-analysis";
     inline static const char * Annotation_ = "print-annotation-time";
     inline static const char * CommonNodeElimination_ = "print-cne-stat";

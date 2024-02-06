@@ -830,7 +830,7 @@ TestStatistics()
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       filePath,
-      { jlm::util::Statistics::Id::MemoryNodeProvisioning });
+      { jlm::util::Statistics::Id::AgnosticMemoryNodeProvisioning });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act
