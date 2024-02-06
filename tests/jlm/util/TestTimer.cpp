@@ -1,7 +1,7 @@
 /*
-* Copyright 2024 Håvard Krogstie <krogstie.havard@gmail.com>
-* See COPYING for terms of redistribution.
-*/
+ * Copyright 2024 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
 
 #include <test-registry.hpp>
 
