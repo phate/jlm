@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -8,8 +9,13 @@
 
 #include <jlm/util/file.hpp>
 #include <jlm/util/HashSet.hpp>
+#include <jlm/util/time.hpp>
 
+#include <cstdint>
+#include <list>
 #include <memory>
+#include <string>
+#include <variant>
 
 namespace jlm::util
 {
@@ -49,6 +55,11 @@ public:
     LastEnumValue // must always be the last enum value, used for iteration
   };
 
+  using Measurement = std::variant<std::string, int64_t, uint64_t, double>;
+  // Lists are used instead of vectors to give stable references to members
+  using MeasurementList = std::list<std::pair<std::string, Measurement>>;
+  using TimerList = std::list<std::pair<std::string, util::timer>>;
+
   virtual ~Statistics();
 
   explicit Statistics(const Statistics::Id & statisticsId)
@@ -64,8 +75,105 @@ public:
   [[nodiscard]] virtual std::string
   ToString() const = 0;
 
+  /**
+   * Creates a string containing all measurements and timers.
+   * Requires all timers to be stopped.
+   * @return the created string
+   */
+  [[nodiscard]] std::string
+  Serialize() const;
+
+  /**
+   * Checks if a measurement with the given \p name exists.
+   * @return true if the measurement exists, false otherwise.
+   */
+  [[nodiscard]] bool
+  HasMeasurement(const std::string & name) const noexcept;
+
+  /**
+   * Gets the measurement with the given \p name, it must exist.
+   * @return a reference to the measurement.
+   */
+  [[nodiscard]] const Measurement &
+  GetMeasurement(const std::string & name) const;
+
+  /**
+   * Gets the value of the measurement with the given \p name.
+   * Requires the measurement to exist and have the given type \tparam T.
+   * @return the measurement's value.
+   */
+  template <typename T>
+  [[nodiscard]] const T &
+  GetMeasurementValue(const std::string & name) const
+  {
+    const auto & measurement = GetMeasurement(name);
+    return std::get<T>(measurement);
+  }
+
+  /**
+   * Retrieves the full list of measurements
+   */
+  [[nodiscard]] util::iterator_range<MeasurementList::const_iterator>
+  GetMeasurements() const;
+
+  /**
+   * Checks if a timer with the given \p name exists.
+   * @return true if the timer exists, false otherwise.
+   */
+  [[nodiscard]] bool
+  HasTimer(const std::string & name) const noexcept;
+
+  /**
+   * Gets the timer with the given \p name, it must exist.
+   * @return the timer.
+   */
+  [[nodiscard]] const util::timer &
+  GetTimer(const std::string & name) const;
+
+  /**
+   * Retrieves the full list of timers
+   */
+  [[nodiscard]] util::iterator_range<TimerList::const_iterator>
+  GetTimers() const;
+
+protected:
+  /**
+   * Adds a measurement, identified by \p name, with the given value.
+   * Requires that the measurement doesn't already exist.
+   * Measurements are listed in insertion order.
+   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint16_4, double
+   */
+  template <typename T>
+  void
+  AddMeasurement(std::string name, T value)
+  {
+    JLM_ASSERT(!HasMeasurement(name));
+    Measurements_.emplace_back(std::make_pair(std::move(name), std::move(value)));
+  }
+
+
+  // Mutable version of @see GetMeasurement
+  [[nodiscard]] Measurement &
+  GetMeasurement(const std::string & name);
+
+  /**
+   * Creates a new timer with the given \p name.
+   * Requires that the timer does not already exist.
+   * @return a reference to the timer
+   */
+  util::timer &
+  AddTimer(std::string name);
+
+  // Mutable version of @see GetTimer
+  [[nodiscard]] util::timer &
+  GetTimer(const std::string & name);
+
 private:
   Statistics::Id StatisticsId_;
+
+  // Lists are used instead of vectors to give stable references to members
+  MeasurementList Measurements_;
+  TimerList Timers_;
 };
 
 /**
