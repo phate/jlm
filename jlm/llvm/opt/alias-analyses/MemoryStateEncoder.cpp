@@ -24,7 +24,7 @@ public:
   ~EncodingStatistics() override = default;
 
   explicit EncodingStatistics(jlm::util::filepath sourceFile)
-      : Statistics(Statistics::Id::BasicEncoderEncoding),
+      : Statistics(Statistics::Id::MemoryStateEncoder),
         NumNodesBefore_(0),
         SourceFile_(std::move(sourceFile))
   {}

@@ -26,7 +26,6 @@ public:
 
     Aggregation,
     Annotation,
-    BasicEncoderEncoding,
     CommonNodeElimination,
     ControlFlowRecovery,
     DataNodeToDelta,
@@ -36,6 +35,7 @@ public:
     JlmToRvsdgConversion,
     LoopUnrolling,
     MemoryNodeProvisioning,
+    MemoryStateEncoder,
     PullNodes,
     PushNodes,
     ReduceNodes,
