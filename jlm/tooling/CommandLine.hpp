@@ -189,11 +189,12 @@ private:
     inline static const char * InvariantValueRedirection_ = "printInvariantValueRedirection";
     inline static const char * JlmToRvsdgConversion_ = "print-jlm-rvsdg-conversion";
     inline static const char * LoopUnrolling_ = "print-unroll-stat";
-    inline static const char * MemoryNodeProvisioning_ = "print-memory-node-provisioning";
     inline static const char * MemoryStateEncoder_ = "print-basicencoder-encoding";
     inline static const char * PullNodes_ = "print-pull-stat";
     inline static const char * PushNodes_ = "print-push-stat";
     inline static const char * ReduceNodes_ = "print-reduction-stat";
+    inline static const char * RegionAwareMemoryNodeProvisioning_ =
+        "print-memory-node-provisioning";
     inline static const char * RvsdgConstruction_ = "print-rvsdg-construction";
     inline static const char * RvsdgDestruction_ = "print-rvsdg-destruction";
     inline static const char * RvsdgOptimization_ = "print-rvsdg-optimization";
