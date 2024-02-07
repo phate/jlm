@@ -17,8 +17,7 @@ public:
   ~Statistics() noexcept override = default;
 
   explicit Statistics(util::filepath sourceFile)
-      : util::Statistics(Statistics::Id::RvsdgOptimization),
-        SourceFile_(std::move(sourceFile)),
+      : util::Statistics(Statistics::Id::RvsdgOptimization, std::move(sourceFile)),
         NumNodesBefore_(0),
         NumNodesAfter_(0)
   {}
@@ -38,12 +37,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return util::strfmt(
-        "RVSDGOPTIMIZATION ",
-        SourceFile_.to_str(),
-        " ",
         NumNodesBefore_,
         " ",
         NumNodesAfter_,
@@ -59,7 +55,6 @@ public:
 
 private:
   util::timer Timer_;
-  util::filepath SourceFile_;
   size_t NumNodesBefore_;
   size_t NumNodesAfter_;
 };

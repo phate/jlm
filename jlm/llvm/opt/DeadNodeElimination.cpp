@@ -101,8 +101,7 @@ public:
   ~Statistics() override = default;
 
   explicit Statistics(util::filepath sourceFile)
-      : util::Statistics(Statistics::Id::DeadNodeElimination),
-        SourceFile_(std::move(sourceFile)),
+      : util::Statistics(Statistics::Id::DeadNodeElimination, std::move(sourceFile)),
         NumRvsdgNodesBefore_(0),
         NumRvsdgNodesAfter_(0),
         NumInputsBefore_(0),
@@ -138,12 +137,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return util::strfmt(
-        "DeadNodeElimination ",
-        SourceFile_.to_str(),
-        " ",
         "#RvsdgNodesBeforeDNE:",
         NumRvsdgNodesBefore_,
         " ",
@@ -170,8 +166,6 @@ public:
   }
 
 private:
-  util::filepath SourceFile_;
-
   size_t NumRvsdgNodesBefore_;
   size_t NumRvsdgNodesAfter_;
   size_t NumInputsBefore_;

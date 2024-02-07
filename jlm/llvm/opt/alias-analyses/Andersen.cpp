@@ -33,8 +33,7 @@ public:
   ~Statistics() override = default;
 
   explicit Statistics(jlm::util::filepath sourceFile)
-      : jlm::util::Statistics(Statistics::Id::AndersenAnalysis),
-        SourceFile_(std::move(sourceFile)),
+      : jlm::util::Statistics(Statistics::Id::AndersenAnalysis, std::move(sourceFile)),
         NumRvsdgNodes_(0),
         NumPointerObjects_(0),
         NumRegistersMappedToPointerObject_(0),
@@ -144,12 +143,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "AndersenAnalysis ",
-        SourceFile_.to_str(),
-        " ",
         "#RvsdgNodes:",
         NumRvsdgNodes_,
         " ",
@@ -230,7 +226,6 @@ public:
   }
 
 private:
-  jlm::util::filepath SourceFile_;
   size_t NumRvsdgNodes_;
 
   size_t NumPointerObjects_;

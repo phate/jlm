@@ -24,9 +24,8 @@ public:
   ~EncodingStatistics() override = default;
 
   explicit EncodingStatistics(jlm::util::filepath sourceFile)
-      : Statistics(Statistics::Id::MemoryStateEncoder),
-        NumNodesBefore_(0),
-        SourceFile_(std::move(sourceFile))
+      : Statistics(Statistics::Id::MemoryStateEncoder, std::move(sourceFile)),
+        NumNodesBefore_(0)
   {}
 
   void
@@ -43,12 +42,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "MemoryStateEncoder ",
-        SourceFile_.to_str(),
-        " ",
         "#RvsdgNodes:",
         NumNodesBefore_,
         " ",
@@ -65,7 +61,6 @@ public:
 private:
   jlm::util::timer Timer_;
   size_t NumNodesBefore_;
-  jlm::util::filepath SourceFile_;
 };
 
 static jlm::rvsdg::argument *

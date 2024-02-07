@@ -22,14 +22,12 @@ namespace jlm::llvm
 class rvsdg_destruction_stat final : public jlm::util::Statistics
 {
 public:
-  virtual ~rvsdg_destruction_stat()
-  {}
+  ~rvsdg_destruction_stat() override = default;
 
-  rvsdg_destruction_stat(const jlm::util::filepath & filename)
-      : Statistics(Statistics::Id::RvsdgDestruction),
+  explicit rvsdg_destruction_stat(const jlm::util::filepath & filename)
+      : Statistics(Statistics::Id::RvsdgDestruction, filename),
         ntacs_(0),
-        nnodes_(0),
-        filename_(filename)
+        nnodes_(0)
   {}
 
   void
@@ -46,13 +44,10 @@ public:
     timer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "RVSDGDESTRUCTION ",
-        filename_.to_str(),
-        " ",
         nnodes_,
         " ",
         ntacs_,
@@ -70,7 +65,6 @@ private:
   size_t ntacs_;
   size_t nnodes_;
   jlm::util::timer timer_;
-  jlm::util::filepath filename_;
 };
 
 namespace rvsdg2jlm

@@ -783,9 +783,8 @@ public:
   ~Statistics() override = default;
 
   explicit Statistics(jlm::util::filepath sourceFile)
-      : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis),
+      : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis, std::move(sourceFile)),
         NumRvsdgNodes_(0),
-        SourceFile_(std::move(sourceFile)),
         NumDisjointSets_(0),
         NumLocations_(0),
         NumPointsToGraphNodes_(0),
@@ -860,12 +859,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "SteensgaardAnalysis ",
-        SourceFile_.to_str(),
-        " ",
         "#RvsdgNodes:",
         NumRvsdgNodes_,
         " ",
@@ -923,7 +919,6 @@ public:
 
 private:
   size_t NumRvsdgNodes_;
-  jlm::util::filepath SourceFile_;
 
   size_t NumDisjointSets_;
   size_t NumLocations_;

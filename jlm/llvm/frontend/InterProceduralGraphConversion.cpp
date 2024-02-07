@@ -131,10 +131,9 @@ public:
   ~ControlFlowRestructuringStatistics() override = default;
 
   ControlFlowRestructuringStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(Statistics::Id::ControlFlowRecovery),
+      : Statistics(Statistics::Id::ControlFlowRecovery, std::move(sourceFileName)),
         NumNodes_(0),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -150,13 +149,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "ControlFlowRestructuring ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "#Nodes:",
@@ -178,7 +174,6 @@ private:
   size_t NumNodes_;
   jlm::util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
 class AggregationStatistics final : public jlm::util::Statistics
@@ -187,10 +182,9 @@ public:
   ~AggregationStatistics() override = default;
 
   AggregationStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(jlm::util::Statistics::Id::Aggregation),
+      : Statistics(jlm::util::Statistics::Id::Aggregation, std::move(sourceFileName)),
         NumNodes_(0),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -206,13 +200,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "Aggregation ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "#Nodes:",
@@ -234,7 +225,6 @@ private:
   size_t NumNodes_;
   jlm::util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
 class AnnotationStatistics final : public jlm::util::Statistics
@@ -243,10 +233,9 @@ public:
   ~AnnotationStatistics() override = default;
 
   AnnotationStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(jlm::util::Statistics::Id::Annotation),
+      : Statistics(jlm::util::Statistics::Id::Annotation, std::move(sourceFileName)),
         NumThreeAddressCodes_(0),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -262,13 +251,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "Annotation ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "#ThreeAddressCodes:",
@@ -290,7 +276,6 @@ private:
   size_t NumThreeAddressCodes_;
   jlm::util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
 class AggregationTreeToLambdaStatistics final : public jlm::util::Statistics
@@ -299,9 +284,8 @@ public:
   ~AggregationTreeToLambdaStatistics() override = default;
 
   AggregationTreeToLambdaStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(jlm::util::Statistics::Id::JlmToRvsdgConversion),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+      : Statistics(jlm::util::Statistics::Id::JlmToRvsdgConversion, std::move(sourceFileName)),
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -316,13 +300,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "ControlFlowGraphToLambda ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "Time[ns]:",
@@ -340,7 +321,6 @@ public:
 private:
   jlm::util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
 class DataNodeToDeltaStatistics final : public jlm::util::Statistics
@@ -349,10 +329,9 @@ public:
   ~DataNodeToDeltaStatistics() override = default;
 
   DataNodeToDeltaStatistics(jlm::util::filepath sourceFileName, std::string dataNodeName)
-      : Statistics(jlm::util::Statistics::Id::DataNodeToDelta),
+      : Statistics(jlm::util::Statistics::Id::DataNodeToDelta, std::move(sourceFileName)),
         NumInitializationThreeAddressCodes_(0),
-        DataNodeName_(std::move(dataNodeName)),
-        SourceFileName_(std::move(sourceFileName))
+        DataNodeName_(std::move(dataNodeName))
   {}
 
   void
@@ -368,13 +347,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "DataNodeToDeltaStatistics ",
-        SourceFileName_.to_str(),
-        " ",
         DataNodeName_,
         " ",
         "#InitializationThreeAddressCodes:",
@@ -396,7 +372,6 @@ private:
   jlm::util::timer Timer_;
   size_t NumInitializationThreeAddressCodes_;
   std::string DataNodeName_;
-  jlm::util::filepath SourceFileName_;
 };
 
 class InterProceduralGraphToRvsdgStatistics final : public jlm::util::Statistics
@@ -405,10 +380,9 @@ public:
   ~InterProceduralGraphToRvsdgStatistics() override = default;
 
   explicit InterProceduralGraphToRvsdgStatistics(jlm::util::filepath sourceFileName)
-      : Statistics(jlm::util::Statistics::Id::RvsdgConstruction),
+      : Statistics(jlm::util::Statistics::Id::RvsdgConstruction, std::move(sourceFileName)),
         NumThreeAddressCodes_(0),
-        NumRvsdgNodes_(0),
-        SourceFileName_(std::move(sourceFileName))
+        NumRvsdgNodes_(0)
   {}
 
   void
@@ -425,13 +399,10 @@ public:
     NumRvsdgNodes_ = rvsdg::nnodes(graph.root());
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "InterProceduralGraphToRvsdg ",
-        SourceFileName_.to_str(),
-        " ",
         "#ThreeAddressCodes:",
         NumThreeAddressCodes_,
         " ",
@@ -452,7 +423,6 @@ private:
   size_t NumThreeAddressCodes_;
   size_t NumRvsdgNodes_;
   jlm::util::timer Timer_;
-  jlm::util::filepath SourceFileName_;
 };
 
 class InterProceduralGraphToRvsdgStatisticsCollector final

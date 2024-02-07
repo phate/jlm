@@ -18,11 +18,10 @@ namespace jlm::llvm
 class pushstat final : public util::Statistics
 {
 public:
-  virtual ~pushstat()
-  {}
+  ~pushstat() override = default;
 
-  pushstat()
-      : Statistics(Statistics::Id::PushNodes),
+  explicit pushstat(util::filepath sourceFile)
+      : Statistics(Statistics::Id::PushNodes, std::move(sourceFile)),
         ninputs_before_(0),
         ninputs_after_(0)
   {}
@@ -41,16 +40,16 @@ public:
     timer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
-    return util::strfmt("PUSH ", ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
+    return util::strfmt(ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
   }
 
   static std::unique_ptr<pushstat>
-  Create()
+  Create(util::filepath sourceFile)
   {
-    return std::make_unique<pushstat>();
+    return std::make_unique<pushstat>(std::move(sourceFile));
   }
 
 private:
@@ -435,7 +434,7 @@ push(jlm::rvsdg::region * region)
 static void
 push(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pushstat::Create();
+  auto statistics = pushstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
   push(rm.Rvsdg().root());

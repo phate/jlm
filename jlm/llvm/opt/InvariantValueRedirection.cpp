@@ -19,8 +19,8 @@ class InvariantValueRedirection::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  Statistics()
-      : util::Statistics(Statistics::Id::InvariantValueRedirection)
+  Statistics(util::filepath sourceFile)
+      : util::Statistics(Statistics::Id::InvariantValueRedirection, std::move(sourceFile))
   {}
 
   void
@@ -36,15 +36,15 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
-    return util::strfmt("InvariantValueRedirection ", "Time[ns]:", Timer_.ns());
+    return util::strfmt("Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<Statistics>
-  Create()
+  Create(util::filepath sourceFile)
   {
-    return std::make_unique<Statistics>();
+    return std::make_unique<Statistics>(std::move(sourceFile));
   }
 
 private:
@@ -59,7 +59,7 @@ InvariantValueRedirection::run(
     util::StatisticsCollector & statisticsCollector)
 {
   auto & rvsdg = rvsdgModule.Rvsdg();
-  auto statistics = Statistics::Create();
+  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
 
   statistics->Start();
   RedirectInvariantValues(*rvsdg.root());
