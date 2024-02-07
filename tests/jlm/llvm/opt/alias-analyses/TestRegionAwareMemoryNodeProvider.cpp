@@ -1435,7 +1435,7 @@ TestStatistics()
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       filePath,
-      { jlm::util::Statistics::Id::MemoryNodeProvisioning });
+      { jlm::util::Statistics::Id::RegionAwareMemoryNodeProvisioning });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   /*
