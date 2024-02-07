@@ -183,8 +183,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
 {
   static std::unordered_map<std::string, util::Statistics::Id> map(
       { { StatisticsCommandLineArgument::Aggregation_, util::Statistics::Id::Aggregation },
-        { StatisticsCommandLineArgument::BasicEncoderEncoding_,
-          util::Statistics::Id::BasicEncoderEncoding },
+        { StatisticsCommandLineArgument::AgnosticMemoryNodeProvisioning_,
+          util::Statistics::Id::AgnosticMemoryNodeProvisioning },
         { StatisticsCommandLineArgument::Annotation_, util::Statistics::Id::Annotation },
         { StatisticsCommandLineArgument::CommonNodeElimination_,
           util::Statistics::Id::CommonNodeElimination },
@@ -200,11 +200,13 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
         { StatisticsCommandLineArgument::JlmToRvsdgConversion_,
           util::Statistics::Id::JlmToRvsdgConversion },
         { StatisticsCommandLineArgument::LoopUnrolling_, util::Statistics::Id::LoopUnrolling },
-        { StatisticsCommandLineArgument::MemoryNodeProvisioning_,
-          util::Statistics::Id::MemoryNodeProvisioning },
+        { StatisticsCommandLineArgument::MemoryStateEncoder_,
+          util::Statistics::Id::MemoryStateEncoder },
         { StatisticsCommandLineArgument::PullNodes_, util::Statistics::Id::PullNodes },
         { StatisticsCommandLineArgument::PushNodes_, util::Statistics::Id::PushNodes },
         { StatisticsCommandLineArgument::ReduceNodes_, util::Statistics::Id::ReduceNodes },
+        { StatisticsCommandLineArgument::RegionAwareMemoryNodeProvisioning_,
+          util::Statistics::Id::RegionAwareMemoryNodeProvisioning },
         { StatisticsCommandLineArgument::RvsdgConstruction_,
           util::Statistics::Id::RvsdgConstruction },
         { StatisticsCommandLineArgument::RvsdgDestruction_,
@@ -227,11 +229,11 @@ JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statis
 {
   static std::unordered_map<util::Statistics::Id, const char *> map(
       { { util::Statistics::Id::Aggregation, StatisticsCommandLineArgument::Aggregation_ },
+        { util::Statistics::Id::AgnosticMemoryNodeProvisioning,
+          StatisticsCommandLineArgument::AgnosticMemoryNodeProvisioning_ },
         { util::Statistics::Id::AndersenAnalysis,
           StatisticsCommandLineArgument::AndersenAnalysis_ },
         { util::Statistics::Id::Annotation, StatisticsCommandLineArgument::Annotation_ },
-        { util::Statistics::Id::BasicEncoderEncoding,
-          StatisticsCommandLineArgument::BasicEncoderEncoding_ },
         { util::Statistics::Id::CommonNodeElimination,
           StatisticsCommandLineArgument::CommonNodeElimination_ },
         { util::Statistics::Id::ControlFlowRecovery,
@@ -246,11 +248,13 @@ JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statis
         { util::Statistics::Id::JlmToRvsdgConversion,
           StatisticsCommandLineArgument::JlmToRvsdgConversion_ },
         { util::Statistics::Id::LoopUnrolling, StatisticsCommandLineArgument::LoopUnrolling_ },
-        { util::Statistics::Id::MemoryNodeProvisioning,
-          StatisticsCommandLineArgument::MemoryNodeProvisioning_ },
+        { util::Statistics::Id::MemoryStateEncoder,
+          StatisticsCommandLineArgument::MemoryStateEncoder_ },
         { util::Statistics::Id::PullNodes, StatisticsCommandLineArgument::PullNodes_ },
         { util::Statistics::Id::PushNodes, StatisticsCommandLineArgument::PushNodes_ },
         { util::Statistics::Id::ReduceNodes, StatisticsCommandLineArgument::ReduceNodes_ },
+        { util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
+          StatisticsCommandLineArgument::RegionAwareMemoryNodeProvisioning_ },
         { util::Statistics::Id::RvsdgConstruction,
           StatisticsCommandLineArgument::RvsdgConstruction_ },
         { util::Statistics::Id::RvsdgDestruction,
@@ -510,9 +514,10 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::value_desc("value"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto agnosticMemoryNodeProvisioningStatisticsId =
+      util::Statistics::Id::AgnosticMemoryNodeProvisioning;
   auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
-  auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
   auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
   auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
   auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
@@ -521,10 +526,12 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
   auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
   auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
-  auto memoryNodeProvisioningStatisticsId = util::Statistics::Id::MemoryNodeProvisioning;
+  auto memoryStateEncoderStatisticsId = util::Statistics::Id::MemoryStateEncoder;
   auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
   auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
   auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
+  auto regionAwareMemoryNodeProvisioningStatisticsId =
+      util::Statistics::Id::RegionAwareMemoryNodeProvisioning;
   auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
   auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
   auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
@@ -539,6 +546,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
               "Collect control flow graph aggregation pass statistics."),
           ::clEnumValN(
+              agnosticMemoryNodeProvisioningStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  agnosticMemoryNodeProvisioningStatisticsId),
+              "Collect agnostic memory node provisioning pass statistics."),
+          ::clEnumValN(
               andersenAnalysisStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
               "Collect Andersen alias analysis pass statistics."),
@@ -547,8 +559,8 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
               "Collect aggregation tree annotation pass statistics."),
           ::clEnumValN(
-              basicEncoderEncodingStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(basicEncoderEncodingStatisticsId),
+              memoryStateEncoderStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(memoryStateEncoderStatisticsId),
               "Collect memory state encoding pass statistics."),
           ::clEnumValN(
               commonNodeEliminationStatisticsId,
@@ -584,10 +596,6 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
               "Collect loop unrolling pass statistics."),
           ::clEnumValN(
-              memoryNodeProvisioningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(memoryNodeProvisioningStatisticsId),
-              "Collect memory node provisioning pass statistics."),
-          ::clEnumValN(
               pullNodesStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
               "Collect node pull pass statistics."),
@@ -599,6 +607,11 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               reduceNodesStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
               "Collect node reduction pass statistics."),
+          ::clEnumValN(
+              regionAwareMemoryNodeProvisioningStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  regionAwareMemoryNodeProvisioningStatisticsId),
+              "Collect memory node provisioning pass statistics."),
           ::clEnumValN(
               rvsdgConstructionStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),
@@ -769,9 +782,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::value_desc("dir"));
 
   auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
+  auto agnosticMemoryNodeProvisioningStatisticsId =
+      util::Statistics::Id::AgnosticMemoryNodeProvisioning;
   auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
   auto annotationStatisticsId = util::Statistics::Id::Annotation;
-  auto basicEncoderEncodingStatisticsId = util::Statistics::Id::BasicEncoderEncoding;
   auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
   auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
   auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
@@ -780,10 +794,12 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
   auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
   auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
-  auto memoryNodeProvisioningStatisticsId = util::Statistics::Id::MemoryNodeProvisioning;
+  auto memoryStateEncoderStatisticsId = util::Statistics::Id::MemoryStateEncoder;
   auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
   auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
   auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
+  auto regionAwareMemoryNodeProvisioningStatisticsId =
+      util::Statistics::Id::RegionAwareMemoryNodeProvisioning;
   auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
   auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
   auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
@@ -797,6 +813,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
               "Write aggregation statistics to file."),
           ::clEnumValN(
+              agnosticMemoryNodeProvisioningStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  agnosticMemoryNodeProvisioningStatisticsId),
+              "Collect agnostic memory node provisioning pass statistics."),
+          ::clEnumValN(
               andersenAnalysisStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
               "Collect Andersen alias analysis pass statistics."),
@@ -805,8 +826,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
               "Write annotation statistics to file."),
           ::clEnumValN(
-              basicEncoderEncodingStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(basicEncoderEncodingStatisticsId),
+              memoryStateEncoderStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(memoryStateEncoderStatisticsId),
               "Write encoding statistics of basic encoder to file."),
           ::clEnumValN(
               commonNodeEliminationStatisticsId,
@@ -842,10 +863,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
               "Write loop unrolling statistics to file."),
           ::clEnumValN(
-              memoryNodeProvisioningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(memoryNodeProvisioningStatisticsId),
-              "Write memory node provisioning statistics to file."),
-          ::clEnumValN(
               pullNodesStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
               "Write node pull statistics to file."),
@@ -857,6 +874,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               reduceNodesStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
               "Write node reduction statistics to file."),
+          ::clEnumValN(
+              regionAwareMemoryNodeProvisioningStatisticsId,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  regionAwareMemoryNodeProvisioningStatisticsId),
+              "Write memory node provisioning statistics to file."),
           ::clEnumValN(
               rvsdgConstructionStatisticsId,
               JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),

@@ -25,8 +25,8 @@ public:
     FirstEnumValue, // must always be the first enum value, used for iteration
 
     Aggregation,
+    AgnosticMemoryNodeProvisioning,
     Annotation,
-    BasicEncoderEncoding,
     CommonNodeElimination,
     ControlFlowRecovery,
     DataNodeToDelta,
@@ -35,10 +35,11 @@ public:
     InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,
-    MemoryNodeProvisioning,
+    MemoryStateEncoder,
     PullNodes,
     PushNodes,
     ReduceNodes,
+    RegionAwareMemoryNodeProvisioning,
     RvsdgConstruction,
     RvsdgDestruction,
     RvsdgOptimization,

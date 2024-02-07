@@ -177,9 +177,10 @@ private:
   struct StatisticsCommandLineArgument
   {
     inline static const char * Aggregation_ = "print-aggregation-time";
+    inline static const char * AgnosticMemoryNodeProvisioning_ =
+        "print-agnostic-memory-node-provisioning";
     inline static const char * AndersenAnalysis_ = "print-andersen-analysis";
     inline static const char * Annotation_ = "print-annotation-time";
-    inline static const char * BasicEncoderEncoding_ = "print-basicencoder-encoding";
     inline static const char * CommonNodeElimination_ = "print-cne-stat";
     inline static const char * ControlFlowRecovery_ = "print-cfr-time";
     inline static const char * DataNodeToDelta_ = "printDataNodeToDelta";
@@ -188,10 +189,12 @@ private:
     inline static const char * InvariantValueRedirection_ = "printInvariantValueRedirection";
     inline static const char * JlmToRvsdgConversion_ = "print-jlm-rvsdg-conversion";
     inline static const char * LoopUnrolling_ = "print-unroll-stat";
-    inline static const char * MemoryNodeProvisioning_ = "print-memory-node-provisioning";
+    inline static const char * MemoryStateEncoder_ = "print-basicencoder-encoding";
     inline static const char * PullNodes_ = "print-pull-stat";
     inline static const char * PushNodes_ = "print-push-stat";
     inline static const char * ReduceNodes_ = "print-reduction-stat";
+    inline static const char * RegionAwareMemoryNodeProvisioning_ =
+        "print-memory-node-provisioning";
     inline static const char * RvsdgConstruction_ = "print-rvsdg-construction";
     inline static const char * RvsdgDestruction_ = "print-rvsdg-destruction";
     inline static const char * RvsdgOptimization_ = "print-rvsdg-optimization";

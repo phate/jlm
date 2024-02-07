@@ -202,7 +202,7 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
-      : jlm::util::Statistics(Statistics::Id::MemoryNodeProvisioning),
+      : jlm::util::Statistics(Statistics::Id::RegionAwareMemoryNodeProvisioning),
         NumRvsdgNodes_(0),
         NumRvsdgRegions_(0),
         NumPointsToGraphMemoryNodes_(0),
