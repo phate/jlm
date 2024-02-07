@@ -7,6 +7,7 @@
 #define JLM_TOOLING_COMMANDLINE_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/file.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -174,33 +175,33 @@ private:
     inline static const char * NodeReduction_ = "NodeReduction";
   };
 
-  struct StatisticsCommandLineArgument
-  {
-    inline static const char * Aggregation_ = "print-aggregation-time";
-    inline static const char * AgnosticMemoryNodeProvisioning_ =
-        "print-agnostic-memory-node-provisioning";
-    inline static const char * AndersenAnalysis_ = "print-andersen-analysis";
-    inline static const char * Annotation_ = "print-annotation-time";
-    inline static const char * CommonNodeElimination_ = "print-cne-stat";
-    inline static const char * ControlFlowRecovery_ = "print-cfr-time";
-    inline static const char * DataNodeToDelta_ = "printDataNodeToDelta";
-    inline static const char * DeadNodeElimination_ = "print-dne-stat";
-    inline static const char * FunctionInlining_ = "print-iln-stat";
-    inline static const char * InvariantValueRedirection_ = "printInvariantValueRedirection";
-    inline static const char * JlmToRvsdgConversion_ = "print-jlm-rvsdg-conversion";
-    inline static const char * LoopUnrolling_ = "print-unroll-stat";
-    inline static const char * MemoryStateEncoder_ = "print-basicencoder-encoding";
-    inline static const char * PullNodes_ = "print-pull-stat";
-    inline static const char * PushNodes_ = "print-push-stat";
-    inline static const char * ReduceNodes_ = "print-reduction-stat";
-    inline static const char * RegionAwareMemoryNodeProvisioning_ =
-        "print-memory-node-provisioning";
-    inline static const char * RvsdgConstruction_ = "print-rvsdg-construction";
-    inline static const char * RvsdgDestruction_ = "print-rvsdg-destruction";
-    inline static const char * RvsdgOptimization_ = "print-rvsdg-optimization";
-    inline static const char * SteensgaardAnalysis_ = "print-steensgaard-analysis";
-    inline static const char * ThetaGammaInversion_ = "print-ivt-stat";
-  };
+  static inline const util::BijectiveMap<util::Statistics::Id, std::string>
+      StatisticsIdCommandLineArguments_ = {
+        { util::Statistics::Id::Aggregation, "print-aggregation-time" },
+        { util::Statistics::Id::AgnosticMemoryNodeProvisioning,
+          "print-agnostic-memory-node-provisioning" },
+        { util::Statistics::Id::AndersenAnalysis, "print-andersen-analysis" },
+        { util::Statistics::Id::Annotation, "print-annotation-time" },
+        { util::Statistics::Id::CommonNodeElimination, "print-cne-stat" },
+        { util::Statistics::Id::ControlFlowRecovery, "print-cfr-time" },
+        { util::Statistics::Id::DataNodeToDelta, "printDataNodeToDelta" },
+        { util::Statistics::Id::DeadNodeElimination, "print-dne-stat" },
+        { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
+        { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
+        { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
+        { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
+        { util::Statistics::Id::MemoryStateEncoder, "print-basicencoder-encoding" },
+        { util::Statistics::Id::PullNodes, "print-pull-stat" },
+        { util::Statistics::Id::PushNodes, "print-push-stat" },
+        { util::Statistics::Id::ReduceNodes, "print-reduction-stat" },
+        { util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
+          "print-memory-node-provisioning" },
+        { util::Statistics::Id::RvsdgConstruction, "print-rvsdg-construction" },
+        { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
+        { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
+        { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
+        { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" }
+      };
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions

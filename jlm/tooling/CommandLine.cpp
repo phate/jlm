@@ -181,95 +181,27 @@ util::Statistics::Id
 JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
     const std::string & commandLineArgument)
 {
-  static std::unordered_map<std::string, util::Statistics::Id> map(
-      { { StatisticsCommandLineArgument::Aggregation_, util::Statistics::Id::Aggregation },
-        { StatisticsCommandLineArgument::AgnosticMemoryNodeProvisioning_,
-          util::Statistics::Id::AgnosticMemoryNodeProvisioning },
-        { StatisticsCommandLineArgument::Annotation_, util::Statistics::Id::Annotation },
-        { StatisticsCommandLineArgument::CommonNodeElimination_,
-          util::Statistics::Id::CommonNodeElimination },
-        { StatisticsCommandLineArgument::ControlFlowRecovery_,
-          util::Statistics::Id::ControlFlowRecovery },
-        { StatisticsCommandLineArgument::DataNodeToDelta_, util::Statistics::Id::DataNodeToDelta },
-        { StatisticsCommandLineArgument::DeadNodeElimination_,
-          util::Statistics::Id::DeadNodeElimination },
-        { StatisticsCommandLineArgument::FunctionInlining_,
-          util::Statistics::Id::FunctionInlining },
-        { StatisticsCommandLineArgument::InvariantValueRedirection_,
-          util::Statistics::Id::InvariantValueRedirection },
-        { StatisticsCommandLineArgument::JlmToRvsdgConversion_,
-          util::Statistics::Id::JlmToRvsdgConversion },
-        { StatisticsCommandLineArgument::LoopUnrolling_, util::Statistics::Id::LoopUnrolling },
-        { StatisticsCommandLineArgument::MemoryStateEncoder_,
-          util::Statistics::Id::MemoryStateEncoder },
-        { StatisticsCommandLineArgument::PullNodes_, util::Statistics::Id::PullNodes },
-        { StatisticsCommandLineArgument::PushNodes_, util::Statistics::Id::PushNodes },
-        { StatisticsCommandLineArgument::ReduceNodes_, util::Statistics::Id::ReduceNodes },
-        { StatisticsCommandLineArgument::RegionAwareMemoryNodeProvisioning_,
-          util::Statistics::Id::RegionAwareMemoryNodeProvisioning },
-        { StatisticsCommandLineArgument::RvsdgConstruction_,
-          util::Statistics::Id::RvsdgConstruction },
-        { StatisticsCommandLineArgument::RvsdgDestruction_,
-          util::Statistics::Id::RvsdgDestruction },
-        { StatisticsCommandLineArgument::RvsdgOptimization_,
-          util::Statistics::Id::RvsdgOptimization },
-        { StatisticsCommandLineArgument::SteensgaardAnalysis_,
-          util::Statistics::Id::SteensgaardAnalysis },
-        { StatisticsCommandLineArgument::ThetaGammaInversion_,
-          util::Statistics::Id::ThetaGammaInversion } });
-
-  if (map.find(commandLineArgument) != map.end())
-    return map[commandLineArgument];
-
-  throw util::error("Unknown command line argument: " + commandLineArgument);
+  try
+  {
+    return StatisticsIdCommandLineArguments_.LookupValue(commandLineArgument);
+  }
+  catch (...)
+  {
+    throw util::error("Unknown command line argument: " + commandLineArgument);
+  }
 }
 
 const char *
-JlmOptCommandLineOptions::ToCommandLineArgument(jlm::util::Statistics::Id statisticsId)
+JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsId)
 {
-  static std::unordered_map<util::Statistics::Id, const char *> map(
-      { { util::Statistics::Id::Aggregation, StatisticsCommandLineArgument::Aggregation_ },
-        { util::Statistics::Id::AgnosticMemoryNodeProvisioning,
-          StatisticsCommandLineArgument::AgnosticMemoryNodeProvisioning_ },
-        { util::Statistics::Id::AndersenAnalysis,
-          StatisticsCommandLineArgument::AndersenAnalysis_ },
-        { util::Statistics::Id::Annotation, StatisticsCommandLineArgument::Annotation_ },
-        { util::Statistics::Id::CommonNodeElimination,
-          StatisticsCommandLineArgument::CommonNodeElimination_ },
-        { util::Statistics::Id::ControlFlowRecovery,
-          StatisticsCommandLineArgument::ControlFlowRecovery_ },
-        { util::Statistics::Id::DataNodeToDelta, StatisticsCommandLineArgument::DataNodeToDelta_ },
-        { util::Statistics::Id::DeadNodeElimination,
-          StatisticsCommandLineArgument::DeadNodeElimination_ },
-        { util::Statistics::Id::FunctionInlining,
-          StatisticsCommandLineArgument::FunctionInlining_ },
-        { util::Statistics::Id::InvariantValueRedirection,
-          StatisticsCommandLineArgument::InvariantValueRedirection_ },
-        { util::Statistics::Id::JlmToRvsdgConversion,
-          StatisticsCommandLineArgument::JlmToRvsdgConversion_ },
-        { util::Statistics::Id::LoopUnrolling, StatisticsCommandLineArgument::LoopUnrolling_ },
-        { util::Statistics::Id::MemoryStateEncoder,
-          StatisticsCommandLineArgument::MemoryStateEncoder_ },
-        { util::Statistics::Id::PullNodes, StatisticsCommandLineArgument::PullNodes_ },
-        { util::Statistics::Id::PushNodes, StatisticsCommandLineArgument::PushNodes_ },
-        { util::Statistics::Id::ReduceNodes, StatisticsCommandLineArgument::ReduceNodes_ },
-        { util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
-          StatisticsCommandLineArgument::RegionAwareMemoryNodeProvisioning_ },
-        { util::Statistics::Id::RvsdgConstruction,
-          StatisticsCommandLineArgument::RvsdgConstruction_ },
-        { util::Statistics::Id::RvsdgDestruction,
-          StatisticsCommandLineArgument::RvsdgDestruction_ },
-        { util::Statistics::Id::RvsdgOptimization,
-          StatisticsCommandLineArgument::RvsdgOptimization_ },
-        { util::Statistics::Id::SteensgaardAnalysis,
-          StatisticsCommandLineArgument::SteensgaardAnalysis_ },
-        { util::Statistics::Id::ThetaGammaInversion,
-          StatisticsCommandLineArgument::ThetaGammaInversion_ } });
-
-  if (map.find(statisticsId) != map.end())
-    return map[statisticsId];
-
-  throw util::error("Unknown statistics identifier");
+  try
+  {
+    return StatisticsIdCommandLineArguments_.LookupKey(statisticsId).c_str();
+  }
+  catch (...)
+  {
+    throw util::error("Unknown statistics identifier");
+  }
 }
 
 const char *
