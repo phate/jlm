@@ -275,6 +275,15 @@ JhlsCommandLineOptions::Reset() noexcept
   *this = JhlsCommandLineOptions();
 }
 
+static ::llvm::cl::OptionEnumValue
+CreateStatisticsOption(util::Statistics::Id statisticsId, const char * description)
+{
+  return ::clEnumValN(
+      statisticsId,
+      JlmOptCommandLineOptions::ToCommandLineArgument(statisticsId),
+      description);
+}
+
 CommandLineParser::~CommandLineParser() noexcept = default;
 
 CommandLineParser::Exception::~Exception() noexcept = default;
@@ -445,124 +454,74 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::desc("Specify name of main file output in depfile."),
       cl::value_desc("value"));
 
-  auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
-  auto agnosticMemoryNodeProvisioningStatisticsId =
-      util::Statistics::Id::AgnosticMemoryNodeProvisioning;
-  auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
-  auto annotationStatisticsId = util::Statistics::Id::Annotation;
-  auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
-  auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
-  auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
-  auto deadNodeEliminationStatisticsId = util::Statistics::Id::DeadNodeElimination;
-  auto functionInliningStatisticsId = util::Statistics::Id::FunctionInlining;
-  auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
-  auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
-  auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
-  auto memoryStateEncoderStatisticsId = util::Statistics::Id::MemoryStateEncoder;
-  auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
-  auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
-  auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
-  auto regionAwareMemoryNodeProvisioningStatisticsId =
-      util::Statistics::Id::RegionAwareMemoryNodeProvisioning;
-  auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
-  auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
-  auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
-  auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
-  auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
-
   cl::list<util::Statistics::Id> jlmOptPassStatistics(
       "JlmOptPassStatistics",
       cl::values(
-          ::clEnumValN(
-              aggregationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::Aggregation,
               "Collect control flow graph aggregation pass statistics."),
-          ::clEnumValN(
-              agnosticMemoryNodeProvisioningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  agnosticMemoryNodeProvisioningStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::AgnosticMemoryNodeProvisioning,
               "Collect agnostic memory node provisioning pass statistics."),
-          ::clEnumValN(
-              andersenAnalysisStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),
-          ::clEnumValN(
-              annotationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::Annotation,
               "Collect aggregation tree annotation pass statistics."),
-          ::clEnumValN(
-              memoryStateEncoderStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(memoryStateEncoderStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::MemoryStateEncoder,
               "Collect memory state encoding pass statistics."),
-          ::clEnumValN(
-              commonNodeEliminationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeEliminationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::CommonNodeElimination,
               "Collect common node elimination pass statistics."),
-          ::clEnumValN(
-              controlFlowRecoveryStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(controlFlowRecoveryStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::ControlFlowRecovery,
               "Collect control flow recovery pass statistics."),
-          ::clEnumValN(
-              dataNodeToDeltaStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(dataNodeToDeltaStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::DataNodeToDelta,
               "Collect data node to delta node conversion pass statistics."),
-          ::clEnumValN(
-              deadNodeEliminationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeEliminationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::DeadNodeElimination,
               "Collect dead node elimination pass statistics."),
-          ::clEnumValN(
-              functionInliningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(functionInliningStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::FunctionInlining,
               "Collect function inlining pass statistics."),
-          ::clEnumValN(
-              invariantValueRedirectionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  invariantValueRedirectionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::InvariantValueRedirection,
               "Collect invariant value redirection pass statistics."),
-          ::clEnumValN(
-              jlmToRvsdgConversionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(jlmToRvsdgConversionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::JlmToRvsdgConversion,
               "Collect Jlm to RVSDG conversion pass statistics."),
-          ::clEnumValN(
-              loopUnrollingStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::LoopUnrolling,
               "Collect loop unrolling pass statistics."),
-          ::clEnumValN(
-              pullNodesStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::PullNodes,
               "Collect node pull pass statistics."),
-          ::clEnumValN(
-              pushNodesStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(pushNodesStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::PushNodes,
               "Collect node push pass statistics."),
-          ::clEnumValN(
-              reduceNodesStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::ReduceNodes,
               "Collect node reduction pass statistics."),
-          ::clEnumValN(
-              regionAwareMemoryNodeProvisioningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  regionAwareMemoryNodeProvisioningStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
               "Collect memory node provisioning pass statistics."),
-          ::clEnumValN(
-              rvsdgConstructionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RvsdgConstruction,
               "Collect RVSDG construction pass statistics."),
-          ::clEnumValN(
-              rvsdgDestructionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgDestructionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RvsdgDestruction,
               "Collect RVSDG destruction pass statistics."),
-          ::clEnumValN(
-              rvsdgOptimizationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgOptimizationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RvsdgOptimization,
               "Collect RVSDG optimization pass statistics."),
-          ::clEnumValN(
-              steensgaardAnalysisStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
-          ::clEnumValN(
-              thetaGammaInversionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::ThetaGammaInversion,
               "Collect theta-gamma inversion pass statistics.")),
       cl::desc("Collect jlm-opt pass statistics"));
 
@@ -713,123 +672,73 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
-  auto aggregationStatisticsId = util::Statistics::Id::Aggregation;
-  auto agnosticMemoryNodeProvisioningStatisticsId =
-      util::Statistics::Id::AgnosticMemoryNodeProvisioning;
-  auto andersenAnalysisStatisticsId = util::Statistics::Id::AndersenAnalysis;
-  auto annotationStatisticsId = util::Statistics::Id::Annotation;
-  auto commonNodeEliminationStatisticsId = util::Statistics::Id::CommonNodeElimination;
-  auto controlFlowRecoveryStatisticsId = util::Statistics::Id::ControlFlowRecovery;
-  auto dataNodeToDeltaStatisticsId = util::Statistics::Id::DataNodeToDelta;
-  auto deadNodeEliminationStatisticsId = util::Statistics::Id::DeadNodeElimination;
-  auto functionInliningStatisticsId = util::Statistics::Id::FunctionInlining;
-  auto invariantValueRedirectionStatisticsId = util::Statistics::Id::InvariantValueRedirection;
-  auto jlmToRvsdgConversionStatisticsId = util::Statistics::Id::JlmToRvsdgConversion;
-  auto loopUnrollingStatisticsId = util::Statistics::Id::LoopUnrolling;
-  auto memoryStateEncoderStatisticsId = util::Statistics::Id::MemoryStateEncoder;
-  auto pullNodesStatisticsId = util::Statistics::Id::PullNodes;
-  auto pushNodesStatisticsId = util::Statistics::Id::PushNodes;
-  auto reduceNodesStatisticsId = util::Statistics::Id::ReduceNodes;
-  auto regionAwareMemoryNodeProvisioningStatisticsId =
-      util::Statistics::Id::RegionAwareMemoryNodeProvisioning;
-  auto rvsdgConstructionStatisticsId = util::Statistics::Id::RvsdgConstruction;
-  auto rvsdgDestructionStatisticsId = util::Statistics::Id::RvsdgDestruction;
-  auto rvsdgOptimizationStatisticsId = util::Statistics::Id::RvsdgOptimization;
-  auto steensgaardAnalysisStatisticsId = util::Statistics::Id::SteensgaardAnalysis;
-  auto thetaGammaInversionStatisticsId = util::Statistics::Id::ThetaGammaInversion;
-
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
-          ::clEnumValN(
-              aggregationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aggregationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::Aggregation,
               "Write aggregation statistics to file."),
-          ::clEnumValN(
-              agnosticMemoryNodeProvisioningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  agnosticMemoryNodeProvisioningStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::AgnosticMemoryNodeProvisioning,
               "Collect agnostic memory node provisioning pass statistics."),
-          ::clEnumValN(
-              andersenAnalysisStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(andersenAnalysisStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),
-          ::clEnumValN(
-              annotationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(annotationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::Annotation,
               "Write annotation statistics to file."),
-          ::clEnumValN(
-              memoryStateEncoderStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(memoryStateEncoderStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::MemoryStateEncoder,
               "Write encoding statistics of basic encoder to file."),
-          ::clEnumValN(
-              commonNodeEliminationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(commonNodeEliminationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::CommonNodeElimination,
               "Write common node elimination statistics to file."),
-          ::clEnumValN(
-              controlFlowRecoveryStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(controlFlowRecoveryStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::ControlFlowRecovery,
               "Write control flow recovery statistics to file."),
-          ::clEnumValN(
-              dataNodeToDeltaStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(dataNodeToDeltaStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::DataNodeToDelta,
               "Write data node to delta node conversion statistics to file."),
-          ::clEnumValN(
-              deadNodeEliminationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeEliminationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::DeadNodeElimination,
               "Write dead node elimination statistics to file."),
-          ::clEnumValN(
-              functionInliningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(functionInliningStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::FunctionInlining,
               "Write function inlining statistics to file."),
-          ::clEnumValN(
-              invariantValueRedirectionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  invariantValueRedirectionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::InvariantValueRedirection,
               "Write invariant value redirection statistics to file."),
-          ::clEnumValN(
-              jlmToRvsdgConversionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(jlmToRvsdgConversionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::JlmToRvsdgConversion,
               "Write Jlm to RVSDG conversion statistics to file."),
-          ::clEnumValN(
-              loopUnrollingStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrollingStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::LoopUnrolling,
               "Write loop unrolling statistics to file."),
-          ::clEnumValN(
-              pullNodesStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(pullNodesStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::PullNodes,
               "Write node pull statistics to file."),
-          ::clEnumValN(
-              pushNodesStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(pushNodesStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::PushNodes,
               "Write node push statistics to file."),
-          ::clEnumValN(
-              reduceNodesStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(reduceNodesStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::ReduceNodes,
               "Write node reduction statistics to file."),
-          ::clEnumValN(
-              regionAwareMemoryNodeProvisioningStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  regionAwareMemoryNodeProvisioningStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
               "Write memory node provisioning statistics to file."),
-          ::clEnumValN(
-              rvsdgConstructionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgConstructionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RvsdgConstruction,
               "Write RVSDG construction statistics to file."),
-          ::clEnumValN(
-              rvsdgDestructionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgDestructionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RvsdgDestruction,
               "Write RVSDG destruction statistics to file."),
-          ::clEnumValN(
-              rvsdgOptimizationStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgOptimizationStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::RvsdgOptimization,
               "Write RVSDG optimization statistics to file."),
-          ::clEnumValN(
-              steensgaardAnalysisStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(steensgaardAnalysisStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::SteensgaardAnalysis,
               "Write Steensgaard analysis statistics to file."),
-          ::clEnumValN(
-              thetaGammaInversionStatisticsId,
-              JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversionStatisticsId),
+          CreateStatisticsOption(
+              util::Statistics::Id::ThetaGammaInversion,
               "Write theta-gamma inversion statistics to file.")),
       cl::desc("Write statistics"));
 
