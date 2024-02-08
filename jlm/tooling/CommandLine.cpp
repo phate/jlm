@@ -183,7 +183,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
 {
   try
   {
-    return StatisticsIdCommandLineArguments_.LookupValue(commandLineArgument);
+    return GetStatisticsIdCommandLineArguments().LookupValue(commandLineArgument);
   }
   catch (...)
   {
@@ -196,7 +196,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsI
 {
   try
   {
-    return StatisticsIdCommandLineArguments_.LookupKey(statisticsId).c_str();
+    return GetStatisticsIdCommandLineArguments().LookupKey(statisticsId).data();
   }
   catch (...)
   {
@@ -256,6 +256,41 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
     return map[id];
 
   throw util::error("Unknown optimization identifier");
+}
+
+const util::BijectiveMap<util::Statistics::Id, std::string_view> &
+JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
+{
+  static util::BijectiveMap<util::Statistics::Id, std::string_view> mapping = {
+    { util::Statistics::Id::Aggregation, "print-aggregation-time" },
+    { util::Statistics::Id::AgnosticMemoryNodeProvisioning,
+      "print-agnostic-memory-node-provisioning" },
+    { util::Statistics::Id::AndersenAnalysis, "print-andersen-analysis" },
+    { util::Statistics::Id::Annotation, "print-annotation-time" },
+    { util::Statistics::Id::CommonNodeElimination, "print-cne-stat" },
+    { util::Statistics::Id::ControlFlowRecovery, "print-cfr-time" },
+    { util::Statistics::Id::DataNodeToDelta, "printDataNodeToDelta" },
+    { util::Statistics::Id::DeadNodeElimination, "print-dne-stat" },
+    { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
+    { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
+    { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
+    { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
+    { util::Statistics::Id::MemoryStateEncoder, "print-basicencoder-encoding" },
+    { util::Statistics::Id::PullNodes, "print-pull-stat" },
+    { util::Statistics::Id::PushNodes, "print-push-stat" },
+    { util::Statistics::Id::ReduceNodes, "print-reduction-stat" },
+    { util::Statistics::Id::RegionAwareMemoryNodeProvisioning, "print-memory-node-provisioning" },
+    { util::Statistics::Id::RvsdgConstruction, "print-rvsdg-construction" },
+    { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
+    { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
+    { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
+    { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" }
+  };
+
+  auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
+  auto lastIndex = static_cast<size_t>(util::Statistics::Id::LastEnumValue);
+  JLM_ASSERT(mapping.Size() == lastIndex - firstIndex - 1);
+  return mapping;
 }
 
 void
