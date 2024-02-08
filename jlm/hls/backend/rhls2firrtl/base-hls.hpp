@@ -6,10 +6,10 @@
 #ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 #define JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 
+#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/hls/ir/hls.hpp>
 
 #include <fstream>
 

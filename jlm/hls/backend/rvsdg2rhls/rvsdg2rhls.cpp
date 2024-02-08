@@ -23,8 +23,8 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <llvm/IR/LLVMContext.h>

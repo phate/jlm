@@ -355,7 +355,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
         << "]->back().valid = true;\n"
            "        void *addr = (void *) "
         << mem_ports[i].req_addr() << ";\n";
-      cpp << "        mem_resp[" << i << "]->back().id = " << mem_ports[i].req_id() << ";\n";
+    cpp << "        mem_resp[" << i << "]->back().id = " << mem_ports[i].req_id() << ";\n";
     if (mem_ports[i].has_write)
     {
       cpp << "        uint64_t data = " << mem_ports[i].req_data()

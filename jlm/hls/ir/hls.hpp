@@ -6,12 +6,12 @@
 #ifndef JLM_HLS_IR_HLS_HPP
 #define JLM_HLS_IR_HLS_HPP
 
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/type.hpp>
-#include <jlm/llvm/ir/types.hpp>
 #include <jlm/util/common.hpp>
 #include <memory>
 #include <utility>
@@ -24,8 +24,8 @@ class branch_op final : public jlm::rvsdg::simple_op
 private:
   branch_op(size_t nalternatives, const jlm::rvsdg::type & type, bool loop)
       : jlm::rvsdg::simple_op(
-            { jlm::rvsdg::ctltype(nalternatives), type },
-            std::vector<jlm::rvsdg::port>(nalternatives, type)),
+          { jlm::rvsdg::ctltype(nalternatives), type },
+          std::vector<jlm::rvsdg::port>(nalternatives, type)),
         loop(loop)
   {}
 
@@ -661,7 +661,8 @@ public:
   ~bundletype()
   {}
 
-  bundletype(const std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>> * elements)
+  bundletype(
+      const std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>> * elements)
       : jlm::rvsdg::valuetype(),
         elements_(std::move(elements))
   {}
@@ -850,7 +851,11 @@ public:
   }
 
   static jlm::rvsdg::output *
-  create(jlm::rvsdg::output & check, jlm::rvsdg::output & enq, jlm::rvsdg::output & deq, size_t capacity = 10)
+  create(
+      jlm::rvsdg::output & check,
+      jlm::rvsdg::output & enq,
+      jlm::rvsdg::output & deq,
+      size_t capacity = 10)
   {
     auto region = check.region();
     auto pointerType = dynamic_cast<const llvm::PointerType *>(&check.type());
@@ -942,7 +947,7 @@ public:
   static std::vector<jlm::rvsdg::port>
   CreateOutPorts(const rvsdg::valuetype & pointeeType)
   {
-    std::vector<jlm::rvsdg::port> ports(1, {pointeeType });
+    std::vector<jlm::rvsdg::port> ports(1, { pointeeType });
     ports.emplace_back(llvm::PointerType()); // addr
     return ports;
   }
@@ -1072,17 +1077,17 @@ public:
       const std::vector<const rvsdg::valuetype *> & store_types)
   {
     std::vector<jlm::rvsdg::port> ports;
-    for (auto lt : load_types)
+    for (size_t i=0; i < load_types.size(); i++)
     {
       ports.emplace_back(llvm::PointerType()); // addr
     }
     for (auto st : store_types)
     {
-      ports.emplace_back(llvm::PointerType());                  // addr
-      ports.emplace_back(*st); // data
+      ports.emplace_back(llvm::PointerType()); // addr
+      ports.emplace_back(*st);                 // data
     }
     return ports;
-}
+  }
 
   static std::vector<jlm::rvsdg::port>
   CreateOutPorts(
@@ -1101,8 +1106,7 @@ public:
     //                    max_width = sz>max_width?sz:max_width;
     //                }
     std::vector<jlm::rvsdg::port> ports;
-    ports.emplace_back(
-        get_mem_req_type(jlm::rvsdg::bittype(max_width), !store_types.empty()));
+    ports.emplace_back(get_mem_req_type(jlm::rvsdg::bittype(max_width), !store_types.empty()));
     return ports;
   }
 
@@ -1130,8 +1134,8 @@ public:
     for (size_t i = 1; i < store_operands.size(); i += 2)
     {
       auto pt = dynamic_cast<const rvsdg::valuetype *>(&store_operands[i]->type());
-//      auto et = &store_operands[i + 1]->type();
-//      JLM_ASSERT(pt && et && pt->GetElementType() == *et);
+      //      auto et = &store_operands[i + 1]->type();
+      //      JLM_ASSERT(pt && et && pt->GetElementType() == *et);
       store_types.push_back(pt);
     }
     mem_req_op op(load_types, store_types);
@@ -1181,8 +1185,8 @@ public:
   CreateOutPorts(const rvsdg::valuetype & pointeeType, size_t numStates)
   {
     std::vector<jlm::rvsdg::port> ports(numStates, { llvm::MemoryStateType::Create() });
-    ports.emplace_back(llvm::PointerType());                  // addr
-    ports.emplace_back(pointeeType); // data
+    ports.emplace_back(llvm::PointerType()); // addr
+    ports.emplace_back(pointeeType);         // data
     return ports;
   }
 
@@ -1199,7 +1203,10 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & addr, jlm::rvsdg::output & value, const std::vector<jlm::rvsdg::output *> & states)
+  create(
+      jlm::rvsdg::output & addr,
+      jlm::rvsdg::output & value,
+      const std::vector<jlm::rvsdg::output *> & states)
   {
     auto region = addr.region();
     auto pointerType = dynamic_cast<const llvm::PointerType *>(&addr.type());
@@ -1226,7 +1233,7 @@ public:
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
     // TODO:
-    auto ot = dynamic_cast<const local_mem_op *>(&other);
+    //auto ot = dynamic_cast<const local_mem_op *>(&other);
     // check predicate and value
     return false;
   }
@@ -1251,7 +1258,7 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(const jlm::llvm::arraytype &at, jlm::rvsdg::region * region)
+  create(const jlm::llvm::arraytype & at, jlm::rvsdg::region * region)
   {
     local_mem_op op(at);
     return jlm::rvsdg::simple_node::create_normalized(region, op, {});
@@ -1408,7 +1415,7 @@ public:
   {
     std::vector<jlm::rvsdg::port> ports(numStates, { llvm::MemoryStateType::Create() });
     ports.emplace_back(jlm::rvsdg::bit64); // addr
-    ports.emplace_back(valuetype);   // data
+    ports.emplace_back(valuetype);         // data
     return ports;
   }
 
@@ -1425,7 +1432,10 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & index, jlm::rvsdg::output & value, const std::vector<jlm::rvsdg::output *> & states)
+  create(
+      jlm::rvsdg::output & index,
+      jlm::rvsdg::output & value,
+      const std::vector<jlm::rvsdg::output *> & states)
   {
     auto region = index.region();
     auto valuetype = dynamic_cast<const jlm::rvsdg::valuetype *>(&value.type());
@@ -1469,7 +1479,7 @@ public:
     }
     for (size_t i = 0; i < store_cnt; ++i)
     {
-      ports.emplace_back(jlm::rvsdg::bit64);       // addr
+      ports.emplace_back(jlm::rvsdg::bit64); // addr
       ports.emplace_back(at.element_type()); // data
     }
     return ports;

@@ -1332,9 +1332,6 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
   // Initialize the signals of mem_req
   InitializeMemReq(module);
 
-  // Get the clock and reset signal of the module
-  auto clock = GetClockSignal(module);
-  auto reset = GetResetSignal(module);
   // First we create and instantiate all the modules and keep them in a dictionary
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances =
       createInstances(subRegion, circuitBody, body);
@@ -1417,85 +1414,85 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
     }
   }
 
-// Connect memory instances to the main memory ports
-mlir::Value previousGranted = GetConstant(body, 1, 0);
-for (const auto & instance : memInstances)
-{
-  // RVSDG node
-  auto rvsdgNode = instance.first;
-  // Corresponding InstanceOp
-  auto node = instance.second;
-
-  // Get the index to the last port of the subregion and the node
-  auto mainIndex = body->getArguments().size();
-  auto nodeIndex = 2 + rvsdgNode->ninputs() + rvsdgNode->noutputs() - 1;
-
-  // mem_res (last argument of the region and result of the instance)
-  auto mainMemRes = body->getArgument(mainIndex - 1);
-  auto nodeMemRes = node->getResult(nodeIndex + 2);
-  Connect(body, nodeMemRes, mainMemRes);
-
-  // mem_req (second to last argument of the region and result of the instance)
-  // The arbitration is prioritized for now so the first memory operation
-  // (as given by memInstances) that makes a request will be granted.
-  auto mainMemReq = body->getArgument(mainIndex - 2);
-  auto nodeMemReq = node->getResult(nodeIndex + 1);
-  auto memReqReady = GetSubfield(body, nodeMemReq, "ready");
-  Connect(body, memReqReady, GetConstant(body, 1, 0));
-  auto memReqValid = GetSubfield(body, nodeMemReq, "valid");
-  auto notOp = AddNotOp(body, previousGranted);
-  auto condition = AddAndOp(body, notOp, memReqValid);
-  auto whenOp = AddWhenOp(body, condition, false);
-  auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-  // The direction is inverted compared to mem_res
-  Connect(thenBody, mainMemReq, nodeMemReq);
-  // update for next iteration
-  previousGranted = AddOrOp(body, previousGranted, memReqValid);
-}
-
-// Connect the results of the region
-for (size_t i = 0; i < subRegion->nresults(); i++)
-{
-  auto result = subRegion->result(i);
-  auto origin = result->origin();
-  jlm::rvsdg::simple_output * output;
-  if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+  // Connect memory instances to the main memory ports
+  mlir::Value previousGranted = GetConstant(body, 1, 0);
+  for (const auto & instance : memInstances)
   {
-    // We have found the source output
-    output = o;
+    // RVSDG node
+    auto rvsdgNode = instance.first;
+    // Corresponding InstanceOp
+    auto node = instance.second;
+
+    // Get the index to the last port of the subregion and the node
+    auto mainIndex = body->getArguments().size();
+    auto nodeIndex = 2 + rvsdgNode->ninputs() + rvsdgNode->noutputs() - 1;
+
+    // mem_res (last argument of the region and result of the instance)
+    auto mainMemRes = body->getArgument(mainIndex - 1);
+    auto nodeMemRes = node->getResult(nodeIndex + 2);
+    Connect(body, nodeMemRes, mainMemRes);
+
+    // mem_req (second to last argument of the region and result of the instance)
+    // The arbitration is prioritized for now so the first memory operation
+    // (as given by memInstances) that makes a request will be granted.
+    auto mainMemReq = body->getArgument(mainIndex - 2);
+    auto nodeMemReq = node->getResult(nodeIndex + 1);
+    auto memReqReady = GetSubfield(body, nodeMemReq, "ready");
+    Connect(body, memReqReady, GetConstant(body, 1, 0));
+    auto memReqValid = GetSubfield(body, nodeMemReq, "valid");
+    auto notOp = AddNotOp(body, previousGranted);
+    auto condition = AddAndOp(body, notOp, memReqValid);
+    auto whenOp = AddWhenOp(body, condition, false);
+    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+    // The direction is inverted compared to mem_res
+    Connect(thenBody, mainMemReq, nodeMemReq);
+    // update for next iteration
+    previousGranted = AddOrOp(body, previousGranted, memReqValid);
   }
-  else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+
+  // Connect the results of the region
+  for (size_t i = 0; i < subRegion->nresults(); i++)
   {
-    // Need to trace through the region to find the source node
-    output = TraceStructuralOutput(o);
+    auto result = subRegion->result(i);
+    auto origin = result->origin();
+    jlm::rvsdg::simple_output * output;
+    if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+    {
+      // We have found the source output
+      output = o;
+    }
+    else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+    {
+      // Need to trace through the region to find the source node
+      output = TraceStructuralOutput(o);
+    }
+    else
+    {
+      throw std::logic_error("Unsupported output");
+    }
+    // Get the node of the output
+    jlm::rvsdg::simple_node * source = output->node();
+    // Get the corresponding InstanceOp
+    auto sourceNode = instances[source];
+    // Calculate the result port of the instance:
+    //   2 for clock and reset +
+    //   Number of inputs of the node +
+    //   The index of the output of the node
+    auto sourceIndex = 2 + source->ninputs() + output->index();
+    auto sourcePort = sourceNode->getResult(sourceIndex);
+
+    // Calculate the result port of the region:
+    //   2 for clock and reset +
+    //   Number of inputs of the region +
+    //   The index of the result of the region (== i)
+    auto sinkIndex = 2 + subRegion->narguments() + i;
+    auto sinkPort = body->getArgument(sinkIndex);
+
+    // Connect the InstanceOp output to the result of the region
+    Connect(body, sinkPort, sourcePort);
   }
-  else
-  {
-    throw std::logic_error("Unsupported output");
-  }
-  // Get the node of the output
-  jlm::rvsdg::simple_node * source = output->node();
-  // Get the corresponding InstanceOp
-  auto sourceNode = instances[source];
-  // Calculate the result port of the instance:
-  //   2 for clock and reset +
-  //   Number of inputs of the node +
-  //   The index of the output of the node
-  auto sourceIndex = 2 + source->ninputs() + output->index();
-  auto sourcePort = sourceNode->getResult(sourceIndex);
 
-  // Calculate the result port of the region:
-  //   2 for clock and reset +
-  //   Number of inputs of the region +
-  //   The index of the result of the region (== i)
-  auto sinkIndex = 2 + subRegion->narguments() + i;
-  auto sinkPort = body->getArgument(sinkIndex);
-
-  // Connect the InstanceOp output to the result of the region
-  Connect(body, sinkPort, sourcePort);
-}
-
-return module;
+  return module;
 }
 
 std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
@@ -1754,7 +1751,6 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
 
   // Need to know the number of inputs so we can calculate the
   // correct index for outputs
-  auto numInputs = subRegion->narguments();
   ::llvm::SmallVector<circt::firrtl::RegResetOp> outputValidRegs;
   ::llvm::SmallVector<circt::firrtl::RegResetOp> outputDataRegs;
 
