@@ -133,20 +133,24 @@ TestStatisticsPrinting()
   StatisticsCollector collector(std::move(settings));
 
   filepath path("file.ll");
-  std::unique_ptr<MyTestStatistics> testStatistics(
+  std::unique_ptr<MyTestStatistics> statistics(
       new MyTestStatistics(Statistics::Id::Aggregation, path));
+  statistics->Start(10, 6.0);
+  statistics->Stop(-400, "poor");
 
-  collector.CollectDemandedStatistics(std::move(testStatistics));
+  collector.CollectDemandedStatistics(std::move(statistics));
 
   // Act
   collector.PrintStatistics();
 
   // Assert
-  std::stringstream stringStream;
   std::ifstream file(filePath.to_str());
-  stringStream << file.rdbuf();
+  std::string name, fileName, measurement;
+  file >> name >> fileName >> measurement;
 
-  assert(stringStream.str() == "Aggregation file.ll");
+  assert(name == "Aggregation");
+  assert(fileName == path.to_str());
+  assert(measurement == "count:10");
 }
 
 static int
