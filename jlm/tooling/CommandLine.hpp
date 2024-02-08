@@ -175,9 +175,6 @@ private:
     inline static const char * NodeReduction_ = "NodeReduction";
   };
 
-  static const util::BijectiveMap<util::Statistics::Id, std::string_view>
-      StatisticsIdCommandLineArguments_;
-
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
   GetStatisticsIdCommandLineArguments();
 };
