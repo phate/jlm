@@ -14,13 +14,13 @@
 namespace jlm::llvm
 {
 
-class ivtstat final : public jlm::util::Statistics
+class ivtstat final : public util::Statistics
 {
 public:
   ~ivtstat() override = default;
 
-  explicit ivtstat(util::filepath sourceFile)
-      : Statistics(Statistics::Id::ThetaGammaInversion, std::move(sourceFile)),
+  explicit ivtstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0),
         ninputs_before_(0),
@@ -59,9 +59,9 @@ public:
   }
 
   static std::unique_ptr<ivtstat>
-  Create(util::filepath sourceFile)
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<ivtstat>(std::move(sourceFile));
+    return std::make_unique<ivtstat>(sourceFile);
   }
 
 private:

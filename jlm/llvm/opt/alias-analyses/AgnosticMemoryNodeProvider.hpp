@@ -88,10 +88,10 @@ class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   Statistics(
-      util::filepath sourceFile,
+      const util::filepath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, std::move(sourceFile)),
+      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, sourceFile),
         NumPointsToGraphMemoryNodes_(0),
         StatisticsCollector_(statisticsCollector)
   {

@@ -16,8 +16,8 @@ class OptimizationSequence::Statistics final : public util::Statistics
 public:
   ~Statistics() noexcept override = default;
 
-  explicit Statistics(util::filepath sourceFile)
-      : util::Statistics(Statistics::Id::RvsdgOptimization, std::move(sourceFile)),
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::RvsdgOptimization, sourceFile),
         NumNodesBefore_(0),
         NumNodesAfter_(0)
   {}
@@ -39,12 +39,7 @@ public:
   [[nodiscard]] std::string
   Serialize() const override
   {
-    return util::strfmt(
-        NumNodesBefore_,
-        " ",
-        NumNodesAfter_,
-        " ",
-        Timer_.ns());
+    return util::strfmt(NumNodesBefore_, " ", NumNodesAfter_, " ", Timer_.ns());
   }
 
   static std::unique_ptr<Statistics>

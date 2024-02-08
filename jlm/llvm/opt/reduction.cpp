@@ -18,8 +18,8 @@ class redstat final : public util::Statistics
 public:
   ~redstat() override = default;
 
-  explicit redstat(util::filepath sourceFile)
-      : Statistics(Statistics::Id::ReduceNodes, std::move(sourceFile)),
+  explicit redstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::ReduceNodes, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0),
         ninputs_before_(0),
@@ -58,9 +58,9 @@ public:
   }
 
   static std::unique_ptr<redstat>
-  Create(util::filepath sourceFile)
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<redstat>(std::move(sourceFile));
+    return std::make_unique<redstat>(sourceFile);
   }
 
 private:

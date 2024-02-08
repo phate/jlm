@@ -100,8 +100,8 @@ class DeadNodeElimination::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(util::filepath sourceFile)
-      : util::Statistics(Statistics::Id::DeadNodeElimination, std::move(sourceFile)),
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::DeadNodeElimination, sourceFile),
         NumRvsdgNodesBefore_(0),
         NumRvsdgNodesAfter_(0),
         NumInputsBefore_(0),

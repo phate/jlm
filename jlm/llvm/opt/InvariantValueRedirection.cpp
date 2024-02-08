@@ -19,8 +19,8 @@ class InvariantValueRedirection::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  Statistics(util::filepath sourceFile)
-      : util::Statistics(Statistics::Id::InvariantValueRedirection, std::move(sourceFile))
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::InvariantValueRedirection, sourceFile)
   {}
 
   void
@@ -42,9 +42,9 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(util::filepath sourceFile)
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<Statistics>(std::move(sourceFile));
+    return std::make_unique<Statistics>(sourceFile);
   }
 
 private:

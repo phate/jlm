@@ -19,12 +19,12 @@
 namespace jlm::llvm
 {
 
-class rvsdg_destruction_stat final : public jlm::util::Statistics
+class rvsdg_destruction_stat final : public util::Statistics
 {
 public:
   ~rvsdg_destruction_stat() override = default;
 
-  explicit rvsdg_destruction_stat(const jlm::util::filepath & filename)
+  explicit rvsdg_destruction_stat(const util::filepath & filename)
       : Statistics(Statistics::Id::RvsdgDestruction, filename),
         ntacs_(0),
         nnodes_(0)
@@ -47,16 +47,11 @@ public:
   [[nodiscard]] std::string
   Serialize() const override
   {
-    return jlm::util::strfmt(
-        nnodes_,
-        " ",
-        ntacs_,
-        " ",
-        timer_.ns());
+    return jlm::util::strfmt(nnodes_, " ", ntacs_, " ", timer_.ns());
   }
 
   static std::unique_ptr<rvsdg_destruction_stat>
-  Create(const jlm::util::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<rvsdg_destruction_stat>(sourceFile);
   }
@@ -64,7 +59,7 @@ public:
 private:
   size_t ntacs_;
   size_t nnodes_;
-  jlm::util::timer timer_;
+  util::timer timer_;
 };
 
 namespace rvsdg2jlm

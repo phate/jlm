@@ -142,11 +142,15 @@ public:
   HasTimer(const std::string & name) const noexcept;
 
   /**
-   * Gets the timer with the given \p name, it must exist.
-   * @return the timer.
+   * Retrieves the measured time passed on the timer with the given \p name.
+   * Requires the timer to exist, and not currently be running.
+   * @return the timer's elapsed time in nanoseconds
    */
-  [[nodiscard]] const util::timer &
-  GetTimer(const std::string & name) const;
+  [[nodiscard]] size_t
+  GetTimerElapsedNanoseconds(const std::string & name) const
+  {
+    return GetTimer(name).ns();
+  }
 
   /**
    * Retrieves the full list of timers
@@ -158,7 +162,6 @@ protected:
   /**
    * Adds a measurement, identified by \p name, with the given value.
    * Requires that the measurement doesn't already exist.
-   * Measurements are listed in insertion order.
    * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint16_4, double
    */
   template<typename T>
@@ -169,10 +172,6 @@ protected:
     Measurements_.emplace_back(std::make_pair(std::move(name), std::move(value)));
   }
 
-  // Mutable version of @see GetMeasurement
-  [[nodiscard]] Measurement &
-  GetMeasurement(const std::string & name);
-
   /**
    * Creates a new timer with the given \p name.
    * Requires that the timer does not already exist.
@@ -181,13 +180,20 @@ protected:
   util::timer &
   AddTimer(std::string name);
 
-  // Mutable version of @see GetTimer
+  /**
+   * Retrieves the timer with the given \p name.
+   * Requires that the timer already exists.
+   * @return a reference to the timer
+   */
   [[nodiscard]] util::timer &
   GetTimer(const std::string & name);
 
+  [[nodiscard]] const util::timer &
+  GetTimer(const std::string & name) const;
+
 private:
   Statistics::Id StatisticsId_;
-  jlm::util::filepath SourceFile_;
+  util::filepath SourceFile_;
 
   MeasurementList Measurements_;
   TimerList Timers_;

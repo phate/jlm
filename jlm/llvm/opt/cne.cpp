@@ -18,8 +18,8 @@ class cnestat final : public util::Statistics
 public:
   ~cnestat() override = default;
 
-  cnestat(util::filepath sourceFile)
-      : Statistics(Statistics::Id::CommonNodeElimination, std::move(sourceFile)),
+  explicit cnestat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0),
         ninputs_before_(0),
@@ -72,9 +72,9 @@ public:
   }
 
   static std::unique_ptr<cnestat>
-  Create(util::filepath sourceFile)
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<cnestat>(std::move(sourceFile));
+    return std::make_unique<cnestat>(sourceFile);
   }
 
 private:

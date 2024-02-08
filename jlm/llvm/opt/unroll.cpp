@@ -18,8 +18,8 @@ class unrollstat final : public util::Statistics
 public:
   ~unrollstat() override = default;
 
-  explicit unrollstat(util::filepath sourceFile)
-      : Statistics(Statistics::Id::LoopUnrolling, std::move(sourceFile)),
+  explicit unrollstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::LoopUnrolling, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0)
   {}
@@ -45,9 +45,9 @@ public:
   }
 
   static std::unique_ptr<unrollstat>
-  Create(util::filepath sourceFile)
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<unrollstat>(std::move(sourceFile));
+    return std::make_unique<unrollstat>(sourceFile);
   }
 
 private:

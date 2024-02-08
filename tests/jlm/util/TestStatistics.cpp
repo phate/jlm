@@ -7,6 +7,7 @@
 
 #include <jlm/util/Statistics.hpp>
 
+#include <atomic>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -14,8 +15,8 @@
 class MyTestStatistics final : public jlm::util::Statistics
 {
 public:
-  MyTestStatistics(jlm::util::Statistics::Id id, jlm::util::filepath sourceFile)
-      : jlm::util::Statistics(id, std::move(sourceFile))
+  MyTestStatistics(jlm::util::Statistics::Id id, const jlm::util::filepath & sourceFile)
+      : jlm::util::Statistics(id, sourceFile)
   {}
 
   void
@@ -39,16 +40,47 @@ void
 TestStatisticsMeasurements()
 {
   using namespace jlm::util;
+
+  // Arrange
   filepath path("file.ll");
   MyTestStatistics statistics(Statistics::Id::Aggregation, path);
 
+  // Act
   statistics.Start(10, 6.0);
+  // Pretend to do real work
+  std::atomic_signal_fence(std::memory_order::memory_order_seq_cst);
   statistics.Stop(-400, "poor");
+
+  // Assert
+  assert(statistics.GetId() == Statistics::Id::Aggregation);
+  assert(statistics.GetSourceFile() == path);
+
+  assert(statistics.HasMeasurement("count"));
+  assert(!statistics.HasMeasurement("height"));
+  assert(statistics.HasTimer("Timer"));
+  assert(!statistics.HasTimer("SpinLockTimer"));
 
   assert(statistics.GetMeasurementValue<uint64_t>("count") == 10);
   assert(statistics.GetMeasurementValue<double>("weight") == 6.0);
   assert(statistics.GetMeasurementValue<int64_t>("bankAccount") == -400);
-  assert(statistics.GetMeasurementValue<std::string>("count") == "poor");
+  assert(statistics.GetMeasurementValue<std::string>("state") == "poor");
+  assert(statistics.GetTimerElapsedNanoseconds("Timer") > 0);
+
+  // Ensure order is preserved
+  auto measurements = statistics.GetMeasurements();
+  auto it = measurements.begin();
+  assert(it->first == "count");
+  it++;
+  assert(it->first == "weight");
+  it++;
+  assert(it->first == "bankAccount");
+  it++;
+  assert(it->first == "state");
+  it++;
+  assert(it == measurements.end());
+
+  auto timers = statistics.GetTimers();
+  assert(timers.begin()->first == "Timer");
 }
 
 void

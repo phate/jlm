@@ -777,13 +777,13 @@ private:
 /** \brief Collect statistics about Steensgaard alias analysis pass
  *
  */
-class Steensgaard::Statistics final : public jlm::util::Statistics
+class Steensgaard::Statistics final : public util::Statistics
 {
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(jlm::util::filepath sourceFile)
-      : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis, std::move(sourceFile)),
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::SteensgaardAnalysis, sourceFile),
         NumRvsdgNodes_(0),
         NumDisjointSets_(0),
         NumLocations_(0),
@@ -912,7 +912,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const jlm::util::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }

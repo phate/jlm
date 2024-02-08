@@ -106,19 +106,13 @@ Statistics::HasMeasurement(const std::string & name) const noexcept
   return false;
 }
 
-Statistics::Measurement &
-Statistics::GetMeasurement(const std::string & name)
-{
-  for (auto & [mName, measurement] : Measurements_)
-    if (mName == name)
-      return measurement;
-  throw util::error(util::strfmt("Unknown measurement: ", name));
-}
-
 const Statistics::Measurement &
 Statistics::GetMeasurement(const std::string & name) const
 {
-  return const_cast<Statistics *>(this)->GetMeasurement(name);
+  for (const auto & [mName, measurement] : Measurements_)
+    if (mName == name)
+      return measurement;
+  JLM_UNREACHABLE("Unknown measurement");
 }
 
 util::iterator_range<Statistics::MeasurementList::const_iterator>
@@ -142,7 +136,7 @@ Statistics::GetTimer(const std::string & name)
   for (auto & [mName, timer] : Timers_)
     if (mName == name)
       return timer;
-  throw util::error(util::strfmt("Unknown timer: ", name));
+  JLM_UNREACHABLE("Unknown timer");
 }
 
 const util::timer &

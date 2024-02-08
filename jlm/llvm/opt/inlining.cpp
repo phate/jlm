@@ -18,8 +18,8 @@ class ilnstat final : public util::Statistics
 public:
   ~ilnstat() override = default;
 
-  ilnstat(util::filepath sourceFile)
-      : Statistics(Statistics::Id::FunctionInlining, std::move(sourceFile)),
+  explicit ilnstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::FunctionInlining, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0)
   {}
@@ -45,9 +45,9 @@ public:
   }
 
   static std::unique_ptr<ilnstat>
-  Create(util::filepath sourceFile)
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<ilnstat>(std::move(sourceFile));
+    return std::make_unique<ilnstat>(sourceFile);
   }
 
 private:
