@@ -1077,7 +1077,7 @@ public:
       const std::vector<const rvsdg::valuetype *> & store_types)
   {
     std::vector<jlm::rvsdg::port> ports;
-    for (size_t i=0; i < load_types.size(); i++)
+    for (size_t i = 0; i < load_types.size(); i++)
     {
       ports.emplace_back(llvm::PointerType()); // addr
     }
@@ -1233,7 +1233,7 @@ public:
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
     // TODO:
-    //auto ot = dynamic_cast<const local_mem_op *>(&other);
+    // auto ot = dynamic_cast<const local_mem_op *>(&other);
     // check predicate and value
     return false;
   }
