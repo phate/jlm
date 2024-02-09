@@ -4,7 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/hls/backend/rhls2firrtl/mlirgen.hpp"
+#include "jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp"
 #include "jlm/llvm/opt/alias-analyses/Operators.hpp"
 
 namespace jlm::hls
@@ -12,7 +12,7 @@ namespace jlm::hls
 
 // Handles nodes with 2 inputs and 1 output
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
 {
   // Only handles nodes with a single output
   if (node->noutputs() != 1)
@@ -382,7 +382,7 @@ MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenSink(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -390,7 +390,10 @@ MLIRGenImpl::MlirGenSink(const jlm::rvsdg::simple_node * node)
 
   // Create a constant of UInt<1>(1)
   auto intType = GetIntType(1);
-  auto constant = builder.create<circt::firrtl::ConstantOp>(location, intType, ::llvm::APInt(1, 1));
+  auto constant = Builder_->create<circt::firrtl::ConstantOp>(
+      Builder_->getUnknownLoc(),
+      intType,
+      ::llvm::APInt(1, 1));
   body->push_back(constant);
 
   // Get the input bundle
@@ -404,7 +407,7 @@ MLIRGenImpl::MlirGenSink(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenFork(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -431,13 +434,13 @@ MLIRGenImpl::MlirGenFork(const jlm::rvsdg::simple_node * node)
     std::string validName("out");
     validName.append(std::to_string(i));
     validName.append("_fired_reg");
-    auto firedReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto firedReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(1),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(validName));
+        Builder_->getStringAttr(validName));
     body->push_back(firedReg);
     firedRegs.push_back(firedReg);
 
@@ -485,7 +488,7 @@ MLIRGenImpl::MlirGenFork(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, true);
@@ -554,13 +557,13 @@ MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node * node)
     std::string validName("o");
     validName.append(std::to_string(i));
     validName.append("_valid_reg");
-    auto validReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto validReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(1),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(validName));
+        Builder_->getStringAttr(validName));
     body->push_back(validReg);
     oValidRegs.push_back(validReg);
 
@@ -568,23 +571,23 @@ MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node * node)
     std::string dataName("o");
     dataName.append(std::to_string(i));
     dataName.append("_data_reg");
-    auto dataReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(&node->output(i)->type()),
         clock,
         reset,
         zeroValue,
-        builder.getStringAttr(dataName));
+        Builder_->getStringAttr(dataName));
     body->push_back(dataReg);
     oDataRegs.push_back(dataReg);
   }
-  auto sentReg = builder.create<circt::firrtl::RegResetOp>(
-      location,
+  auto sentReg = Builder_->create<circt::firrtl::RegResetOp>(
+      Builder_->getUnknownLoc(),
       GetIntType(1),
       clock,
       reset,
       zeroBitValue,
-      builder.getStringAttr("sent_reg"));
+      Builder_->getStringAttr("sent_reg"));
   body->push_back(sentReg);
 
   mlir::Value canRequest = AddNotOp(body, sentReg.getResult());
@@ -702,7 +705,7 @@ MLIRGenImpl::MlirGenMem(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -736,7 +739,7 @@ MLIRGenImpl::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenPrint(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -760,14 +763,18 @@ MLIRGenImpl::MlirGenPrint(const jlm::rvsdg::simple_node * node)
   auto printValue = AddPadOp(body, inData, 64);
   ::llvm::SmallVector<mlir::Value> operands;
   operands.push_back(printValue);
-  body->push_back(
-      builder
-          .create<circt::firrtl::PrintFOp>(location, clock, trigger, formatString, operands, name));
+  body->push_back(Builder_->create<circt::firrtl::PrintFOp>(
+      Builder_->getUnknownLoc(),
+      clock,
+      trigger,
+      formatString,
+      operands,
+      name));
   return module;
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -779,23 +786,23 @@ MLIRGenImpl::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node)
   auto oneBitValue = GetConstant(body, 1, 1);
 
   std::string validName("buf_valid_reg");
-  auto validReg = builder.create<circt::firrtl::RegResetOp>(
-      location,
+  auto validReg = Builder_->create<circt::firrtl::RegResetOp>(
+      Builder_->getUnknownLoc(),
       GetIntType(1),
       clock,
       reset,
       oneBitValue,
-      builder.getStringAttr(validName));
+      Builder_->getStringAttr(validName));
   body->push_back(validReg);
 
   std::string dataName("buf_data_reg");
-  auto dataReg = builder.create<circt::firrtl::RegResetOp>(
-      location,
+  auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
+      Builder_->getUnknownLoc(),
       GetIntType(&node->input(0)->type()),
       clock,
       reset,
       zeroBitValue,
-      builder.getStringAttr(dataName));
+      Builder_->getStringAttr(dataName));
   body->push_back(dataReg);
 
   auto inBundle = GetInPort(module, 0);
@@ -832,7 +839,7 @@ MLIRGenImpl::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -855,26 +862,26 @@ MLIRGenImpl::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
     std::string validName("buf");
     validName.append(std::to_string(i));
     validName.append("_valid_reg");
-    auto validReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto validReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(1),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(validName));
+        Builder_->getStringAttr(validName));
     body->push_back(validReg);
     validRegs.push_back(validReg);
 
     std::string dataName("buf");
     dataName.append(std::to_string(i));
     dataName.append("_data_reg");
-    auto dataReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(&node->input(0)->type()),
         clock,
         reset,
         zeroValue,
-        builder.getStringAttr(dataName));
+        Builder_->getStringAttr(dataName));
     body->push_back(dataReg);
     dataRegs.push_back(dataReg);
   }
@@ -972,7 +979,7 @@ MLIRGenImpl::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenDMux(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1009,13 +1016,13 @@ MLIRGenImpl::MlirGenDMux(const jlm::rvsdg::simple_node * node)
     std::string regName("i");
     regName.append(std::to_string(i));
     regName.append("_discard_reg");
-    auto reg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto reg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(1),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(regName));
+        Builder_->getStringAttr(regName));
     body->push_back(reg);
     discardRegs.push_back(reg);
     anyDiscardReg = AddOrOp(body, anyDiscardReg, reg.getResult());
@@ -1030,13 +1037,13 @@ MLIRGenImpl::MlirGenDMux(const jlm::rvsdg::simple_node * node)
   }
   auto notAnyDiscardReg = AddNotOp(body, anyDiscardReg);
 
-  auto processedReg = builder.create<circt::firrtl::RegResetOp>(
-      location,
+  auto processedReg = Builder_->create<circt::firrtl::RegResetOp>(
+      Builder_->getUnknownLoc(),
       GetIntType(1),
       clock,
       reset,
       zeroBitValue,
-      builder.getStringAttr("processed_reg"));
+      Builder_->getStringAttr("processed_reg"));
   body->push_back(processedReg);
   auto notProcessedReg = AddNotOp(body, processedReg.getResult());
 
@@ -1090,7 +1097,7 @@ MLIRGenImpl::MlirGenDMux(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1137,7 +1144,7 @@ MLIRGenImpl::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGenBranch(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::simple_node * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1184,7 +1191,7 @@ MLIRGenImpl::MlirGenBranch(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGen(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
 {
   if (dynamic_cast<const hls::sink_op *>(&(node->operation())))
   {
@@ -1242,7 +1249,10 @@ MLIRGenImpl::MlirGen(const jlm::rvsdg::simple_node * node)
 }
 
 std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
-MLIRGenImpl::MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody)
+RhlsToFirrtlConverter::MlirGen(
+    hls::loop_node * loopNode,
+    mlir::Block * body,
+    mlir::Block * circuitBody)
 {
   auto subRegion = loopNode->subregion();
   return createInstances(subRegion, circuitBody, body);
@@ -1252,7 +1262,7 @@ MLIRGenImpl::MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block 
 // Returns the output of a node or the argument of a region that has
 // been instantiated as a module
 jlm::rvsdg::output *
-MLIRGenImpl::TraceArgument(jlm::rvsdg::argument * arg)
+RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
 {
   // Check if the argument is part of a hls::loop_node
   auto region = arg->region();
@@ -1291,7 +1301,7 @@ MLIRGenImpl::TraceArgument(jlm::rvsdg::argument * arg)
 }
 
 circt::firrtl::FModuleOp
-MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
+RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
 {
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -1322,10 +1332,13 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
   AddMemResPort(&ports);
 
   // Create a name for the module
-  auto moduleName = builder.getStringAttr("subregion_mod");
+  auto moduleName = Builder_->getStringAttr("subregion_mod");
   // Now when we have all the port information we can create the module
-  auto module =
-      builder.create<circt::firrtl::FModuleOp>(location, moduleName, conventionAttr, ports);
+  auto module = Builder_->create<circt::firrtl::FModuleOp>(
+      Builder_->getUnknownLoc(),
+      moduleName,
+      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
 
@@ -1496,7 +1509,7 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
 }
 
 std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
-MLIRGenImpl::createInstances(
+RhlsToFirrtlConverter::createInstances(
     jlm::rvsdg::region * subRegion,
     mlir::Block * circuitBody,
     mlir::Block * body)
@@ -1538,7 +1551,7 @@ MLIRGenImpl::createInstances(
 // Trace a structural output back to the "node" generating the value
 // Returns the output of the node
 jlm::rvsdg::simple_output *
-MLIRGenImpl::TraceStructuralOutput(jlm::rvsdg::structural_output * output)
+RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * output)
 {
   auto node = output->node();
 
@@ -1568,15 +1581,15 @@ MLIRGenImpl::TraceStructuralOutput(jlm::rvsdg::structural_output * output)
 
 // Emit a circuit
 circt::firrtl::CircuitOp
-MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
+RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
 {
 
   // Ensure consistent naming across runs
   create_node_names(lambdaNode->subregion());
   // The same name is used for the circuit and main module
-  auto moduleName = builder.getStringAttr(lambdaNode->name() + "_lambda_mod");
+  auto moduleName = Builder_->getStringAttr(lambdaNode->name() + "_lambda_mod");
   // Create the top level FIRRTL circuit
-  auto circuit = builder.create<circt::firrtl::CircuitOp>(location, moduleName);
+  auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
   // The body will be populated with a list of modules
   auto circuitBody = circuit.getBodyBlock();
 
@@ -1607,11 +1620,12 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     std::string portName("data_");
     portName.append(std::to_string(i));
     inputElements.push_back(
-        BundleElement(builder.getStringAttr(portName), false, GetIntType(&reg_args[i]->type())));
+        BundleElement(Builder_->getStringAttr(portName), false, GetIntType(&reg_args[i]->type())));
   }
-  auto inputType = circt::firrtl::BundleType::get(builder.getContext(), inputElements);
+  auto inputType = circt::firrtl::BundleType::get(Builder_->getContext(), inputElements);
   struct circt::firrtl::PortInfo iBundle = {
-    builder.getStringAttr("i"), inputType, circt::firrtl::Direction::In, {}, location,
+    Builder_->getStringAttr("i"), inputType, circt::firrtl::Direction::In, {},
+    Builder_->getUnknownLoc(),
   };
   ports.push_back(iBundle);
 
@@ -1623,12 +1637,15 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   {
     std::string portName("data_");
     portName.append(std::to_string(i));
-    outputElements.push_back(
-        BundleElement(builder.getStringAttr(portName), false, GetIntType(&reg_results[i]->type())));
+    outputElements.push_back(BundleElement(
+        Builder_->getStringAttr(portName),
+        false,
+        GetIntType(&reg_results[i]->type())));
   }
-  auto outputType = circt::firrtl::BundleType::get(builder.getContext(), outputElements);
+  auto outputType = circt::firrtl::BundleType::get(Builder_->getContext(), outputElements);
   struct circt::firrtl::PortInfo oBundle = {
-    builder.getStringAttr("o"), outputType, circt::firrtl::Direction::Out, {}, location,
+    Builder_->getStringAttr("o"), outputType, circt::firrtl::Direction::Out, {},
+    Builder_->getUnknownLoc(),
   };
   ports.push_back(oBundle);
 
@@ -1647,33 +1664,38 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     reqElements.push_back(GetReadyElement());
     reqElements.push_back(GetValidElement());
     reqElements.push_back(
-        BundleElement(builder.getStringAttr("data"), false, GetFirrtlType(&mem_reqs[i]->type())));
-    auto reqType = circt::firrtl::BundleType::get(builder.getContext(), reqElements);
-    memElements.push_back(BundleElement(builder.getStringAttr("req"), false, reqType));
+        BundleElement(Builder_->getStringAttr("data"), false, GetFirrtlType(&mem_reqs[i]->type())));
+    auto reqType = circt::firrtl::BundleType::get(Builder_->getContext(), reqElements);
+    memElements.push_back(BundleElement(Builder_->getStringAttr("req"), false, reqType));
 
     ::llvm::SmallVector<BundleElement> resElements;
     resElements.push_back(GetReadyElement());
     resElements.push_back(GetValidElement());
-    resElements.push_back(
-        BundleElement(builder.getStringAttr("data"), false, GetFirrtlType(&mem_resps[i]->type())));
-    auto resType = circt::firrtl::BundleType::get(builder.getContext(), resElements);
-    memElements.push_back(BundleElement(builder.getStringAttr("res"), true, resType));
+    resElements.push_back(BundleElement(
+        Builder_->getStringAttr("data"),
+        false,
+        GetFirrtlType(&mem_resps[i]->type())));
+    auto resType = circt::firrtl::BundleType::get(Builder_->getContext(), resElements);
+    memElements.push_back(BundleElement(Builder_->getStringAttr("res"), true, resType));
 
-    auto memType = circt::firrtl::BundleType::get(builder.getContext(), memElements);
+    auto memType = circt::firrtl::BundleType::get(Builder_->getContext(), memElements);
     struct circt::firrtl::PortInfo memBundle = {
-      builder.getStringAttr("mem_" + std::to_string(i)),
+      Builder_->getStringAttr("mem_" + std::to_string(i)),
       memType,
       circt::firrtl::Direction::Out,
-      { builder.getStringAttr("") },
-      location,
+      { Builder_->getStringAttr("") },
+      Builder_->getUnknownLoc(),
     };
     ports.push_back(memBundle);
   }
 
   // Now when we have all the port information we can create the module
   // The same name is used for the circuit and main module
-  auto module =
-      builder.create<circt::firrtl::FModuleOp>(location, moduleName, conventionAttr, ports);
+  auto module = Builder_->create<circt::firrtl::FModuleOp>(
+      Builder_->getUnknownLoc(),
+      moduleName,
+      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
 
@@ -1684,7 +1706,8 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   auto srModule = MlirGen(subRegion, circuitBody);
   circuitBody->push_back(srModule);
   // Instantiate the region
-  auto instance = builder.create<circt::firrtl::InstanceOp>(location, srModule, "sr");
+  auto instance =
+      Builder_->create<circt::firrtl::InstanceOp>(Builder_->getUnknownLoc(), srModule, "sr");
   body->push_back(instance);
   // Connect the Clock
   auto clock = GetClockSignal(module);
@@ -1707,26 +1730,26 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     std::string validName("i");
     validName.append(std::to_string(i));
     validName.append("_valid_reg");
-    auto validReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto validReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(1),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(validName));
+        Builder_->getStringAttr(validName));
     body->push_back(validReg);
     inputValidRegs.push_back(validReg);
 
     std::string dataName("i");
     dataName.append(std::to_string(i));
     dataName.append("_data_reg");
-    auto dataReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(&reg_args[i]->type()),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(dataName));
+        Builder_->getStringAttr(dataName));
     body->push_back(dataReg);
     inputDataRegs.push_back(dataReg);
 
@@ -1760,26 +1783,26 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     std::string validName("o");
     validName.append(std::to_string(i));
     validName.append("_valid_reg");
-    auto validReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto validReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(1),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(validName));
+        Builder_->getStringAttr(validName));
     body->push_back(validReg);
     outputValidRegs.push_back(validReg);
 
     std::string dataName("o");
     dataName.append(std::to_string(i));
     dataName.append("_data_reg");
-    auto dataReg = builder.create<circt::firrtl::RegResetOp>(
-        location,
+    auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
+        Builder_->getUnknownLoc(),
         GetIntType(&reg_results[i]->type()),
         clock,
         reset,
         zeroBitValue,
-        builder.getStringAttr(dataName));
+        Builder_->getStringAttr(dataName));
     body->push_back(dataReg);
     outputDataRegs.push_back(dataReg);
 
@@ -1787,9 +1810,9 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     auto port = GetInstancePort(instance, "r" + std::to_string(reg_results[i]->index()));
 
     auto portReady = GetSubfield(body, port, "ready");
-    auto notValidReg = builder.create<circt::firrtl::NotPrimOp>(
-        location,
-        circt::firrtl::IntType::get(builder.getContext(), false, 1),
+    auto notValidReg = Builder_->create<circt::firrtl::NotPrimOp>(
+        Builder_->getUnknownLoc(),
+        circt::firrtl::IntType::get(Builder_->getContext(), false, 1),
         validReg.getResult());
     body->push_back(notValidReg);
     Connect(body, portReady, notValidReg);
@@ -1811,9 +1834,9 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   mlir::Value prevAnd = oneBitValue;
   for (size_t i = 0; i < inputValidRegs.size(); i++)
   {
-    auto notReg = builder.create<circt::firrtl::NotPrimOp>(
-        location,
-        circt::firrtl::IntType::get(builder.getContext(), false, 1),
+    auto notReg = Builder_->create<circt::firrtl::NotPrimOp>(
+        Builder_->getUnknownLoc(),
+        circt::firrtl::IntType::get(Builder_->getContext(), false, 1),
         inputValidRegs[i].getResult());
     body->push_back(notReg);
     auto andOp = AddAndOp(body, notReg, prevAnd);
@@ -1937,34 +1960,30 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
 
 // Returns a PortInfo of ClockType
 void
-MLIRGenImpl::AddClockPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
+RhlsToFirrtlConverter::AddClockPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
 {
   struct circt::firrtl::PortInfo port = {
-    builder.getStringAttr("clk"),
-    circt::firrtl::ClockType::get(builder.getContext()),
-    circt::firrtl::Direction::In,
-    {},
-    location,
+    Builder_->getStringAttr("clk"), circt::firrtl::ClockType::get(Builder_->getContext()),
+    circt::firrtl::Direction::In,   {},
+    Builder_->getUnknownLoc(),
   };
   ports->push_back(port);
 }
 
 // Returns a PortInfo of unsigned IntType with width of 1
 void
-MLIRGenImpl::AddResetPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
+RhlsToFirrtlConverter::AddResetPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
 {
   struct circt::firrtl::PortInfo port = {
-    builder.getStringAttr("reset"),
-    circt::firrtl::IntType::get(builder.getContext(), false, 1),
-    circt::firrtl::Direction::In,
-    {},
-    location,
+    Builder_->getStringAttr("reset"), circt::firrtl::IntType::get(Builder_->getContext(), false, 1),
+    circt::firrtl::Direction::In,     {},
+    Builder_->getUnknownLoc(),
   };
   ports->push_back(port);
 }
 
 void
-MLIRGenImpl::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
+RhlsToFirrtlConverter::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
 {
   using BundleElement = circt::firrtl::BundleType::BundleElement;
 
@@ -1972,50 +1991,52 @@ MLIRGenImpl::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
   memReqElements.push_back(GetReadyElement());
   memReqElements.push_back(GetValidElement());
   memReqElements.push_back(BundleElement(
-      builder.getStringAttr("addr"),
+      Builder_->getStringAttr("addr"),
       false,
-      circt::firrtl::IntType::get(builder.getContext(), false, 64)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 64)));
   memReqElements.push_back(BundleElement(
-      builder.getStringAttr("data"),
+      Builder_->getStringAttr("data"),
       false,
-      circt::firrtl::IntType::get(builder.getContext(), false, 64)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 64)));
   memReqElements.push_back(BundleElement(
-      builder.getStringAttr("write"),
+      Builder_->getStringAttr("write"),
       false,
-      circt::firrtl::IntType::get(builder.getContext(), false, 1)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 1)));
   memReqElements.push_back(BundleElement(
-      builder.getStringAttr("width"),
+      Builder_->getStringAttr("width"),
       false,
-      circt::firrtl::IntType::get(builder.getContext(), false, 3)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 3)));
 
-  auto memType = circt::firrtl::BundleType::get(builder.getContext(), memReqElements);
+  auto memType = circt::firrtl::BundleType::get(Builder_->getContext(), memReqElements);
   struct circt::firrtl::PortInfo memBundle = {
-    builder.getStringAttr("mem_req"), memType, circt::firrtl::Direction::Out, {}, location,
+    Builder_->getStringAttr("mem_req"), memType, circt::firrtl::Direction::Out, {},
+    Builder_->getUnknownLoc(),
   };
   ports->push_back(memBundle);
 }
 
 void
-MLIRGenImpl::AddMemResPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
+RhlsToFirrtlConverter::AddMemResPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
 {
   using BundleElement = circt::firrtl::BundleType::BundleElement;
 
   ::llvm::SmallVector<BundleElement> memResElements;
   memResElements.push_back(GetValidElement());
   memResElements.push_back(BundleElement(
-      builder.getStringAttr("data"),
+      Builder_->getStringAttr("data"),
       false,
-      circt::firrtl::IntType::get(builder.getContext(), false, 64)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 64)));
 
-  auto memResType = circt::firrtl::BundleType::get(builder.getContext(), memResElements);
+  auto memResType = circt::firrtl::BundleType::get(Builder_->getContext(), memResElements);
   struct circt::firrtl::PortInfo memResBundle = {
-    builder.getStringAttr("mem_res"), memResType, circt::firrtl::Direction::In, {}, location,
+    Builder_->getStringAttr("mem_res"), memResType, circt::firrtl::Direction::In, {},
+    Builder_->getUnknownLoc(),
   };
   ports->push_back(memResBundle);
 }
 
 void
-MLIRGenImpl::AddBundlePort(
+RhlsToFirrtlConverter::AddBundlePort(
     ::llvm::SmallVector<circt::firrtl::PortInfo> * ports,
     circt::firrtl::Direction direction,
     std::string name,
@@ -2026,33 +2047,38 @@ MLIRGenImpl::AddBundlePort(
   ::llvm::SmallVector<BundleElement> elements;
   elements.push_back(GetReadyElement());
   elements.push_back(GetValidElement());
-  elements.push_back(BundleElement(builder.getStringAttr("data"), false, type));
+  elements.push_back(BundleElement(Builder_->getStringAttr("data"), false, type));
 
-  auto bundleType = circt::firrtl::BundleType::get(builder.getContext(), elements);
+  auto bundleType = circt::firrtl::BundleType::get(Builder_->getContext(), elements);
   struct circt::firrtl::PortInfo bundle = {
-    builder.getStringAttr(name), bundleType, direction, {}, location,
+    Builder_->getStringAttr(name), bundleType, direction, {}, Builder_->getUnknownLoc(),
   };
   ports->push_back(bundle);
 }
 
 circt::firrtl::SubfieldOp
-MLIRGenImpl::GetSubfield(mlir::Block * body, mlir::Value value, int index)
+RhlsToFirrtlConverter::GetSubfield(mlir::Block * body, mlir::Value value, int index)
 {
-  auto subfield = builder.create<circt::firrtl::SubfieldOp>(location, value, index);
+  auto subfield =
+      Builder_->create<circt::firrtl::SubfieldOp>(Builder_->getUnknownLoc(), value, index);
   body->push_back(subfield);
   return subfield;
 }
 
 circt::firrtl::SubfieldOp
-MLIRGenImpl::GetSubfield(mlir::Block * body, mlir::Value value, ::llvm::StringRef fieldName)
+RhlsToFirrtlConverter::GetSubfield(
+    mlir::Block * body,
+    mlir::Value value,
+    ::llvm::StringRef fieldName)
 {
-  auto subfield = builder.create<circt::firrtl::SubfieldOp>(location, value, fieldName);
+  auto subfield =
+      Builder_->create<circt::firrtl::SubfieldOp>(Builder_->getUnknownLoc(), value, fieldName);
   body->push_back(subfield);
   return subfield;
 }
 
 mlir::BlockArgument
-MLIRGenImpl::GetPort(circt::firrtl::FModuleOp & module, std::string portName)
+RhlsToFirrtlConverter::GetPort(circt::firrtl::FModuleOp & module, std::string portName)
 {
   for (size_t i = 0; i < module.getNumPorts(); ++i)
   {
@@ -2065,7 +2091,7 @@ MLIRGenImpl::GetPort(circt::firrtl::FModuleOp & module, std::string portName)
 }
 
 mlir::OpResult
-MLIRGenImpl::GetInstancePort(circt::firrtl::InstanceOp & instance, std::string portName)
+RhlsToFirrtlConverter::GetInstancePort(circt::firrtl::InstanceOp & instance, std::string portName)
 {
   for (size_t i = 0; i < instance.getNumResults(); ++i)
   {
@@ -2079,238 +2105,246 @@ MLIRGenImpl::GetInstancePort(circt::firrtl::InstanceOp & instance, std::string p
 }
 
 mlir::BlockArgument
-MLIRGenImpl::GetInPort(circt::firrtl::FModuleOp & module, size_t portNr)
+RhlsToFirrtlConverter::GetInPort(circt::firrtl::FModuleOp & module, size_t portNr)
 {
   return GetPort(module, "i" + std::to_string(portNr));
 }
 
 mlir::BlockArgument
-MLIRGenImpl::GetOutPort(circt::firrtl::FModuleOp & module, size_t portNr)
+RhlsToFirrtlConverter::GetOutPort(circt::firrtl::FModuleOp & module, size_t portNr)
 {
   return GetPort(module, "o" + std::to_string(portNr));
 }
 
 void
-MLIRGenImpl::Connect(mlir::Block * body, mlir::Value sink, mlir::Value source)
+RhlsToFirrtlConverter::Connect(mlir::Block * body, mlir::Value sink, mlir::Value source)
 {
-  body->push_back(builder.create<circt::firrtl::ConnectOp>(location, sink, source));
+  body->push_back(
+      Builder_->create<circt::firrtl::ConnectOp>(Builder_->getUnknownLoc(), sink, source));
 }
 
 circt::firrtl::BitsPrimOp
-MLIRGenImpl::AddBitsOp(mlir::Block * body, mlir::Value value, int high, int low)
+RhlsToFirrtlConverter::AddBitsOp(mlir::Block * body, mlir::Value value, int high, int low)
 {
-  auto intType = builder.getIntegerType(32);
-  auto op = builder.create<circt::firrtl::BitsPrimOp>(
-      location,
+  auto intType = Builder_->getIntegerType(32);
+  auto op = Builder_->create<circt::firrtl::BitsPrimOp>(
+      Builder_->getUnknownLoc(),
       value,
-      builder.getIntegerAttr(intType, high),
-      builder.getIntegerAttr(intType, low));
+      Builder_->getIntegerAttr(intType, high),
+      Builder_->getIntegerAttr(intType, low));
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::AndPrimOp
-MLIRGenImpl::AddAndOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddAndOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::AndPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::AndPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::NodeOp
-MLIRGenImpl::AddNodeOp(mlir::Block * body, mlir::Value value, std::string name)
+RhlsToFirrtlConverter::AddNodeOp(mlir::Block * body, mlir::Value value, std::string name)
 {
-  auto op = builder.create<circt::firrtl::NodeOp>(location, value, name);
+  auto op = Builder_->create<circt::firrtl::NodeOp>(Builder_->getUnknownLoc(), value, name);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::XorPrimOp
-MLIRGenImpl::AddXorOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddXorOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::XorPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::XorPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::OrPrimOp
-MLIRGenImpl::AddOrOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddOrOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::OrPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::OrPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::NotPrimOp
-MLIRGenImpl::AddNotOp(mlir::Block * body, mlir::Value first)
+RhlsToFirrtlConverter::AddNotOp(mlir::Block * body, mlir::Value first)
 {
-  auto op = builder.create<circt::firrtl::NotPrimOp>(location, first);
+  auto op = Builder_->create<circt::firrtl::NotPrimOp>(Builder_->getUnknownLoc(), first);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::AddPrimOp
-MLIRGenImpl::AddAddOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddAddOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::AddPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::AddPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::SubPrimOp
-MLIRGenImpl::AddSubOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddSubOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::SubPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::SubPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::MulPrimOp
-MLIRGenImpl::AddMulOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddMulOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::MulPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::MulPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::DivPrimOp
-MLIRGenImpl::AddDivOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddDivOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::DivPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::DivPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::DShrPrimOp
-MLIRGenImpl::AddDShrOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddDShrOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::DShrPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::DShrPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::DShlPrimOp
-MLIRGenImpl::AddDShlOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddDShlOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::DShlPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::DShlPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::RemPrimOp
-MLIRGenImpl::AddRemOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddRemOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::RemPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::RemPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::EQPrimOp
-MLIRGenImpl::AddEqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddEqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::EQPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::EQPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::NEQPrimOp
-MLIRGenImpl::AddNeqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddNeqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::NEQPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::NEQPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::GTPrimOp
-MLIRGenImpl::AddGtOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddGtOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::GTPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::GTPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::GEQPrimOp
-MLIRGenImpl::AddGeqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddGeqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::GEQPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::GEQPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::LTPrimOp
-MLIRGenImpl::AddLtOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddLtOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::LTPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::LTPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::LEQPrimOp
-MLIRGenImpl::AddLeqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
+RhlsToFirrtlConverter::AddLeqOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
-  auto op = builder.create<circt::firrtl::LEQPrimOp>(location, first, second);
+  auto op = Builder_->create<circt::firrtl::LEQPrimOp>(Builder_->getUnknownLoc(), first, second);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::MuxPrimOp
-MLIRGenImpl::AddMuxOp(mlir::Block * body, mlir::Value select, mlir::Value high, mlir::Value low)
+RhlsToFirrtlConverter::AddMuxOp(
+    mlir::Block * body,
+    mlir::Value select,
+    mlir::Value high,
+    mlir::Value low)
 {
-  auto op = builder.create<circt::firrtl::MuxPrimOp>(location, select, high, low);
+  auto op =
+      Builder_->create<circt::firrtl::MuxPrimOp>(Builder_->getUnknownLoc(), select, high, low);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::AsSIntPrimOp
-MLIRGenImpl::AddAsSIntOp(mlir::Block * body, mlir::Value value)
+RhlsToFirrtlConverter::AddAsSIntOp(mlir::Block * body, mlir::Value value)
 {
-  auto op = builder.create<circt::firrtl::AsSIntPrimOp>(location, value);
+  auto op = Builder_->create<circt::firrtl::AsSIntPrimOp>(Builder_->getUnknownLoc(), value);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::AsUIntPrimOp
-MLIRGenImpl::AddAsUIntOp(mlir::Block * body, mlir::Value value)
+RhlsToFirrtlConverter::AddAsUIntOp(mlir::Block * body, mlir::Value value)
 {
-  auto op = builder.create<circt::firrtl::AsUIntPrimOp>(location, value);
+  auto op = Builder_->create<circt::firrtl::AsUIntPrimOp>(Builder_->getUnknownLoc(), value);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::PadPrimOp
-MLIRGenImpl::AddPadOp(mlir::Block * body, mlir::Value value, int amount)
+RhlsToFirrtlConverter::AddPadOp(mlir::Block * body, mlir::Value value, int amount)
 {
-  auto op = builder.create<circt::firrtl::PadPrimOp>(location, value, amount);
+  auto op = Builder_->create<circt::firrtl::PadPrimOp>(Builder_->getUnknownLoc(), value, amount);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::CvtPrimOp
-MLIRGenImpl::AddCvtOp(mlir::Block * body, mlir::Value value)
+RhlsToFirrtlConverter::AddCvtOp(mlir::Block * body, mlir::Value value)
 {
-  auto op = builder.create<circt::firrtl::CvtPrimOp>(location, value);
+  auto op = Builder_->create<circt::firrtl::CvtPrimOp>(Builder_->getUnknownLoc(), value);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::WireOp
-MLIRGenImpl::AddWireOp(mlir::Block * body, std::string name, int size)
+RhlsToFirrtlConverter::AddWireOp(mlir::Block * body, std::string name, int size)
 {
-  auto op = builder.create<circt::firrtl::WireOp>(location, GetIntType(size), name);
+  auto op =
+      Builder_->create<circt::firrtl::WireOp>(Builder_->getUnknownLoc(), GetIntType(size), name);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::WhenOp
-MLIRGenImpl::AddWhenOp(mlir::Block * body, mlir::Value condition, bool elseStatement)
+RhlsToFirrtlConverter::AddWhenOp(mlir::Block * body, mlir::Value condition, bool elseStatement)
 {
-  auto op = builder.create<circt::firrtl::WhenOp>(location, condition, elseStatement);
+  auto op =
+      Builder_->create<circt::firrtl::WhenOp>(Builder_->getUnknownLoc(), condition, elseStatement);
   body->push_back(op);
   return op;
 }
 
 circt::firrtl::InstanceOp
-MLIRGenImpl::AddInstanceOp(mlir::Block * body, jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * body, jlm::rvsdg::simple_node * node)
 {
   auto name = GetModuleName(node);
   // Check if the module has already been instantiated else we need to generate it
@@ -2324,31 +2358,37 @@ MLIRGenImpl::AddInstanceOp(mlir::Block * body, jlm::rvsdg::simple_node * node)
   // to assure the name is unique while still being relatively
   // easy to ready (which helps when debugging).
   auto node_name = get_node_name(node);
-  return builder.create<circt::firrtl::InstanceOp>(location, modules[name], node_name);
+  return Builder_->create<circt::firrtl::InstanceOp>(
+      Builder_->getUnknownLoc(),
+      modules[name],
+      node_name);
 }
 
 circt::firrtl::ConstantOp
-MLIRGenImpl::GetConstant(mlir::Block * body, int size, int value)
+RhlsToFirrtlConverter::GetConstant(mlir::Block * body, int size, int value)
 {
   auto intType = GetIntType(size);
-  auto constant =
-      builder.create<circt::firrtl::ConstantOp>(location, intType, ::llvm::APInt(size, value));
+  auto constant = Builder_->create<circt::firrtl::ConstantOp>(
+      Builder_->getUnknownLoc(),
+      intType,
+      ::llvm::APInt(size, value));
   body->push_back(constant);
   return constant;
 }
 
 circt::firrtl::InvalidValueOp
-MLIRGenImpl::GetInvalid(mlir::Block * body, int size)
+RhlsToFirrtlConverter::GetInvalid(mlir::Block * body, int size)
 {
 
-  auto invalid = builder.create<circt::firrtl::InvalidValueOp>(location, GetIntType(size));
+  auto invalid =
+      Builder_->create<circt::firrtl::InvalidValueOp>(Builder_->getUnknownLoc(), GetIntType(size));
   body->push_back(invalid);
   return invalid;
 }
 
 // Get the clock signal in the module
 mlir::BlockArgument
-MLIRGenImpl::GetClockSignal(circt::firrtl::FModuleOp module)
+RhlsToFirrtlConverter::GetClockSignal(circt::firrtl::FModuleOp module)
 {
   auto clock = module.getArgument(0);
   auto ctype = clock.getType().cast<circt::firrtl::FIRRTLType>();
@@ -2361,7 +2401,7 @@ MLIRGenImpl::GetClockSignal(circt::firrtl::FModuleOp module)
 
 // Get the reset signal in the module
 mlir::BlockArgument
-MLIRGenImpl::GetResetSignal(circt::firrtl::FModuleOp module)
+RhlsToFirrtlConverter::GetResetSignal(circt::firrtl::FModuleOp module)
 {
   auto reset = module.getArgument(1);
   auto rtype = reset.getType().cast<circt::firrtl::FIRRTLType>();
@@ -2373,29 +2413,29 @@ MLIRGenImpl::GetResetSignal(circt::firrtl::FModuleOp module)
 }
 
 circt::firrtl::BundleType::BundleElement
-MLIRGenImpl::GetReadyElement()
+RhlsToFirrtlConverter::GetReadyElement()
 {
   using BundleElement = circt::firrtl::BundleType::BundleElement;
 
   return BundleElement(
-      builder.getStringAttr("ready"),
+      Builder_->getStringAttr("ready"),
       true,
-      circt::firrtl::IntType::get(builder.getContext(), false, 1));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 1));
 }
 
 circt::firrtl::BundleType::BundleElement
-MLIRGenImpl::GetValidElement()
+RhlsToFirrtlConverter::GetValidElement()
 {
   using BundleElement = circt::firrtl::BundleType::BundleElement;
 
   return BundleElement(
-      builder.getStringAttr("valid"),
+      Builder_->getStringAttr("valid"),
       false,
-      circt::firrtl::IntType::get(builder.getContext(), false, 1));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, 1));
 }
 
 void
-MLIRGenImpl::InitializeMemReq(circt::firrtl::FModuleOp module)
+RhlsToFirrtlConverter::InitializeMemReq(circt::firrtl::FModuleOp module)
 {
   mlir::BlockArgument mem = GetPort(module, "mem_req");
   mlir::Block * body = module.getBodyBlock();
@@ -2422,7 +2462,7 @@ MLIRGenImpl::InitializeMemReq(circt::firrtl::FModuleOp module)
 // bundle for each node input and output bundle for each node output
 // Returns a circt::firrtl::FModuleOp with an empty body
 circt::firrtl::FModuleOp
-MLIRGenImpl::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
+RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
 {
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -2460,9 +2500,13 @@ MLIRGenImpl::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
 
   // Creat a name for the module
   auto nodeName = GetModuleName(node);
-  mlir::StringAttr name = builder.getStringAttr(nodeName);
+  mlir::StringAttr name = Builder_->getStringAttr(nodeName);
   // Create the module
-  return builder.create<circt::firrtl::FModuleOp>(location, name, conventionAttr, ports);
+  return Builder_->create<circt::firrtl::FModuleOp>(
+      Builder_->getUnknownLoc(),
+      name,
+      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      ports);
 }
 
 //
@@ -2471,9 +2515,9 @@ MLIRGenImpl::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
 
 // Returns IntType of the specified width
 circt::firrtl::IntType
-MLIRGenImpl::GetIntType(int size)
+RhlsToFirrtlConverter::GetIntType(int size)
 {
-  return circt::firrtl::IntType::get(builder.getContext(), false, size);
+  return circt::firrtl::IntType::get(Builder_->getContext(), false, size);
 }
 
 // Return unsigned IntType with the bit width specified by the
@@ -2481,13 +2525,13 @@ MLIRGenImpl::GetIntType(int size)
 // which is useful for, e.g., additions where the result has to be 1
 // larger than the operands to accommodate for the carry.
 circt::firrtl::IntType
-MLIRGenImpl::GetIntType(const jlm::rvsdg::type * type, int extend)
+RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::type * type, int extend)
 {
-  return circt::firrtl::IntType::get(builder.getContext(), false, JlmSize(type) + extend);
+  return circt::firrtl::IntType::get(Builder_->getContext(), false, JlmSize(type) + extend);
 }
 
 circt::firrtl::FIRRTLBaseType
-MLIRGenImpl::GetFirrtlType(const jlm::rvsdg::type * type)
+RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::type * type)
 {
   if (auto bt = dynamic_cast<const bundletype *>(type))
   {
@@ -2497,9 +2541,9 @@ MLIRGenImpl::GetFirrtlType(const jlm::rvsdg::type * type)
     {
       auto t = &bt->elements_->at(i);
       elements.push_back(
-          BundleElement(builder.getStringAttr(t->first), false, GetFirrtlType(t->second.get())));
+          BundleElement(Builder_->getStringAttr(t->first), false, GetFirrtlType(t->second.get())));
     }
-    return circt::firrtl::BundleType::get(builder.getContext(), elements);
+    return circt::firrtl::BundleType::get(Builder_->getContext(), elements);
   }
   else
   {
@@ -2508,7 +2552,7 @@ MLIRGenImpl::GetFirrtlType(const jlm::rvsdg::type * type)
 }
 
 std::string
-MLIRGenImpl::GetModuleName(const jlm::rvsdg::node * node)
+RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
 {
 
   std::string append = "";
@@ -2588,7 +2632,7 @@ MLIRGenImpl::GetModuleName(const jlm::rvsdg::node * node)
 }
 
 bool
-MLIRGenImpl::IsIdentityMapping(const jlm::rvsdg::match_op & op)
+RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::match_op & op)
 {
   for (const auto & pair : op)
   {
@@ -2602,7 +2646,7 @@ MLIRGenImpl::IsIdentityMapping(const jlm::rvsdg::match_op & op)
 // Used for debugging a module by wrapping it in a circuit and writing it to a file
 // Node is simply a convenience for generating the circuit name
 void
-MLIRGenImpl::WriteModuleToFile(
+RhlsToFirrtlConverter::WriteModuleToFile(
     const circt::firrtl::FModuleOp fModuleOp,
     const jlm::rvsdg::node * node)
 {
@@ -2610,10 +2654,10 @@ MLIRGenImpl::WriteModuleToFile(
     return;
 
   auto name = GetModuleName(node);
-  auto moduleName = builder.getStringAttr(name);
+  auto moduleName = Builder_->getStringAttr(name);
 
   // Adde the fModuleOp to a circuit
-  auto circuit = builder.create<circt::firrtl::CircuitOp>(location, moduleName);
+  auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
   auto body = circuit.getBodyBlock();
   body->push_back(fModuleOp);
 
@@ -2622,10 +2666,10 @@ MLIRGenImpl::WriteModuleToFile(
 
 // Verifies the circuit and writes the FIRRTL to a file
 void
-MLIRGenImpl::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name)
+RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name)
 {
   // Add the circuit to a top module
-  auto module = mlir::ModuleOp::create(location);
+  auto module = mlir::ModuleOp::create(Builder_->getUnknownLoc());
   module.push_back(circuit);
 
   // Verify the module
@@ -2650,10 +2694,16 @@ MLIRGenImpl::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::str
 }
 
 std::string
-MLIRGenImpl::toString(const circt::firrtl::CircuitOp circuit)
+RhlsToFirrtlConverter::ToString(llvm::RvsdgModule & rvsdgModule)
 {
+  auto region = rvsdgModule.Rvsdg().root();
+  auto lambdaNode = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  // Region should consist of a single lambdaNode
+  JLM_ASSERT(region->nnodes() == 1 && lambdaNode);
+  auto circuit = MlirGen(lambdaNode);
+
   // Add the circuit to a top module
-  auto module = mlir::ModuleOp::create(location);
+  auto module = mlir::ModuleOp::create(Builder_->getUnknownLoc());
   module.push_back(circuit);
 
   // Verify the module
@@ -2672,4 +2722,5 @@ MLIRGenImpl::toString(const circt::firrtl::CircuitOp circuit)
 
   return outputString;
 }
+
 }
