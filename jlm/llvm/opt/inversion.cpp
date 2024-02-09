@@ -14,14 +14,13 @@
 namespace jlm::llvm
 {
 
-class ivtstat final : public jlm::util::Statistics
+class ivtstat final : public util::Statistics
 {
 public:
-  virtual ~ivtstat()
-  {}
+  ~ivtstat() override = default;
 
-  ivtstat()
-      : Statistics(Statistics::Id::ThetaGammaInversion),
+  explicit ivtstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0),
         ninputs_before_(0),
@@ -44,11 +43,10 @@ public:
     timer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "IVT ",
         nnodes_before_,
         " ",
         nnodes_after_,
@@ -61,9 +59,9 @@ public:
   }
 
   static std::unique_ptr<ivtstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<ivtstat>();
+    return std::make_unique<ivtstat>(sourceFile);
   }
 
 private:
@@ -330,7 +328,7 @@ invert(jlm::rvsdg::region * region)
 static void
 invert(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = ivtstat::Create();
+  auto statistics = ivtstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
   invert(rm.Rvsdg().root());

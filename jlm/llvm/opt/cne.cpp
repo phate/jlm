@@ -16,11 +16,10 @@ namespace jlm::llvm
 class cnestat final : public util::Statistics
 {
 public:
-  virtual ~cnestat()
-  {}
+  ~cnestat() override = default;
 
-  cnestat()
-      : Statistics(Statistics::Id::CommonNodeElimination),
+  explicit cnestat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0),
         ninputs_before_(0),
@@ -55,11 +54,10 @@ public:
     diverttimer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return util::strfmt(
-        "CNE ",
         nnodes_before_,
         " ",
         nnodes_after_,
@@ -74,9 +72,9 @@ public:
   }
 
   static std::unique_ptr<cnestat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<cnestat>();
+    return std::make_unique<cnestat>(sourceFile);
   }
 
 private:
@@ -580,7 +578,7 @@ cne(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   auto & graph = rm.Rvsdg();
 
   cnectx ctx;
-  auto statistics = cnestat::Create();
+  auto statistics = cnestat::Create(rm.SourceFileName());
 
   statistics->start_mark_stat(graph);
   mark(graph.root(), ctx);

@@ -16,11 +16,10 @@ namespace jlm::llvm
 class pullstat final : public util::Statistics
 {
 public:
-  virtual ~pullstat()
-  {}
+  ~pullstat() override = default;
 
-  pullstat()
-      : Statistics(Statistics::Id::PullNodes),
+  explicit pullstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::PullNodes, sourceFile),
         ninputs_before_(0),
         ninputs_after_(0)
   {}
@@ -39,16 +38,16 @@ public:
     timer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
-    return util::strfmt("PULL ", ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
+    return util::strfmt(ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
   }
 
   static std::unique_ptr<pullstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<pullstat>();
+    return std::make_unique<pullstat>(sourceFile);
   }
 
 private:
@@ -313,7 +312,7 @@ pull(jlm::rvsdg::region * region)
 static void
 pull(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pullstat::Create();
+  auto statistics = pullstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
   pull(rm.Rvsdg().root());

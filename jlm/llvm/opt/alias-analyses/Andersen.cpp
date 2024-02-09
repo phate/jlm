@@ -27,14 +27,13 @@ IsOrContainsPointerType(const rvsdg::type & type)
 /**
  * Class collecting statistics from a pass of Andersen's alias analysis
  */
-class Andersen::Statistics final : public jlm::util::Statistics
+class Andersen::Statistics final : public util::Statistics
 {
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(jlm::util::filepath sourceFile)
-      : jlm::util::Statistics(Statistics::Id::AndersenAnalysis),
-        SourceFile_(std::move(sourceFile)),
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::AndersenAnalysis, sourceFile),
         NumRvsdgNodes_(0),
         NumPointerObjects_(0),
         NumRegistersMappedToPointerObject_(0),
@@ -144,12 +143,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "AndersenAnalysis ",
-        SourceFile_.to_str(),
-        " ",
         "#RvsdgNodes:",
         NumRvsdgNodes_,
         " ",
@@ -224,13 +220,12 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const jlm::util::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
 
 private:
-  jlm::util::filepath SourceFile_;
   size_t NumRvsdgNodes_;
 
   size_t NumPointerObjects_;

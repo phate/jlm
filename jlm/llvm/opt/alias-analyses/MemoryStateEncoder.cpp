@@ -18,15 +18,14 @@ namespace jlm::llvm::aa
 /** \brief Statistics class for memory state encoder encoding
  *
  */
-class EncodingStatistics final : public jlm::util::Statistics
+class EncodingStatistics final : public util::Statistics
 {
 public:
   ~EncodingStatistics() override = default;
 
-  explicit EncodingStatistics(jlm::util::filepath sourceFile)
-      : Statistics(Statistics::Id::MemoryStateEncoder),
-        NumNodesBefore_(0),
-        SourceFile_(std::move(sourceFile))
+  explicit EncodingStatistics(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::MemoryStateEncoder, sourceFile),
+        NumNodesBefore_(0)
   {}
 
   void
@@ -43,17 +42,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
-    return jlm::util::strfmt(
-        "MemoryStateEncoder ",
-        SourceFile_.to_str(),
-        " ",
-        "#RvsdgNodes:",
-        NumNodesBefore_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    return jlm::util::strfmt("#RvsdgNodes:", NumNodesBefore_, " ", "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<EncodingStatistics>
@@ -63,9 +54,8 @@ public:
   }
 
 private:
-  jlm::util::timer Timer_;
+  util::timer Timer_;
   size_t NumNodesBefore_;
-  jlm::util::filepath SourceFile_;
 };
 
 static jlm::rvsdg::argument *

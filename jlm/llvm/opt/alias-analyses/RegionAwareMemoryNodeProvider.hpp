@@ -193,7 +193,7 @@ private:
  *
  * @see RegionAwareMemoryNodeProvider
  */
-class RegionAwareMemoryNodeProvider::Statistics final : public jlm::util::Statistics
+class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   ~Statistics() override = default;
@@ -202,7 +202,9 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
-      : jlm::util::Statistics(Statistics::Id::RegionAwareMemoryNodeProvisioning),
+      : util::Statistics(
+          Statistics::Id::RegionAwareMemoryNodeProvisioning,
+          rvsdgModule.SourceFileName()),
         NumRvsdgNodes_(0),
         NumRvsdgRegions_(0),
         NumPointsToGraphMemoryNodes_(0),
@@ -331,10 +333,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return util::strfmt(
-        "RegionAwareMemoryNodeProvision ",
         "#RvsdgNodes:",
         NumRvsdgNodes_,
         " ",
@@ -354,8 +355,7 @@ public:
         ResolveUnknownMemoryReferencesTimer_.ns(),
         " ",
         "PropagationPass2Time[ns]:",
-        PropagationPass2Timer_.ns(),
-        " ");
+        PropagationPass2Timer_.ns());
   }
 
   static std::unique_ptr<Statistics>

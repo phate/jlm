@@ -18,6 +18,7 @@
 #include <jlm/util/time.hpp>
 
 #include <stack>
+#include <utility>
 
 namespace jlm::llvm
 {
@@ -125,16 +126,17 @@ private:
   std::vector<rvsdg::region *> RegionStack_;
 };
 
-class ControlFlowRestructuringStatistics final : public jlm::util::Statistics
+class ControlFlowRestructuringStatistics final : public util::Statistics
 {
 public:
   ~ControlFlowRestructuringStatistics() override = default;
 
-  ControlFlowRestructuringStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(Statistics::Id::ControlFlowRecovery),
+  ControlFlowRestructuringStatistics(
+      const util::filepath & sourceFileName,
+      std::string functionName)
+      : Statistics(Statistics::Id::ControlFlowRecovery, sourceFileName),
         NumNodes_(0),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -150,13 +152,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "ControlFlowRestructuring ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "#Nodes:",
@@ -167,30 +166,28 @@ public:
   }
 
   static std::unique_ptr<ControlFlowRestructuringStatistics>
-  Create(jlm::util::filepath sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, std::string functionName)
   {
     return std::make_unique<ControlFlowRestructuringStatistics>(
-        std::move(sourceFileName),
+        sourceFileName,
         std::move(functionName));
   }
 
 private:
   size_t NumNodes_;
-  jlm::util::timer Timer_;
+  util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
-class AggregationStatistics final : public jlm::util::Statistics
+class AggregationStatistics final : public util::Statistics
 {
 public:
   ~AggregationStatistics() override = default;
 
-  AggregationStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(jlm::util::Statistics::Id::Aggregation),
+  AggregationStatistics(const util::filepath & sourceFileName, std::string functionName)
+      : Statistics(util::Statistics::Id::Aggregation, sourceFileName),
         NumNodes_(0),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -206,13 +203,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "Aggregation ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "#Nodes:",
@@ -223,30 +217,26 @@ public:
   }
 
   static std::unique_ptr<AggregationStatistics>
-  Create(jlm::util::filepath sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, std::string functionName)
   {
-    return std::make_unique<AggregationStatistics>(
-        std::move(sourceFileName),
-        std::move(functionName));
+    return std::make_unique<AggregationStatistics>(sourceFileName, std::move(functionName));
   }
 
 private:
   size_t NumNodes_;
-  jlm::util::timer Timer_;
+  util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
-class AnnotationStatistics final : public jlm::util::Statistics
+class AnnotationStatistics final : public util::Statistics
 {
 public:
   ~AnnotationStatistics() override = default;
 
-  AnnotationStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(jlm::util::Statistics::Id::Annotation),
+  AnnotationStatistics(const util::filepath & sourceFileName, std::string functionName)
+      : Statistics(util::Statistics::Id::Annotation, sourceFileName),
         NumThreeAddressCodes_(0),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -262,13 +252,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "Annotation ",
-        SourceFileName_.to_str(),
-        " ",
         FunctionName_,
         " ",
         "#ThreeAddressCodes:",
@@ -279,29 +266,25 @@ public:
   }
 
   static std::unique_ptr<AnnotationStatistics>
-  Create(jlm::util::filepath sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, std::string functionName)
   {
-    return std::make_unique<AnnotationStatistics>(
-        std::move(sourceFileName),
-        std::move(functionName));
+    return std::make_unique<AnnotationStatistics>(sourceFileName, std::move(functionName));
   }
 
 private:
   size_t NumThreeAddressCodes_;
-  jlm::util::timer Timer_;
+  util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
-class AggregationTreeToLambdaStatistics final : public jlm::util::Statistics
+class AggregationTreeToLambdaStatistics final : public util::Statistics
 {
 public:
   ~AggregationTreeToLambdaStatistics() override = default;
 
-  AggregationTreeToLambdaStatistics(jlm::util::filepath sourceFileName, std::string functionName)
-      : Statistics(jlm::util::Statistics::Id::JlmToRvsdgConversion),
-        FunctionName_(std::move(functionName)),
-        SourceFileName_(std::move(sourceFileName))
+  AggregationTreeToLambdaStatistics(const util::filepath & sourceFileName, std::string functionName)
+      : Statistics(util::Statistics::Id::JlmToRvsdgConversion, sourceFileName),
+        FunctionName_(std::move(functionName))
   {}
 
   void
@@ -316,43 +299,34 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
-    return jlm::util::strfmt(
-        "ControlFlowGraphToLambda ",
-        SourceFileName_.to_str(),
-        " ",
-        FunctionName_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    return jlm::util::strfmt(FunctionName_, " ", "Time[ns]:", Timer_.ns());
   }
 
   static std::unique_ptr<AggregationTreeToLambdaStatistics>
-  Create(jlm::util::filepath sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, std::string functionName)
   {
     return std::make_unique<AggregationTreeToLambdaStatistics>(
-        std::move(sourceFileName),
+        sourceFileName,
         std::move(functionName));
   }
 
 private:
-  jlm::util::timer Timer_;
+  util::timer Timer_;
   std::string FunctionName_;
-  jlm::util::filepath SourceFileName_;
 };
 
-class DataNodeToDeltaStatistics final : public jlm::util::Statistics
+class DataNodeToDeltaStatistics final : public util::Statistics
 {
 public:
   ~DataNodeToDeltaStatistics() override = default;
 
-  DataNodeToDeltaStatistics(jlm::util::filepath sourceFileName, std::string dataNodeName)
-      : Statistics(jlm::util::Statistics::Id::DataNodeToDelta),
+  DataNodeToDeltaStatistics(const util::filepath & sourceFileName, std::string dataNodeName)
+      : Statistics(util::Statistics::Id::DataNodeToDelta, sourceFileName),
         NumInitializationThreeAddressCodes_(0),
-        DataNodeName_(std::move(dataNodeName)),
-        SourceFileName_(std::move(sourceFileName))
+        DataNodeName_(std::move(dataNodeName))
   {}
 
   void
@@ -368,13 +342,10 @@ public:
     Timer_.stop();
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "DataNodeToDeltaStatistics ",
-        SourceFileName_.to_str(),
-        " ",
         DataNodeName_,
         " ",
         "#InitializationThreeAddressCodes:",
@@ -385,30 +356,26 @@ public:
   }
 
   static std::unique_ptr<DataNodeToDeltaStatistics>
-  Create(jlm::util::filepath sourceFileName, std::string dataNodeName)
+  Create(const util::filepath & sourceFileName, std::string dataNodeName)
   {
-    return std::make_unique<DataNodeToDeltaStatistics>(
-        std::move(sourceFileName),
-        std::move(dataNodeName));
+    return std::make_unique<DataNodeToDeltaStatistics>(sourceFileName, std::move(dataNodeName));
   }
 
 private:
-  jlm::util::timer Timer_;
+  util::timer Timer_;
   size_t NumInitializationThreeAddressCodes_;
   std::string DataNodeName_;
-  jlm::util::filepath SourceFileName_;
 };
 
-class InterProceduralGraphToRvsdgStatistics final : public jlm::util::Statistics
+class InterProceduralGraphToRvsdgStatistics final : public util::Statistics
 {
 public:
   ~InterProceduralGraphToRvsdgStatistics() override = default;
 
-  explicit InterProceduralGraphToRvsdgStatistics(jlm::util::filepath sourceFileName)
-      : Statistics(jlm::util::Statistics::Id::RvsdgConstruction),
+  explicit InterProceduralGraphToRvsdgStatistics(const util::filepath & sourceFileName)
+      : Statistics(util::Statistics::Id::RvsdgConstruction, sourceFileName),
         NumThreeAddressCodes_(0),
-        NumRvsdgNodes_(0),
-        SourceFileName_(std::move(sourceFileName))
+        NumRvsdgNodes_(0)
   {}
 
   void
@@ -425,13 +392,10 @@ public:
     NumRvsdgNodes_ = rvsdg::nnodes(graph.root());
   }
 
-  std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return jlm::util::strfmt(
-        "InterProceduralGraphToRvsdg ",
-        SourceFileName_.to_str(),
-        " ",
         "#ThreeAddressCodes:",
         NumThreeAddressCodes_,
         " ",
@@ -443,24 +407,23 @@ public:
   }
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
-  Create(jlm::util::filepath sourceFileName)
+  Create(const util::filepath & sourceFileName)
   {
-    return std::make_unique<InterProceduralGraphToRvsdgStatistics>(std::move(sourceFileName));
+    return std::make_unique<InterProceduralGraphToRvsdgStatistics>(sourceFileName);
   }
 
 private:
   size_t NumThreeAddressCodes_;
   size_t NumRvsdgNodes_;
-  jlm::util::timer Timer_;
-  jlm::util::filepath SourceFileName_;
+  util::timer Timer_;
 };
 
 class InterProceduralGraphToRvsdgStatisticsCollector final
 {
 public:
-  explicit InterProceduralGraphToRvsdgStatisticsCollector(
-      jlm::util::StatisticsCollector & statisticsCollector,
-      jlm::util::filepath sourceFileName)
+  InterProceduralGraphToRvsdgStatisticsCollector(
+      util::StatisticsCollector & statisticsCollector,
+      util::filepath sourceFileName)
       : SourceFileName_(std::move(sourceFileName)),
         StatisticsCollector_(statisticsCollector)
   {}
@@ -587,8 +550,8 @@ public:
   }
 
 private:
-  const jlm::util::filepath SourceFileName_;
-  jlm::util::StatisticsCollector & StatisticsCollector_;
+  const util::filepath SourceFileName_;
+  util::StatisticsCollector & StatisticsCollector_;
 };
 
 static bool
@@ -1329,7 +1292,7 @@ ConvertInterProceduralGraphModule(
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
     ipgraph_module & interProceduralGraphModule,
-    jlm::util::StatisticsCollector & statisticsCollector)
+    util::StatisticsCollector & statisticsCollector)
 {
   InterProceduralGraphToRvsdgStatisticsCollector interProceduralGraphToRvsdgStatisticsCollector(
       statisticsCollector,
