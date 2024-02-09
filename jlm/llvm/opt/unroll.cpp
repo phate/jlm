@@ -16,11 +16,10 @@ namespace jlm::llvm
 class unrollstat final : public util::Statistics
 {
 public:
-  virtual ~unrollstat()
-  {}
+  ~unrollstat() override = default;
 
-  unrollstat()
-      : Statistics(Statistics::Id::LoopUnrolling),
+  explicit unrollstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::LoopUnrolling, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0)
   {}
@@ -39,16 +38,16 @@ public:
     timer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
-    return util::strfmt("UNROLL ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+    return util::strfmt(nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
   }
 
   static std::unique_ptr<unrollstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<unrollstat>();
+    return std::make_unique<unrollstat>(sourceFile);
   }
 
 private:
@@ -530,7 +529,7 @@ loopunroll::run(RvsdgModule & module, util::StatisticsCollector & statisticsColl
     return;
 
   auto & graph = module.Rvsdg();
-  auto statistics = unrollstat::Create();
+  auto statistics = unrollstat::Create(module.SourceFileName());
 
   statistics->start(module.Rvsdg());
   unroll(graph.root(), factor_);

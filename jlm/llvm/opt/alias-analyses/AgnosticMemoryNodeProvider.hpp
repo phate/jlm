@@ -88,11 +88,10 @@ class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   Statistics(
-      util::filepath sourceFile,
+      const util::filepath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning),
-        SourceFile_(std::move(sourceFile)),
+      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, sourceFile),
         NumPointsToGraphMemoryNodes_(0),
         StatisticsCollector_(statisticsCollector)
   {
@@ -114,12 +113,6 @@ public:
     return Timer_.ns();
   }
 
-  [[nodiscard]] const util::filepath &
-  GetSourceFile() const noexcept
-  {
-    return SourceFile_;
-  }
-
   void
   StartCollecting() noexcept
   {
@@ -139,12 +132,9 @@ public:
   }
 
   [[nodiscard]] std::string
-  ToString() const override
+  Serialize() const override
   {
     return util::strfmt(
-        "AgnosticMemoryNodeProvider ",
-        SourceFile_.to_str(),
-        " ",
         "#PointsToGraphMemoryNodes:",
         NumPointsToGraphMemoryNodes_,
         " ",
@@ -163,7 +153,6 @@ public:
 
 private:
   util::timer Timer_;
-  util::filepath SourceFile_;
   size_t NumPointsToGraphMemoryNodes_;
   const util::StatisticsCollector & StatisticsCollector_;
 };

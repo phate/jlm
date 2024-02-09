@@ -16,11 +16,10 @@ namespace jlm::llvm
 class ilnstat final : public util::Statistics
 {
 public:
-  virtual ~ilnstat()
-  {}
+  ~ilnstat() override = default;
 
-  ilnstat()
-      : Statistics(Statistics::Id::FunctionInlining),
+  explicit ilnstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::FunctionInlining, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0)
   {}
@@ -40,15 +39,15 @@ public:
   }
 
   virtual std::string
-  ToString() const override
+  Serialize() const override
   {
-    return util::strfmt("ILN ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+    return util::strfmt(nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
   }
 
   static std::unique_ptr<ilnstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<ilnstat>();
+    return std::make_unique<ilnstat>(sourceFile);
   }
 
 private:
@@ -173,7 +172,7 @@ static void
 inlining(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
   auto & graph = rm.Rvsdg();
-  auto statistics = ilnstat::Create();
+  auto statistics = ilnstat::Create(rm.SourceFileName());
 
   statistics->start(graph);
   inlining(graph);

@@ -16,11 +16,10 @@ namespace jlm::llvm
 class redstat final : public util::Statistics
 {
 public:
-  virtual ~redstat()
-  {}
+  ~redstat() override = default;
 
-  redstat()
-      : Statistics(Statistics::Id::ReduceNodes),
+  explicit redstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::ReduceNodes, sourceFile),
         nnodes_before_(0),
         nnodes_after_(0),
         ninputs_before_(0),
@@ -43,11 +42,10 @@ public:
     timer_.stop();
   }
 
-  virtual std::string
-  ToString() const override
+  [[nodiscard]] std::string
+  Serialize() const override
   {
     return util::strfmt(
-        "RED ",
         nnodes_before_,
         " ",
         nnodes_after_,
@@ -60,9 +58,9 @@ public:
   }
 
   static std::unique_ptr<redstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<redstat>();
+    return std::make_unique<redstat>(sourceFile);
   }
 
 private:
@@ -144,7 +142,7 @@ static void
 reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
   auto & graph = rm.Rvsdg();
-  auto statistics = redstat::Create();
+  auto statistics = redstat::Create(rm.SourceFileName());
 
   statistics->start(graph);
 
