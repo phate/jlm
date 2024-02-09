@@ -15,60 +15,42 @@ namespace jlm::llvm
 
 class cnestat final : public util::Statistics
 {
+  const char * MarkTimerLabel_ = "MarkTimer";
+  const char * DiverTimerLabel_ = "DiverTimer";
+
 public:
   ~cnestat() override = default;
 
   explicit cnestat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile),
-        nnodes_before_(0),
-        nnodes_after_(0),
-        ninputs_before_(0),
-        ninputs_after_(0)
+      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
   void
   start_mark_stat(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    marktimer_.start();
+    AddMeasurement("NumNodesBefore", rvsdg::nnodes(graph.root()));
+    AddMeasurement("NumInputsBefore", rvsdg::ninputs(graph.root()));
+    AddTimer(MarkTimerLabel_).start();
   }
 
   void
   end_mark_stat() noexcept
   {
-    marktimer_.stop();
+    GetTimer(MarkTimerLabel_).stop();
   }
 
   void
   start_divert_stat() noexcept
   {
-    diverttimer_.start();
+    AddTimer(DiverTimerLabel_).start();
   }
 
   void
   end_divert_stat(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    diverttimer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt(
-        nnodes_before_,
-        " ",
-        nnodes_after_,
-        " ",
-        ninputs_before_,
-        " ",
-        ninputs_after_,
-        " ",
-        marktimer_.ns(),
-        " ",
-        diverttimer_.ns());
+    AddMeasurement("NumNodesAfter", rvsdg::nnodes(graph.root()));
+    AddMeasurement("NumInputsAfter", rvsdg::ninputs(graph.root()));
+    GetTimer(DiverTimerLabel_).stop();
   }
 
   static std::unique_ptr<cnestat>
@@ -76,11 +58,6 @@ public:
   {
     return std::make_unique<cnestat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  size_t ninputs_before_, ninputs_after_;
-  util::timer marktimer_, diverttimer_;
 };
 
 typedef std::unordered_set<jlm::rvsdg::output *> congruence_set;
