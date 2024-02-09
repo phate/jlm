@@ -20,42 +20,23 @@ public:
   ~ivtstat() override = default;
 
   explicit ivtstat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile),
-        nnodes_before_(0),
-        nnodes_after_(0),
-        ninputs_before_(0),
-        ninputs_after_(0)
+      : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        nnodes_before_,
-        " ",
-        nnodes_after_,
-        " ",
-        ninputs_before_,
-        " ",
-        ninputs_after_,
-        " ",
-        timer_.ns());
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<ivtstat>
@@ -63,11 +44,6 @@ public:
   {
     return std::make_unique<ivtstat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  size_t ninputs_before_, ninputs_after_;
-  jlm::util::timer timer_;
 };
 
 static jlm::rvsdg::gamma_node *

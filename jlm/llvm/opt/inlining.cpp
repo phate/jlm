@@ -15,33 +15,30 @@ namespace jlm::llvm
 
 class ilnstat final : public util::Statistics
 {
+  const char * NumRvsdgNodesBeforeLabel_ = "#RvsdgNodesBefore";
+  const char * NumRvsdgNodesAfterLabel_ = "#RvsdgNodesAfter";
+
+  const char * TimerLabel_ = "Time";
+
 public:
   ~ilnstat() override = default;
 
   explicit ilnstat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::FunctionInlining, sourceFile),
-        nnodes_before_(0),
-        nnodes_after_(0)
+      : Statistics(Statistics::Id::FunctionInlining, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph)
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    timer_.start();
+    AddMeasurement(NumRvsdgNodesBeforeLabel_, rvsdg::nnodes(graph.root()));
+    AddTimer(TimerLabel_).start();
   }
 
   void
   stop(const jlm::rvsdg::graph & graph)
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    timer_.stop();
-  }
-
-  virtual std::string
-  Serialize() const override
-  {
-    return util::strfmt(nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+    AddMeasurement(NumRvsdgNodesAfterLabel_, rvsdg::nnodes(graph.root()));
+    GetTimer(TimerLabel_).stop();
   }
 
   static std::unique_ptr<ilnstat>
@@ -49,10 +46,6 @@ public:
   {
     return std::make_unique<ilnstat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  util::timer timer_;
 };
 
 jlm::rvsdg::output *

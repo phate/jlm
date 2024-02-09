@@ -779,69 +779,74 @@ private:
  */
 class Steensgaard::Statistics final : public util::Statistics
 {
+  const char * AnalysisTimerLabel_ = "AliasAnalysisTime";
+  const char * PointsToFlagsPropagationTimerLabel_ = "PointsToFlagsPropagationTime";
+  const char * PointsToGraphConstructionTimerLabel_ = "PointsToGraphConstructionTime";
+
+  const char * NumDisjointSetsLabel_ = "#DisjointSets";
+  const char * NumLocationsLabel_ = "#Locations";
+
+  const char * NumPointsToGraphNodesLabel_ = "#PointsToGraphNodes";
+  const char * NumAllocaNodesLabel_ = "#AllocaNodes";
+  const char * NuMDeltaNodesLabel_ = "#DeltaNodes";
+  const char * NumImportNodesLabel_ = "#ImportNodes";
+  const char * NumLambdaNodesLabel_ = "#LambdaNodes";
+  const char * NumMallocNodesLabel_ = "#MallocNodes";
+  const char * NumMemoryNodesLabel_ = "#MemoryNodes";
+  const char * NumRegisterNodesLabel_ = "#RegisterNodes";
+  const char * NumUnknownMemorySourcesLabel_ = "#UnknownMemorySources";
+
 public:
   ~Statistics() override = default;
 
   explicit Statistics(const util::filepath & sourceFile)
-      : util::Statistics(Statistics::Id::SteensgaardAnalysis, sourceFile),
-        NumRvsdgNodes_(0),
-        NumDisjointSets_(0),
-        NumLocations_(0),
-        NumPointsToGraphNodes_(0),
-        NumAllocaNodes_(0),
-        NumDeltaNodes_(0),
-        NumImportNodes_(0),
-        NumLambdaNodes_(0),
-        NumMallocNodes_(0),
-        NumMemoryNodes_(0),
-        NumRegisterNodes_(0),
-        NumUnknownMemorySources_(0)
+      : util::Statistics(Statistics::Id::SteensgaardAnalysis, sourceFile)
   {}
 
   void
   StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
-    AnalysisTimer_.start();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddTimer(AnalysisTimerLabel_).start();
   }
 
   void
   StopSteensgaardStatistics() noexcept
   {
-    AnalysisTimer_.stop();
+    GetTimer(AnalysisTimerLabel_).stop();
   }
 
   void
   StartPointsToFlagsPropagationStatistics(const LocationSet & disjointLocationSet) noexcept
   {
-    NumDisjointSets_ = disjointLocationSet.NumDisjointSets();
-    NumLocations_ = disjointLocationSet.NumLocations();
-    PointsToFlagsPropagationTimer_.start();
+    AddMeasurement(NumDisjointSetsLabel_, disjointLocationSet.NumDisjointSets());
+    AddMeasurement(NumLocationsLabel_, disjointLocationSet.NumLocations());
+    AddTimer(PointsToFlagsPropagationTimerLabel_).start();
   }
 
   void
   StopPointsToFlagsPropagationStatistics() noexcept
   {
-    PointsToFlagsPropagationTimer_.stop();
+    GetTimer(PointsToFlagsPropagationTimerLabel_).stop();
   }
 
   void
   StartPointsToGraphConstructionStatistics(const LocationSet & locationSet)
   {
-    PointsToGraphConstructionTimer_.start();
+    AddTimer(PointsToGraphConstructionTimerLabel_).start();
   }
 
   void
   StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
   {
-    PointsToGraphConstructionTimer_.stop();
-    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
-    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
-    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
-    NumImportNodes_ = pointsToGraph.NumImportNodes();
-    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
-    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
-    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    GetTimer(PointsToGraphConstructionTimerLabel_).stop();
+    AddMeasurement(NumPointsToGraphNodesLabel_, pointsToGraph.NumNodes());
+    AddMeasurement(NumAllocaNodesLabel_, pointsToGraph.NumAllocaNodes());
+    AddMeasurement(NuMDeltaNodesLabel_, pointsToGraph.NumDeltaNodes());
+    AddMeasurement(NumImportNodesLabel_, pointsToGraph.NumImportNodes());
+    AddMeasurement(NumLambdaNodesLabel_, pointsToGraph.NumLambdaNodes());
+    AddMeasurement(NumMallocNodesLabel_, pointsToGraph.NumMallocNodes());
+    NumMemoryNoes_ = pointsToGraph.NumMemoryNodes();
     NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
     NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
   }

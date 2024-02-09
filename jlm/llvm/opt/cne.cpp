@@ -15,8 +15,8 @@ namespace jlm::llvm
 
 class cnestat final : public util::Statistics
 {
-  const char * MarkTimerLabel_ = "MarkTimer";
-  const char * DiverTimerLabel_ = "DiverTimer";
+  const char * MarkTimerLabel_ = "MarkTime";
+  const char * DivertTimerLabel_ = "DivertTime";
 
 public:
   ~cnestat() override = default;
@@ -28,8 +28,8 @@ public:
   void
   start_mark_stat(const jlm::rvsdg::graph & graph) noexcept
   {
-    AddMeasurement("NumNodesBefore", rvsdg::nnodes(graph.root()));
-    AddMeasurement("NumInputsBefore", rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
     AddTimer(MarkTimerLabel_).start();
   }
 
@@ -42,15 +42,15 @@ public:
   void
   start_divert_stat() noexcept
   {
-    AddTimer(DiverTimerLabel_).start();
+    AddTimer(DivertTimerLabel_).start();
   }
 
   void
   end_divert_stat(const jlm::rvsdg::graph & graph) noexcept
   {
-    AddMeasurement("NumNodesAfter", rvsdg::nnodes(graph.root()));
-    AddMeasurement("NumInputsAfter", rvsdg::ninputs(graph.root()));
-    GetTimer(DiverTimerLabel_).stop();
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    GetTimer(DivertTimerLabel_).stop();
   }
 
   static std::unique_ptr<cnestat>
