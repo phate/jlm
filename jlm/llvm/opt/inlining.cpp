@@ -15,11 +15,6 @@ namespace jlm::llvm
 
 class ilnstat final : public util::Statistics
 {
-  const char * NumRvsdgNodesBeforeLabel_ = "#RvsdgNodesBefore";
-  const char * NumRvsdgNodesAfterLabel_ = "#RvsdgNodesAfter";
-
-  const char * TimerLabel_ = "Time";
-
 public:
   ~ilnstat() override = default;
 
@@ -30,15 +25,15 @@ public:
   void
   start(const jlm::rvsdg::graph & graph)
   {
-    AddMeasurement(NumRvsdgNodesBeforeLabel_, rvsdg::nnodes(graph.root()));
-    AddTimer(TimerLabel_).start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   stop(const jlm::rvsdg::graph & graph)
   {
-    AddMeasurement(NumRvsdgNodesAfterLabel_, rvsdg::nnodes(graph.root()));
-    GetTimer(TimerLabel_).stop();
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<ilnstat>
