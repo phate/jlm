@@ -782,6 +782,8 @@ class Steensgaard::Statistics final : public util::Statistics
   const char * AnalysisTimerLabel_ = "AliasAnalysisTime";
   const char * PointsToFlagsPropagationTimerLabel_ = "PointsToFlagsPropagationTime";
   const char * PointsToGraphConstructionTimerLabel_ = "PointsToGraphConstructionTime";
+  const char * UnknownMemoryNodeSourcesRedirectionTimerLabel_ =
+      "UnknownMemoryNodeSourcesRedirectionTime";
 
   const char * NumDisjointSetsLabel_ = "#DisjointSets";
   const char * NumLocationsLabel_ = "#Locations";
@@ -846,74 +848,23 @@ public:
     AddMeasurement(NumImportNodesLabel_, pointsToGraph.NumImportNodes());
     AddMeasurement(NumLambdaNodesLabel_, pointsToGraph.NumLambdaNodes());
     AddMeasurement(NumMallocNodesLabel_, pointsToGraph.NumMallocNodes());
-    NumMemoryNoes_ = pointsToGraph.NumMemoryNodes();
-    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
-    NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
+    AddMeasurement(NumMemoryNodesLabel_, pointsToGraph.NumMemoryNodes());
+    AddMeasurement(NumRegisterNodesLabel_, pointsToGraph.NumRegisterNodes());
+    AddMeasurement(
+        NumUnknownMemorySourcesLabel_,
+        pointsToGraph.GetUnknownMemoryNode().NumSources());
   }
 
   void
   StartUnknownMemoryNodeSourcesRedirectionStatistics()
   {
-    UnknownMemoryNodeSourcesRedirectionTimer_.start();
+    AddTimer(UnknownMemoryNodeSourcesRedirectionTimerLabel_).start();
   }
 
   void
   StopUnknownMemoryNodeSourcesRedirectionStatistics()
   {
-    UnknownMemoryNodeSourcesRedirectionTimer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        "#RvsdgNodes:",
-        NumRvsdgNodes_,
-        " ",
-        "AliasAnalysisTime[ns]:",
-        AnalysisTimer_.ns(),
-        " ",
-        "#DisjointSets:",
-        NumDisjointSets_,
-        " ",
-        "#Locations:",
-        NumLocations_,
-        " ",
-        "#PointsToGraphNodes:",
-        NumPointsToGraphNodes_,
-        " ",
-        "#AllocaNodes:",
-        NumAllocaNodes_,
-        " ",
-        "#DeltaNodes:",
-        NumDeltaNodes_,
-        " ",
-        "#ImportNodes:",
-        NumImportNodes_,
-        " ",
-        "#LambdaNodes:",
-        NumLambdaNodes_,
-        " ",
-        "#MallocNodes:",
-        NumMallocNodes_,
-        " ",
-        "#MemoryNodes:",
-        NumMemoryNodes_,
-        " ",
-        "#RegisterNodes:",
-        NumRegisterNodes_,
-        " ",
-        "#UnknownMemorySources:",
-        NumUnknownMemorySources_,
-        " ",
-        "PointsToFlagsPropagationTime[ns]:",
-        PointsToFlagsPropagationTimer_.ns(),
-        " ",
-        "PointsToGraphConstructionTime[ns]:",
-        PointsToGraphConstructionTimer_.ns(),
-        " ",
-        "UnknownMemoryNodeSourcesRedirection[ns]:",
-        UnknownMemoryNodeSourcesRedirectionTimer_.ns());
+    GetTimer(UnknownMemoryNodeSourcesRedirectionTimerLabel_).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -921,27 +872,6 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
-
-private:
-  size_t NumRvsdgNodes_;
-
-  size_t NumDisjointSets_;
-  size_t NumLocations_;
-
-  size_t NumPointsToGraphNodes_;
-  size_t NumAllocaNodes_;
-  size_t NumDeltaNodes_;
-  size_t NumImportNodes_;
-  size_t NumLambdaNodes_;
-  size_t NumMallocNodes_;
-  size_t NumMemoryNodes_;
-  size_t NumRegisterNodes_;
-  size_t NumUnknownMemorySources_;
-
-  util::timer AnalysisTimer_;
-  util::timer PointsToFlagsPropagationTimer_;
-  util::timer PointsToGraphConstructionTimer_;
-  util::timer UnknownMemoryNodeSourcesRedirectionTimer_;
 };
 
 Steensgaard::~Steensgaard() = default;

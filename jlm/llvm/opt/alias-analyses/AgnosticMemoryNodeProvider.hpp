@@ -97,7 +97,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes())
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
   [[nodiscard]] size_t
