@@ -24,27 +24,20 @@ public:
   ~EncodingStatistics() override = default;
 
   explicit EncodingStatistics(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::MemoryStateEncoder, sourceFile),
-        NumNodesBefore_(0)
+      : Statistics(Statistics::Id::MemoryStateEncoder, sourceFile)
   {}
 
   void
   Start(const jlm::rvsdg::graph & graph)
   {
-    NumNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
-    Timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   Stop()
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt("#RvsdgNodes:", NumNodesBefore_, " ", "Time[ns]:", Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<EncodingStatistics>
@@ -52,10 +45,6 @@ public:
   {
     return std::make_unique<EncodingStatistics>(sourceFile);
   }
-
-private:
-  util::timer Timer_;
-  size_t NumNodesBefore_;
 };
 
 static jlm::rvsdg::argument *

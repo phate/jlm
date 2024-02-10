@@ -97,66 +97,42 @@ private:
  */
 class DeadNodeElimination::Statistics final : public util::Statistics
 {
+  const char * MarkTimerLabel_ = "MarkTime";
+  const char * SweepTimerLabel_ = "SweepTime";
+
 public:
   ~Statistics() override = default;
 
   explicit Statistics(const util::filepath & sourceFile)
-      : util::Statistics(Statistics::Id::DeadNodeElimination, sourceFile),
-        NumRvsdgNodesBefore_(0),
-        NumRvsdgNodesAfter_(0),
-        NumInputsBefore_(0),
-        NumInputsAfter_(0)
+      : util::Statistics(Statistics::Id::DeadNodeElimination, sourceFile)
   {}
 
   void
   StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    NumRvsdgNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
-    NumInputsBefore_ = jlm::rvsdg::ninputs(graph.root());
-    MarkTimer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddTimer(MarkTimerLabel_).start();
   }
 
   void
   StopMarkStatistics() noexcept
   {
-    MarkTimer_.stop();
+    GetTimer(MarkTimerLabel_).stop();
   }
 
   void
   StartSweepStatistics() noexcept
   {
-    SweepTimer_.start();
+    AddTimer(SweepTimerLabel_).start();
   }
 
   void
   StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    SweepTimer_.stop();
-    NumRvsdgNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
-    NumInputsAfter_ = jlm::rvsdg::ninputs(graph.root());
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt(
-        "#RvsdgNodesBeforeDNE:",
-        NumRvsdgNodesBefore_,
-        " ",
-        "#RvsdgNodesAfterDNE:",
-        NumRvsdgNodesAfter_,
-        " ",
-        "#RvsdgInputsBeforeDNE:",
-        NumInputsBefore_,
-        " ",
-        "#RvsdgInputsAfterDNE:",
-        NumInputsAfter_,
-        " ",
-        "MarkTime[ns]:",
-        MarkTimer_.ns(),
-        " ",
-        "SweepTime[ns]:",
-        SweepTimer_.ns());
+    GetTimer(SweepTimerLabel_).stop();
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
   }
 
   static std::unique_ptr<Statistics>
@@ -164,15 +140,6 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
-
-private:
-  size_t NumRvsdgNodesBefore_;
-  size_t NumRvsdgNodesAfter_;
-  size_t NumInputsBefore_;
-  size_t NumInputsAfter_;
-
-  util::timer MarkTimer_;
-  util::timer SweepTimer_;
 };
 
 DeadNodeElimination::~DeadNodeElimination() noexcept = default;

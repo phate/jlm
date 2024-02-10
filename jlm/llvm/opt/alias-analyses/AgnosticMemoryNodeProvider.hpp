@@ -92,25 +92,24 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
       : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, sourceFile),
-        NumPointsToGraphMemoryNodes_(0),
         StatisticsCollector_(statisticsCollector)
   {
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    NumPointsToGraphMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
   [[nodiscard]] size_t
   NumPointsToGraphMemoryNodes() const noexcept
   {
-    return NumPointsToGraphMemoryNodes_;
+    return GetMeasurementValue<uint64_t>(Label::NumPointsToGraphMemoryNodes);
   }
 
   [[nodiscard]] size_t
   GetTime() const noexcept
   {
-    return Timer_.ns();
+    return GetTimer(Label::Timer).ns();
   }
 
   void
@@ -119,7 +118,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    Timer_.start();
+    AddTimer(Label::Timer).start();
   }
 
   void
@@ -128,18 +127,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt(
-        "#PointsToGraphMemoryNodes:",
-        NumPointsToGraphMemoryNodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -152,8 +140,6 @@ public:
   }
 
 private:
-  util::timer Timer_;
-  size_t NumPointsToGraphMemoryNodes_;
   const util::StatisticsCollector & StatisticsCollector_;
 };
 

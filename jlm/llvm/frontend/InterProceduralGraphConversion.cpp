@@ -133,50 +133,30 @@ public:
 
   ControlFlowRestructuringStatistics(
       const util::filepath & sourceFileName,
-      std::string functionName)
-      : Statistics(Statistics::Id::ControlFlowRecovery, sourceFileName),
-        NumNodes_(0),
-        FunctionName_(std::move(functionName))
-  {}
+      const std::string & functionName)
+      : Statistics(Statistics::Id::ControlFlowRecovery, sourceFileName)
+  {
+    AddMeasurement(Label::FunctionNameLabel_, functionName);
+  }
 
   void
   Start(const llvm::cfg & cfg) noexcept
   {
-    NumNodes_ = cfg.nnodes();
-    Timer_.start();
+    AddMeasurement(Label::NumCfgNodes, cfg.nnodes());
+    AddTimer(Label::Timer).start();
   }
 
   void
   End() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        FunctionName_,
-        " ",
-        "#Nodes:",
-        NumNodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<ControlFlowRestructuringStatistics>
-  Create(const util::filepath & sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, const std::string & functionName)
   {
-    return std::make_unique<ControlFlowRestructuringStatistics>(
-        sourceFileName,
-        std::move(functionName));
+    return std::make_unique<ControlFlowRestructuringStatistics>(sourceFileName, functionName);
   }
-
-private:
-  size_t NumNodes_;
-  util::timer Timer_;
-  std::string FunctionName_;
 };
 
 class AggregationStatistics final : public util::Statistics
@@ -184,48 +164,30 @@ class AggregationStatistics final : public util::Statistics
 public:
   ~AggregationStatistics() override = default;
 
-  AggregationStatistics(const util::filepath & sourceFileName, std::string functionName)
-      : Statistics(util::Statistics::Id::Aggregation, sourceFileName),
-        NumNodes_(0),
-        FunctionName_(std::move(functionName))
-  {}
+  AggregationStatistics(const util::filepath & sourceFileName, const std::string & functionName)
+      : Statistics(util::Statistics::Id::Aggregation, sourceFileName)
+  {
+    AddMeasurement(Label::FunctionNameLabel_, functionName);
+  }
 
   void
   Start(const llvm::cfg & cfg) noexcept
   {
-    NumNodes_ = cfg.nnodes();
-    Timer_.start();
+    AddMeasurement(Label::NumCfgNodes, cfg.nnodes());
+    AddTimer(Label::Timer).start();
   }
 
   void
   End() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        FunctionName_,
-        " ",
-        "#Nodes:",
-        NumNodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<AggregationStatistics>
-  Create(const util::filepath & sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, const std::string & functionName)
   {
-    return std::make_unique<AggregationStatistics>(sourceFileName, std::move(functionName));
+    return std::make_unique<AggregationStatistics>(sourceFileName, functionName);
   }
-
-private:
-  size_t NumNodes_;
-  util::timer Timer_;
-  std::string FunctionName_;
 };
 
 class AnnotationStatistics final : public util::Statistics
@@ -233,48 +195,30 @@ class AnnotationStatistics final : public util::Statistics
 public:
   ~AnnotationStatistics() override = default;
 
-  AnnotationStatistics(const util::filepath & sourceFileName, std::string functionName)
-      : Statistics(util::Statistics::Id::Annotation, sourceFileName),
-        NumThreeAddressCodes_(0),
-        FunctionName_(std::move(functionName))
-  {}
+  AnnotationStatistics(const util::filepath & sourceFileName, const std::string & functionName)
+      : Statistics(util::Statistics::Id::Annotation, sourceFileName)
+  {
+    AddMeasurement(Label::FunctionNameLabel_, functionName);
+  }
 
   void
   Start(const aggnode & node) noexcept
   {
-    NumThreeAddressCodes_ = llvm::ntacs(node);
-    Timer_.start();
+    AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(node));
+    AddTimer(Label::Timer).start();
   }
 
   void
   End() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        FunctionName_,
-        " ",
-        "#ThreeAddressCodes:",
-        NumThreeAddressCodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<AnnotationStatistics>
-  Create(const util::filepath & sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, const std::string & functionName)
   {
-    return std::make_unique<AnnotationStatistics>(sourceFileName, std::move(functionName));
+    return std::make_unique<AnnotationStatistics>(sourceFileName, functionName);
   }
-
-private:
-  size_t NumThreeAddressCodes_;
-  util::timer Timer_;
-  std::string FunctionName_;
 };
 
 class AggregationTreeToLambdaStatistics final : public util::Statistics
@@ -282,40 +226,31 @@ class AggregationTreeToLambdaStatistics final : public util::Statistics
 public:
   ~AggregationTreeToLambdaStatistics() override = default;
 
-  AggregationTreeToLambdaStatistics(const util::filepath & sourceFileName, std::string functionName)
-      : Statistics(util::Statistics::Id::JlmToRvsdgConversion, sourceFileName),
-        FunctionName_(std::move(functionName))
-  {}
+  AggregationTreeToLambdaStatistics(
+      const util::filepath & sourceFileName,
+      const std::string & functionName)
+      : Statistics(util::Statistics::Id::JlmToRvsdgConversion, sourceFileName)
+  {
+    AddMeasurement(Label::FunctionNameLabel_, functionName);
+  }
 
   void
   Start() noexcept
   {
-    Timer_.start();
+    AddTimer(Label::Timer).start();
   }
 
   void
   End() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(FunctionName_, " ", "Time[ns]:", Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<AggregationTreeToLambdaStatistics>
-  Create(const util::filepath & sourceFileName, std::string functionName)
+  Create(const util::filepath & sourceFileName, const std::string & functionName)
   {
-    return std::make_unique<AggregationTreeToLambdaStatistics>(
-        sourceFileName,
-        std::move(functionName));
+    return std::make_unique<AggregationTreeToLambdaStatistics>(sourceFileName, functionName);
   }
-
-private:
-  util::timer Timer_;
-  std::string FunctionName_;
 };
 
 class DataNodeToDeltaStatistics final : public util::Statistics
@@ -323,48 +258,30 @@ class DataNodeToDeltaStatistics final : public util::Statistics
 public:
   ~DataNodeToDeltaStatistics() override = default;
 
-  DataNodeToDeltaStatistics(const util::filepath & sourceFileName, std::string dataNodeName)
-      : Statistics(util::Statistics::Id::DataNodeToDelta, sourceFileName),
-        NumInitializationThreeAddressCodes_(0),
-        DataNodeName_(std::move(dataNodeName))
-  {}
+  DataNodeToDeltaStatistics(const util::filepath & sourceFileName, const std::string & dataNodeName)
+      : Statistics(util::Statistics::Id::DataNodeToDelta, sourceFileName)
+  {
+    AddMeasurement("DataNode", dataNodeName);
+  }
 
   void
   Start(size_t numInitializationThreeAddressCodes) noexcept
   {
-    NumInitializationThreeAddressCodes_ = numInitializationThreeAddressCodes;
-    Timer_.start();
+    AddMeasurement(Label::NumThreeAddressCodes, numInitializationThreeAddressCodes);
+    AddTimer(Label::Timer).start();
   }
 
   void
   End() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        DataNodeName_,
-        " ",
-        "#InitializationThreeAddressCodes:",
-        NumInitializationThreeAddressCodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<DataNodeToDeltaStatistics>
-  Create(const util::filepath & sourceFileName, std::string dataNodeName)
+  Create(const util::filepath & sourceFileName, const std::string & dataNodeName)
   {
-    return std::make_unique<DataNodeToDeltaStatistics>(sourceFileName, std::move(dataNodeName));
+    return std::make_unique<DataNodeToDeltaStatistics>(sourceFileName, dataNodeName);
   }
-
-private:
-  util::timer Timer_;
-  size_t NumInitializationThreeAddressCodes_;
-  std::string DataNodeName_;
 };
 
 class InterProceduralGraphToRvsdgStatistics final : public util::Statistics
@@ -373,37 +290,21 @@ public:
   ~InterProceduralGraphToRvsdgStatistics() override = default;
 
   explicit InterProceduralGraphToRvsdgStatistics(const util::filepath & sourceFileName)
-      : Statistics(util::Statistics::Id::RvsdgConstruction, sourceFileName),
-        NumThreeAddressCodes_(0),
-        NumRvsdgNodes_(0)
+      : Statistics(util::Statistics::Id::RvsdgConstruction, sourceFileName)
   {}
 
   void
   Start(const ipgraph_module & interProceduralGraphModule) noexcept
   {
-    NumThreeAddressCodes_ = llvm::ntacs(interProceduralGraphModule);
-    Timer_.start();
+    AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(interProceduralGraphModule));
+    AddTimer(Label::Timer).start();
   }
 
   void
   End(const rvsdg::graph & graph) noexcept
   {
-    Timer_.stop();
-    NumRvsdgNodes_ = rvsdg::nnodes(graph.root());
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(
-        "#ThreeAddressCodes:",
-        NumThreeAddressCodes_,
-        " ",
-        "#RvsdgNodes:",
-        NumRvsdgNodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    AddTimer(Label::Timer).stop();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
   }
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
@@ -411,11 +312,6 @@ public:
   {
     return std::make_unique<InterProceduralGraphToRvsdgStatistics>(sourceFileName);
   }
-
-private:
-  size_t NumThreeAddressCodes_;
-  size_t NumRvsdgNodes_;
-  util::timer Timer_;
 };
 
 class InterProceduralGraphToRvsdgStatisticsCollector final

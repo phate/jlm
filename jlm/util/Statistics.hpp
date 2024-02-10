@@ -191,6 +191,29 @@ protected:
   [[nodiscard]] const util::timer &
   GetTimer(const std::string & name) const;
 
+  /**
+   * Commonly used measurement and timer labels throughout statistics gathering.
+   */
+  struct Label
+  {
+    static inline const char * FunctionNameLabel_ = "Function";
+
+    static inline const char * NumCfgNodes = "#CfgNodes";
+
+    static inline const char * NumThreeAddressCodes = "#ThreeAddressCodes";
+
+    static inline const char * NumRvsdgNodes = "#RvsdgNodes";
+    static inline const char * NumRvsdgNodesBefore = "#RvsdgNodesBefore";
+    static inline const char * NumRvsdgNodesAfter = "#RvsdgNodesAfter";
+
+    static inline const char * NumRvsdgInputsBefore = "#RvsdgInputsBefore";
+    static inline const char * NumRvsdgInputsAfter = "#RvsdgInputsAfter";
+
+    static inline const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
+
+    static inline const char * Timer = "Time";
+  };
+
 private:
   Statistics::Id StatisticsId_;
   util::filepath SourceFile_;

@@ -21,29 +21,21 @@ public:
   ~pushstat() override = default;
 
   explicit pushstat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::PushNodes, sourceFile),
-        ninputs_before_(0),
-        ninputs_after_(0)
+      : Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph) noexcept
   {
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgInputsBefore, jlm::rvsdg::ninputs(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const jlm::rvsdg::graph & graph) noexcept
   {
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt(ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
+    AddMeasurement(Label::NumRvsdgInputsAfter, jlm::rvsdg::ninputs(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<pushstat>
@@ -51,10 +43,6 @@ public:
   {
     return std::make_unique<pushstat>(sourceFile);
   }
-
-private:
-  size_t ninputs_before_, ninputs_after_;
-  util::timer timer_;
 };
 
 class worklist

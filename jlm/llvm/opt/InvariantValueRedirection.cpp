@@ -26,19 +26,13 @@ public:
   void
   Start() noexcept
   {
-    Timer_.start();
+    AddTimer(Label::Timer).start();
   }
 
   void
   Stop() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt("Time[ns]:", Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -46,9 +40,6 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
-
-private:
-  util::timer Timer_;
 };
 
 InvariantValueRedirection::~InvariantValueRedirection() = default;

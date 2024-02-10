@@ -19,29 +19,21 @@ public:
   ~ilnstat() override = default;
 
   explicit ilnstat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::FunctionInlining, sourceFile),
-        nnodes_before_(0),
-        nnodes_after_(0)
+      : Statistics(Statistics::Id::FunctionInlining, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph)
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   stop(const jlm::rvsdg::graph & graph)
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    timer_.stop();
-  }
-
-  virtual std::string
-  Serialize() const override
-  {
-    return util::strfmt(nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<ilnstat>
@@ -49,10 +41,6 @@ public:
   {
     return std::make_unique<ilnstat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  util::timer timer_;
 };
 
 jlm::rvsdg::output *
