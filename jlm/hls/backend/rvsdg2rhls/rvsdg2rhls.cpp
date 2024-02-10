@@ -23,6 +23,7 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -31,10 +32,29 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
+#include "jlm/llvm/opt/reduction.hpp"
 #include <regex>
 
 namespace jlm::hls
 {
+
+void
+split_opt(llvm::RvsdgModule & rm)
+{
+  // TODO: figure out which optimizations to use here
+  jlm::llvm::DeadNodeElimination dne;
+  jlm::llvm::cne cne;
+  jlm::llvm::InvariantValueRedirection ivr;
+  jlm::llvm::tginversion tgi;
+  jlm::llvm::nodereduction red;
+  jlm::util::StatisticsCollector statisticsCollector;
+  tgi.run(rm, statisticsCollector);
+  dne.run(rm, statisticsCollector);
+  cne.run(rm, statisticsCollector);
+  ivr.run(rm, statisticsCollector);
+  red.run(rm, statisticsCollector);
+  dne.run(rm, statisticsCollector);
+}
 
 void
 pre_opt(jlm::llvm::RvsdgModule & rm)
@@ -86,18 +106,6 @@ trace_call(jlm::rvsdg::input * input)
     JLM_ASSERT(argument->input() != nullptr);
     result = trace_call(argument->input());
   }
-  auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(result);
-  if (!so)
-  {
-    auto arg = dynamic_cast<const jlm::rvsdg::argument *>(result);
-    auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
-    if (ip)
-    {
-      throw jlm::util::error("can not inline external function " + ip->name());
-    }
-  }
-  JLM_ASSERT(so);
-  JLM_ASSERT(jlm::rvsdg::is<llvm::lambda::operation>(so->node()));
   return result;
 }
 
@@ -115,8 +123,24 @@ inline_calls(jlm::rvsdg::region * region)
     }
     else if (dynamic_cast<const llvm::CallOperation *>(&(node->operation())))
     {
-      auto func = trace_call(node->input(0));
-      auto ln = dynamic_cast<const jlm::rvsdg::structural_output *>(func)->node();
+      auto traced = jlm::hls::trace_call(node->input(0));
+      auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(traced);
+      if (!so)
+      {
+        auto arg = dynamic_cast<const jlm::rvsdg::argument *>(traced);
+        auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
+        if (ip)
+        {
+          if (ip->name().rfind("decouple_", 0) == 0)
+          {
+            // can't inline pseudo functions used for decoupling
+            continue;
+          }
+          throw jlm::util::error("can not inline external function " + ip->name());
+        }
+      }
+      JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
+      auto ln = dynamic_cast<const jlm::rvsdg::structural_output *>(traced)->node();
       llvm::inlineCall(
           dynamic_cast<jlm::rvsdg::simple_node *>(node),
           dynamic_cast<const llvm::lambda::node *>(ln));
@@ -170,14 +194,24 @@ convert_alloca(jlm::rvsdg::region * region)
       auto delta_local = route_to_region(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
+      // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
       auto mux_node = llvm::input_node(mux_in);
-      JLM_ASSERT(dynamic_cast<const llvm::MemStateMergeOperator *>(&mux_node->operation()));
-      JLM_ASSERT(mux_node->ninputs() == 2);
-      auto other_index = mux_in->index() ? 0 : 1;
-      mux_node->output(0)->divert_users(mux_node->input(other_index)->origin());
-      jlm::rvsdg::remove(mux_node);
+      if (dynamic_cast<const llvm::MemStateMergeOperator *>(&mux_node->operation()))
+      {
+        // merge after alloca -> remove merge
+        JLM_ASSERT(mux_node->ninputs() == 2);
+        auto other_index = mux_in->index() ? 0 : 1;
+        mux_node->output(0)->divert_users(mux_node->input(other_index)->origin());
+        jlm::rvsdg::remove(mux_node);
+      }
+      else
+      {
+        // TODO: fix this properly by adding a state edge to the LambdaEntryMemState and routing it
+        // to the region
+        JLM_ASSERT(false);
+      }
       jlm::rvsdg::remove(node);
     }
   }
@@ -240,7 +274,10 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 
   /* collect function arguments */
   for (size_t n = 0; n < ln->nfctarguments(); n++)
+  {
+    lambda->fctargument(n)->set_attributes(ln->fctargument(n)->attributes());
     subregionmap.insert(ln->fctargument(n), lambda->fctargument(n));
+  }
 
   /* copy subregion */
   ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
@@ -276,13 +313,22 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         continue;
       }
       inline_calls(ln->subregion());
-      // TODO: have a seperate set of optimizations here
-      pre_opt(rm);
+      split_opt(rm);
       convert_alloca(ln->subregion());
       jlm::rvsdg::substitution_map smap;
       for (size_t i = 0; i < ln->ninputs(); ++i)
       {
-        auto orig_node = dynamic_cast<jlm::rvsdg::node_output *>(ln->input(i)->origin())->node();
+        auto orig_node_output = dynamic_cast<jlm::rvsdg::node_output *>(ln->input(i)->origin());
+        if (!orig_node_output)
+        {
+          // handle decouple stuff
+          auto arg = dynamic_cast<const jlm::rvsdg::argument *>(ln->input(i)->origin());
+          auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
+          auto new_arg = rhls->Rvsdg().add_import(*ip);
+          smap.insert(ln->input(i)->origin(), new_arg);
+          continue;
+        }
+        auto orig_node = orig_node_output->node();
         if (auto oln = dynamic_cast<llvm::lambda::node *>(orig_node))
         {
           throw jlm::util::error("Inlining of function " + oln->name() + " not supported");
@@ -344,8 +390,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
 
   // run conversion on copy
   remove_unused_state(rhls);
+  //  mem_sep_argument(rhls);
   // main conversion steps
-  add_triggers(rhls); // TODO: make compatible with loop nodes?
+  add_triggers(rhls); // TODO: remove
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   // rhls optimization
@@ -353,7 +400,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
-  //	add_buffers(*rhls, true);
+  //  add_buffers(rhls, true);
   // ensure that all rhls rules are met
   check_rhls(rhls);
 }

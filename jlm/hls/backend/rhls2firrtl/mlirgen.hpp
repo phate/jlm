@@ -119,6 +119,8 @@ private:
   GetSubfield(mlir::Block * body, mlir::Value value, int index);
   circt::firrtl::SubfieldOp
   GetSubfield(mlir::Block * body, mlir::Value value, ::llvm::StringRef fieldName);
+  mlir::OpResult
+  GetInstancePort(circt::firrtl::InstanceOp & instance, std::string portName);
   mlir::BlockArgument
   GetPort(circt::firrtl::FModuleOp & module, std::string portName);
   mlir::BlockArgument
@@ -132,6 +134,8 @@ private:
   AddBitsOp(mlir::Block * body, mlir::Value value, int high, int low);
   circt::firrtl::AndPrimOp
   AddAndOp(mlir::Block * body, mlir::Value first, mlir::Value second);
+  circt::firrtl::NodeOp
+  AddNodeOp(mlir::Block * body, mlir::Value value, std::string name);
   circt::firrtl::XorPrimOp
   AddXorOp(mlir::Block * body, mlir::Value first, mlir::Value second);
   circt::firrtl::OrPrimOp
@@ -206,10 +210,15 @@ private:
   GetIntType(int size);
   circt::firrtl::IntType
   GetIntType(const jlm::rvsdg::type * type, int extend = 0);
+  circt::firrtl::FIRRTLBaseType
+  GetFirrtlType(const jlm::rvsdg::type * type);
   std::string
   GetModuleName(const jlm::rvsdg::node * node);
   bool
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
+
+  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+  createInstances(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
 };
 
 class MLIRGen : public BaseHLS

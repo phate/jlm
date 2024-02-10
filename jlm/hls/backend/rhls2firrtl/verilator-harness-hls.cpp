@@ -5,9 +5,123 @@
 
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <utility>
 
 namespace jlm::hls
 {
+class MemoryPort
+{
+public:
+  const std::string req_name;
+  const std::string res_name;
+  bool has_write;
+  bool legacy;
+
+  MemoryPort(std::string req_name, std::string resp_name, bool has_write, bool legacy = false)
+      : req_name(std::move(req_name)),
+        res_name(std::move(resp_name)),
+        has_write(has_write),
+        legacy(legacy){};
+
+  std::string
+  req_valid()
+  {
+    return "top->" + req_name + "_valid";
+  };
+
+  std::string
+  req_ready()
+  {
+    return "top->" + req_name + "_ready";
+  };
+
+  std::string
+  req_id()
+  {
+    if (legacy)
+    {
+      return "0";
+    }
+    return "top->" + req_name + "_data_id";
+  };
+
+  std::string
+  req_size()
+  {
+    if (legacy)
+    {
+      return "top->" + req_name + "_width";
+    }
+    return "top->" + req_name + "_data_size";
+  };
+
+  std::string
+  req_write()
+  {
+    if (legacy)
+    {
+      return "top->" + req_name + "_write";
+    }
+    return "top->" + req_name + "_data_write";
+  };
+
+  std::string
+  req_data()
+  {
+    if (legacy)
+    {
+      return "top->" + req_name + "_data";
+    }
+    return "top->" + req_name + "_data_data";
+  };
+
+  std::string
+  req_addr()
+  {
+    if (legacy)
+    {
+      return "top->" + req_name + "_addr";
+    }
+    return "top->" + req_name + "_data_addr";
+  };
+
+  std::string
+  res_valid()
+  {
+    return "top->" + res_name + "_valid";
+  };
+
+  std::string
+  res_ready()
+  {
+    if (legacy)
+    {
+      // hack, because signal does not exist
+      return "true";
+    }
+    return "top->" + res_name + "_ready";
+  };
+
+  std::string
+  res_data()
+  {
+    if (legacy)
+    {
+      return "top->" + res_name + "_data";
+    }
+    return "top->" + res_name + "_data_data";
+  };
+
+  std::string
+  res_id()
+  {
+    if (legacy)
+    {
+      return "top->" + res_name + "_id";
+    }
+    return "top->" + res_name + "_data_id";
+  };
+};
 
 std::string
 VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
@@ -16,6 +130,24 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   auto ln = get_hls_lambda(rm);
   auto function_name = ln->name();
   auto file_name = get_base_file_name(rm);
+
+  std::vector<MemoryPort> mem_ports;
+  // TODO: remove default port
+  mem_ports.emplace_back("mem_req", "mem_res", true, true);
+
+  auto mem_reqs = get_mem_reqs(ln);
+  auto mem_resps = get_mem_resps(ln);
+  assert(mem_reqs.size() == mem_resps.size());
+  for (size_t i = 0; i < mem_reqs.size(); ++i)
+  {
+    auto req_bt = dynamic_cast<const jlm::hls::bundletype *>(&mem_reqs[i]->type());
+    auto has_write = req_bt->get_element_type("write") != nullptr;
+    mem_ports.emplace_back(
+        util::strfmt("mem_", i, "_req"),
+        util::strfmt("mem_", i, "_res"),
+        has_write);
+  }
+
   cpp << "#define TRACE_CHUNK_SIZE 100000\n"
 #ifndef HLS_USE_VCD
          "#define FST 1\n"
@@ -32,6 +164,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "#include <unistd.h>\n"
          "#include <sstream>\n"
          "#include <iomanip>\n"
+         "#include <queue>\n"
          "#ifdef FST\n"
          "#include \"verilated_fst_c.h\"\n"
          "#else\n"
@@ -79,6 +212,17 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    top = NULL;\n"
          "}\n"
          "\n"
+         "#define MEM_LATENCY 1\n"
+         "typedef struct mem_resp_struct {\n"
+         "    bool valid = false;\n"
+         "    uint64_t data = 0xDEADBEEF;\n"
+         "    uint8_t id = 0;\n"
+         "} mem_resp_struct;\n"
+         "\n"
+         "std::queue<mem_resp_struct>* mem_resp["
+      << mem_ports.size()
+      << "];"
+         "\n"
          "void verilator_init(int argc, char **argv) {\n"
          "    // set up signaling so we can kill the program and still get waveforms\n"
          "    struct sigaction action;\n"
@@ -86,8 +230,19 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    action.sa_handler = term;\n"
          "    sigaction(SIGTERM, &action, NULL);\n"
          "    sigaction(SIGKILL, &action, NULL);\n"
-         "    sigaction(SIGINT, &action, NULL);\n"
-         "\n"
+         "    sigaction(SIGINT, &action, NULL);\n";
+
+  for (size_t i = 0; i < mem_ports.size(); ++i)
+  {
+    cpp << "    mem_resp[" << i << "] = new std::queue<mem_resp_struct>();\n";
+  }
+  cpp << "    for (size_t i = 0; i < MEM_LATENCY; ++i) {\n";
+  for (size_t i = 0; i < mem_ports.size(); ++i)
+  {
+    cpp << "    mem_resp[" << i << "]->emplace();\n";
+  }
+  cpp << "    }\n";
+  cpp << "\n"
          "	atexit(verilator_finish);\n"
          "\n"
          "    // Set debug level, 0 is off, 9 is highest presently used\n"
@@ -121,23 +276,27 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   // reset all data inputs to zero
   for (size_t i = 0; i < ln->ninputs(); ++i)
   {
-    cpp << "    top->i_data" << i << " = 0;\n";
+    cpp << "    top->i_data_" << i << " = 0;\n";
   }
   cpp << "    top->reset = 1;\n"
-         "\n"
-         "    top->mem_req_ready = true;\n"
-         "    top->mem_res_valid = false;\n"
-         "    top->mem_res_data = 1111111;\n"
-         "    clock_cycle();\n"
+         "\n";
+  for (size_t i = 0; i < mem_ports.size(); ++i)
+  {
+    cpp << "    " << mem_ports[i].req_ready()
+        << " = false;\n"
+           "    "
+        << mem_ports[i].res_valid()
+        << " = false;\n"
+           "    "
+        << mem_ports[i].res_data() << " = 0xDEADBEEF;\n";
+  }
+  cpp << "    clock_cycle();\n"
          "    clock_cycle();\n"
          "    top->reset = 0;\n"
          "    clock_cycle();\n"
          "}\n"
          "\n"
-         "bool mem_resp_valid;\n"
-         "uint64_t mem_resp_data;\n"
-         "\n"
-         "void clock_cycle() {\n"
+         "void posedge() {\n"
          "    if (terminate) {\n"
          "        std::cout << \"terminating\\n\";\n"
          "        verilator_finish();\n"
@@ -145,65 +304,150 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    }\n"
          "    assert(!Verilated::gotFinish());\n"
          "    top->clk = 1;\n"
-         "    top->eval();\n"
-         "    top->mem_res_valid = mem_resp_valid;\n"
-         "    top->mem_res_data = mem_resp_data;\n"
+         "    top->eval(); //eval here to get a clean posedge with the old inputs\n"
+         "}\n"
+         "\n"
+         "void finish_clock_cycle() {\n";
+  for (size_t i = 0; i < mem_ports.size(); ++i)
+  {
+    cpp << "    " << mem_ports[i].res_data() << " = mem_resp[" << i
+        << "]->front().data;\n"
+           "    "
+        << mem_ports[i].res_valid() << " = mem_resp[" << i
+        << "]->front().valid;\n"
+           "    "
+        << mem_ports[i].req_ready() << " = true;\n";
+    if (!mem_ports[i].legacy)
+    {
+      cpp << "    " << mem_ports[i].res_id() << " = mem_resp[" << i << "]->front().id;\n";
+    }
+  }
+  cpp << "    top->eval();\n"
          "    // dump before trying to access memory\n"
-         "    tfp->dump(main_time * 2);\n"
-         "    if (!top->reset && top->mem_req_valid) {\n"
-         "        mem_resp_valid = true;\n"
-         "        void *addr = (void *) top->mem_req_addr;\n"
-         "        uint64_t data = top->mem_req_data;\n"
-         "        if (top->mem_req_write) {\n"
-         "#ifdef HLS_MEM_DEBUG\n"
-         "            std::cout << \"writing \" << data << \" to \" << addr << \"\\n\";\n"
-         "#endif\n"
-         "            switch (top->mem_req_width) {\n"
-         "                case 0:\n"
-         "                    *(uint8_t *) addr = data;\n"
-         "                    break;\n"
-         "                case 1:\n"
-         "                    *(uint16_t *) addr = data;\n"
-         "                    break;\n"
-         "                case 2:\n"
-         "                    *(uint32_t *) addr = data;\n"
-         "                    break;\n"
-         "                case 3:\n"
-         "                    *(uint64_t *) addr = data;\n"
-         "                    break;\n"
-         "                default:\n"
-         "                    assert(false);\n"
-         "            }\n"
-         "        } else {\n"
-         "#ifdef HLS_MEM_DEBUG\n"
-         "            std::cout << \"reading from \" << addr << \"\\n\";\n"
-         "#endif\n"
-         "        }\n"
-         "        switch (top->mem_req_width) {\n"
-         "            case 0:\n"
-         "                mem_resp_data = *(uint8_t *) addr;\n"
-         "                break;\n"
-         "            case 1:\n"
-         "                mem_resp_data = *(uint16_t *) addr;\n"
-         "                break;\n"
-         "            case 2:\n"
-         "                mem_resp_data = *(uint32_t *) addr;\n"
-         "                break;\n"
-         "            case 3:\n"
-         "                mem_resp_data = *(uint64_t *) addr;\n"
-         "                break;\n"
-         "            default:\n"
-         "                assert(false);\n"
-         "        }\n"
-         "    } else {\n"
-         "        mem_resp_valid = false;\n"
-         "    }\n"
-         "    assert(!Verilated::gotFinish());\n"
+         "    tfp->dump(main_time * 2);\n";
+  for (size_t i = 0; i < mem_ports.size(); ++i)
+  {
+    cpp << "    if (" << mem_ports[i].res_valid() << " && " << mem_ports[i].res_ready()
+        << ") {\n"
+           "        mem_resp["
+        << i
+        << "]->pop();\n"
+           "    } else if (!mem_resp["
+        << i
+        << "]->front().valid){\n"
+           "        mem_resp["
+        << i
+        << "]->pop();\n"
+           "    }\n";
+  }
+  for (size_t i = 0; i < mem_ports.size(); ++i)
+  {
+    cpp << "    // mem " << i
+        << "\n"
+           "    if (!top->reset && "
+        << mem_ports[i].req_valid() << " && " << mem_ports[i].req_ready()
+        << ") {\n"
+           "        mem_resp["
+        << i
+        << "]->emplace();\n"
+           "        mem_resp["
+        << i
+        << "]->back().valid = true;\n"
+           "        void *addr = (void *) "
+        << mem_ports[i].req_addr() << ";\n";
+    cpp << "        mem_resp[" << i << "]->back().id = " << mem_ports[i].req_id() << ";\n";
+    if (mem_ports[i].has_write)
+    {
+      cpp << "        uint64_t data = " << mem_ports[i].req_data()
+          << ";\n"
+             "        if ("
+          << mem_ports[i].req_write()
+          << ") {\n"
+             "#ifdef HLS_MEM_DEBUG\n"
+             "            std::cout << \"mem_"
+          << i
+          << " writing \" << data << \" to \" << addr << \"\\n\";\n"
+             "#endif\n"
+             "            switch ("
+          << mem_ports[i].req_size()
+          << ") {\n"
+             "                case 0:\n"
+             "                    *(uint8_t *) addr = data;\n"
+             "                    break;\n"
+             "                case 1:\n"
+             "                    *(uint16_t *) addr = data;\n"
+             "                    break;\n"
+             "                case 2:\n"
+             "                    *(uint32_t *) addr = data;\n"
+             "                    break;\n"
+             "                case 3:\n"
+             "                    *(uint64_t *) addr = data;\n"
+             "                    break;\n"
+             "                default:\n"
+             "                    assert(false);\n"
+             "            }\n"
+             "            mem_resp["
+          << i
+          << "]->back().data = 0xFFFFFFFF;\n"
+             "        } else {\n";
+    }
+    else
+    {
+      cpp << "        if (true) {\n";
+    }
+    cpp << "#ifdef HLS_MEM_DEBUG\n"
+           "            std::cout << \"mem_"
+        << i
+        << " reading from \" << addr << \"\\n\";\n"
+           "#endif\n"
+           "        }\n"
+           "        switch ("
+        << mem_ports[i].req_size()
+        << ") {\n"
+           "            case 0:\n"
+           "                mem_resp["
+        << i
+        << "]->back().data = *(uint8_t *) addr;\n"
+           "                break;\n"
+           "            case 1:\n"
+           "                mem_resp["
+        << i
+        << "]->back().data = *(uint16_t *) addr;\n"
+           "                break;\n"
+           "            case 2:\n"
+           "                mem_resp["
+        << i
+        << "]->back().data = *(uint32_t *) addr;\n"
+           "                break;\n"
+           "            case 3:\n"
+           "                mem_resp["
+        << i
+        << "]->back().data = *(uint64_t *) addr;\n"
+           "                break;\n"
+           "            default:\n"
+           "                assert(false);\n"
+           "        }\n"
+           "    } else if (mem_resp["
+        << i
+        << "]->size()<MEM_LATENCY){\n"
+           "        mem_resp["
+        << i
+        << "]->emplace();\n"
+           "    }\n";
+  }
+  cpp << "    assert(!Verilated::gotFinish());\n"
          "    top->clk = 0;\n"
          "    top->eval();\n"
          "    tfp->dump(main_time * 2 + 1);\n"
+         "//    tfp->flush();\n"
          "    main_time++;\n"
          "}\n"
+         "\n"
+         "void clock_cycle() {\n"
+         "    posedge();\n"
+         "    finish_clock_cycle();\n"
+         "}\n"
+         "\n"
          "extern \"C\"\n" // TODO: parameter for linkage type here
          "{\n";
   // imports
@@ -260,7 +504,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
     {
       continue;
     }
-    cpp << "    top->i_data" << i << " = (uint64_t) a" << i << ";\n";
+    cpp << "    top->i_data_" << i << " = (uint64_t) a" << i << ";\n";
   }
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
@@ -277,7 +521,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
     {
       throw util::error("Unsupported cvarg origin type type");
     }
-    cpp << "    top->i_data" << ix << " = (uint64_t) &" << name << ";\n";
+    cpp << "    top->i_data_" << ix << " = (uint64_t) &" << name << ";\n";
     cpp << "#ifdef HLS_MEM_DEBUG\n";
     cpp << "    std::cout << \"" << name << ": \" << &" << name << " << \"\\n\";\n";
     cpp << "#endif\n";
@@ -291,27 +535,30 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "        verilator_finish();\n"
          "        exit(-1);\n"
          "    }\n"
+         "    posedge();\n"
          "    top->i_valid = 1;\n"
          "    top->o_ready = 1;\n"
-         "    clock_cycle();\n"
+         "    finish_clock_cycle();\n"
+         "    posedge();\n"
          "    top->i_valid = 0;\n";
   for (size_t i = 0; i < ln->type().NumArguments(); ++i)
   {
-    cpp << "    top->i_data" << i << " = 0;\n";
+    cpp << "    top->i_data_" << i << " = 0;\n";
   }
-  cpp << "    for (int i = 0; i < TIMEOUT && !top->o_valid; i++) {\n"
+  cpp << "    finish_clock_cycle();\n"
+         "    for (int i = 0; i < TIMEOUT && !top->o_valid; i++) {\n"
          "        clock_cycle();\n"
          "    }\n"
          "    if (!top->o_valid) {\n"
          "        std::cout << \"o_valid not set\\n\";\n"
-         "        verilator_finish();\n"
+         "        //verilator_finish();\n"
          "        exit(-1);\n"
          "    }\n"
          "    std::cout << \"finished - took \" << (main_time - start) << \"cycles\\n\";\n";
   if (ln->type().NumResults()
       && !dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ResultType(0)))
   {
-    cpp << "    return top->o_data0;\n";
+    cpp << "    return top->o_data_0;\n";
   }
   cpp << "}\n}\n";
   return cpp.str();
@@ -350,5 +597,4 @@ VerilatorHarnessHLS::convert_to_c_type_postfix(const jlm::rvsdg::type * type)
     return "";
   }
 }
-
 }

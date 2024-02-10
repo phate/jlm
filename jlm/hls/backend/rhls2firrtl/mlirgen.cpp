@@ -5,6 +5,7 @@
  */
 
 #include "jlm/hls/backend/rhls2firrtl/mlirgen.hpp"
+#include "jlm/llvm/opt/alias-analyses/Operators.hpp"
 
 namespace jlm::hls
 {
@@ -187,6 +188,22 @@ MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
+  else if (dynamic_cast<const jlm::rvsdg::bitule_op *>(&(node->operation())))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    auto input1 = GetSubfield(body, inBundles[1], "data");
+    auto op = AddLeqOp(body, input0, input1);
+    // Connect the op to the output data
+    Connect(body, outData, op);
+  }
+  else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(node->operation())))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    auto input1 = GetSubfield(body, inBundles[1], "data");
+    auto op = AddGtOp(body, input0, input1);
+    // Connect the op to the output data
+    Connect(body, outData, op);
+  }
   else if (dynamic_cast<const jlm::rvsdg::bitsge_op *>(&(node->operation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
@@ -217,6 +234,16 @@ MLIRGenImpl::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto inData = GetSubfield(body, inBundles[0], "data");
     int outSize = JlmSize(&node->output(0)->type());
     Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
+  }
+  else if (dynamic_cast<const llvm::aa::LambdaExitMemStateOperator *>(&(node->operation())))
+  {
+    auto inData = GetSubfield(body, inBundles[0], "data");
+    Connect(body, outData, inData);
+  }
+  else if (dynamic_cast<const llvm::MemStateMergeOperator *>(&(node->operation())))
+  {
+    auto inData = GetSubfield(body, inBundles[0], "data");
+    Connect(body, outData, inData);
   }
   else if (auto op = dynamic_cast<const llvm::sext_op *>(&(node->operation())))
   {
@@ -398,7 +425,7 @@ MLIRGenImpl::MlirGenFork(const jlm::rvsdg::simple_node * node)
   ::llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
   auto oneBitValue = GetConstant(body, 1, 1);
   auto zeroBitValue = GetConstant(body, 1, 0);
-  mlir::Value prevAnd = oneBitValue;
+  mlir::Value allFired = oneBitValue;
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
     std::string validName("out");
@@ -426,15 +453,16 @@ MLIRGenImpl::MlirGenFork(const jlm::rvsdg::simple_node * node)
     Connect(body, portData, inData);
 
     auto orOp = AddOrOp(body, portReady, firedReg.getResult());
-    prevAnd = AddAndOp(body, prevAnd, orOp);
+    allFired = AddAndOp(body, allFired, orOp);
 
     // Conditions needed for the when statements
     whenConditions.push_back(AddAndOp(body, portReady, portValid));
   }
-  Connect(body, inReady, prevAnd);
+  allFired = AddNodeOp(body, allFired, "all_fired")->getResult(0);
+  Connect(body, inReady, allFired);
 
   // When statement
-  auto condition = AddNotOp(body, prevAnd);
+  auto condition = AddNotOp(body, allFired);
   auto whenOp = AddWhenOp(body, condition, true);
   // getThenBlock() cause an error during commpilation
   // So we first get the builder and then its associated body
@@ -893,6 +921,7 @@ MLIRGenImpl::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
     auto whenOp = AddWhenOp(body, notOp, false);
     auto thenBody = whenOp.getThenBodyBuilder().getBlock();
     Connect(thenBody, outData, inData);
+    Connect(thenBody, outValid, inValid);
   }
   else
   {
@@ -1189,19 +1218,9 @@ MLIRGenImpl::MlirGen(const jlm::rvsdg::simple_node * node)
   {
     return MlirGenTrigger(node);
   }
-  else if (dynamic_cast<const hls::sink_op *>(&(node->operation())))
-  {
-    // return sink_to_firrtl(n);
-    throw std::logic_error(node->operation().debug_string() + " not implemented!");
-  }
   else if (dynamic_cast<const hls::print_op *>(&(node->operation())))
   {
     return MlirGenPrint(node);
-  }
-  else if (dynamic_cast<const hls::fork_op *>(&(node->operation())))
-  {
-    // return fork_to_firrtl(n);
-    throw std::logic_error(node->operation().debug_string() + " not implemented!");
   }
   else if (dynamic_cast<const hls::merge_op *>(&(node->operation())))
   {
@@ -1226,32 +1245,7 @@ std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
 MLIRGenImpl::MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody)
 {
   auto subRegion = loopNode->subregion();
-
-  // First we create and instantiate all the modules and keep them in a dictionary
-  auto clock = body->getArgument(0);
-  auto reset = body->getArgument(1);
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances;
-  for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
-  {
-    if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
-    {
-      instances[sn] = AddInstanceOp(circuitBody, sn);
-      body->push_back(instances[sn]);
-      Connect(body, instances[sn]->getResult(0), clock);
-      Connect(body, instances[sn]->getResult(1), reset);
-    }
-    else if (auto oln = dynamic_cast<hls::loop_node *>(node))
-    {
-      auto inst = MlirGen(oln, body, circuitBody);
-      instances.merge(inst);
-    }
-    else
-    {
-      throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
-    }
-  }
-  return instances;
+  return createInstances(subRegion, circuitBody, body);
 }
 
 // Trace the argument back to the "node" generating the value
@@ -1338,32 +1332,9 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
   // Initialize the signals of mem_req
   InitializeMemReq(module);
 
-  // Get the clock and reset signal of the module
-  auto clock = GetClockSignal(module);
-  auto reset = GetResetSignal(module);
   // First we create and instantiate all the modules and keep them in a dictionary
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances;
-  for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
-  {
-    if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
-    {
-      instances[sn] = AddInstanceOp(circuitBody, sn);
-      body->push_back(instances[sn]);
-      // Connect clock and reset to the instance
-      Connect(body, instances[sn]->getResult(0), clock);
-      Connect(body, instances[sn]->getResult(1), reset);
-    }
-    else if (auto oln = dynamic_cast<hls::loop_node *>(node))
-    {
-      auto inst = MlirGen(oln, body, circuitBody);
-      instances.merge(inst);
-    }
-    else
-    {
-      throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
-    }
-  }
+  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances =
+      createInstances(subRegion, circuitBody, body);
 
   // Need to keep track of memory operations such that they can be connected
   // to the main memory port.
@@ -1399,10 +1370,29 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
       // Get the RVSDG node that's the origin of this input
       jlm::rvsdg::simple_input * input = rvsdgNode->input(i);
       auto origin = input->origin();
-
-      // If the origin is a jlm::rvsdg::simple_node then we connect the source output
-      // with the sink input
-      if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      {
+        origin = TraceArgument(o);
+      }
+      if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+      {
+        // Need to trace through the region to find the source node
+        origin = TraceStructuralOutput(o);
+      }
+      // now origin is either a simple_output or a top-level argument
+      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      {
+        // The port of the instance is connected to an argument
+        // of the region
+        // Calculate the result port of the instance:
+        //   2 for clock and reset +
+        //   The index of the input of the region
+        auto sourceIndex = 2 + o->index();
+        auto sourcePort = body->getArgument(sourceIndex);
+        auto sinkPort = sinkNode->getResult(i + 2);
+        Connect(body, sinkPort, sourcePort);
+      }
+      else if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
       {
         // Get RVSDG node of the source
         auto source = o->node();
@@ -1413,59 +1403,6 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
         auto sourceIndex = 2 + source->ninputs() + o->index();
         // Get the corresponding InstanceOp
         auto sourceNode = instances[source];
-
-        auto sourcePort = sourceNode->getResult(sourceIndex);
-        auto sinkPort = sinkNode->getResult(i + 2);
-        Connect(body, sinkPort, sourcePort);
-      }
-      else if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
-      {
-        auto origin = TraceArgument(o);
-        if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
-        {
-          // The port of the instance is connected to an argument
-          // of the region
-          // Calculate the result port of the instance:
-          //   2 for clock and reset +
-          //   The index of the input of the region
-          auto sourceIndex = 2 + o->index();
-          auto sourcePort = body->getArgument(sourceIndex);
-          auto sinkPort = sinkNode->getResult(i + 2);
-          Connect(body, sinkPort, sourcePort);
-        }
-        else if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
-        {
-          // Get RVSDG node of the source
-          auto source = o->node();
-          // Calculate the result port of the instance:
-          //   2 for clock and reset +
-          //   Number of inputs of the node +
-          //   The index of the output of the node
-          auto sourceIndex = 2 + source->ninputs() + o->index();
-          // Get the corresponding InstanceOp
-          auto sourceNode = instances[source];
-          auto sourcePort = sourceNode->getResult(sourceIndex);
-          auto sinkPort = sinkNode->getResult(i + 2);
-          Connect(body, sinkPort, sourcePort);
-        }
-        else
-        {
-          throw std::logic_error("Unsupported output");
-        }
-      }
-      else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
-      {
-        // Need to trace through the region to find the source node
-        auto output = TraceStructuralOutput(o);
-        // Get the node of the output
-        jlm::rvsdg::simple_node * source = output->node();
-        // Get the corresponding InstanceOp
-        auto sourceNode = instances[source];
-        // Calculate the result port of the instance:
-        //   2 for clock and reset +
-        //   Number of inputs of the node +
-        //   The index of the output of the node
-        auto sourceIndex = 2 + source->ninputs() + output->index();
         auto sourcePort = sourceNode->getResult(sourceIndex);
         auto sinkPort = sinkNode->getResult(i + 2);
         Connect(body, sinkPort, sourcePort);
@@ -1558,6 +1495,46 @@ MLIRGenImpl::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
   return module;
 }
 
+std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+MLIRGenImpl::createInstances(
+    jlm::rvsdg::region * subRegion,
+    mlir::Block * circuitBody,
+    mlir::Block * body)
+{
+  // create and instantiate all the modules and keep them in a dictionary
+  auto clock = body->getArgument(0);
+  auto reset = body->getArgument(1);
+  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances;
+  for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
+  {
+    if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    {
+      if (dynamic_cast<const hls::local_mem_req_op *>(&(node->operation()))
+          || dynamic_cast<const hls::local_mem_resp_op *>(&(node->operation())))
+      {
+        // these are virtual - connections go to local_mem instead
+        continue;
+      }
+      instances[sn] = AddInstanceOp(circuitBody, sn);
+      body->push_back(instances[sn]);
+      // Connect clock and reset to the instance
+      Connect(body, instances[sn]->getResult(0), clock);
+      Connect(body, instances[sn]->getResult(1), reset);
+    }
+    else if (auto oln = dynamic_cast<loop_node *>(node))
+    {
+      auto inst = MlirGen(oln, body, circuitBody);
+      instances.merge(inst);
+    }
+    else
+    {
+      throw jlm::util::error(
+          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
+    }
+  }
+  return instances;
+}
+
 // Trace a structural output back to the "node" generating the value
 // Returns the output of the node
 jlm::rvsdg::simple_output *
@@ -1616,19 +1593,21 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   AddClockPort(&ports);
   AddResetPort(&ports);
 
+  auto reg_args = get_reg_args(lambdaNode);
+  auto reg_results = get_reg_results(lambdaNode);
+
   // Input bundle
   using BundleElement = circt::firrtl::BundleType::BundleElement;
   ::llvm::SmallVector<BundleElement> inputElements;
   inputElements.push_back(GetReadyElement());
   inputElements.push_back(GetValidElement());
-  for (size_t i = 0; i < subRegion->narguments(); ++i)
+
+  for (size_t i = 0; i < reg_args.size(); ++i)
   {
-    std::string portName("data");
+    std::string portName("data_");
     portName.append(std::to_string(i));
-    inputElements.push_back(BundleElement(
-        builder.getStringAttr(portName),
-        false,
-        GetIntType(&subRegion->argument(i)->type())));
+    inputElements.push_back(
+        BundleElement(builder.getStringAttr(portName), false, GetIntType(&reg_args[i]->type())));
   }
   auto inputType = circt::firrtl::BundleType::get(builder.getContext(), inputElements);
   struct circt::firrtl::PortInfo iBundle = {
@@ -1640,14 +1619,12 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   ::llvm::SmallVector<BundleElement> outputElements;
   outputElements.push_back(GetReadyElement());
   outputElements.push_back(GetValidElement());
-  for (size_t i = 0; i < subRegion->nresults(); ++i)
+  for (size_t i = 0; i < reg_results.size(); ++i)
   {
-    std::string portName("data");
+    std::string portName("data_");
     portName.append(std::to_string(i));
-    outputElements.push_back(BundleElement(
-        builder.getStringAttr(portName),
-        false,
-        GetIntType(&subRegion->result(i)->type())));
+    outputElements.push_back(
+        BundleElement(builder.getStringAttr(portName), false, GetIntType(&reg_results[i]->type())));
   }
   auto outputType = circt::firrtl::BundleType::get(builder.getContext(), outputElements);
   struct circt::firrtl::PortInfo oBundle = {
@@ -1658,6 +1635,40 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   // Memory ports
   AddMemReqPort(&ports);
   AddMemResPort(&ports);
+
+  auto mem_reqs = get_mem_reqs(lambdaNode);
+  auto mem_resps = get_mem_resps(lambdaNode);
+  assert(mem_resps.size() == mem_reqs.size());
+  for (size_t i = 0; i < mem_reqs.size(); ++i)
+  {
+    ::llvm::SmallVector<BundleElement> memElements;
+
+    ::llvm::SmallVector<BundleElement> reqElements;
+    reqElements.push_back(GetReadyElement());
+    reqElements.push_back(GetValidElement());
+    reqElements.push_back(
+        BundleElement(builder.getStringAttr("data"), false, GetFirrtlType(&mem_reqs[i]->type())));
+    auto reqType = circt::firrtl::BundleType::get(builder.getContext(), reqElements);
+    memElements.push_back(BundleElement(builder.getStringAttr("req"), false, reqType));
+
+    ::llvm::SmallVector<BundleElement> resElements;
+    resElements.push_back(GetReadyElement());
+    resElements.push_back(GetValidElement());
+    resElements.push_back(
+        BundleElement(builder.getStringAttr("data"), false, GetFirrtlType(&mem_resps[i]->type())));
+    auto resType = circt::firrtl::BundleType::get(builder.getContext(), resElements);
+    memElements.push_back(BundleElement(builder.getStringAttr("res"), true, resType));
+
+    auto memType = circt::firrtl::BundleType::get(builder.getContext(), memElements);
+    struct circt::firrtl::PortInfo memBundle = {
+      builder.getStringAttr("mem_" + std::to_string(i)),
+      memType,
+      circt::firrtl::Direction::Out,
+      { builder.getStringAttr("") },
+      location,
+    };
+    ports.push_back(memBundle);
+  }
 
   // Now when we have all the port information we can create the module
   // The same name is used for the circuit and main module
@@ -1677,10 +1688,10 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   body->push_back(instance);
   // Connect the Clock
   auto clock = GetClockSignal(module);
-  Connect(body, instance->getResult(0), clock);
+  Connect(body, GetInstancePort(instance, "clk"), clock);
   // Connect the Reset
   auto reset = GetResetSignal(module);
-  Connect(body, instance->getResult(1), reset);
+  Connect(body, GetInstancePort(instance, "reset"), reset);
 
   //
   // Add registers to the module
@@ -1691,7 +1702,7 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   // Input registers
   ::llvm::SmallVector<circt::firrtl::RegResetOp> inputValidRegs;
   ::llvm::SmallVector<circt::firrtl::RegResetOp> inputDataRegs;
-  for (size_t i = 0; i < subRegion->narguments(); ++i)
+  for (size_t i = 0; i < reg_args.size(); ++i)
   {
     std::string validName("i");
     validName.append(std::to_string(i));
@@ -1711,7 +1722,7 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     dataName.append("_data_reg");
     auto dataReg = builder.create<circt::firrtl::RegResetOp>(
         location,
-        GetIntType(&subRegion->argument(i)->type()),
+        GetIntType(&reg_args[i]->type()),
         clock,
         reset,
         zeroBitValue,
@@ -1719,7 +1730,7 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     body->push_back(dataReg);
     inputDataRegs.push_back(dataReg);
 
-    auto port = instance.getResult(i + 2);
+    auto port = GetInstancePort(instance, "a" + std::to_string(reg_args[i]->index()));
     auto portValid = GetSubfield(body, port, "valid");
     Connect(body, portValid, validReg.getResult());
     auto portData = GetSubfield(body, port, "data");
@@ -1740,12 +1751,11 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
 
   // Need to know the number of inputs so we can calculate the
   // correct index for outputs
-  auto numInputs = subRegion->narguments();
   ::llvm::SmallVector<circt::firrtl::RegResetOp> outputValidRegs;
   ::llvm::SmallVector<circt::firrtl::RegResetOp> outputDataRegs;
 
   auto oneBitValue = GetConstant(body, 1, 1);
-  for (size_t i = 0; i < subRegion->nresults(); ++i)
+  for (size_t i = 0; i < reg_results.size(); ++i)
   {
     std::string validName("o");
     validName.append(std::to_string(i));
@@ -1765,7 +1775,7 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     dataName.append("_data_reg");
     auto dataReg = builder.create<circt::firrtl::RegResetOp>(
         location,
-        GetIntType(&subRegion->result(i)->type()),
+        GetIntType(&reg_results[i]->type()),
         clock,
         reset,
         zeroBitValue,
@@ -1774,7 +1784,7 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     outputDataRegs.push_back(dataReg);
 
     // Get the bundle
-    auto port = instance.getResult(2 + numInputs + i);
+    auto port = GetInstancePort(instance, "r" + std::to_string(reg_results[i]->index()));
 
     auto portReady = GetSubfield(body, port, "ready");
     auto notValidReg = builder.create<circt::firrtl::NotPrimOp>(
@@ -1809,7 +1819,7 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     auto andOp = AddAndOp(body, notReg, prevAnd);
     prevAnd = andOp;
   }
-  auto inBundle = body->getArgument(2);
+  auto inBundle = GetPort(module, "i");
   auto inReady = GetSubfield(body, inBundle, "ready");
   Connect(body, inReady, prevAnd);
 
@@ -1820,39 +1830,42 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
     auto andOp = AddAndOp(body, outputValidRegs[i].getResult(), prevAnd);
     prevAnd = andOp;
   }
-  auto outBundle = body->getArgument(3);
+  auto outBundle = GetPort(module, "o");
   auto outValid = GetSubfield(body, outBundle, "valid");
   Connect(body, outValid, prevAnd);
 
   // Connect output data signals
   for (size_t i = 0; i < outputDataRegs.size(); i++)
   {
-    auto outData = GetSubfield(body, outBundle, 2 + i);
+    auto outData = GetSubfield(body, outBundle, "data_" + std::to_string(i));
     Connect(body, outData, outputDataRegs[i].getResult());
   }
 
-  // Input when statement
-  auto inValid = GetSubfield(body, inBundle, "valid");
-  auto whenCondition = AddAndOp(body, inReady, inValid);
-  auto whenOp = AddWhenOp(body, whenCondition, false);
+  if (inputValidRegs.size())
+  { // avoid generating invalid firrtl for return of just a constant
+    // Input when statement
+    auto inValid = GetSubfield(body, inBundle, "valid");
+    auto whenCondition = AddAndOp(body, inReady, inValid);
+    auto whenOp = AddWhenOp(body, whenCondition, false);
 
-  // getThenBlock() cause an error during commpilation
-  // So we first get the builder and then its associated body
-  auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-  for (size_t i = 0; i < inputValidRegs.size(); i++)
-  {
-    Connect(thenBody, inputValidRegs[i].getResult(), oneBitValue);
-    auto inData = GetSubfield(thenBody, inBundle, 2 + i);
-    Connect(thenBody, inputDataRegs[i].getResult(), inData);
+    // getThenBlock() cause an error during commpilation
+    // So we first get the builder and then its associated body
+    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+    for (size_t i = 0; i < inputValidRegs.size(); i++)
+    {
+      Connect(thenBody, inputValidRegs[i].getResult(), oneBitValue);
+      auto inData = GetSubfield(thenBody, inBundle, "data_" + std::to_string(i));
+      Connect(thenBody, inputDataRegs[i].getResult(), inData);
+    }
   }
 
   // Output when statement
   auto outReady = GetSubfield(body, outBundle, "ready");
-  whenCondition = AddAndOp(body, outReady, outValid);
-  whenOp = AddWhenOp(body, whenCondition, false);
+  auto whenCondition = AddAndOp(body, outReady, outValid);
+  auto whenOp = AddWhenOp(body, whenCondition, false);
   // getThenBlock() cause an error during commpilation
   // So we first get the builder and then its associated body
-  thenBody = whenOp.getThenBodyBuilder().getBlock();
+  auto thenBody = whenOp.getThenBodyBuilder().getBlock();
   for (size_t i = 0; i < outputValidRegs.size(); i++)
   {
     Connect(thenBody, outputValidRegs[i].getResult(), zeroBitValue);
@@ -1899,6 +1912,18 @@ MLIRGenImpl::MlirGen(const llvm::lambda::node * lambdaNode)
   Connect(thenBody, memReqData, srMemReqData);
   Connect(thenBody, memReqWrite, srMemReqWrite);
   Connect(thenBody, memReqWidth, srMemReqWidth);
+
+  // Connect the memory ports
+  for (size_t i = 0; i < mem_reqs.size(); ++i)
+  {
+    auto mem_port = GetPort(module, "mem_" + std::to_string(i));
+    auto mem_req = GetSubfield(body, mem_port, "req");
+    auto mem_res = GetSubfield(body, mem_port, "res");
+    auto inst_req = GetInstancePort(instance, "r" + std::to_string(mem_reqs[i]->index()));
+    auto inst_res = GetInstancePort(instance, "a" + std::to_string(mem_resps[i]->index()));
+    Connect(body, mem_req, inst_req);
+    Connect(body, inst_res, mem_res);
+  }
 
   // Add the module to the body of the circuit
   circuitBody->push_back(module);
@@ -2039,6 +2064,20 @@ MLIRGenImpl::GetPort(circt::firrtl::FModuleOp & module, std::string portName)
   llvm_unreachable("port not found");
 }
 
+mlir::OpResult
+MLIRGenImpl::GetInstancePort(circt::firrtl::InstanceOp & instance, std::string portName)
+{
+  for (size_t i = 0; i < instance.getNumResults(); ++i)
+  {
+    //        std::cout << instance.getPortName(i).str() << std::endl;
+    if (instance.getPortName(i) == portName)
+    {
+      return instance->getResult(i);
+    }
+  }
+  llvm_unreachable("port not found");
+}
+
 mlir::BlockArgument
 MLIRGenImpl::GetInPort(circt::firrtl::FModuleOp & module, size_t portNr)
 {
@@ -2074,6 +2113,14 @@ circt::firrtl::AndPrimOp
 MLIRGenImpl::AddAndOp(mlir::Block * body, mlir::Value first, mlir::Value second)
 {
   auto op = builder.create<circt::firrtl::AndPrimOp>(location, first, second);
+  body->push_back(op);
+  return op;
+}
+
+circt::firrtl::NodeOp
+MLIRGenImpl::AddNodeOp(mlir::Block * body, mlir::Value value, std::string name)
+{
+  auto op = builder.create<circt::firrtl::NodeOp>(location, value, name);
   body->push_back(op);
   return op;
 }
@@ -2388,7 +2435,11 @@ MLIRGenImpl::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
   {
     std::string name("i");
     name.append(std::to_string(i));
-    AddBundlePort(&ports, circt::firrtl::Direction::In, name, GetIntType(&node->input(i)->type()));
+    AddBundlePort(
+        &ports,
+        circt::firrtl::Direction::In,
+        name,
+        GetFirrtlType(&node->input(i)->type()));
   }
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
@@ -2398,7 +2449,7 @@ MLIRGenImpl::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
         &ports,
         circt::firrtl::Direction::Out,
         name,
-        GetIntType(&node->output(i)->type()));
+        GetFirrtlType(&node->output(i)->type()));
   }
 
   if (mem)
@@ -2427,12 +2478,33 @@ MLIRGenImpl::GetIntType(int size)
 
 // Return unsigned IntType with the bit width specified by the
 // jlm::rvsdg::type. The extend argument extends the width of the IntType,
-// which is usefull for, e.g., additions where the result has to be 1
-// larger than the operands to accomodate for the carry.
+// which is useful for, e.g., additions where the result has to be 1
+// larger than the operands to accommodate for the carry.
 circt::firrtl::IntType
 MLIRGenImpl::GetIntType(const jlm::rvsdg::type * type, int extend)
 {
   return circt::firrtl::IntType::get(builder.getContext(), false, JlmSize(type) + extend);
+}
+
+circt::firrtl::FIRRTLBaseType
+MLIRGenImpl::GetFirrtlType(const jlm::rvsdg::type * type)
+{
+  if (auto bt = dynamic_cast<const bundletype *>(type))
+  {
+    using BundleElement = circt::firrtl::BundleType::BundleElement;
+    ::llvm::SmallVector<BundleElement> elements;
+    for (size_t i = 0; i < bt->elements_->size(); ++i)
+    {
+      auto t = &bt->elements_->at(i);
+      elements.push_back(
+          BundleElement(builder.getStringAttr(t->first), false, GetFirrtlType(t->second.get())));
+    }
+    return circt::firrtl::BundleType::get(builder.getContext(), elements);
+  }
+  else
+  {
+    return GetIntType(type);
+  }
 }
 
 std::string
@@ -2475,7 +2547,40 @@ MLIRGenImpl::GetModuleName(const jlm::rvsdg::node * node)
       append.append(std::to_string(bytes));
     }
   }
-
+  if (auto op = dynamic_cast<const mem_req_op *>(&node->operation()))
+  {
+    for (auto lt : op->load_types)
+    {
+      auto dataType = lt;
+      int bitWidth;
+      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(dataType))
+      {
+        bitWidth = bitType->nbits();
+      }
+      else if (dynamic_cast<const llvm::PointerType *>(dataType))
+      {
+        bitWidth = 64;
+      }
+      else
+      {
+        throw jlm::util::error("unknown width for mem request");
+      }
+      append.append("_");
+      append.append(std::to_string(bitWidth));
+    }
+  }
+  if (auto op = dynamic_cast<const local_mem_op *>(&node->operation()))
+  {
+    append.append("_S");
+    append.append(
+        std::to_string(dynamic_cast<const llvm::arraytype *>(&op->result(0).type())->nelements()));
+    append.append("_L");
+    size_t loads = llvm::input_node(*node->output(0)->begin())->noutputs();
+    append.append(std::to_string(loads));
+    append.append("_S");
+    size_t stores = (llvm::input_node(*node->output(1)->begin())->ninputs() - 1 - loads) / 2;
+    append.append(std::to_string(stores));
+  }
   auto name = jlm::util::strfmt("op_", node->operation().debug_string() + append);
   // Remove characters that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
@@ -2567,5 +2672,4 @@ MLIRGenImpl::toString(const circt::firrtl::CircuitOp circuit)
 
   return outputString;
 }
-
 }
