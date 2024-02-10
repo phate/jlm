@@ -54,12 +54,25 @@ public:
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
 
+  RhlsToFirrtlConverter(const RhlsToFirrtlConverter &) = delete;
+
+  RhlsToFirrtlConverter(RhlsToFirrtlConverter &&) = delete;
+
+  RhlsToFirrtlConverter &
+  operator=(const RhlsToFirrtlConverter &) = delete;
+
+  RhlsToFirrtlConverter &
+  operator=(RhlsToFirrtlConverter &&) = delete;
+
   circt::firrtl::CircuitOp
   MlirGen(const llvm::lambda::node * lamdaNode);
+
   void
   WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jlm::rvsdg::node * node);
+
   void
   WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
+
   std::string
   ToString(llvm::RvsdgModule & rvsdgModule);
 
