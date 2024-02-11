@@ -127,7 +127,9 @@ $(RUNTESTS): run-% : %
 	if $^ >$^.log 2>&1 ; then \
 		echo "success" ; \
 	else \
+		EXIT_CODE="$$?" ; \
 		echo "failed. See $^.log:" ; cat $^.log ; \
+		exit "$$EXIT_CODE" ; \
 	fi
 
 $(VALGRINDTESTS): valgrind-% : %
