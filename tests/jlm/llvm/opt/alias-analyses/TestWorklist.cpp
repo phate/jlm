@@ -12,15 +12,15 @@
 #include <cassert>
 
 static void
-TestLIFOWorklist()
+TestLifoWorklist()
 {
-  jlm::llvm::aa::LIFOWorklist<size_t> wl(10);
-  assert(!wl.HasWorkItem());
+  jlm::llvm::aa::LifoWorklist<size_t> wl;
+  assert(!wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
   wl.PushWorkItem(2);
   wl.PushWorkItem(5);
 
-  assert(wl.HasWorkItem());
+  assert(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
   assert(item == 2);
 
@@ -30,19 +30,19 @@ TestLIFOWorklist()
 
   item = wl.PopWorkItem();
   assert(item == 5);
-  assert(!wl.HasWorkItem());
+  assert(!wl.HasMoreWorkItems());
 }
 
 static void
-TestFIFOWorklist()
+TestFifoWorklist()
 {
-  jlm::llvm::aa::FIFOWorklist<size_t> wl(10);
-  assert(!wl.HasWorkItem());
+  jlm::llvm::aa::FifoWorklist<size_t> wl;
+  assert(!wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
   wl.PushWorkItem(2);
   wl.PushWorkItem(5);
 
-  assert(wl.HasWorkItem());
+  assert(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
   assert(item == 5);
 
@@ -53,17 +53,17 @@ TestFIFOWorklist()
 
   item = wl.PopWorkItem();
   assert(item == 7);
-  assert(!wl.HasWorkItem());
+  assert(!wl.HasMoreWorkItems());
 }
 
 static void
-TestLRFWorklist()
+TestLrfWorklist()
 {
-  jlm::llvm::aa::LRFWorklist<size_t> wl(10);
-  assert(!wl.HasWorkItem());
+  jlm::llvm::aa::LrfWorklist<size_t> wl;
+  assert(!wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
 
-  assert(wl.HasWorkItem());
+  assert(wl.HasMoreWorkItems());
   auto item = wl.PopWorkItem();
   assert(item == 5);
 
@@ -74,21 +74,20 @@ TestLRFWorklist()
   assert(item == 7);
 
   wl.PushWorkItem(2);
+  item = wl.PopWorkItem();
+  assert(item == 2);
 
   item = wl.PopWorkItem();
   assert(item == 5);
-
-  item = wl.PopWorkItem();
-  assert(item == 2);
-  assert(!wl.HasWorkItem());
+  assert(!wl.HasMoreWorkItems());
 }
 
 static int
 TestWorklist()
 {
-  TestLIFOWorklist();
-  TestFIFOWorklist();
-  TestLRFWorklist();
+  TestLifoWorklist();
+  TestFifoWorklist();
+  TestLrfWorklist();
   return 0;
 }
 

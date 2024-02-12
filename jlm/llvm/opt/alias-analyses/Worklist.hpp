@@ -6,10 +6,12 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_WORKLIST_HPP
 
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 
 #include <limits>
 #include <queue>
 #include <stack>
+#include <unordered_map>
 #include <vector>
 
 namespace jlm::llvm::aa
@@ -17,36 +19,39 @@ namespace jlm::llvm::aa
 
 /**
  * Class for managing a set of work items, that are waiting to be visited by an algorithm.
- * @tparam T the integer type used to index work items.
+ * The implementation decides in what order remaining work items should be processed.
+ * @tparam T the type of the work items.
  */
 template<typename T>
 class Worklist
 {
 public:
-  Worklist()
-  {}
+  virtual ~Worklist() = default;
+
+  Worklist() = default;
 
   Worklist(const Worklist & other) = delete;
+
   Worklist(Worklist && other) = delete;
+
   Worklist &
   operator=(const Worklist & other) = delete;
+
   Worklist &
   operator=(Worklist && other) = delete;
-
-  virtual ~Worklist() = default;
 
   /**
    * @return true if there are work items left to be visited
    */
-  virtual bool
-  HasWorkItem() = 0;
+  [[nodiscard]] virtual bool
+  HasMoreWorkItems() = 0;
 
   /**
    * Removes one work item from the worklist.
    * Requires there to be at least one work item left.
    * @return the removed work item.
    */
-  virtual T
+  [[nodiscard]] virtual T
   PopWorkItem() = 0;
 
   /**
@@ -59,22 +64,21 @@ public:
 };
 
 /**
- * Class for managing a set of work items using a stack.
- * Pushing a work item already on the stack is a no-op.
- * @tparam T the integer type used to index work items.
+ * Worklist implementation using a stack.
+ * Pushing a work item that is already on the stack is a no-op.
+ * @tparam T the type of the work items.
+ * @see Worklist
  */
 template<typename T>
-class LIFOWorklist final : public Worklist<T>
+class LifoWorklist final : public Worklist<T>
 {
 public:
-  explicit LIFOWorklist(T size)
-      : OnList_(size, false)
-  {}
+  ~LifoWorklist() override = default;
 
-  ~LIFOWorklist() override = default;
+  LifoWorklist() = default;
 
   bool
-  HasWorkItem() override
+  HasMoreWorkItems() override
   {
     return !WorkItems_.empty();
   }
@@ -82,48 +86,44 @@ public:
   T
   PopWorkItem() override
   {
-    JLM_ASSERT(HasWorkItem());
+    JLM_ASSERT(HasMoreWorkItems());
     T item = WorkItems_.top();
     WorkItems_.pop();
-    OnList_[item] = false;
+    OnList_.Remove(item);
     return item;
   }
 
   void
   PushWorkItem(T item) override
   {
-    JLM_ASSERT(0 <= item < OnList_.size());
-    if (OnList_[item])
-      return;
-    OnList_[item] = true;
-    WorkItems_.push(item);
+    if (OnList_.Insert(item))
+      WorkItems_.push(item);
   }
 
 private:
   // Tracking which work items are already on the list
-  std::vector<bool> OnList_;
+  util::HashSet<T> OnList_;
 
   // The stack used to order the work items
   std::stack<T> WorkItems_;
 };
 
 /**
- * Class for managing a set of work items using a queue.
- * Pushing a work item already in the queue is a no-op.
- * @tparam T the integer type used to index work items.
+ * Worklist implementation using a queue.
+ * Pushing a work item that is already in the queue is a no-op.
+ * @tparam T the type of the work items.
+ * @see Worklist
  */
 template<typename T>
-class FIFOWorklist final : public Worklist<T>
+class FifoWorklist final : public Worklist<T>
 {
 public:
-  explicit FIFOWorklist(T size)
-      : OnList_(size, false)
-  {}
+  ~FifoWorklist() override = default;
 
-  ~FIFOWorklist() override = default;
+  FifoWorklist() = default;
 
   bool
-  HasWorkItem() override
+  HasMoreWorkItems() override
   {
     return !WorkItems_.empty();
   }
@@ -131,49 +131,44 @@ public:
   T
   PopWorkItem() override
   {
-    JLM_ASSERT(HasWorkItem());
+    JLM_ASSERT(HasMoreWorkItems());
     T item = WorkItems_.front();
     WorkItems_.pop();
-    OnList_[item] = false;
+    OnList_.Remove(item);
     return item;
   }
 
   void
   PushWorkItem(T item) override
   {
-    JLM_ASSERT(0 <= item < OnList_.size());
-    if (OnList_[item])
-      return;
-    OnList_[item] = true;
-    WorkItems_.push(item);
+    if (OnList_.Insert(item))
+      WorkItems_.push(item);
   }
 
 private:
   // Tracking which work items are already on the list
-  std::vector<bool> OnList_;
+  util::HashSet<T> OnList_;
 
   // The queue used to order the items
   std::queue<T> WorkItems_;
 };
 
 /**
- * Class for managing a set of work items using a priority queue.
- * The next work item to fire is the one that was least recently fired (LRF)
- * @tparam T the integer type used to index work items.
+ * Worklist implementation using a priority queue.
+ * The next work item to fire is the one that was least recently fired (LRF).
+ * @tparam T the type of the work items.
+ * @see Worklist
  */
 template<typename T>
-class LRFWorklist final : public Worklist<T>
+class LrfWorklist final : public Worklist<T>
 {
 public:
-  explicit LRFWorklist(T size)
-      : FireCounter_(0),
-        LastFire_(size, 0)
-  {}
+  ~LrfWorklist() override = default;
 
-  ~LRFWorklist() override = default;
+  LrfWorklist() = default;
 
   bool
-  HasWorkItem() override
+  HasMoreWorkItems() override
   {
     return !WorkItems_.empty();
   }
@@ -181,7 +176,7 @@ public:
   T
   PopWorkItem() override
   {
-    JLM_ASSERT(HasWorkItem());
+    JLM_ASSERT(HasMoreWorkItems());
     auto [_, item] = WorkItems_.top();
     WorkItems_.pop();
     // Note down the moment this item fired
@@ -192,12 +187,13 @@ public:
   void
   PushWorkItem(T item) override
   {
-    JLM_ASSERT(0 <= item < LastFire_.size());
-    if (LastFire_[item] == InQueueSentinelValue)
+    size_t & lastFire = LastFire_[item];
+    if (lastFire == InQueueSentinelValue)
       return;
+
     // Add the work item to the priority queue based on when it was last fired
-    WorkItems_.push({ LastFire_[item], item });
-    LastFire_[item] = InQueueSentinelValue;
+    WorkItems_.push({ lastFire, item });
+    lastFire = InQueueSentinelValue;
   }
 
 private:
@@ -212,11 +208,11 @@ private:
   MinPriorityQueue<std::pair<size_t, T>> WorkItems_;
 
   // Counter used to order fire events (work items being popped)
-  size_t FireCounter_;
+  size_t FireCounter_ = 0;
 
   // For each work item, when the item was last fired.
   // If the work item is currently in the queue, InQueueSentinelValue is used instead
-  std::vector<size_t> LastFire_;
+  std::unordered_map<T, size_t> LastFire_;
 };
 
 }
