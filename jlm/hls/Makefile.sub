@@ -18,14 +18,14 @@ libhls_SOURCES = \
     jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
     jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/mlirgen.cpp \
+    jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     \
     jlm/hls/ir/hls.cpp \
 
 libhls_HEADERS = \
 	jlm/hls/ir/hls.hpp \
 	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
-	jlm/hls/backend/rhls2firrtl/mlirgen.hpp \
+	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
 	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
