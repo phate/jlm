@@ -19,29 +19,21 @@ public:
   ~pullstat() override = default;
 
   explicit pullstat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::PullNodes, sourceFile),
-        ninputs_before_(0),
-        ninputs_after_(0)
+      : Statistics(Statistics::Id::PullNodes, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph) noexcept
   {
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const jlm::rvsdg::graph & graph) noexcept
   {
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt(ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<pullstat>
@@ -49,10 +41,6 @@ public:
   {
     return std::make_unique<pullstat>(sourceFile);
   }
-
-private:
-  size_t ninputs_before_, ninputs_after_;
-  util::timer timer_;
 };
 
 static bool

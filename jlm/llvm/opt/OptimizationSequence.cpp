@@ -17,29 +17,21 @@ public:
   ~Statistics() noexcept override = default;
 
   explicit Statistics(const util::filepath & sourceFile)
-      : util::Statistics(Statistics::Id::RvsdgOptimization, sourceFile),
-        NumNodesBefore_(0),
-        NumNodesAfter_(0)
+      : util::Statistics(Statistics::Id::RvsdgOptimization, sourceFile)
   {}
 
   void
   StartMeasuring(const jlm::rvsdg::graph & graph) noexcept
   {
-    NumNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
-    Timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   EndMeasuring(const jlm::rvsdg::graph & graph) noexcept
   {
-    Timer_.stop();
-    NumNodesAfter_ = jlm::rvsdg::nnodes(graph.root());
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return util::strfmt(NumNodesBefore_, " ", NumNodesAfter_, " ", Timer_.ns());
+    GetTimer(Label::Timer).stop();
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
   }
 
   static std::unique_ptr<Statistics>
@@ -47,11 +39,6 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
-
-private:
-  util::timer Timer_;
-  size_t NumNodesBefore_;
-  size_t NumNodesAfter_;
 };
 
 OptimizationSequence::~OptimizationSequence() noexcept = default;

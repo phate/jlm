@@ -25,29 +25,21 @@ public:
   ~rvsdg_destruction_stat() override = default;
 
   explicit rvsdg_destruction_stat(const util::filepath & filename)
-      : Statistics(Statistics::Id::RvsdgDestruction, filename),
-        ntacs_(0),
-        nnodes_(0)
+      : Statistics(Statistics::Id::RvsdgDestruction, filename)
   {}
 
   void
   start(const rvsdg::graph & graph) noexcept
   {
-    nnodes_ = rvsdg::nnodes(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const ipgraph_module & im)
   {
-    ntacs_ = llvm::ntacs(im);
-    timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  Serialize() const override
-  {
-    return jlm::util::strfmt(nnodes_, " ", ntacs_, " ", timer_.ns());
+    AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(im));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<rvsdg_destruction_stat>
@@ -55,11 +47,6 @@ public:
   {
     return std::make_unique<rvsdg_destruction_stat>(sourceFile);
   }
-
-private:
-  size_t ntacs_;
-  size_t nnodes_;
-  util::timer timer_;
 };
 
 namespace rvsdg2jlm
