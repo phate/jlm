@@ -361,7 +361,7 @@ public:
   {}
 
   /**
-   * @return the PointerObject that should point to a superset of what the subset points to
+   * @return the PointerObject that should point to everything the subset points to
    */
   [[nodiscard]] PointerObject::Index
   GetSuperset() const noexcept
@@ -370,7 +370,7 @@ public:
   }
 
   /**
-   * @param value the new PointerObject that should point to a superset of what the subset points to
+   * @param superset the new PointerObject that should point to everything the subset points to
    */
   void
   SetSuperset(PointerObject::Index superset)
@@ -388,7 +388,7 @@ public:
   }
 
   /**
-   * @param value the new PointerObject whose points to-set should be contained within the superset
+   * @param subset the new PointerObject whose points to-set should be contained within the superset
    */
   void
   SetSubset(PointerObject::Index subset)
@@ -450,7 +450,7 @@ public:
   }
 
   /**
-   * @param value the new PointerObject representing the pointer written to by the store instruction
+   * @param pointer the new PointerObject representing the pointer written to by the store.
    */
   void
   SetPointer(PointerObject::Index pointer)
@@ -512,7 +512,7 @@ public:
   }
 
   /**
-   * @param value the new PointerObject representing the pointer loaded by the load instruction
+   * @param pointer the new PointerObject representing the pointer loaded by the load instruction.
    */
   void
   SetPointer(PointerObject::Index pointer)
