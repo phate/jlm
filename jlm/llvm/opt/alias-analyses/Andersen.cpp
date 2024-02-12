@@ -7,7 +7,6 @@
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -41,17 +40,6 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
 
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
-
-  inline static const char * NumPointsToGraphNodesLabel_ = "#PointsToGraphNodes";
-  inline static const char * NumAllocaNodesLabel_ = "#AllocaNodes";
-  inline static const char * NumDeltaNodesLabel_ = "#DeltaNodes";
-  inline static const char * NumImportNodesLabel_ = "#ImportNodes";
-  inline static const char * NumLambdaNodesLabel_ = "#LambdaNodes";
-  inline static const char * NumMallocNodesLabel_ = "#MallocNodes";
-  inline static const char * NumMemoryNodesLabel_ = "#MemoryNodes";
-  inline static const char * NumRegisterNodesLabel_ = "#RegisterNodes";
-  inline static const char * NumEscapedNodesLabel_ = "#EscapedNodes";
-  inline static const char * NumExternalMemorySourcesLabel_ = "#ExternalMemorySources";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
@@ -149,18 +137,20 @@ public:
   StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
   {
     GetTimer(PointsToGraphConstructionTimer_).stop();
-    AddMeasurement(NumPointsToGraphNodesLabel_, pointsToGraph.NumNodes());
-    AddMeasurement(NumAllocaNodesLabel_, pointsToGraph.NumAllocaNodes());
-    AddMeasurement(NumDeltaNodesLabel_, pointsToGraph.NumDeltaNodes());
-    AddMeasurement(NumImportNodesLabel_, pointsToGraph.NumImportNodes());
-    AddMeasurement(NumLambdaNodesLabel_, pointsToGraph.NumLambdaNodes());
-    AddMeasurement(NumMallocNodesLabel_, pointsToGraph.NumMallocNodes());
-    AddMeasurement(NumMemoryNodesLabel_, pointsToGraph.NumMemoryNodes());
-    AddMeasurement(NumRegisterNodesLabel_, pointsToGraph.NumRegisterNodes());
-    AddMeasurement(NumEscapedNodesLabel_, pointsToGraph.GetEscapedMemoryNodes().Size());
+    AddMeasurement(Label::NumPointsToGraphNodes, pointsToGraph.NumNodes());
+    AddMeasurement(Label::NumPointsToGraphAllocaNodes, pointsToGraph.NumAllocaNodes());
+    AddMeasurement(Label::NumPointsToGraphDeltaNodes, pointsToGraph.NumDeltaNodes());
+    AddMeasurement(Label::NumPointsToGraphImportNodes, pointsToGraph.NumImportNodes());
+    AddMeasurement(Label::NumPointsToGraphLambdaNodes, pointsToGraph.NumLambdaNodes());
+    AddMeasurement(Label::NumPointsToGraphMallocNodes, pointsToGraph.NumMallocNodes());
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
+    AddMeasurement(Label::NumPointsToGraphRegisterNodes, pointsToGraph.NumRegisterNodes());
+    AddMeasurement(
+        Label::NumPointsToGraphEscapedNodes,
+        pointsToGraph.GetEscapedMemoryNodes().Size());
     // The number of nodes pointing to external (and all nodes marked as escaped)
     AddMeasurement(
-        NumExternalMemorySourcesLabel_,
+        Label::NumPointsToGraphExternalMemorySources,
         pointsToGraph.GetExternalMemoryNode().NumSources());
   }
 

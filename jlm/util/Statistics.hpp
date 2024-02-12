@@ -209,7 +209,19 @@ protected:
     static inline const char * NumRvsdgInputsBefore = "#RvsdgInputsBefore";
     static inline const char * NumRvsdgInputsAfter = "#RvsdgInputsAfter";
 
-    static inline const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
+    inline static const char * NumPointsToGraphNodes = "#PointsToGraphNodes";
+    inline static const char * NumPointsToGraphAllocaNodes = "#PointsToGraphAllocaNodes";
+    inline static const char * NumPointsToGraphDeltaNodes = "#PointsToGraphDeltaNodes";
+    inline static const char * NumPointsToGraphImportNodes = "#PointsToGraphImportNodes";
+    inline static const char * NumPointsToGraphLambdaNodes = "#PointsToGraphLambdaNodes";
+    inline static const char * NumPointsToGraphMallocNodes = "#PointsToGraphMallocNodes";
+    inline static const char * NumPointsToGraphMemoryNodes = "#PointsToGraphMemoryNodes";
+    inline static const char * NumPointsToGraphRegisterNodes = "#PointsToGraphRegisterNodes";
+    inline static const char * NumPointsToGraphEscapedNodes = "#PointsToGraphEscapedNodes";
+    inline static const char * NumPointsToGraphExternalMemorySources =
+        "#PointsToGraphExternalMemorySources";
+    inline static const char * NumPointsToGraphUnknownMemorySources =
+        "#PointsToGraphUnknownMemorySources";
 
     static inline const char * Timer = "Time";
   };

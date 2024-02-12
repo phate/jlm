@@ -370,7 +370,7 @@ public:
   }
 
   /**
-   * @parm value the new PointerObject that should point to a superset of what the subset points to
+   * @param value the new PointerObject that should point to a superset of what the subset points to
    */
   void
   SetSuperset(PointerObject::Index superset)
@@ -388,7 +388,7 @@ public:
   }
 
   /**
-   * @parm value the new PointerObject whose points to-set should be contained within the superset
+   * @param value the new PointerObject whose points to-set should be contained within the superset
    */
   void
   SetSubset(PointerObject::Index subset)
@@ -432,7 +432,7 @@ public:
   }
 
   /**
-   * @parm value the new PointerObject representing the value written by the store instruction
+   * @param value the new PointerObject representing the value written by the store instruction
    */
   void
   SetValue(PointerObject::Index value)
@@ -450,7 +450,7 @@ public:
   }
 
   /**
-   * @parm value the new PointerObject representing the pointer written to by the store instruction
+   * @param value the new PointerObject representing the pointer written to by the store instruction
    */
   void
   SetPointer(PointerObject::Index pointer)
@@ -494,7 +494,7 @@ public:
   }
 
   /**
-   * @parm value the new PointerObject representing the value returned by the load instruction
+   * @param value the new PointerObject representing the value returned by the load instruction
    */
   void
   SetValue(PointerObject::Index value)
@@ -512,7 +512,7 @@ public:
   }
 
   /**
-   * @parm value the new PointerObject representing the pointer loaded by the load instruction
+   * @param value the new PointerObject representing the pointer loaded by the load instruction
    */
   void
   SetPointer(PointerObject::Index pointer)
