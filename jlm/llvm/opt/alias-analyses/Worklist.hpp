@@ -166,7 +166,8 @@ class LRFWorklist final : public Worklist<T>
 {
 public:
   explicit LRFWorklist(T size)
-      : FireCounter_(0), LastFire_(size, 0)
+      : FireCounter_(0),
+        LastFire_(size, 0)
   {}
 
   ~LRFWorklist() override = default;
@@ -195,7 +196,7 @@ public:
     if (LastFire_[item] == InQueueSentinelValue)
       return;
     // Add the work item to the priority queue based on when it was last fired
-    WorkItems_.push({LastFire_[item], item});
+    WorkItems_.push({ LastFire_[item], item });
     LastFire_[item] = InQueueSentinelValue;
   }
 
