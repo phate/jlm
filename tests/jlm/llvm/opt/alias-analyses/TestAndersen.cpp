@@ -881,10 +881,16 @@ TestStatistics()
 
   // Act
   jlm::llvm::aa::Andersen andersen;
-  andersen.Analyze(test.module(), statisticsCollector);
+  auto ptg = andersen.Analyze(test.module(), statisticsCollector);
 
   // Assert
   assert(statisticsCollector.NumCollectedStatistics() == 1);
+  const auto & statistics = *statisticsCollector.CollectedStatistics().begin();
+
+  assert(statistics.GetMeasurementValue<uint64_t>("#StoreConstraints") == 0);
+  assert(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints") == 1);
+  assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphNodes") == ptg->NumNodes());
+  assert(statistics.GetTimerElapsedNanoseconds("AnalysisTimer") > 0);
 }
 
 static int

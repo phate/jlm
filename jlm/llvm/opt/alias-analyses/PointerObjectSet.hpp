@@ -44,7 +44,7 @@ class PointerObject final
 {
   PointerObjectKind Kind_ : util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
-  // May point to a memory object defined outside of the module, or any escaped memory object
+  // May point to a memory object defined outside the module, or any escaped memory object
   uint8_t PointsToExternal_ : 1;
 
   // This memory object's address is known outside the module.
@@ -52,7 +52,7 @@ class PointerObject final
   uint8_t HasEscaped_ : 1;
 
 public:
-  using Index = size_t;
+  using Index = std::uint32_t;
 
   explicit PointerObject(PointerObjectKind kind)
       : Kind_(kind),
@@ -102,7 +102,7 @@ public:
    * escaped.
    * @return true if the PointsToExternal is set.
    */
-  bool
+  [[nodiscard]] bool
   PointsToExternal() const noexcept
   {
     return PointsToExternal_;
@@ -135,7 +135,7 @@ public:
    *
    * @return true if the PointerObject is marked as having escaped
    */
-  bool
+  [[nodiscard]] bool
   HasEscaped() const noexcept
   {
     return HasEscaped_;
@@ -197,6 +197,17 @@ public:
   [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
 
+  /**
+   * Returns the number of PointerObjects in the set matching the specified \p kind.
+   * @return the number of matches
+   */
+  [[nodiscard]] size_t
+  NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept;
+
+  /**
+   * Gets the PointerObject associated with the given \p index
+   * @return a reference to the PointerObject with the given index
+   */
   [[nodiscard]] PointerObject &
   GetPointerObject(PointerObject::Index index);
 
@@ -335,7 +346,7 @@ public:
 
 /**
  * A constraint of the form:
- * P(superset) is a superset of P(subset)
+ * P(superset) supseteq P(subset)
  * Example of application is when a register has multiple source values
  */
 class SupersetConstraint final
@@ -350,59 +361,171 @@ public:
   {}
 
   /**
-   * \brief Applies the constraint to the \p set
-   * \return true if this operation modified any PointerObjects or points-to-sets
+   * @return the PointerObject that should point to a superset of what the subset points to
+   */
+  [[nodiscard]] PointerObject::Index
+  GetSuperset() const noexcept
+  {
+    return Superset_;
+  }
+
+  /**
+   * @parm value the new PointerObject that should point to a superset of what the subset points to
+   */
+  void
+  SetSuperset(PointerObject::Index superset)
+  {
+    Superset_ = superset;
+  }
+
+  /**
+   * @return the PointerObject whose points to-set should be contained within the superset
+   */
+  [[nodiscard]] PointerObject::Index
+  GetSubset() const noexcept
+  {
+    return Subset_;
+  }
+
+  /**
+   * @parm value the new PointerObject whose points to-set should be contained within the superset
+   */
+  void
+  SetSubset(PointerObject::Index subset)
+  {
+    Subset_ = subset;
+  }
+
+  /**
+   * Make the minimal amount of changes required to make \p set satisfy this constraint.
+   * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet & set);
+  ApplyDirectly(PointerObjectSet & set);
 };
 
 /**
- * A constraint of the form:
- * for all x in P(pointer1), make P(x) a superset of P(pointer2)
- * Example of application is a store, e.g. when *pointer1 = pointer2
+ * The constraint:
+ *   *P(pointer) supseteq P(value)
+ * Written out as
+ *   for all x in P(pointer), P(x) supseteq P(value)
+ * Which corresponds to *pointer = value
  */
-class AllPointeesPointToSupersetConstraint final
+class StoreConstraint final
 {
-  PointerObject::Index Pointer1_;
-  PointerObject::Index Pointer2_;
+  PointerObject::Index Pointer_;
+  PointerObject::Index Value_;
 
 public:
-  AllPointeesPointToSupersetConstraint(PointerObject::Index pointer1, PointerObject::Index pointer2)
-      : Pointer1_(pointer1),
-        Pointer2_(pointer2)
+  StoreConstraint(PointerObject::Index pointer, PointerObject::Index value)
+      : Pointer_(pointer),
+        Value_(value)
   {}
 
   /**
-   * \brief Applies the constraint to the \p set
-   * \return true if this operation modified any PointerObjects or points-to-sets
+   * @return the PointerObject representing the value written by the store instruction
+   */
+  [[nodiscard]] PointerObject::Index
+  GetValue() const noexcept
+  {
+    return Value_;
+  }
+
+  /**
+   * @parm value the new PointerObject representing the value written by the store instruction
+   */
+  void
+  SetValue(PointerObject::Index value)
+  {
+    Value_ = value;
+  }
+
+  /**
+   * @return the PointerObject representing the pointer written to by the store instruction
+   */
+  [[nodiscard]] PointerObject::Index
+  GetPointer() const noexcept
+  {
+    return Pointer_;
+  }
+
+  /**
+   * @parm value the new PointerObject representing the pointer written to by the store instruction
+   */
+  void
+  SetPointer(PointerObject::Index pointer)
+  {
+    Pointer_ = pointer;
+  }
+
+  /**
+   * Make the minimal amount of changes required to make \p set satisfy this constraint.
+   * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet & set);
+  ApplyDirectly(PointerObjectSet & set);
 };
 
 /**
  * A constraint of the form:
- * P(loaded) is a superset of P(x) for all x in P(pointer)
- * Example of application is a load, e.g. when loaded = *pointer
+ *   P(value) supseteq *P(pointer)
+ * Written out as
+ *   for all x in P(pointer), P(value) supseteq P(x)
+ * Which corresponds to value = *pointer
  */
-class SupersetOfAllPointeesConstraint final
+class LoadConstraint final
 {
-  PointerObject::Index Loaded_;
+  PointerObject::Index Value_;
   PointerObject::Index Pointer_;
 
 public:
-  SupersetOfAllPointeesConstraint(PointerObject::Index loaded, PointerObject::Index pointer)
-      : Loaded_(loaded),
+  LoadConstraint(PointerObject::Index value, PointerObject::Index pointer)
+      : Value_(value),
         Pointer_(pointer)
   {}
 
   /**
-   * \brief Applies the constraint to the \p set
-   * \return true if this operation modified any PointerObjects or points-to-sets
+   * @return the PointerObject representing the value returned by the load instruction
+   */
+  [[nodiscard]] PointerObject::Index
+  GetValue() const noexcept
+  {
+    return Value_;
+  }
+
+  /**
+   * @parm value the new PointerObject representing the value returned by the load instruction
+   */
+  void
+  SetValue(PointerObject::Index value)
+  {
+    Value_ = value;
+  }
+
+  /**
+   * @return the PointerObject representing the pointer loaded by the load instruction
+   */
+  [[nodiscard]] PointerObject::Index
+  GetPointer() const noexcept
+  {
+    return Pointer_;
+  }
+
+  /**
+   * @parm value the new PointerObject representing the pointer loaded by the load instruction
+   */
+  void
+  SetPointer(PointerObject::Index pointer)
+  {
+    Pointer_ = pointer;
+  }
+
+  /**
+   * Make the minimal amount of changes required to make \p set satisfy this constraint.
+   * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet & set);
+  ApplyDirectly(PointerObjectSet & set);
 };
 
 /**
@@ -432,7 +555,7 @@ public:
    * \return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet & set);
+  ApplyDirectly(PointerObjectSet & set);
 };
 
 /**
@@ -506,13 +629,13 @@ public:
    * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
-  Apply(PointerObjectSet & set);
+  ApplyDirectly(PointerObjectSet & set);
 };
 
 /**
  * A class for adding and applying constraints to the points-to-sets of the PointerObjectSet.
  * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order,
- * with the same result. Use Solve() to calculate the final points-to-sets.
+ * with the same result. Use SolveNaively() to calculate the final points-to-sets.
  *
  * Some additional constraints on the PointerObject flags are built in.
  */
@@ -521,8 +644,8 @@ class PointerObjectConstraintSet final
 public:
   using ConstraintVariant = std::variant<
       SupersetConstraint,
-      AllPointeesPointToSupersetConstraint,
-      SupersetOfAllPointeesConstraint,
+      StoreConstraint,
+      LoadConstraint,
       HandleEscapingFunctionConstraint,
       FunctionCallConstraint>;
 
@@ -573,16 +696,16 @@ public:
   /**
    * Retrieves all added constraints that were not simple one-off flag changes
    */
-  const std::vector<ConstraintVariant> &
+  [[nodiscard]] const std::vector<ConstraintVariant> &
   GetConstraints() const noexcept;
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
-   * This operation potentially has a long runtime, with an upper bound of O(n^3).
+   * This operation potentially has a long runtime, with an upper bound of O(n^5).
    * @return the number of iterations until a fixed solution was established. At least 1.
    */
   size_t
-  Solve();
+  SolveNaively();
 
 private:
   /**
