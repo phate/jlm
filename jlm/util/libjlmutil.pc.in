@@ -1,0 +1,9 @@
+libdir = @libdir@
+includedir = @includedir@
+
+Name: libjlmutil
+Description: jlm common utilities library
+Version: 0.0.1
+URL: https://github.com/phate/jlm
+Libs: -L${libdir} -ljlmutil
+Cflags: -I${includedir}

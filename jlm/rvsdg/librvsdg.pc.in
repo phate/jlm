@@ -1,0 +1,10 @@
+libdir = @libdir@
+includedir = @includedir@
+
+Name: librvsdg
+Description: rvsdg representation library
+Version: 0.0.1
+URL: https://github.com/phate/jlm
+Libs: -L${libdir} -lrvsdg
+Requires: libjlmutil
+Cflags: -I${includedir}

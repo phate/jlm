@@ -46,11 +46,13 @@ libhls_TESTS += \
 
 libhls_TEST_LIBS += \
 	libhls \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 	libjlmtest \
 
 libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+libhls_VERSION = 0.0.1
+libhls_SOVERSION = 0
 
 $(eval $(call common_library,libhls))

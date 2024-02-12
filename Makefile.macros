@@ -16,6 +16,16 @@
 #   - libfoo_TEST_EXTRA_LDFLAGS:
 #     additional LDFLAGS to be passed to link each test binary;
 #     use this to pull in external libraries (not built in this project)
+#   - libfoo_SOVERSION:
+#     SOVERSION that is recorded in linker options whenever a binary
+#     is dynamically linked against this library
+#     Should be increased for every incompatible ABI change if library
+#     is deemed to be ABI-stable).
+#     REQUIRED if shared library builds are enabled
+#   - libfoo_VERSION:
+#     Detailed version of library. Should be increased with every
+#     feature addition if library is assumed to be forward-ABI-compatible
+#     REQUIRED if shared library builds are enabled
 #
 # Depending on configuration builds only static or both
 # static and dynamic library. Depending on configuration

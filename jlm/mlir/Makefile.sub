@@ -15,9 +15,9 @@ libmlir_TESTS += \
 
 libmlir_TEST_LIBS += \
 	libmlir \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 	libjlmtest \
 
 libmlir_TEST_EXTRA_LDFLAGS = \
@@ -26,5 +26,8 @@ libmlir_TEST_EXTRA_LDFLAGS = \
         -lMLIR \
         -lMLIRJLM \
         -lMLIRRVSDG \
+
+libmlir_VERSION = 0.0.1
+libmlir_SOVERSION = 0
 
 $(eval $(call common_library,libmlir))

@@ -56,11 +56,14 @@ libtooling_TESTS = \
 libtooling_TEST_LIBS = \
 	libtooling \
 	libhls \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 	libjlmtest \
 
 libtooling_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+
+libtooling_VERSION = 0.0.1
+libtooling_SOVERSION = 0
 
 $(eval $(call common_library,libtooling))

@@ -1,0 +1,4 @@
+usr/include/jlm/rvsdg/*
+usr/lib/*/librvsdg.so
+usr/lib/*/librvsdg.a
+usr/lib/*/pkgconfig/librvsdg.pc

@@ -1,7 +1,7 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-libllvm_SOURCES = \
+libjlmllvm_SOURCES = \
     jlm/llvm/backend/jlm2llvm/instruction.cpp \
     jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/jlm2llvm/type.cpp \
@@ -61,7 +61,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/reduction.cpp \
     jlm/llvm/opt/unroll.cpp \
 
-libllvm_HEADERS = \
+libjlmllvm_HEADERS = \
 	jlm/llvm/opt/unroll.hpp \
 	jlm/llvm/opt/DeadNodeElimination.hpp \
 	jlm/llvm/opt/inlining.hpp \
@@ -124,7 +124,7 @@ libllvm_HEADERS = \
 	jlm/llvm/backend/jlm2llvm/instruction.hpp \
 	jlm/llvm/backend/jlm2llvm/context.hpp \
 
-libllvm_TESTS += \
+libjlmllvm_TESTS += \
 	tests/jlm/llvm/backend/llvm/r2j/test-empty-gamma \
 	tests/jlm/llvm/backend/llvm/r2j/test-partial-gamma \
 	tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
@@ -180,12 +180,14 @@ libllvm_TESTS += \
 	tests/jlm/llvm/opt/test-push \
 	tests/jlm/llvm/opt/test-unroll \
 
-libllvm_TEST_LIBS = \
+libjlmllvm_TEST_LIBS = \
 	libjlmtest \
-	libllvm \
+	libjlmllvm \
 	librvsdg \
-	libutil \
+	libjlmutil \
 
-libllvm_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+libjlmllvm_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+libjlmllvm_VERSION = 0.0.1
+libjlmllvm_SOVERSION = 0
 
-$(eval $(call common_library,libllvm))
+$(eval $(call common_library,libjlmllvm))

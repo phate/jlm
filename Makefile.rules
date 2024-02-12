@@ -5,7 +5,7 @@ EXECUTABLES += $(TARGET_EXECUTABLES) $(TEST_EXECUTABLES) $(COVERAGE_EXECUTABLES)
 
 GENERATED_FILES += $(EXECUTABLES)
 
-all: $(SHARED_LIBRARIES) $(STATIC_LIBRARIES) $(EXECUTABLES)
+all: $(SHARED_LIBRARIES) $(STATIC_LIBRARIES) $(EXECUTABLES) $(PKGCONFIG_FILES)
 
 # commands for generating various types of targets
 
@@ -25,7 +25,7 @@ $(BUILD_OUT_PREFIX)%.la: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 # static libraries
-$(BUILD_OUT_PREFIX)%.a: BASENAME=$(patsubst %.a, %, $@)
+$(BUILD_OUT_PREFIX)%.a: BASENAME=$(patsubst $(BUILD_OUT_PREFIX)%.a, %, $@)
 $(BUILD_OUT_PREFIX)%.a:
 	@mkdir -p $(dir $@)
 	rm -f $@
@@ -33,18 +33,25 @@ $(BUILD_OUT_PREFIX)%.a:
 	ranlib $@
 
 # dynamic libraries
-$(BUILD_OUT_PREFIX)%.so: BASENAME=$(patsubst %.so,%,$@)
+$(BUILD_OUT_PREFIX)%.so: BASENAME=$(patsubst $(BUILD_OUT_PREFIX)%.so,%,$@)
 $(BUILD_OUT_PREFIX)%.so:
 	@mkdir -p $(dir $@)
 	rm -rf $@ $@.$($(BASENAME)_VERSION) $@.$($(BASENAME)_SOVERSION)
-	$(DYNAMIC_MODULE_LINK) -o $@.$($(BASENAME)_VERSION) $^ -Wl,-soname -Wl,$@.$($(BASENAME)_SOVERSION) $(LIBS)
-	ln -sf $@.$($(BASENAME)_VERSION) $@.$($(BASENAME)_SOVERSION)
-	ln -sf $@.$($(BASENAME)_VERSION) $@
+	$(DYNAMIC_MODULE_LINK) -o $@.$($(BASENAME)_VERSION) $^ -Wl,-soname -Wl,$(BASENAME).so.$($(BASENAME)_SOVERSION) $(LIBS)
+	ln -sf $(BASENAME).so.$($(BASENAME)_VERSION) $@.$($(BASENAME)_SOVERSION)
+	ln -sf $(BASENAME).so.$($(BASENAME)_VERSION) $@
 
 # binaries
 $(EXECUTABLES):
 	@mkdir -p $(dir $@)
 	$(EXECUTABLE_LINK) -o $@ $(filter %.la, $^) $(filter %.lo, $^) $(LDFLAGS) $(LIBS)
+
+################################################################################
+# pkgconfig substitution rules
+
+$(BUILD_OUT_PREFIX)%.pc: %.pc.in
+	@mkdir -p $(dir $@)
+	sed -e "s!@libdir@!$(libdir)!" -e "s!@includedir@!$(includedir)!" <$^ >$@
 
 ################################################################################
 # Installation rules
@@ -68,11 +75,12 @@ install-static: $(STATIC_LIBRARIES)
 		$(INSTALL) -m 644 -v $$file $(DESTDIR)$(libdir)/ ; \
 	done
 
-install-shared: $(patsubst %.so,install-shared-%,$(SHARED_LIBRARIES))
+install-shared: $(patsubst $(BUILD_OUT_PREFIX)%.so,install-shared-%,$(SHARED_LIBRARIES))
 install-shared-%: BASENAME=$(patsubst install-shared-%,%,$@)
 install-shared-%:
+	echo "$@"
 	mkdir -p $(DESTDIR)$(libdir)/
-	$(INSTALL) -m 755 -v $(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/
+	$(INSTALL) -m 755 -v $(BUILD_OUT_PREFIX)$(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/
 	$(RM) -rf $(DESTDIR)$(libdir)/$(BASENAME).so $(DESTDIR)$(libdir)/$(BASENAME).so.$($(BASENAME)_SOVERSION)
 	ln -sf $(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/$(BASENAME).so
 	ln -sf $(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/$(BASENAME).so.$($(BASENAME)_SOVERSION)
@@ -153,24 +161,26 @@ $(BUILD_OUT_PREFIX)%.coverage.la: %.cpp
 $(COVERAGE_TESTS): $(BUILD_OUT_PREFIX)%.coverage : $(BUILD_OUT_PREFIX)%.coverage.la
 $(COVERAGE_TESTS): LDFLAGS += -pthread $(COVERAGEFLAGS)
 
-coverage: $(COVERAGE_TESTS) .PHONY
+coverage: $(COVERAGE_TESTS)
 	for CTEST in $(COVERAGE_TESTS) ; do $$CTEST ; done
 	mkdir -p $(BUILD_OUT_PREFIX)coverage
 	gcovr $(BUILD_OUT_PREFIX) --html-details -o $(BUILD_OUT_PREFIX)coverage/coverage.html
 
 endif
 
+.PHONY: coverage
+
 ################################################################################
 # Documentation rules
 
 docclean:
-	rm -rf doc
+	rm -rf docs
 
-docs: .PHONY
+docs:
 	mkdir -p docs
 	doxygen doxygen.conf
 
-.PHONY:
+.PHONY: docs
 
 #################################################################################
 # Clang format rules
