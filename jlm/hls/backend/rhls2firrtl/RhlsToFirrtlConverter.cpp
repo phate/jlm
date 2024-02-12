@@ -1963,8 +1963,7 @@ void
 RhlsToFirrtlConverter::AddClockPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
 {
   struct circt::firrtl::PortInfo port = {
-    Builder_->getStringAttr("clk"),
-    circt::firrtl::ClockType::get(Builder_->getContext()),
+    Builder_->getStringAttr("clk"), circt::firrtl::ClockType::get(Builder_->getContext()),
     circt::firrtl::Direction::In,   {},
     Builder_->getUnknownLoc(),
   };
@@ -1976,10 +1975,8 @@ void
 RhlsToFirrtlConverter::AddResetPort(::llvm::SmallVector<circt::firrtl::PortInfo> * ports)
 {
   struct circt::firrtl::PortInfo port = {
-    Builder_->getStringAttr("reset"),
-    circt::firrtl::IntType::get(Builder_->getContext(), false, 1),
-    circt::firrtl::Direction::In,
-    {},
+    Builder_->getStringAttr("reset"), circt::firrtl::IntType::get(Builder_->getContext(), false, 1),
+    circt::firrtl::Direction::In,     {},
     Builder_->getUnknownLoc(),
   };
   ports->push_back(port);
@@ -2012,9 +2009,7 @@ RhlsToFirrtlConverter::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo
 
   auto memType = circt::firrtl::BundleType::get(Builder_->getContext(), memReqElements);
   struct circt::firrtl::PortInfo memBundle = {
-    Builder_->getStringAttr("mem_req"),
-    memType, circt::firrtl::Direction::Out,
-    {},
+    Builder_->getStringAttr("mem_req"), memType, circt::firrtl::Direction::Out, {},
     Builder_->getUnknownLoc(),
   };
   ports->push_back(memBundle);
