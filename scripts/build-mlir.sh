@@ -3,8 +3,19 @@ set -eu
 
 GIT_COMMIT=6bfb270607f35b787bc849182f184e83548aa404
 
-MLIR_BUILD="${PWD}/build-mlir/"
-MLIR_INSTALL="${PWD}/usr/"
+# Get the absolute path to this script and set default build and install paths
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+MLIR_BUILD="${SCRIPT_DIR}/../build-mlir/"
+MLIR_INSTALL="${SCRIPT_DIR}/../usr/"
+
+# Check if Makefile.config exists and use it to set the installation path
+CONFIG=${SCRIPT_DIR}/../Makefile.config
+if test -f "$CONFIG"; then
+        MLIR_PATH=$(sed -n '/MLIR_PATH=/s/^.*=//p' ${CONFIG})
+        if [ -n "${MLIR_PATH-}" ]; then
+                MLIR_INSTALL=${SCRIPT_DIR}/../${MLIR_PATH}
+        fi
+fi
 
 function commit()
 {
