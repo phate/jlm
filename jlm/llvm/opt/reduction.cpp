@@ -16,59 +16,33 @@ namespace jlm::llvm
 class redstat final : public util::Statistics
 {
 public:
-  virtual ~redstat()
-  {}
+  ~redstat() override = default;
 
-  redstat()
-      : Statistics(Statistics::Id::ReduceNodes),
-        nnodes_before_(0),
-        nnodes_after_(0),
-        ninputs_before_(0),
-        ninputs_after_(0)
+  explicit redstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::ReduceNodes, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.stop();
-  }
-
-  virtual std::string
-  ToString() const override
-  {
-    return util::strfmt(
-        "RED ",
-        nnodes_before_,
-        " ",
-        nnodes_after_,
-        " ",
-        ninputs_before_,
-        " ",
-        ninputs_after_,
-        " ",
-        timer_.ns());
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<redstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<redstat>();
+    return std::make_unique<redstat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  size_t ninputs_before_, ninputs_after_;
-  util::timer timer_;
 };
 
 static void
@@ -144,7 +118,7 @@ static void
 reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
   auto & graph = rm.Rvsdg();
-  auto statistics = redstat::Create();
+  auto statistics = redstat::Create(rm.SourceFileName());
 
   statistics->start(graph);
 

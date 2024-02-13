@@ -193,8 +193,15 @@ private:
  *
  * @see RegionAwareMemoryNodeProvider
  */
-class RegionAwareMemoryNodeProvider::Statistics final : public jlm::util::Statistics
+class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics
 {
+  const char * NumRvsdgRegionsLabel_ = "#RvsdgRegions";
+
+  const char * AnnotationTimerLabel_ = "AnnotationTime";
+  const char * PropagationPass1TimerLabel_ = "PropagationPass1Time";
+  const char * PropagationPass2TimerLabel_ = "PropagationPass2Time";
+  const char * ResolveUnknownMemoryReferenceTimerLabel_ = "ResolveUnknownMemoryReferenceTime";
+
 public:
   ~Statistics() override = default;
 
@@ -202,60 +209,59 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
-      : jlm::util::Statistics(Statistics::Id::RegionAwareMemoryNodeProvisioning),
-        NumRvsdgNodes_(0),
-        NumRvsdgRegions_(0),
-        NumPointsToGraphMemoryNodes_(0),
+      : util::Statistics(
+          Statistics::Id::RegionAwareMemoryNodeProvisioning,
+          rvsdgModule.SourceFileName()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())
       return;
 
-    NumRvsdgNodes_ = jlm::rvsdg::nnodes(rvsdgModule.Rvsdg().root());
-    NumRvsdgRegions_ = jlm::rvsdg::region::NumRegions(*rvsdgModule.Rvsdg().root());
-    NumPointsToGraphMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(rvsdgModule.Rvsdg().root()));
+    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::region::NumRegions(*rvsdgModule.Rvsdg().root()));
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
   [[nodiscard]] size_t
   NumRvsdgNodes() const noexcept
   {
-    return NumRvsdgNodes_;
+    return GetMeasurementValue<uint64_t>(Label::NumRvsdgNodes);
   }
 
   [[nodiscard]] size_t
   NumRvsdgRegions() const noexcept
   {
-    return NumRvsdgRegions_;
+    return GetMeasurementValue<uint64_t>(NumRvsdgRegionsLabel_);
   }
 
   [[nodiscard]] size_t
   NumPointsToGraphMemoryNodes() const noexcept
   {
-    return NumPointsToGraphMemoryNodes_;
+    return GetMeasurementValue<uint64_t>(Label::NumPointsToGraphMemoryNodes);
   }
 
   [[nodiscard]] size_t
   GetAnnotationStatisticsTime() const noexcept
   {
-    return AnnotationTimer_.ns();
+    return GetTimer(AnnotationTimerLabel_).ns();
   }
 
   [[nodiscard]] size_t
   GetPropagationPass1Time() const noexcept
   {
-    return PropagationPass1Timer_.ns();
+    return GetTimer(PropagationPass1TimerLabel_).ns();
   }
 
   [[nodiscard]] size_t
   GetPropagationPass2Time() const noexcept
   {
-    return PropagationPass2Timer_.ns();
+    return GetTimer(PropagationPass2TimerLabel_).ns();
   }
 
   [[nodiscard]] size_t
   GetResolveUnknownMemoryNodeReferencesTime() const noexcept
   {
-    return ResolveUnknownMemoryReferencesTimer_.ns();
+    return GetTimer(ResolveUnknownMemoryReferenceTimerLabel_).ns();
   }
 
   void
@@ -264,7 +270,7 @@ public:
     if (!IsDemanded())
       return;
 
-    AnnotationTimer_.start();
+    AddTimer(AnnotationTimerLabel_).start();
   }
 
   void
@@ -273,7 +279,7 @@ public:
     if (!IsDemanded())
       return;
 
-    AnnotationTimer_.stop();
+    GetTimer(AnnotationTimerLabel_).stop();
   }
 
   void
@@ -282,7 +288,7 @@ public:
     if (!IsDemanded())
       return;
 
-    PropagationPass1Timer_.start();
+    AddTimer(PropagationPass1TimerLabel_).start();
   }
 
   void
@@ -291,7 +297,7 @@ public:
     if (!IsDemanded())
       return;
 
-    PropagationPass1Timer_.stop();
+    GetTimer(PropagationPass1TimerLabel_).stop();
   }
 
   void
@@ -300,7 +306,7 @@ public:
     if (!IsDemanded())
       return;
 
-    ResolveUnknownMemoryReferencesTimer_.start();
+    AddTimer(ResolveUnknownMemoryReferenceTimerLabel_).start();
   }
 
   void
@@ -309,7 +315,7 @@ public:
     if (!IsDemanded())
       return;
 
-    ResolveUnknownMemoryReferencesTimer_.stop();
+    GetTimer(ResolveUnknownMemoryReferenceTimerLabel_).stop();
   }
 
   void
@@ -318,7 +324,7 @@ public:
     if (!IsDemanded())
       return;
 
-    PropagationPass2Timer_.start();
+    AddTimer(PropagationPass2TimerLabel_).start();
   }
 
   void
@@ -327,35 +333,7 @@ public:
     if (!IsDemanded())
       return;
 
-    PropagationPass2Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return util::strfmt(
-        "RegionAwareMemoryNodeProvision ",
-        "#RvsdgNodes:",
-        NumRvsdgNodes_,
-        " ",
-        "#RvsdgRegions:",
-        NumRvsdgRegions_,
-        " ",
-        "#PointsToGraphMemoryNodes:",
-        NumPointsToGraphMemoryNodes_,
-        " ",
-        "AnnotationTime[ns]:",
-        AnnotationTimer_.ns(),
-        " ",
-        "PropagationPass1Time[ns]:",
-        PropagationPass1Timer_.ns(),
-        " ",
-        "ResolveUnknownMemoryNodeReferences[ns]:",
-        ResolveUnknownMemoryReferencesTimer_.ns(),
-        " ",
-        "PropagationPass2Time[ns]:",
-        PropagationPass2Timer_.ns(),
-        " ");
+    GetTimer(PropagationPass2TimerLabel_).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -378,15 +356,6 @@ private:
   {
     return StatisticsCollector_.GetSettings().IsDemanded(GetId());
   }
-
-  size_t NumRvsdgNodes_;
-  size_t NumRvsdgRegions_;
-  size_t NumPointsToGraphMemoryNodes_;
-
-  util::timer AnnotationTimer_;
-  util::timer PropagationPass1Timer_;
-  util::timer ResolveUnknownMemoryReferencesTimer_;
-  util::timer PropagationPass2Timer_;
 
   const util::StatisticsCollector & StatisticsCollector_;
 };

@@ -59,7 +59,9 @@ $(patsubst %, run-%, $(JLC_COMPILE_TESTS)): run-%: $(BUILD_OUT_PREFIX)%.jlm
 	if $^ >$^.log 2>&1 ; then \
 		echo "success" ; \
 	else \
+		EXIT_CODE="$$?" ; \
 		echo "failed. See $^.log:" ; cat $^.log ; \
+		exit "$$EXIT_CODE" ; \
 	fi
 
 # Run the jlc-compiled binaries as part of tests. This may

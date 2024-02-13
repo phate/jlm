@@ -18,42 +18,26 @@ namespace jlm::llvm::aa
 /** \brief Statistics class for memory state encoder encoding
  *
  */
-class EncodingStatistics final : public jlm::util::Statistics
+class EncodingStatistics final : public util::Statistics
 {
 public:
   ~EncodingStatistics() override = default;
 
-  explicit EncodingStatistics(jlm::util::filepath sourceFile)
-      : Statistics(Statistics::Id::MemoryStateEncoder),
-        NumNodesBefore_(0),
-        SourceFile_(std::move(sourceFile))
+  explicit EncodingStatistics(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::MemoryStateEncoder, sourceFile)
   {}
 
   void
   Start(const jlm::rvsdg::graph & graph)
   {
-    NumNodesBefore_ = jlm::rvsdg::nnodes(graph.root());
-    Timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   Stop()
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return jlm::util::strfmt(
-        "MemoryStateEncoder ",
-        SourceFile_.to_str(),
-        " ",
-        "#RvsdgNodes:",
-        NumNodesBefore_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<EncodingStatistics>
@@ -61,11 +45,6 @@ public:
   {
     return std::make_unique<EncodingStatistics>(sourceFile);
   }
-
-private:
-  jlm::util::timer Timer_;
-  size_t NumNodesBefore_;
-  jlm::util::filepath SourceFile_;
 };
 
 static jlm::rvsdg::argument *

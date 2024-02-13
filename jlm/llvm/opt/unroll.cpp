@@ -16,44 +16,31 @@ namespace jlm::llvm
 class unrollstat final : public util::Statistics
 {
 public:
-  virtual ~unrollstat()
-  {}
+  ~unrollstat() override = default;
 
-  unrollstat()
-      : Statistics(Statistics::Id::LoopUnrolling),
-        nnodes_before_(0),
-        nnodes_after_(0)
+  explicit unrollstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::LoopUnrolling, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    timer_.stop();
-  }
-
-  virtual std::string
-  ToString() const override
-  {
-    return util::strfmt("UNROLL ", nnodes_before_, " ", nnodes_after_, " ", timer_.ns());
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<unrollstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<unrollstat>();
+    return std::make_unique<unrollstat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  util::timer timer_;
 };
 
 /* helper functions */
@@ -530,7 +517,7 @@ loopunroll::run(RvsdgModule & module, util::StatisticsCollector & statisticsColl
     return;
 
   auto & graph = module.Rvsdg();
-  auto statistics = unrollstat::Create();
+  auto statistics = unrollstat::Create(module.SourceFileName());
 
   statistics->start(module.Rvsdg());
   unroll(graph.root(), factor_);

@@ -18,44 +18,31 @@ namespace jlm::llvm
 class pushstat final : public util::Statistics
 {
 public:
-  virtual ~pushstat()
-  {}
+  ~pushstat() override = default;
 
-  pushstat()
-      : Statistics(Statistics::Id::PushNodes),
-        ninputs_before_(0),
-        ninputs_after_(0)
+  explicit pushstat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
   void
   start(const jlm::rvsdg::graph & graph) noexcept
   {
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgInputsBefore, jlm::rvsdg::ninputs(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const jlm::rvsdg::graph & graph) noexcept
   {
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    timer_.stop();
-  }
-
-  virtual std::string
-  ToString() const override
-  {
-    return util::strfmt("PUSH ", ninputs_before_, " ", ninputs_after_, " ", timer_.ns());
+    AddMeasurement(Label::NumRvsdgInputsAfter, jlm::rvsdg::ninputs(graph.root()));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<pushstat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<pushstat>();
+    return std::make_unique<pushstat>(sourceFile);
   }
-
-private:
-  size_t ninputs_before_, ninputs_after_;
-  util::timer timer_;
 };
 
 class worklist
@@ -435,7 +422,7 @@ push(jlm::rvsdg::region * region)
 static void
 push(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pushstat::Create();
+  auto statistics = pushstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
   push(rm.Rvsdg().root());

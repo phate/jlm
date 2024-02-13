@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP
-#define JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP
+#ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_RHLSTOFIRRTLCONVERTER_HPP
+#define JLM_HLS_BACKEND_RHLS2FIRRTL_RHLSTOFIRRTLCONVERTER_HPP
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -32,7 +32,7 @@
 namespace jlm::hls
 {
 
-class MLIRGenImpl : public BaseHLS
+class RhlsToFirrtlConverter : public BaseHLS
 {
   std::string
   extension() override
@@ -47,27 +47,36 @@ public:
     return "MLIR/FIRRTL generator";
   }
 
-  MLIRGenImpl(mlir::MLIRContext & context)
-      : builder(&context)
-  {}
+  RhlsToFirrtlConverter()
+      : Context_(std::make_unique<::mlir::MLIRContext>())
+  {
+    Context_->getOrLoadDialect<circt::firrtl::FIRRTLDialect>();
+    Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
+  }
+
+  RhlsToFirrtlConverter(const RhlsToFirrtlConverter &) = delete;
+
+  RhlsToFirrtlConverter(RhlsToFirrtlConverter &&) = delete;
+
+  RhlsToFirrtlConverter &
+  operator=(const RhlsToFirrtlConverter &) = delete;
+
+  RhlsToFirrtlConverter &
+  operator=(RhlsToFirrtlConverter &&) = delete;
 
   circt::firrtl::CircuitOp
   MlirGen(const llvm::lambda::node * lamdaNode);
+
   void
   WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jlm::rvsdg::node * node);
+
   void
   WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
+
   std::string
-  toString(const circt::firrtl::CircuitOp circuit);
+  ToString(llvm::RvsdgModule & rvsdgModule);
 
 private:
-  // Variables
-  mlir::OpBuilder builder;
-  // We don't have any locations (i.e., the originating line in the
-  // source file) in RVSDG, so we set all operations to unkown
-  mlir::Location location = builder.getUnknownLoc();
-  circt::firrtl::ConventionAttr conventionAttr =
-      circt::firrtl::ConventionAttr::get(builder.getContext(), Convention::Internal);
   std::unordered_map<std::string, circt::firrtl::FModuleOp> modules;
   // FIRRTL generating functions
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
@@ -119,6 +128,8 @@ private:
   GetSubfield(mlir::Block * body, mlir::Value value, int index);
   circt::firrtl::SubfieldOp
   GetSubfield(mlir::Block * body, mlir::Value value, ::llvm::StringRef fieldName);
+  mlir::OpResult
+  GetInstancePort(circt::firrtl::InstanceOp & instance, std::string portName);
   mlir::BlockArgument
   GetPort(circt::firrtl::FModuleOp & module, std::string portName);
   mlir::BlockArgument
@@ -132,6 +143,8 @@ private:
   AddBitsOp(mlir::Block * body, mlir::Value value, int high, int low);
   circt::firrtl::AndPrimOp
   AddAndOp(mlir::Block * body, mlir::Value first, mlir::Value second);
+  circt::firrtl::NodeOp
+  AddNodeOp(mlir::Block * body, mlir::Value value, std::string name);
   circt::firrtl::XorPrimOp
   AddXorOp(mlir::Block * body, mlir::Value first, mlir::Value second);
   circt::firrtl::OrPrimOp
@@ -206,77 +219,20 @@ private:
   GetIntType(int size);
   circt::firrtl::IntType
   GetIntType(const jlm::rvsdg::type * type, int extend = 0);
+  circt::firrtl::FIRRTLBaseType
+  GetFirrtlType(const jlm::rvsdg::type * type);
   std::string
   GetModuleName(const jlm::rvsdg::node * node);
   bool
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
+
+  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+  createInstances(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
+
+  std::unique_ptr<::mlir::OpBuilder> Builder_;
+  std::unique_ptr<::mlir::MLIRContext> Context_;
 };
 
-class MLIRGen : public BaseHLS
-{
-  std::string
-  extension() override
-  {
-    return ".fir";
-  }
+} // namespace jlm::hls
 
-  std::string
-  get_text(llvm::RvsdgModule & rm) override
-  {
-    return "";
-  }
-
-public:
-  std::string
-  run(llvm::RvsdgModule & rvsdgModule)
-  {
-    // Load the FIRRTLDialect
-    mlir::MLIRContext context;
-    context.getOrLoadDialect<circt::firrtl::FIRRTLDialect>();
-
-    // Generate a FIRRTL circuit of the rvsdgModule
-    auto lambdaNode = get_hls_lambda(rvsdgModule);
-    auto mlirGen = MLIRGenImpl(context);
-    auto circuit = mlirGen.MlirGen(lambdaNode);
-    // Write the FIRRTL to a file
-    return mlirGen.toString(circuit);
-  }
-
-private:
-};
-
-} // namespace jlm
-
-#else
-
-namespace jlm::hls
-{
-
-class MLIRGen : public BaseHLS
-{
-  std::string
-  extension() override
-  {
-    return ".fir";
-  }
-
-  std::string
-  get_text(llvm::RvsdgModule & rm) override
-  {
-    return "";
-  }
-
-public:
-  std::string
-  run(llvm::RvsdgModule & rvsdgModule)
-  {
-    throw util::error(
-        "This version of jlm-hls has not been compiled with support for the CIRCT backend\n");
-  }
-
-private:
-};
-
-} // namespace jlm
-
-#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_MLIRGEN_HPP
+#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_RHLSTOFIRRTLCONVERTER_HPP
