@@ -3,6 +3,20 @@ set -eu
 
 GIT_COMMIT=093cdfe482530623fea01e1d3242af93e533ba54
 
+# Get the absolute path to this script and set default build and install paths
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+CIRCT_BUILD=${SCRIPT_DIR}/../build-circt
+CIRCT_INSTALL=${SCRIPT_DIR}/../usr
+
+# Check if Makefile.config exists and use it to set the installation path
+CONFIG=${SCRIPT_DIR}/../Makefile.config
+if test -f "$CONFIG"; then
+	CIRCT_PATH=$(sed -n '/CIRCT_PATH=/s/^.*=//p' ${CONFIG})
+	if [ -n "${CIRCT_PATH-}" ]; then
+		CIRCT_INSTALL=${SCRIPT_DIR}/../${CIRCT_PATH}
+	fi
+fi
+
 function commit()
 {
 	echo ${GIT_COMMIT}
