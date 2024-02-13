@@ -24,10 +24,16 @@ ifdef ENABLE_HLS
 include jlm/hls/Makefile.sub
 include tools/jhls/Makefile.sub
 include tools/jlm-hls/Makefile.sub
+
+ifdef ENABLE_VERILATOR
+include tests/verilator/Makefile.sub
+endif
+
 endif
 
 ifdef ENABLE_MLIR
 include jlm/mlir/Makefile.sub
 endif
+
 
 include Makefile.rules

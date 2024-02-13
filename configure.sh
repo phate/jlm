@@ -11,6 +11,7 @@ CIRCT_PATH=
 ENABLE_MLIR=
 MLIR_PATH=
 MLIR_LDFLAGS=
+ENABLE_VERILATOR=
 
 function usage()
 {
@@ -27,6 +28,7 @@ function usage()
 	echo "  --enable-mlir PATH    Sets the path to the MLIR RVSDG Dialect and enables"
 	echo "                        building the MLIR backend and frontend. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
+	echo "  --enable-verilator    Enable verilator tests."
 	echo "  --help                Prints this message and stops."
 	echo
 	echo "Influential variables that can be set:"
@@ -64,6 +66,10 @@ while [[ "$#" -ge 1 ]] ; do
 			;;
 		--enable-coverage)
 			ENABLE_COVERAGE="yes"
+			shift
+			;;
+		--enable-verilator)
+			ENABLE_VERILATOR="yes"
 			shift
 			;;
 		--help)
@@ -138,6 +144,7 @@ MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
+ENABLE_VERILATOR=${ENABLE_VERILATOR}
 EOF
 	if [ ! -z "${CXX-}" ] ; then
 		echo "CXX=${CXX}"

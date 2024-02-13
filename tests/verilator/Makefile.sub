@@ -1,0 +1,125 @@
+BUILD=./build
+
+# Envorinment variables used to output colored text
+NC=\033[0m
+RED=\033[0;31m
+GREEN=\033[0;32m
+BLUE=\033[1;34m
+
+.PHONY: check-verilator
+check-verilator: check-verilator-base check-verilator-polybench check-verilator-dynamatic
+
+# Generic build target used by the various tests
+$(BUILD)/%.hls: $(BUILD)/jhls $(BUILD)/jlm-hls
+$(BUILD)/%.hls: %.c
+	@mkdir -p $(@D)
+	@set -e && printf '$(BLUE)Building: $(NC)%s\n' $@ 
+	@PATH=$(BUILD):$(PATH) $(BUILD)/jhls $^ $(HLS_TEST_ADDITIONAL_SRC) $(HLS_TEST_ADDITIONAL_FLAGS) --circt --hls-function=$(HLS_TEST_FUNCTION) -o $@ > /dev/null
+	@llc-16 -O0 --relocation-model=pic -filetype=obj -o $@.o $@.rest.ll
+	@TMPDIR=`mktemp -d`; \
+	$(CIRCT_PATH)/bin/firtool -format=fir --verilog $@.fir > $$TMPDIR/jlm_hls.v; \
+	VERILATOR_ROOT=/usr/share/verilator verilator_bin --cc --build --exe --trace-fst -Wno-WIDTH -j -Mdir $$TMPDIR -MAKEFLAGS CXX=g++ -CFLAGS -g --assert -CFLAGS " -fPIC" -o $${PWD}/$@ $$TMPDIR/jlm_hls.v $${PWD}/$@.o $${PWD}/$@.harness.cpp > /dev/null
+
+# This target is used for running and checking built tests 
+.PHONY: verilator-run/%.hls
+verilator-run/%.hls:
+	@set -e ; \
+	printf '$(BLUE)Running: $(NC)%s\n' $* ; \
+	if $(BUILD)/$*.hls >> /dev/null 2>&1 ; then \
+		printf '    $(GREEN)%s\n$(NC)' "SUCCESS" ; \
+	else \
+		printf '    $(RED)%s$(NC)%s\n' "FAILURE" ; \
+		exit 1 ; \
+	fi ;
+
+# This target is used for running and checking built Dynamatic tests
+.PHONY: verilator-run-dynamatic/%.hls
+verilator-run-dynamatic/%.hls:
+	@set -e ; \
+	printf '$(BLUE)Running: $(NC)%s\n' $* ; \
+	$(BUILD)/$*.hls > $(BUILD)/$*.log ; \
+	tail -n +2 $(BUILD)/$*.log > $(BUILD)/$*.log2 ; \
+	\
+	DIFF=$(diff -q $1 $2) ; \
+	if [ "$$DIFF" != "" ]; then \
+		printf '    $(RED)%s$(NC)%s\n' "FAILURE" ; exit 1 ; \
+        	exit -1 ; \
+	else \
+		printf '    $(GREEN)%s\n$(NC)' "SUCCESS" ; \
+	fi ;
+
+
+VERILATOR_BASE_FILES = \
+	tests/verilator/base/return \
+	tests/verilator/base/arithmetic \
+	tests/verilator/base/loop \
+	tests/verilator/base/nested_loops \
+	tests/verilator/base/conditional \
+	tests/verilator/base/load \
+	tests/verilator/base/array \
+	tests/verilator/base/gep \
+	tests/verilator/base/global \
+	tests/verilator/base/matrix \
+	tests/verilator/base/cpu \
+
+.PHONY: check-verilator-base
+check-verilator-base: HLS_TEST_FUNCTION=run
+check-verilator-base: $(patsubst %, $(BUILD)/%.hls, $(VERILATOR_BASE_FILES))
+check-verilator-base: $(patsubst %, verilator-run/%.hls, $(VERILATOR_BASE_FILES))
+
+
+VERILATOR_POLYBENCH_FILES = \
+	tests/verilator/polybench/correlation \
+	tests/verilator/polybench/jacobi_1d \
+
+.PHONY: check-verilator-polybench
+check-verilator-polybench: HLS_TEST_FUNCTION=kernel
+check-verilator-polybench: HLS_TEST_ADDITIONAL_SRC = tests/verilator/polybench/polybench.c
+check-verilator-polybench: HLS_TEST_ADDITIONAL_FLAGS = -Itests/verilator/polybench -D=DATA_TYPE_IS_INT -D=POLYBENCH_DUMP_ARRAYS -D=POLYBENCH_USE_C99_PROTO -D=MINI_DATASET
+check-verilator-polybench: $(patsubst %, $(BUILD)/%.hls, $(VERILATOR_POLYBENCH_FILES))
+check-verilator-polybench: $(patsubst %, verilator-run/%.hls, $(VERILATOR_POLYBENCH_FILES))
+
+
+VERILATOR_DYNAMATIC_FILES = \
+	tests/verilator/dynamatic/fir \
+	tests/verilator/dynamatic/gaussian \
+	tests/verilator/dynamatic/if_loop_1 \
+	tests/verilator/dynamatic/if_loop_2 \
+	tests/verilator/dynamatic/if_loop_3 \
+	tests/verilator/dynamatic/iir \
+	tests/verilator/dynamatic/image_resize \
+	tests/verilator/dynamatic/insertion_sort \
+	tests/verilator/dynamatic/kernel_2mm \
+	tests/verilator/dynamatic/kernel_3mm \
+	tests/verilator/dynamatic/loop_array \
+	tests/verilator/dynamatic/matrix \
+	tests/verilator/dynamatic/memory_loop \
+	tests/verilator/dynamatic/mul_example \
+	tests/verilator/dynamatic/pivot \
+	tests/verilator/dynamatic/simple_example_1 \
+	tests/verilator/dynamatic/simple_example_2 \
+	tests/verilator/dynamatic/stencil_2d \
+	tests/verilator/dynamatic/sumi3_mem \
+	tests/verilator/dynamatic/test_memory_1 \
+	tests/verilator/dynamatic/test_memory_2 \
+	tests/verilator/dynamatic/test_memory_3 \
+	tests/verilator/dynamatic/test_memory_4 \
+	tests/verilator/dynamatic/test_memory_5 \
+	tests/verilator/dynamatic/test_memory_6 \
+	tests/verilator/dynamatic/test_memory_7 \
+	tests/verilator/dynamatic/test_memory_8 \
+	tests/verilator/dynamatic/test_memory_9 \
+	tests/verilator/dynamatic/test_memory_10 \
+	tests/verilator/dynamatic/threshold \
+	tests/verilator/dynamatic/vector_rescale \
+	tests/verilator/dynamatic/video_filter \
+	tests/verilator/dynamatic/bicg \
+	tests/verilator/dynamatic/gemver \
+	tests/verilator/dynamatic/matrix_power \
+	tests/verilator/dynamatic/matvec \
+	tests/verilator/dynamatic/triangular \
+
+.PHONY: check-verilator-dynamatic
+check-verilator-dynamatic: HLS_TEST_FUNCTION=kernel
+check-verilator-dynamatic: $(patsubst %, $(BUILD)/%.hls, $(VERILATOR_DYNAMATIC_FILES))
+check-verilator-dynamatic: $(patsubst %, verilator-run-dynamatic/%.hls, $(VERILATOR_DYNAMATIC_FILES))

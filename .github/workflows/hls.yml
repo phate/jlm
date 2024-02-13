@@ -22,21 +22,17 @@ jobs:
     - name: "Build CIRCT"
       uses: ./.github/actions/BuildCirct
     - name: "Configure jlm"
-      run: ./configure.sh --enable-asserts --enable-hls ${{ github.workspace }}/build-circt/circt CXX=clang++-16
+      run: ./configure.sh --enable-asserts --enable-hls ${{ github.workspace }}/build-circt/circt --enable-verilator CXX=clang++-16
     - name: "Compile jlm"
       run: make -j `nproc` -O
 
     # --------
-    # Run HLS test suite
+    # Run checks
     # --------
 
     - name: "Install verilator"
       run: sudo apt-get install verilator
-    - name: "Clone jlm-test-suite"
-      run: git clone https://github.com/phate/jlm-eval-suite.git
-    - name: "Link the build output directory to where it is expected by jlm-eval-suite"
-      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/build
-    - name: "Run hls-test-suite"
-      run: |
-        cd jlm-eval-suite
-        make CIRCT_PATH=${{ github.workspace }}/build-circt/circt hls-test-run
+    - name: "Run check"
+      run: make -j `nproc` -O check
+    - name: "Run check-verilator"
+      run: make check-verilator
