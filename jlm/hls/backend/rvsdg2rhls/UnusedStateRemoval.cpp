@@ -104,8 +104,8 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
   auto newLambdaOutput = newLambda->finalize(newResults);
 
   // TODO handle functions at other levels?
-  assert(lambdaNode.region() == lambdaNode.region()->graph()->root());
-  assert((*lambdaNode.output()->begin())->region() == lambdaNode.region()->graph()->root());
+  JLM_ASSERT(lambdaNode.region() == lambdaNode.region()->graph()->root());
+  JLM_ASSERT((*lambdaNode.output()->begin())->region() == lambdaNode.region()->graph()->root());
 
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
   lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
