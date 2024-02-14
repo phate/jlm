@@ -43,14 +43,14 @@ libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
 	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
-	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval \
+	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
 
 libhls_TEST_LIBS += \
+	libjlmtest \
 	libhls \
 	libllvm \
 	librvsdg \
 	libutil \
-	libjlmtest \
 
 libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 
