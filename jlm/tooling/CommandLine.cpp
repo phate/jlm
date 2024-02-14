@@ -790,9 +790,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               "Write theta-gamma inversion statistics to file.")),
       cl::desc("Write statistics"));
 
-#ifdef ENABLE_MLIR
   auto llvmInputFormat = JlmOptCommandLineOptions::InputFormat::Llvm;
-  auto mlirInputFormat = JlmOptCommandLineOptions::InputFormat::Mlir;
 
   cl::opt<JlmOptCommandLineOptions::InputFormat> inputFormat(
       "input-format",
@@ -802,18 +800,16 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               llvmInputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(llvmInputFormat),
               "Input LLVM IR [default]"),
+#ifdef ENABLE_MLIR
           ::clEnumValN(
-              mlirInputFormat,
-              JlmOptCommandLineOptions::ToCommandLineArgument(mlirInputFormat),
+              JlmOptCommandLineOptions::InputFormat::Mlir,
+              JlmOptCommandLineOptions::ToCommandLineArgument(JlmOptCommandLineOptions::InputFormat::Mlir),
               "Input MLIR")),
-      cl::init(llvmInputFormat));
 #endif
+      cl::init(llvmInputFormat));
 
   auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
   auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
-#ifdef ENABLE_MLIR
-  auto mlirOutputFormat = JlmOptCommandLineOptions::OutputFormat::Mlir;
-#endif
 
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
       "output-format",
@@ -825,8 +821,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               "Output LLVM IR [default]"),
 #ifdef ENABLE_MLIR
           ::clEnumValN(
-              mlirOutputFormat,
-              JlmOptCommandLineOptions::ToCommandLineArgument(mlirOutputFormat),
+              JlmOptCommandLineOptions::OutputFormat::Mlir,
+              JlmOptCommandLineOptions::ToCommandLineArgument(JlmOptCommandLineOptions::OutputFormat::Mlir),
               "Output MLIR"),
 #endif
           ::clEnumValN(
@@ -931,11 +927,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
-#ifdef ENABLE_MLIR
       inputFormat,
-#else
-      JlmOptCommandLineOptions::InputFormat::Llvm,
-#endif
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
