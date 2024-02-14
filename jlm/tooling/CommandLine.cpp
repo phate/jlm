@@ -803,7 +803,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 #ifdef ENABLE_MLIR
           ::clEnumValN(
               JlmOptCommandLineOptions::InputFormat::Mlir,
-              JlmOptCommandLineOptions::ToCommandLineArgument(JlmOptCommandLineOptions::InputFormat::Mlir),
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  JlmOptCommandLineOptions::InputFormat::Mlir),
               "Input MLIR")),
 #endif
       cl::init(llvmInputFormat));
@@ -822,7 +823,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 #ifdef ENABLE_MLIR
           ::clEnumValN(
               JlmOptCommandLineOptions::OutputFormat::Mlir,
-              JlmOptCommandLineOptions::ToCommandLineArgument(JlmOptCommandLineOptions::OutputFormat::Mlir),
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  JlmOptCommandLineOptions::OutputFormat::Mlir),
               "Output MLIR"),
 #endif
           ::clEnumValN(
