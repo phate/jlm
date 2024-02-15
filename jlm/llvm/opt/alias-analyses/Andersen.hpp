@@ -28,7 +28,7 @@ public:
   /**
    * class for configuring the Andersen pass, such as what solver to use.
    */
-  class PassConfiguration
+  class Configuration
   {
   public:
     enum class Solver
@@ -38,7 +38,7 @@ public:
     };
 
   public:
-    PassConfiguration() = default;
+    Configuration() = default;
 
     void
     SetSolver(Solver solver)
@@ -75,12 +75,12 @@ public:
    * @param config
    */
   void
-  SetConfiguration(PassConfiguration config);
+  SetConfiguration(Configuration config);
 
   /**
    * @return the PassConfiguration used by the Andersen pass when analyzing
    */
-  [[nodiscard]] const PassConfiguration &
+  [[nodiscard]] const Configuration &
   GetConfiguration() const;
 
   /**
@@ -197,7 +197,7 @@ private:
   void
   AnalyzeRvsdg(const rvsdg::graph & graph);
 
-  PassConfiguration Config_;
+  Configuration Config_;
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;

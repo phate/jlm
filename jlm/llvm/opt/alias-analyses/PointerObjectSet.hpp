@@ -379,7 +379,7 @@ public:
   }
 
   /**
-   * @return the PointerObject whose points to-set should be contained within the superset
+   * @return the PointerObject whose points-to set should be contained within the superset
    */
   [[nodiscard]] PointerObject::Index
   GetSubset() const noexcept
@@ -388,7 +388,7 @@ public:
   }
 
   /**
-   * @param subset the new PointerObject whose points to-set should be contained within the superset
+   * @param subset the new PointerObject whose points-to set should be contained within the superset
    */
   void
   SetSubset(PointerObject::Index subset)

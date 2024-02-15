@@ -796,12 +796,12 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
 }
 
 void
-Andersen::SetConfiguration(PassConfiguration config)
+Andersen::SetConfiguration(Configuration config)
 {
-  Config_ = config;
+  Config_ = std::move(config);
 }
 
-const Andersen::PassConfiguration &
+const Andersen::Configuration &
 Andersen::GetConfiguration() const
 {
   return Config_;
@@ -820,13 +820,13 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   AnalyzeRvsdg(module.Rvsdg());
   statistics->StopSetAndConstraintBuildingStatistics(*Set_, *Constraints_);
 
-  if (Config_.GetSolver() == PassConfiguration::Solver::Naive)
+  if (Config_.GetSolver() == Configuration::Solver::Naive)
   {
     statistics->StartConstraintSolvingNaiveStatistics();
     size_t numIterations = Constraints_->SolveNaively();
     statistics->StopConstraintSolvingNaiveStatistics(numIterations);
   }
-  else if (Config_.GetSolver() == PassConfiguration::Solver::Worklist)
+  else if (Config_.GetSolver() == Configuration::Solver::Worklist)
   {
     JLM_UNREACHABLE("Worklist solver not yet implemented");
   }
