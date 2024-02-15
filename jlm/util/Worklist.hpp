@@ -2,11 +2,11 @@
  * Copyright 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_WORKLIST_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_WORKLIST_HPP
+#ifndef JLM_UTIL_WORKLIST_HPP
+#define JLM_UTIL_WORKLIST_HPP
 
-#include <jlm/util/common.hpp>
-#include <jlm/util/HashSet.hpp>
+#include "common.hpp"
+#include "HashSet.hpp"
 
 #include <limits>
 #include <queue>
@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace jlm::llvm::aa
+namespace jlm::util
 {
 
 /**
@@ -32,13 +32,13 @@ public:
 
   Worklist(const Worklist & other) = delete;
 
-  Worklist(Worklist && other) = delete;
+  Worklist(Worklist && other) = default;
 
   Worklist &
   operator=(const Worklist & other) = delete;
 
   Worklist &
-  operator=(Worklist && other) = delete;
+  operator=(Worklist && other) = default;
 
   /**
    * @return true if there are work items left to be visited
@@ -154,8 +154,13 @@ private:
 };
 
 /**
- * Worklist implementation using a priority queue.
- * The next work item to fire is the one that was least recently fired (LRF).
+ * Worklist implementation using a priority queue, ordering work items by "Least Recently Fired".
+ * Each work item is time stamped when it leaves the work list. When selecting a work item from
+ * the list, the item with the oldest time stemp (or no time stamp, if any) is chosen.
+ * LRF is presented in
+ *   A. Kanamori and D. Weise "Worklist management strategies for Dataflow Analysis" (1994),
+ * and used in
+ *   Pierce's "Online cycle detection and difference propagation for pointer analysis" (2003).
  * @tparam T the type of the work items.
  * @see Worklist
  */
@@ -217,4 +222,4 @@ private:
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_WORKLIST_HPP
+#endif // JLM_UTIL_WORKLIST_HPP

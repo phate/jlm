@@ -5,16 +5,16 @@
 
 #include "TestRvsdgs.hpp"
 
-#include <test-registry.hpp>
+#include "tests/test-registry.hpp"
 
-#include <jlm/llvm/opt/alias-analyses/Worklist.hpp>
+#include "jlm/util/Worklist.hpp"
 
 #include <cassert>
 
 static void
 TestLifoWorklist()
 {
-  jlm::llvm::aa::LifoWorklist<size_t> wl;
+  jlm::util::LifoWorklist<size_t> wl;
   assert(!wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
   wl.PushWorkItem(2);
@@ -36,7 +36,7 @@ TestLifoWorklist()
 static void
 TestFifoWorklist()
 {
-  jlm::llvm::aa::FifoWorklist<size_t> wl;
+  jlm::util::FifoWorklist<size_t> wl;
   assert(!wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
   wl.PushWorkItem(2);
@@ -59,7 +59,7 @@ TestFifoWorklist()
 static void
 TestLrfWorklist()
 {
-  jlm::llvm::aa::LrfWorklist<size_t> wl;
+  jlm::util::LrfWorklist<size_t> wl;
   assert(!wl.HasMoreWorkItems());
   wl.PushWorkItem(5);
 
