@@ -25,9 +25,40 @@ class Andersen final : public AliasAnalysis
   class Statistics;
 
 public:
-  Andersen() = default;
+  /**
+   * class for configuring the Andersen pass, such as what solver to use.
+   */
+  class Configuration
+  {
+  public:
+    enum class Solver
+    {
+      Naive,
+      Worklist
+    };
+
+  public:
+    Configuration() = default;
+
+    void
+    SetSolver(Solver solver)
+    {
+      Solver_ = solver;
+    }
+
+    [[nodiscard]] Solver
+    GetSolver() const
+    {
+      return Solver_;
+    }
+
+  private:
+    Solver Solver_ = Solver::Naive;
+  };
 
   ~Andersen() noexcept override = default;
+
+  Andersen() = default;
 
   Andersen(const Andersen &) = delete;
 
@@ -40,12 +71,26 @@ public:
   operator=(Andersen &&) = delete;
 
   /**
+   * Specify the PassConfiguration the Andersen pass should use when analyzing
+   * @param config
+   */
+  void
+  SetConfiguration(Configuration config);
+
+  /**
+   * @return the PassConfiguration used by the Andersen pass when analyzing
+   */
+  [[nodiscard]] const Configuration &
+  GetConfiguration() const;
+
+  /**
    * Performs Andersen's alias analysis on the rvsdg \p module,
    * producing a PointsToGraph describing what memory objects exists,
    * and which values in the rvsdg program may point to them.
    * @param module the module to analyze
    * @param statisticsCollector the collector that will receive pass statistics
    * @return A PointsToGraph for the module
+   * @see SetConfiguration to configure settings for the analysis
    */
   std::unique_ptr<PointsToGraph>
   Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
@@ -63,10 +108,10 @@ public:
    *
    * Note that registers sharing PointerObject, become separate PointsToGraph nodes.
    *
-   * In the PointerObjectSet, the PointsToExternal flag encodes pointing to an address from outside
-   * the module. This may however be the address of a memory object within the module, that has
-   * escaped. In the final graph, any node marked as pointing to external, will get an edge to the
-   * special "external" node, as well as to every memory object node marked as escaped.
+   * In the PointerObjectSet, the PointsToExternal flag encodes pointing to an address available
+   * outside the module. This may however be the address of a memory object within the module, that
+   * has escaped. In the final PointsToGraph, any node marked as pointing to external, will get an
+   * edge to the special "external" node, as well as to every memory object node marked as escaped.
    *
    * @return the newly created PointsToGraph
    */
@@ -151,6 +196,8 @@ private:
 
   void
   AnalyzeRvsdg(const rvsdg::graph & graph);
+
+  Configuration Config_;
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;
