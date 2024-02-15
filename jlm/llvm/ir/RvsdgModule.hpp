@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/ir/linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/util/file.hpp>
 
 namespace jlm::llvm
@@ -86,16 +86,27 @@ is_export(const jlm::rvsdg::input * input)
   return result && result->region() == graph->root();
 }
 
-/** \brief RVSDG module class
- *
+/**
+ * An LLVM module utilizing the RVSDG representation.
  */
-class RvsdgModule final
+class RvsdgModule final : public rvsdg::RvsdgModule
 {
 public:
+  ~RvsdgModule() noexcept override = default;
+
   RvsdgModule(jlm::util::filepath sourceFileName, std::string targetTriple, std::string dataLayout)
+      : RvsdgModule(std::move(sourceFileName), std::move(targetTriple), std::move(dataLayout), {})
+  {}
+
+  RvsdgModule(
+      jlm::util::filepath sourceFileName,
+      std::string targetTriple,
+      std::string dataLayout,
+      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
       : DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple)),
-        SourceFileName_(std::move(sourceFileName))
+        SourceFileName_(std::move(sourceFileName)),
+        StructTypeDeclarations_(std::move(declarations))
   {}
 
   RvsdgModule(const RvsdgModule &) = delete;
@@ -108,34 +119,47 @@ public:
   RvsdgModule &
   operator=(RvsdgModule &&) = delete;
 
-  jlm::rvsdg::graph &
-  Rvsdg() noexcept
-  {
-    return Rvsdg_;
-  }
-
-  const jlm::rvsdg::graph &
-  Rvsdg() const noexcept
-  {
-    return Rvsdg_;
-  }
-
-  const jlm::util::filepath &
+  [[nodiscard]] const jlm::util::filepath &
   SourceFileName() const noexcept
   {
     return SourceFileName_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   TargetTriple() const noexcept
   {
     return TargetTriple_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   DataLayout() const noexcept
   {
     return DataLayout_;
+  }
+
+  /**
+   * Adds a struct type declaration to the module. The module becomes the owner of the declaration.
+   *
+   * @param declaration A declaration that is added to the module.
+   * @return A reference to the added documentation.
+   */
+  const StructType::Declaration &
+  AddStructTypeDeclaration(std::unique_ptr<StructType::Declaration> declaration)
+  {
+    StructTypeDeclarations_.emplace_back(std::move(declaration));
+    return *StructTypeDeclarations_.back();
+  }
+
+  /**
+   * Releases all struct type declarations from the module to the caller. The caller is the new
+   * owner of the declarations.
+   *
+   * @return A vector of declarations.
+   */
+  std::vector<std::unique_ptr<StructType::Declaration>> &&
+  ReleaseStructTypeDeclarations()
+  {
+    return std::move(StructTypeDeclarations_);
   }
 
   static std::unique_ptr<RvsdgModule>
@@ -144,14 +168,28 @@ public:
       const std::string & targetTriple,
       const std::string & dataLayout)
   {
-    return std::make_unique<RvsdgModule>(sourceFileName, targetTriple, dataLayout);
+    return Create(sourceFileName, targetTriple, dataLayout, {});
+  }
+
+  static std::unique_ptr<RvsdgModule>
+  Create(
+      const jlm::util::filepath & sourceFileName,
+      const std::string & targetTriple,
+      const std::string & dataLayout,
+      std::vector<std::unique_ptr<StructType::Declaration>> declarations)
+  {
+    return std::make_unique<RvsdgModule>(
+        sourceFileName,
+        targetTriple,
+        dataLayout,
+        std::move(declarations));
   }
 
 private:
-  jlm::rvsdg::graph Rvsdg_;
   std::string DataLayout_;
   std::string TargetTriple_;
   const jlm::util::filepath SourceFileName_;
+  std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
 }

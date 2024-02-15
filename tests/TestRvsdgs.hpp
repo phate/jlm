@@ -1795,6 +1795,133 @@ private:
   jlm::rvsdg::node * Memcpy_;
 };
 
+/**
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *   #include <string.h>
+ *
+ *   typedef struct structB
+ *   {
+ *     int * array[32];
+ *   } structB;
+ *
+ *   typedef struct structA
+ *   {
+ *     int x;
+ *     structB * b;
+ *   } structA;
+ *
+ *   static void
+ *   g(structB * s1, structB * s2)
+ *   {
+ *     memcpy(*s2->array, *s1->array, sizeof(int) * 32);
+ *   }
+ *
+ *   void
+ *   f(structA * s1, structA * s2)
+ *   {
+ *     g(s1->b, s2->b);
+ *   }
+ * \endcode
+ */
+class MemcpyTest2 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  LambdaF() const noexcept
+  {
+    JLM_ASSERT(LambdaF_ != nullptr);
+    return *LambdaF_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  LambdaG() const noexcept
+  {
+    JLM_ASSERT(LambdaG_ != nullptr);
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] const jlm::llvm::CallNode &
+  CallG() const noexcept
+  {
+    JLM_ASSERT(CallG_ != nullptr);
+    return *CallG_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  Memcpy() const noexcept
+  {
+    JLM_ASSERT(Memcpy_ != nullptr);
+    return *Memcpy_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::lambda::node * LambdaF_ = {};
+  jlm::llvm::lambda::node * LambdaG_ = {};
+
+  jlm::llvm::CallNode * CallG_ = {};
+
+  jlm::rvsdg::node * Memcpy_ = {};
+};
+
+/**
+ * This class sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *   #include <stdint.h>
+ *   #include <string.h>
+ *
+ *   typedef struct {
+ *     uint8_t * buf;
+ *   } myStruct;
+ *
+ *   void
+ *   f(myStruct * p)
+ *   {
+ *     myStruct s = *p;
+ *     memcpy(s.buf, s.buf - 5, 3);
+ *   }
+ * \endcode
+ */
+class MemcpyTest3 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  Lambda() const noexcept
+  {
+    JLM_ASSERT(Lambda_ != nullptr);
+    return *Lambda_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  Alloca() const noexcept
+  {
+    JLM_ASSERT(Alloca_ != nullptr);
+    return *Alloca_;
+  }
+
+  [[nodiscard]] const jlm::rvsdg::node &
+  Memcpy() const noexcept
+  {
+    JLM_ASSERT(Memcpy_ != nullptr);
+    return *Memcpy_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::lambda::node * Lambda_ = {};
+
+  jlm::rvsdg::node * Alloca_ = {};
+
+  jlm::rvsdg::node * Memcpy_ = {};
+};
+
 /** \brief LinkedListTest class
  *
  * This class sets up an RVSDG representing the following code snippet:

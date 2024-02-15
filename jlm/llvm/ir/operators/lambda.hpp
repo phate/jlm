@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/linkage.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/iterator_range.hpp>
@@ -791,9 +792,9 @@ public:
   }
 
   /**
-   * Returns an \ref iterator_range for iterating through all direct call sites.
+   * Returns an \ref util::iterator_range for iterating through all direct call sites.
    *
-   * @return An \ref iterator_range of all direct call sites.
+   * @return An \ref util::iterator_range of all direct call sites.
    */
   [[nodiscard]] DirectCallsConstRange
   DirectCalls() const noexcept
@@ -802,9 +803,9 @@ public:
   }
 
   /**
-   * Returns an \ref iterator_range for iterating through all other usages.
+   * Returns an \ref util::iterator_range for iterating through all other usages.
    *
-   * @return An \ref iterator_range of all other usages.
+   * @return An \ref util::iterator_range of all other usages.
    */
   [[nodiscard]] OtherUsersConstRange
   OtherUsers() const noexcept

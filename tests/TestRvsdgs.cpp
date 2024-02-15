@@ -258,28 +258,31 @@ GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
 
-  auto dcl = jlm::rvsdg::rcddeclaration::create({ &jlm::rvsdg::bit32, &jlm::rvsdg::bit32 });
-  jlm::rvsdg::rcdtype rt(dcl.get());
-
-  MemoryStateType mt;
-  PointerType pointerType;
-  FunctionType fcttype({ &pointerType, &mt }, { &jlm::rvsdg::bit32, &mt });
-
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
+  auto & declaration = module->AddStructTypeDeclaration(
+      StructType::Declaration::Create({ &jlm::rvsdg::bit32, &jlm::rvsdg::bit32 }));
+  StructType structType(false, declaration);
+
+  MemoryStateType mt;
+  PointerType pointerType;
+  FunctionType fcttype({ &pointerType, &mt }, { &jlm::rvsdg::bit32, &mt });
+
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
   auto zero = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 0);
   auto one = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 1);
 
-  auto gepx = GetElementPtrOperation::Create(fct->fctargument(0), { zero, zero }, rt, pointerType);
+  auto gepx =
+      GetElementPtrOperation::Create(fct->fctargument(0), { zero, zero }, structType, pointerType);
   auto ldx = LoadNode::Create(gepx, { fct->fctargument(1) }, jlm::rvsdg::bit32, 4);
 
-  auto gepy = GetElementPtrOperation::Create(fct->fctargument(0), { zero, one }, rt, pointerType);
+  auto gepy =
+      GetElementPtrOperation::Create(fct->fctargument(0), { zero, one }, structType, pointerType);
   auto ldy = LoadNode::Create(gepy, { ldx[1] }, jlm::rvsdg::bit32, 4);
 
   auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);
@@ -3022,6 +3025,168 @@ MemcpyTest::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
+MemcpyTest2::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  arraytype arrayType(pointerType, 32);
+  auto & structBDeclaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &arrayType }));
+  auto structTypeB = StructType::Create("structTypeB", false, structBDeclaration);
+
+  auto SetupFunctionG = [&]()
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+        { &iOStateType, &memoryStateType, &loopStateType });
+
+    auto lambda = lambda::node::create(rvsdg->root(), functionType, "g", linkage::internal_linkage);
+    auto s1Argument = lambda->fctargument(0);
+    auto s2Argument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+
+    auto cFalse = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
+    auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
+    auto c128 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 128);
+
+    auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType, pointerType);
+    auto ldS2 = LoadNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
+
+    auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
+    auto ldS1 = LoadNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
+
+    auto memcpyResults = Memcpy::create(ldS2[0], ldS1[0], c128, cFalse, { ldS1[1] });
+
+    auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0], loopStateArgument });
+
+    return std::make_tuple(lambdaOutput, jlm::rvsdg::node_output::node(memcpyResults[0]));
+  };
+
+  auto SetupFunctionF = [&](lambda::output & functionF)
+  {
+    iostatetype iOStateType;
+    MemoryStateType memoryStateType;
+    loopstatetype loopStateType;
+    FunctionType functionType(
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+        { &iOStateType, &memoryStateType, &loopStateType });
+
+    auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
+    auto s1Argument = lambda->fctargument(0);
+    auto s2Argument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->fctargument(2);
+    auto memoryStateArgument = lambda->fctargument(3);
+    auto loopStateArgument = lambda->fctargument(4);
+
+    auto functionFArgument = lambda->add_ctxvar(&functionF);
+
+    auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
+
+    auto gepS1 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto ldS1 = LoadNode::Create(gepS1, { memoryStateArgument }, pointerType, 8);
+
+    auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
+    auto ldS2 = LoadNode::Create(gepS2, { ldS1[1] }, pointerType, 8);
+
+    auto callResults = CallNode::Create(
+        functionFArgument,
+        functionF.node()->type(),
+        { ldS1[0], ldS2[0], iOStateArgument, ldS2[1], loopStateArgument });
+
+    auto lambdaOutput = lambda->finalize(callResults);
+
+    rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
+
+    return std::make_tuple(
+        lambdaOutput,
+        util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+  };
+
+  auto [lambdaG, memcpyNode] = SetupFunctionG();
+  auto [lambdaF, callG] = SetupFunctionF(*lambdaG);
+
+  this->LambdaF_ = lambdaF->node();
+  this->LambdaG_ = lambdaG->node();
+  this->CallG_ = callG;
+  this->Memcpy_ = memcpyNode;
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
+MemcpyTest3::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdg = &rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  auto & declaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &pointerType }));
+  auto structType = StructType::Create("myStruct", false, declaration);
+
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType functionType(
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+
+  Lambda_ = lambda::node::create(rvsdg->root(), functionType, "f", linkage::internal_linkage);
+  auto pArgument = Lambda_->fctargument(0);
+  auto iOStateArgument = Lambda_->fctargument(1);
+  auto memoryStateArgument = Lambda_->fctargument(2);
+  auto loopStateArgument = Lambda_->fctargument(3);
+
+  auto cFalse = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 1, 0);
+  auto eight = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 8);
+  auto zero = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 0);
+  auto minusFive = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, -5);
+  auto three = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 3);
+
+  auto allocaResults = alloca_op::create(*structType, eight, 8);
+  auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
+
+  auto memcpyResults = Memcpy::create(allocaResults[0], pArgument, eight, cFalse, { memoryState });
+
+  auto gep1 =
+      GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, *structType, pointerType);
+  auto ld = LoadNode::Create(gep1, { memcpyResults[0] }, pointerType, 8);
+
+  auto gep2 =
+      GetElementPtrOperation::Create(allocaResults[0], { minusFive }, *structType, pointerType);
+
+  memcpyResults = Memcpy::create(ld[0], gep2, three, cFalse, { ld[1] });
+
+  auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0], loopStateArgument });
+
+  rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
+
+  Alloca_ = rvsdg::node_output::node(allocaResults[0]);
+  Memcpy_ = rvsdg::node_output::node(memcpyResults[0]);
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
 LinkedListTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
@@ -3032,10 +3197,10 @@ LinkedListTest::SetupRvsdg()
   auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto declaration = jlm::rvsdg::rcddeclaration::create({});
-  auto structType = StructType::Create("list", false, *declaration);
   PointerType pointerType;
-  declaration->append(pointerType);
+  auto & declaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &pointerType }));
+  auto structType = StructType::Create("list", false, declaration);
 
   auto SetupDeltaMyList = [&]()
   {

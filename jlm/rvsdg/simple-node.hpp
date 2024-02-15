@@ -72,7 +72,7 @@ public:
 
 class simple_input final : public node_input
 {
-  friend jlm::rvsdg::output;
+  friend class jlm::rvsdg::output;
 
 public:
   virtual ~simple_input() noexcept;
@@ -91,7 +91,7 @@ public:
 
 class simple_output final : public node_output
 {
-  friend jlm::rvsdg::simple_input;
+  friend class jlm::rvsdg::simple_input;
 
 public:
   virtual ~simple_output() noexcept;

@@ -1,0 +1,120 @@
+# Define a library and its build rules, register unit
+# tests for it.
+#
+# Basic usage :
+#   libfoo_SOURCES = a.cpp b.cpp ...
+#   libfoo_HEADERS = a.h b.h ...
+#   $(eval $(call common_library,libfoo))
+#
+# additional attributes supported (define before calling the macro):
+#   - libfoo_TESTS:
+#     list of tests for this library; each must compile to a binary
+#     by itself, and for each test there must be a single source file
+#   - libfoo_TEST_LIBS:
+#     extra libraries built in this project linked into each test
+#     (just specify the name without extension)
+#   - libfoo_TEST_EXTRA_LDFLAGS:
+#     additional LDFLAGS to be passed to link each test binary;
+#     use this to pull in external libraries (not built in this project)
+#
+# Depending on configuration builds only static or both
+# static and dynamic library. Depending on configuration
+# may also set up rules for test coverage report.
+define common_library
+
+### library build rules
+
+# add to the global list of sources and headers
+
+SOURCES += $$($1_SOURCES)
+HEADERS += $$($1_HEADERS)
+
+# rule to build static library
+
+$$(BUILD_OUT_PREFIX)$1.a: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.la, $$($1_SOURCES))
+STATIC_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.a
+
+# rule to build build elf shared library
+
+$$(BUILD_OUT_PREFIX)$1.so: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.lo, $$($1_SOURCES))
+ifeq ($$(ENABLE_SHARED), yes)
+SHARED_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.so
+endif
+
+### test rules
+
+# list of test binaries within the target build directory
+$1_TESTBINARIES = $$(patsubst %, $$(BUILD_OUT_PREFIX)%, $$($1_TESTS))
+
+# add to global list of tests
+TESTS += $$(patsubst %, $$(BUILD_OUT_PREFIX)%, $$($1_TESTS))
+
+# linking of test binaries
+$$($1_TESTBINARIES): $$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_TEST_LIBS)) $$(BUILD_OUT_PREFIX)$1.a
+$$($1_TESTBINARIES): LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_TEST_LIBS)) $$($1_TEST_EXTRA_LDFLAGS)
+
+# add test source files to list of sources
+SOURCES += $$(patsubst %, %.cpp, $$($1_TESTS))
+
+### test coverage rules
+
+ifeq ($$(ENABLE_COVERAGE), yes)
+
+## rules to build this library with coverage support
+
+# rule to build static library with test coverage collection support
+$$(BUILD_OUT_PREFIX)$1.coverage.a: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.coverage.la, $$($1_SOURCES))
+
+# add to clobal list of test coverage libraries
+COVERAGE_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.coverage.a
+
+## rules to build the tests for this library with coverage support
+
+# list of test coverage binaries for this library, within the target build directory
+$1_COVERAGEBINARIES = $$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage, $$($1_TESTS))
+
+# add to global list of test coverage binaries
+COVERAGE_TESTS += $$($1_COVERAGEBINARIES)
+
+# linking of coverage binaries; we need to link the "coverage" version of dependent libraries, transitively
+$$($1_COVERAGEBINARIES): $$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage.a, $$($1_TEST_LIBS)) $$(BUILD_OUT_PREFIX)$1.coverage.a
+$$($1_COVERAGEBINARIES): LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.coverage.a, $$($1_TEST_LIBS)) $$($1_TEST_EXTRA_LDFLAGS)
+
+STATIC_LIBRARIES += $$(BUILD_OUT_PREFIX)$1.coverage.a
+
+endif
+
+# alias rules to allow issuing "make libfoo" instead of "make build/libfoo"
+ifndef ($$(BUILD_OUT_PREFIX),)
+$1.a: $$(BUILD_OUT_PREFIX)$1.a
+$1.so: $$(BUILD_OUT_PREFIX)$1.so
+endif
+endef
+
+# Define an executable and its build rules.
+#
+# Usage :
+#   foo_SOURCES = a.cpp b.cpp ...
+#   foo_HEADERS = a.h b.h ...
+#   $(eval $(call common_executable,foo))
+#
+# additional attributes supported (define before calling the macro):
+#   - foo_LIBS:
+#     extra libraries built in this project linked into the binary
+#     (just specify the name without extension)
+#   - foo_EXTRA_LDFLAGS:
+#     additional LDFLAGS to be passed to link the executable
+#     use this to pull in external libraries (not built in this project)
+define common_executable
+SOURCES += $$($1_SOURCES)
+HEADERS += $$($1_HEADERS)
+
+$$(BUILD_OUT_PREFIX)$1: $$(patsubst %.cpp, $$(BUILD_OUT_PREFIX)%.la, $$($1_SOURCES)) $$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_LIBS))
+$$(BUILD_OUT_PREFIX)$1: LDFLAGS+=$$(patsubst %, $$(BUILD_OUT_PREFIX)%.a, $$($1_LIBS)) $$($1_EXTRA_LDFLAGS)
+EXECUTABLES += $$(BUILD_OUT_PREFIX)$1
+
+# alias rule to allow issuing "make foo" instead of "make build/foo"
+ifndef ($$(BUILD_OUT_PREFIX),)
+$1: $$(BUILD_OUT_PREFIX)$1
+endif
+endef

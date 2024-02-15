@@ -1,24 +1,26 @@
-# Copyright 2023 Nico Reißmann <nico.reissmann@gmail.com>
-# See COPYING for terms of redistribution.
-
-LIBUTIL_SRC = \
+libutil_SOURCES = \
 	jlm/util/callbacks.cpp \
 	jlm/util/common.cpp \
 	jlm/util/GraphWriter.cpp \
 	jlm/util/Statistics.cpp \
 
-.PHONY: libutil-debug
-libutil-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-libutil-debug: $(JLM_BUILD)/libutil.a
+libutil_TESTS += \
+	tests/jlm/util/test-disjointset \
+	tests/jlm/util/test-intrusive-hash \
+	tests/jlm/util/test-intrusive-list \
+	tests/jlm/util/TestBijectiveMap \
+	tests/jlm/util/TestFile \
+	tests/jlm/util/TestHashSet \
+	tests/jlm/util/TestMath \
+	tests/jlm/util/TestStatistics \
+	tests/jlm/util/TestTimer \
 
-.PHONY: libutil-release
-libutil-release: CXXFLAGS += -O3
-libutil-release: $(JLM_BUILD)/libutil.a
+libutil_TEST_LIBS = \
+	libjlmtest \
+	libutil \
 
-$(JLM_BUILD)/libutil.a: CPPFLAGS += -I$(JLM_ROOT)
-$(JLM_BUILD)/libutil.a : $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBUTIL_SRC))
+# Not fully clear why this is required, but omitting this causes
+# linker errors.
+libutil_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 
-.PHONY: libutil-clean
-libutil-clean:
-	@rm -rf $(JLM_BUILD)/libjlm
-	@rm -rf $(JLM_BUILD)/libutil.a
+$(eval $(call common_library,libutil))

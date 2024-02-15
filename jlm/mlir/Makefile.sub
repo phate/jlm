@@ -1,0 +1,30 @@
+# Copyright 2024 Magnus Sjalander <work@sjalander.com>
+# See COPYING for terms of redistribution.
+
+libmlir_SOURCES = \
+	jlm/mlir/backend/JlmToMlirConverter.cpp \
+	jlm/mlir/frontend/MlirToJlmConverter.cpp \
+
+libmlir_HEADERS = \
+	jlm/mlir/backend/JlmToMlirConverter.hpp \
+	jlm/mlir/frontend/MlirToJlmConverter.hpp \
+
+libmlir_TESTS += \
+	tests/jlm/mlir/backend/TestJlmToMlirConverter \
+	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
+
+libmlir_TEST_LIBS += \
+	libmlir \
+	libllvm \
+	librvsdg \
+	libutil \
+	libjlmtest \
+
+libmlir_TEST_EXTRA_LDFLAGS = \
+	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
+	-L$(MLIR_PATH)/lib \
+        -lMLIR \
+        -lMLIRJLM \
+        -lMLIRRVSDG \
+
+$(eval $(call common_library,libmlir))

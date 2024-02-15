@@ -375,7 +375,7 @@ private:
 
   static void
   PrintRvsdgModule(
-      const llvm::RvsdgModule & rvsdgModule,
+      llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,
       const JlmOptCommandLineOptions::OutputFormat & outputFormat,
       util::StatisticsCollector & statisticsCollector);
@@ -555,19 +555,19 @@ public:
   [[nodiscard]] util::filepath
   FirrtlFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls.fir";
+    return OutputFolder_.to_str() + ".fir";
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
+    return OutputFolder_.to_str() + ".rest.ll";
   }
 
   [[nodiscard]] util::filepath
   HarnessFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_harness.cpp";
+    return OutputFolder_.to_str() + ".harness.cpp";
   }
 
   [[nodiscard]] const util::filepath &
@@ -620,13 +620,13 @@ public:
   [[nodiscard]] util::filepath
   HlsFunctionFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_function.ll";
+    return OutputFolder_.to_str() + ".function.ll";
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + "/jlm_hls_rest.ll";
+    return OutputFolder_.to_str() + ".rest.ll";
   }
 
   [[nodiscard]] const util::filepath &
@@ -658,139 +658,6 @@ private:
   util::filepath OutputFolder_;
 
   std::string HlsFunctionName_;
-};
-
-/**
- * The FirtoolCommand class represents the firtool command line tool.
- */
-class FirtoolCommand final : public Command
-{
-public:
-  ~FirtoolCommand() noexcept override;
-
-  FirtoolCommand(util::filepath inputFile, util::filepath outputFile)
-      : OutputFile_(std::move(outputFile)),
-        InputFile_(std::move(inputFile))
-  {}
-
-  [[nodiscard]] std::string
-  ToString() const override;
-
-  void
-  Run() const override;
-
-  [[nodiscard]] const util::filepath &
-  OutputFile() const noexcept
-  {
-    return OutputFile_;
-  }
-
-  [[nodiscard]] const util::filepath &
-  InputFile() const noexcept
-  {
-    return InputFile_;
-  }
-
-  static CommandGraph::Node &
-  Create(
-      CommandGraph & commandGraph,
-      const util::filepath & inputFile,
-      const util::filepath & outputFile)
-  {
-    std::unique_ptr<FirtoolCommand> command(new FirtoolCommand(inputFile, outputFile));
-    return CommandGraph::Node::Create(commandGraph, std::move(command));
-  }
-
-private:
-  util::filepath OutputFile_;
-  util::filepath InputFile_;
-};
-
-/**
- * The VerilatorCommand class represents the verilator command line tool.
- */
-class VerilatorCommand final : public Command
-{
-public:
-  ~VerilatorCommand() noexcept override;
-
-  VerilatorCommand(
-      util::filepath verilogFile,
-      std::vector<util::filepath> objectFiles,
-      util::filepath harnessFile,
-      util::filepath outputFile,
-      util::filepath tempFolder,
-      std::vector<std::string> libraryPaths,
-      std::vector<std::string> libraries)
-      : OutputFile_(std::move(outputFile)),
-        VerilogFile_(std::move(verilogFile)),
-        HarnessFile_(std::move(harnessFile)),
-        TempFolder_(std::move(tempFolder)),
-        Libraries_(std::move(libraries)),
-        ObjectFiles_(std::move(objectFiles)),
-        LibraryPaths_(std::move(libraryPaths))
-  {}
-
-  [[nodiscard]] std::string
-  ToString() const override;
-
-  void
-  Run() const override;
-
-  [[nodiscard]] const util::filepath &
-  VerilogFile() const noexcept
-  {
-    return VerilogFile_;
-  }
-
-  [[nodiscard]] const util::filepath &
-  HarnessFile() const noexcept
-  {
-    return HarnessFile_;
-  }
-
-  [[nodiscard]] const util::filepath &
-  OutputFile() const noexcept
-  {
-    return OutputFile_;
-  }
-
-  [[nodiscard]] const std::vector<util::filepath> &
-  ObjectFiles() const noexcept
-  {
-    return ObjectFiles_;
-  }
-
-  static CommandGraph::Node &
-  Create(
-      CommandGraph & commandGraph,
-      const util::filepath & verilogFile,
-      const std::vector<util::filepath> & objectFiles,
-      const util::filepath & harnessFile,
-      const util::filepath & outputFile,
-      const util::filepath & tempFolder,
-      const std::vector<std::string> & libraryPaths,
-      const std::vector<std::string> & libraries)
-  {
-    std::unique_ptr<VerilatorCommand> command(new VerilatorCommand(
-        verilogFile,
-        objectFiles,
-        harnessFile,
-        outputFile,
-        tempFolder,
-        libraryPaths,
-        libraries));
-    return CommandGraph::Node::Create(commandGraph, std::move(command));
-  }
-
-private:
-  util::filepath OutputFile_;
-  util::filepath VerilogFile_;
-  util::filepath HarnessFile_;
-  util::filepath TempFolder_;
-  std::vector<std::string> Libraries_;
-  std::vector<util::filepath> ObjectFiles_;
-  std::vector<std::string> LibraryPaths_;
 };
 
 }

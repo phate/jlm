@@ -1,15 +1,15 @@
 # Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-LIBHLS_SRC = \
+libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
+    jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
     jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
-    jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
+    jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/add-prints.cpp \
     jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
@@ -18,22 +18,40 @@ LIBHLS_SRC = \
     jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
     jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/mlirgen.cpp \
+    jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     \
     jlm/hls/ir/hls.cpp \
 
-.PHONY: libhls-debug
-libhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-libhls-debug: $(JLM_BUILD)/libhls.a
+libhls_HEADERS = \
+	jlm/hls/ir/hls.hpp \
+	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
+	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-prints.hpp \
+	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-buffers.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
+	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
+	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
+	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-forks.hpp \
+	jlm/hls/backend/rvsdg2rhls/add-sinks.hpp \
 
-.PHONY: libhls-release
-libhls-release: CXXFLAGS += -O3
-libhls-release: $(JLM_BUILD)/libhls.a
+libhls_TESTS += \
+	tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
+	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
+	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
+	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
 
-$(JLM_BUILD)/libhls.a: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BUILD)/libhls.a: $(patsubst %.cpp, $(JLM_BUILD)/%.la, $(LIBHLS_SRC))
+libhls_TEST_LIBS += \
+	libjlmtest \
+	libhls \
+	libllvm \
+	librvsdg \
+	libutil \
 
-.PHONY: libhls-clean
-libhls-clean:
-	@rm -rf $(JLM_BUILD)/jlm/hls
-	@rm -rf $(JLM_BUILD)/libhls.a
+libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
+
+$(eval $(call common_library,libhls))

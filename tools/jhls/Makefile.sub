@@ -1,24 +1,17 @@
-# Copyright 2022 Magnus Sjaladner <work@sjalander.com>
+# Copyright 2022 Magnus Sjalander <work@sjalander.com>
+# Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
 # See COPYING for terms of redistribution.
 
-JHLS_SRC = \
+jhls_SOURCES = \
 	tools/jhls/jhls.cpp \
 
-.PHONY: jhls-debug
-jhls-debug: CXXFLAGS += $(CXXFLAGS_DEBUG)
-jhls-debug: $(JLM_BIN)/jhls
+jhls_LIBS = \
+	libtooling \
+	libhls \
+	libllvm \
+	librvsdg \
+	libutil \
 
-.PHONY: jhls-release
-jhls-release: CXXFLAGS += -O3
-jhls-release: $(JLM_BIN)/jhls
+jhls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
 
-$(JLM_BIN)/jhls: CPPFLAGS += -I$(JLM_ROOT) -I$(shell $(LLVMCONFIG) --includedir)
-$(JLM_BIN)/jhls: LDFLAGS += $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs) -L$(JLM_BUILD)/ -ltooling -lhls -lllvm -lrvsdg -lutil
-$(JLM_BIN)/jhls: $(patsubst %.cpp, $(JLM_BUILD)/%.o, $(JHLS_SRC)) $(JLM_BUILD)/libtooling.a $(JLM_BUILD)/librvsdg.a $(JLM_BUILD)/libhls.a $(JLM_BUILD)/libllvm.a $(JLM_BUILD)/libutil.a
-	@mkdir -p $(JLM_BIN)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ -o $@ $(LDFLAGS)
-
-.PHONY: jhls-clean
-jhls-clean:
-	@rm -rf $(JLM_BUILD)/tools/jhls
-	@rm -rf $(JLM_BIN)/jhls
+$(eval $(call common_executable,jhls))

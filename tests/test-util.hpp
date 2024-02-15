@@ -20,7 +20,7 @@
       __VA_ARGS__;                                            \
       assert(false && #__VA_ARGS__ " was supposed to throw"); \
     }                                                         \
-    catch (jlm::util::error e)                                \
+    catch (const jlm::util::error & e)                        \
     {                                                         \
       (void)e;                                                \
     }                                                         \

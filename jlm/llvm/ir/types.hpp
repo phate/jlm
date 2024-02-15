@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_IR_TYPES_HPP
 #define JLM_LLVM_IR_TYPES_HPP
 
-#include <jlm/rvsdg/record.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
@@ -331,15 +330,17 @@ create_varargtype()
 class StructType final : public jlm::rvsdg::valuetype
 {
 public:
+  class Declaration;
+
   ~StructType() override;
 
-  StructType(bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  StructType(bool isPacked, const Declaration & declaration)
       : jlm::rvsdg::valuetype(),
         IsPacked_(isPacked),
         Declaration_(declaration)
   {}
 
-  StructType(std::string name, bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  StructType(std::string name, bool isPacked, const Declaration & declaration)
       : jlm::rvsdg::valuetype(),
         IsPacked_(isPacked),
         Name_(std::move(name)),
@@ -374,7 +375,7 @@ public:
     return IsPacked_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::rcddeclaration &
+  [[nodiscard]] const Declaration &
   GetDeclaration() const noexcept
   {
     return Declaration_;
@@ -390,13 +391,13 @@ public:
   debug_string() const override;
 
   static std::unique_ptr<StructType>
-  Create(const std::string & name, bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  Create(const std::string & name, bool isPacked, const Declaration & declaration)
   {
     return std::make_unique<StructType>(name, isPacked, declaration);
   }
 
   static std::unique_ptr<StructType>
-  Create(bool isPacked, const jlm::rvsdg::rcddeclaration & declaration)
+  Create(bool isPacked, const Declaration & declaration)
   {
     return std::make_unique<StructType>(isPacked, declaration);
   }
@@ -404,7 +405,60 @@ public:
 private:
   bool IsPacked_;
   std::string Name_;
-  const jlm::rvsdg::rcddeclaration & Declaration_;
+  const Declaration & Declaration_;
+};
+
+class StructType::Declaration final
+{
+public:
+  ~Declaration() = default;
+
+private:
+  Declaration() = default;
+
+public:
+  Declaration(const Declaration &) = delete;
+
+  Declaration &
+  operator=(const Declaration &) = delete;
+
+  [[nodiscard]] size_t
+  NumElements() const noexcept
+  {
+    return Types_.size();
+  }
+
+  [[nodiscard]] const valuetype &
+  GetElement(size_t index) const noexcept
+  {
+    JLM_ASSERT(index < NumElements());
+    return *util::AssertedCast<const valuetype>(Types_[index].get());
+  }
+
+  void
+  Append(const jlm::rvsdg::valuetype & type)
+  {
+    Types_.push_back(type.copy());
+  }
+
+  static std::unique_ptr<Declaration>
+  Create()
+  {
+    return std::unique_ptr<Declaration>(new Declaration());
+  }
+
+  static std::unique_ptr<Declaration>
+  Create(const std::vector<const valuetype *> & types)
+  {
+    auto declaration = Create();
+    for (auto type : types)
+      declaration->Append(*type);
+
+    return declaration;
+  }
+
+private:
+  std::vector<std::unique_ptr<rvsdg::type>> Types_;
 };
 
 /* vector type */
@@ -602,7 +656,7 @@ public:
 };
 
 template<class ELEMENTYPE>
-static inline bool
+inline bool
 IsOrContains(const jlm::rvsdg::type & type)
 {
   if (jlm::rvsdg::is<ELEMENTYPE>(type))
@@ -614,8 +668,8 @@ IsOrContains(const jlm::rvsdg::type & type)
   if (auto structType = dynamic_cast<const StructType *>(&type))
   {
     auto & structDeclaration = structType->GetDeclaration();
-    for (size_t n = 0; n < structDeclaration.nelements(); n++)
-      return IsOrContains<ELEMENTYPE>(structDeclaration.element(n));
+    for (size_t n = 0; n < structDeclaration.NumElements(); n++)
+      return IsOrContains<ELEMENTYPE>(structDeclaration.GetElement(n));
 
     return false;
   }
@@ -624,6 +678,18 @@ IsOrContains(const jlm::rvsdg::type & type)
     return IsOrContains<ELEMENTYPE>(vectorType->type());
 
   return false;
+}
+
+/**
+ * Given a type, determines if it is one of LLVM's aggregate types.
+ * Vectors are not considered to be aggregate types, despite being based on a subtype.
+ * @param type the type to check
+ * @return true if the type is an aggreate type, false otherwise
+ */
+inline bool
+IsAggregateType(const jlm::rvsdg::type & type)
+{
+  return jlm::rvsdg::is<arraytype>(type) || jlm::rvsdg::is<StructType>(type);
 }
 
 }

@@ -1,16 +1,273 @@
 /*
- * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * Copyright 2023, 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
+#include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
+
+/**
+ * If values of the given type may point to things, the set of pointees needs to be tracked.
+ * If the type is an aggregate type, pointees must be tracked if any subtype is pointing.
+ * @param type the rvsdg type to be checked
+ * @return true if pointees should be tracked for all values of the given type, otherwise false
+ */
+bool
+IsOrContainsPointerType(const rvsdg::type & type)
+{
+  return IsOrContains<PointerType>(type);
+}
+
+/**
+ * Class collecting statistics from a pass of Andersen's alias analysis
+ */
+class Andersen::Statistics final : public util::Statistics
+{
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::AndersenAnalysis, sourceFile),
+        NumRvsdgNodes_(0),
+        NumPointerObjects_(0),
+        NumRegistersMappedToPointerObject_(0),
+        NumSupersetConstraints_(0),
+        NumAllPointeesPointToSupersetConstraints_(0),
+        NumSupersetOfAllPointeesConstraints_(0),
+        NumHandleEscapingFunctionConstraints_(0),
+        NumFunctionCallConstraints_(0),
+        NumConstraintSolvingIterations_(0),
+        NumPointsToGraphNodes_(0),
+        NumRegisterNodes_(0),
+        NumAllocaNodes_(0),
+        NumDeltaNodes_(0),
+        NumImportNodes_(0),
+        NumLambdaNodes_(0),
+        NumMallocNodes_(0),
+        NumMemoryNodes_(0),
+        NumEscapedNodes_(0),
+        NumExternalMemorySources_(0)
+  {}
+
+  void
+  StartAndersenStatistics(const jlm::rvsdg::graph & graph) noexcept
+  {
+    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
+    AnalysisTimer_.start();
+    SetAndConstraintBuildingTimer_.start();
+  }
+
+  void
+  StartConstraintSolvingStatistics(
+      const PointerObjectSet & set,
+      const PointerObjectConstraintSet & constraints) noexcept
+  {
+    SetAndConstraintBuildingTimer_.stop();
+
+    NumPointerObjects_ = set.NumPointerObjects();
+    NumRegistersMappedToPointerObject_ = set.GetRegisterMap().size();
+    for (const auto & constraint : constraints.GetConstraints())
+    {
+      std::visit(
+          [&](const auto & c)
+          {
+            using ConstraintType = std::decay_t<decltype(c)>;
+            if constexpr (std::is_same_v<ConstraintType, SupersetConstraint>)
+              NumSupersetConstraints_++;
+            if constexpr (std::is_same_v<ConstraintType, AllPointeesPointToSupersetConstraint>)
+              NumAllPointeesPointToSupersetConstraints_++;
+            if constexpr (std::is_same_v<ConstraintType, SupersetOfAllPointeesConstraint>)
+              NumSupersetOfAllPointeesConstraints_++;
+            if constexpr (std::is_same_v<ConstraintType, HandleEscapingFunctionConstraint>)
+              NumHandleEscapingFunctionConstraints_++;
+            if constexpr (std::is_same_v<ConstraintType, FunctionCallConstraint>)
+              NumFunctionCallConstraints_++;
+          },
+          constraint);
+    }
+
+    ConstraintSolvingTimer_.start();
+  }
+
+  void
+  StopConstraintSolvingStatistics(size_t numConstraintSolvingIterations) noexcept
+  {
+    ConstraintSolvingTimer_.stop();
+    NumConstraintSolvingIterations_ = numConstraintSolvingIterations;
+  }
+
+  void
+  StartPointsToGraphConstructionStatistics()
+  {
+    PointsToGraphConstructionTimer_.start();
+  }
+
+  void
+  StartExternalToAllEscapedStatistics()
+  {
+    PointsToGraphConstructionExternalToEscapedTimer_.start();
+  }
+
+  void
+  StopExternalToAllEscapedStatistics()
+  {
+    PointsToGraphConstructionExternalToEscapedTimer_.stop();
+  }
+
+  void
+  StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
+  {
+    PointsToGraphConstructionTimer_.stop();
+    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
+    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
+    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
+    NumImportNodes_ = pointsToGraph.NumImportNodes();
+    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
+    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
+    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
+    NumEscapedNodes_ = pointsToGraph.GetEscapedMemoryNodes().Size();
+    NumExternalMemorySources_ = pointsToGraph.GetExternalMemoryNode().NumSources();
+  }
+
+  void
+  StopAndersenStatistics() noexcept
+  {
+    AnalysisTimer_.stop();
+  }
+
+  [[nodiscard]] std::string
+  Serialize() const override
+  {
+    return jlm::util::strfmt(
+        "#RvsdgNodes:",
+        NumRvsdgNodes_,
+        " ",
+        "AliasAnalysisTime[ns]:",
+        AnalysisTimer_.ns(),
+        " ",
+        "#PointerObjects:",
+        NumPointerObjects_,
+        " ",
+        "#RegistersMappedToPointerObject:",
+        NumRegistersMappedToPointerObject_,
+        " ",
+        "#SupersetConstraints:",
+        NumSupersetConstraints_,
+        " ",
+        "#NumAllPointeesPointToSupersetConstraints:",
+        NumAllPointeesPointToSupersetConstraints_,
+        " ",
+        "#SupersetOfAllPointeesConstraints:",
+        NumSupersetOfAllPointeesConstraints_,
+        " ",
+        "#HandleEscapingFunctionConstraints:",
+        NumHandleEscapingFunctionConstraints_,
+        " ",
+        "#FunctionCallConstraints:",
+        NumFunctionCallConstraints_,
+        " ",
+        "#ConstraintSolvingIterations:",
+        NumConstraintSolvingIterations_,
+        " ",
+        "#PointsToGraphNodes:",
+        NumPointsToGraphNodes_,
+        " ",
+        "#RegisterNodes:",
+        NumRegisterNodes_,
+        " ",
+        "#AllocaNodes:",
+        NumAllocaNodes_,
+        " ",
+        "#DeltaNodes:",
+        NumDeltaNodes_,
+        " ",
+        "#ImportNodes:",
+        NumImportNodes_,
+        " ",
+        "#LambdaNodes:",
+        NumLambdaNodes_,
+        " ",
+        "#MallocNodes:",
+        NumMallocNodes_,
+        " ",
+        "#MemoryNodes:",
+        NumMemoryNodes_,
+        " ",
+        "#EscapedNodes:",
+        NumEscapedNodes_,
+        " ",
+        "#ExternalMemorySources:",
+        NumExternalMemorySources_,
+        " ",
+        "SetAndConstraintBuildingTime[ns]:",
+        SetAndConstraintBuildingTimer_.ns(),
+        " ",
+        "ConstraintSolvingTime[ns]:",
+        ConstraintSolvingTimer_.ns(),
+        " ",
+        "PointsToGraphConstructionTime[ns]:",
+        PointsToGraphConstructionTimer_.ns(),
+        " ",
+        "PointsToGraphConstructionExternalToEscapedTime[ns]:",
+        PointsToGraphConstructionExternalToEscapedTimer_.ns());
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(const util::filepath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+
+private:
+  size_t NumRvsdgNodes_;
+
+  size_t NumPointerObjects_;
+  // The number of RVSDG outputs and arguments that are associated with a PointerObject
+  size_t NumRegistersMappedToPointerObject_;
+
+  // Counts of each different type of constraint
+  size_t NumSupersetConstraints_;
+  size_t NumAllPointeesPointToSupersetConstraints_;
+  size_t NumSupersetOfAllPointeesConstraints_;
+  size_t NumHandleEscapingFunctionConstraints_;
+  size_t NumFunctionCallConstraints_;
+
+  // How many iterations constraint solving used before a fixed point was established
+  size_t NumConstraintSolvingIterations_;
+
+  // Counts of nodes in the final PointsToGraph
+  size_t NumPointsToGraphNodes_;
+  size_t NumRegisterNodes_;
+  size_t NumAllocaNodes_;
+  size_t NumDeltaNodes_;
+  size_t NumImportNodes_;
+  size_t NumLambdaNodes_;
+  size_t NumMallocNodes_;
+  size_t NumMemoryNodes_;
+  // How many of the memory nodes in the PointsToGraph are marked as escaped
+  size_t NumEscapedNodes_;
+  // How many of the nodes in the PointsToGraph point to the "external" node
+  size_t NumExternalMemorySources_;
+
+  // Total time spent at analysis, start to finish
+  util::timer AnalysisTimer_;
+  // Time spent traversing RVSDG and creating PointerObjects and constraints
+  util::timer SetAndConstraintBuildingTimer_;
+  // Time spent solving points-to sets until all constraints are satisfied
+  util::timer ConstraintSolvingTimer_;
+  // Total time spent converting PointerObjects and points-to sets into PointsToGraph
+  util::timer PointsToGraphConstructionTimer_;
+  // The subset of PointsToGraph construction time that was spent specifically
+  // to attach all nodes pointing to external, to all nodes marked as escaped.
+  util::timer PointsToGraphConstructionExternalToEscapedTimer_;
+};
 
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
@@ -33,6 +290,8 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeBitcast(node);
   else if (is<bits2ptr_op>(op))
     AnalyzeBits2ptr(node);
+  else if (is<ptr2bits_op>(op))
+    AnalyzePtr2bits(node);
   else if (is<ConstantPointerNullOperation>(op))
     AnalyzeConstantPointerNull(node);
   else if (is<UndefValueOperation>(op))
@@ -47,13 +306,19 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValue>(op))
     AnalyzeExtractValue(node);
-  else if (is<FreeOperation>(op))
+  else if (is<valist_op>(op))
+    AnalyzeValist(node);
+  else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
-    // A free does not affect any Points-to-sets
+    // These operations take pointers as input, but do not affect any points-to sets
   }
   else
   {
-    // TODO: Make sure all simple nodes involving pointers are correctly handled by the analysis
+    // This node operation is unknown, make sure it doesn't consume any pointers
+    for (size_t i = 0; i < node.ninputs(); i++)
+    {
+      JLM_ASSERT(!IsOrContainsPointerType(node.input(i)->type()));
+    }
   }
 }
 
@@ -87,7 +352,7 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
-  if (!is<PointerType>(outputRegister.type()))
+  if (!IsOrContainsPointerType(outputRegister.type()))
   {
     // TODO: When reading address as an integer, some of address' target might still pointers,
     // which should now be considered as having escaped
@@ -105,7 +370,7 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
   const auto & valueRegister = *storeNode.GetValueInput()->origin();
 
   // If the written value is not a pointer, be conservative and mark the address
-  if (!is<PointerType>(valueRegister.type()))
+  if (!IsOrContainsPointerType(valueRegister.type()))
   {
     // TODO: We are writing an integer to *address,
     // which really should mark all of address' targets as pointing to external
@@ -130,7 +395,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
   for (size_t n = 0; n < callNode.NumResults(); n++)
   {
     const auto & outputRegister = *callNode.Result(n);
-    if (is<PointerType>(outputRegister.type()))
+    if (IsOrContainsPointerType(outputRegister.type()))
       (void)Set_->CreateRegisterPointerObject(outputRegister);
   }
 
@@ -148,9 +413,10 @@ Andersen::AnalyzeGep(const rvsdg::simple_node & node)
   // The analysis is field insensitive, so ignoring the offset and mapping the output
   // to the same PointerObject as the input is sufficient.
   const auto & baseRegister = *node.input(0)->origin();
-  const auto & outputRegister = *node.output(0);
+  JLM_ASSERT(is<PointerType>(baseRegister.type()));
 
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
   Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
 }
 
@@ -162,11 +428,12 @@ Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);
 
-  if (!is<PointerType>(inputRegister.type()))
+  JLM_ASSERT(!IsAggregateType(inputRegister.type()) && !IsAggregateType(outputRegister.type()));
+  if (!IsOrContainsPointerType(inputRegister.type()))
     return;
 
   // If the input is a pointer type, the output must also be a pointer type
-  JLM_ASSERT(is<PointerType>(outputRegister.type()));
+  JLM_ASSERT(IsOrContainsPointerType(outputRegister.type()));
 
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
   Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
@@ -187,6 +454,18 @@ Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
 }
 
 void
+Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
+{
+  JLM_ASSERT(is<ptr2bits_op>(&node));
+  const auto & inputRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(inputRegister.type()));
+
+  // This operation converts a pointer to bytes, exposing it as an integer, which we can't track.
+  const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+  Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
+}
+
+void
 Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
@@ -204,7 +483,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
   JLM_ASSERT(is<UndefValueOperation>(&node));
   const auto & output = *node.output(0);
 
-  if (!is<PointerType>(output.type()))
+  if (!IsOrContainsPointerType(output.type()))
     return;
 
   // UndefValue cannot point to any memory location. We therefore only insert a register node for
@@ -237,16 +516,20 @@ Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantArray>(&node));
 
+  if (!IsOrContainsPointerType(node.output(0)->type()))
+    return;
+
+  // Make the resulting array point to everything its members are pointing to
+  auto & outputRegister = *node.output(0);
+  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     const auto & inputRegister = *node.input(n)->origin();
-    if (!is<PointerType>(inputRegister.type()))
-      continue;
+    JLM_ASSERT(IsOrContainsPointerType(inputRegister.type()));
 
-    // TODO: Pass pointer information through aggregate types
-    // Since the rest of the code only considers values of PointerType, mark inputs as escaping.
-    auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
-    Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
+    const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+    Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, inputRegisterPO));
   }
 }
 
@@ -255,16 +538,21 @@ Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
+  if (!IsOrContainsPointerType(node.output(0)->type()))
+    return;
+
+  // Make the resulting struct point to everything its members are pointing to
+  auto & outputRegister = *node.output(0);
+  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     const auto & inputRegister = *node.input(n)->origin();
-    if (!is<PointerType>(inputRegister.type()))
+    if (!IsOrContainsPointerType(inputRegister.type()))
       continue;
 
-    // TODO: Pass pointer information through aggregate types
-    // Since the rest of the code only considers values of PointerType, mark inputs as escaping.
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
-    Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
+    Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, inputRegisterPO));
   }
 }
 
@@ -274,7 +562,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto & output = *node.output(0);
 
-  if (!is<PointerType>(output.type()))
+  if (!IsOrContainsPointerType(output.type()))
     return;
 
   // ConstantAggregateZero cannot point to any memory location.
@@ -288,14 +576,34 @@ Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
   JLM_ASSERT(is<ExtractValue>(&node));
 
   const auto & result = *node.output(0);
-  if (!is<PointerType>(result.type()))
+  if (!IsOrContainsPointerType(result.type()))
     return;
 
-  // TODO: Make aggregate types with at least one field of pointer type have PointerObjects.
-  // Then we could be more precise than "escaping" all pointers passing through aggregate types.
-  // This involves replacing all usages of is<PointerType> with IsOrContains<PointerType>
-  const auto resultPO = Set_->CreateRegisterPointerObject(result);
-  Constraints_->AddPointsToExternalConstraint(resultPO);
+  const auto & inputRegister = *node.input(0)->origin();
+  const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+  // The resulting element can point to anything the aggregate type points to
+  Set_->MapRegisterToExistingPointerObject(result, inputRegisterPO);
+}
+
+void
+Andersen::AnalyzeValist(const rvsdg::simple_node & node)
+{
+  JLM_ASSERT(is<valist_op>(&node));
+
+  // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
+  // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
+  // to external. All we need to do is mark all pointees of pointer varargs as escaping. When the
+  // pointers are re-created inside the function, they will be marked as pointing to external.
+
+  for (size_t i = 0; i < node.ninputs(); i++)
+  {
+    if (!IsOrContainsPointerType(node.input(i)->type()))
+      continue;
+
+    const auto & inputRegister = *node.input(i)->origin();
+    const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+    Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
+  }
 }
 
 void
@@ -321,7 +629,7 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
   // Handle context variables
   for (auto & cv : lambda.ctxvars())
   {
-    if (!jlm::rvsdg::is<PointerType>(cv.type()))
+    if (!IsOrContainsPointerType(cv.type()))
       continue;
 
     auto & inputRegister = *cv.origin();
@@ -330,10 +638,10 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
-  // Create Register PointerObjects for each argument in the function
+  // Create Register PointerObjects for each argument of pointing type in the function
   for (auto & argument : lambda.fctarguments())
   {
-    if (jlm::rvsdg::is<PointerType>(argument.type()))
+    if (IsOrContainsPointerType(argument.type()))
       (void)Set_->CreateRegisterPointerObject(argument);
   }
 
@@ -342,7 +650,7 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
   // Create a lambda PointerObject for the lambda itself
   const auto lambdaPO = Set_->CreateFunctionMemoryObject(lambda);
 
-  // Make the labda node's output point to the lambda PointerObject
+  // Make the lambda node's output point to the lambda PointerObject
   const auto & lambdaOutput = *lambda.output();
   const auto lambdaOutputPO = Set_->CreateRegisterPointerObject(lambdaOutput);
   Constraints_->AddPointerPointeeConstraint(lambdaOutputPO, lambdaPO);
@@ -358,7 +666,7 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   // Handle context variables
   for (auto & cv : delta.ctxvars())
   {
-    if (!is<PointerType>(cv.type()))
+    if (!IsOrContainsPointerType(cv.type()))
       continue;
 
     auto & inputRegister = *cv.origin();
@@ -376,7 +684,7 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   const auto globalPO = Set_->CreateGlobalMemoryObject(delta);
 
   // If the subregion result is a pointer, make the global point to the same variables
-  if (is<PointerType>(resultRegister.type()))
+  if (IsOrContainsPointerType(resultRegister.type()))
   {
     const auto resultRegisterPO = Set_->GetRegisterPointerObject(resultRegister);
     Constraints_->AddConstraint(SupersetConstraint(globalPO, resultRegisterPO));
@@ -394,7 +702,7 @@ Andersen::AnalyzePhi(const phi::node & phi)
   // Handle context variables
   for (auto cv = phi.begin_cv(); cv != phi.end_cv(); ++cv)
   {
-    if (!is<PointerType>(cv->type()))
+    if (!IsOrContainsPointerType(cv->type()))
       continue;
 
     auto & inputRegister = *cv->origin();
@@ -406,7 +714,7 @@ Andersen::AnalyzePhi(const phi::node & phi)
   // Create Register PointerObjects for each recursion variable argument
   for (auto rv = phi.begin_rv(); rv != phi.end_rv(); ++rv)
   {
-    if (!is<PointerType>(rv->type()))
+    if (!IsOrContainsPointerType(rv->type()))
       continue;
 
     auto & argumentRegister = *rv->argument();
@@ -418,7 +726,7 @@ Andersen::AnalyzePhi(const phi::node & phi)
   // Handle recursion variable results
   for (auto rv = phi.begin_rv(); rv != phi.end_rv(); ++rv)
   {
-    if (!is<PointerType>(rv->type()))
+    if (!IsOrContainsPointerType(rv->type()))
       continue;
 
     // Make the recursion variable argument point to what the result register points to
@@ -440,7 +748,7 @@ Andersen::AnalyzeGamma(const rvsdg::gamma_node & gamma)
   // Handle input variables
   for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)
   {
-    if (!is<PointerType>(ev->type()))
+    if (!IsOrContainsPointerType(ev->type()))
       continue;
 
     auto & inputRegister = *ev->origin();
@@ -457,7 +765,7 @@ Andersen::AnalyzeGamma(const rvsdg::gamma_node & gamma)
   // Handle exit variables
   for (auto ex = gamma.begin_exitvar(); ex != gamma.end_exitvar(); ++ex)
   {
-    if (!is<PointerType>(ex->type()))
+    if (!IsOrContainsPointerType(ex->type()))
       continue;
 
     auto & outputRegister = *ex.output();
@@ -478,7 +786,7 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
   // And make it point to a superset of the corresponding input register
   for (const auto thetaOutput : theta)
   {
-    if (!is<PointerType>(thetaOutput->type()))
+    if (!IsOrContainsPointerType(thetaOutput->type()))
       continue;
 
     auto & inputReg = *thetaOutput->input()->origin();
@@ -496,7 +804,7 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
   // of what the corresponding result registers point to
   for (const auto thetaOutput : theta)
   {
-    if (!is<PointerType>(thetaOutput->type()))
+    if (!IsOrContainsPointerType(thetaOutput->type()))
       continue;
 
     auto & innerArgumentReg = *thetaOutput->argument();
@@ -517,6 +825,13 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
 void
 Andersen::AnalyzeRegion(rvsdg::region & region)
 {
+  // Check that all region arguments of pointing types have PointerObjects
+  for (size_t i = 0; i < region.narguments(); i++)
+  {
+    if (IsOrContainsPointerType(region.argument(i)->type()))
+      JLM_ASSERT(Set_->GetRegisterMap().count(region.argument(i)));
+  }
+
   // The use of the top-down traverser is vital, as it ensures all input origins
   // of pointer type are mapped to PointerObjects by the time a node is processed.
   rvsdg::topdown_traverser traverser(&region);
@@ -531,6 +846,13 @@ Andersen::AnalyzeRegion(rvsdg::region & region)
       AnalyzeStructuralNode(*structuralNode);
     else
       JLM_UNREACHABLE("Unknown node type");
+
+    // Check that all outputs with pointing types have PointerObjects created
+    for (size_t i = 0; i < node->noutputs(); i++)
+    {
+      if (IsOrContainsPointerType(node->output(i)->type()))
+        JLM_ASSERT(Set_->GetRegisterMap().count(node->output(i)));
+    }
   }
 }
 
@@ -546,11 +868,12 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
     auto & argument = *rootRegion.argument(n);
 
     // Only care about imported pointer values
-    if (!jlm::rvsdg::is<PointerType>(argument.type()))
+    if (!IsOrContainsPointerType(argument.type()))
       continue;
 
     // TODO: Mark the created ImportMemoryObject based on it being a function or a variable
-    // Functions can not point to other MemoryObjects, so CanPoint() should be false
+    // Functions and non-pointer typed globals can not point to other MemoryObjects, so CanPoint()
+    // should be false
 
     // Create a memory PointerObject representing the target of the external symbol
     // We can assume that two external symbols don't alias, clang does.
@@ -567,7 +890,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
   for (size_t n = 0; n < rootRegion.nresults(); n++)
   {
     auto & escapedRegister = *rootRegion.result(n)->origin();
-    if (!jlm::rvsdg::is<PointerType>(escapedRegister.type()))
+    if (!IsOrContainsPointerType(escapedRegister.type()))
       continue;
 
     const auto escapedRegisterPO = Set_->GetRegisterPointerObject(escapedRegister);
@@ -578,18 +901,27 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
 std::unique_ptr<PointsToGraph>
 Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
+  auto statistics = Statistics::Create(module.SourceFileName());
+  statistics->StartAndersenStatistics(module.Rvsdg());
+
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
 
   AnalyzeRvsdg(module.Rvsdg());
 
-  Constraints_->Solve();
+  statistics->StartConstraintSolvingStatistics(*Set_, *Constraints_);
+  size_t numIterations = Constraints_->Solve();
+  statistics->StopConstraintSolvingStatistics(numIterations);
 
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_);
+  statistics->StartPointsToGraphConstructionStatistics();
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+  statistics->StopPointsToGraphConstructionStatistics(*result);
+
+  statistics->StopAndersenStatistics();
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   Constraints_.reset();
   Set_.reset();
-
   return result;
 }
 
@@ -601,7 +933,9 @@ Andersen::Analyze(const RvsdgModule & module)
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
+Andersen::ConstructPointsToGraphFromPointerObjectSet(
+    const PointerObjectSet & set,
+    Statistics & statistics)
 {
   auto pointsToGraph = PointsToGraph::Create();
 
@@ -689,8 +1023,8 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     }
   }
 
-  // Finally make all nodes marked as pointing to external, point to all escaped memory nodes in the
-  // graph
+  // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
+  statistics.StartExternalToAllEscapedStatistics();
   for (const auto source : pointsToExternal)
   {
     for (const auto target : escapedMemoryNodes)
@@ -700,6 +1034,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & se
     // Add an edge to the special PointsToGraph node called "external" as well
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
+  statistics.StopExternalToAllEscapedStatistics();
 
   return pointsToGraph;
 }

@@ -1,10 +1,13 @@
 /*
  * Copyright 2019 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
 #ifndef JLM_UTIL_TIME_HPP
 #define JLM_UTIL_TIME_HPP
+
+#include <jlm/util/common.hpp>
 
 #include <chrono>
 
@@ -15,29 +18,78 @@ class timer final
 {
 public:
   constexpr timer()
+      : ElapsedTimeInNanoseconds_(0),
+        IsRunning_(false)
   {}
 
+  timer(const timer & other) = delete;
+  timer(timer && other) = default;
+  timer &
+  operator=(const timer & other) = delete;
+  timer &
+  operator=(timer && other) = default;
+
+  [[nodiscard]] bool
+  IsRunning() const noexcept
+  {
+    return IsRunning_;
+  }
+
+  /**
+   * Discards any time counted thus far.
+   * If the timer is currently running, it stops.
+   */
+  void
+  reset() noexcept
+  {
+    ElapsedTimeInNanoseconds_ = 0;
+    IsRunning_ = false;
+  }
+
+  /**
+   * Starts the timer, without resetting any previously counted time.
+   * A no-op if the timer is already running.
+   */
   void
   start() noexcept
   {
-    start_ = std::chrono::high_resolution_clock::now();
+    if (IsRunning_)
+      return;
+    Start_ = std::chrono::high_resolution_clock::now();
+    IsRunning_ = true;
   }
 
+  /**
+   * Stops the timer. The timer can be resumed again by calling start().
+   * If the timer was already stopped, this is a no-op.
+   */
   void
   stop() noexcept
   {
-    end_ = std::chrono::high_resolution_clock::now();
+    if (!IsRunning_)
+      return;
+    auto end = std::chrono::high_resolution_clock::now();
+    ElapsedTimeInNanoseconds_ +=
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - Start_).count();
+    IsRunning_ = false;
   }
 
-  size_t
+  /**
+   * Retrieves the total time the timer has been running since the last reset.
+   * Requires the timer to not be running.
+   * @return total timed runtime in wall clock nanoseconds
+   */
+  [[nodiscard]] size_t
   ns() const
   {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(end_ - start_).count();
+    JLM_ASSERT(!IsRunning_);
+    return ElapsedTimeInNanoseconds_;
   }
 
 private:
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-  std::chrono::time_point<std::chrono::high_resolution_clock> end_;
+  size_t ElapsedTimeInNanoseconds_;
+  bool IsRunning_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> Start_;
 };
 
 }

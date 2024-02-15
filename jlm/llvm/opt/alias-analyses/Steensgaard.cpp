@@ -690,7 +690,7 @@ public:
     };
 
     std::string str;
-    str.append("digraph PointsToGraph {\n");
+    str.append("digraph DisjointLocationSetGraph {\n");
 
     for (auto & set : DisjointLocationSet_)
     {
@@ -777,155 +777,101 @@ private:
 /** \brief Collect statistics about Steensgaard alias analysis pass
  *
  */
-class Steensgaard::Statistics final : public jlm::util::Statistics
+class Steensgaard::Statistics final : public util::Statistics
 {
+  const char * AnalysisTimerLabel_ = "AliasAnalysisTime";
+  const char * PointsToFlagsPropagationTimerLabel_ = "PointsToFlagsPropagationTime";
+  const char * PointsToGraphConstructionTimerLabel_ = "PointsToGraphConstructionTime";
+  const char * UnknownMemoryNodeSourcesRedirectionTimerLabel_ =
+      "UnknownMemoryNodeSourcesRedirectionTime";
+
+  const char * NumDisjointSetsLabel_ = "#DisjointSets";
+  const char * NumLocationsLabel_ = "#Locations";
+
+  const char * NumPointsToGraphNodesLabel_ = "#PointsToGraphNodes";
+  const char * NumAllocaNodesLabel_ = "#AllocaNodes";
+  const char * NuMDeltaNodesLabel_ = "#DeltaNodes";
+  const char * NumImportNodesLabel_ = "#ImportNodes";
+  const char * NumLambdaNodesLabel_ = "#LambdaNodes";
+  const char * NumMallocNodesLabel_ = "#MallocNodes";
+  const char * NumMemoryNodesLabel_ = "#MemoryNodes";
+  const char * NumRegisterNodesLabel_ = "#RegisterNodes";
+  const char * NumUnknownMemorySourcesLabel_ = "#UnknownMemorySources";
+
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(jlm::util::filepath sourceFile)
-      : jlm::util::Statistics(Statistics::Id::SteensgaardAnalysis),
-        NumRvsdgNodes_(0),
-        SourceFile_(std::move(sourceFile)),
-        NumDisjointSets_(0),
-        NumLocations_(0),
-        NumPointsToGraphNodes_(0),
-        NumAllocaNodes_(0),
-        NumDeltaNodes_(0),
-        NumImportNodes_(0),
-        NumLambdaNodes_(0),
-        NumMallocNodes_(0),
-        NumMemoryNodes_(0),
-        NumRegisterNodes_(0),
-        NumUnknownMemorySources_(0)
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::SteensgaardAnalysis, sourceFile)
   {}
 
   void
   StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
   {
-    NumRvsdgNodes_ = jlm::rvsdg::nnodes(graph.root());
-    AnalysisTimer_.start();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddTimer(AnalysisTimerLabel_).start();
   }
 
   void
   StopSteensgaardStatistics() noexcept
   {
-    AnalysisTimer_.stop();
+    GetTimer(AnalysisTimerLabel_).stop();
+  }
+
+  void
+  StartPointsToFlagsPropagationStatistics(const LocationSet & disjointLocationSet) noexcept
+  {
+    AddMeasurement(NumDisjointSetsLabel_, disjointLocationSet.NumDisjointSets());
+    AddMeasurement(NumLocationsLabel_, disjointLocationSet.NumLocations());
+    AddTimer(PointsToFlagsPropagationTimerLabel_).start();
+  }
+
+  void
+  StopPointsToFlagsPropagationStatistics() noexcept
+  {
+    GetTimer(PointsToFlagsPropagationTimerLabel_).stop();
   }
 
   void
   StartPointsToGraphConstructionStatistics(const LocationSet & locationSet)
   {
-    NumDisjointSets_ = locationSet.NumDisjointSets();
-    NumLocations_ = locationSet.NumLocations();
-    PointsToGraphConstructionTimer_.start();
+    AddTimer(PointsToGraphConstructionTimerLabel_).start();
   }
 
   void
   StopPointsToGraphConstructionStatistics(const PointsToGraph & pointsToGraph)
   {
-    PointsToGraphConstructionTimer_.stop();
-    NumPointsToGraphNodes_ = pointsToGraph.NumNodes();
-    NumAllocaNodes_ = pointsToGraph.NumAllocaNodes();
-    NumDeltaNodes_ = pointsToGraph.NumDeltaNodes();
-    NumImportNodes_ = pointsToGraph.NumImportNodes();
-    NumLambdaNodes_ = pointsToGraph.NumLambdaNodes();
-    NumMallocNodes_ = pointsToGraph.NumMallocNodes();
-    NumMemoryNodes_ = pointsToGraph.NumMemoryNodes();
-    NumRegisterNodes_ = pointsToGraph.NumRegisterNodes();
-    NumUnknownMemorySources_ = pointsToGraph.GetUnknownMemoryNode().NumSources();
+    GetTimer(PointsToGraphConstructionTimerLabel_).stop();
+    AddMeasurement(NumPointsToGraphNodesLabel_, pointsToGraph.NumNodes());
+    AddMeasurement(NumAllocaNodesLabel_, pointsToGraph.NumAllocaNodes());
+    AddMeasurement(NuMDeltaNodesLabel_, pointsToGraph.NumDeltaNodes());
+    AddMeasurement(NumImportNodesLabel_, pointsToGraph.NumImportNodes());
+    AddMeasurement(NumLambdaNodesLabel_, pointsToGraph.NumLambdaNodes());
+    AddMeasurement(NumMallocNodesLabel_, pointsToGraph.NumMallocNodes());
+    AddMeasurement(NumMemoryNodesLabel_, pointsToGraph.NumMemoryNodes());
+    AddMeasurement(NumRegisterNodesLabel_, pointsToGraph.NumRegisterNodes());
+    AddMeasurement(
+        NumUnknownMemorySourcesLabel_,
+        pointsToGraph.GetUnknownMemoryNode().NumSources());
   }
 
   void
   StartUnknownMemoryNodeSourcesRedirectionStatistics()
   {
-    UnknownMemoryNodeSourcesRedirectionTimer_.start();
+    AddTimer(UnknownMemoryNodeSourcesRedirectionTimerLabel_).start();
   }
 
   void
   StopUnknownMemoryNodeSourcesRedirectionStatistics()
   {
-    UnknownMemoryNodeSourcesRedirectionTimer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return jlm::util::strfmt(
-        "SteensgaardAnalysis ",
-        SourceFile_.to_str(),
-        " ",
-        "#RvsdgNodes:",
-        NumRvsdgNodes_,
-        " ",
-        "AliasAnalysisTime[ns]:",
-        AnalysisTimer_.ns(),
-        " ",
-        "#DisjointSets:",
-        NumDisjointSets_,
-        " ",
-        "#Locations:",
-        NumLocations_,
-        " ",
-        "#PointsToGraphNodes:",
-        NumPointsToGraphNodes_,
-        " ",
-        "#AllocaNodes:",
-        NumAllocaNodes_,
-        " ",
-        "#DeltaNodes:",
-        NumDeltaNodes_,
-        " ",
-        "#ImportNodes:",
-        NumImportNodes_,
-        " ",
-        "#LambdaNodes:",
-        NumLambdaNodes_,
-        " ",
-        "#MallocNodes:",
-        NumMallocNodes_,
-        " ",
-        "#MemoryNodes:",
-        NumMemoryNodes_,
-        " ",
-        "#RegisterNodes:",
-        NumRegisterNodes_,
-        " ",
-        "#UnknownMemorySources:",
-        NumUnknownMemorySources_,
-        " ",
-        "PointsToGraphConstructionTime[ns]:",
-        PointsToGraphConstructionTimer_.ns(),
-        " ",
-        "UnknownMemoryNodeSourcesRedirection[ns]:",
-        UnknownMemoryNodeSourcesRedirectionTimer_.ns());
+    GetTimer(UnknownMemoryNodeSourcesRedirectionTimerLabel_).stop();
   }
 
   static std::unique_ptr<Statistics>
-  Create(const jlm::util::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
-
-private:
-  size_t NumRvsdgNodes_;
-  jlm::util::filepath SourceFile_;
-
-  size_t NumDisjointSets_;
-  size_t NumLocations_;
-
-  size_t NumPointsToGraphNodes_;
-  size_t NumAllocaNodes_;
-  size_t NumDeltaNodes_;
-  size_t NumImportNodes_;
-  size_t NumLambdaNodes_;
-  size_t NumMallocNodes_;
-  size_t NumMemoryNodes_;
-  size_t NumRegisterNodes_;
-  size_t NumUnknownMemorySources_;
-
-  util::timer AnalysisTimer_;
-  util::timer PointsToGraphConstructionTimer_;
-  util::timer UnknownMemoryNodeSourcesRedirectionTimer_;
 };
 
 Steensgaard::~Steensgaard() = default;
@@ -1023,9 +969,9 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
     {
       auto & declaration = structType->GetDeclaration();
 
-      for (size_t n = 0; n < declaration.nelements(); n++)
+      for (size_t n = 0; n < declaration.NumElements(); n++)
       {
-        if (IsVaListAlloca(declaration.element(n)))
+        if (IsVaListAlloca(declaration.GetElement(n)))
           return true;
       }
     }
@@ -1363,45 +1309,39 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<Memcpy>(&node));
 
-  // FIXME: handle unknown
-
-  // FIXME: write some documentation about the implementation
-
   auto & dstAddress = LocationSet_->Find(*node.input(0)->origin());
   auto & srcAddress = LocationSet_->Find(*node.input(1)->origin());
 
+  // We implement memcpy by pointing srcAddress and dstAddress to the same underlying memory:
+  //
+  // srcAddress -> underlyingMemory
+  // dstAddress -> underlyingMemory
+  //
+  // Preferably, I would have liked to implement it as follows:
+  //
+  // srcAddress -> srcMemory
+  // dstAddress -> dstMemory (which is a copy of srcMemory)
+  // srcMemory and dstMemory -> underlyingMemory
+  //
+  // However, this was not possible due to points-to flags propagation. We have no guarantee that
+  // srcAddress and dstAddress are annotated with the right flags BEFORE PropagatePointsToFlags()
+  // ran. In this scheme, dstMemory is a copy of srcMemory, which means that it should also get a
+  // copy of its flags (which again are the same as the points-to flags of srcAddress).
   if (srcAddress.GetPointsTo() == nullptr)
   {
-    // If we do not know where the source address points to yet(!),
-    // insert a dummy location such that we have something to work with.
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    srcAddress.SetPointsTo(dummyLocation);
+    auto & underlyingMemory = LocationSet_->InsertDummyLocation();
+    srcAddress.SetPointsTo(underlyingMemory);
   }
 
   if (dstAddress.GetPointsTo() == nullptr)
   {
-    // If we do not know where the destination address points to yet(!),
-    // insert a dummy location such that we have something to work with.
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    dstAddress.SetPointsTo(dummyLocation);
+    dstAddress.SetPointsTo(*srcAddress.GetPointsTo());
   }
-
-  auto & srcMemory = LocationSet_->GetRootLocation(*srcAddress.GetPointsTo());
-  auto & dstMemory = LocationSet_->GetRootLocation(*dstAddress.GetPointsTo());
-
-  if (srcMemory.GetPointsTo() == nullptr)
+  else
   {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    srcMemory.SetPointsTo(dummyLocation);
+    // Unifies the underlying memory of srcMemory and dstMemory
+    LocationSet_->Join(*srcAddress.GetPointsTo(), *dstAddress.GetPointsTo());
   }
-
-  if (dstMemory.GetPointsTo() == nullptr)
-  {
-    auto & dummyLocation = LocationSet_->InsertDummyLocation();
-    dstMemory.SetPointsTo(dummyLocation);
-  }
-
-  LocationSet_->Join(*srcMemory.GetPointsTo(), *dstMemory.GetPointsTo());
 }
 
 void
@@ -1705,6 +1645,9 @@ Steensgaard::Analyze(
     const RvsdgModule & module,
     jlm::util::StatisticsCollector & statisticsCollector)
 {
+  // std::unordered_map<const rvsdg::output *, std::string> outputMap;
+  // std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
+
   LocationSet_ = LocationSet::Create();
   auto statistics = Statistics::Create(module.SourceFileName());
 
@@ -1714,10 +1657,15 @@ Steensgaard::Analyze(
   // std::cout << LocationSet_->ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
+  // Propagate points-to flags in disjoint location set graph
+  statistics->StartPointsToFlagsPropagationStatistics(*LocationSet_);
+  PropagatePointsToFlags();
+  statistics->StopPointsToFlagsPropagationStatistics();
+
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics(*LocationSet_);
   auto pointsToGraph = ConstructPointsToGraph();
-  // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::flush;
+  // std::cout << PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
   // Redirect unknown memory node sources
@@ -1731,6 +1679,37 @@ Steensgaard::Analyze(
   LocationSet_.reset();
 
   return pointsToGraph;
+}
+
+void
+Steensgaard::PropagatePointsToFlags()
+{
+  bool pointsToFlagsChanged;
+  do
+  {
+    pointsToFlagsChanged = false;
+
+    for (auto & set : *LocationSet_)
+    {
+      auto location = set.value();
+
+      // Nothing needs to be done if this set does not point to another set
+      if (!location->GetPointsTo())
+      {
+        continue;
+      }
+      auto & pointsToLocation = LocationSet_->GetRootLocation(*location->GetPointsTo());
+
+      auto locationFlags = location->GetPointsToFlags();
+      auto pointsToLocationFlags = pointsToLocation.GetPointsToFlags();
+      auto combinedFlags = locationFlags | pointsToLocationFlags;
+      if (pointsToLocationFlags != combinedFlags)
+      {
+        pointsToLocation.SetPointsToFlags(combinedFlags);
+        pointsToFlagsChanged = true;
+      }
+    }
+  } while (pointsToFlagsChanged);
 }
 
 PointsToGraph::MemoryNode &

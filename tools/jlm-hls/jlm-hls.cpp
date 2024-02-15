@@ -5,7 +5,7 @@
 
 #include <jlm/hls/backend/rhls2firrtl/dot-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp>
-#include <jlm/hls/backend/rhls2firrtl/mlirgen.hpp>
+#include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
@@ -44,19 +44,12 @@ llvmToFile(jlm::llvm::RvsdgModule & module, std::string fileName)
 int
 main(int argc, char ** argv)
 {
-
-#ifndef CIRCT
-  ::llvm::outs() << "jlm-hls has not been compiled with the CIRCT backend enabled.\n";
-  ::llvm::outs() << "Recompile jlm with -DCIRCT=1 if you want to use jlm-hls.\n";
-  exit(EXIT_SUCCESS);
-#endif
-
   auto & commandLineOptions = jlm::tooling::JlmHlsCommandLineParser::Parse(argc, argv);
 
   llvm::LLVMContext ctx;
   llvm::SMDiagnostic err;
   auto llvmModule = llvm::parseIRFile(commandLineOptions.InputFile_.to_str(), err, ctx);
-  llvmModule->setSourceFileName(commandLineOptions.OutputFolder_.path() + "/jlm_hls");
+  llvmModule->setSourceFileName(commandLineOptions.OutputFiles_.path() + "/jlm_hls");
   if (!llvmModule)
   {
     err.print(argv[0], llvm::errs());
@@ -72,8 +65,8 @@ main(int argc, char ** argv)
   {
     auto hlsFunction = jlm::hls::split_hls_function(*rvsdgModule, commandLineOptions.HlsFunction_);
 
-    llvmToFile(*rvsdgModule, commandLineOptions.OutputFolder_.path() + "/jlm_hls_rest.ll");
-    llvmToFile(*hlsFunction, commandLineOptions.OutputFolder_.path() + "/jlm_hls_function.ll");
+    llvmToFile(*rvsdgModule, commandLineOptions.OutputFiles_.to_str() + ".rest.ll");
+    llvmToFile(*hlsFunction, commandLineOptions.OutputFiles_.to_str() + ".function.ll");
     return 0;
   }
 
@@ -85,20 +78,18 @@ main(int argc, char ** argv)
     std::string output;
     if (commandLineOptions.UseCirct_)
     {
-      jlm::hls::MLIRGen hls;
-      output = hls.run(*rvsdgModule);
+      jlm::hls::RhlsToFirrtlConverter hls;
+      output = hls.ToString(*rvsdgModule);
     }
     else
     {
       jlm::hls::FirrtlHLS hls;
       output = hls.run(*rvsdgModule);
     }
-    stringToFile(output, commandLineOptions.OutputFolder_.path() + "/jlm_hls.fir");
+    stringToFile(output, commandLineOptions.OutputFiles_.to_str() + ".fir");
 
     jlm::hls::VerilatorHarnessHLS vhls;
-    stringToFile(
-        vhls.run(*rvsdgModule),
-        commandLineOptions.OutputFolder_.path() + "/jlm_hls_harness.cpp");
+    stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
   }
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)
@@ -106,7 +97,7 @@ main(int argc, char ** argv)
     jlm::hls::rvsdg2rhls(*rvsdgModule);
 
     jlm::hls::DotHLS dhls;
-    stringToFile(dhls.run(*rvsdgModule), commandLineOptions.OutputFolder_.path() + "/jlm_hls.dot");
+    stringToFile(dhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.path() + "/jlm_hls.dot");
   }
   else
   {

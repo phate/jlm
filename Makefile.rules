@@ -1,0 +1,186 @@
+TEST_EXECUTABLES += $(TESTS)
+COVERAGE_EXECUTABLES += $(COVERAGE_TESTS)
+
+EXECUTABLES += $(TARGET_EXECUTABLES) $(TEST_EXECUTABLES) $(COVERAGE_EXECUTABLES)
+
+GENERATED_FILES += $(EXECUTABLES)
+
+all: $(SHARED_LIBRARIES) $(STATIC_LIBRARIES) $(EXECUTABLES)
+
+# commands for generating various types of targets
+
+EXECUTABLE_LINK = $(CXX)
+DYNAMIC_MODULE_LINK = $(CXX) -shared
+STATIC_MODULE_LINK =$(AR) r
+
+################################################################################
+# Object build rules
+
+$(BUILD_OUT_PREFIX)%.lo: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) -c -fPIC $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+$(BUILD_OUT_PREFIX)%.la: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+# static libraries
+$(BUILD_OUT_PREFIX)%.a: BASENAME=$(patsubst %.a, %, $@)
+$(BUILD_OUT_PREFIX)%.a:
+	@mkdir -p $(dir $@)
+	rm -f $@
+	ar cqv $@ $^
+	ranlib $@
+
+# dynamic libraries
+$(BUILD_OUT_PREFIX)%.so: BASENAME=$(patsubst %.so,%,$@)
+$(BUILD_OUT_PREFIX)%.so:
+	@mkdir -p $(dir $@)
+	rm -rf $@ $@.$($(BASENAME)_VERSION) $@.$($(BASENAME)_SOVERSION)
+	$(DYNAMIC_MODULE_LINK) -o $@.$($(BASENAME)_VERSION) $^ -Wl,-soname -Wl,$@.$($(BASENAME)_SOVERSION) $(LIBS)
+	ln -sf $@.$($(BASENAME)_VERSION) $@.$($(BASENAME)_SOVERSION)
+	ln -sf $@.$($(BASENAME)_VERSION) $@
+
+# binaries
+$(EXECUTABLES):
+	@mkdir -p $(dir $@)
+	$(EXECUTABLE_LINK) -o $@ $(filter %.la, $^) $(filter %.lo, $^) $(LDFLAGS) $(LIBS)
+
+################################################################################
+# Installation rules
+
+install: install-headers install-pkgconfig install-static install-shared
+
+install-headers:
+	for file in $(HEADERS) ; do \
+		$(INSTALL) -m 644 -v -D $$file $(DESTDIR)$(includedir)/$$file ; \
+	done
+
+install-pkgconfig:
+	mkdir -p $(DESTDIR)$(libdir)/pkgconfig/
+	for file in $(PKGCONFIG_FILES) ; do \
+		$(INSTALL) -m 644 -v -D $$file $(DESTDIR)$(libdir)/pkgconfig/ ; \
+	done
+
+install-static: $(STATIC_LIBRARIES)
+	mkdir -p $(DESTDIR)$(libdir)/
+	for file in $(filter %.a,$(STATIC_LIBRARIES)) ; do\
+		$(INSTALL) -m 644 -v $$file $(DESTDIR)$(libdir)/ ; \
+	done
+
+install-shared: $(patsubst %.so,install-shared-%,$(SHARED_LIBRARIES))
+install-shared-%: BASENAME=$(patsubst install-shared-%,%,$@)
+install-shared-%:
+	mkdir -p $(DESTDIR)$(libdir)/
+	$(INSTALL) -m 755 -v $(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/
+	$(RM) -rf $(DESTDIR)$(libdir)/$(BASENAME).so $(DESTDIR)$(libdir)/$(BASENAME).so.$($(BASENAME)_SOVERSION)
+	ln -sf $(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/$(BASENAME).so
+	ln -sf $(BASENAME).so.$($(BASENAME)_VERSION) $(DESTDIR)$(libdir)/$(BASENAME).so.$($(BASENAME)_SOVERSION)
+
+################################################################################
+# Pseudo-rules for maintaining development build tree
+
+clean:
+	find $(BUILD_OUT_PREFIX). -name "*.[ao]" -o -name "*.l[ao]" -o -name "*.so" -o -name "*.so.*" -o -name "*.gcda" -o -name "*.gcno" -o -name "*.log" | xargs rm -f
+	rm -f $(GENERATED_FILES)
+
+distclean: clean depclean
+	rm -rf Makefile.config build
+	rm -rf build-debug build-release
+
+maintainerclean: distclean
+
+# dependency rules
+
+$(BUILD_OUT_PREFIX).dep/%.la.d: %.cpp
+	@mkdir -p $(dir $@)
+	@$(CXX) -MM $(CXXFLAGS) $(CPPFLAGS) -MT $(patsubst %.cpp, $(BUILD_OUT_PREFIX)%.la, $<) -MP -MF $@ $<
+	@echo MAKEDEP $<
+
+$(BUILD_OUT_PREFIX).dep/%.lo.d: %.cpp
+	@mkdir -p $(dir $@)
+	@$(CXX) -MM -DPIC -fPIC $(CXXFLAGS) $(CPPFLAGS) -MT $(patsubst %.cpp, $(BUILD_OUT_PREFIX)%.lo, $<) -MP -MF $@ $<
+
+depclean:
+	rm -rf $(BUILD_OUT_PREFIX).dep
+
+DEPEND = $(patsubst %.cpp, $(BUILD_OUT_PREFIX).dep/%.la.d, $(SOURCES)) $(patsubst %.cpp, $(BUILD_OUT_PREFIX).dep/%.lo.d, $(SOURCES))
+depend: $(DEPEND)
+ifeq ($(shell if [ -e $(BUILD_OUT_PREFIX).dep ] ; then echo yes ; fi),yes)
+-include $(DEPEND)
+endif
+
+echo-depends:
+	echo $(DEPEND)
+
+################################################################################
+# Unit testing rules
+
+RUNTESTS=$(patsubst %, run-%, $(TESTS))
+VALGRINDTESTS=$(patsubst %, valgrind-%, $(TESTS))
+
+$(TESTS): % : %.la
+$(TESTS): LDFLAGS += -pthread
+
+$(RUNTESTS): run-% : %
+	@echo -n "Running test $^ ... " ; \
+	if $^ >$^.log 2>&1 ; then \
+		echo "success" ; \
+	else \
+		EXIT_CODE="$$?" ; \
+		echo "failed. See $^.log:" ; cat $^.log ; \
+		exit "$$EXIT_CODE" ; \
+	fi
+
+$(VALGRINDTESTS): valgrind-% : %
+	valgrind --leak-check=full --error-exitcode=1 $^
+
+check: $(RUNTESTS)
+
+valgrind-check: $(VALGRINDTESTS)
+
+################################################################################
+# Unit test coverage rules
+
+ifeq ($(ENABLE_COVERAGE), yes)
+
+COVERAGEFLAGS = -fprofile-arcs -ftest-coverage
+
+$(BUILD_OUT_PREFIX)%.coverage.la: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $(COVERAGEFLAGS) -o $@ $<
+
+$(COVERAGE_TESTS): $(BUILD_OUT_PREFIX)%.coverage : $(BUILD_OUT_PREFIX)%.coverage.la
+$(COVERAGE_TESTS): LDFLAGS += -pthread $(COVERAGEFLAGS)
+
+coverage: $(COVERAGE_TESTS) .PHONY
+	for CTEST in $(COVERAGE_TESTS) ; do $$CTEST ; done
+	mkdir -p $(BUILD_OUT_PREFIX)coverage
+	gcovr $(BUILD_OUT_PREFIX) --html-details -o $(BUILD_OUT_PREFIX)coverage/coverage.html
+
+endif
+
+################################################################################
+# Documentation rules
+
+docclean:
+	rm -rf doc
+
+docs: .PHONY
+	mkdir -p docs
+	doxygen doxygen.conf
+
+.PHONY:
+
+#################################################################################
+# Clang format rules
+
+format:
+	@for FILE in $(SOURCES) $(HEADERS) ; do \
+		clang-format-16 --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
+	done
+
+format-dry-run:
+	@for FILE in $(SOURCES) $(HEADERS) ; do \
+		clang-format-16 --dry-run --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
+	done

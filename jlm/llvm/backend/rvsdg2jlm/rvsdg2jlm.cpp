@@ -19,58 +19,34 @@
 namespace jlm::llvm
 {
 
-class rvsdg_destruction_stat final : public jlm::util::Statistics
+class rvsdg_destruction_stat final : public util::Statistics
 {
 public:
-  virtual ~rvsdg_destruction_stat()
-  {}
+  ~rvsdg_destruction_stat() override = default;
 
-  rvsdg_destruction_stat(const jlm::util::filepath & filename)
-      : Statistics(Statistics::Id::RvsdgDestruction),
-        ntacs_(0),
-        nnodes_(0),
-        filename_(filename)
+  explicit rvsdg_destruction_stat(const util::filepath & filename)
+      : Statistics(Statistics::Id::RvsdgDestruction, filename)
   {}
 
   void
   start(const rvsdg::graph & graph) noexcept
   {
-    nnodes_ = rvsdg::nnodes(graph.root());
-    timer_.start();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   end(const ipgraph_module & im)
   {
-    ntacs_ = llvm::ntacs(im);
-    timer_.stop();
-  }
-
-  virtual std::string
-  ToString() const override
-  {
-    return jlm::util::strfmt(
-        "RVSDGDESTRUCTION ",
-        filename_.to_str(),
-        " ",
-        nnodes_,
-        " ",
-        ntacs_,
-        " ",
-        timer_.ns());
+    AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(im));
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<rvsdg_destruction_stat>
-  Create(const jlm::util::filepath & sourceFile)
+  Create(const util::filepath & sourceFile)
   {
     return std::make_unique<rvsdg_destruction_stat>(sourceFile);
   }
-
-private:
-  size_t ntacs_;
-  size_t nnodes_;
-  jlm::util::timer timer_;
-  jlm::util::filepath filename_;
 };
 
 namespace rvsdg2jlm
@@ -602,9 +578,13 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
 }
 
 static std::unique_ptr<ipgraph_module>
-convert_rvsdg(const RvsdgModule & rm)
+convert_rvsdg(RvsdgModule & rm)
 {
-  auto im = ipgraph_module::create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
+  auto im = ipgraph_module::Create(
+      rm.SourceFileName(),
+      rm.TargetTriple(),
+      rm.DataLayout(),
+      std::move(rm.ReleaseStructTypeDeclarations()));
 
   context ctx(*im);
   convert_imports(rm.Rvsdg(), *im, ctx);
@@ -614,7 +594,7 @@ convert_rvsdg(const RvsdgModule & rm)
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(const RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector)
+rvsdg2jlm(RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
 

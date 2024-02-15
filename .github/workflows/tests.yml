@@ -5,70 +5,65 @@ on:
     branches: [ master ]
 
 jobs:
-  docs:
-    runs-on: ubuntu-22.04
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies
-      run: sudo apt-get install graphviz doxygen
-    - name: Generate documentation
-      run: make docs
-
-  ClangFormat:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: "Install clang format"
-        uses: ./.github/actions/InstallLlvmDependencies
-      - name: Find source files
-        run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
-      - name: Check format
-        run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
-
   build:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Cache build
       id: cache-build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: Configure jlm
+      run: ./configure.sh --enable-asserts CXX=clang++-16
     - name: Compile jlm
-      run: make jlm-release -j `nproc`
+      run: make -O -j `nproc`
     - name: Run unit and C tests
-      run: make check -j `nproc`
+      run: make check -O -j `nproc`
 
   gcc:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
+    - name: Configure jlm
+      run: ./configure.sh --enable-asserts CXX=g++
     - name: Compile jlm
-      run: make CXX=g++ jlm-release -j `nproc`
+      run: make -O -j `nproc`
     - name: Run unit and C tests
       run: make check -j `nproc`
+
+  mlir:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build MLIR RVSDG Dialect"
+      uses: ./.github/actions/BuildMlirDialect
+    - name: "Configure jlm"
+      run: ./configure.sh --enable-mlir ./lib/mlir-rvsdg CXX=clang++-16
+    - name: "Compile jlm"
+      run: make -O -j `nproc`
+    - name: "Run unit and C tests"
+      run: make check -O -j `nproc`
 
   valgrind:
     runs-on: ubuntu-22.04
     needs: build
     steps:
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
-    - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
     - name: Install valgrind
       run: sudo apt-get install valgrind
-    - name: Valgrind Check 
+    - name: Valgrind Check
       run: make -C ${{ github.workspace }} valgrind-check
 
   polybench:
@@ -76,14 +71,14 @@ jobs:
     needs: build
     steps:
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench
@@ -94,21 +89,43 @@ jobs:
     needs: build
     steps:
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallLlvmDependencies
     - name: Add jlc to PATH
-      run: echo '${{ github.workspace }}/bin' >> $GITHUB_PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Clone jlm-test-suite
-      run: git clone https://github.com/phate/jlm-eval-suite.git
+      run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
     - name: Update submodules
       run: make -C jlm-eval-suite submodule
-    - name: Install lit
-      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
     - name: Apply patch
       run: cd jlm-eval-suite && make apply-llvm-git-patch
     - name: Run llvm-test-suite
       run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
+
+
+  llvm-test-suite-andersen:
+    if: contains(github.event.pull_request.title, '[Andersen]')
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/*
+        key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: "Install LLVM and Clang"
+      uses: ./.github/actions/InstallLlvmDependencies
+    - name: Add jlc to PATH
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
+    - name: Clone jlm-test-suite
+      run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
+    - name: Update submodules
+      run: make -C jlm-eval-suite submodule
+    - name: Apply patch
+      run: cd jlm-eval-suite && make apply-llvm-git-patch
+    - name: Run llvm-test-suite-andersen
+      run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen

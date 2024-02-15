@@ -15,74 +15,49 @@ namespace jlm::llvm
 
 class cnestat final : public util::Statistics
 {
-public:
-  virtual ~cnestat()
-  {}
+  const char * MarkTimerLabel_ = "MarkTime";
+  const char * DivertTimerLabel_ = "DivertTime";
 
-  cnestat()
-      : Statistics(Statistics::Id::CommonNodeElimination),
-        nnodes_before_(0),
-        nnodes_after_(0),
-        ninputs_before_(0),
-        ninputs_after_(0)
+public:
+  ~cnestat() override = default;
+
+  explicit cnestat(const util::filepath & sourceFile)
+      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
   void
   start_mark_stat(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_before_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_before_ = jlm::rvsdg::ninputs(graph.root());
-    marktimer_.start();
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddTimer(MarkTimerLabel_).start();
   }
 
   void
   end_mark_stat() noexcept
   {
-    marktimer_.stop();
+    GetTimer(MarkTimerLabel_).stop();
   }
 
   void
   start_divert_stat() noexcept
   {
-    diverttimer_.start();
+    AddTimer(DivertTimerLabel_).start();
   }
 
   void
   end_divert_stat(const jlm::rvsdg::graph & graph) noexcept
   {
-    nnodes_after_ = jlm::rvsdg::nnodes(graph.root());
-    ninputs_after_ = jlm::rvsdg::ninputs(graph.root());
-    diverttimer_.stop();
-  }
-
-  virtual std::string
-  ToString() const override
-  {
-    return util::strfmt(
-        "CNE ",
-        nnodes_before_,
-        " ",
-        nnodes_after_,
-        " ",
-        ninputs_before_,
-        " ",
-        ninputs_after_,
-        " ",
-        marktimer_.ns(),
-        " ",
-        diverttimer_.ns());
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    GetTimer(DivertTimerLabel_).stop();
   }
 
   static std::unique_ptr<cnestat>
-  Create()
+  Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<cnestat>();
+    return std::make_unique<cnestat>(sourceFile);
   }
-
-private:
-  size_t nnodes_before_, nnodes_after_;
-  size_t ninputs_before_, ninputs_after_;
-  util::timer marktimer_, diverttimer_;
 };
 
 typedef std::unordered_set<jlm::rvsdg::output *> congruence_set;
@@ -580,7 +555,7 @@ cne(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   auto & graph = rm.Rvsdg();
 
   cnectx ctx;
-  auto statistics = cnestat::Create();
+  auto statistics = cnestat::Create(rm.SourceFileName());
 
   statistics->start_mark_stat(graph);
   mark(graph.root(), ctx);

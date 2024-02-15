@@ -49,7 +49,7 @@ public:
   /**
    * \brief Analyze RVSDG module
    *
-   * \param module RVSDG module the analysis is performed on.
+   * \param rvsdgModule RVSDG module the analysis is performed on.
    *
    * \return A PointsTo graph.
    */
@@ -143,6 +143,18 @@ private:
 
   void
   AnalyzeExtractValue(const rvsdg::simple_node & node);
+
+  /**
+   * Propagates the points-to flags throughout the disjoint set location graph.
+   *
+   * AnalyzeRvsdg() builds a disjoint set location graph, where each set is annotated with points-to
+   * flags. This method propagates these points-to flags throughout the graph as all of these flags
+   * are contagious. An example would be a set A that is marked as PointsToEscapedMemory and points
+   * to another set B. As set B would "originate" from a load operation from "set A", the
+   * consequence would be that set B must be marked as PointsToEscapedMemory as well.
+   */
+  void
+  PropagatePointsToFlags();
 
   /**
    * Construct a points-to graph from the Steensgaard analysis result.

@@ -356,7 +356,7 @@ JlmOptCommand::ParseLlvmIrFile(const util::filepath & llvmIrFile, ::llvm::LLVMCo
 
 void
 JlmOptCommand::PrintRvsdgModule(
-    const llvm::RvsdgModule & rvsdgModule,
+    llvm::RvsdgModule & rvsdgModule,
     const util::filepath & outputFile,
     const JlmOptCommandLineOptions::OutputFormat & outputFormat,
     util::StatisticsCollector & statisticsCollector)
@@ -373,7 +373,7 @@ JlmOptCommand::PrintRvsdgModule(
       fclose(fd);
   };
 
-  auto printAsLlvm = [](const llvm::RvsdgModule & rvsdgModule,
+  auto printAsLlvm = [](llvm::RvsdgModule & rvsdgModule,
                         const util::filepath & outputFile,
                         util::StatisticsCollector & statisticsCollector)
   {
@@ -397,8 +397,7 @@ JlmOptCommand::PrintRvsdgModule(
 
   static std::unordered_map<
       JlmOptCommandLineOptions::OutputFormat,
-      std::function<
-          void(const llvm::RvsdgModule &, const util::filepath &, util::StatisticsCollector &)>>
+      std::function<void(llvm::RvsdgModule &, const util::filepath &, util::StatisticsCollector &)>>
       printers({ { tooling::JlmOptCommandLineOptions::OutputFormat::Xml, printAsXml },
                  { tooling::JlmOptCommandLineOptions::OutputFormat::Llvm, printAsLlvm } });
 
@@ -540,96 +539,6 @@ JlmHlsExtractCommand::ToString() const
 
 void
 JlmHlsExtractCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
-FirtoolCommand::~FirtoolCommand() noexcept = default;
-
-std::string
-FirtoolCommand::ToString() const
-{
-  return util::strfmt(
-      firtoolpath.to_str(),
-      " ",
-      " -format=fir --verilog ",
-      InputFile().to_str(),
-      " > ",
-      OutputFile().to_str());
-}
-
-void
-FirtoolCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
-VerilatorCommand::~VerilatorCommand() noexcept = default;
-
-std::string
-VerilatorCommand::ToString() const
-{
-  std::string objectFiles;
-  for (auto & objectFile : ObjectFiles_)
-    objectFiles += objectFile.to_str() + " ";
-
-  std::string libraryPaths;
-  for (auto & libraryPath : LibraryPaths_)
-    libraryPaths += "-L" + libraryPath + " ";
-
-  std::string libraries;
-  for (const auto & library : Libraries_)
-    libraries += "-l" + library + " ";
-
-  std::string cflags;
-  cflags = " -CFLAGS \"" + libraries + libraryPaths + " -fPIC\"";
-
-  std::string outputFile = OutputFile_.to_str();
-  if (outputFile.at(0) != '/')
-  {
-    outputFile = std::filesystem::current_path() / outputFile;
-  }
-
-  std::string verilator_root;
-  if (!verilatorrootpath.to_str().empty())
-  {
-    verilator_root = util::strfmt("VERILATOR_ROOT=", verilatorrootpath.to_str(), " ");
-  }
-
-  return util::strfmt(
-      verilator_root,
-      verilatorpath.to_str(),
-      " --cc",
-      " --build",
-      " --exe",
-#ifndef HLS_USE_VCD
-      " --trace-fst",
-#else
-      " --trace",
-#endif
-      " -Wno-WIDTH", // divisions otherwise cause errors
-      " -j",
-      " -Mdir ",
-      TempFolder_.to_str(),
-      "verilator/",
-      " -MAKEFLAGS CXX=g++",
-      " -CFLAGS -g", // TODO: switch for this
-      " --assert",
-      cflags,
-      " -o ",
-      outputFile,
-      " ",
-      VerilogFile().to_str(),
-      " ",
-      HarnessFile().to_str(),
-      " ",
-      objectFiles);
-}
-
-void
-VerilatorCommand::Run() const
 {
   if (system(ToString().c_str()))
     exit(EXIT_FAILURE);

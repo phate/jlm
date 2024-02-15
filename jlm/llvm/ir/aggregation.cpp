@@ -4,13 +4,10 @@
  */
 
 #include <jlm/llvm/ir/aggregation.hpp>
-#include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
-#include <jlm/llvm/ir/cfg.hpp>
-#include <jlm/llvm/ir/tac.hpp>
 
-#include <algorithm>
 #include <deque>
+#include <functional>
 #include <unordered_map>
 
 namespace jlm::llvm

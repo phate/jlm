@@ -82,42 +82,34 @@ public:
  *
  * The statistics collected when running the agnostic memory node provider.
  *
- * @See AgnosticMemoryNodeProvider
+ * @see AgnosticMemoryNodeProvider
  */
 class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
 {
 public:
   Statistics(
-      util::filepath sourceFile,
+      const util::filepath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(Statistics::Id::MemoryNodeProvisioning),
-        SourceFile_(std::move(sourceFile)),
-        NumPointsToGraphMemoryNodes_(0),
+      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, sourceFile),
         StatisticsCollector_(statisticsCollector)
   {
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    NumPointsToGraphMemoryNodes_ = pointsToGraph.NumMemoryNodes();
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
   [[nodiscard]] size_t
   NumPointsToGraphMemoryNodes() const noexcept
   {
-    return NumPointsToGraphMemoryNodes_;
+    return GetMeasurementValue<uint64_t>(Label::NumPointsToGraphMemoryNodes);
   }
 
   [[nodiscard]] size_t
   GetTime() const noexcept
   {
-    return Timer_.ns();
-  }
-
-  [[nodiscard]] const util::filepath &
-  GetSourceFile() const noexcept
-  {
-    return SourceFile_;
+    return GetTimer(Label::Timer).ns();
   }
 
   void
@@ -126,7 +118,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    Timer_.start();
+    AddTimer(Label::Timer).start();
   }
 
   void
@@ -135,21 +127,7 @@ public:
     if (!StatisticsCollector_.IsDemanded(*this))
       return;
 
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return util::strfmt(
-        "AgnosticMemoryNodeProvider ",
-        SourceFile_.to_str(),
-        " ",
-        "#PointsToGraphMemoryNodes:",
-        NumPointsToGraphMemoryNodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -162,9 +140,6 @@ public:
   }
 
 private:
-  util::timer Timer_;
-  util::filepath SourceFile_;
-  size_t NumPointsToGraphMemoryNodes_;
   const util::StatisticsCollector & StatisticsCollector_;
 };
 

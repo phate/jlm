@@ -13,7 +13,6 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/nullary.hpp>
-#include <jlm/rvsdg/record.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
@@ -1527,8 +1526,8 @@ private:
   create_srcports(const StructType & type)
   {
     std::vector<jlm::rvsdg::port> ports;
-    for (size_t n = 0; n < type.GetDeclaration().nelements(); n++)
-      ports.push_back(type.GetDeclaration().element(n));
+    for (size_t n = 0; n < type.GetDeclaration().NumElements(); n++)
+      ports.push_back(type.GetDeclaration().GetElement(n));
 
     return ports;
   }
@@ -2297,10 +2296,10 @@ private:
     {
       if (auto st = dynamic_cast<const StructType *>(type))
       {
-        if (index >= st->GetDeclaration().nelements())
+        if (index >= st->GetDeclaration().NumElements())
           throw jlm::util::error("extractvalue index out of bound.");
 
-        type = &st->GetDeclaration().element(index);
+        type = &st->GetDeclaration().GetElement(index);
       }
       else if (auto at = dynamic_cast<const arraytype *>(type))
       {

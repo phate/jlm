@@ -1,0 +1,19 @@
+name: Doxygen
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  GenerateDocumentation:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install doxygen and graphviz
+        run: sudo apt-get install graphviz doxygen
+      - name: Install LLVM and Clang
+        uses: ./.github/actions/InstallLlvmDependencies
+      - name: Configure jlm
+        run: ./configure.sh
+      - name: Generate documentation
+        run: make docs
