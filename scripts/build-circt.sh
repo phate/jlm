@@ -8,15 +8,6 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 CIRCT_BUILD=${SCRIPT_DIR}/../build-circt
 CIRCT_INSTALL=${SCRIPT_DIR}/../usr
 
-# Check if Makefile.config exists and use it to set the installation path
-CONFIG=${SCRIPT_DIR}/../Makefile.config
-if test -f "$CONFIG"; then
-	CIRCT_PATH=$(sed -n '/CIRCT_PATH=/s/^.*=//p' ${CONFIG})
-	if [ -n "${CIRCT_PATH-}" ]; then
-		CIRCT_INSTALL=${SCRIPT_DIR}/../${CIRCT_PATH}
-	fi
-fi
-
 function commit()
 {
 	echo ${GIT_COMMIT}
@@ -38,12 +29,12 @@ while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
 		--build-path)
 			shift
-			CIRCT_BUILD="$1"
+			CIRCT_BUILD="${PWD}/$1"
 			shift
 			;;
 		--install-path)
 			shift
-			CIRCT_INSTALL="$1"
+			CIRCT_INSTALL="${PWD}/$1"
 			shift
 			;;
 		--get-commit-hash)
@@ -57,12 +48,15 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-git clone https://github.com/EECS-NTNU/circt.git ${CIRCT_BUILD}
-cd ${CIRCT_BUILD}
+if [ ! -d "$CIRCT_BUILD/circt.git" ] ;
+then
+	git clone https://github.com/EECS-NTNU/circt.git ${CIRCT_BUILD}/circt.git
+fi
+cd ${CIRCT_BUILD}/circt.git
 git checkout ${GIT_COMMIT}
-mkdir build
-cd build
-cmake -G Ninja .. \
+mkdir -p  ../build
+cd ../build
+cmake -G Ninja ../circt.git \
 	-DCMAKE_C_COMPILER=clang-16 \
 	-DCMAKE_CXX_COMPILER=clang++-16 \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
