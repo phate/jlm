@@ -1,0 +1,32 @@
+name: "Build jlm"
+description: "Configures and builds jlm"
+
+inputs:
+  build-mode:
+    description: "Sets the build mode for the build"
+    default: "release"
+    required: true
+
+  enable-asserts:
+    description: "Enables asserts in jlm"
+    default: "yes"
+    required: false
+
+  enable-hls:
+    description: "Enables build of HLS dialect"
+    default: "yes"
+    required: false
+
+  enable-mlir:
+    description: "Enables build of MLIR dialect"
+    default: "yes"
+    required: false
+
+  enable-coverage:
+    description: "Enables computation of test coverage"
+    default: "no"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
