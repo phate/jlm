@@ -58,9 +58,9 @@ then
 fi
 cd ${CIRCT_GIT_DIR}
 git checkout ${GIT_COMMIT}
-mkdir -p  ${CIRCT_BUILD_DIR}
-cd ${CIRCT_BUILD_DIR}
-cmake -G Ninja ${CIRCT_GIT_DIR} \
+cmake -G Ninja \
+	${CIRCT_GIT_DIR} \
+	-B ${CIRCT_BUILD_DIR} \
 	-DCMAKE_C_COMPILER=clang-16 \
 	-DCMAKE_CXX_COMPILER=clang++-16 \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -70,6 +70,6 @@ cmake -G Ninja ${CIRCT_GIT_DIR} \
 	-DLLVM_LIT_ARGS="-v --show-unsupported" \
 	-DVERILATOR_DISABLE=ON \
 	-DCMAKE_INSTALL_PREFIX=${CIRCT_INSTALL}
-ninja
-ninja check-circt
-ninja install
+ninja -C ${CIRCT_BUILD_DIR}
+ninja -C ${CIRCT_BUILD_DIR} check-circt
+ninja -C ${CIRCT_BUILD_DIR} install
