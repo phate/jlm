@@ -12,7 +12,7 @@ jlm-hls_LIBS = \
 	librvsdg \
 	libutil \
 
-jlm-hls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) $(shell $(LLVMCONFIG) --system-libs)
+jlm-hls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs)
 
 jlm-hls_EXTRA_LDFLAGS += \
 	-L$(CIRCT_PATH)/lib \
@@ -28,6 +28,5 @@ jlm-hls_EXTRA_LDFLAGS += \
 	-lCIRCTSupport \
 	-lCIRCTTransforms \
 	-lCIRCTHW \
-	${MLIR_LDFLAGS} \
 
 $(eval $(call common_executable,jlm-hls))

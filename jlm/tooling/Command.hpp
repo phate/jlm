@@ -376,11 +376,37 @@ private:
       const JlmOptCommandLineOptions::InputFormat & inputFormat,
       util::StatisticsCollector & statisticsCollector) const;
 
+  std::unique_ptr<llvm::RvsdgModule>
+  ParseLlvmIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
+      const;
+
+  std::unique_ptr<llvm::RvsdgModule>
+  ParseMlirIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
+      const;
+
   static void
   PrintRvsdgModule(
       llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,
       const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsXml(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsLlvm(
+      llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsMlir(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   std::string ProgramName_;
