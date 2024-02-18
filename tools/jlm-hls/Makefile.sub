@@ -27,6 +27,6 @@ jlm-hls_EXTRA_LDFLAGS += \
 	-lCIRCTSeq \
 	-lCIRCTSupport \
 	-lCIRCTTransforms \
-	-lCIRCTHW \
+	-lCIRCTHW
 
 $(eval $(call common_executable,jlm-hls))
