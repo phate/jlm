@@ -33,7 +33,6 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/add-buffers.hpp \
 	jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
-	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/add-forks.hpp \
