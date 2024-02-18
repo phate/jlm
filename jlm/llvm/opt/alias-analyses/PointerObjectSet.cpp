@@ -6,6 +6,8 @@
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
+
+#include <limits>
 #include <queue>
 
 namespace jlm::llvm::aa
@@ -14,15 +16,27 @@ namespace jlm::llvm::aa
 PointerObject::Index
 PointerObjectSet::AddPointerObject(PointerObjectKind kind)
 {
+  JLM_ASSERT(PointerObjects_.size() < std::numeric_limits<PointerObject::Index>::max());
   PointerObjects_.emplace_back(kind);
   PointsToSets_.emplace_back(); // Add empty points-to-set
   return PointerObjects_.size() - 1;
 }
 
-PointerObject::Index
+size_t
 PointerObjectSet::NumPointerObjects() const noexcept
 {
   return PointerObjects_.size();
+}
+
+size_t
+PointerObjectSet::NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept
+{
+  size_t count = 0;
+  for (auto & pointerObject : PointerObjects_)
+  {
+    count += pointerObject.GetKind() == kind;
+  }
+  return count;
 }
 
 PointerObject &
@@ -222,38 +236,38 @@ PointerObjectSet::MarkAllPointeesAsEscaped(PointerObject::Index pointer)
 
 // P(superset) is a superset of P(subset)
 bool
-SupersetConstraint::Apply(PointerObjectSet & set)
+SupersetConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   return set.MakePointsToSetSuperset(Superset_, Subset_);
 }
 
 // for all x in P(pointer1), make P(x) a superset of P(pointer2)
 bool
-AllPointeesPointToSupersetConstraint::Apply(PointerObjectSet & set)
+StoreConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   bool modified = false;
-  for (PointerObject::Index x : set.GetPointsToSet(Pointer1_).Items())
-    modified |= set.MakePointsToSetSuperset(x, Pointer2_);
+  for (PointerObject::Index x : set.GetPointsToSet(Pointer_).Items())
+    modified |= set.MakePointsToSetSuperset(x, Value_);
 
   // If external in P(Pointer1_), P(external) should become a superset of P(Pointer2)
   // In practice, this means everything in P(Pointer2) escapes
-  if (set.GetPointerObject(Pointer1_).PointsToExternal())
-    modified |= set.MarkAllPointeesAsEscaped(Pointer2_);
+  if (set.GetPointerObject(Pointer_).PointsToExternal())
+    modified |= set.MarkAllPointeesAsEscaped(Value_);
 
   return modified;
 }
 
 // Make P(loaded) a superset of P(x) for all x in P(pointer)
 bool
-SupersetOfAllPointeesConstraint::Apply(PointerObjectSet & set)
+LoadConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   bool modified = false;
   for (PointerObject::Index x : set.GetPointsToSet(Pointer_).Items())
-    modified |= set.MakePointsToSetSuperset(Loaded_, x);
+    modified |= set.MakePointsToSetSuperset(Value_, x);
 
   // P(pointer) "contains" external, then P(loaded) should also "contain" it
   if (set.GetPointerObject(Pointer_).PointsToExternal())
-    modified |= set.GetPointerObject(Loaded_).MarkAsPointsToExternal();
+    modified |= set.GetPointerObject(Value_).MarkAsPointsToExternal();
 
   return modified;
 }
@@ -261,7 +275,7 @@ SupersetOfAllPointeesConstraint::Apply(PointerObjectSet & set)
 // For escaped functions, the result must be marked as escaped,
 // and all arguments of pointer type as pointing to external.
 bool
-HandleEscapingFunctionConstraint::Apply(PointerObjectSet & set)
+HandleEscapingFunctionConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   if (EscapeHandled_ || !set.GetPointerObject(Lambda_).HasEscaped())
   {
@@ -386,7 +400,7 @@ FunctionCallConstraint::HandleCallingLambdaFunction(
 
 // Connects function calls to every possible target function
 bool
-FunctionCallConstraint::Apply(PointerObjectSet & set)
+FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   bool modified = false;
 
@@ -450,7 +464,7 @@ PointerObjectConstraintSet::GetConstraints() const noexcept
 }
 
 size_t
-PointerObjectConstraintSet::Solve()
+PointerObjectConstraintSet::SolveNaively()
 {
   size_t numIterations = 0;
 
@@ -467,7 +481,7 @@ PointerObjectConstraintSet::Solve()
       std::visit(
           [&](auto & constraint)
           {
-            modified |= constraint.Apply(Set_);
+            modified |= constraint.ApplyDirectly(Set_);
           },
           constraint);
     }
