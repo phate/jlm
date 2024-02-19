@@ -1,32 +1,62 @@
 name: "Build jlm"
-description: "Configures and builds jlm"
+description: "Install dependencies, configures, and builds jlm"
 
 inputs:
-  build-mode:
-    description: "Sets the build mode for the build"
-    default: "release"
-    required: true
-
-  enable-asserts:
-    description: "Enables asserts in jlm"
-    default: "yes"
-    required: false
-
   enable-hls:
-    description: "Enables build of HLS dialect"
-    default: "yes"
+    description: "Enables HLS dialect. Default is 'false'."
+    default: "false"
     required: false
 
   enable-mlir:
-    description: "Enables build of MLIR dialect"
-    default: "yes"
+    description: "Enables MLIR dialect. Default is 'false'."
+    default: "false"
     required: false
 
   enable-coverage:
-    description: "Enables computation of test coverage"
-    default: "no"
+    description: "Enables computation of test coverage. Default is 'false'."
+    default: "false"
+    required: false
+
+  cxx:
+    description: "Set C++ compiler. Default is 'clang++'."
+    default: "clang++"
     required: false
 
 runs:
   using: "composite"
   steps:
+    - // FIXME: Validate input
+
+    - name: "Install LLVM dependencies"
+      uses: ./.github/action/InstallLlvmDependencies
+
+    - name: "Install HLS dialect dependencies"
+      if: ${{inputs.enable-hls}} == 'true'
+      uses: ./.github/actions/BuildCirct
+
+    - name: "Install MLIR dialect dependencies"
+      if: ${{inputs.enable-mlir}} == 'true'
+      uses: ./.github/actions/BuildMlirDialect
+
+    - name: "Collect command line arguments"
+      run: |
+        JLM_CONFIGURE_ARGUMENTS = "--target release --enable-asserts"
+        if [[ "${{inputs.enable-hls}}" == "true" ]]; then
+          JLM_CONFIGURE_ARGUMENTS = "$JLM_CONFIGURE_ARGUMENTS --enable-hls ${{ github.workspace }}/build-circt/circt"
+        fi
+        if [[ "${{inputs.enable-mlir}}" == "true" ]]; then
+          JLM_CONFIGURE_ARGUMENTS = "$JLM_CONFIGURE_ARGUMENTS --enable-mlir ${{ github.workspace }}/lib/mlir-rvsdg"
+        fi
+        if [[ "${{inputs.enable-coverage}}" == "true" ]]; then
+          JLM_CONFIGURE_ARGUMENTS = "$JLM_CONFIGURE_ARGUMENTS --enable-coverage"
+        fi
+        JLM_CONFIGURE_ARGUMENTS = "$JLM_CONFIGURE_ARGUMENTS CXX=${{inputs.cxx}}"
+      shell: bash
+
+    - name: "Configure jlm"
+      run: ./configure.sh ${JLM_CONFIGURE_ARGUMENTS}
+      shell: bash
+
+    - name: "Compile jlm"
+      run: make -j `nproc` -O
+      shell: bash
