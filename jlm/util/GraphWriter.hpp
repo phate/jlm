@@ -18,9 +18,14 @@ namespace jlm::util
 
 enum class GraphOutputFormat
 {
-  Dot,
-  ShortASCII, // Only label, no additional attributes
-  FullASCII   // Label and all other attributes
+  Dot,   // prints
+  ASCII, // output format that makes edges implicit when possible
+};
+
+enum class AttributeOutputFormat
+{
+  SpaceSeparatedList, // printed on the form attr=value other="value 2"
+  HTMLAttributes      // adds extra restrictions on attribute names
 };
 
 class GraphWriter;
@@ -31,64 +36,101 @@ class Graph;
 
 class GraphElement
 {
-protected:
-  explicit GraphElement(const std::string & label);
-
-  GraphElement(const GraphElement & other) = delete;
-  GraphElement(GraphElement && other) = delete;
-  GraphElement &
-  operator=(const GraphElement & other) = delete;
-  GraphElement &
-  operator=(GraphElement && other) = delete;
-
 public:
   virtual ~GraphElement() = default;
 
   /**
-   * Gets a short string that will serve as the base for a unique ID
+   * Constructs a graph element with no label, attributes or associated program object
+   * @param label
+   */
+  GraphElement();
+
+  GraphElement(const GraphElement & other) = delete;
+
+  GraphElement(GraphElement && other) = delete;
+
+  GraphElement &
+  operator=(const GraphElement & other) = delete;
+
+  GraphElement &
+  operator=(GraphElement && other) = delete;
+
+  /**
+   * Gets a short string that will serve as the base for a unique ID.
+   * This base should be a valid C-like identifier.
    * @return a string, such as "node", "i", "o", "graph"
    */
   [[nodiscard]] virtual const char *
-  GetIdStub() = 0;
+  GetIdStub() const = 0;
+
+  /**
+   * Gives the final unique ID of the GraphElement, such as "node3".
+   * Requires the GraphElement to be finalized.
+   * @return the full id of the GraphElement, including unique suffix
+   */
+  [[nodiscard]] std::string
+  GetFullId() const;
+
+  /**
+   * Gets a reference to the graph this GraphElement belongs to
+   */
+  [[nodiscard]] virtual Graph &
+  GetGraph() = 0;
 
   /**
    * Sets the element's label.
-   * A label is intended to be visible in all renderings of the graph
+   * A label is text intended to be visible in all renderings of the graph.
+   * Use an empty string to signify no label.
    * @param label the new label string
    */
   void
-  SetLabel(const std::string & label);
+  SetLabel(std::string label);
+
+  /**
+   * @return true if this graph element has a non-empty label
+   */
+  [[nodiscard]] bool
+  HasLabel() const;
 
   /**
    * @return the GraphElement's label
    */
-  const std::string &
-  GetLabel();
+  [[nodiscard]] const std::string &
+  GetLabel() const;
 
   /**
-   * Assigns a suffix to the id stub, unique among all elements sharing id stub, starting at 0
+   * @return the graph element's label, or if it is empty, the string \p otherwise
    */
-  void
-  SetUniqueIdSuffix(int uniqueIdSuffix);
+  [[nodiscard]] const char *
+  GetLabelOr(const char * otherwise) const;
 
   /**
-   * @return the unique suffix assigned to this element
+   * @return the unique suffix assigned to this element when finalized.
    */
-  int
-  GetUniqueIdSuffix();
+  [[nodiscard]] int
+  GetUniqueIdSuffix() const;
 
   /**
    * Graph elements often represent objects from the program. By making this association explicit,
-   * the GraphElement's unique shorthand id can be found when referencing the object, across graphs.
+   * the GraphElement's unique id can be used when referencing the object, across graphs.
+   * Within a graph, only one graph element can be associated with any given program object.
+   * @param programObject the object to associate this GraphElement with
    */
+  template<typename T>
   void
-  SetProgramObject(void * programObject);
-
-  [[nodiscard]] uintptr_t
-  GetProgramObject();
+  SetProgramObject(T * object)
+  {
+    SetProgramObjectUintptr(reinterpret_cast<uintptr_t>(object));
+  }
 
   /**
-   * Assigns or overrides a given attribute on the element
+   * @return the program object associated with this graph element.
+   */
+  [[nodiscard]] uintptr_t
+  GetProgramObject() const;
+
+  /**
+   * Assigns or overrides a given attribute on the element.
    * @param attribute the name of the attribute
    * @param value the attribute value
    */
@@ -96,36 +138,58 @@ public:
   SetAttributeString(const std::string & attribute, const std::string & value);
 
   /**
-   * Assigns or overrides a given attribute on the element, with a program object.
-   * If the object exists somewhere else in the GraphWriter, it will print its id.
-   * @param attribute the name of the attribute
-   * @param object the program object.
+   * Assigns or overrides a given attribute on the element,
+   * with a uintptr representing the address of a program object.
+   * @param attribute the name of the attribute.
+   * @param object the address of a program object, must be non-zero.
+   * @see SetAttributeObject
    */
   void
-  SetAttributeObject(const std::string & attribute, void * object);
+  SetAttributeUintptr(const std::string & attribute, uintptr_t object);
 
+  /**
+   * Assigns or overrides a given attribute on the element, with a program object.
+   * If the object is mapped to a graph element in the GraphWriter, the id of the graph element will
+   * be used when referring to the object.
+   * @param attribute the name of the attribute.
+   * @param object the program object, must be non-null.
+   */
+  template<class T>
   void
-  OutputAttributes(std::ostream & out, GraphOutputFormat format, ) {
-
+  SetAttributeObject(const std::string & attribute, T * object)
+  {
+    SetAttributeUintptr(attribute, reinterpret_cast<uintptr_t>(object));
   }
 
   /**
-   * Claims a unique id suffix for the element,
-   * and registers the ProgramObject with the GraphWriter, if it has one.
+   * Claims a unique id suffix for the element, if it doesn't already have one.
    */
-  void
-  Finalize(GraphWriter & writer);
+  virtual void
+  Finalize();
 
   /**
-   * @return true if this GraphElement has been finalized, false otherwise
+   * @return true if this GraphElement has been finalized, false otherwise.
+   *
    */
-  bool IsFinalized();
+  [[nodiscard]] bool
+  IsFinalized() const;
+
+  /**
+   * Prints the attributes of the graph element.
+   * @param out the stream output is written to.
+   * @param format the output format to use.
+   */
+  void
+  OutputAttributes(std::ostream & out, AttributeOutputFormat format);
 
 private:
+  void
+  SetProgramObjectUintptr(uintptr_t object);
+
   // A human-readable piece of text that should be rendered with the element
   std::string Label_;
 
-  // A number added to the end of the id to make it unique, or -1 if still unassigned
+  // A number added to the end of the id stub to make it globally unique
   int UniqueIdSuffix_;
 
   // The object in the program this graph object corresponds to, or 0 if none
@@ -139,23 +203,72 @@ private:
 };
 
 /**
- * Class representing a part of a node that edges can be attached to
+ * Abstract class representing a part of a node that edges can be attached to
  */
 class Port : public GraphElement
 {
+  friend Edge;
+
 protected:
-  Port(const std::string & label);
+  Port();
 
 public:
-  virtual ~Port() = default;
+  ~Port() override = default;
 
   virtual Node &
   GetNode() = 0;
 
+  [[nodiscard]] Graph &
+  GetGraph() override;
+
+  /**
+   * @return true if a directed edge may have its head at this port, false otherwise
+   */
+  [[nodiscard]] virtual bool
+  CanBeEdgeHead() const;
+
+  /**
+   * @return true if a directed edge may have its tail at this port, false otherwise
+   */
+  [[nodiscard]] virtual bool
+  CanBeEdgeTail() const;
+
+  /**
+   * @return true if any edges are leaving this port, or any non-directed edges are present
+   */
+  [[nodiscard]] bool
+  HasOutgoingEdges() const;
+
+  /**
+   * @return true if any edges are pointing at this port, or any non-directed edges are present
+   */
+  [[nodiscard]] bool
+  HasIncomingEdges() const;
+
+  /**
+   * Only used by the Dot printer.
+   * Outputs the fully qualified port name, such as node8:i6
+   */
+  virtual void
+  OutputDotPortId(std::ostream & out) = 0;
+
+  /**
+   * Only used by the ASCII printer.
+   * Outputs the origin(s) of edges pointing to this port.
+   * Brackets are omitted when exactly one edge points to the port.
+   * Example outputs: "o4", "[]" and "[o2, o6]"
+   */
+  void
+  OutputIncomingEdgesASCII(std::ostream & out);
+
+private:
+  /**
+   * Called when an edge has been added to the graph, to inform the edge's ports
+   * @param edge the newly added edge
+   */
   void
   OnEdgeAdded(Edge & edge);
 
-protected:
   std::vector<Edge *> Connections_;
 };
 
@@ -168,32 +281,41 @@ class Node : public Port
   friend Graph;
 
 protected:
-  Node(Graph & graph, const std::string & label);
+  explicit Node(Graph & graph);
 
 public:
-  virtual ~Node() = default;
+  ~Node() override = default;
 
-  virtual const char *
-  GetIdStub() override;
+  const char *
+  GetIdStub() const override;
 
-  virtual Node &
+  Node &
   GetNode() override;
 
   /**
    * @return the graph this node belongs to
    */
   Graph &
-  GetGraph();
+  GetGraph() override;
 
-  virtual void
-  Output(std::ostream & out, GraphOutputFormat format);
+  void
+  OutputDotPortId(std::ostream & out) override;
 
   /**
-   * When outputting the nodes of a graph in a sequential fashion, how early should this node be.
-   * @return the node's priority, lower values means higher priority, default is 0
+   * Output the node to the ostream \p out, in the specified \p format.
+   * Lines printed while outputting are indented by at least \p indent levels.
+   * Depending on output format, this function may also recurse and print sub graphs.
    */
-  virtual int
-  GetOutputOrderPriority();
+  virtual void
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent);
+
+  /**
+   * Prints all sub graphs of the node, to the given ostream \p out, in the given \p format.
+   * * All lines printed by this function are indented by at least \p indent levels.
+   * This function is recursive, as sub graphs may have nodes with sub graphs of their own.
+   */
+  virtual void
+  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent);
 
 private:
   Graph & Graph_;
@@ -209,34 +331,54 @@ class OutputPort;
  */
 class InputPort : public Port
 {
+  friend InOutNode;
+
+  InputPort(InOutNode & node, size_t nodeInputIndex);
+
 public:
-  virtual ~InputPort() = default;
+  ~InputPort() override = default;
 
-  virtual const char *
-  GetIdStub() override;
+  const char *
+  GetIdStub() const override;
 
-  virtual Node &
+  Node &
   GetNode() override;
 
+  bool
+  CanBeEdgeTail() const override;
+
+  void
+  OutputDotPortId(std::ostream & out) override;
+
 private:
-  InOutNode * Node_;
+  InOutNode & Node_;
   // The index of this input of the InOutNode
-  size_t NodeInputIndex_;
+  const size_t NodeInputIndex_;
 };
 
 class OutputPort : public Port
 {
+  friend InOutNode;
+
+  OutputPort(InOutNode & node, size_t nodeOutputIndex);
+
 public:
-  virtual ~OutputPort() = default;
+  ~OutputPort() override = default;
 
-  virtual const char *
-  GetIdStub() override;
+  const char *
+  GetIdStub() const override;
 
-  virtual Node &
+  Node &
   GetNode() override;
 
+  bool
+  CanBeEdgeHead() const override;
+
+  void
+  OutputDotPortId(std::ostream & out) override;
+
 private:
-  InOutNode * Node_;
+  InOutNode & Node_;
   // The index of this output of the InOutNode
   size_t NodeOutputIndex_;
 };
@@ -244,10 +386,14 @@ private:
 class InOutNode : public Node
 {
   friend Graph;
-  InOutNode(Graph & graph, const std::string & label, size_t inPorts, size_t outPorts);
+
+  InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts);
 
 public:
-  virtual ~InOutNode() = default;
+  ~InOutNode() override = default;
+
+  InputPort &
+  CreateInputPort();
 
   size_t
   NumInputPorts();
@@ -255,10 +401,13 @@ public:
   InputPort &
   GetInputPort(size_t index);
 
+  OutputPort &
+  CreateOutputPort();
+
   size_t
   NumOutputPorts();
 
-  InputPort &
+  OutputPort &
   GetOutputPort(size_t index);
 
   Graph &
@@ -270,8 +419,14 @@ public:
   Graph &
   GetSubgraph(size_t index);
 
-  virtual void
-  Output(std::ostream & out, GraphOutputFormat format) override;
+  void
+  Finalize() override;
+
+  void
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent) override;
+
+  void
+  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) override;
 
 private:
   std::vector<std::unique_ptr<InputPort>> InputPorts_;
@@ -286,9 +441,17 @@ class ArgumentNode : public Node
 {
   friend Graph;
 
-  ArgumentNode(Graph & graph, const std::string & label);
+  ArgumentNode(Graph & graph);
 
 public:
+  ~ArgumentNode() override = default;
+
+  const char *
+  GetIdStub() const override;
+
+  bool
+  CanBeEdgeHead() const override;
+
   /**
    * Indicate that the argument node represents a value coming in from a port in another graph
    * @param outsideSource the Port in the other graph
@@ -296,8 +459,8 @@ public:
   void
   SetOutsideSource(Port & outsideSource);
 
-  virtual void
-  Output(std::ostream & out, GraphOutputFormat format);
+  void
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent) override;
 
 private:
   // Optional reference to a Port outside of this graph from which this argument came
@@ -311,9 +474,17 @@ class ResultNode : public Node
 {
   friend Graph;
 
-  ResultNode(Graph & graph, const std::string & label);
+  ResultNode(Graph & graph);
 
 public:
+  ~ResultNode() override = default;
+
+  const char *
+  GetIdStub() const override;
+
+  bool
+  CanBeEdgeTail() const override;
+
   /**
    * Indicate that the result node represents the value of a port in another graph
    * @param outsideSource the Port in the other graph
@@ -321,8 +492,8 @@ public:
   void
   SetOutsideDestination(Port & outsideSource);
 
-  virtual void
-  Output(std::ostream & out, GraphOutputFormat format);
+  void
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent);
 
 private:
   // Optional reference to a Port outside of this graph representing where the result ends up
@@ -331,82 +502,184 @@ private:
 
 class Edge : public GraphElement
 {
-  Edge(Port * from, Port * to, bool directed);
+  friend Graph;
+
+  Edge(Port & from, Port & to, bool directed);
 
 public:
-  virtual ~Edge() = default;
+  ~Edge() override = default;
+
+  const char *
+  GetIdStub() const override;
+
+  Graph &
+  GetGraph() override;
 
   /**
    * Gets the port being pointed to
    * Even if the edge is non-directed, the from/to order can matter for layout.
    */
-  Port &
+  [[nodiscard]] Port &
   GetFrom();
 
   /**
    * Gets the port being pointed from.
    * Even if the edge is non-directed, the from/to order can matter for layout.
    */
-  Port &
+  [[nodiscard]] Port &
   GetTo();
+
+  /**
+   * @return true if this edge is directed, false otherwise
+   */
+  [[nodiscard]] bool
+  IsDirected() const;
 
   /**
    * Given one end of the edge, returns the port on the opposite side of the edge.
    */
-  Port *
-  GetOtherEnd(Port * from);
+  [[nodiscard]] Port &
+  GetOtherEnd(Port & from);
 
-  virtual void
-  Output(std::ostream & out, GraphOutputFormat format);
+  void
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent);
 
 private:
-  Port * From_;
-  Port * To_;
+  Port & From_;
+  Port & To_;
   bool Directed_;
 };
 
 class Graph : public GraphElement
 {
   friend GraphWriter;
+  friend GraphElement;
 
-  Graph(GraphWriter & writer, const std::string & id);
+  explicit Graph(GraphWriter & writer);
+
+  Graph(GraphWriter & writer, Node & parentNode);
 
 public:
-  Node &
+  ~Graph() override = default;
+
+  const char *
+  GetIdStub() const override;
+
+  Graph &
+  GetGraph() override;
+
+  [[nodiscard]] GraphWriter &
+  GetGraphWriter();
+
+  /**
+   * @return true if this graph is a subgraph of another graph, false if it is top-level
+   */
+  [[nodiscard]] bool
+  IsSubgraph() const;
+
+  /**
+   * Creates a basic Node in the graph. It has a single port: itself.
+   * @return a reference to the newly added node.
+   */
+  [[nodiscard]] Node &
   CreateNode();
 
-  InOutNode &
-  CreateInOutNode(size_t inPorts, size_t outPorts);
+  /**
+   * Creates an InOutNode in the graph with the given number of input and output ports.
+   * @param inputPorts the number of input ports.
+   * @param outputPorts the number of output ports.
+   * @return a reference to the newly added node.
+   */
+  [[nodiscard]] InOutNode &
+  CreateInOutNode(size_t inputPorts, size_t outputPorts);
 
-  ArgumentNode &
+  [[nodiscard]] ArgumentNode &
   CreateArgumentNode();
 
-  ResultNode &
+  [[nodiscard]] ResultNode &
   CreateResultNode();
 
   Edge &
-  CreateEdge(Port * from, Port * to, bool directed);
+  CreateEdge(Port & from, Port & to, bool directed);
 
   /**
-   * Assigns unique ids to all graph elements, and determines the final order of nodes.
+   * Retrieves the GraphElement in this graph associated with a given ProgramObject.
+   * This function does not look for graph elements inside sub graphs.
+   * @param object the program object that is possibly mapped to a GraphElement in the graph
+   * @return the GraphElement mapped to the given object, or nullptr if none exists in this graph.
+   */
+  [[nodiscard]] GraphElement *
+  GetElementFromProgramObject(uintptr_t object);
+
+  /**
+   * Retrieves the GraphElement in this graph associated with the given program object.
+   * Requires the program object to be mapped to a GraphElement in this graph,
+   * and that the graph element is of type T.
+   * @param object the program object mapped to a GraphElement
+   * @return a reference to the T mapped to the given object.
+   */
+  template<typename T, typename ProgramObject>
+  T &
+  GetFromProgramObject(ProgramObject * object)
+  {
+    static_assert(std::is_base_of_v<GraphElement, T>);
+    GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
+    auto result = dynamic_cast<T *>(element);
+    JLM_ASSERT(result);
+    return *result;
+  }
+
+  /**
+   * Assigns unique IDs to all graph elements.
+   * Finalizing is recursive, visiting all sub graphs.
    */
   void
-  Finalize();
+  Finalize() override;
 
   /**
-   * Prints the graph to the given string stream, in the specified format
-   * @param ss the stream to which output is written
+   * Prints the graph to the given string stream, in the specified format.
+   * Requires the graph to be finalized first.
+   * @param out the stream to which output is written
    * @param format the format to output the graph in
+   * @param indent the amount of indent the graph should be printed with
    */
   void
-  Output(std::ostream & out, GraphOutputFormat format);
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent = 0);
 
 private:
+  /**
+   * Creates a mapping from a GraphElement's assigned program object to the GraphElement.
+   * The GraphElement must be a direct member of this graph.
+   * @param element the graph element to map
+   */
+  void
+  MapProgramObjectToElement(GraphElement & element);
+
+  /**
+   * Removes the mapping of a program object to a graph element in the graph.
+   * @param object the program object that should no longer be mapped.
+   */
+  void
+  RemoveProgramObjectMapping(uintptr_t object);
+
   // The GraphWriter this graph was created by, and belongs to
   GraphWriter & Writer_;
 
+  // If this graph is a subgraph, this is its parent node in the parent graph.
+  // For top level graphs, this field is nullptr
+  Node * ParentNode_;
+
+  // The set of nodes in the graph. Finalizing the graph may re-order this list.
   std::vector<std::unique_ptr<Node>> Nodes_;
+
+  // Argument nodes and result nodes are kept in separate lists
+  std::vector<std::unique_ptr<ArgumentNode>> ArgumentNodes_;
+  std::vector<std::unique_ptr<ResultNode>> ResultNodes_;
+
   std::vector<std::unique_ptr<Edge>> Edges_;
+
+  // A mapping from pointers to program objects, to the GraphElement representing the program object
+  std::unordered_map<uintptr_t, GraphElement *> ProgramObjectMapping_;
 };
 
 /**
@@ -415,42 +688,71 @@ private:
  */
 class GraphWriter
 {
-  friend GraphElement;
-
 public:
-  GraphWriter() = default;
   ~GraphWriter() = default;
 
-  Graph &
-  CreateGraph(const std::string & label);
+  GraphWriter() = default;
 
+  GraphWriter(const GraphWriter & other) = delete;
+
+  GraphWriter(GraphWriter && other) = delete;
+
+  GraphWriter &
+  operator=(const GraphWriter & other) = delete;
+
+  GraphWriter &
+  operator=(GraphWriter && other) = delete;
+
+  [[nodiscard]] Graph &
+  CreateGraph();
+
+  /**
+   * Attempts to find a GraphElement in one of the graphs that is associated with \p object
+   * @return the graph element associated with object, or nullptr if none is found
+   */
+  [[nodiscard]] GraphElement *
+  GetElementFromProgramObject(uintptr_t object);
+
+  /**
+   * Finalizes and prints all graphs created in this GraphWriter.
+   * @param out the output stream to write graphs to
+   * @param format the format to emit the graphs in
+   */
   void
   OutputAllGraphs(std::ostream & out, GraphOutputFormat format);
 
-  int
+private:
+  [[nodiscard]] Graph &
+  CreateSubGraph(Node & parentNode);
+
+  friend Graph &
+  InOutNode::CreateSubgraph();
+
+  /**
+   * Returns a unique suffix for the given \p idStub, starting at 0 and counting up
+   * @return the next unique integer suffix for the given idStub
+   */
+  [[nodiscard]] int
   GetNextUniqueIdStubSuffix(const char * idStub);
 
-  void
-  AssociateElementWithProgramObject(GraphElement * elm, uintptr_t programObject);
+  friend void
+  GraphElement::Finalize();
 
-private:
   // All graphs being worked on by the GraphWriter
-  // Edges can not go across graphs, IDs are unique across graphs allowing semantic connections
+  // Edges can not go across graphs.
+  // IDs are however unique across graphs allowing semantic connections.
   std::vector<std::unique_ptr<Graph>> Graphs_;
 
   // Tracks the next integer to be used when assigning a unique suffix to a given id stub
-  std::unordered_map<std::string, int> NextUniqueIdStubSuffix;
-
-  // A shared mapping between objects in the program, and the GraphElements representing them.
-  std::unordered_map<uintptr_t, GraphElement *> MappedElements_;
+  std::unordered_map<std::string, int> NextUniqueIdStubSuffix_;
 };
 
 /**
- * Returns a shared global instance of the GraphWriter
+ * Returns a shared global instance of GraphWriter
  */
 GraphWriter &
 GetGraphWriter();
 
 };
 
-#endif // JLM_GRAPHWRITER_HPP
+#endif // JLM_UTIL_GRAPHWRITER_HPP
