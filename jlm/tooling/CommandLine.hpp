@@ -41,9 +41,16 @@ class optimization;
 class JlmOptCommandLineOptions final : public CommandLineOptions
 {
 public:
+  enum class InputFormat
+  {
+    Llvm,
+    Mlir,
+  };
+
   enum class OutputFormat
   {
     Llvm,
+    Mlir,
     Xml
   };
 
@@ -70,11 +77,13 @@ public:
 
   JlmOptCommandLineOptions(
       util::filepath inputFile,
+      InputFormat inputFormat,
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       std::vector<OptimizationId> optimizations)
       : InputFile_(std::move(inputFile)),
+        InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
         OutputFormat_(outputFormat),
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
@@ -88,6 +97,12 @@ public:
   GetInputFile() const noexcept
   {
     return InputFile_;
+  }
+
+  [[nodiscard]] InputFormat
+  GetInputFormat() const noexcept
+  {
+    return InputFormat_;
   }
 
   [[nodiscard]] const util::filepath &
@@ -130,6 +145,9 @@ public:
   ToCommandLineArgument(util::Statistics::Id statisticsId);
 
   static const char *
+  ToCommandLineArgument(InputFormat inputFormat);
+
+  static const char *
   ToCommandLineArgument(OutputFormat outputFormat);
 
   static llvm::optimization *
@@ -138,6 +156,7 @@ public:
   static std::unique_ptr<JlmOptCommandLineOptions>
   Create(
       util::filepath inputFile,
+      InputFormat inputFormat,
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
@@ -145,6 +164,7 @@ public:
   {
     return std::make_unique<JlmOptCommandLineOptions>(
         std::move(inputFile),
+        inputFormat,
         std::move(outputFile),
         outputFormat,
         std::move(statisticsCollectorSettings),
@@ -153,6 +173,7 @@ public:
 
 private:
   util::filepath InputFile_;
+  InputFormat InputFormat_;
   util::filepath OutputFile_;
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;

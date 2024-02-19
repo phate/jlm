@@ -22,6 +22,7 @@ TestStatistics()
 
   JlmOptCommandLineOptions commandLineOptions(
       jlm::util::filepath("inputFile.ll"),
+      JlmOptCommandLineOptions::InputFormat::Llvm,
       jlm::util::filepath("outputFile.ll"),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       statisticsCollectorSettings,

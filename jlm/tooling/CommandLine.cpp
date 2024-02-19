@@ -205,10 +205,23 @@ JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsI
 }
 
 const char *
+JlmOptCommandLineOptions::ToCommandLineArgument(InputFormat inputFormat)
+{
+  static std::unordered_map<InputFormat, const char *> map(
+      { { InputFormat::Llvm, "llvm" }, { InputFormat::Mlir, "mlir" } });
+
+  if (map.find(inputFormat) != map.end())
+    return map[inputFormat];
+
+  throw util::error("Unknown input format");
+}
+
+const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 {
-  static std::unordered_map<OutputFormat, const char *> map(
-      { { OutputFormat::Llvm, "llvm" }, { OutputFormat::Xml, "xml" } });
+  static std::unordered_map<OutputFormat, const char *> map({ { OutputFormat::Llvm, "llvm" },
+                                                              { OutputFormat::Mlir, "mlir" },
+                                                              { OutputFormat::Xml, "xml" } });
 
   if (map.find(outputFormat) != map.end())
     return map[outputFormat];
@@ -777,21 +790,50 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               "Write theta-gamma inversion statistics to file.")),
       cl::desc("Write statistics"));
 
+#ifdef ENABLE_MLIR
+  auto llvmInputFormat = JlmOptCommandLineOptions::InputFormat::Llvm;
+  auto mlirInputFormat = JlmOptCommandLineOptions::InputFormat::Mlir;
+
+  cl::opt<JlmOptCommandLineOptions::InputFormat> inputFormat(
+      "input-format",
+      cl::desc("Select input format:"),
+      cl::values(
+          ::clEnumValN(
+              llvmInputFormat,
+              JlmOptCommandLineOptions::ToCommandLineArgument(llvmInputFormat),
+              "Input LLVM IR [default]"),
+          ::clEnumValN(
+              mlirInputFormat,
+              JlmOptCommandLineOptions::ToCommandLineArgument(mlirInputFormat),
+              "Input MLIR")),
+      cl::init(llvmInputFormat));
+#else
+  auto inputFormat = JlmOptCommandLineOptions::InputFormat::Llvm;
+#endif
+
   auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
   auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
 
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
+      "output-format",
+      cl::desc("Select output format:"),
       cl::values(
           ::clEnumValN(
               llvmOutputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(llvmOutputFormat),
               "Output LLVM IR [default]"),
+#ifdef ENABLE_MLIR
+          ::clEnumValN(
+              JlmOptCommandLineOptions::OutputFormat::Mlir,
+              JlmOptCommandLineOptions::ToCommandLineArgument(
+                  JlmOptCommandLineOptions::OutputFormat::Mlir),
+              "Output MLIR"),
+#endif
           ::clEnumValN(
               xmlOutputFormat,
               JlmOptCommandLineOptions::ToCommandLineArgument(xmlOutputFormat),
               "Output XML")),
-      cl::init(llvmOutputFormat),
-      cl::desc("Select output format"));
+      cl::init(llvmOutputFormat));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
@@ -889,6 +931,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
+      inputFormat,
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
