@@ -3,6 +3,12 @@ set -eu
 
 GIT_COMMIT=093cdfe482530623fea01e1d3242af93e533ba54
 
+# Get the absolute path to this script and set default build and install paths
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+JLM_ROOT_DIR=${SCRIPT_DIR}/..
+CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
+CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
+
 function commit()
 {
 	echo ${GIT_COMMIT}
@@ -24,12 +30,12 @@ while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
 		--build-path)
 			shift
-			CIRCT_BUILD="$1"
+			CIRCT_BUILD="${PWD}/$1"
 			shift
 			;;
 		--install-path)
 			shift
-			CIRCT_INSTALL="$1"
+			CIRCT_INSTALL="${PWD}/$1"
 			shift
 			;;
 		--get-commit-hash)
@@ -43,12 +49,18 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-git clone https://github.com/EECS-NTNU/circt.git ${CIRCT_BUILD}
-cd ${CIRCT_BUILD}
+CIRCT_GIT_DIR=${CIRCT_BUILD}/circt.git
+CIRCT_BUILD_DIR=${CIRCT_BUILD}/build
+
+if [ ! -d "$CIRCT_GIT_DIR" ] ;
+then
+	git clone https://github.com/EECS-NTNU/circt.git ${CIRCT_GIT_DIR}
+fi
+cd ${CIRCT_GIT_DIR}
 git checkout ${GIT_COMMIT}
-mkdir build
-cd build
-cmake -G Ninja .. \
+cmake -G Ninja \
+	${CIRCT_GIT_DIR} \
+	-B ${CIRCT_BUILD_DIR} \
 	-DCMAKE_C_COMPILER=clang-16 \
 	-DCMAKE_CXX_COMPILER=clang++-16 \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -57,7 +69,7 @@ cmake -G Ninja .. \
 	-DLLVM_EXTERNAL_LIT=/usr/local/bin/lit \
 	-DLLVM_LIT_ARGS="-v --show-unsupported" \
 	-DVERILATOR_DISABLE=ON \
-	-DCMAKE_INSTALL_PREFIX=$CIRCT_INSTALL
-ninja
-ninja check-circt
-ninja install
+	-DCMAKE_INSTALL_PREFIX=${CIRCT_INSTALL}
+ninja -C ${CIRCT_BUILD_DIR}
+ninja -C ${CIRCT_BUILD_DIR} check-circt
+ninja -C ${CIRCT_BUILD_DIR} install
