@@ -18,8 +18,10 @@ runs:
 
     - name: "Place MLIRlib in system folder"
       run: |
-        sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/
-        sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
+        if ! [ -f /usr/lib/x86_64-linux-gnu/libMLIR.so ]; then
+          sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/
+          sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
+        fi
       shell: bash
 
     - name: "Install lit"
