@@ -612,9 +612,10 @@ public:
   CreateResultNode();
 
   /**
-   * Creates a new edge from the port \p from to the port \p to.
-   * Both ports must belong to this graph.
+   * Creates a new edge between from and to. Both ports must belong to this graph.
    * If the edge is directed, the ports must support being the tail and head of an edge.
+   * @param from the port the edge goes from.
+   * @param to the port the edge goes to.
    * @param directed if true, the edge is a directed edge, otherwise undirected
    * @return a reference to the newly created edge.
    */
@@ -624,6 +625,7 @@ public:
   /**
    * Creates a new directed edge from \p from to \p to.
    * @return a reference to the newly created edge.
+   * @see CreateEdge
    */
   Edge &
   CreateDirectedEdge(Port & from, Port & to)
@@ -635,6 +637,7 @@ public:
    * Creates a new edge between \p a and \p b.
    * The ordering of a and b may affect graph layout.
    * @return a reference to the newly created edge.
+   * @see CreateEdge
    */
   Edge &
   CreateUndirectedEdge(Port & a, Port & b)
