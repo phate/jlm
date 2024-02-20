@@ -626,12 +626,14 @@ public:
   CreateEdge(Port & from, Port & to, bool directed);
 
   Edge &
-  CreateDirectedEdge(Port & from, Port & to) {
+  CreateDirectedEdge(Port & from, Port & to)
+  {
     return CreateEdge(from, to, true);
   }
 
   Edge &
-  CreateUndirectedEdge(Port & a, Port & b) {
+  CreateUndirectedEdge(Port & a, Port & b)
+  {
     return CreateEdge(a, b, false);
   }
 

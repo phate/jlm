@@ -945,7 +945,7 @@ Node &
 Graph::CreateNode()
 {
   auto * node = new Node(*this);
-  Nodes_.emplace_back(std::unique_ptr<Node>(node));
+  Nodes_.emplace_back(node);
   return *node;
 }
 
@@ -953,7 +953,7 @@ InOutNode &
 Graph::CreateInOutNode(size_t inputPorts, size_t outputPorts)
 {
   auto * node = new InOutNode(*this, inputPorts, outputPorts);
-  Nodes_.emplace_back(std::unique_ptr<InOutNode>(node));
+  Nodes_.emplace_back(node);
   return *node;
 }
 
@@ -961,7 +961,7 @@ ArgumentNode &
 Graph::CreateArgumentNode()
 {
   auto * node = new ArgumentNode(*this);
-  ArgumentNodes_.emplace_back(std::unique_ptr<ArgumentNode>(node));
+  ArgumentNodes_.emplace_back(node);
   return *node;
 }
 
@@ -969,7 +969,7 @@ ResultNode &
 Graph::CreateResultNode()
 {
   auto * node = new ResultNode(*this);
-  ResultNodes_.emplace_back(std::unique_ptr<ResultNode>(node));
+  ResultNodes_.emplace_back(node);
   return *node;
 }
 
@@ -982,7 +982,7 @@ Graph::CreateEdge(Port & from, Port & to, bool directed)
 
   // Edge's constructor informs the ports about the edge
   auto * edge = new Edge(from, to, directed);
-  Edges_.emplace_back(std::unique_ptr<Edge>(edge));
+  Edges_.emplace_back(edge);
   return *edge;
 }
 
@@ -1146,7 +1146,7 @@ Graph &
 GraphWriter::CreateGraph()
 {
   auto * graph = new Graph(*this);
-  Graphs_.emplace_back(std::unique_ptr<Graph>(graph));
+  Graphs_.emplace_back(graph);
   return *graph;
 }
 
@@ -1154,7 +1154,7 @@ Graph &
 GraphWriter::CreateSubGraph(Node & parentNode)
 {
   auto * graph = new Graph(*this, parentNode);
-  Graphs_.emplace_back(std::unique_ptr<Graph>(graph));
+  Graphs_.emplace_back(graph);
   return *graph;
 }
 
