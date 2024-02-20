@@ -65,7 +65,7 @@ runs:
 
     - name: "Configure jlm"
       run: |
-        echo "Configure arguments: ${JLM_CONFIGURE_ARGUMENTS}"
+        echo "Configure arguments: $JLM_CONFIGURE_ARGUMENTS"
         ./configure.sh ${JLM_CONFIGURE_ARGUMENTS}
       shell: bash
 
