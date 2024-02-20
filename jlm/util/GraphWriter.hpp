@@ -116,7 +116,7 @@ public:
    * When referencing a program object that is associated with a GraphElement,
    * the unique id of the element is used instead of the address of the program object.
    * Within a graph, only one graph element can be associated with any given program object.
-   * @param programObject the object to associate this GraphElement with
+   * @param object the object to associate this GraphElement with
    */
   template<typename T>
   void
@@ -612,7 +612,7 @@ public:
   CreateResultNode();
 
   /**
-   * Creates a new edge from the port \from to the port \to.
+   * Creates a new edge from the port \p from to the port \p to.
    * Both ports must belong to this graph.
    * If the edge is directed, the ports must support being the tail and head of an edge.
    * @param directed if true, the edge is a directed edge, otherwise undirected
@@ -621,12 +621,21 @@ public:
   Edge &
   CreateEdge(Port & from, Port & to, bool directed);
 
+  /**
+   * Creates a new directed edge from \p from to \p to.
+   * @return a reference to the newly created edge.
+   */
   Edge &
   CreateDirectedEdge(Port & from, Port & to)
   {
     return CreateEdge(from, to, true);
   }
 
+  /**
+   * Creates a new edge between \p a and \p b.
+   * The ordering of a and b may affect graph layout.
+   * @return a reference to the newly created edge.
+   */
   Edge &
   CreateUndirectedEdge(Port & a, Port & b)
   {
