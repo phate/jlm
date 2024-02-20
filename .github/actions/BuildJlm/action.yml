@@ -49,6 +49,7 @@ runs:
       uses: ./.github/actions/BuildMlirDialect
 
     - name: "Collect command line arguments"
+      id: collect
       run: |
         export JLM_CONFIGURE_ARGUMENTS="--target release --enable-asserts"
         if [[ "${{inputs.enable-hls}}" == "true" ]]; then
@@ -61,12 +62,12 @@ runs:
           JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-coverage"
         fi
         JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS CXX=${{inputs.cxx}}"
+        echo "jlm_configure_arguments=$JLM_CONFIGURE_ARGUMENTS" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: "Configure jlm"
       run: |
-        echo "Configure arguments: $JLM_CONFIGURE_ARGUMENTS"
-        ./configure.sh ${JLM_CONFIGURE_ARGUMENTS}
+        ./configure.sh ${{steps.collect.outputs.jlm_configure_arguments}}
       shell: bash
 
     - name: "Compile jlm"
