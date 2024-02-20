@@ -30,7 +30,10 @@ runs:
         || ${{inputs.enable-mlir}} != true || ${{inputs.enable-mlir}} != false
         || ${{inputs.enable-coverage}} != true || ${{inputs.enable-coverage}} != false
       run: |
-        echo "Invalid composite action inputs"
+        echo "Invalid composite action inputs:"
+        echo "enable-hls: ${{inputs.enable-hls}}"
+        echo "enable-mlir: ${{inputs.enable-mlir}}"
+        echo "enable-coverage: ${{inputs.enable-coverage}}"
         exit 1
       shell: bash
 
@@ -61,7 +64,9 @@ runs:
       shell: bash
 
     - name: "Configure jlm"
-      run: ./configure.sh ${JLM_CONFIGURE_ARGUMENTS}
+      run: |
+        echo "Configure arguments: ${JLM_CONFIGURE_ARGUMENTS}"
+        ./configure.sh ${JLM_CONFIGURE_ARGUMENTS}
       shell: bash
 
     - name: "Compile jlm"
