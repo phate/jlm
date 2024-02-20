@@ -9,9 +9,12 @@ jhls_LIBS = \
 	libtooling \
 	libhls \
 	libllvm \
+	libmlir \
 	librvsdg \
 	libutil \
 
-jhls_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --libs core irReader) $(shell $(LLVMCONFIG) --ldflags) \
+jhls_EXTRA_LDFLAGS = \
+	$(shell $(LLVMCONFIG) --libs core irReader --ldflags) \
+	${MLIR_LDFLAGS} \
 
 $(eval $(call common_executable,jhls))

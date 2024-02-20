@@ -113,7 +113,7 @@ fi
 
 CPPFLAGS_MLIR=""
 if [ "${ENABLE_MLIR}" == "yes" ] ; then
-	CPPFLAGS_MLIR="-I${MLIR_PATH}/include"
+	CPPFLAGS_MLIR="-I${MLIR_PATH}/include -DENABLE_MLIR"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
 fi

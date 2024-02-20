@@ -228,8 +228,8 @@ TestSupersetConstraint()
 
   // Make alloca0 point to everything reg1 points to
   SupersetConstraint c1(alloca0, reg1);
-  assert(c1.Apply(set));
-  while (c1.Apply(set))
+  assert(c1.ApplyDirectly(set));
+  while (c1.ApplyDirectly(set))
     ;
   // For now this only makes alloca0 point to alloca1
   assert(set.GetPointsToSet(alloca0).Size() == 1);
@@ -237,15 +237,15 @@ TestSupersetConstraint()
 
   // Make reg1 point to everything reg2 points to
   SupersetConstraint c2(reg1, reg2);
-  assert(c2.Apply(set));
-  while (c2.Apply(set))
+  assert(c2.ApplyDirectly(set));
+  while (c2.ApplyDirectly(set))
     ;
   // This makes alloca2 a member of P(reg1)
   assert(set.GetPointsToSet(reg1).Contains(alloca2));
 
   // Apply c1 again
-  assert(c1.Apply(set));
-  while (c1.Apply(set))
+  assert(c1.ApplyDirectly(set));
+  while (c1.ApplyDirectly(set))
     ;
   // Now alloca0 should also point to alloca2
   assert(set.GetPointsToSet(alloca0).Size() == 2);
@@ -253,11 +253,11 @@ TestSupersetConstraint()
 
   // Make reg2 point to external, and propagate through constraints
   set.GetPointerObject(reg2).MarkAsPointsToExternal();
-  assert(c2.Apply(set));
-  while (c2.Apply(set))
+  assert(c2.ApplyDirectly(set));
+  while (c2.ApplyDirectly(set))
     ;
-  assert(c1.Apply(set));
-  while (c1.Apply(set))
+  assert(c1.ApplyDirectly(set));
+  while (c1.ApplyDirectly(set))
     ;
   // Now both reg1 and alloca0 may point to external
   assert(set.GetPointerObject(reg1).PointsToExternal());
@@ -286,21 +286,21 @@ TestAllPointeesPointToSupersetConstraint()
   set.AddToPointsToSet(reg2, alloca2);
 
   // Add *alloca0 = reg2, which will do nothing, since alloca0 can't be pointing to anything yet
-  AllPointeesPointToSupersetConstraint c1(alloca0, reg2);
-  assert(!c1.Apply(set));
+  StoreConstraint c1(alloca0, reg2);
+  assert(!c1.ApplyDirectly(set));
 
   // This means *reg0 = reg1, and as we know, reg0 points to alloca0
   // This should make alloca0 point to anything reg1 points to, aka alloca1
-  AllPointeesPointToSupersetConstraint c2(reg0, reg1);
-  assert(c2.Apply(set));
-  while (c2.Apply(set))
+  StoreConstraint c2(reg0, reg1);
+  assert(c2.ApplyDirectly(set));
+  while (c2.ApplyDirectly(set))
     ;
   assert(set.GetPointsToSet(alloca0).Size() == 1);
   assert(set.GetPointsToSet(alloca0).Contains(alloca1));
 
   // Do c1 again, now that alloca0 points to alloca1
-  assert(c1.Apply(set));
-  while (c1.Apply(set))
+  assert(c1.ApplyDirectly(set));
+  while (c1.ApplyDirectly(set))
     ;
   assert(set.GetPointsToSet(alloca1).Size() == 1);
   assert(set.GetPointsToSet(alloca1).Contains(alloca2));
@@ -329,14 +329,14 @@ TestSupersetOfAllPointeesConstraint()
 
   // Makes reg1 = *reg0, where reg0 currently just points to alloca0
   // Since alloca0 currently has no pointees, this does nothing
-  SupersetOfAllPointeesConstraint c1(reg1, reg0);
-  assert(!c1.Apply(set));
+  LoadConstraint c1(reg1, reg0);
+  assert(!c1.ApplyDirectly(set));
 
   // Make alloca0 point to something: alloca2
   set.AddToPointsToSet(alloca0, alloca2);
   // The constraint now makes a difference
-  assert(c1.Apply(set));
-  while (c1.Apply(set))
+  assert(c1.ApplyDirectly(set));
+  while (c1.ApplyDirectly(set))
     ;
   assert(set.GetPointsToSet(reg1).Size() == 2);
   assert(set.GetPointsToSet(reg1).Contains(alloca2));
@@ -367,7 +367,7 @@ TestHandleEscapingFunctionConstraint()
   // Make a constraints set
   PointerObjectConstraintSet constraints(set);
   constraints.AddConstraint(HandleEscapingFunctionConstraint(exportedFunctionPO));
-  constraints.Solve();
+  constraints.SolveNaively();
 
   // Nothing has happened yet, since the exported function is yet to be marked as escaped
   assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
@@ -375,7 +375,7 @@ TestHandleEscapingFunctionConstraint()
   assert(!set.GetPointerObject(exportedFunctionPO).HasEscaped());
 
   set.GetPointerObject(exportedFunctionPO).MarkAsEscaped();
-  constraints.Solve();
+  constraints.SolveNaively();
 
   // Now the local function has been marked as escaped as well, since it is the return value
   assert(set.GetPointerObject(localFunctionPO).HasEscaped());
@@ -405,8 +405,8 @@ TestFunctionCallConstraint()
   set.AddToPointsToSet(allocaYRegister, allocaY);
 
   FunctionCallConstraint c(lambdaFRegister, rvsdg.CallF());
-  assert(c.Apply(set));
-  while (c.Apply(set))
+  assert(c.ApplyDirectly(set));
+  while (c.ApplyDirectly(set))
     ;
 
   // The arguments to f should now be pointing to exactly the corresponding allocas
@@ -435,7 +435,7 @@ TestAddPointsToExternalConstraint()
   constraints.AddPointerPointeeConstraint(reg1, alloca1);
 
   constraints.AddPointsToExternalConstraint(reg0);
-  constraints.Solve();
+  constraints.SolveNaively();
 
   // Make sure only reg0 points to external, and nothing has escaped
   assert(set.GetPointerObject(reg0).PointsToExternal());
@@ -449,8 +449,8 @@ TestAddPointsToExternalConstraint()
   assert(!set.GetPointerObject(alloca1).HasEscaped());
 
   // Add a *reg0 = reg1 store
-  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg0, reg1));
-  constraints.Solve();
+  constraints.AddConstraint(StoreConstraint(reg0, reg1));
+  constraints.SolveNaively();
 
   // Now alloca1 is marked as escaped, due to being written to a pointer that might point to
   // external
@@ -479,15 +479,15 @@ TestAddRegisterContentEscapedConstraint()
 
   // return reg0, making alloca0 escapce
   constraints.AddRegisterContentEscapedConstraint(reg0);
-  constraints.Solve();
+  constraints.SolveNaively();
 
   // Make sure only alloca0 has escaped
   assert(set.GetPointerObject(alloca0).HasEscaped());
   assert(!set.GetPointerObject(alloca1).HasEscaped());
 
   // Add a alloca0 = reg1 store
-  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg0, reg1));
-  constraints.Solve();
+  constraints.AddConstraint(StoreConstraint(reg0, reg1));
+  constraints.SolveNaively();
 
   // Now both are marked as escaped
   assert(set.GetPointerObject(alloca0).HasEscaped());
@@ -532,16 +532,16 @@ TestPointerObjectConstraintSetSolve()
   constraints.AddPointerPointeeConstraint(reg[4], alloca4);
 
   // store [%1], %2 (alloca1 now points to alloca2)
-  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[1], reg[2]));
+  constraints.AddConstraint(StoreConstraint(reg[1], reg[2]));
   // store [%2], %3 (alloca2 now points to alloca3)
-  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[2], reg[3]));
+  constraints.AddConstraint(StoreConstraint(reg[2], reg[3]));
   // store [%3], %4 (alloca3 now points to alloca4)
-  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[3], reg[4]));
+  constraints.AddConstraint(StoreConstraint(reg[3], reg[4]));
 
   // %5 = load [%1] (loads v1, which is %2, the pointer to alloca2)
-  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[5], reg[1]));
+  constraints.AddConstraint(LoadConstraint(reg[5], reg[1]));
   // %6 = load [%3] (loads v3, which is %4, the pointer to alloca4)
-  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[6], reg[3]));
+  constraints.AddConstraint(LoadConstraint(reg[6], reg[3]));
 
   // %7 = phi %5/%6 (either points to alloca2 or alloca4)
   constraints.AddConstraint(SupersetConstraint(reg[7], reg[5]));
@@ -552,17 +552,17 @@ TestPointerObjectConstraintSetSolve()
   constraints.AddConstraint(SupersetConstraint(reg[8], reg[4]));
 
   // %9 = load [%7] (either loads alloca2 or alloca4, the first is a pointer to alloca3)
-  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[9], reg[7]));
+  constraints.AddConstraint(LoadConstraint(reg[9], reg[7]));
 
   // store [%8], %9 (stores what might be a pointer to alloca3 into what's either alloca4 or the
   // pointer argument)
-  constraints.AddConstraint(AllPointeesPointToSupersetConstraint(reg[8], reg[9]));
+  constraints.AddConstraint(StoreConstraint(reg[8], reg[9]));
 
   // %10 = load [%8] (loads from possibly external, should also point to external)
-  constraints.AddConstraint(SupersetOfAllPointeesConstraint(reg[10], reg[8]));
+  constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  constraints.Solve();
+  constraints.SolveNaively();
 
   // alloca1 should point to alloca2, etc
   assert(set.GetPointsToSet(alloca1).Size() == 1);

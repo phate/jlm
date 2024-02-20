@@ -14,6 +14,7 @@ libutil_TESTS += \
 	tests/jlm/util/TestMath \
 	tests/jlm/util/TestStatistics \
 	tests/jlm/util/TestTimer \
+	tests/jlm/util/TestWorklist \
 
 libutil_TEST_LIBS = \
 	libjlmtest \
