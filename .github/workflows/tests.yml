@@ -20,6 +20,8 @@ jobs:
       with:
         enable-hls: true
         enable-mlir: true
+    - name: "Add executables to PATH"
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
     - name: Run unit and C tests
       run: make check -O -j `nproc`
 
@@ -59,6 +61,8 @@ jobs:
       with:
         path: ${{ github.workspace }}/*
         key: ${{ runner.os }}-${{ github.sha }}-jlm
+    - name: Echo path
+      run:
     - name: Clone polybench
       run: git clone https://github.com/phate/polybench-jlm.git
     - name: Check polybench

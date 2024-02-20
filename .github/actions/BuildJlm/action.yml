@@ -73,7 +73,3 @@ runs:
     - name: "Compile jlm"
       run: make -j `nproc` -O
       shell: bash
-
-    - name: "Add executables to PATH"
-      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
-      shell: bash
