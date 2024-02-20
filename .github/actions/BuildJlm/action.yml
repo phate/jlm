@@ -38,7 +38,7 @@ runs:
       shell: bash
 
     - name: "Install LLVM dependencies"
-      uses: ./.github/action/InstallLlvmDependencies
+      uses: ./.github/actions/InstallLlvmDependencies
 
     - name: "Install HLS dialect dependencies"
       if: ${{inputs.enable-hls}} == true
