@@ -1187,11 +1187,4 @@ GraphWriter::OutputAllGraphs(std::ostream & out, GraphOutputFormat format)
       graph->Output(out, format);
 }
 
-GraphWriter &
-GetGraphWriter()
-{
-  static GraphWriter theGraphWriter;
-  return theGraphWriter;
-}
-
 }

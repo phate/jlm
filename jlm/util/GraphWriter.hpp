@@ -719,7 +719,7 @@ private:
 
 /**
  * Utility class for creating graphs in memory, and printing them to a human or machine readable
- * format
+ * format.
  */
 class GraphWriter
 {
@@ -781,12 +781,6 @@ private:
   // Tracks the next integer to be used when assigning a unique suffix to a given id stub
   std::unordered_map<std::string, int> NextUniqueIdStubSuffix_;
 };
-
-/**
- * Returns a shared global instance of GraphWriter
- */
-GraphWriter &
-GetGraphWriter();
 
 };
 
