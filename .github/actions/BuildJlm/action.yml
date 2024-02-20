@@ -1,5 +1,5 @@
 name: "Build jlm"
-description: "Install dependencies, configures, and builds jlm"
+description: "Configures and builds jlm along with the necessary dependencies."
 
 inputs:
   enable-hls:
@@ -25,7 +25,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - // FIXME: Validate input
+    - name: "Validate input"
+      if: ${{input.enable-hls}} != 'true' || ${{input.enable-hls}} != 'false'
+        || ${{input.enable-mlir}} != 'true' || ${{input.enable-mlir != 'false'
+        || ${{input.enable-coverage}} != 'true' || ${{input.enable-coverage}} != 'false'
+      run: |
+        echo "Invalid input"
+        exit 1
+      shell: bash
 
     - name: "Install LLVM dependencies"
       uses: ./.github/action/InstallLlvmDependencies
@@ -40,7 +47,7 @@ runs:
 
     - name: "Collect command line arguments"
       run: |
-        JLM_CONFIGURE_ARGUMENTS = "--target release --enable-asserts"
+        export JLM_CONFIGURE_ARGUMENTS = "--target release --enable-asserts"
         if [[ "${{inputs.enable-hls}}" == "true" ]]; then
           JLM_CONFIGURE_ARGUMENTS = "$JLM_CONFIGURE_ARGUMENTS --enable-hls ${{ github.workspace }}/build-circt/circt"
         fi
