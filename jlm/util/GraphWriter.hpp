@@ -782,6 +782,6 @@ private:
   std::unordered_map<std::string, int> NextUniqueIdStubSuffix_;
 };
 
-};
+}
 
 #endif // JLM_UTIL_GRAPHWRITER_HPP
