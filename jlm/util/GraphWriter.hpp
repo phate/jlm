@@ -111,8 +111,10 @@ public:
   GetUniqueIdSuffix() const;
 
   /**
-   * Graph elements often represent objects from the program. By making this association explicit,
-   * the GraphElement's unique id can be used when referencing the object, across graphs.
+   * Graph elements often represent objects from the program.
+   * By making this association explicit, GraphElements can be looked up by program object.
+   * When referencing a program object that is associated with a GraphElement,
+   * the unique id of the element is used instead of the address of the program object.
    * Within a graph, only one graph element can be associated with any given program object.
    * @param programObject the object to associate this GraphElement with
    */
@@ -135,7 +137,7 @@ public:
    * @param value the attribute value
    */
   void
-  SetAttributeString(const std::string & attribute, const std::string & value);
+  SetAttribute(const std::string & attribute, std::string value);
 
   /**
    * Assigns or overrides a given attribute on the element,
@@ -149,8 +151,8 @@ public:
 
   /**
    * Assigns or overrides a given attribute on the element, with a program object.
-   * If the object is mapped to a graph element in the GraphWriter, the id of the graph element will
-   * be used when referring to the object.
+   * If the object is mapped to a graph element in the GraphWriter,
+   * the id of the graph element will be used when referring to the object.
    * @param attribute the name of the attribute.
    * @param object the program object, must be non-null.
    */
@@ -168,8 +170,7 @@ public:
   Finalize();
 
   /**
-   * @return true if this GraphElement has been finalized, false otherwise.
-   *
+   * @return true if this GraphElement has been finalized, otherwise false.
    */
   [[nodiscard]] bool
   IsFinalized() const;
@@ -246,6 +247,12 @@ public:
   HasIncomingEdges() const;
 
   /**
+   * Helper function for setting the background color of the Port using the correct dot attributes
+   */
+  virtual void
+  SetFillColor(std::string color) = 0;
+
+  /**
    * Only used by the Dot printer.
    * Outputs the fully qualified port name, such as node8:i6
    */
@@ -299,6 +306,9 @@ public:
   GetGraph() override;
 
   void
+  SetFillColor(std::string color) override;
+
+  void
   OutputDotPortId(std::ostream & out) override;
 
   /**
@@ -348,6 +358,9 @@ public:
   CanBeEdgeTail() const override;
 
   void
+  SetFillColor(std::string color) override;
+
+  void
   OutputDotPortId(std::ostream & out) override;
 
 private:
@@ -373,6 +386,9 @@ public:
 
   bool
   CanBeEdgeHead() const override;
+
+  void
+  SetFillColor(std::string color) override;
 
   void
   OutputDotPortId(std::ostream & out) override;
@@ -599,8 +615,25 @@ public:
   [[nodiscard]] ResultNode &
   CreateResultNode();
 
+  /**
+   * Creates a new edge from the port \from to the port \to.
+   * Both ports must belong to this graph.
+   * If the edge is directed, the ports must support being the tail and head of an edge.
+   * @param directed if true, the edge is a directed edge, otherwise undirected
+   * @return a reference to the newly created edge.
+   */
   Edge &
   CreateEdge(Port & from, Port & to, bool directed);
+
+  Edge &
+  CreateDirectedEdge(Port & from, Port & to) {
+    return CreateEdge(from, to, true);
+  }
+
+  Edge &
+  CreateUndirectedEdge(Port & a, Port & b) {
+    return CreateEdge(a, b, false);
+  }
 
   /**
    * Retrieves the GraphElement in this graph associated with a given ProgramObject.
