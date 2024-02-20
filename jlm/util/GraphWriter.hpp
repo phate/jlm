@@ -509,7 +509,7 @@ public:
   SetOutsideDestination(Port & outsideSource);
 
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent);
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent) override;
 
 private:
   // Optional reference to a Port outside of this graph representing where the result ends up
