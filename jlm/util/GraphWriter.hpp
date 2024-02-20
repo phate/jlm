@@ -343,7 +343,7 @@ class InputPort : public Port
 {
   friend InOutNode;
 
-  InputPort(InOutNode & node, size_t nodeInputIndex);
+  InputPort(InOutNode & node);
 
 public:
   ~InputPort() override = default;
@@ -365,15 +365,13 @@ public:
 
 private:
   InOutNode & Node_;
-  // The index of this input of the InOutNode
-  const size_t NodeInputIndex_;
 };
 
 class OutputPort : public Port
 {
   friend InOutNode;
 
-  OutputPort(InOutNode & node, size_t nodeOutputIndex);
+  OutputPort(InOutNode & node);
 
 public:
   ~OutputPort() override = default;
@@ -395,8 +393,6 @@ public:
 
 private:
   InOutNode & Node_;
-  // The index of this output of the InOutNode
-  size_t NodeOutputIndex_;
 };
 
 class InOutNode : public Node

@@ -442,9 +442,8 @@ Node::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t inden
   // Regular nodes do not have sub graphs
 }
 
-InputPort::InputPort(jlm::util::InOutNode & node, size_t nodeInputIndex)
-    : Node_(node),
-      NodeInputIndex_(nodeInputIndex)
+InputPort::InputPort(jlm::util::InOutNode & node)
+    : Node_(node)
 {}
 
 const char *
@@ -478,9 +477,8 @@ InputPort::OutputDotPortId(std::ostream & out)
   out << Node_.GetFullId() << ":" << GetFullId() << ":n";
 }
 
-OutputPort::OutputPort(jlm::util::InOutNode & node, size_t nodeOutputIndex)
-    : Node_(node),
-      NodeOutputIndex_(nodeOutputIndex)
+OutputPort::OutputPort(jlm::util::InOutNode & node)
+    : Node_(node)
 {}
 
 const char *
@@ -527,7 +525,7 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 InputPort &
 InOutNode::CreateInputPort()
 {
-  auto * inputPort = new InputPort(*this, InputPorts_.size());
+  auto * inputPort = new InputPort(*this);
   InputPorts_.emplace_back(inputPort);
   return *inputPort;
 }
@@ -548,7 +546,7 @@ InOutNode::GetInputPort(size_t index)
 OutputPort &
 InOutNode::CreateOutputPort()
 {
-  auto * outputPort = new OutputPort(*this, OutputPorts_.size());
+  auto * outputPort = new OutputPort(*this);
   OutputPorts_.emplace_back(outputPort);
   return *outputPort;
 }
