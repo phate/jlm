@@ -27,7 +27,7 @@ runs:
   steps:
     - name: "Validate input"
       if: ${{inputs.enable-hls}} != 'true' || ${{inputs.enable-hls}} != 'false'
-        || ${{inputs.enable-mlir}} != 'true' || ${{inputs.enable-mlir != 'false'
+        || ${{inputs.enable-mlir}} != 'true' || ${{inputs.enable-mlir}} != 'false'
         || ${{inputs.enable-coverage}} != 'true' || ${{inputs.enable-coverage}} != 'false'
       run: |
         echo "Invalid input"
