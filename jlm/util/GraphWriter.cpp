@@ -147,7 +147,7 @@ GraphElement::GetFullId() const
 {
   JLM_ASSERT(IsFinalized());
   std::ostringstream ss;
-  ss << GetIdStub() << GetUniqueIdSuffix();
+  ss << GetIdPrefix() << GetUniqueIdSuffix();
   return ss.str();
 }
 
@@ -206,10 +206,17 @@ GraphElement::SetAttribute(const std::string & attribute, std::string value)
 }
 
 void
-GraphElement::SetAttributeUintptr(const std::string & attribute, uintptr_t object)
+GraphElement::SetAttributeObject(const std::string & attribute, void * object)
 {
   JLM_ASSERT(object);
-  AttributeMap_[attribute] = object;
+  AttributeMap_[attribute] = reinterpret_cast<uintptr_t>(object);
+}
+
+void
+GraphElement::SetAttributeGraphElement(const std::string & attribute, GraphElement & element)
+{
+  JLM_ASSERT(&GetGraph().GetGraphWriter() == &element.GetGraph().GetGraphWriter());
+  AttributeMap_[attribute] = &element;
 }
 
 void
@@ -219,7 +226,7 @@ GraphElement::Finalize()
     return;
 
   auto & writer = GetGraph().GetGraphWriter();
-  UniqueIdSuffix_ = writer.GetNextUniqueIdStubSuffix(GetIdStub());
+  UniqueIdSuffix_ = writer.GetNextUniqueIdStubSuffix(GetIdPrefix());
 }
 
 bool
@@ -241,7 +248,7 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
       JLM_UNREACHABLE("Unknown AttributeOutputFormat");
 
     out << "=";
-    if (auto * string = std::get_if<std::string>(&value))
+    if (auto string = std::get_if<std::string>(&value))
     {
       if (format == AttributeOutputFormat::SpaceSeparatedList)
         PrintIdentifierSafe(out, *string);
@@ -252,10 +259,15 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
         out << '"';
       }
     }
-    else if (auto * ptr = std::get_if<uintptr_t>(&value))
+    else if (auto graphElement = std::get_if<GraphElement *>(&value))
+    {
+      // HTML allows unquoted attribute values when they are single words with no special characters
+      out << (*graphElement)->GetFullId();
+    }
+    else if (auto ptr = std::get_if<uintptr_t>(&value))
     {
       // Check if some GraphElement in the graph is mapped to this pointer
-      auto * element = GetGraph().GetElementFromProgramObject(*ptr);
+      auto element = GetGraph().GetElementFromProgramObject(*ptr);
 
       // If not, check all other graphs
       if (element == nullptr)
@@ -359,7 +371,7 @@ Node::Node(Graph & graph)
 {}
 
 const char *
-Node::GetIdStub() const
+Node::GetIdPrefix() const
 {
   return "node";
 }
@@ -392,48 +404,54 @@ Node::OutputDotPortId(std::ostream & out)
 void
 Node::Output(std::ostream & out, GraphOutputFormat format, size_t indent)
 {
-  JLM_ASSERT(IsFinalized());
-
   switch (format)
   {
   case GraphOutputFormat::ASCII:
-  {
-    out << Indent(indent);
-    if (HasOutgoingEdges())
-    {
-      out << GetFullId() << ":";
-    }
-    PrintIdentifierSafe(out, GetLabelOr("NODE"));
-    if (HasIncomingEdges())
-    {
-      out << "<-";
-      OutputIncomingEdgesASCII(out);
-    }
-    out << std::endl;
+    OutputASCII(out, indent);
     break;
-  }
   case GraphOutputFormat::Dot:
-  {
-    out << Indent(indent) << GetFullId() << " [";
-    out << "label=";
-    if (HasLabel())
-    {
-      PrintIdentifierSafe(out, GetLabel());
-      out << " tooltip=";
-      PrintIdentifierSafe(out, GetFullId());
-    }
-    else
-    {
-      PrintIdentifierSafe(out, GetFullId());
-    }
-    out << " ";
-    OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
-    out << "];" << std::endl;
+    OutputDot(out, indent);
     break;
-  }
   default:
     JLM_UNREACHABLE("Unknown GraphOutputFormat");
   }
+}
+
+void
+Node::OutputASCII(std::ostream & out, size_t indent)
+{
+  out << Indent(indent);
+  if (HasOutgoingEdges())
+  {
+    out << GetFullId() << ":";
+  }
+  PrintIdentifierSafe(out, GetLabelOr("NODE"));
+  if (HasIncomingEdges())
+  {
+    out << "<-";
+    OutputIncomingEdgesASCII(out);
+  }
+  out << std::endl;
+}
+
+void
+Node::OutputDot(std::ostream & out, size_t indent)
+{
+  out << Indent(indent) << GetFullId() << " [";
+  out << "label=";
+  if (HasLabel())
+  {
+    PrintIdentifierSafe(out, GetLabel());
+    out << " tooltip=";
+    PrintIdentifierSafe(out, GetFullId());
+  }
+  else
+  {
+    PrintIdentifierSafe(out, GetFullId());
+  }
+  out << " ";
+  OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
+  out << "];" << std::endl;
 }
 
 void
@@ -447,7 +465,7 @@ InputPort::InputPort(jlm::util::InOutNode & node)
 {}
 
 const char *
-InputPort::GetIdStub() const
+InputPort::GetIdPrefix() const
 {
   return "i";
 }
@@ -482,7 +500,7 @@ OutputPort::OutputPort(jlm::util::InOutNode & node)
 {}
 
 const char *
-OutputPort::GetIdStub() const
+OutputPort::GetIdPrefix() const
 {
   return "o";
 }
@@ -525,7 +543,7 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 InputPort &
 InOutNode::CreateInputPort()
 {
-  auto * inputPort = new InputPort(*this);
+  auto inputPort = new InputPort(*this);
   InputPorts_.emplace_back(inputPort);
   return *inputPort;
 }
@@ -546,7 +564,7 @@ InOutNode::GetInputPort(size_t index)
 OutputPort &
 InOutNode::CreateOutputPort()
 {
-  auto * outputPort = new OutputPort(*this);
+  auto outputPort = new OutputPort(*this);
   OutputPorts_.emplace_back(outputPort);
   return *outputPort;
 }
@@ -599,124 +617,115 @@ InOutNode::Finalize()
 }
 
 void
-InOutNode::Output(std::ostream & out, GraphOutputFormat format, size_t indent)
+InOutNode::OutputASCII(std::ostream & out, size_t indent)
 {
-  switch (format)
+  out << Indent(indent);
+
+  // output the names of all output ports
+  for (size_t i = 0; i < NumOutputPorts(); i++)
   {
-  case GraphOutputFormat::ASCII:
-  {
-    out << Indent(indent);
-
-    // output the names of all output ports
-    for (size_t i = 0; i < NumOutputPorts(); i++)
-    {
-      if (i != 0)
-        out << ", ";
-      out << GetOutputPort(i).GetFullId();
-    }
-    if (NumOutputPorts() != 0)
-      out << " := ";
-
-    // If the node itself is used as a tail port, we must include its name
-    if (Port::HasOutgoingEdges())
-    {
-      out << GetFullId() << ":";
-    }
-    PrintIdentifierSafe(out, GetLabelOr("NODE"));
-    if (Port::HasIncomingEdges())
-    {
-      out << "<-";
-      Port::OutputIncomingEdgesASCII(out);
-    }
-    out << " ";
-
-    // Now output the origins of all input ports
-    for (size_t i = 0; i < NumInputPorts(); i++)
-    {
-      if (i != 0)
-        out << ", ";
-      GetInputPort(i).OutputIncomingEdgesASCII(out);
-    }
-    out << std::endl;
-
-    // Output all sub graphs, if we have any
-    OutputSubgraphs(out, format, indent + 1);
-
-    break;
+    if (i != 0)
+      out << ", ";
+    out << GetOutputPort(i).GetFullId();
   }
-  case GraphOutputFormat::Dot:
+  if (NumOutputPorts() != 0)
+    out << " := ";
+
+  // If the node itself is used as a tail port, we must include its name
+  if (Port::HasOutgoingEdges())
   {
-    out << Indent(indent) << GetFullId() << " [shape=plain ";
-    out << "label=<" << std::endl;
+    out << GetFullId() << ":";
+  }
+  PrintIdentifierSafe(out, GetLabelOr("NODE"));
+  if (Port::HasIncomingEdges())
+  {
+    out << "<-";
+    Port::OutputIncomingEdgesASCII(out);
+  }
+  out << " ";
 
-    // InOutNodes are printed as html tables
-    out << "<TABLE BORDER='0' CELLBORDER='0' CELLSPACING='0' CELLPADDING='0'>" << std::endl;
+  // Now output the origins of all input ports
+  for (size_t i = 0; i < NumInputPorts(); i++)
+  {
+    if (i != 0)
+      out << ", ";
+    GetInputPort(i).OutputIncomingEdgesASCII(out);
+  }
+  out << std::endl;
 
-    // Inputs
-    if (!InputPorts_.empty())
+  // Output all sub graphs, if we have any
+  OutputSubgraphs(out, GraphOutputFormat::ASCII, indent + 1);
+}
+
+void
+InOutNode::OutputDot(std::ostream & out, size_t indent)
+{
+  out << Indent(indent) << GetFullId() << " [shape=plain ";
+  out << "label=<" << std::endl;
+
+  // InOutNodes are printed as html tables
+  out << "<TABLE BORDER='0' CELLBORDER='0' CELLSPACING='0' CELLPADDING='0'>" << std::endl;
+
+  // Inputs
+  if (!InputPorts_.empty())
+  {
+    out << "<TR><TD>" << std::endl;
+    out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
+    for (auto & inputPort : InputPorts_)
     {
-      out << "<TR><TD>" << std::endl;
-      out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
-      for (auto & inputPort : InputPorts_)
-      {
-        out << "<TD PORT='" << inputPort->GetFullId() << "' ";
-        inputPort->OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-        out << ">";
-        PrintStringAsHtmlText(out, inputPort->GetLabelOr(inputPort->GetFullId().c_str()));
-        out << "</TD>" << std::endl;
-        ;
-      }
-      out << "</TR></TABLE>" << std::endl;
-      out << "</TD></TR>" << std::endl;
+      out << "<TD PORT='" << inputPort->GetFullId() << "' ";
+      inputPort->OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      out << ">";
+      PrintStringAsHtmlText(out, inputPort->GetLabelOr(inputPort->GetFullId().c_str()));
+      out << "</TD>" << std::endl;
+      ;
     }
-
-    // Label
-    out << "<TR><TD BORDER='1'>";
-    PrintStringAsHtmlText(out, GetLabelOr(GetFullId().c_str()));
+    out << "</TR></TABLE>" << std::endl;
     out << "</TD></TR>" << std::endl;
-
-    // Subgraphs
-    if (!SubGraphs_.empty())
-    {
-      out << "<TR><TD>" << std::endl;
-      out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
-      for (auto & graph : SubGraphs_)
-      {
-        out << "<TD SUBGRAPH='" << graph->GetFullId() << "'>";
-        PrintStringAsHtmlText(out, graph->GetLabelOr(graph->GetFullId().c_str()));
-        out << "</TD>" << std::endl;
-        ;
-      }
-      out << "</TR></TABLE>" << std::endl;
-      out << "</TD></TR>" << std::endl;
-    }
-
-    // Outputs
-    if (!OutputPorts_.empty())
-    {
-      out << "<TR><TD>" << std::endl;
-      out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
-      for (auto & outputPort : OutputPorts_)
-      {
-        out << "<TD PORT='" << outputPort->GetFullId() << "' ";
-        outputPort->OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-        out << ">";
-        PrintStringAsHtmlText(out, outputPort->GetLabelOr(outputPort->GetFullId().c_str()));
-        out << "</TD>" << std::endl;
-      }
-      out << "</TR></TABLE>" << std::endl;
-      out << "</TD></TR>" << std::endl;
-    }
-
-    out << "</TABLE>" << std::endl;
-    out << Indent(indent) << "> ";
-    OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
-    out << "];" << std::endl;
-    break;
   }
-  default:
-    JLM_UNREACHABLE("Unknown GraphOutputFormat");
+
+  // Label
+  out << "<TR><TD BORDER='1'>";
+  PrintStringAsHtmlText(out, GetLabelOr(GetFullId().c_str()));
+  out << "</TD></TR>" << std::endl;
+
+  // Subgraphs
+  if (!SubGraphs_.empty())
+  {
+    out << "<TR><TD>" << std::endl;
+    out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
+    for (auto & graph : SubGraphs_)
+    {
+      out << "<TD SUBGRAPH='" << graph->GetFullId() << "'>";
+      PrintStringAsHtmlText(out, graph->GetLabelOr(graph->GetFullId().c_str()));
+      out << "</TD>" << std::endl;
+      ;
+    }
+    out << "</TR></TABLE>" << std::endl;
+    out << "</TD></TR>" << std::endl;
   }
+
+  // Outputs
+  if (!OutputPorts_.empty())
+  {
+    out << "<TR><TD>" << std::endl;
+    out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
+    for (auto & outputPort : OutputPorts_)
+    {
+      out << "<TD PORT='" << outputPort->GetFullId() << "' ";
+      outputPort->OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      out << ">";
+      PrintStringAsHtmlText(out, outputPort->GetLabelOr(outputPort->GetFullId().c_str()));
+      out << "</TD>" << std::endl;
+    }
+    out << "</TR></TABLE>" << std::endl;
+    out << "</TD></TR>" << std::endl;
+  }
+
+  out << "</TABLE>" << std::endl;
+  out << Indent(indent) << "> ";
+  OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
+  out << "];" << std::endl;
 }
 
 void
@@ -732,7 +741,7 @@ ArgumentNode::ArgumentNode(jlm::util::Graph & graph)
 {}
 
 const char *
-ArgumentNode::GetIdStub() const
+ArgumentNode::GetIdPrefix() const
 {
   return "a";
 }
@@ -747,31 +756,18 @@ void
 ArgumentNode::SetOutsideSource(Port & outsideSource)
 {
   OutsideSource_ = &outsideSource;
+  SetAttributeGraphElement("outsideSource", outsideSource);
 }
 
 void
-ArgumentNode::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t indent)
+ArgumentNode::OutputASCII(std::ostream & out, size_t indent)
 {
-  switch (format)
+  // In ASCII the argument is printed as part of an ARG line
+  out << GetFullId();
+  if (OutsideSource_ != nullptr)
   {
-  case GraphOutputFormat::ASCII:
-  {
-    // In ASCII the argument is printed as part of an ARG line
-    out << GetFullId();
-    if (OutsideSource_ != nullptr)
-    {
-      out << " <= ";
-      OutsideSource_->OutputIncomingEdgesASCII(out);
-    }
-    break;
-  }
-  case GraphOutputFormat::Dot:
-  {
-    Node::Output(out, format, indent);
-    break;
-  }
-  default:
-    JLM_UNREACHABLE("Unknown GraphOutputFormat");
+    out << " <= ";
+    OutsideSource_->OutputIncomingEdgesASCII(out);
   }
 }
 
@@ -781,7 +777,7 @@ ResultNode::ResultNode(jlm::util::Graph & graph)
 {}
 
 const char *
-ResultNode::GetIdStub() const
+ResultNode::GetIdPrefix() const
 {
   return "r";
 }
@@ -796,29 +792,16 @@ void
 ResultNode::SetOutsideDestination(Port & outsideDestination)
 {
   OutsideDestination_ = &outsideDestination;
+  SetAttributeGraphElement("outsideDest", outsideDestination);
 }
 
 void
-ResultNode::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t indent)
+ResultNode::OutputASCII(std::ostream & out, size_t indent)
 {
-  switch (format)
-  {
-  case GraphOutputFormat::ASCII:
-  {
-    // In ASCII the result is printed as part of an RES line
-    OutputIncomingEdgesASCII(out);
-    if (OutsideDestination_ != nullptr)
-      out << " => " << OutsideDestination_->GetFullId();
-    break;
-  }
-  case GraphOutputFormat::Dot:
-  {
-    Node::Output(out, format, indent);
-    break;
-  }
-  default:
-    JLM_UNREACHABLE("Unknown GraphOutputFormat");
-  }
+  // In ASCII the result is printed as part of an RES line
+  OutputIncomingEdgesASCII(out);
+  if (OutsideDestination_ != nullptr)
+    out << " => " << OutsideDestination_->GetFullId();
 }
 
 Edge::Edge(Port & from, Port & to, bool directed)
@@ -831,7 +814,7 @@ Edge::Edge(Port & from, Port & to, bool directed)
 }
 
 const char *
-Edge::GetIdStub() const
+Edge::GetIdPrefix() const
 {
   return "edge";
 }
@@ -873,34 +856,23 @@ Edge::GetOtherEnd(Port & from)
 }
 
 void
-Edge::Output(std::ostream & out, GraphOutputFormat format, size_t indent)
+Edge::OutputDot(std::ostream & out, size_t indent)
 {
-  switch (format)
+  out << Indent(indent);
+  From_.OutputDotPortId(out);
+  out << " -> ";
+  To_.OutputDotPortId(out);
+  out << "[";
+  if (!Directed_)
+    out << "dir=none ";
+  if (HasLabel())
   {
-  case GraphOutputFormat::ASCII:
-    break; // All edge information is described in terms of inputs and outputs
-  case GraphOutputFormat::Dot:
-  {
-    out << Indent(indent);
-    From_.OutputDotPortId(out);
-    out << " -> ";
-    To_.OutputDotPortId(out);
-    out << "[";
-    if (!Directed_)
-      out << "dir=none ";
-    if (HasLabel())
-    {
-      out << "label=";
-      PrintIdentifierSafe(out, GetLabel());
-      out << " ";
-    }
-    OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
-    out << "];" << std::endl;
-    break;
+    out << "label=";
+    PrintIdentifierSafe(out, GetLabel());
+    out << " ";
   }
-  default:
-    JLM_UNREACHABLE("Unknown GraphOutputFormat");
-  }
+  OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
+  out << "];" << std::endl;
 }
 
 Graph::Graph(GraphWriter & writer)
@@ -916,7 +888,7 @@ Graph::Graph(GraphWriter & writer, Node & parentNode)
 {}
 
 const char *
-Graph::GetIdStub() const
+Graph::GetIdPrefix() const
 {
   return "graph";
 }
@@ -942,7 +914,7 @@ Graph::IsSubgraph() const
 Node &
 Graph::CreateNode()
 {
-  auto * node = new Node(*this);
+  auto node = new Node(*this);
   Nodes_.emplace_back(node);
   return *node;
 }
@@ -950,7 +922,7 @@ Graph::CreateNode()
 InOutNode &
 Graph::CreateInOutNode(size_t inputPorts, size_t outputPorts)
 {
-  auto * node = new InOutNode(*this, inputPorts, outputPorts);
+  auto node = new InOutNode(*this, inputPorts, outputPorts);
   Nodes_.emplace_back(node);
   return *node;
 }
@@ -958,7 +930,7 @@ Graph::CreateInOutNode(size_t inputPorts, size_t outputPorts)
 ArgumentNode &
 Graph::CreateArgumentNode()
 {
-  auto * node = new ArgumentNode(*this);
+  auto node = new ArgumentNode(*this);
   ArgumentNodes_.emplace_back(node);
   return *node;
 }
@@ -966,7 +938,7 @@ Graph::CreateArgumentNode()
 ResultNode &
 Graph::CreateResultNode()
 {
-  auto * node = new ResultNode(*this);
+  auto node = new ResultNode(*this);
   ResultNodes_.emplace_back(node);
   return *node;
 }
@@ -979,7 +951,7 @@ Graph::CreateEdge(Port & from, Port & to, bool directed)
   JLM_ASSERT(&to.GetGraph() == this);
 
   // Edge's constructor informs the ports about the edge
-  auto * edge = new Edge(from, to, directed);
+  auto edge = new Edge(from, to, directed);
   Edges_.emplace_back(edge);
   return *edge;
 }
@@ -987,8 +959,7 @@ Graph::CreateEdge(Port & from, Port & to, bool directed)
 GraphElement *
 Graph::GetElementFromProgramObject(uintptr_t object)
 {
-  auto it = ProgramObjectMapping_.find(object);
-  if (it != ProgramObjectMapping_.end())
+  if (auto it = ProgramObjectMapping_.find(object); it != ProgramObjectMapping_.end())
     return it->second;
   return nullptr;
 }
@@ -1030,6 +1001,112 @@ Graph::Finalize()
 }
 
 void
+Graph::OutputASCII(std::ostream & out, size_t indent)
+{
+  out << Indent(indent) << "{" << std::endl;
+  indent++;
+
+  // Use a single ARG line for all graph arguments
+  bool anyArguments = false;
+  for (auto & arg : ArgumentNodes_)
+  {
+    if (!anyArguments)
+      out << Indent(indent) << "ARG ";
+    else
+      out << ", ";
+    anyArguments = true;
+    arg->OutputASCII(out, indent);
+  }
+  if (anyArguments)
+    out << std::endl;
+
+  // Print all other nodes in order
+  for (auto & node : Nodes_)
+  {
+    // Will also print sub graphs recursively
+    node->OutputASCII(out, indent);
+  }
+
+  // Use a single RES line for all graph results
+  bool anyResults = false;
+  for (auto & res : ResultNodes_)
+  {
+    if (!anyResults)
+      out << Indent(indent) << "RES ";
+    else
+      out << ", ";
+    anyResults = true;
+    res->OutputASCII(out, indent);
+  }
+  if (anyResults)
+    out << std::endl;
+
+  indent--;
+  out << Indent(indent) << "}" << std::endl;
+}
+
+void
+Graph::OutputDot(std::ostream & out, size_t indent)
+{
+  out << Indent(indent) << "digraph " << GetFullId() << " {" << std::endl;
+  indent++;
+
+  out << Indent(indent) << "node[shape=box];" << std::endl;
+  out << Indent(indent) << "penwidth=6;" << std::endl;
+  if (HasLabel())
+  {
+    out << Indent(indent) << "label=";
+    PrintIdentifierSafe(out, GetLabel());
+    out << std::endl;
+  }
+  out << Indent(indent);
+  OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
+  out << std::endl;
+
+  // Helper function used to print argument nodes and result nodes
+  auto PrintOrderedSubgraph = [&out](auto & nodes, const char * rank, size_t indent)
+  {
+    if (nodes.empty())
+      return;
+    out << Indent(indent++) << "{" << std::endl;
+    out << Indent(indent) << "rank=" << rank << ";" << std::endl;
+    for (size_t i = 0; i < nodes.size(); i++)
+    {
+      nodes[i]->OutputDot(out, indent);
+
+      // Use invisible edges to order nodes in the subgraph
+      if (i != 0)
+        out << Indent(indent) << nodes[i - 1]->GetFullId() << " -> " << nodes[i]->GetFullId()
+            << "[style=invis];" << std::endl;
+    }
+    out << Indent(--indent) << "}" << std::endl;
+  };
+
+  PrintOrderedSubgraph(ArgumentNodes_, "source", indent);
+
+  for (auto & node : Nodes_)
+  {
+    node->OutputDot(out, indent);
+  }
+
+  PrintOrderedSubgraph(ResultNodes_, "sink", indent);
+
+  for (auto & edge : Edges_)
+  {
+    edge->OutputDot(out, indent);
+  }
+
+  indent--;
+  out << Indent(indent) << "}" << std::endl;
+
+  // After fully printing this graph, print any sub graphs it may have
+  for (auto & node : Nodes_)
+  {
+    node->OutputSubgraphs(out, GraphOutputFormat::Dot, indent);
+  }
+}
+
+void
 Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t indent)
 {
   JLM_ASSERT(IsFinalized());
@@ -1037,104 +1114,11 @@ Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t in
   switch (format)
   {
   case GraphOutputFormat::ASCII:
-  {
-    out << Indent(indent) << "{" << std::endl;
-    indent++;
-
-    // Use a single ARG line for all graph arguments
-    bool anyArguments = false;
-    for (auto & arg : ArgumentNodes_)
-    {
-      if (!anyArguments)
-        out << Indent(indent) << "ARG ";
-      else
-        out << ", ";
-      anyArguments = true;
-      arg->Output(out, format, indent);
-    }
-    if (anyArguments)
-      out << std::endl;
-
-    // Print all other nodes in order
-    for (auto & node : Nodes_)
-    {
-      // Will also print sub graphs recursively
-      node->Output(out, format, indent);
-    }
-
-    // Use a single RES line for all graph results
-    bool anyResults = false;
-    for (auto & res : ResultNodes_)
-    {
-      if (!anyResults)
-        out << Indent(indent) << "RES ";
-      else
-        out << ", ";
-      anyResults = true;
-      res->Output(out, format, indent);
-    }
-    if (anyResults)
-      out << std::endl;
-
-    indent--;
-    out << Indent(indent) << "}" << std::endl;
-
+    OutputASCII(out, indent);
     break;
-  }
   case GraphOutputFormat::Dot:
-  {
-    out << Indent(indent) << "digraph " << GetFullId() << " {" << std::endl;
-    indent++;
-
-    out << Indent(indent) << "node[shape=box];" << std::endl;
-    out << Indent(indent) << "penwidth=6;" << std::endl;
-    out << Indent(indent);
-    OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
-    out << std::endl;
-
-    // Helper function used to print argument nodes and result nodes
-    auto PrintOrderedSubgraph = [&out, format](auto & nodes, const char * rank, size_t indent)
-    {
-      if (nodes.empty())
-        return;
-      out << Indent(indent++) << "{" << std::endl;
-      out << Indent(indent) << "rank=" << rank << ";" << std::endl;
-      for (size_t i = 0; i < nodes.size(); i++)
-      {
-        nodes[i]->Output(out, format, indent);
-
-        // Use invisible edges to order nodes in the subgraph
-        if (i != 0)
-          out << Indent(indent) << nodes[i - 1]->GetFullId() << " -> " << nodes[i]->GetFullId()
-              << "[style=invis];" << std::endl;
-      }
-      out << Indent(--indent) << "}" << std::endl;
-    };
-
-    PrintOrderedSubgraph(ArgumentNodes_, "source", indent);
-
-    for (auto & node : Nodes_)
-    {
-      node->Output(out, format, indent);
-    }
-
-    PrintOrderedSubgraph(ResultNodes_, "sink", indent);
-
-    for (auto & edge : Edges_)
-    {
-      edge->Output(out, format, indent);
-    }
-
-    indent--;
-    out << Indent(indent) << "}" << std::endl;
-
-    // After fully printing this graph, print any sub graphs it may have
-    for (auto & node : Nodes_)
-    {
-      node->OutputSubgraphs(out, format, indent);
-    }
+    OutputDot(out, indent);
     break;
-  }
   default:
     JLM_UNREACHABLE("Unknown output format");
   }
@@ -1143,7 +1127,7 @@ Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t in
 Graph &
 GraphWriter::CreateGraph()
 {
-  auto * graph = new Graph(*this);
+  auto graph = new Graph(*this);
   Graphs_.emplace_back(graph);
   return *graph;
 }
@@ -1151,7 +1135,7 @@ GraphWriter::CreateGraph()
 Graph &
 GraphWriter::CreateSubGraph(Node & parentNode)
 {
-  auto * graph = new Graph(*this, parentNode);
+  auto graph = new Graph(*this, parentNode);
   Graphs_.emplace_back(graph);
   return *graph;
 }
@@ -1160,7 +1144,7 @@ GraphElement *
 GraphWriter::GetElementFromProgramObject(uintptr_t object)
 {
   for (auto & graph : Graphs_)
-    if (auto * found = graph->GetElementFromProgramObject(object))
+    if (auto found = graph->GetElementFromProgramObject(object))
       return found;
 
   return nullptr;

@@ -61,7 +61,7 @@ public:
    * @return a string, such as "node", "i", "o", "graph"
    */
   [[nodiscard]] virtual const char *
-  GetIdStub() const = 0;
+  GetIdPrefix() const = 0;
 
   /**
    * Gives the final unique ID of the GraphElement, such as "node3".
@@ -113,14 +113,13 @@ public:
   /**
    * Graph elements often represent objects from the program.
    * By making this association explicit, GraphElements can be looked up by program object.
-   * When referencing a program object that is associated with a GraphElement,
-   * the unique id of the element is used instead of the address of the program object.
+   * When using program objects as attributes, the association is used to refer to
+   * the unique id of its associated graph element, instead of the object's address.
    * Within a graph, only one graph element can be associated with any given program object.
    * @param object the object to associate this GraphElement with
    */
-  template<typename T>
   void
-  SetProgramObject(T * object)
+  SetProgramObject(void * object)
   {
     SetProgramObjectUintptr(reinterpret_cast<uintptr_t>(object));
   }
@@ -140,28 +139,24 @@ public:
   SetAttribute(const std::string & attribute, std::string value);
 
   /**
-   * Assigns or overrides a given attribute on the element,
-   * with a uintptr representing the address of a program object.
+   * Assigns or overrides a given attribute on the element with a program object.
+   * If this program object is associated with a GraphElement, the attribute value becomes its id.
+   * This only works if the element is a part of the same GraphWriter instance.
    * @param attribute the name of the attribute.
-   * @param object the address of a program object, must be non-zero.
-   * @see SetAttributeObject
+   * @param object a pointer to a program object, must be non-null.
    */
   void
-  SetAttributeUintptr(const std::string & attribute, uintptr_t object);
+  SetAttributeObject(const std::string & attribute, void * object);
 
   /**
-   * Assigns or overrides a given attribute on the element, with a program object.
-   * If the object is mapped to a graph element in the GraphWriter,
-   * the id of the graph element will be used when referring to the object.
+   * Assigns or overrides a given attribute on the element with a reference to a graph element.
+   * This allows associations between graph elements to be included in the output, across graphs.
+   * The element must be a part of the same GraphWriter instance.
    * @param attribute the name of the attribute.
-   * @param object the program object, must be non-null.
+   * @param element the graph element whose id should be used as attribute value.
    */
-  template<class T>
   void
-  SetAttributeObject(const std::string & attribute, T * object)
-  {
-    SetAttributeUintptr(attribute, reinterpret_cast<uintptr_t>(object));
-  }
+  SetAttributeGraphElement(const std::string & attribute, GraphElement & element);
 
   /**
    * Claims a unique id suffix for the element, if it doesn't already have one.
@@ -196,10 +191,9 @@ private:
   // The object in the program this graph object corresponds to, or 0 if none
   uintptr_t ProgramObject_;
 
-  // Arbitrary collection of other attributes. The value can be a string, or a reference to a
-  // program object. In the latter case, the GraphWriter looks for GraphElements representing the
-  // other object during printing.
-  using AttributeValue = std::variant<std::string, uintptr_t>;
+  // Arbitrary collection of other attributes. The value can be a string, a reference to a
+  // GraphElement, or a reference to a program object.
+  using AttributeValue = std::variant<std::string, GraphElement *, uintptr_t>;
   std::unordered_map<std::string, AttributeValue> AttributeMap_;
 };
 
@@ -253,8 +247,8 @@ public:
   SetFillColor(std::string color) = 0;
 
   /**
-   * Only used by the Dot printer.
    * Outputs the fully qualified port name, such as node8:i6
+   * Only used by the Dot printer.
    */
   virtual void
   OutputDotPortId(std::ostream & out) = 0;
@@ -294,7 +288,7 @@ public:
   ~Node() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   Node &
   GetNode() override;
@@ -316,8 +310,23 @@ public:
    * Lines printed while outputting are indented by at least \p indent levels.
    * Depending on output format, this function may also recurse and print sub graphs.
    */
-  virtual void
+  void
   Output(std::ostream & out, GraphOutputFormat format, size_t indent);
+
+  /**
+   * Outputs the node in ASCII format to the ostream \p out, indented by \p indent levels.
+   * In this format, attributes are ignored, and edges are only included implicitly,
+   * by listing the origins of all edges pointing into this node.
+   */
+  virtual void
+  OutputASCII(std::ostream & out, size_t indent);
+
+  /**
+   * Outputs the node in Dot format to the ostream \p out, indented by \p indent levels.
+   * This format includes all attributes. Edges are output
+   */
+  virtual void
+  OutputDot(std::ostream & out, size_t indent);
 
   /**
    * Prints all sub graphs of the node, to the given ostream \p out, in the given \p format.
@@ -349,7 +358,7 @@ public:
   ~InputPort() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   Node &
   GetNode() override;
@@ -377,7 +386,7 @@ public:
   ~OutputPort() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   Node &
   GetNode() override;
@@ -435,7 +444,10 @@ public:
   Finalize() override;
 
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent) override;
+  OutputASCII(std::ostream & out, size_t indent) override;
+
+  void
+  OutputDot(std::ostream & out, size_t indent) override;
 
   void
   OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) override;
@@ -459,7 +471,7 @@ public:
   ~ArgumentNode() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   bool
   CanBeEdgeHead() const override;
@@ -472,7 +484,7 @@ public:
   SetOutsideSource(Port & outsideSource);
 
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent) override;
+  OutputASCII(std::ostream & out, size_t indent) override;
 
 private:
   // Optional reference to a Port outside of this graph from which this argument came
@@ -492,7 +504,7 @@ public:
   ~ResultNode() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   bool
   CanBeEdgeTail() const override;
@@ -505,7 +517,7 @@ public:
   SetOutsideDestination(Port & outsideSource);
 
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent) override;
+  OutputASCII(std::ostream & out, size_t indent) override;
 
 private:
   // Optional reference to a Port outside of this graph representing where the result ends up
@@ -522,7 +534,7 @@ public:
   ~Edge() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   Graph &
   GetGraph() override;
@@ -553,8 +565,11 @@ public:
   [[nodiscard]] Port &
   GetOtherEnd(Port & from);
 
+  /**
+   * Outputs the edge in dot format. In ASCII, edges are not implicitly encoded by nodes/ports.
+   */
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent);
+  OutputDot(std::ostream & out, size_t indent);
 
 private:
   Port & From_;
@@ -575,7 +590,7 @@ public:
   ~Graph() override = default;
 
   const char *
-  GetIdStub() const override;
+  GetIdPrefix() const override;
 
   Graph &
   GetGraph() override;
@@ -661,9 +676,9 @@ public:
    * @param object the program object mapped to a GraphElement
    * @return a reference to the T mapped to the given object.
    */
-  template<typename T, typename ProgramObject>
+  template<typename T>
   T &
-  GetFromProgramObject(ProgramObject * object)
+  GetFromProgramObject(void * object)
   {
     static_assert(std::is_base_of_v<GraphElement, T>);
     GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
@@ -680,11 +695,27 @@ public:
   Finalize() override;
 
   /**
-   * Prints the graph to the given string stream, in the specified format.
+   * Prints the graph to the ostream \p out in ASCII.
+   * Each line starts with at least \p indent levels of indentation.
+   * Requires the graph to be finalized first.
+   */
+  void
+  OutputASCII(std::ostream & out, size_t indent);
+
+  /**
+   * Prints the graph to the ostream \p out in dot format.
+   * Each line starts with at least \p indent levels of indentation.
+   * Requires the graph to be finalized first.
+   */
+  void
+  OutputDot(std::ostream & out, size_t indent);
+
+  /**
+   * Prints the graph to the given ostream, in the specified format.
    * Requires the graph to be finalized first.
    * @param out the stream to which output is written
    * @param format the format to output the graph in
-   * @param indent the amount of indent the graph should be printed with
+   * @param indent the amount of indentation levels the graph should be printed with
    */
   void
   Output(std::ostream & out, GraphOutputFormat format, size_t indent = 0);
