@@ -440,6 +440,20 @@ public:
   Graph &
   GetSubgraph(size_t index);
 
+  /**
+   * Regular attributes are placed on the dot node itself.
+   * Use this method to set attributes on the HTML table printed when outputting InOutNodes to dot.
+   * The attributes will affect the outmost table with a visible border.
+   * @param name the name of the attribute
+   * @param value the value the attribute should take
+   * @see SetAttribute for setting attributes on the node itself
+   */
+  void
+  SetHtmlTableAttribute(std::string name, std::string value);
+
+  void
+  SetFillColor(std::string color) override;
+
   void
   Finalize() override;
 
@@ -453,6 +467,9 @@ public:
   OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) override;
 
 private:
+  // Attributes that need to be placed on the HTML table in the dot output, and not on the node.
+  std::unordered_map<std::string, std::string> HtmlTableAttributes_;
+
   std::vector<std::unique_ptr<InputPort>> InputPorts_;
   std::vector<std::unique_ptr<OutputPort>> OutputPorts_;
   std::vector<Graph *> SubGraphs_;

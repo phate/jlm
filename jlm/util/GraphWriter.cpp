@@ -100,14 +100,18 @@ PrintStringAsHtmlText(std::ostream & out, std::string_view string)
 }
 
 /**
- * Prints the given \p string to \p out, ignoring any chars that are not in the english alphabet.
+ * Prints the given \p string to \p out,
+ * replacing chars that are not allowed in html attribute names by '-'
  */
 static void
 PrintStringAsHtmlAttributeName(std::ostream & out, std::string_view string)
 {
   for (char c : string)
   {
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+    if (c <= ' ' || c >= 127 || c == '<' || c == '>' || c == '"' || c == '\'' || c == '/'
+        || c == '=')
+      out << '-';
+    else
       out << c;
   }
 }
@@ -486,7 +490,7 @@ void
 InputPort::SetFillColor(std::string color)
 {
   // Attribute on the <TD> tag used by the dot output
-  SetAttribute("bgcolor", std::move(color));
+  SetAttribute("BGCOLOR", std::move(color));
 }
 
 void
@@ -521,7 +525,7 @@ void
 OutputPort::SetFillColor(std::string color)
 {
   // Attribute on the <TD> tag used by the dot output
-  SetAttribute("bgcolor", std::move(color));
+  SetAttribute("BGCOLOR", std::move(color));
 }
 
 void
@@ -604,6 +608,18 @@ InOutNode::GetSubgraph(size_t index)
 }
 
 void
+InOutNode::SetHtmlTableAttribute(std::string name, std::string value)
+{
+  HtmlTableAttributes_[name] = std::move(value);
+}
+
+void
+InOutNode::SetFillColor(std::string color)
+{
+  SetHtmlTableAttribute("BGCOLOR", std::move(color));
+}
+
+void
 InOutNode::Finalize()
 {
   Node::Finalize();
@@ -664,63 +680,77 @@ InOutNode::OutputDot(std::ostream & out, size_t indent)
   out << "label=<" << std::endl;
 
   // InOutNodes are printed as html tables
-  out << "<TABLE BORDER='0' CELLBORDER='0' CELLSPACING='0' CELLPADDING='0'>" << std::endl;
+  out << "<TABLE BORDER=\"0\" CELLSPACING=\"0\" CELLPADDING=\"0\">" << std::endl;
+
+  // Used to create rows of boxes above and below the node
+  auto PrintPortList = [&out](auto & ports)
+  {
+    if (ports.empty())
+      return;
+
+    out << "\t<TR><TD>" << std::endl;
+    out << "\t\t<TABLE BORDER=\"0\" CELLSPACING=\"0\" CELLPADDING=\"0\"><TR>" << std::endl;
+    out << "\t\t\t<TD WIDTH=\"20\"></TD>" << std::endl;
+    for (size_t i = 0; i < ports.size(); i++)
+    {
+      // Spacing
+      if (i != 0)
+        out << "\t\t\t<TD WIDTH=\"10\"></TD>" << std::endl;
+
+      auto & inputPort = *ports[i];
+      out << "\t\t\t<TD BORDER=\"1\" CELLPADDING=\"1\" ";
+      out << "PORT=\"" << inputPort.GetFullId() << "\" ";
+      inputPort.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      out << ">";
+      out << "<FONT POINT-SIZE=\"10\">";
+      PrintStringAsHtmlText(out, inputPort.GetLabelOr(inputPort.GetFullId().c_str()));
+      out << "</FONT></TD>" << std::endl;
+    }
+    out << "\t\t\t<TD WIDTH=\"20\"></TD>" << std::endl;
+    out << "\t\t</TR></TABLE>" << std::endl;
+    out << "\t</TD></TR>" << std::endl;
+  };
 
   // Inputs
-  if (!InputPorts_.empty())
-  {
-    out << "<TR><TD>" << std::endl;
-    out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
-    for (auto & inputPort : InputPorts_)
-    {
-      out << "<TD PORT='" << inputPort->GetFullId() << "' ";
-      inputPort->OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-      out << ">";
-      PrintStringAsHtmlText(out, inputPort->GetLabelOr(inputPort->GetFullId().c_str()));
-      out << "</TD>" << std::endl;
-      ;
-    }
-    out << "</TR></TABLE>" << std::endl;
-    out << "</TD></TR>" << std::endl;
-  }
+  PrintPortList(InputPorts_);
 
-  // Label
-  out << "<TR><TD BORDER='1'>";
+  // The main body of the node: a rounded rectangle
+  out << "\t<TR><TD>" << std::endl;
+  out << "\t\t<TABLE BORDER=\"1\" STYLE=\"ROUNDED\" CELLBORDER=\"0\" ";
+  out << "CELLSPACING=\"0\" CELLPADDING=\"0\" ";
+  for (auto & [name, value] : HtmlTableAttributes_)
+  {
+    PrintStringAsHtmlAttributeName(out, name);
+    out << "=\"";
+    PrintStringAsHtmlText(out, value);
+    out << "\" ";
+  }
+  out << ">" << std::endl;
+  out << "\t\t\t<TR><TD CELLPADDING=\"1\">";
   PrintStringAsHtmlText(out, GetLabelOr(GetFullId().c_str()));
   out << "</TD></TR>" << std::endl;
 
   // Subgraphs
   if (!SubGraphs_.empty())
   {
-    out << "<TR><TD>" << std::endl;
-    out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
+    out << "\t\t\t<TR><TD>" << std::endl;
+    out << "\t\t\t\t<TABLE BORDER=\"0\" CELLSPACING=\"4\" CELLPADDING=\"2\"><TR>" << std::endl;
     for (auto & graph : SubGraphs_)
     {
-      out << "<TD SUBGRAPH='" << graph->GetFullId() << "'>";
+      out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" ";
+      out << "SUBGRAPH=\"" << graph->GetFullId() << "\">";
       PrintStringAsHtmlText(out, graph->GetLabelOr(graph->GetFullId().c_str()));
       out << "</TD>" << std::endl;
-      ;
     }
-    out << "</TR></TABLE>" << std::endl;
-    out << "</TD></TR>" << std::endl;
+    out << "\t\t\t\t</TR></TABLE>" << std::endl;
+    out << "\t\t\t</TD></TR>" << std::endl;
   }
 
-  // Outputs
-  if (!OutputPorts_.empty())
-  {
-    out << "<TR><TD>" << std::endl;
-    out << "<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0' CELLPADDING='0'><TR>" << std::endl;
-    for (auto & outputPort : OutputPorts_)
-    {
-      out << "<TD PORT='" << outputPort->GetFullId() << "' ";
-      outputPort->OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-      out << ">";
-      PrintStringAsHtmlText(out, outputPort->GetLabelOr(outputPort->GetFullId().c_str()));
-      out << "</TD>" << std::endl;
-    }
-    out << "</TR></TABLE>" << std::endl;
-    out << "</TD></TR>" << std::endl;
-  }
+  // End of the rounded rectangle
+  out << "\t\t</TABLE>" << std::endl;
+  out << "\t</TD></TR>" << std::endl;
+
+  PrintPortList(OutputPorts_);
 
   out << "</TABLE>" << std::endl;
   out << Indent(indent) << "> ";
