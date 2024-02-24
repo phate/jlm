@@ -3,6 +3,22 @@ libutil_SOURCES = \
 	jlm/util/common.cpp \
 	jlm/util/Statistics.cpp \
 
+libutil_HEADERS = \
+    jlm/util/BijectiveMap.hpp \
+    jlm/util/callbacks.hpp \
+    jlm/util/common.hpp \
+    jlm/util/disjointset.hpp \
+    jlm/util/file.hpp \
+    jlm/util/HashSet.hpp \
+    jlm/util/intrusive-hash.hpp \
+    jlm/util/intrusive-list.hpp \
+    jlm/util/iterator_range.hpp \
+    jlm/util/Math.hpp \
+    jlm/util/Statistics.hpp \
+    jlm/util/strfmt.hpp \
+    jlm/util/time.hpp \
+    jlm/util/Worklist.hpp \
+
 libutil_TESTS += \
 	tests/jlm/util/test-disjointset \
 	tests/jlm/util/test-intrusive-hash \
