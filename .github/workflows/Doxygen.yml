@@ -8,10 +8,10 @@ jobs:
   GenerateDocumentation:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install doxygen and graphviz
         run: sudo apt-get install graphviz doxygen
-      - name: "Build jlm"
+      - name: "Build documentation"
         uses: ./.github/actions/BuildJlm
         with:
           make-target: docs
