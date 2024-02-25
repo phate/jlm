@@ -22,6 +22,11 @@ inputs:
     default: "clang++-16"
     required: false
 
+  make-target:
+    description: "The make target that is invoked for compilation."
+    default: "all"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -71,5 +76,9 @@ runs:
       shell: bash
 
     - name: "Compile jlm"
-      run: make -j `nproc` -O
+      run: make -j `nproc` -O ${{inputs.make-target}}
+      shell: bash
+
+    - name: "Add executables to PATH"
+      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
       shell: bash

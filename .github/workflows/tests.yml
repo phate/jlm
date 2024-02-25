@@ -8,98 +8,72 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: Cache build
-      id: cache-build
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: "Build jlm"
-      uses: ./.github/actions/BuildJlm
-      with:
-        enable-hls: true
-        enable-mlir: true
-    - name: "Add executables to PATH"
-      run: echo '${{ github.workspace }}/build' >> $GITHUB_PATH
-    - name: Run unit and C tests
-      run: make check -O -j `nproc`
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          enable-hls: true
+          enable-mlir: true
+          make-target: check
 
   gcc:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: "Build jlm"
-      uses: ./.github/actions/BuildJlm
-      with:
-        enable-hls: true
-        enable-mlir: true
-        cxx: g++
-    - name: Run unit and C tests
-      run: make check -j `nproc`
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          enable-hls: true
+          enable-mlir: true
+          cxx: g++
+          make-target: check
 
   valgrind:
     runs-on: ubuntu-22.04
-    needs: build
     steps:
-    - name: Cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Install valgrind
-      run: sudo apt-get install valgrind
-    - name: Valgrind Check
-      run: make -C ${{ github.workspace }} valgrind-check
+      - name: Install valgrind
+        run: sudo apt-get install valgrind
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          enable-hls: true
+          enable-mlir: true
+          make-target: valgrind-check
 
   polybench:
     runs-on: ubuntu-22.04
-    needs: build
     steps:
-    - name: Cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Clone polybench
-      run: git clone https://github.com/phate/polybench-jlm.git
-    - name: Check polybench
-      run: make -C polybench-jlm check -j `nproc`
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+      - name: Clone polybench
+        run: git clone https://github.com/phate/polybench-jlm.git
+      - name: Check polybench
+        run: make -C polybench-jlm check -j `nproc`
 
   llvm-test-suite:
     runs-on: ubuntu-22.04
-    needs: build
     steps:
-    - name: Cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Clone jlm-test-suite
-      run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
-    - name: Update submodules
-      run: make -C jlm-eval-suite submodule
-    - name: Apply patch
-      run: cd jlm-eval-suite && make apply-llvm-git-patch
-    - name: Run llvm-test-suite
-      run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+      - name: Clone jlm-test-suite
+        run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
+      - name: Update submodules
+        run: make -C jlm-eval-suite submodule
+      - name: Apply patch
+        run: cd jlm-eval-suite && make apply-llvm-git-patch
+      - name: Run llvm-test-suite
+        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
 
 
   llvm-test-suite-andersen:
     if: contains(github.event.pull_request.title, '[Andersen]')
     runs-on: ubuntu-22.04
-    needs: build
     steps:
-    - name: Cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ github.workspace }}/*
-        key: ${{ runner.os }}-${{ github.sha }}-jlm
-    - name: Clone jlm-test-suite
-      run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
-    - name: Update submodules
-      run: make -C jlm-eval-suite submodule
-    - name: Apply patch
-      run: cd jlm-eval-suite && make apply-llvm-git-patch
-    - name: Run llvm-test-suite-andersen
-      run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+      - name: Clone jlm-test-suite
+        run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
+      - name: Update submodules
+        run: make -C jlm-eval-suite submodule
+      - name: Apply patch
+        run: cd jlm-eval-suite && make apply-llvm-git-patch
+      - name: Run llvm-test-suite-andersen
+        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen
