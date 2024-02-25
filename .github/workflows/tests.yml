@@ -8,6 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
         with:
@@ -18,6 +19,7 @@ jobs:
   gcc:
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
         with:
@@ -29,6 +31,7 @@ jobs:
   valgrind:
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: Install valgrind
         run: sudo apt-get install valgrind
       - name: "Build jlm"
@@ -41,6 +44,7 @@ jobs:
   polybench:
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
       - name: Clone polybench
@@ -51,6 +55,7 @@ jobs:
   llvm-test-suite:
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
       - name: Clone jlm-test-suite
@@ -62,11 +67,11 @@ jobs:
       - name: Run llvm-test-suite
         run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
 
-
   llvm-test-suite-andersen:
     if: contains(github.event.pull_request.title, '[Andersen]')
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
       - name: Clone jlm-test-suite
