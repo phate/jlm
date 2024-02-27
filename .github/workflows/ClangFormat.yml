@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "Install clang format"
-        uses: ./.github/actions/InstallLlvmDependencies
+        uses: ./.github/actions/InstallPackages
       - name: "Find source files"
         run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
       - name: "Check format"
