@@ -14,18 +14,6 @@ namespace jlm::llvm::aa
 {
 
 /**
- * Determines whether \p type is or contains a pointer type.
- *
- * @param type An rvsdg::type.
- * @return True if \p type is or contains a pointer type, otherwise false.
- */
-static bool
-IsOrContainsPointerType(const rvsdg::type & type)
-{
-  return IsOrContains<PointerType>(type);
-}
-
-/**
  * Determines whether \p output should be handled by the Steensgaard analysis.
  *
  * @param output An rvsdg::output.
@@ -34,7 +22,7 @@ IsOrContainsPointerType(const rvsdg::type & type)
 static bool
 ShouldHandle(const rvsdg::output & output)
 {
-  return IsOrContainsPointerType(output.type());
+  return IsOrContains<PointerType>(output.type());
 }
 
 /**
