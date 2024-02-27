@@ -1076,10 +1076,11 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
   if (addressLocation.GetPointsTo() == nullptr)
   {
     addressLocation.SetPointsTo(resultLocation);
-    return;
   }
-
-  LocationSet_->Join(resultLocation, *addressLocation.GetPointsTo());
+  else
+  {
+    LocationSet_->Join(resultLocation, *addressLocation.GetPointsTo());
+  }
 }
 
 void
@@ -1097,10 +1098,11 @@ Steensgaard::AnalyzeStore(const StoreNode & storeNode)
   if (addressLocation.GetPointsTo() == nullptr)
   {
     addressLocation.SetPointsTo(valueLocation);
-    return;
   }
-
-  LocationSet_->Join(*addressLocation.GetPointsTo(), valueLocation);
+  else
+  {
+    LocationSet_->Join(*addressLocation.GetPointsTo(), valueLocation);
+  }
 }
 
 void
