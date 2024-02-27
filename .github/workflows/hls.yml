@@ -13,16 +13,10 @@ jobs:
       with:
         fetch-depth: '0'
 
-    # --------
-    # Compile jlm with the HLS backend enabled
-    # --------
-
-    - name: "Build CIRCT"
-      uses: ./.github/actions/BuildCirct
-    - name: "Configure jlm"
-      run: ./configure.sh --enable-asserts --enable-hls ${{ github.workspace }}/build-circt/circt CXX=clang++-16
-    - name: "Compile jlm"
-      run: make -j `nproc` -O
+    - name: "Build jlm"
+      uses: ./.github/actions/BuildJlm
+      with:
+        enable-hls: true
 
     # --------
     # Run HLS test suite
