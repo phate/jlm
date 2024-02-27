@@ -20,6 +20,10 @@ runs:
 
     - name: "Install LLVM, Clang, MLIR, and Ninja"
       uses: ./.github/actions/InstallPackages
+      with:
+        install-llvm: true
+        install-mlir: true
+        install-ninja: true
 
     - name: "Build CIRCT if we didn't hit in the cache"
       if: steps.cache-circt.outputs.cache-hit != 'true'

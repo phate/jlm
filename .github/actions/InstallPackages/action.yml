@@ -1,29 +1,73 @@
-name: "Install Llvm Dependencies"
-description: "Installs all the required LLVM dependencies"
+name: "Install packages"
+description: "Installs packages that jlm and co depend on."
+
+inputs:
+  install-llvm:
+    description: "Install LLVM package. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-clang:
+    description: "Install clang package. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-mlir:
+    description: "Install MLIR packages. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-clang-format:
+    description: "Install clang-format package. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-ninja:
+    description: "Install ninja package. Default is 'false'."
+    default: "false"
+    required: false
 
 runs:
   using: "composite"
   steps:
-    - name: "Get LLVM apt key"
-      run: wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-      shell: bash
-
-    - name: "Update apt sources"
-      run: sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
-      shell: bash
-
-    - name: "Install LLVM dependencies"
-      run: sudo apt-get update && sudo apt-get install llvm-16-dev clang-16 libmlir-16-dev mlir-16-tools clang-format-16 ninja-build
-      shell: bash
-
-    - name: "Place MLIRlib in system folder"
+    - name: "Get LLVM apt key and update apt sources"
+      if: ${{inputs.install-llvm == 'true'
+        || inputs.install-clang == 'true'
+        || inputs.install-mlir == 'true'
+        || inputs.install-clang-format == 'true'}}
       run: |
+        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+        sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+      shell: bash
+
+    - name: "Install LLVM package"
+      if: ${{inputs.install-llvm == 'true'}}
+      run: |
+        sudo apt-get update && sudo apt-get install llvm-16-dev
+        sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+      shell: bash
+
+    - name: "Install clang package"
+      if: ${{inputs.install-clang == 'true'}}
+      run: sudo apt-get update && sudo apt-get install clang-16
+      shell: bash
+
+    - name: "Install MLIR packages"
+      if: ${{inputs.install-mlir == 'true'}}
+      run: |
+        sudo apt-get update && sudo apt-get install libmlir-16-dev mlir-16-tools
         if ! [ -f /usr/lib/x86_64-linux-gnu/libMLIR.so ]; then
           sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/
           sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
         fi
       shell: bash
 
-    - name: "Install lit"
-      run: sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+    - name: "Install clang-format package"
+      if: ${{inputs.install-clang-format == 'true'}}
+      run: sudo apt-get update && sudo apt-get install clang-format-16
+      shell: bash
+
+    - name: "Install ninja package"
+      if: ${{inputs.install-ninja == 'true'}}
+      run: sudo apt-get update && sudo apt-get install clang-format-16
       shell: bash

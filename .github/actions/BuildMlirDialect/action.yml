@@ -25,6 +25,10 @@ runs:
 
     - name: "Install LLVM and Clang"
       uses: ./.github/actions/InstallPackages
+      with:
+        install-llvm: true
+        install-mlir: true
+        install-ninja: true
 
     - name: "Build MLIR RVSDG Dialect if we didn't hit in the cache"
       if: steps.cache-mlir.outputs.cache-hit != 'true'
