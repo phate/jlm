@@ -9,10 +9,54 @@
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
+
+/**
+ * Determines whether \p type is or contains a pointer type.
+ *
+ * @param type An rvsdg::type.
+ * @return True if \p type is or contains a pointer type, otherwise false.
+ */
+static bool
+IsOrContainsPointerType(const rvsdg::type & type)
+{
+  return IsOrContains<PointerType>(type);
+}
+
+/**
+ * Determines whether \p output should be handled by the Steensgaard analysis.
+ *
+ * @param output An rvsdg::output.
+ * @return True if \p output should handled, otherwise false.
+ */
+static bool
+ShouldHandle(const rvsdg::output & output)
+{
+  return IsOrContainsPointerType(output.type());
+}
+
+/**
+ * Determines whether \p node should be handled by the Steensgaard analysis.
+ *
+ * @param node An rvsdg::simple_node.
+ * @return True if \p node should be handled, otherwise false.
+ */
+static bool
+ShouldHandle(const rvsdg::simple_node & node)
+{
+  for (size_t n = 0; n < node.ninputs(); n++)
+  {
+    auto & origin = *node.input(n)->origin();
+    if (ShouldHandle(origin))
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 enum class PointsToFlags
 {
@@ -651,6 +695,13 @@ public:
     return it == LocationMap_.end() ? nullptr : it->second;
   }
 
+  bool
+  ContainsRegisterLocation(const rvsdg::output & output)
+  {
+    auto it = LocationMap_.find(&output);
+    return it != LocationMap_.end();
+  }
+
   std::string
   ToDot() const
   {
@@ -941,14 +992,14 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeExtractValue(node);
   }
+  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  {
+    // Nothing needs to be done as these operations do not affect points-to sets
+  }
   else
   {
-    // Ensure that we really took care of all pointer-producing instructions
-    for (size_t n = 0; n < node.noutputs(); n++)
-    {
-      if (rvsdg::is<PointerType>(node.output(n)->type()))
-        JLM_UNREACHABLE("We should have never reached this statement.");
-    }
+    // Ensure that we took care of all pointer consuming nodes.
+    JLM_ASSERT(!ShouldHandle(node));
   }
 }
 
@@ -1580,6 +1631,16 @@ Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
 void
 Steensgaard::AnalyzeRegion(jlm::rvsdg::region & region)
 {
+  // Check that we added a RegisterLocation for each required argument
+  for (size_t n = 0; n < region.narguments(); n++)
+  {
+    auto & argument = *region.argument(n);
+    if (ShouldHandle(argument))
+    {
+      JLM_ASSERT(LocationSet_->ContainsRegisterLocation(argument));
+    }
+  }
+
   using namespace jlm::rvsdg;
 
   topdown_traverser traverser(&region);
