@@ -1,5 +1,5 @@
 name: "Install packages"
-description: "Installs packages that jlm and co depend on."
+description: "Installs packages that the jlm framework depends on."
 
 inputs:
   install-llvm:
