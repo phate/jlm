@@ -628,6 +628,14 @@ public:
     return *location;
   }
 
+  /**
+   * Returns the set's root location for register \p output if output's location exists.
+   * Otherwise creates a new location for register \p output.
+   *
+   * @param output A register.
+   * @param pointsToFlags The points-to flags associated with the newly created location.
+   * @return A Location.
+   */
   Location &
   GetOrInsertRegisterLocation(const rvsdg::output & output, PointsToFlags pointsToFlags)
   {
@@ -637,6 +645,12 @@ public:
     return InsertRegisterLocation(output, pointsToFlags);
   }
 
+  /**
+   * Returns the disjoint set for Location \p location.
+   *
+   * @param location A Location.
+   * @return The disjoint set the location is part of.
+   */
   const DisjointLocationSet::set &
   GetSet(Location & location) const
   {
@@ -655,18 +669,36 @@ public:
     return DisjointLocationSet_.nvalues();
   }
 
+  /**
+   * Returns the set's root location for Location \p location.
+   *
+   * @param location A Location.
+   * @return The set's root location.
+   */
   Location &
   GetRootLocation(Location & location) const
   {
     return *GetSet(location).value();
   }
 
+  /**
+   * Returns the set's root location of which the \p output register location is part of.
+   *
+   * @param output A register.
+   * @return The root Location of the set.
+   */
   Location &
   GetLocation(const rvsdg::output & output)
   {
     return GetRootLocation(GetRegisterLocation(output));
   }
 
+  /**
+   * Returns the register location for register \p output.
+   *
+   * @param output A register.
+   * @return A RegisterLocation.
+   */
   RegisterLocation &
   GetRegisterLocation(const rvsdg::output & output)
   {
@@ -675,6 +707,12 @@ public:
     return *it->second;
   }
 
+  /**
+   * Checks whether a register location exists for register \p output.
+   *
+   * @param output A register.
+   * @return True if the location exists, otherwise false.
+   */
   bool
   HasRegisterLocation(const rvsdg::output & output)
   {
