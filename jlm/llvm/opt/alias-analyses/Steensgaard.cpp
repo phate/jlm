@@ -628,12 +628,6 @@ public:
     return *location;
   }
 
-  bool
-  Contains(const jlm::rvsdg::output & output) const noexcept
-  {
-    return LocationMap_.find(&output) != LocationMap_.end();
-  }
-
   Location &
   FindOrInsertRegisterLocation(const rvsdg::output & output, PointsToFlags pointsToFlags)
   {
@@ -682,7 +676,7 @@ public:
   }
 
   bool
-  ContainsRegisterLocation(const rvsdg::output & output)
+  HasRegisterLocation(const rvsdg::output & output)
   {
     auto it = LocationMap_.find(&output);
     return it != LocationMap_.end();
@@ -794,7 +788,7 @@ private:
   RegisterLocation &
   InsertRegisterLocation(const jlm::rvsdg::output & output, PointsToFlags pointsToFlags)
   {
-    JLM_ASSERT(!Contains(output));
+    JLM_ASSERT(!HasRegisterLocation(output));
 
     auto registerLocation = RegisterLocation::Create(output, pointsToFlags);
     auto registerLocationPointer = registerLocation.get();
@@ -1320,12 +1314,12 @@ Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
   {
     auto & operand = *node.input(n)->origin();
 
-    if (Context_->Contains(operand))
+    if (Context_->HasRegisterLocation(operand))
     {
-      auto & originLocation = Context_->GetLocation(operand);
+      auto & operandLocation = Context_->GetLocation(operand);
       auto & outputLocation =
           Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
-      Context_->Join(outputLocation, originLocation);
+      Context_->Join(outputLocation, operandLocation);
     }
   }
 }
@@ -1340,12 +1334,12 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
   {
     auto & operand = *node.input(n)->origin();
 
-    if (Context_->Contains(operand))
+    if (Context_->HasRegisterLocation(operand))
     {
-      auto & originLocation = Context_->GetLocation(operand);
+      auto & operandLocation = Context_->GetLocation(operand);
       auto & outputLocation =
           Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
-      Context_->Join(outputLocation, originLocation);
+      Context_->Join(outputLocation, operandLocation);
     }
   }
 }
@@ -1481,10 +1475,10 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
   auto & origin = *delta.result()->origin();
-  if (Context_->Contains(origin))
+  if (Context_->HasRegisterLocation(origin))
   {
-    auto & resultLocation = Context_->GetLocation(origin);
-    Context_->Join(deltaLocation, resultLocation);
+    auto & originLocation = Context_->GetLocation(origin);
+    Context_->Join(deltaLocation, originLocation);
   }
 }
 
@@ -1651,7 +1645,7 @@ Steensgaard::AnalyzeRegion(jlm::rvsdg::region & region)
     auto & argument = *region.argument(n);
     if (ShouldHandle(argument))
     {
-      JLM_ASSERT(Context_->ContainsRegisterLocation(argument));
+      JLM_ASSERT(Context_->HasRegisterLocation(argument));
     }
   }
 
