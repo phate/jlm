@@ -635,10 +635,10 @@ public:
   }
 
   Location &
-  FindOrInsertRegisterLocation(const jlm::rvsdg::output & output, PointsToFlags pointsToFlags)
+  FindOrInsertRegisterLocation(const rvsdg::output & output, PointsToFlags pointsToFlags)
   {
-    if (auto location = LookupRegisterLocation(output))
-      return GetRootLocation(*location);
+    if (auto it = LocationMap_.find(&output); it != LocationMap_.end())
+      return GetRootLocation(*it->second);
 
     return InsertRegisterLocation(output, pointsToFlags);
   }
@@ -668,19 +668,17 @@ public:
   }
 
   Location &
-  GetLocation(const jlm::rvsdg::output & output)
+  GetLocation(const rvsdg::output & output)
   {
-    auto location = LookupRegisterLocation(output);
-    JLM_ASSERT(location != nullptr);
-
-    return GetRootLocation(*location);
+    return GetRootLocation(GetRegisterLocation(output));
   }
 
-  RegisterLocation *
-  LookupRegisterLocation(const jlm::rvsdg::output & output)
+  RegisterLocation &
+  GetRegisterLocation(const rvsdg::output & output)
   {
     auto it = LocationMap_.find(&output);
-    return it == LocationMap_.end() ? nullptr : it->second;
+    JLM_ASSERT(it != LocationMap_.end());
+    return *it->second;
   }
 
   bool
@@ -1177,8 +1175,8 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 
     if (ShouldHandle(callArgument))
     {
-      auto registerLocation = Context_->LookupRegisterLocation(callArgument);
-      registerLocation->SetIsEscapingModule(true);
+      auto & argumentLocation = Context_->GetRegisterLocation(callArgument);
+      argumentLocation.SetIsEscapingModule(true);
     }
   }
 
@@ -1436,16 +1434,17 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   AnalyzeRegion(*lambda.subregion());
 
   // Handle function results
-  for (auto & result : lambda.fctresults())
+  if (is_exported(lambda))
   {
-    auto & operand = *result.origin();
-
-    if (ShouldHandle(operand))
+    for (auto & result : lambda.fctresults())
     {
-      auto registerLocation = Context_->LookupRegisterLocation(operand);
+      auto & operand = *result.origin();
 
-      if (is_exported(lambda))
-        registerLocation->SetIsEscapingModule(true);
+      if (ShouldHandle(operand))
+      {
+        auto & operandLocation = Context_->GetRegisterLocation(operand);
+        operandLocation.SetIsEscapingModule(true);
+      }
     }
   }
 
@@ -1710,8 +1709,8 @@ Steensgaard::AnalyzeExports(const rvsdg::graph & graph)
   for (size_t n = 0; n < rootRegion->nresults(); n++)
   {
     auto & result = *rootRegion->result(n);
-    auto registerLocation = Context_->LookupRegisterLocation(*result.origin());
-    registerLocation->SetIsEscapingModule(true);
+    auto & resultLocation = Context_->GetRegisterLocation(*result.origin());
+    resultLocation.SetIsEscapingModule(true);
   }
 }
 
