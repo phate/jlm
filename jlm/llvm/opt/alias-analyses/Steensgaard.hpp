@@ -13,7 +13,6 @@ namespace jlm::llvm::aa
 {
 
 class Location;
-class LocationSet;
 class RegisterLocation;
 
 /** \brief Steensgaard alias analysis
@@ -25,6 +24,7 @@ class RegisterLocation;
  */
 class Steensgaard final : public AliasAnalysis
 {
+  class Context;
   class Statistics;
 
 public:
@@ -218,7 +218,7 @@ private:
   static void
   RedirectUnknownMemoryNodeSources(PointsToGraph & pointsToGraph);
 
-  std::unique_ptr<LocationSet> LocationSet_;
+  std::unique_ptr<Context> Context_;
 };
 
 }
