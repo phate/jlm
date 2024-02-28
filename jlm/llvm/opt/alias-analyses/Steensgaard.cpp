@@ -668,7 +668,7 @@ public:
   }
 
   Location &
-  Find(const jlm::rvsdg::output & output)
+  GetLocation(const jlm::rvsdg::output & output)
   {
     auto location = LookupRegisterLocation(output);
     JLM_ASSERT(location != nullptr);
@@ -1057,7 +1057,7 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
   if (!ShouldHandle(result))
     return;
 
-  auto & addressLocation = Context_->Find(address);
+  auto & addressLocation = Context_->GetLocation(address);
   auto & resultLocation =
       Context_->FindOrInsertRegisterLocation(result, addressLocation.GetPointsToFlags());
 
@@ -1080,8 +1080,8 @@ Steensgaard::AnalyzeStore(const StoreNode & storeNode)
   if (!ShouldHandle(value))
     return;
 
-  auto & addressLocation = Context_->Find(address);
-  auto & valueLocation = Context_->Find(value);
+  auto & addressLocation = Context_->GetLocation(address);
+  auto & valueLocation = Context_->GetLocation(value);
 
   if (addressLocation.GetPointsTo() == nullptr)
   {
@@ -1139,7 +1139,7 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
 
     if (ShouldHandle(callArgument))
     {
-      auto & callArgumentLocation = Context_->Find(callArgument);
+      auto & callArgumentLocation = Context_->GetLocation(callArgument);
       auto & lambdaArgumentLocation =
           Context_->FindOrInsertRegisterLocation(lambdaArgument, PointsToFlags::PointsToNone);
 
@@ -1221,7 +1221,7 @@ Steensgaard::AnalyzeGep(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
-  auto & base = Context_->Find(*node.input(0)->origin());
+  auto & base = Context_->GetLocation(*node.input(0)->origin());
   auto & value =
       Context_->FindOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
 
@@ -1238,7 +1238,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
 
   if (ShouldHandle(operand))
   {
-    auto & operandLocation = Context_->Find(operand);
+    auto & operandLocation = Context_->GetLocation(operand);
     auto & resultLocation =
         Context_->FindOrInsertRegisterLocation(result, PointsToFlags::PointsToNone);
 
@@ -1324,7 +1324,7 @@ Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
 
     if (Context_->Contains(operand))
     {
-      auto & originLocation = Context_->Find(operand);
+      auto & originLocation = Context_->GetLocation(operand);
       auto & outputLocation =
           Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
       Context_->Join(outputLocation, originLocation);
@@ -1344,7 +1344,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 
     if (Context_->Contains(operand))
     {
-      auto & originLocation = Context_->Find(operand);
+      auto & originLocation = Context_->GetLocation(operand);
       auto & outputLocation =
           Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
       Context_->Join(outputLocation, originLocation);
@@ -1357,8 +1357,8 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<Memcpy>(&node));
 
-  auto & dstAddress = Context_->Find(*node.input(0)->origin());
-  auto & srcAddress = Context_->Find(*node.input(1)->origin());
+  auto & dstAddress = Context_->GetLocation(*node.input(0)->origin());
+  auto & srcAddress = Context_->GetLocation(*node.input(1)->origin());
 
   // We implement memcpy by pointing srcAddress and dstAddress to the same underlying memory:
   //
@@ -1402,7 +1402,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 
     if (ShouldHandle(origin))
     {
-      auto & originLocation = Context_->Find(origin);
+      auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
           Context_->FindOrInsertRegisterLocation(*cv.argument(), PointsToFlags::PointsToNone);
       Context_->Join(originLocation, argumentLocation);
@@ -1466,7 +1466,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
 
     if (ShouldHandle(origin))
     {
-      auto & originLocation = Context_->Find(origin);
+      auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation = Context_->FindOrInsertRegisterLocation(
           *input.arguments.first(),
           PointsToFlags::PointsToNone);
@@ -1484,7 +1484,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
   auto & origin = *delta.result()->origin();
   if (Context_->Contains(origin))
   {
-    auto & resultLocation = Context_->Find(origin);
+    auto & resultLocation = Context_->GetLocation(origin);
     Context_->Join(deltaLocation, resultLocation);
   }
 }
@@ -1499,7 +1499,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 
     if (ShouldHandle(origin))
     {
-      auto & originLocation = Context_->Find(origin);
+      auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
           Context_->FindOrInsertRegisterLocation(*cv->argument(), PointsToFlags::PointsToNone);
       Context_->Join(originLocation, argumentLocation);
@@ -1528,8 +1528,8 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 
     if (ShouldHandle(argument))
     {
-      auto & originLocation = Context_->Find(*result.origin());
-      auto & argumentLocation = Context_->Find(argument);
+      auto & originLocation = Context_->GetLocation(*result.origin());
+      auto & argumentLocation = Context_->GetLocation(argument);
       auto & outputLocation =
           Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
 
@@ -1549,7 +1549,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
 
     if (ShouldHandle(origin))
     {
-      auto & originLocation = Context_->Find(*ev->origin());
+      auto & originLocation = Context_->GetLocation(*ev->origin());
       for (auto & argument : *ev)
       {
         auto & argumentLocation =
@@ -1574,7 +1574,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
           Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
       for (auto & result : *ex)
       {
-        auto & resultLocation = Context_->Find(*result.origin());
+        auto & resultLocation = Context_->GetLocation(*result.origin());
         Context_->Join(outputLocation, resultLocation);
       }
     }
@@ -1588,7 +1588,7 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
   {
     if (ShouldHandle(*thetaOutput))
     {
-      auto & originLocation = Context_->Find(*thetaOutput->input()->origin());
+      auto & originLocation = Context_->GetLocation(*thetaOutput->input()->origin());
       auto & argumentLocation = Context_->FindOrInsertRegisterLocation(
           *thetaOutput->argument(),
           PointsToFlags::PointsToNone);
@@ -1603,8 +1603,8 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
   {
     if (ShouldHandle(*thetaOutput))
     {
-      auto & originLocation = Context_->Find(*thetaOutput->result()->origin());
-      auto & argumentLocation = Context_->Find(*thetaOutput->argument());
+      auto & originLocation = Context_->GetLocation(*thetaOutput->result()->origin());
+      auto & argumentLocation = Context_->GetLocation(*thetaOutput->argument());
       auto & outputLocation =
           Context_->FindOrInsertRegisterLocation(*thetaOutput, PointsToFlags::PointsToNone);
 
