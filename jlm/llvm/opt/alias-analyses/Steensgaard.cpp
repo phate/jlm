@@ -629,7 +629,7 @@ public:
   }
 
   Location &
-  FindOrInsertRegisterLocation(const rvsdg::output & output, PointsToFlags pointsToFlags)
+  GetOrInsertRegisterLocation(const rvsdg::output & output, PointsToFlags pointsToFlags)
   {
     if (auto it = LocationMap_.find(&output); it != LocationMap_.end())
       return GetRootLocation(*it->second);
@@ -1014,7 +1014,7 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
   };
 
   auto & allocaOutputLocation =
-      Context_->FindOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
+      Context_->GetOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
   auto & allocaLocation = Context_->InsertAllocaLocation(node);
   allocaOutputLocation.SetPointsTo(allocaLocation);
 
@@ -1035,7 +1035,7 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
   JLM_ASSERT(is<malloc_op>(&node));
 
   auto & mallocOutputLocation =
-      Context_->FindOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
+      Context_->GetOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
   auto & mallocLocation = Context_->InsertMallocLocation(node);
   mallocOutputLocation.SetPointsTo(mallocLocation);
 }
@@ -1051,7 +1051,7 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 
   auto & addressLocation = Context_->GetLocation(address);
   auto & resultLocation =
-      Context_->FindOrInsertRegisterLocation(result, addressLocation.GetPointsToFlags());
+      Context_->GetOrInsertRegisterLocation(result, addressLocation.GetPointsToFlags());
 
   if (addressLocation.GetPointsTo() == nullptr)
   {
@@ -1133,7 +1133,7 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
     {
       auto & callArgumentLocation = Context_->GetLocation(callArgument);
       auto & lambdaArgumentLocation =
-          Context_->FindOrInsertRegisterLocation(lambdaArgument, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(lambdaArgument, PointsToFlags::PointsToNone);
 
       Context_->Join(callArgumentLocation, lambdaArgumentLocation);
     }
@@ -1150,9 +1150,9 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
     if (ShouldHandle(callResult))
     {
       auto & callResultLocation =
-          Context_->FindOrInsertRegisterLocation(callResult, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(callResult, PointsToFlags::PointsToNone);
       auto & lambdaResultLocation =
-          Context_->FindOrInsertRegisterLocation(lambdaResult, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(lambdaResult, PointsToFlags::PointsToNone);
 
       Context_->Join(callResultLocation, lambdaResultLocation);
     }
@@ -1180,7 +1180,7 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 
     if (ShouldHandle(callResult))
     {
-      Context_->FindOrInsertRegisterLocation(
+      Context_->GetOrInsertRegisterLocation(
           callResult,
           PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
     }
@@ -1200,7 +1200,7 @@ Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
 
     if (ShouldHandle(callResult))
     {
-      Context_->FindOrInsertRegisterLocation(
+      Context_->GetOrInsertRegisterLocation(
           callResult,
           PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory
               | PointsToFlags::PointsToEscapedMemory);
@@ -1215,7 +1215,7 @@ Steensgaard::AnalyzeGep(const jlm::rvsdg::simple_node & node)
 
   auto & base = Context_->GetLocation(*node.input(0)->origin());
   auto & value =
-      Context_->FindOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
+      Context_->GetOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
 
   Context_->Join(base, value);
 }
@@ -1232,7 +1232,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
   {
     auto & operandLocation = Context_->GetLocation(operand);
     auto & resultLocation =
-        Context_->FindOrInsertRegisterLocation(result, PointsToFlags::PointsToNone);
+        Context_->GetOrInsertRegisterLocation(result, PointsToFlags::PointsToNone);
 
     Context_->Join(operandLocation, resultLocation);
   }
@@ -1243,7 +1243,7 @@ Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
 
-  Context_->FindOrInsertRegisterLocation(
+  Context_->GetOrInsertRegisterLocation(
       *node.output(0),
       // The register location already points to unknown memory. Unknown memory is a superset of
       // escaped memory, and therefore we can simply set escaped memory to false.
@@ -1260,7 +1260,7 @@ Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
   if (ShouldHandle(result))
   {
     // FIXME: Have a look at this operation again to ensure that the flags add up.
-    Context_->FindOrInsertRegisterLocation(
+    Context_->GetOrInsertRegisterLocation(
         result,
         PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory);
   }
@@ -1273,7 +1273,7 @@ Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node)
 
   // ConstantPointerNull cannot point to any memory location. We therefore only insert a register
   // node for it, but let this node not point to anything.
-  Context_->FindOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
+  Context_->GetOrInsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
 }
 
 void
@@ -1286,7 +1286,7 @@ Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node)
   {
     // ConstantAggregateZero cannot point to any memory location. We therefore only insert a
     // register node for it, but let this node not point to anything.
-    Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
+    Context_->GetOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
   }
 }
 
@@ -1300,7 +1300,7 @@ Steensgaard::AnalyzeUndef(const jlm::rvsdg::simple_node & node)
   {
     // UndefValue cannot point to any memory location. We therefore only insert a register node for
     // it, but let this node not point to anything.
-    Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
+    Context_->GetOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
   }
 }
 
@@ -1318,7 +1318,7 @@ Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
     {
       auto & operandLocation = Context_->GetLocation(operand);
       auto & outputLocation =
-          Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
       Context_->Join(outputLocation, operandLocation);
     }
   }
@@ -1338,7 +1338,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
     {
       auto & operandLocation = Context_->GetLocation(operand);
       auto & outputLocation =
-          Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
       Context_->Join(outputLocation, operandLocation);
     }
   }
@@ -1396,7 +1396,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     {
       auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
-          Context_->FindOrInsertRegisterLocation(*cv.argument(), PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(*cv.argument(), PointsToFlags::PointsToNone);
       Context_->Join(originLocation, argumentLocation);
     }
   }
@@ -1409,7 +1409,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     {
       if (ShouldHandle(argument))
       {
-        Context_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
+        Context_->GetOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
       }
     }
   }
@@ -1419,7 +1419,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     for (auto & argument : lambda.fctarguments())
     {
       if (rvsdg::is<PointerType>(argument.type()))
-        Context_->FindOrInsertRegisterLocation(
+        Context_->GetOrInsertRegisterLocation(
             argument,
             PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
     }
@@ -1444,7 +1444,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 
   // Handle function
   auto & lambdaOutputLocation =
-      Context_->FindOrInsertRegisterLocation(*lambda.output(), PointsToFlags::PointsToNone);
+      Context_->GetOrInsertRegisterLocation(*lambda.output(), PointsToFlags::PointsToNone);
   auto & lambdaLocation = Context_->InsertLambdaLocation(lambda);
   lambdaOutputLocation.SetPointsTo(lambdaLocation);
 }
@@ -1460,7 +1460,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
     if (ShouldHandle(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->FindOrInsertRegisterLocation(
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(
           *input.arguments.first(),
           PointsToFlags::PointsToNone);
       Context_->Join(originLocation, argumentLocation);
@@ -1470,7 +1470,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
   AnalyzeRegion(*delta.subregion());
 
   auto & deltaOutputLocation =
-      Context_->FindOrInsertRegisterLocation(*delta.output(), PointsToFlags::PointsToNone);
+      Context_->GetOrInsertRegisterLocation(*delta.output(), PointsToFlags::PointsToNone);
   auto & deltaLocation = Context_->InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
@@ -1494,7 +1494,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
     {
       auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
-          Context_->FindOrInsertRegisterLocation(*cv->argument(), PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(*cv->argument(), PointsToFlags::PointsToNone);
       Context_->Join(originLocation, argumentLocation);
     }
   }
@@ -1506,7 +1506,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 
     if (ShouldHandle(argument))
     {
-      Context_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
+      Context_->GetOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
     }
   }
 
@@ -1524,7 +1524,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
       auto & originLocation = Context_->GetLocation(*result.origin());
       auto & argumentLocation = Context_->GetLocation(argument);
       auto & outputLocation =
-          Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
 
       Context_->Join(originLocation, argumentLocation);
       Context_->Join(argumentLocation, outputLocation);
@@ -1546,7 +1546,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
       for (auto & argument : *ev)
       {
         auto & argumentLocation =
-            Context_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
+            Context_->GetOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
         Context_->Join(argumentLocation, originLocation);
       }
     }
@@ -1564,7 +1564,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
     if (ShouldHandle(output))
     {
       auto & outputLocation =
-          Context_->FindOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(output, PointsToFlags::PointsToNone);
       for (auto & result : *ex)
       {
         auto & resultLocation = Context_->GetLocation(*result.origin());
@@ -1582,7 +1582,7 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
     if (ShouldHandle(*thetaOutput))
     {
       auto & originLocation = Context_->GetLocation(*thetaOutput->input()->origin());
-      auto & argumentLocation = Context_->FindOrInsertRegisterLocation(
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(
           *thetaOutput->argument(),
           PointsToFlags::PointsToNone);
 
@@ -1599,7 +1599,7 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
       auto & originLocation = Context_->GetLocation(*thetaOutput->result()->origin());
       auto & argumentLocation = Context_->GetLocation(*thetaOutput->argument());
       auto & outputLocation =
-          Context_->FindOrInsertRegisterLocation(*thetaOutput, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(*thetaOutput, PointsToFlags::PointsToNone);
 
       Context_->Join(originLocation, argumentLocation);
       Context_->Join(originLocation, outputLocation);
@@ -1689,7 +1689,7 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
     {
       auto & importLocation = Context_->InsertImportLocation(argument);
       auto & registerLocation =
-          Context_->FindOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
+          Context_->GetOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
       registerLocation.SetPointsTo(importLocation);
     }
   }
