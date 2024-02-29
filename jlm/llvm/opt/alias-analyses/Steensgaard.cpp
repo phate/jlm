@@ -1946,9 +1946,9 @@ Steensgaard::ConstructPointsToGraph() const
   // Create points-to graph edges
   for (auto & set : Context_->Sets())
   {
-    bool pointsToUnknown = Context_->GetSet(**set.begin()).value()->PointsToUnknownMemory();
-    bool pointsToExternalMemory = Context_->GetSet(**set.begin()).value()->PointsToExternalMemory();
-    bool pointsToEscapedMemory = Context_->GetSet(**set.begin()).value()->PointsToEscapedMemory();
+    bool pointsToUnknown = set.value()->PointsToUnknownMemory();
+    bool pointsToExternalMemory = set.value()->PointsToExternalMemory();
+    bool pointsToEscapedMemory = set.value()->PointsToEscapedMemory();
 
     bool handledRegisterLocations = false;
     for (auto & location : set)
