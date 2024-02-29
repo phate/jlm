@@ -533,12 +533,13 @@ public:
   }
 };
 
+using DisjointLocationSet = util::disjointset<Location *>;
+
 /** \brief Context class
  */
 class Steensgaard::Context final
 {
 public:
-  using DisjointLocationSet = typename util::disjointset<Location *>;
   using DisjointLocationSetRange = util::iterator_range<DisjointLocationSet::set_iterator>;
 
   ~Context() = default;
@@ -1850,7 +1851,7 @@ Steensgaard::CollectEscapedMemoryNodes(
 
   // Collect escaped memory nodes
   util::HashSet<PointsToGraph::MemoryNode *> escapedMemoryNodes;
-  util::HashSet<const Context::DisjointLocationSet::set *> visited;
+  util::HashSet<const DisjointLocationSet::set *> visited;
   while (!toVisit.IsEmpty())
   {
     auto moduleEscapingLocation = *toVisit.Items().begin();
@@ -1886,10 +1887,8 @@ Steensgaard::ConstructPointsToGraph() const
 {
   auto pointsToGraph = PointsToGraph::Create();
 
-  // All the memory nodes within a Context
-  std::unordered_map<
-      const util::disjointset<Location *>::set *,
-      std::vector<PointsToGraph::MemoryNode *>>
+  // All the memory nodes within a set
+  std::unordered_map<const DisjointLocationSet::set *, std::vector<PointsToGraph::MemoryNode *>>
       memoryNodesInSet;
 
   // All register locations that are marked as RegisterLocation::HasEscaped()
