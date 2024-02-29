@@ -881,10 +881,10 @@ public:
   }
 
   void
-  StartPointsToFlagsPropagationStatistics(const Context & disjointLocationSet) noexcept
+  StartPointsToFlagsPropagationStatistics(const Context & context) noexcept
   {
-    AddMeasurement(NumDisjointSetsLabel_, disjointLocationSet.NumDisjointSets());
-    AddMeasurement(NumLocationsLabel_, disjointLocationSet.NumLocations());
+    AddMeasurement(NumDisjointSetsLabel_, context.NumDisjointSets());
+    AddMeasurement(NumLocationsLabel_, context.NumLocations());
     AddTimer(PointsToFlagsPropagationTimerLabel_).start();
   }
 
@@ -895,7 +895,7 @@ public:
   }
 
   void
-  StartPointsToGraphConstructionStatistics(const Context & locationSet)
+  StartPointsToGraphConstructionStatistics()
   {
     AddTimer(PointsToGraphConstructionTimerLabel_).start();
   }
@@ -1761,7 +1761,7 @@ Steensgaard::Analyze(
   statistics->StopPointsToFlagsPropagationStatistics();
 
   // Construct PointsTo graph
-  statistics->StartPointsToGraphConstructionStatistics(*Context_);
+  statistics->StartPointsToGraphConstructionStatistics();
   auto pointsToGraph = ConstructPointsToGraph();
   // std::cout << PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
