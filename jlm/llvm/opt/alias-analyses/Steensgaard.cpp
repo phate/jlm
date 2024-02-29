@@ -538,7 +538,8 @@ public:
 class Steensgaard::Context final
 {
 public:
-  using DisjointLocationSet = typename jlm::util::disjointset<Location *>;
+  using DisjointLocationSet = typename util::disjointset<Location *>;
+  using DisjointLocationSetRange = util::iterator_range<DisjointLocationSet::set_iterator>;
 
   ~Context() = default;
 
@@ -554,16 +555,10 @@ public:
   Context &
   operator=(Context &&) = delete;
 
-  DisjointLocationSet::set_iterator
-  begin() const
+  DisjointLocationSetRange
+  Sets()
   {
-    return DisjointLocationSet_.begin();
-  }
-
-  DisjointLocationSet::set_iterator
-  end() const
-  {
-    return DisjointLocationSet_.end();
+    return { DisjointLocationSet_.begin(), DisjointLocationSet_.end() };
   }
 
   Location &
@@ -1799,7 +1794,7 @@ Steensgaard::PropagatePointsToFlags()
   {
     pointsToFlagsChanged = false;
 
-    for (auto & set : *Context_)
+    for (auto & set : Context_->Sets())
     {
       auto location = set.value();
 
@@ -1912,7 +1907,7 @@ Steensgaard::ConstructPointsToGraph() const
   std::unordered_map<const Location *, PointsToGraph::Node *> locationMap;
 
   // Create points-to graph nodes
-  for (auto & locationSet : *Context_)
+  for (auto & locationSet : Context_->Sets())
   {
     memoryNodesInSet[&locationSet] = {};
 
@@ -1958,7 +1953,7 @@ Steensgaard::ConstructPointsToGraph() const
   auto escapedMemoryNodes = CollectEscapedMemoryNodes(escapingRegisterLocations, memoryNodesInSet);
 
   // Create points-to graph edges
-  for (auto & set : *Context_)
+  for (auto & set : Context_->Sets())
   {
     bool pointsToUnknown = Context_->GetSet(**set.begin()).value()->PointsToUnknownMemory();
     bool pointsToExternalMemory = Context_->GetSet(**set.begin()).value()->PointsToExternalMemory();
