@@ -87,18 +87,11 @@ public:
   GetSourceFile() const;
 
   /**
-   * Converts the Statistics instance to a string containing all information it has
+   * Converts the Statistics instance to a string containing all information it has.
+   * Requires all timers to be stopped.
    * @return a full serialized description of the Statistic instance
    */
-  [[nodiscard]] virtual std::string
-  ToString() const;
-
-  /**
-   * Creates a string containing all measurements and timers.
-   * Requires all timers to be stopped.
-   * @return the created string
-   */
-  [[nodiscard]] virtual std::string
+  [[nodiscard]] std::string
   Serialize() const;
 
   /**

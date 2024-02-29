@@ -64,15 +64,13 @@ Statistics::GetSourceFile() const
 }
 
 std::string
-Statistics::ToString() const
-{
-  return util::strfmt(GetName(), " ", GetSourceFile().to_str(), " ", Serialize());
-}
-
-std::string
 Statistics::Serialize() const
 {
   std::ostringstream ss;
+
+  ss << GetName() << " ";
+  ss << GetSourceFile().to_str() << " ";
+
   for (const auto & [mName, measurement] : Measurements_)
   {
     if (ss.tellp() != 0)
@@ -177,7 +175,7 @@ StatisticsCollector::PrintStatistics() const
 
   for (auto & statistics : CollectedStatistics())
   {
-    fprintf(file.fd(), "%s\n", statistics.ToString().c_str());
+    fprintf(file.fd(), "%s\n", statistics.Serialize().c_str());
   }
 
   file.close();
