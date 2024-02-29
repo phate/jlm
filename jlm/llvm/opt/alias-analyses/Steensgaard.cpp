@@ -540,8 +540,6 @@ class Steensgaard::Context final
 public:
   using DisjointLocationSet = typename jlm::util::disjointset<Location *>;
 
-  using const_iterator = std::unordered_map<const jlm::rvsdg::output *, Location *>::const_iterator;
-
   ~Context() = default;
 
   Context() = default;
