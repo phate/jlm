@@ -62,7 +62,7 @@ TestGraphElement()
   graph.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
   attributes = out.str();
   assert(StringContains(attributes, "color=\"&quot;brown&quot;\""));
-  assert(StringContains(attributes, "another-graph=graph0"));
+  assert(StringContains(attributes, "another-graph=\"graph0\""));
 }
 
 static void
