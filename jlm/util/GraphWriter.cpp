@@ -141,7 +141,7 @@ Indent(size_t indent)
 
 GraphElement::GraphElement()
     : Label_(),
-      UniqueIdSuffix_(-1),
+      UniqueIdSuffix_(std::nullopt),
       ProgramObject_(0),
       AttributeMap_()
 {}
@@ -153,6 +153,12 @@ GraphElement::GetFullId() const
   std::ostringstream ss;
   ss << GetIdPrefix() << GetUniqueIdSuffix();
   return ss.str();
+}
+
+const Graph &
+GraphElement::GetGraph() const
+{
+  return const_cast<GraphElement *>(this)->GetGraph();
 }
 
 void
@@ -181,10 +187,11 @@ GraphElement::GetLabelOr(const char * otherwise) const
   return otherwise;
 }
 
-int
+size_t
 GraphElement::GetUniqueIdSuffix() const
 {
-  return UniqueIdSuffix_;
+  JLM_ASSERT(UniqueIdSuffix_);
+  return UniqueIdSuffix_.value();
 }
 
 void
@@ -217,7 +224,7 @@ GraphElement::SetAttributeObject(const std::string & attribute, void * object)
 }
 
 void
-GraphElement::SetAttributeGraphElement(const std::string & attribute, GraphElement & element)
+GraphElement::SetAttributeGraphElement(const std::string & attribute, const GraphElement & element)
 {
   JLM_ASSERT(&GetGraph().GetGraphWriter() == &element.GetGraph().GetGraphWriter());
   AttributeMap_[attribute] = &element;
@@ -236,11 +243,11 @@ GraphElement::Finalize()
 bool
 GraphElement::IsFinalized() const
 {
-  return UniqueIdSuffix_ != -1;
+  return UniqueIdSuffix_.has_value();
 }
 
 void
-GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
+GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format) const
 {
   for (const auto & [name, value] : AttributeMap_)
   {
@@ -263,24 +270,26 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
         out << '"';
       }
     }
-    else if (auto graphElement = std::get_if<GraphElement *>(&value))
+    else if (auto graphElement = std::get_if<const GraphElement *>(&value))
     {
       // HTML allows unquoted attribute values when they are single words with no special characters
       out << (*graphElement)->GetFullId();
     }
     else if (auto ptr = std::get_if<uintptr_t>(&value))
     {
-      // Check if some GraphElement in the graph is mapped to this pointer
-      auto element = GetGraph().GetElementFromProgramObject(*ptr);
-
-      // If not, check all other graphs
-      if (element == nullptr)
-        element = GetGraph().GetGraphWriter().GetElementFromProgramObject(*ptr);
-
-      if (element)
-        out << element->GetFullId();
+      // Check if some GraphElement in this graph, or in any graph, is mapped to this pointer
+      if (auto gElement = GetGraph().GetElementFromProgramObject(*ptr))
+      {
+        out << gElement->GetFullId();
+      }
+      else if (auto gwElement = GetGraph().GetGraphWriter().GetElementFromProgramObject(*ptr))
+      {
+        out << gwElement->GetFullId();
+      }
       else
-        out << "ptr" << element;
+      {
+        out << "ptr" << ptr;
+      }
     }
     out << " ";
   }
@@ -344,7 +353,7 @@ Port::HasIncomingEdges() const
 }
 
 void
-Port::OutputIncomingEdgesASCII(std::ostream & out)
+Port::OutputIncomingEdgesASCII(std::ostream & out) const
 {
   std::ostringstream text;
   size_t numIncomingEdges = 0;
@@ -400,13 +409,13 @@ Node::SetFillColor(std::string color)
 }
 
 void
-Node::OutputDotPortId(std::ostream & out)
+Node::OutputDotPortId(std::ostream & out) const
 {
   out << GetFullId();
 }
 
 void
-Node::Output(std::ostream & out, GraphOutputFormat format, size_t indent)
+Node::Output(std::ostream & out, GraphOutputFormat format, size_t indent) const
 {
   switch (format)
   {
@@ -422,7 +431,7 @@ Node::Output(std::ostream & out, GraphOutputFormat format, size_t indent)
 }
 
 void
-Node::OutputASCII(std::ostream & out, size_t indent)
+Node::OutputASCII(std::ostream & out, size_t indent) const
 {
   out << Indent(indent);
   if (HasOutgoingEdges())
@@ -439,7 +448,7 @@ Node::OutputASCII(std::ostream & out, size_t indent)
 }
 
 void
-Node::OutputDot(std::ostream & out, size_t indent)
+Node::OutputDot(std::ostream & out, size_t indent) const
 {
   out << Indent(indent) << GetFullId() << " [";
   out << "label=";
@@ -459,7 +468,7 @@ Node::OutputDot(std::ostream & out, size_t indent)
 }
 
 void
-Node::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent)
+Node::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const
 {
   // Regular nodes do not have sub graphs
 }
@@ -494,7 +503,7 @@ InputPort::SetFillColor(std::string color)
 }
 
 void
-InputPort::OutputDotPortId(std::ostream & out)
+InputPort::OutputDotPortId(std::ostream & out) const
 {
   out << Node_.GetFullId() << ":" << GetFullId() << ":n";
 }
@@ -529,7 +538,7 @@ OutputPort::SetFillColor(std::string color)
 }
 
 void
-OutputPort::OutputDotPortId(std::ostream & out)
+OutputPort::OutputDotPortId(std::ostream & out) const
 {
   out << Node_.GetFullId() << ":" << GetFullId() << ":s";
 }
@@ -553,7 +562,7 @@ InOutNode::CreateInputPort()
 }
 
 size_t
-InOutNode::NumInputPorts()
+InOutNode::NumInputPorts() const
 {
   return InputPorts_.size();
 }
@@ -574,7 +583,7 @@ InOutNode::CreateOutputPort()
 }
 
 size_t
-InOutNode::NumOutputPorts()
+InOutNode::NumOutputPorts() const
 {
   return OutputPorts_.size();
 }
@@ -595,7 +604,7 @@ InOutNode::CreateSubgraph()
 }
 
 size_t
-InOutNode::NumSubgraphs()
+InOutNode::NumSubgraphs() const
 {
   return SubGraphs_.size();
 }
@@ -633,7 +642,14 @@ InOutNode::Finalize()
 }
 
 void
-InOutNode::OutputASCII(std::ostream & out, size_t indent)
+InOutNode::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const
+{
+  for (auto & graph : SubGraphs_)
+    graph->Output(out, format, indent);
+}
+
+void
+InOutNode::OutputASCII(std::ostream & out, size_t indent) const
 {
   out << Indent(indent);
 
@@ -642,7 +658,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent)
   {
     if (i != 0)
       out << ", ";
-    out << GetOutputPort(i).GetFullId();
+    out << OutputPorts_[i]->GetFullId();
   }
   if (NumOutputPorts() != 0)
     out << " := ";
@@ -665,7 +681,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent)
   {
     if (i != 0)
       out << ", ";
-    GetInputPort(i).OutputIncomingEdgesASCII(out);
+    InputPorts_[i]->OutputIncomingEdgesASCII(out);
   }
   out << std::endl;
 
@@ -674,7 +690,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent)
 }
 
 void
-InOutNode::OutputDot(std::ostream & out, size_t indent)
+InOutNode::OutputDot(std::ostream & out, size_t indent) const
 {
   out << Indent(indent) << GetFullId() << " [shape=plain ";
   out << "label=<" << std::endl;
@@ -758,13 +774,6 @@ InOutNode::OutputDot(std::ostream & out, size_t indent)
   out << "];" << std::endl;
 }
 
-void
-InOutNode::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent)
-{
-  for (auto & graph : SubGraphs_)
-    graph->Output(out, format, indent);
-}
-
 ArgumentNode::ArgumentNode(jlm::util::Graph & graph)
     : Node(graph),
       OutsideSource_(nullptr)
@@ -783,17 +792,22 @@ ArgumentNode::CanBeEdgeHead() const
 }
 
 void
-ArgumentNode::SetOutsideSource(Port & outsideSource)
+ArgumentNode::SetOutsideSource(const Port & outsideSource)
 {
   OutsideSource_ = &outsideSource;
   SetAttributeGraphElement("outsideSource", outsideSource);
 }
 
 void
-ArgumentNode::OutputASCII(std::ostream & out, size_t indent)
+ArgumentNode::OutputASCII(std::ostream & out, size_t indent) const
 {
   // In ASCII the argument is printed as part of an ARG line
   out << GetFullId();
+  if (HasLabel())
+  {
+    out << ":";
+    PrintIdentifierSafe(out, GetLabel());
+  }
   if (OutsideSource_ != nullptr)
   {
     out << " <= ";
@@ -819,17 +833,22 @@ ResultNode::CanBeEdgeTail() const
 }
 
 void
-ResultNode::SetOutsideDestination(Port & outsideDestination)
+ResultNode::SetOutsideDestination(const Port & outsideDestination)
 {
   OutsideDestination_ = &outsideDestination;
   SetAttributeGraphElement("outsideDest", outsideDestination);
 }
 
 void
-ResultNode::OutputASCII(std::ostream & out, size_t indent)
+ResultNode::OutputASCII(std::ostream & out, size_t indent) const
 {
   // In ASCII the result is printed as part of an RES line
   OutputIncomingEdgesASCII(out);
+  if (HasLabel())
+  {
+    out << ":";
+    PrintIdentifierSafe(out, GetLabel());
+  }
   if (OutsideDestination_ != nullptr)
     out << " => " << OutsideDestination_->GetFullId();
 }
@@ -875,18 +894,18 @@ Edge::IsDirected() const
 }
 
 Port &
-Edge::GetOtherEnd(Port & from)
+Edge::GetOtherEnd(const Port & end)
 {
-  if (&from == &From_)
+  if (&end == &From_)
     return To_;
-  else if (&from == &To_)
+  else if (&end == &To_)
     return From_;
 
   JLM_UNREACHABLE("GetOtherEnd called with neither end");
 }
 
 void
-Edge::OutputDot(std::ostream & out, size_t indent)
+Edge::OutputDot(std::ostream & out, size_t indent) const
 {
   out << Indent(indent);
   From_.OutputDotPortId(out);
@@ -931,6 +950,12 @@ Graph::GetGraph()
 
 GraphWriter &
 Graph::GetGraphWriter()
+{
+  return Writer_;
+}
+
+const GraphWriter &
+Graph::GetGraphWriter() const
 {
   return Writer_;
 }
@@ -987,7 +1012,7 @@ Graph::CreateEdge(Port & from, Port & to, bool directed)
 }
 
 GraphElement *
-Graph::GetElementFromProgramObject(uintptr_t object)
+Graph::GetElementFromProgramObject(uintptr_t object) const
 {
   if (auto it = ProgramObjectMapping_.find(object); it != ProgramObjectMapping_.end())
     return it->second;
@@ -1031,7 +1056,7 @@ Graph::Finalize()
 }
 
 void
-Graph::OutputASCII(std::ostream & out, size_t indent)
+Graph::OutputASCII(std::ostream & out, size_t indent) const
 {
   out << Indent(indent) << "{" << std::endl;
   indent++;
@@ -1076,7 +1101,7 @@ Graph::OutputASCII(std::ostream & out, size_t indent)
 }
 
 void
-Graph::OutputDot(std::ostream & out, size_t indent)
+Graph::OutputDot(std::ostream & out, size_t indent) const
 {
   out << Indent(indent) << "digraph " << GetFullId() << " {" << std::endl;
   indent++;
@@ -1137,7 +1162,7 @@ Graph::OutputDot(std::ostream & out, size_t indent)
 }
 
 void
-Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t indent)
+Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t indent) const
 {
   JLM_ASSERT(IsFinalized());
 
@@ -1171,7 +1196,7 @@ GraphWriter::CreateSubGraph(Node & parentNode)
 }
 
 GraphElement *
-GraphWriter::GetElementFromProgramObject(uintptr_t object)
+GraphWriter::GetElementFromProgramObject(uintptr_t object) const
 {
   for (auto & graph : Graphs_)
     if (auto found = graph->GetElementFromProgramObject(object))
@@ -1180,10 +1205,10 @@ GraphWriter::GetElementFromProgramObject(uintptr_t object)
   return nullptr;
 }
 
-int
+size_t
 GraphWriter::GetNextUniqueIdStubSuffix(const char * idStub)
 {
-  int & nextValue = NextUniqueIdStubSuffix_[idStub];
+  size_t & nextValue = NextUniqueIdStubSuffix_[idStub];
   return nextValue++;
 }
 

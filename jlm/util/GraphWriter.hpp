@@ -6,8 +6,11 @@
 #ifndef JLM_UTIL_GRAPHWRITER_HPP
 #define JLM_UTIL_GRAPHWRITER_HPP
 
+#include <jlm/util/common.hpp>
+
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 #include <variant>
@@ -77,6 +80,9 @@ public:
   [[nodiscard]] virtual Graph &
   GetGraph() = 0;
 
+  [[nodiscard]] const Graph &
+  GetGraph() const;
+
   /**
    * Sets the element's label.
    * A label is text intended to be visible in all renderings of the graph.
@@ -106,8 +112,9 @@ public:
 
   /**
    * @return the unique suffix assigned to this element when finalized.
+   * @see IsFinalized() must return true before calling
    */
-  [[nodiscard]] int
+  [[nodiscard]] size_t
   GetUniqueIdSuffix() const;
 
   /**
@@ -156,7 +163,7 @@ public:
    * @param element the graph element whose id should be used as attribute value.
    */
   void
-  SetAttributeGraphElement(const std::string & attribute, GraphElement & element);
+  SetAttributeGraphElement(const std::string & attribute, const GraphElement & element);
 
   /**
    * Claims a unique id suffix for the element, if it doesn't already have one.
@@ -176,7 +183,7 @@ public:
    * @param format the output format to use.
    */
   void
-  OutputAttributes(std::ostream & out, AttributeOutputFormat format);
+  OutputAttributes(std::ostream & out, AttributeOutputFormat format) const;
 
 private:
   void
@@ -186,14 +193,14 @@ private:
   std::string Label_;
 
   // A number added to the end of the id stub to make it globally unique
-  int UniqueIdSuffix_;
+  std::optional<size_t> UniqueIdSuffix_;
 
   // The object in the program this graph object corresponds to, or 0 if none
   uintptr_t ProgramObject_;
 
   // Arbitrary collection of other attributes. The value can be a string, a reference to a
   // GraphElement, or a reference to a program object.
-  using AttributeValue = std::variant<std::string, GraphElement *, uintptr_t>;
+  using AttributeValue = std::variant<std::string, const GraphElement *, uintptr_t>;
   std::unordered_map<std::string, AttributeValue> AttributeMap_;
 };
 
@@ -213,7 +220,7 @@ public:
   virtual Node &
   GetNode() = 0;
 
-  [[nodiscard]] Graph &
+  Graph &
   GetGraph() override;
 
   /**
@@ -241,26 +248,28 @@ public:
   HasIncomingEdges() const;
 
   /**
-   * Helper function for setting the background color of the Port using the correct dot attributes
+   * Helper function for setting the background color of the Port using the correct dot attributes.
+   * @param color an X11 color name or an RGB value in hex, prefixed by '#'
+   * @see jlm::util::Colors namespace for a list of common colors.
    */
   virtual void
   SetFillColor(std::string color) = 0;
 
   /**
-   * Outputs the fully qualified port name, such as node8:i6
+   * Outputs the fully qualified port name, such as node8:i6:n
    * Only used by the Dot printer.
    */
   virtual void
-  OutputDotPortId(std::ostream & out) = 0;
+  OutputDotPortId(std::ostream & out) const = 0;
 
   /**
-   * Only used by the ASCII printer.
    * Outputs the origin(s) of edges pointing to this port.
    * Brackets are omitted when exactly one edge points to the port.
+   * Only used by the ASCII printer.
    * Example outputs: "o4", "[]" and "[o2, o6]"
    */
   void
-  OutputIncomingEdgesASCII(std::ostream & out);
+  OutputIncomingEdgesASCII(std::ostream & out) const;
 
 private:
   /**
@@ -303,7 +312,7 @@ public:
   SetFillColor(std::string color) override;
 
   void
-  OutputDotPortId(std::ostream & out) override;
+  OutputDotPortId(std::ostream & out) const override;
 
   /**
    * Output the node to the ostream \p out, in the specified \p format.
@@ -311,22 +320,7 @@ public:
    * Depending on output format, this function may also recurse and print sub graphs.
    */
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent);
-
-  /**
-   * Outputs the node in ASCII format to the ostream \p out, indented by \p indent levels.
-   * In this format, attributes are ignored, and edges are only included implicitly,
-   * by listing the origins of all edges pointing into this node.
-   */
-  virtual void
-  OutputASCII(std::ostream & out, size_t indent);
-
-  /**
-   * Outputs the node in Dot format to the ostream \p out, indented by \p indent levels.
-   * This format includes all attributes. Edges are output
-   */
-  virtual void
-  OutputDot(std::ostream & out, size_t indent);
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent) const;
 
   /**
    * Prints all sub graphs of the node, to the given ostream \p out, in the given \p format.
@@ -334,13 +328,28 @@ public:
    * This function is recursive, as sub graphs may have nodes with sub graphs of their own.
    */
   virtual void
-  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent);
+  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const;
+
+protected:
+  /**
+   * Outputs the node in ASCII format to the ostream \p out, indented by \p indent levels.
+   * In this format, attributes are ignored, and edges are only included implicitly,
+   * by listing the origins of all edges pointing into this node.
+   */
+  virtual void
+  OutputASCII(std::ostream & out, size_t indent) const;
+
+  /**
+   * Outputs the node in Dot format to the ostream \p out, indented by \p indent levels.
+   * This format includes all attributes. Edges are output
+   */
+  virtual void
+  OutputDot(std::ostream & out, size_t indent) const;
 
 private:
   Graph & Graph_;
 };
 
-// InOut nodes represent operations with clearly defined inputs and outputs, with ports for each
 class InOutNode;
 class InputPort;
 class OutputPort;
@@ -352,7 +361,7 @@ class InputPort : public Port
 {
   friend InOutNode;
 
-  InputPort(InOutNode & node);
+  explicit InputPort(InOutNode & node);
 
 public:
   ~InputPort() override = default;
@@ -370,17 +379,20 @@ public:
   SetFillColor(std::string color) override;
 
   void
-  OutputDotPortId(std::ostream & out) override;
+  OutputDotPortId(std::ostream & out) const override;
 
 private:
   InOutNode & Node_;
 };
 
+/**
+ * The output port of an InOutNode
+ */
 class OutputPort : public Port
 {
   friend InOutNode;
 
-  OutputPort(InOutNode & node);
+  explicit OutputPort(InOutNode & node);
 
 public:
   ~OutputPort() override = default;
@@ -398,12 +410,17 @@ public:
   SetFillColor(std::string color) override;
 
   void
-  OutputDotPortId(std::ostream & out) override;
+  OutputDotPortId(std::ostream & out) const override;
 
 private:
   InOutNode & Node_;
 };
 
+/**
+ * Class representing a node where data flows into a set of input ports,
+ * and results flow out of a set of output ports.
+ * For complex operations, the node can also contain one or more sub-graphs.
+ */
 class InOutNode : public Node
 {
   friend Graph;
@@ -417,7 +434,7 @@ public:
   CreateInputPort();
 
   size_t
-  NumInputPorts();
+  NumInputPorts() const;
 
   InputPort &
   GetInputPort(size_t index);
@@ -426,7 +443,7 @@ public:
   CreateOutputPort();
 
   size_t
-  NumOutputPorts();
+  NumOutputPorts() const;
 
   OutputPort &
   GetOutputPort(size_t index);
@@ -435,15 +452,15 @@ public:
   CreateSubgraph();
 
   size_t
-  NumSubgraphs();
+  NumSubgraphs() const;
 
   Graph &
   GetSubgraph(size_t index);
 
   /**
-   * Regular attributes are placed on the dot node itself.
-   * Use this method to set attributes on the HTML table printed when outputting InOutNodes to dot.
-   * The attributes will affect the outmost table with a visible border.
+   * Set attributes on the HTML-like table used to render the node in dot.
+   * See the GraphViz manual's list of table attributes:
+   *   https://graphviz.org/doc/info/shapes.html#table
    * @param name the name of the attribute
    * @param value the value the attribute should take
    * @see SetAttribute for setting attributes on the node itself
@@ -458,13 +475,14 @@ public:
   Finalize() override;
 
   void
-  OutputASCII(std::ostream & out, size_t indent) override;
+  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const override;
+
+protected:
+  void
+  OutputASCII(std::ostream & out, size_t indent) const override;
 
   void
-  OutputDot(std::ostream & out, size_t indent) override;
-
-  void
-  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) override;
+  OutputDot(std::ostream & out, size_t indent) const override;
 
 private:
   // Attributes that need to be placed on the HTML table in the dot output, and not on the node.
@@ -476,13 +494,14 @@ private:
 };
 
 /**
- * Node representing a single sink port
+ * Node representing a port where values enter the graph.
+ * All argument nodes are rendered in order at the top of the graph.
  */
 class ArgumentNode : public Node
 {
   friend Graph;
 
-  ArgumentNode(Graph & graph);
+  explicit ArgumentNode(Graph & graph);
 
 public:
   ~ArgumentNode() override = default;
@@ -498,24 +517,26 @@ public:
    * @param outsideSource the Port in the other graph
    */
   void
-  SetOutsideSource(Port & outsideSource);
+  SetOutsideSource(const Port & outsideSource);
 
+protected:
   void
-  OutputASCII(std::ostream & out, size_t indent) override;
+  OutputASCII(std::ostream & out, size_t indent) const override;
 
 private:
   // Optional reference to a Port outside of this graph from which this argument came
-  Port * OutsideSource_;
+  const Port * OutsideSource_;
 };
 
 /**
- * Node representing a single source port
+ * Node representing a port where values leave the graph.
+ * All result nodes are rendered in order at the bottom of the graph.
  */
 class ResultNode : public Node
 {
   friend Graph;
 
-  ResultNode(Graph & graph);
+  explicit ResultNode(Graph & graph);
 
 public:
   ~ResultNode() override = default;
@@ -531,14 +552,15 @@ public:
    * @param outsideSource the Port in the other graph
    */
   void
-  SetOutsideDestination(Port & outsideSource);
+  SetOutsideDestination(const Port & outsideSource);
 
+protected:
   void
-  OutputASCII(std::ostream & out, size_t indent) override;
+  OutputASCII(std::ostream & out, size_t indent) const override;
 
 private:
   // Optional reference to a Port outside of this graph representing where the result ends up
-  Port * OutsideDestination_;
+  const Port * OutsideDestination_;
 };
 
 class Edge : public GraphElement
@@ -580,13 +602,13 @@ public:
    * Given one end of the edge, returns the port on the opposite side of the edge.
    */
   [[nodiscard]] Port &
-  GetOtherEnd(Port & from);
+  GetOtherEnd(const Port & end);
 
   /**
    * Outputs the edge in dot format. In ASCII, edges are not implicitly encoded by nodes/ports.
    */
   void
-  OutputDot(std::ostream & out, size_t indent);
+  OutputDot(std::ostream & out, size_t indent) const;
 
 private:
   Port & From_;
@@ -614,6 +636,9 @@ public:
 
   [[nodiscard]] GraphWriter &
   GetGraphWriter();
+
+  [[nodiscard]] const GraphWriter &
+  GetGraphWriter() const;
 
   /**
    * @return true if this graph is a subgraph of another graph, false if it is top-level
@@ -684,7 +709,7 @@ public:
    * @return the GraphElement mapped to the given object, or nullptr if none exists in this graph.
    */
   [[nodiscard]] GraphElement *
-  GetElementFromProgramObject(uintptr_t object);
+  GetElementFromProgramObject(uintptr_t object) const;
 
   /**
    * Retrieves the GraphElement in this graph associated with the given program object.
@@ -695,7 +720,7 @@ public:
    */
   template<typename T>
   T &
-  GetFromProgramObject(void * object)
+  GetFromProgramObject(void * object) const
   {
     static_assert(std::is_base_of_v<GraphElement, T>);
     GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
@@ -712,22 +737,6 @@ public:
   Finalize() override;
 
   /**
-   * Prints the graph to the ostream \p out in ASCII.
-   * Each line starts with at least \p indent levels of indentation.
-   * Requires the graph to be finalized first.
-   */
-  void
-  OutputASCII(std::ostream & out, size_t indent);
-
-  /**
-   * Prints the graph to the ostream \p out in dot format.
-   * Each line starts with at least \p indent levels of indentation.
-   * Requires the graph to be finalized first.
-   */
-  void
-  OutputDot(std::ostream & out, size_t indent);
-
-  /**
    * Prints the graph to the given ostream, in the specified format.
    * Requires the graph to be finalized first.
    * @param out the stream to which output is written
@@ -735,9 +744,15 @@ public:
    * @param indent the amount of indentation levels the graph should be printed with
    */
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent = 0);
+  Output(std::ostream & out, GraphOutputFormat format, size_t indent = 0) const;
 
 private:
+  void
+  OutputASCII(std::ostream & out, size_t indent) const;
+
+  void
+  OutputDot(std::ostream & out, size_t indent) const;
+
   /**
    * Creates a mapping from a GraphElement's assigned program object to the GraphElement.
    * The GraphElement must be a direct member of this graph.
@@ -802,7 +817,7 @@ public:
    * @return the graph element associated with object, or nullptr if none is found
    */
   [[nodiscard]] GraphElement *
-  GetElementFromProgramObject(uintptr_t object);
+  GetElementFromProgramObject(uintptr_t object) const;
 
   /**
    * Finalizes and prints all graphs created in this GraphWriter.
@@ -823,7 +838,7 @@ private:
    * Returns a unique suffix for the given \p idStub, starting at 0 and counting up
    * @return the next unique integer suffix for the given idStub
    */
-  [[nodiscard]] int
+  [[nodiscard]] size_t
   GetNextUniqueIdStubSuffix(const char * idStub);
 
   friend void
@@ -835,9 +850,31 @@ private:
   std::vector<std::unique_ptr<Graph>> Graphs_;
 
   // Tracks the next integer to be used when assigning a unique suffix to a given id stub
-  std::unordered_map<std::string, int> NextUniqueIdStubSuffix_;
+  std::unordered_map<std::string, size_t> NextUniqueIdStubSuffix_;
+};
+
+/**
+ * List of common color values for use in graph element attributes.
+ * You may also use X11 color names or arbitrary hex colors.
+ */
+namespace Colors
+{
+inline const char * Black = "#000000";
+inline const char * Blue = "#0000FF";
+inline const char * Coral = "#FF7F50";
+inline const char * CornflowerBlue = "#6495ED";
+inline const char * Firebrick = " #B22222";
+inline const char * Gold = "#FFD700";
+inline const char * Gray = "#BEBEBE";
+inline const char * Green = "#00FF00";
+inline const char * Orange = "#FFA500";
+inline const char * Purple = "#A020F0";
+inline const char * Red = "#FF0000";
+inline const char * Brown = "#8B4513"; // X11's Saddle Brown
+inline const char * SkyBlue = "#87CEEB";
+inline const char * White = "#FFFFFF";
+inline const char * Yellow = "#FFFF00";
 };
 
 }
-
 #endif // JLM_UTIL_GRAPHWRITER_HPP
