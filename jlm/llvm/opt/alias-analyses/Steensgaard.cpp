@@ -540,7 +540,8 @@ using DisjointLocationSet = util::disjointset<Location *>;
 class Steensgaard::Context final
 {
 public:
-  using DisjointLocationSetRange = util::iterator_range<DisjointLocationSet::set_iterator>;
+  using DisjointLocationSetConstRange =
+      util::iterator_range<const DisjointLocationSet::set_iterator>;
 
   ~Context() = default;
 
@@ -556,8 +557,8 @@ public:
   Context &
   operator=(Context &&) = delete;
 
-  DisjointLocationSetRange
-  Sets()
+  [[nodiscard]] DisjointLocationSetConstRange
+  Sets() const
   {
     return { DisjointLocationSet_.begin(), DisjointLocationSet_.end() };
   }
