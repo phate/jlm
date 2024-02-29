@@ -14,6 +14,6 @@ jlm-hls_LIBS = \
 
 jlm-hls_EXTRA_LDFLAGS = \
     $(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
-	${CIRCT_LDFLAGS}
+    ${CIRCT_LDFLAGS}
 
 $(eval $(call common_executable,jlm-hls))
