@@ -87,19 +87,17 @@ public:
   GetSourceFile() const;
 
   /**
-   * Converts the Statistics instance to a string containing all information it has
+   * Converts the Statistics instance to a string containing all information it has.
+   * Requires all timers to be stopped.
+   *
+   * @param fieldSeparator Separation character used between different measurements and/or timers.
+   * @param nameValueSeparator Separation character used between the name and value of a measurement
+   * or timer.
+   *
    * @return a full serialized description of the Statistic instance
    */
-  [[nodiscard]] virtual std::string
-  ToString() const;
-
-  /**
-   * Creates a string containing all measurements and timers.
-   * Requires all timers to be stopped.
-   * @return the created string
-   */
-  [[nodiscard]] virtual std::string
-  Serialize() const;
+  [[nodiscard]] std::string
+  Serialize(char fieldSeparator, char nameValueSeparator) const;
 
   /**
    * Checks if a measurement with the given \p name exists.
