@@ -89,10 +89,15 @@ public:
   /**
    * Converts the Statistics instance to a string containing all information it has.
    * Requires all timers to be stopped.
+   *
+   * @param fieldSeparator Separation character used between different measurements and/or timers.
+   * @param nameValueSeparator Separation character used between the name and value of a measurement
+   * or timer.
+   *
    * @return a full serialized description of the Statistic instance
    */
   [[nodiscard]] std::string
-  Serialize() const;
+  Serialize(char fieldSeparator, char nameValueSeparator) const;
 
   /**
    * Checks if a measurement with the given \p name exists.
