@@ -64,21 +64,19 @@ Statistics::GetSourceFile() const
 }
 
 std::string
-Statistics::ToString() const
-{
-  return util::strfmt(GetName(), " ", GetSourceFile().to_str(), " ", Serialize());
-}
-
-std::string
-Statistics::Serialize() const
+Statistics::Serialize(char fieldSeparator, char nameValueSeparator) const
 {
   std::ostringstream ss;
+
+  ss << GetName() << fieldSeparator;
+  ss << GetSourceFile().to_str();
+
   for (const auto & [mName, measurement] : Measurements_)
   {
     if (ss.tellp() != 0)
-      ss << " ";
+      ss << fieldSeparator;
 
-    ss << mName << ":";
+    ss << mName << nameValueSeparator;
     std::visit(
         [&](const auto & value)
         {
@@ -89,9 +87,9 @@ Statistics::Serialize() const
   for (const auto & [mName, timer] : Timers_)
   {
     if (ss.tellp() != 0)
-      ss << " ";
+      ss << fieldSeparator;
 
-    ss << mName << "[ns]:" << timer.ns();
+    ss << mName << "[ns]" << nameValueSeparator << timer.ns();
   }
 
   return ss.str();
@@ -177,7 +175,7 @@ StatisticsCollector::PrintStatistics() const
 
   for (auto & statistics : CollectedStatistics())
   {
-    fprintf(file.fd(), "%s\n", statistics.ToString().c_str());
+    fprintf(file.fd(), "%s\n", statistics.Serialize(' ', ':').c_str());
   }
 
   file.close();
