@@ -168,7 +168,7 @@ public:
       const jlm::rvsdg::output & output,
       PointsToFlags pointsToFlags)
       : Location(pointsToFlags),
-        IsEscapingModule_(false),
+        HasEscaped_(false),
         Output_(&output)
   {}
 
@@ -183,15 +183,15 @@ public:
    * @return True, if the location escapes the module, otherwise false.
    */
   [[nodiscard]] bool
-  IsEscapingModule() const noexcept
+  HasEscaped() const noexcept
   {
-    return IsEscapingModule_;
+    return HasEscaped_;
   }
 
   void
-  SetIsEscapingModule(bool isEscapingModule) noexcept
+  MarkAsEscaped() noexcept
   {
-    IsEscapingModule_ = isEscapingModule;
+    HasEscaped_ = true;
   }
 
   [[nodiscard]] std::string
@@ -274,10 +274,10 @@ public:
   }
 
   [[nodiscard]] static bool
-  IsEscapingModule(const Location & location) noexcept
+  HasEscaped(const Location & location) noexcept
   {
     auto registerLocation = dynamic_cast<const RegisterLocation *>(&location);
-    return registerLocation && registerLocation->IsEscapingModule();
+    return registerLocation && registerLocation->HasEscaped();
   }
 
   static std::unique_ptr<RegisterLocation>
@@ -287,7 +287,7 @@ public:
   }
 
 private:
-  bool IsEscapingModule_;
+  bool HasEscaped_;
   const jlm::rvsdg::output * Output_;
 };
 
@@ -730,8 +730,7 @@ public:
       {
         auto unknownLabel = location->PointsToUnknownMemory() ? "{U}" : "";
         auto pointsToEscapedMemoryLabel = location->PointsToEscapedMemory() ? "{E}" : "";
-        auto escapesModuleLabel =
-            RegisterLocation::IsEscapingModule(*location) ? "{EscapesModule}" : "";
+        auto escapesModuleLabel = RegisterLocation::HasEscaped(*location) ? "{EscapesModule}" : "";
         auto pointsToLabel = jlm::util::strfmt("{pt:", (intptr_t)location->GetPointsTo(), "}");
         auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
 
@@ -1206,7 +1205,7 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
     if (ShouldHandle(callArgument))
     {
       auto & argumentLocation = Context_->GetRegisterLocation(callArgument);
-      argumentLocation.SetIsEscapingModule(true);
+      argumentLocation.MarkAsEscaped();
     }
   }
 
@@ -1473,7 +1472,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
       if (ShouldHandle(operand))
       {
         auto & operandLocation = Context_->GetRegisterLocation(operand);
-        operandLocation.SetIsEscapingModule(true);
+        operandLocation.MarkAsEscaped();
       }
     }
   }
@@ -1740,7 +1739,7 @@ Steensgaard::AnalyzeExports(const rvsdg::graph & graph)
   {
     auto & result = *rootRegion->result(n);
     auto & resultLocation = Context_->GetRegisterLocation(*result.origin());
-    resultLocation.SetIsEscapingModule(true);
+    resultLocation.MarkAsEscaped();
   }
 }
 
@@ -1906,7 +1905,7 @@ Steensgaard::ConstructPointsToGraph() const
       std::vector<PointsToGraph::MemoryNode *>>
       memoryNodesInSet;
 
-  // All register locations that are marked as RegisterLocation::IsEscapingModule()
+  // All register locations that are marked as RegisterLocation::HasEscaped()
   util::HashSet<RegisterLocation *> escapingRegisterLocations;
 
   // Mapping between locations and points-to graph nodes
@@ -1926,7 +1925,7 @@ Steensgaard::ConstructPointsToGraph() const
         registers.Insert(&registerLocation->GetOutput());
         registerLocations.Insert(registerLocation);
 
-        if (registerLocation->IsEscapingModule())
+        if (registerLocation->HasEscaped())
           escapingRegisterLocations.Insert(registerLocation);
       }
       else if (Location::Is<MemoryLocation>(*location))
