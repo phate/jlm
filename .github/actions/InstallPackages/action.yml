@@ -27,6 +27,16 @@ inputs:
     default: "false"
     required: false
 
+  install-doxygen:
+    description: "Install doxygen package. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-verilator:
+    description: "Install varilator package. Default is 'false'."
+    default: "false"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -73,4 +83,14 @@ runs:
     - name: "Install ninja package"
       if: ${{inputs.install-ninja == 'true'}}
       run: sudo apt-get install ninja-build
+      shell: bash
+
+    - name: "Install doxygen package"
+      if: ${{inputs.install-doxygen == 'true'}}
+      run: sudo apt-get graphviz doxygen
+      shell: bash
+
+    - name: "Install verilator package"
+      if: ${{inputs.install-verilator == 'true'}}
+      run: sudo apt-get verilator
       shell: bash

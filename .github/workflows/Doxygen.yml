@@ -9,8 +9,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install doxygen and graphviz
-        run: sudo apt-get install graphviz doxygen
+      - name: "Install doxygen"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-doxygen: true
       - name: "Build documentation"
         uses: ./.github/actions/BuildJlm
         with:
