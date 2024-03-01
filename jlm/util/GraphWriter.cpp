@@ -259,20 +259,18 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
       JLM_UNREACHABLE("Unknown AttributeOutputFormat");
 
     out << "=";
+    if (format == AttributeOutputFormat::HTMLAttributes)
+      out << '"'; // HTML attributes must be quoted
+
     if (auto string = std::get_if<std::string>(&value))
     {
       if (format == AttributeOutputFormat::SpaceSeparatedList)
         PrintIdentifierSafe(out, *string);
       else
-      {
-        out << '"';
         PrintStringAsHtmlText(out, *string);
-        out << '"';
-      }
     }
     else if (auto graphElement = std::get_if<const GraphElement *>(&value))
     {
-      // HTML allows unquoted attribute values when they are single words with no special characters
       out << (*graphElement)->GetFullId();
     }
     else if (auto ptr = std::get_if<uintptr_t>(&value))
@@ -291,6 +289,8 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
         out << "ptr" << ptr;
       }
     }
+    if (format == AttributeOutputFormat::HTMLAttributes)
+      out << '"'; // Closing quote
     out << " ";
   }
 }
