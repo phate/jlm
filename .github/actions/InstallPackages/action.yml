@@ -27,6 +27,16 @@ inputs:
     default: "false"
     required: false
 
+  install-doxygen:
+    description: "Install doxygen package. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-verilator:
+    description: "Install varilator package. Default is 'false'."
+    default: "false"
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -36,26 +46,29 @@ runs:
         || inputs.install-mlir == 'true'
         || inputs.install-clang-format == 'true'}}
       run: |
-        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-        sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+        export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-16)
+        if [[ -z $HAS_LLVM_REPOSITORY ]]; then
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          sudo add-apt-repository deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+        fi
       shell: bash
 
     - name: "Install LLVM package"
       if: ${{inputs.install-llvm == 'true'}}
       run: |
-        sudo apt-get update && sudo apt-get install llvm-16-dev
-        sudo python3 /usr/lib/llvm-16/build/utils/lit/setup.py install
+        sudo apt-get install llvm-16-dev
+        pip install lit
       shell: bash
 
     - name: "Install clang package"
       if: ${{inputs.install-clang == 'true'}}
-      run: sudo apt-get update && sudo apt-get install clang-16
+      run: sudo apt-get install clang-16
       shell: bash
 
     - name: "Install MLIR packages"
       if: ${{inputs.install-mlir == 'true'}}
       run: |
-        sudo apt-get update && sudo apt-get install libmlir-16-dev mlir-16-tools
+        sudo apt-get install libmlir-16-dev mlir-16-tools
         if ! [ -f /usr/lib/x86_64-linux-gnu/libMLIR.so ]; then
           sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/
           sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
@@ -64,10 +77,20 @@ runs:
 
     - name: "Install clang-format package"
       if: ${{inputs.install-clang-format == 'true'}}
-      run: sudo apt-get update && sudo apt-get install clang-format-16
+      run: sudo apt-get install clang-format-16
       shell: bash
 
     - name: "Install ninja package"
       if: ${{inputs.install-ninja == 'true'}}
-      run: sudo apt-get update && sudo apt-get install ninja-build
+      run: sudo apt-get install ninja-build
+      shell: bash
+
+    - name: "Install doxygen package"
+      if: ${{inputs.install-doxygen == 'true'}}
+      run: sudo apt-get install graphviz doxygen
+      shell: bash
+
+    - name: "Install verilator package"
+      if: ${{inputs.install-verilator == 'true'}}
+      run: sudo apt-get install verilator
       shell: bash
