@@ -36,7 +36,7 @@ runs:
         || inputs.install-mlir == 'true'
         || inputs.install-clang-format == 'true'}}
       run: |
-        HAS_LLVM_REPOSITORY=`find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-16`
+        HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-16)
         echo $HAS_LLVM_REPOSITORY
         if [[ -z $HAS_LLVM_REPOSITORY ]]; then
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
