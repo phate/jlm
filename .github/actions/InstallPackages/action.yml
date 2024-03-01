@@ -87,10 +87,10 @@ runs:
 
     - name: "Install doxygen package"
       if: ${{inputs.install-doxygen == 'true'}}
-      run: sudo apt-get graphviz doxygen
+      run: sudo apt-get install graphviz doxygen
       shell: bash
 
     - name: "Install verilator package"
       if: ${{inputs.install-verilator == 'true'}}
-      run: sudo apt-get verilator
+      run: sudo apt-get install verilator
       shell: bash
