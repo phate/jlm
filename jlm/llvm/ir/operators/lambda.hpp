@@ -879,16 +879,4 @@ lambda::node::RemoveLambdaInputsWhere(const F & match)
 }
 }
 
-static inline bool
-is_exported(const jlm::llvm::lambda::node & lambda)
-{
-  for (auto & user : *lambda.output())
-  {
-    if (dynamic_cast<const jlm::rvsdg::expport *>(&user->port()))
-      return true;
-  }
-
-  return false;
-}
-
 #endif
