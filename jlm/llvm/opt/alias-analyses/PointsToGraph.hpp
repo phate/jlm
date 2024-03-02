@@ -351,6 +351,17 @@ public:
   AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
 
   /**
+   * Checks if this PointsToGraph is a supergraph of the given PointsToGraph.
+   * Every node and every edge in the subgraph needs to have corresponding nodes and edges
+   * present in this graph, defined by nodes representing the same registers and memory objects.
+   * All nodes marked as escaping in the subgraph must also be marked as escaping in this graph.
+   * @param subgraph the graph to compare against
+   * @return true if this graph is a supergraph of the given subgraph, false otherwise
+   */
+  [[nodiscard]] bool
+  IsSupergraphOf(const PointsToGraph & subgraph) const;
+
+  /**
    * Creates a GraphViz description of the given \p pointsToGraph,
    * including the names given to rvsdg::outputs by the \p outputMap,
    * for all RegisterNodes that correspond to names rvsdg::outputs.
@@ -448,11 +459,17 @@ public:
   TargetConstRange
   Targets() const;
 
+  [[nodiscard]] bool
+  HasTarget(const PointsToGraph::MemoryNode & target) const;
+
   SourceRange
   Sources();
 
   SourceConstRange
   Sources() const;
+
+  [[nodiscard]] bool
+  HasSource(const PointsToGraph::Node & source) const;
 
   PointsToGraph &
   Graph() const noexcept
@@ -553,6 +570,15 @@ public:
   MarkAsModuleEscaping()
   {
     Graph().AddEscapedMemoryNode(*this);
+  }
+
+  /**
+   * @return true if this memory node is marked as escaping the module.
+   */
+  bool
+  IsModuleEscaping() const
+  {
+    return Graph().GetEscapedMemoryNodes().Contains(this);
   }
 
 protected:
