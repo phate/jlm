@@ -373,6 +373,17 @@ public:
    */
   [[nodiscard]] std::unique_ptr<CallSummary>
   ComputeCallSummary() const;
+
+  /**
+   * Determines whether \p lambdaNode is exported from the module.
+   *
+   * @param lambdaNode The lambda node to be checked.
+   * @return True if \p lambdaNode is exported, otherwise false.
+   *
+   * \Note This method is equivalent to invoking CallSummary::IsExported().
+   */
+  [[nodiscard]] static bool
+  IsExported(const lambda::node & lambdaNode);
 };
 
 /** \brief Lambda context variable input
