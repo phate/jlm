@@ -380,7 +380,7 @@ public:
    * @param lambdaNode The lambda node to be checked.
    * @return True if \p lambdaNode is exported, otherwise false.
    *
-   * \Note This method is equivalent to invoking CallSummary::IsExported().
+   * \note This method is equivalent to invoking CallSummary::IsExported().
    */
   [[nodiscard]] static bool
   IsExported(const lambda::node & lambdaNode);
