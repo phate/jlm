@@ -80,6 +80,9 @@ TestCreatePointerObjects()
   const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
   const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
 
+  assert(set.NumPointerObjects() == 7);
+  assert(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register) == 2);
+
   assert(set.GetPointerObject(register0).GetKind() == PointerObjectKind::Register);
   assert(set.GetPointerObject(dummy0).GetKind() == PointerObjectKind::Register);
   assert(set.GetPointerObject(alloca0).GetKind() == PointerObjectKind::AllocaMemoryObject);
@@ -91,6 +94,7 @@ TestCreatePointerObjects()
   // Registers have helper function for looking up existing PointerObjects
   assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
   assert(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()) == register0);
+  assert(set.TryGetRegisterPointerObject(rvsdg.GetDeltaOutput()).value() == register0);
 
   // Funtions have the same, but also in the other direction
   assert(set.GetFunctionMemoryObject(rvsdg.GetLambdaNode()) == lambda0);
@@ -177,7 +181,7 @@ TestMakePointsToSetSuperset()
   // Since functions have CanPoint() == false.
   const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
   assert(!set.MakePointsToSetSuperset(function0, reg0));
-  assert(set.GetPointsToSet(function0).Size() == 0);
+  assert(set.GetPointsToSet(function0).IsEmpty());
 }
 
 // Test the PointerObjectSet method for marking all pointees of the given pointer as escaped
@@ -264,9 +268,8 @@ TestSupersetConstraint()
   assert(set.GetPointerObject(alloca0).PointsToExternal());
 }
 
-// Test the AllPointeesPointToSupersetConstraint's Apply function
 static void
-TestAllPointeesPointToSupersetConstraint()
+TestStoreConstraintDirectly()
 {
   using namespace jlm::llvm::aa;
 
@@ -306,9 +309,8 @@ TestAllPointeesPointToSupersetConstraint()
   assert(set.GetPointsToSet(alloca1).Contains(alloca2));
 }
 
-// Test the SupersetOfAllPointeesConstraint's Apply function
 static void
-TestSupersetOfAllPointeesConstraint()
+TestLoadConstraintDirectly()
 {
   using namespace jlm::llvm::aa;
 
@@ -343,7 +345,7 @@ TestSupersetOfAllPointeesConstraint()
 }
 
 static void
-TestHandleEscapingFunctionConstraint()
+TestEscapedFunctionConstraint()
 {
   using namespace jlm::llvm::aa;
 
@@ -364,21 +366,19 @@ TestHandleEscapingFunctionConstraint()
   // Make localFunc's output point to localFunc
   set.AddToPointsToSet(localFunctionRegisterPO, localFunctionPO);
 
-  // Make a constraints set
-  PointerObjectConstraintSet constraints(set);
-  constraints.AddConstraint(HandleEscapingFunctionConstraint(exportedFunctionPO));
-  constraints.SolveNaively();
+  bool result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
 
   // Nothing has happened yet, since the exported function is yet to be marked as escaped
-  assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
-  assert(!set.GetPointerObject(localFunctionPO).HasEscaped());
+  assert(!result);
+  assert(!set.GetPointerObject(localFunctionRegisterPO).HasEscaped());
   assert(!set.GetPointerObject(exportedFunctionPO).HasEscaped());
 
   set.GetPointerObject(exportedFunctionPO).MarkAsEscaped();
-  constraints.SolveNaively();
+  result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
 
   // Now the local function has been marked as escaped as well, since it is the return value
-  assert(set.GetPointerObject(localFunctionPO).HasEscaped());
+  assert(result);
+  assert(set.GetPointerObject(localFunctionRegisterPO).HasEscaped());
 }
 
 static void
@@ -496,7 +496,7 @@ TestAddRegisterContentEscapedConstraint()
 
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
 static void
-TestPointerObjectConstraintSetSolve()
+TestPointerObjectConstraintSetSolve(bool useWorklist)
 {
   using namespace jlm::llvm::aa;
 
@@ -506,8 +506,8 @@ TestPointerObjectConstraintSetSolve()
 
   PointerObjectSet set;
   PointerObject::Index reg[11];
-  for (size_t i = 0; i < 11; i++)
-    reg[i] = set.CreateDummyRegisterPointerObject();
+  for (unsigned int & i : reg)
+    i = set.CreateDummyRegisterPointerObject();
 
   // %0 is a function parameter
   // %1 = alloca 8 (variable v1)
@@ -562,7 +562,10 @@ TestPointerObjectConstraintSetSolve()
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  constraints.SolveNaively();
+  if (useWorklist)
+    constraints.SolveUsingWorklist();
+  else
+    constraints.SolveNaively();
 
   // alloca1 should point to alloca2, etc
   assert(set.GetPointsToSet(alloca1).Size() == 1);
@@ -625,13 +628,14 @@ TestPointerObjectSet()
   TestMakePointsToSetSuperset();
   TestMarkAllPointeesAsEscaped();
   TestSupersetConstraint();
-  TestAllPointeesPointToSupersetConstraint();
-  TestSupersetOfAllPointeesConstraint();
-  TestHandleEscapingFunctionConstraint();
+  TestStoreConstraintDirectly();
+  TestLoadConstraintDirectly();
+  TestEscapedFunctionConstraint();
   TestFunctionCallConstraint();
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
-  TestPointerObjectConstraintSetSolve();
+  TestPointerObjectConstraintSetSolve(false);
+  TestPointerObjectConstraintSetSolve(true);
   return 0;
 }
 
