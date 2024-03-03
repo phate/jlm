@@ -26,7 +26,6 @@ jobs:
       uses: ./.github/actions/InstallPackages
       with:
         install-verilator: true
-      run: sudo apt-get install verilator
     - name: "Clone jlm-test-suite"
       run: git clone https://github.com/phate/jlm-eval-suite.git
     - name: "Link the build output directory to where it is expected by jlm-eval-suite"
