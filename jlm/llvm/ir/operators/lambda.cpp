@@ -350,6 +350,13 @@ node::ComputeCallSummary() const
   return CallSummary::Create(rvsdgExport, std::move(directCalls), std::move(otherUsers));
 }
 
+bool
+node::IsExported(const lambda::node & lambdaNode)
+{
+  auto callSummary = lambdaNode.ComputeCallSummary();
+  return callSummary->IsExported();
+}
+
 /* lambda context variable input class */
 
 cvinput::~cvinput() = default;

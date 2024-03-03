@@ -1456,7 +1456,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   AnalyzeRegion(*lambda.subregion());
 
   // Handle function results
-  if (is_exported(lambda))
+  if (lambda::node::IsExported(lambda))
   {
     for (auto & result : lambda.fctresults())
     {
