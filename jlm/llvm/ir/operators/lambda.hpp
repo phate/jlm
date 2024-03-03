@@ -373,6 +373,17 @@ public:
    */
   [[nodiscard]] std::unique_ptr<CallSummary>
   ComputeCallSummary() const;
+
+  /**
+   * Determines whether \p lambdaNode is exported from the module.
+   *
+   * @param lambdaNode The lambda node to be checked.
+   * @return True if \p lambdaNode is exported, otherwise false.
+   *
+   * \note This method is equivalent to invoking CallSummary::IsExported().
+   */
+  [[nodiscard]] static bool
+  IsExported(const lambda::node & lambdaNode);
 };
 
 /** \brief Lambda context variable input
@@ -866,18 +877,6 @@ lambda::node::RemoveLambdaInputsWhere(const F & match)
 }
 
 }
-}
-
-static inline bool
-is_exported(const jlm::llvm::lambda::node & lambda)
-{
-  for (auto & user : *lambda.output())
-  {
-    if (dynamic_cast<const jlm::rvsdg::expport *>(&user->port()))
-      return true;
-  }
-
-  return false;
 }
 
 #endif
