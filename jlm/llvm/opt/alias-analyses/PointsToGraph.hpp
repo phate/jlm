@@ -351,7 +351,7 @@ public:
   AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
 
   /**
-   * Checks if this PointsToGraph is a supergraph of the given PointsToGraph.
+   * Checks if this PointsToGraph is a supergraph of \p subgraph.
    * Every node and every edge in the subgraph needs to have corresponding nodes and edges
    * present in this graph, defined by nodes representing the same registers and memory objects.
    * All nodes marked as escaping in the subgraph must also be marked as escaping in this graph.

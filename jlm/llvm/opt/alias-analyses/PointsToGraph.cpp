@@ -167,7 +167,7 @@ PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) con
   // Given a memory node representing a memory object in an RVSDG module, this function finds
   // a memory node representing the same memory object in a different PointsToGraph.
   // If no corresponding memory node exists in the graph, nullptr is returned
-  const auto GetCorrespondingMemoryNode =
+  auto GetCorrespondingMemoryNode =
       [](const PointsToGraph::MemoryNode & node,
          const PointsToGraph & graph) -> const PointsToGraph::MemoryNode *
   {
@@ -217,11 +217,15 @@ PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) con
 
   // Given two nodes, checks if the first node points to everything the second points to.
   // The nodes can belong to different PointsToGraphs.
-  const auto HasSupersetOfPointees = [&GetCorrespondingMemoryNode](
-                                         const PointsToGraph::Node & superset,
-                                         const PointsToGraph::Node & subset)
+  auto HasSupersetOfPointees = [&GetCorrespondingMemoryNode](
+                                   const PointsToGraph::Node & superset,
+                                   const PointsToGraph::Node & subset)
   {
-    for (const auto & subsetTarget : subset.Targets())
+    // Early return if the subset is larger
+    if (subset.NumTargets() > superset.NumTargets())
+      return false;
+
+    for (auto & subsetTarget : subset.Targets())
     {
       auto correspondingTarget = GetCorrespondingMemoryNode(subsetTarget, superset.Graph());
 
@@ -235,9 +239,9 @@ PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) con
   // Given a memory node from the subgraph, check that a corresponding node exists in this graph.
   // All edges the other node has, must have corresponding edges in this graph.
   // If the other node is marked as escaping, the corresponding node must be as well.
-  const auto HasSuperOfMemoryNode = [&](const PointsToGraph::MemoryNode & subNode)
+  auto HasSuperOfMemoryNode = [&](const PointsToGraph::MemoryNode & subNode)
   {
-    const auto thisNode = GetCorrespondingMemoryNode(subNode, *this);
+    auto thisNode = GetCorrespondingMemoryNode(subNode, *this);
     if (thisNode == nullptr)
       return false;
 
@@ -247,28 +251,34 @@ PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) con
     return HasSupersetOfPointees(*thisNode, subNode);
   };
 
+  // Early return if the subgraph is representing more memory objects or registers than us
+  if (subgraph.NumMemoryNodes() > NumMemoryNodes())
+    return false;
+  if (subgraph.RegisterNodeMap_.size() > RegisterNodeMap_.size())
+    return false;
+
   // Iterate through all memory nodes in the subgraph, and make sure we have corresponding nodes
-  for (const auto & node : subgraph.AllocaNodes())
+  for (auto & node : subgraph.AllocaNodes())
   {
     if (!HasSuperOfMemoryNode(node))
       return false;
   }
-  for (const auto & node : subgraph.DeltaNodes())
+  for (auto & node : subgraph.DeltaNodes())
   {
     if (!HasSuperOfMemoryNode(node))
       return false;
   }
-  for (const auto & node : subgraph.ImportNodes())
+  for (auto & node : subgraph.ImportNodes())
   {
     if (!HasSuperOfMemoryNode(node))
       return false;
   }
-  for (const auto & node : subgraph.LambdaNodes())
+  for (auto & node : subgraph.LambdaNodes())
   {
     if (!HasSuperOfMemoryNode(node))
       return false;
   }
-  for (const auto & node : subgraph.MallocNodes())
+  for (auto & node : subgraph.MallocNodes())
   {
     if (!HasSuperOfMemoryNode(node))
       return false;
@@ -277,7 +287,7 @@ PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) con
   // For each register mapped to a RegisterNode in the subgraph, this graph must also have mapped
   // the same register to be a supergraph. The RegisterNode must point to a superset of what
   // the subgraph's RegisterNode points to.
-  for (const auto [rvsdgOutput, subNode] : subgraph.RegisterNodeMap_)
+  for (auto [rvsdgOutput, subNode] : subgraph.RegisterNodeMap_)
   {
     auto correspondingRegisterNode = RegisterNodeMap_.find(rvsdgOutput);
     if (correspondingRegisterNode == RegisterNodeMap_.end())
