@@ -161,6 +161,145 @@ PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
   return *tmp;
 }
 
+bool
+PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) const
+{
+  // Given a memory node representing a memory object in an RVSDG module, this function finds
+  // a memory node representing the same memory object in a different PointsToGraph.
+  // If no corresponding memory node exists in the graph, nullptr is returned
+  auto GetCorrespondingMemoryNode =
+      [](const PointsToGraph::MemoryNode & node,
+         const PointsToGraph & graph) -> const PointsToGraph::MemoryNode *
+  {
+    if (auto allocaNode = dynamic_cast<const AllocaNode *>(&node))
+    {
+      if (auto it = graph.AllocaNodes_.find(&allocaNode->GetAllocaNode());
+          it != graph.AllocaNodes_.end())
+        return it->second.get();
+    }
+    else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
+    {
+      if (auto it = graph.DeltaNodes_.find(&deltaNode->GetDeltaNode());
+          it != graph.DeltaNodes_.end())
+        return it->second.get();
+    }
+    else if (auto importNode = dynamic_cast<const ImportNode *>(&node))
+    {
+      if (auto it = graph.ImportNodes_.find(&importNode->GetArgument());
+          it != graph.ImportNodes_.end())
+        return it->second.get();
+    }
+    else if (auto lambdaNode = dynamic_cast<const LambdaNode *>(&node))
+    {
+      if (auto it = graph.LambdaNodes_.find(&lambdaNode->GetLambdaNode());
+          it != graph.LambdaNodes_.end())
+        return it->second.get();
+    }
+    else if (auto mallocNode = dynamic_cast<const MallocNode *>(&node))
+    {
+      if (auto it = graph.MallocNodes_.find(&mallocNode->GetMallocNode());
+          it != graph.MallocNodes_.end())
+        return it->second.get();
+    }
+    else if (MemoryNode::Is<UnknownMemoryNode>(node))
+    {
+      return &graph.GetUnknownMemoryNode();
+    }
+    else if (MemoryNode::Is<ExternalMemoryNode>(node))
+    {
+      return &graph.GetExternalMemoryNode();
+    }
+    else
+      JLM_UNREACHABLE("Unknown type of MemoryNode");
+
+    return nullptr;
+  };
+
+  // Given two nodes, checks if the first node points to everything the second points to.
+  // The nodes can belong to different PointsToGraphs.
+  auto HasSupersetOfPointees = [&GetCorrespondingMemoryNode](
+                                   const PointsToGraph::Node & superset,
+                                   const PointsToGraph::Node & subset)
+  {
+    // Early return if the subset is larger
+    if (subset.NumTargets() > superset.NumTargets())
+      return false;
+
+    for (auto & subsetTarget : subset.Targets())
+    {
+      auto correspondingTarget = GetCorrespondingMemoryNode(subsetTarget, superset.Graph());
+
+      // Check if the superset is pointing to the target
+      if (correspondingTarget == nullptr || !superset.HasTarget(*correspondingTarget))
+        return false;
+    }
+    return true;
+  };
+
+  // Given a memory node from the subgraph, check that a corresponding node exists in this graph.
+  // All edges the other node has, must have corresponding edges in this graph.
+  // If the other node is marked as escaping, the corresponding node must be as well.
+  auto HasSuperOfMemoryNode = [&](const PointsToGraph::MemoryNode & subNode)
+  {
+    auto thisNode = GetCorrespondingMemoryNode(subNode, *this);
+    if (thisNode == nullptr)
+      return false;
+
+    if (subNode.IsModuleEscaping() && !thisNode->IsModuleEscaping())
+      return false;
+
+    return HasSupersetOfPointees(*thisNode, subNode);
+  };
+
+  // Early return if the subgraph is representing more memory objects or registers than us
+  if (subgraph.NumMemoryNodes() > NumMemoryNodes())
+    return false;
+  if (subgraph.RegisterNodeMap_.size() > RegisterNodeMap_.size())
+    return false;
+
+  // Iterate through all memory nodes in the subgraph, and make sure we have corresponding nodes
+  for (auto & node : subgraph.AllocaNodes())
+  {
+    if (!HasSuperOfMemoryNode(node))
+      return false;
+  }
+  for (auto & node : subgraph.DeltaNodes())
+  {
+    if (!HasSuperOfMemoryNode(node))
+      return false;
+  }
+  for (auto & node : subgraph.ImportNodes())
+  {
+    if (!HasSuperOfMemoryNode(node))
+      return false;
+  }
+  for (auto & node : subgraph.LambdaNodes())
+  {
+    if (!HasSuperOfMemoryNode(node))
+      return false;
+  }
+  for (auto & node : subgraph.MallocNodes())
+  {
+    if (!HasSuperOfMemoryNode(node))
+      return false;
+  }
+
+  // For each register mapped to a RegisterNode in the subgraph, this graph must also have mapped
+  // the same register to be a supergraph. The RegisterNode must point to a superset of what
+  // the subgraph's RegisterNode points to.
+  for (auto [rvsdgOutput, subNode] : subgraph.RegisterNodeMap_)
+  {
+    auto correspondingRegisterNode = RegisterNodeMap_.find(rvsdgOutput);
+    if (correspondingRegisterNode == RegisterNodeMap_.end())
+      return false;
+
+    if (!HasSupersetOfPointees(*correspondingRegisterNode->second, *subNode))
+      return false;
+  }
+
+  return true;
+}
+
 std::string
 PointsToGraph::ToDot(
     const PointsToGraph & pointsToGraph,
@@ -293,6 +432,12 @@ PointsToGraph::Node::Targets() const
   return { TargetConstIterator(Targets_.begin()), TargetConstIterator(Targets_.end()) };
 }
 
+bool
+PointsToGraph::Node::HasTarget(const PointsToGraph::MemoryNode & target) const
+{
+  return Targets_.find(const_cast<MemoryNode *>(&target)) != Targets_.end();
+}
+
 PointsToGraph::Node::SourceRange
 PointsToGraph::Node::Sources()
 {
@@ -303,6 +448,12 @@ PointsToGraph::Node::SourceConstRange
 PointsToGraph::Node::Sources() const
 {
   return { SourceConstIterator(Sources_.begin()), SourceConstIterator(Sources_.end()) };
+}
+
+bool
+PointsToGraph::Node::HasSource(const PointsToGraph::Node & source) const
+{
+  return Sources_.find(const_cast<Node *>(&source)) != Sources_.end();
 }
 
 void
