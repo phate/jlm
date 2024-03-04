@@ -861,11 +861,24 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   if (std::getenv(CHECK_AGAINST_NAIVE_SOLVER) != nullptr
       && Config_ != Configuration::DefaultNaiveConfiguration())
   {
+    std::cerr << "Comparing Andersen's PointsToGraph to a naivley solved PointsToGraph" << std::endl;
+
     // Temporarily switch to the default naive configuration
     auto customConfig = Config_;
     Config_ = Configuration::DefaultNaiveConfiguration();
 
     auto naivePointsToGraph = AnalyzeModule(module, statisticsCollector);
+
+    bool error = false;
+    if (!naivePointsToGraph->IsSupergraphOf(*pointsToGraph)) {
+      std::cerr << "The naive PointsToGraph is NOT a supergraph of the PointsToGraph" << std::endl;
+      error = true;
+    }
+    if (!pointsToGraph->IsSupergraphOf(*naivePointsToGraph)) {
+      std::cerr << "The PointsToGraph is NOT a supergraph of the naive PointsToGraph" << std::endl;
+      error = true;
+    }
+    JLM_ASSERT(!error);
 
     Config_ = customConfig;
   }
