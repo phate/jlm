@@ -595,8 +595,6 @@ PointerObjectConstraintSet::GetConstraints() const noexcept
 size_t
 PointerObjectConstraintSet::SolveUsingWorklist()
 {
-  size_t numWorkItems = 0;
-
   // Create auxiliary superset graph.
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
   std::vector<util::HashSet<PointerObject::Index>> supersetEdges(Set_.NumPointerObjects());
@@ -678,6 +676,9 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     if (Set_.GetPointerObject(index).MarkAsPointsToExternal())
       worklist.PushWorkItem(index);
   };
+
+  // Count of the total number of work items fired
+  size_t numWorkItems = 0;
 
   // The main worklist loop. A work item can be in the worklist for the following reasons:
   // - It has never been fired

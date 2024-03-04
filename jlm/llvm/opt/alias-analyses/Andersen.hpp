@@ -73,13 +73,13 @@ public:
     }
 
     [[nodiscard]] static Configuration
-    DefaultConfiguration()
+    WorklistSolverConfiguration()
     {
       return Configuration(Solver::Worklist);
     }
 
     [[nodiscard]] static Configuration
-    DefaultNaiveConfiguration()
+    NaiveSolverConfiguration()
     {
       return Configuration(Solver::Naive);
     }
@@ -232,7 +232,7 @@ private:
   std::unique_ptr<PointsToGraph>
   AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector);
 
-  Configuration Config_ = Configuration::DefaultConfiguration();
+  Configuration Config_ = Configuration::WorklistSolverConfiguration();
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;

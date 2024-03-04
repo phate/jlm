@@ -859,14 +859,14 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
 
   // If a double check is requested, and the current configuration differs from the default naive
   if (std::getenv(CHECK_AGAINST_NAIVE_SOLVER) != nullptr
-      && Config_ != Configuration::DefaultNaiveConfiguration())
+      && Config_ != Configuration::NaiveSolverConfiguration())
   {
     std::cerr << "Comparing Andersen's PointsToGraph to a naivley solved PointsToGraph"
               << std::endl;
 
     // Temporarily switch to the default naive configuration
     auto customConfig = Config_;
-    Config_ = Configuration::DefaultNaiveConfiguration();
+    Config_ = Configuration::NaiveSolverConfiguration();
 
     auto naivePointsToGraph = AnalyzeModule(module, statisticsCollector);
 
