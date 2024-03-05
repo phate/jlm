@@ -1199,6 +1199,10 @@ ExternalCallTest1::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
+ExternalCallTest2::SetupRvsdg()
+{}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
 GammaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;

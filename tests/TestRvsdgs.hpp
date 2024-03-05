@@ -853,6 +853,50 @@ private:
   jlm::rvsdg::argument * ExternalGArgument_;
 };
 
+/**
+ * This function sets up an RVSDG representing the following program:
+ *
+ * \code{.c}
+ *   #include <stdint.h>
+ *
+ *   typedef struct myStruct
+ *   {
+ *     uint32_t i;
+ *     uint32_t ** p1;
+ *     uint32_t ** p2;
+ *   } myStruct;
+ *
+ *   extern void
+ *   f(myStruct * s);
+ *
+ *   void
+ *   g()
+ *   {
+ *     myStruct s;
+ *     f(&s);
+ *     uint32_t * tmp = *s.p1;
+ *     *s.p1 = *s.p2;
+ *     *s.p2 = tmp;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations within each
+ * function.
+ */
+class ExternalCallTest2 final : public RvsdgTest
+{
+public:
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::lambda::node * LambdaG_;
+
+  jlm::llvm::CallNode * CallF_;
+
+  jlm::rvsdg::argument * ExternalFArgument_;
+};
+
 /** \brief GammaTest class
  *
  * This function sets up an RVSDG representing the following function:

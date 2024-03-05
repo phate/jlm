@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <jlm/rvsdg/view.hpp>
+
 namespace jlm::llvm::aa
 {
 
@@ -1744,8 +1746,8 @@ Steensgaard::Analyze(
     const RvsdgModule & module,
     jlm::util::StatisticsCollector & statisticsCollector)
 {
-  // std::unordered_map<const rvsdg::output *, std::string> outputMap;
-  // std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
+  std::unordered_map<const rvsdg::output *, std::string> outputMap;
+  std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
 
   Context_ = Context::Create();
   auto statistics = Statistics::Create(module.SourceFileName());
@@ -1753,7 +1755,7 @@ Steensgaard::Analyze(
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());
   AnalyzeRvsdg(module.Rvsdg());
-  // std::cout << Context_->ToDot() << std::flush;
+  std::cout << Context_->ToDot() << std::flush;
   statistics->StopSteensgaardStatistics();
 
   // Propagate points-to flags in disjoint location set graph
@@ -1764,7 +1766,7 @@ Steensgaard::Analyze(
   // Construct PointsTo graph
   statistics->StartPointsToGraphConstructionStatistics();
   auto pointsToGraph = ConstructPointsToGraph();
-  // std::cout << PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
+  std::cout << PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
   statistics->StopPointsToGraphConstructionStatistics(*pointsToGraph);
 
   // Redirect unknown memory node sources
