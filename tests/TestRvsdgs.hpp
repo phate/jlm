@@ -804,8 +804,7 @@ private:
   jlm::rvsdg::simple_node * AllocaPz_;
 };
 
-/** \brief ExternalCallTest
- *
+/**
  * This function sets up an RVSDG representing the following program:
  *
  * \code{.c}
@@ -822,7 +821,7 @@ private:
  * It uses a single memory state to sequentialize the respective memory operations within each
  * function.
  */
-class ExternalCallTest final : public RvsdgTest
+class ExternalCallTest1 final : public RvsdgTest
 {
 public:
   [[nodiscard]] const jlm::llvm::lambda::node &

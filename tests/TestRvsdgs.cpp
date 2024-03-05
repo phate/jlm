@@ -1119,7 +1119,7 @@ IndirectCallTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
-ExternalCallTest::SetupRvsdg()
+ExternalCallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
 

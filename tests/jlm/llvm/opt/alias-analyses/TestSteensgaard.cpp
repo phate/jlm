@@ -580,10 +580,10 @@ TestIndirectCall2()
 }
 
 static void
-TestExternalCall()
+TestExternalCall1()
 {
   auto validatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph,
-                                  const jlm::tests::ExternalCallTest & test)
+                                  const jlm::tests::ExternalCallTest1 & test)
   {
     assert(pointsToGraph.NumAllocaNodes() == 2);
     assert(pointsToGraph.NumLambdaNodes() == 1);
@@ -603,7 +603,7 @@ TestExternalCall()
     assertTargets(callResult, { &lambdaF, &externalMemory });
   };
 
-  jlm::tests::ExternalCallTest test;
+  jlm::tests::ExternalCallTest1 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1240,7 +1240,7 @@ TestSteensgaardAnalysis()
   TestCall2();
   TestIndirectCall();
   TestIndirectCall2();
-  TestExternalCall();
+  TestExternalCall1();
 
   TestGamma();
 
