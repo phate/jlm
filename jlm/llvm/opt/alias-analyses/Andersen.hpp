@@ -26,6 +26,13 @@ class Andersen final : public AliasAnalysis
 
 public:
   /**
+   * Environment variable that will trigger double checking of the analysis,
+   * by running analysis again with the naive solver and no extra processing.
+   * Any differences in the produced PointsToGraph result in an error.
+   */
+  static inline const char * CHECK_AGAINST_NAIVE_SOLVER = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
+
+  /**
    * class for configuring the Andersen pass, such as what solver to use.
    */
   class Configuration
@@ -37,8 +44,9 @@ public:
       Worklist
     };
 
-  public:
-    Configuration() = default;
+    explicit Configuration(Solver solver)
+        : Solver_(solver)
+    {}
 
     void
     SetSolver(Solver solver)
@@ -52,8 +60,32 @@ public:
       return Solver_;
     }
 
+    [[nodiscard]] bool
+    operator==(const Configuration & other) const
+    {
+      return Solver_ == other.Solver_;
+    }
+
+    [[nodiscard]] bool
+    operator!=(const Configuration & other) const
+    {
+      return !operator==(other);
+    }
+
+    [[nodiscard]] static Configuration
+    WorklistSolverConfiguration()
+    {
+      return Configuration(Solver::Worklist);
+    }
+
+    [[nodiscard]] static Configuration
+    NaiveSolverConfiguration()
+    {
+      return Configuration(Solver::Naive);
+    }
+
   private:
-    Solver Solver_ = Solver::Naive;
+    Solver Solver_;
   };
 
   ~Andersen() noexcept override = default;
@@ -197,7 +229,10 @@ private:
   void
   AnalyzeRvsdg(const rvsdg::graph & graph);
 
-  Configuration Config_;
+  std::unique_ptr<PointsToGraph>
+  AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector);
+
+  Configuration Config_ = Configuration::WorklistSolverConfiguration();
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;

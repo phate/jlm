@@ -14,6 +14,7 @@
 #include <jlm/util/Math.hpp>
 
 #include <cstdint>
+#include <optional>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -100,7 +101,7 @@ public:
    * When the PointsToExternal-flag is set, the PointerObject possibly points to a storage
    * instance declared outside to module, or to a memory object from this same module, that has
    * escaped.
-   * @return true if the PointsToExternal is set.
+   * @return true if the PointsToExternal flag is set.
    */
   [[nodiscard]] bool
   PointsToExternal() const noexcept
@@ -111,7 +112,7 @@ public:
   /**
    * Sets the PointsToExternal-flag, if possible.
    * If CanPoint() is false, this is a no-op.
-   * @return True, if the PointsToExternal flag was modified, otherwise false
+   * @return true if the PointsToExternal flag was modified, otherwise false
    */
   bool
   MarkAsPointsToExternal() noexcept
@@ -230,6 +231,15 @@ public:
    */
   [[nodiscard]] PointerObject::Index
   GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
+
+  /**
+   * Retrieves a previously created PointerObject of Register kind, associated with an rvsdg output.
+   * If no PointerObject is associated with the given output, nullopt is returned.
+   * @param rvsdgOutput the rvsdg::output that might correspond to a PointerObject in the set
+   * @return the index of the PointerObject associated with rvsdgOutput, if it exists
+   */
+  [[nodiscard]] std::optional<PointerObject::Index>
+  TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
 
   /**
    * Reuses an existing PointerObject of register type for an additional rvsdg output.
@@ -397,7 +407,7 @@ public:
   }
 
   /**
-   * Make the minimal amount of changes required to make \p set satisfy this constraint.
+   * Apply this constraint to \p set once.
    * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
@@ -459,7 +469,7 @@ public:
   }
 
   /**
-   * Make the minimal amount of changes required to make \p set satisfy this constraint.
+   * Apply this constraint to \p set once.
    * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
@@ -521,38 +531,8 @@ public:
   }
 
   /**
-   * Make the minimal amount of changes required to make \p set satisfy this constraint.
+   * Apply this constraint to \p set once.
    * @return true if this operation modified any PointerObjects or points-to-sets
-   */
-  bool
-  ApplyDirectly(PointerObjectSet & set);
-};
-
-/**
- * A constraint of the form:
- * If the function escapes the module, its return value should be marked as escaping the module,
- * and all arguments should be marked as possibly pointing to external
- */
-class HandleEscapingFunctionConstraint final
-{
-  PointerObject::Index Lambda_;
-
-  /**
-   * Once the function has been determined to be escaping,
-   * the flags only need to be applied to its arguments and results once.
-   * Afterwards, this boolean will be true, preventing additional unnecessary work.
-   */
-  bool EscapeHandled_;
-
-public:
-  explicit HandleEscapingFunctionConstraint(PointerObject::Index lambda)
-      : Lambda_(lambda),
-        EscapeHandled_(false)
-  {}
-
-  /**
-   * \brief Applies the constraint to the \p set
-   * \return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
   ApplyDirectly(PointerObjectSet & set);
@@ -577,59 +557,91 @@ public:
 class FunctionCallConstraint final
 {
   /**
-   * A PointerObject of Register kind, representing the source of the function pointer
+   * A PointerObject of Register kind, representing the function pointer being called
    */
-  PointerObject::Index CallTarget_;
+  PointerObject::Index Pointer_;
 
   /**
    * The RVSDG node representing the function call
    */
   const jlm::llvm::CallNode & CallNode_;
 
-  /**
-   * Handles informing the arguments and return values of the CallNode about
-   * possibly being sent to and retrieved from unknown code.
-   * @param set the PointerObjectSet representing this module.
-   * @return true if the operation modified any PointerObjects or points-to-sets
-   */
-  bool
-  HandleCallingExternalFunction(PointerObjectSet & set);
-
-  /**
-   * Handles informing the arguments and return values of the CallNode about
-   * possibly being sent to and received from a given PointerObject of ImportMemoryObject.
-   * @param set the PointerObjectSet representing this module.
-   * @param imported the PointerObject of ImportMemoryObject kind that might be called.
-   * @return true if the operation modified any PointerObjects or points-to-sets
-   */
-  bool
-  HandleCallingImportedFunction(PointerObjectSet & set, PointerObject::Index imported);
-
-  /**
-   * Handles informing the CallNode about possibly calling the function represented by \p lambda.
-   * Passes the points-to-sets of the arguments into the function subregion,
-   * and passes the points-to-sets of the function's return values back to the CallNode's outputs.
-   * @param set the PointerObjectSet representing this module.
-   * @param lambda the PointerObject of FunctionMemoryObject kind that might be called.
-   * @return true if the operation modified any PointerObjects or points-to-sets
-   */
-  bool
-  HandleCallingLambdaFunction(PointerObjectSet & set, PointerObject::Index lambda);
-
 public:
-  explicit FunctionCallConstraint(
-      PointerObject::Index callTarget,
-      const jlm::llvm::CallNode & callNode)
-      : CallTarget_(callTarget),
+  FunctionCallConstraint(PointerObject::Index pointer, const jlm::llvm::CallNode & callNode)
+      : Pointer_(pointer),
         CallNode_(callNode)
   {}
 
   /**
-   * Applies the constraint to the \p set
+   * @return the PointerObject representing the function pointer being called
+   */
+  [[nodiscard]] PointerObject::Index
+  GetPointer() const noexcept
+  {
+    return Pointer_;
+  }
+
+  /**
+   * @param pointer the new PointerObject representing the function pointer being called
+   */
+  void
+  SetPointer(PointerObject::Index pointer)
+  {
+    Pointer_ = pointer;
+  }
+
+  /**
+   * @return the RVSDG call node for the function call
+   */
+  [[nodiscard]] const jlm::llvm::CallNode &
+  GetCallNode() const noexcept
+  {
+    return CallNode_;
+  }
+
+  /**
+   * Apply this constraint to \p set once.
    * @return true if this operation modified any PointerObjects or points-to-sets
    */
   bool
   ApplyDirectly(PointerObjectSet & set);
+};
+
+/**
+ * Helper class representing the global constraint:
+ *   For all PointerObjects x marked as escaping, all pointees in P(x) are escaping
+ */
+class EscapeFlagConstraint final
+{
+public:
+  EscapeFlagConstraint() = delete;
+
+  /**
+   * Performs the minimum set of changes required to satisfy the constraint.
+   * @param set the PointerObjectSet representing this module
+   * @return true if the function modified any flags.
+   */
+  static bool
+  PropagateEscapedFlagsDirectly(PointerObjectSet & set);
+};
+
+/**
+ * Helper class representing the global constraint:
+ *   For each function x marked as escaped, all parameters point to external, and all results escape
+ * Parameters and results that do not have PointerObjects corresponding to them are ignored.
+ */
+class EscapedFunctionConstraint final
+{
+public:
+  EscapedFunctionConstraint() = delete;
+
+  /**
+   * Performs the minimum set of changes required to satisfy the constraint.
+   * @param set the PointerObjectSet representing this module
+   * @return true if the function modified any flags
+   */
+  static bool
+  PropagateEscapedFunctionsDirectly(PointerObjectSet & set);
 };
 
 /**
@@ -642,12 +654,8 @@ public:
 class PointerObjectConstraintSet final
 {
 public:
-  using ConstraintVariant = std::variant<
-      SupersetConstraint,
-      StoreConstraint,
-      LoadConstraint,
-      HandleEscapingFunctionConstraint,
-      FunctionCallConstraint>;
+  using ConstraintVariant =
+      std::variant<SupersetConstraint, StoreConstraint, LoadConstraint, FunctionCallConstraint>;
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set)
@@ -700,7 +708,18 @@ public:
   GetConstraints() const noexcept;
 
   /**
+   * Finds a least solution satisfying all constraints, using the Worklist algorithm.
+   * Descriptions of the algorithm can be found in
+   *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
+   *  - Hardekopf et al. 2007, "The Ant and the Grasshopper".
+   * @return the total number of work items handled by the WorkList algorithm
+   */
+  size_t
+  SolveUsingWorklist();
+
+  /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
+   * Also applies inference rules on the escaped and pointing to external flags.
    * This operation potentially has a long runtime, with an upper bound of O(n^5).
    * @return the number of iterations until a fixed solution was established. At least 1.
    */
@@ -708,14 +727,6 @@ public:
   SolveNaively();
 
 private:
-  /**
-   * Ensures that the escaped flag is set for all pointees of any pointer object that is marked as
-   * escaped.
-   * @return true if the function modified any flags
-   */
-  bool
-  PropagateEscapedFlag();
-
   // The PointerObjectSet being built upon
   PointerObjectSet & Set_;
 

@@ -12,8 +12,7 @@ namespace jlm::llvm::aa
 {
 
 /**
- * If values of the given type may point to things, the set of pointees needs to be tracked.
- * If the type is an aggregate type, pointees must be tracked if any subtype is pointing.
+ * If values are pointers, or contain pointers to things, its set of pointees must be tracked.
  * @param type the rvsdg type to be checked
  * @return true if pointees should be tracked for all values of the given type, otherwise false
  */
@@ -35,15 +34,15 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumSupersetConstraints_ = "#SupersetConstraints";
   inline static const char * NumStoreConstraints_ = "#StoreConstraints";
   inline static const char * NumLoadConstraints_ = "#LoadConstraints";
-  inline static const char * NumHandleEscapingFunctionConstraints_ =
-      "#HandleEscapingFunctionConstraints";
   inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
 
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
+  inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
   inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
+  inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
   inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
   inline static const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
@@ -84,21 +83,17 @@ public:
     size_t numSupersetConstraints = 0;
     size_t numStoreConstraints = 0;
     size_t numLoadConstraints = 0;
-    size_t numHandleEscapingFunctionConstraints = 0;
     size_t numFunctionCallConstraints = 0;
     for (const auto & constraint : constraints.GetConstraints())
     {
       numSupersetConstraints += std::holds_alternative<SupersetConstraint>(constraint);
       numStoreConstraints += std::holds_alternative<StoreConstraint>(constraint);
       numLoadConstraints += std::holds_alternative<LoadConstraint>(constraint);
-      numHandleEscapingFunctionConstraints +=
-          std::holds_alternative<HandleEscapingFunctionConstraint>(constraint);
       numFunctionCallConstraints += std::holds_alternative<FunctionCallConstraint>(constraint);
     }
     AddMeasurement(NumSupersetConstraints_, numSupersetConstraints);
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
-    AddMeasurement(NumHandleEscapingFunctionConstraints_, numHandleEscapingFunctionConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
   }
 
@@ -113,6 +108,20 @@ public:
   {
     GetTimer(ConstraintSolvingNaiveTimer_).stop();
     AddMeasurement(NumNaiveSolverIterations_, numIterations);
+  }
+
+  void
+  StartConstraintSolvingWorklistStatistics() noexcept
+  {
+    AddTimer(ConstraintSolvingWorklistTimer_).start();
+  }
+
+  void
+  StopConstraintSolvingWorklistStatistics(size_t numWorkItems) noexcept
+  {
+    GetTimer(ConstraintSolvingWorklistTimer_).stop();
+    // How many work items were popped from the worklist in total
+    AddMeasurement(NumWorklistSolverWorkItems_, numWorkItems);
   }
 
   void
@@ -551,10 +560,6 @@ Andersen::AnalyzeLambda(const lambda::node & lambda)
   const auto & lambdaOutput = *lambda.output();
   const auto lambdaOutputPO = Set_->CreateRegisterPointerObject(lambdaOutput);
   Constraints_->AddPointerPointeeConstraint(lambdaOutputPO, lambdaPO);
-
-  // If the function escapes the module, all arguments must point to external,
-  // and the return value must be marked as escaping the module.
-  Constraints_->AddConstraint(HandleEscapingFunctionConstraint(lambdaPO));
 }
 
 void
@@ -808,7 +813,7 @@ Andersen::GetConfiguration() const
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+Andersen::AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(module.SourceFileName());
   statistics->StartAndersenStatistics(module.Rvsdg());
@@ -828,7 +833,9 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   }
   else if (Config_.GetSolver() == Configuration::Solver::Worklist)
   {
-    JLM_UNREACHABLE("Worklist solver not yet implemented");
+    statistics->StartConstraintSolvingWorklistStatistics();
+    size_t numWorkItems = Constraints_->SolveUsingWorklist();
+    statistics->StopConstraintSolvingWorklistStatistics(numWorkItems);
   }
   else
     JLM_UNREACHABLE("Unknown solver");
@@ -843,6 +850,43 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   Constraints_.reset();
   Set_.reset();
   return result;
+}
+
+std::unique_ptr<PointsToGraph>
+Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+{
+  auto pointsToGraph = AnalyzeModule(module, statisticsCollector);
+
+  // If a double check is requested, and the current configuration differs from the default naive
+  if (std::getenv(CHECK_AGAINST_NAIVE_SOLVER) != nullptr
+      && Config_ != Configuration::NaiveSolverConfiguration())
+  {
+    std::cerr << "Comparing Andersen's PointsToGraph to a naivley solved PointsToGraph"
+              << std::endl;
+
+    // Temporarily switch to the default naive configuration
+    auto customConfig = Config_;
+    Config_ = Configuration::NaiveSolverConfiguration();
+
+    auto naivePointsToGraph = AnalyzeModule(module, statisticsCollector);
+
+    bool error = false;
+    if (!naivePointsToGraph->IsSupergraphOf(*pointsToGraph))
+    {
+      std::cerr << "The naive PointsToGraph is NOT a supergraph of the PointsToGraph" << std::endl;
+      error = true;
+    }
+    if (!pointsToGraph->IsSupergraphOf(*naivePointsToGraph))
+    {
+      std::cerr << "The PointsToGraph is NOT a supergraph of the naive PointsToGraph" << std::endl;
+      error = true;
+    }
+    JLM_ASSERT(!error);
+
+    Config_ = customConfig;
+  }
+
+  return pointsToGraph;
 }
 
 std::unique_ptr<PointsToGraph>
