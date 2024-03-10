@@ -886,15 +886,36 @@ private:
 class ExternalCallTest2 final : public RvsdgTest
 {
 public:
+  [[nodiscard]] jlm::llvm::lambda::node &
+  LambdaG()
+  {
+    JLM_ASSERT(LambdaG_ != nullptr);
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] jlm::llvm::CallNode &
+  CallF()
+  {
+    JLM_ASSERT(CallF_ != nullptr);
+    return *CallF_;
+  }
+
+  [[nodiscard]] jlm::rvsdg::argument &
+  ExternalF()
+  {
+    JLM_ASSERT(ExternalFArgument_ != nullptr);
+    return *ExternalFArgument_;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::llvm::lambda::node * LambdaG_;
+  jlm::llvm::lambda::node * LambdaG_ = {};
 
-  jlm::llvm::CallNode * CallF_;
+  jlm::llvm::CallNode * CallF_ = {};
 
-  jlm::rvsdg::argument * ExternalFArgument_;
+  jlm::rvsdg::argument * ExternalFArgument_ = {};
 };
 
 /** \brief GammaTest class

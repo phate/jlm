@@ -613,6 +613,22 @@ TestExternalCall1()
 }
 
 static void
+TestExternalCall2()
+{
+  // Arrange
+  jlm::tests::ExternalCallTest2 test;
+  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::flush;
+
+  // Act
+  auto pointsToGraph = RunSteensgaard(test.module());
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
+
+  // Assert
+  assert(0);
+}
+
+static void
 TestGamma()
 {
   auto ValidatePointsToGraph =
@@ -1238,9 +1254,12 @@ TestSteensgaardAnalysis()
 
   TestCall1();
   TestCall2();
+
   TestIndirectCall();
   TestIndirectCall2();
+
   TestExternalCall1();
+  TestExternalCall2();
 
   TestGamma();
 

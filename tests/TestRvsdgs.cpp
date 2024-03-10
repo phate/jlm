@@ -1200,7 +1200,100 @@ ExternalCallTest1::SetupRvsdg()
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
 ExternalCallTest2::SetupRvsdg()
-{}
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
+      StructType::Declaration::Create({ &rvsdg::bit32, &pointerType, &pointerType }));
+  auto structType = StructType::Create("myStruct", false, structDeclaration);
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  varargtype varArgType;
+  FunctionType lambdaLlvmLifetimeStartType(
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaLlvmLifetimeEndType(
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaFType(
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaGType(
+      { &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+
+  auto llvmLifetimeStart =
+      rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
+  auto llvmLifetimeEnd =
+      rvsdg.add_import(impport(pointerType, "llvm.lifetime.end.p0", linkage::external_linkage));
+  ExternalFArgument_ = rvsdg.add_import(impport(pointerType, "f", linkage::external_linkage));
+
+  // Setup function g()
+  LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
+  auto iOStateArgument = LambdaG_->fctargument(0);
+  auto memoryStateArgument = LambdaG_->fctargument(1);
+  auto loopStateArgument = LambdaG_->fctargument(2);
+  auto llvmLifetimeStartArgument = LambdaG_->add_ctxvar(llvmLifetimeStart);
+  auto llvmLifetimeEndArgument = LambdaG_->add_ctxvar(llvmLifetimeEnd);
+  auto lambdaFArgument = LambdaG_->add_ctxvar(ExternalFArgument_);
+
+  auto twentyFour = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 24);
+
+  auto allocaResults = alloca_op::create(*structType, twentyFour, 16);
+  auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
+
+  auto callLLvmLifetimeStartResults = CallNode::Create(
+      llvmLifetimeStartArgument,
+      lambdaLlvmLifetimeStartType,
+      { twentyFour, allocaResults[0], iOStateArgument, memoryState, loopStateArgument });
+
+  auto callFResults = CallNode::Create(
+      lambdaFArgument,
+      lambdaFType,
+      { allocaResults[0],
+        callLLvmLifetimeStartResults[0],
+        callLLvmLifetimeStartResults[1],
+        callLLvmLifetimeStartResults[2] });
+  CallF_ = util::AssertedCast<CallNode>(rvsdg::node_output::node(callFResults[0]));
+
+  auto zero = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 0);
+  auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
+  auto two = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 2);
+
+  auto gepResult1 =
+      GetElementPtrOperation::Create(allocaResults[0], { zero, one }, *structType, pointerType);
+  auto loadResults1 = LoadNode::Create(gepResult1, { callFResults[1] }, pointerType, 8);
+  auto loadResults2 = LoadNode::Create(loadResults1[0], { loadResults1[1] }, pointerType, 8);
+
+  auto gepResult2 =
+      GetElementPtrOperation::Create(allocaResults[0], { zero, two }, *structType, pointerType);
+  auto loadResults3 = LoadNode::Create(gepResult2, { loadResults2[1] }, pointerType, 8);
+  auto loadResults4 = LoadNode::Create(loadResults1[0], { loadResults3[1] }, pointerType, 8);
+
+  auto storeResults1 = StoreNode::Create(loadResults1[0], loadResults4[0], { loadResults4[1] }, 8);
+
+  auto loadResults5 = LoadNode::Create(gepResult2, { storeResults1[0] }, pointerType, 8);
+  auto storeResults2 = StoreNode::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
+
+  auto callLLvmLifetimeEndResults = CallNode::Create(
+      llvmLifetimeEndArgument,
+      lambdaLlvmLifetimeEndType,
+      { twentyFour, allocaResults[0], callFResults[0], storeResults2[0], callFResults[2] });
+
+  LambdaG_->finalize({ callLLvmLifetimeEndResults[0],
+                       callLLvmLifetimeEndResults[1],
+                       callLLvmLifetimeEndResults[2] });
+
+  return rvsdgModule;
+}
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
 GammaTest::SetupRvsdg()
