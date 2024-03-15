@@ -625,7 +625,15 @@ TestExternalCall2()
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
 
   // Assert
-  assert(0);
+  assert(pointsToGraph->NumAllocaNodes() == 1);
+  assert(pointsToGraph->NumLambdaNodes() == 1);
+  assert(pointsToGraph->NumImportNodes() == 3);
+  assert(pointsToGraph->NumRegisterNodes() == 7);
+
+  for (auto & registerNode : pointsToGraph->RegisterNodes())
+  {
+    assert(registerNode.NumTargets() != 0);
+  }
 }
 
 static void

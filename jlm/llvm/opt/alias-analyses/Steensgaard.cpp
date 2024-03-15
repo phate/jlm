@@ -732,6 +732,24 @@ public:
     return it != LocationMap_.end();
   }
 
+  void
+  MarkAsEscaped(const rvsdg::output & output)
+  {
+    auto & outputLocation = GetRegisterLocation(output);
+    outputLocation.MarkAsEscaped();
+
+    auto & rootLocation = GetRootLocation(outputLocation);
+    if (!rootLocation.GetPointsTo())
+    {
+    }
+
+    if (rootLocation.GetPointsTo())
+    {
+      rootLocation.GetPointsTo()->SetPointsToFlags(
+          PointsToFlags::PointsToEscapedMemory | PointsToFlags::PointsToExternalMemory);
+    }
+  }
+
   std::string
   ToDot() const
   {
