@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * Copyright 2023, 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -17,44 +17,56 @@ TestFlagFunctions()
 {
   using namespace jlm::llvm::aa;
 
-  PointerObject object(PointerObjectKind::AllocaMemoryObject);
-  assert(object.GetKind() == PointerObjectKind::AllocaMemoryObject);
+  jlm::tests::AllMemoryNodesTest rvsdg;
+  rvsdg.InitializeTest();
 
-  // Important ordering. Test PointsToExternal first, since it is implied by Escaped.
-  assert(!object.PointsToExternal());
-  assert(object.MarkAsPointsToExternal());
-  assert(object.PointsToExternal());
-  assert(!object.MarkAsPointsToExternal());
-  assert(object.PointsToExternal());
+  PointerObjectSet set;
+  auto registerPO = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
 
-  assert(!object.HasEscaped());
-  assert(object.MarkAsEscaped());
-  assert(object.HasEscaped());
-  assert(!object.MarkAsEscaped());
-  assert(object.HasEscaped());
+  // Registers may only point, not be pointee
+  assert(set.CanPointerObjectPoint(registerPO));
+  assert(!set.CanPointerObjectBePointee(registerPO));
+
+  // Escaping flag
+  assert(!set.HasEscaped(registerPO));
+  assert(set.MarkAsEscaped(registerPO));
+  assert(set.HasEscaped(registerPO));
+  // Trying to set the flag again returns false
+  assert(!set.MarkAsEscaped(registerPO));
+  assert(set.HasEscaped(registerPO));
+
+  // PointsToExternal flag. For registers, the two flags are completely independent.
+  assert(!set.IsPointingToExternal(registerPO));
+  assert(set.MarkAsPointingToExternal(registerPO));
+  assert(set.IsPointingToExternal(registerPO));
+  // Trying to set the flag again returns false
+  assert(!set.MarkAsPointingToExternal(registerPO));
+  assert(set.IsPointingToExternal(registerPO));
 
   // Test that Escaped implies PointsToExternal, for memory objects
-  object = PointerObject(PointerObjectKind::AllocaMemoryObject);
-  assert(object.GetKind() == PointerObjectKind::AllocaMemoryObject);
-  assert(!object.PointsToExternal());
-  assert(object.MarkAsEscaped());
-  assert(object.PointsToExternal());
-  assert(!object.MarkAsPointsToExternal());
+  auto allocaPO = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
 
-  // Test that Escaped does not imply PointsToExternal, for registers (CanBePointee() == false)
-  object = PointerObject(PointerObjectKind::Register);
-  assert(!object.CanBePointee());
-  object.MarkAsEscaped();
-  assert(!object.PointsToExternal());
+  // alloca may both point and be a pointee
+  assert(set.CanPointerObjectPoint(allocaPO));
+  assert(set.CanPointerObjectBePointee(allocaPO));
+
+  // Escaping means another module can write a pointer to you -> set the points to external flag
+  assert(!set.IsPointingToExternal(allocaPO));
+  assert(set.MarkAsEscaped(allocaPO));
+  assert(set.IsPointingToExternal(allocaPO));
+  // Already marked as pointing to external
+  assert(!set.MarkAsPointingToExternal(allocaPO));
 
   // Test that Functions, who have CanPoint() == false, can not be made to PointToExternal
-  object = PointerObject(PointerObjectKind::FunctionMemoryObject);
-  assert(!object.CanPoint());
-  // Marking as PointsToExternal directly is a no-op
-  assert(!object.MarkAsPointsToExternal());
-  // Marking as escaped does not imply PointsToExternal
-  object.MarkAsEscaped();
-  assert(!object.PointsToExternal());
+  auto lambdaPO = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
+
+  // functions may only be pointees
+  assert(!set.CanPointerObjectPoint(lambdaPO));
+  assert(set.CanPointerObjectBePointee(lambdaPO));
+
+  // Adding the points to external flag does not work
+  assert(!set.MarkAsPointingToExternal(lambdaPO));
+  assert(!set.IsPointingToExternal(lambdaPO));
 }
 
 // Test creating pointer objects for each type of memory node
@@ -67,7 +79,6 @@ TestCreatePointerObjects()
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-
   // Register PointerObjects have some extra ways of being created: Dummy and mapping
   const auto register0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
   set.MapRegisterToExistingPointerObject(rvsdg.GetDeltaOutput(), register0);
@@ -83,20 +94,20 @@ TestCreatePointerObjects()
   assert(set.NumPointerObjects() == 7);
   assert(set.NumPointerObjectsOfKind(jlm::llvm::aa::PointerObjectKind::Register) == 2);
 
-  assert(set.GetPointerObject(register0).GetKind() == PointerObjectKind::Register);
-  assert(set.GetPointerObject(dummy0).GetKind() == PointerObjectKind::Register);
-  assert(set.GetPointerObject(alloca0).GetKind() == PointerObjectKind::AllocaMemoryObject);
-  assert(set.GetPointerObject(malloc0).GetKind() == PointerObjectKind::MallocMemoryObject);
-  assert(set.GetPointerObject(delta0).GetKind() == PointerObjectKind::GlobalMemoryObject);
-  assert(set.GetPointerObject(lambda0).GetKind() == PointerObjectKind::FunctionMemoryObject);
-  assert(set.GetPointerObject(import0).GetKind() == PointerObjectKind::ImportMemoryObject);
+  assert(set.GetPointerObjectKind(register0) == PointerObjectKind::Register);
+  assert(set.GetPointerObjectKind(dummy0) == PointerObjectKind::Register);
+  assert(set.GetPointerObjectKind(alloca0) == PointerObjectKind::AllocaMemoryObject);
+  assert(set.GetPointerObjectKind(malloc0) == PointerObjectKind::MallocMemoryObject);
+  assert(set.GetPointerObjectKind(delta0) == PointerObjectKind::GlobalMemoryObject);
+  assert(set.GetPointerObjectKind(lambda0) == PointerObjectKind::FunctionMemoryObject);
+  assert(set.GetPointerObjectKind(import0) == PointerObjectKind::ImportMemoryObject);
 
   // Registers have helper function for looking up existing PointerObjects
   assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
   assert(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()) == register0);
   assert(set.TryGetRegisterPointerObject(rvsdg.GetDeltaOutput()).value() == register0);
 
-  // Funtions have the same, but also in the other direction
+  // Functions have the same, but also in the other direction
   assert(set.GetFunctionMemoryObject(rvsdg.GetLambdaNode()) == lambda0);
   assert(&set.GetLambdaNodeFromFunctionMemoryObject(lambda0) == &rvsdg.GetLambdaNode());
 
@@ -110,7 +121,51 @@ TestCreatePointerObjects()
   assert(set.GetImportMap().at(&rvsdg.GetImportOutput()) == import0);
 
   // Imported objects should have been marked as escaped
-  assert(set.GetPointerObject(import0).HasEscaped());
+  assert(set.HasEscaped(import0));
+}
+
+static void
+TestPointerObjectUnification()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::AllMemoryNodesTest rvsdg;
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
+  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
+
+  set.AddToPointsToSet(alloca0, lambda0);
+  assert(set.GetPointsToSet(alloca0).Size() == 1);
+  assert(set.GetPointsToSet(delta0).Size() == 0);
+
+  auto root = set.UnifyPointerObjects(delta0, alloca0);
+  assert(set.GetUnificationRoot(delta0) == root);
+  assert(set.GetUnificationRoot(alloca0) == root);
+
+  // Now both should share points-to sets
+  assert(set.GetPointsToSet(alloca0).Contains(lambda0));
+  assert(set.GetPointsToSet(delta0).Contains(lambda0));
+
+  // Marking one as pointing to external marks all as pointing to external
+  auto notRoot = alloca0 + delta0 - root;
+  assert(set.MarkAsPointingToExternal(notRoot));
+  assert(set.IsPointingToExternal(root));
+  assert(set.IsPointingToExternal(notRoot));
+
+  assert(!set.MarkAsPointingToExternal(root));
+
+  // Adding a new pointee adds it to all members
+  auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+  assert(set.AddToPointsToSet(delta0, import0));
+  assert(set.GetPointsToSet(alloca0).Contains(import0));
+
+  // Escaping is not shared within the unification
+  assert(set.MarkAsEscaped(delta0));
+  assert(set.HasEscaped(delta0));
+  assert(!set.HasEscaped(alloca0));
 }
 
 // Test the PointerObjectSet method for adding pointer objects to another pointer object's
@@ -203,10 +258,10 @@ TestMarkAllPointeesAsEscaped()
   set.AddToPointsToSet(reg0, alloca1);
   assert(set.MarkAllPointeesAsEscaped(reg0));
 
-  assert(set.GetPointerObject(alloca0).HasEscaped());
-  assert(set.GetPointerObject(alloca1).HasEscaped());
-  assert(!set.GetPointerObject(reg0).HasEscaped());
-  assert(!set.GetPointerObject(alloca2).HasEscaped());
+  assert(set.HasEscaped(alloca0));
+  assert(set.HasEscaped(alloca1));
+  assert(!set.HasEscaped(reg0));
+  assert(!set.HasEscaped(alloca2));
 }
 
 // Test the SupersetConstraint's Apply function
@@ -256,7 +311,7 @@ TestSupersetConstraint()
   assert(set.GetPointsToSet(alloca0).Contains(alloca2));
 
   // Make reg2 point to external, and propagate through constraints
-  set.GetPointerObject(reg2).MarkAsPointsToExternal();
+  set.MarkAsPointingToExternal(reg2);
   assert(c2.ApplyDirectly(set));
   while (c2.ApplyDirectly(set))
     ;
@@ -264,8 +319,8 @@ TestSupersetConstraint()
   while (c1.ApplyDirectly(set))
     ;
   // Now both reg1 and alloca0 may point to external
-  assert(set.GetPointerObject(reg1).PointsToExternal());
-  assert(set.GetPointerObject(alloca0).PointsToExternal());
+  assert(set.IsPointingToExternal(reg1));
+  assert(set.IsPointingToExternal(alloca0));
 }
 
 static void
@@ -370,15 +425,15 @@ TestEscapedFunctionConstraint()
 
   // Nothing has happened yet, since the exported function is yet to be marked as escaped
   assert(!result);
-  assert(!set.GetPointerObject(localFunctionRegisterPO).HasEscaped());
-  assert(!set.GetPointerObject(exportedFunctionPO).HasEscaped());
+  assert(!set.HasEscaped(localFunctionRegisterPO));
+  assert(!set.HasEscaped(exportedFunctionPO));
 
-  set.GetPointerObject(exportedFunctionPO).MarkAsEscaped();
+  set.MarkAsEscaped(exportedFunctionPO);
   result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
 
   // Now the local function has been marked as escaped as well, since it is the return value
   assert(result);
-  assert(set.GetPointerObject(localFunctionRegisterPO).HasEscaped());
+  assert(set.HasEscaped(localFunctionRegisterPO));
 }
 
 static void
@@ -438,15 +493,15 @@ TestAddPointsToExternalConstraint()
   constraints.SolveNaively();
 
   // Make sure only reg0 points to external, and nothing has escaped
-  assert(set.GetPointerObject(reg0).PointsToExternal());
-  assert(!set.GetPointerObject(reg1).PointsToExternal());
-  assert(!set.GetPointerObject(alloca0).PointsToExternal());
-  assert(!set.GetPointerObject(alloca1).PointsToExternal());
+  assert(set.IsPointingToExternal(reg0));
+  assert(!set.IsPointingToExternal(reg1));
+  assert(!set.IsPointingToExternal(alloca0));
+  assert(!set.IsPointingToExternal(alloca1));
 
-  assert(!set.GetPointerObject(reg0).HasEscaped());
-  assert(!set.GetPointerObject(reg1).HasEscaped());
-  assert(!set.GetPointerObject(alloca0).HasEscaped());
-  assert(!set.GetPointerObject(alloca1).HasEscaped());
+  assert(!set.HasEscaped(reg0));
+  assert(!set.HasEscaped(reg1));
+  assert(!set.HasEscaped(alloca0));
+  assert(!set.HasEscaped(alloca1));
 
   // Add a *reg0 = reg1 store
   constraints.AddConstraint(StoreConstraint(reg0, reg1));
@@ -454,9 +509,9 @@ TestAddPointsToExternalConstraint()
 
   // Now alloca1 is marked as escaped, due to being written to a pointer that might point to
   // external
-  assert(set.GetPointerObject(alloca1).HasEscaped());
+  assert(set.HasEscaped(alloca1));
   // The other alloca has not escaped
-  assert(!set.GetPointerObject(alloca0).HasEscaped());
+  assert(!set.HasEscaped(alloca0));
 }
 
 static void
@@ -482,16 +537,16 @@ TestAddRegisterContentEscapedConstraint()
   constraints.SolveNaively();
 
   // Make sure only alloca0 has escaped
-  assert(set.GetPointerObject(alloca0).HasEscaped());
-  assert(!set.GetPointerObject(alloca1).HasEscaped());
+  assert(set.HasEscaped(alloca0));
+  assert(!set.HasEscaped(alloca1));
 
   // Add a alloca0 = reg1 store
   constraints.AddConstraint(StoreConstraint(reg0, reg1));
   constraints.SolveNaively();
 
   // Now both are marked as escaped
-  assert(set.GetPointerObject(alloca0).HasEscaped());
-  assert(set.GetPointerObject(alloca1).HasEscaped());
+  assert(set.HasEscaped(alloca0));
+  assert(set.HasEscaped(alloca1));
 }
 
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
@@ -505,7 +560,7 @@ TestPointerObjectConstraintSetSolve(bool useWorklist)
   rvsdg.InitializeTest();
 
   PointerObjectSet set;
-  PointerObject::Index reg[11];
+  PointerObjectIndex reg[11];
   for (unsigned int & i : reg)
     i = set.CreateDummyRegisterPointerObject();
 
@@ -589,7 +644,7 @@ TestPointerObjectConstraintSetSolve(bool useWorklist)
   assert(set.GetPointsToSet(reg[7]).Contains(alloca4));
 
   // %8 should point to external, since it points to the superset of %0 and %1
-  assert(set.GetPointerObject(reg[8]).PointsToExternal());
+  assert(set.IsPointingToExternal(reg[8]));
   // %8 may also point to alloca4
   assert(set.GetPointsToSet(reg[8]).Size() == 1);
   assert(set.GetPointsToSet(reg[8]).Contains(alloca4));
@@ -602,21 +657,21 @@ TestPointerObjectConstraintSetSolve(bool useWorklist)
   assert(set.GetPointsToSet(alloca4).Contains(alloca3));
 
   // Also due to the same store, alloca3 might have escaped
-  assert(set.GetPointerObject(alloca3).HasEscaped());
+  assert(set.HasEscaped(alloca3));
   // Due to alloca3 pointing to alloca4, it too should have been marked as escaped
-  assert(set.GetPointerObject(alloca4).HasEscaped());
+  assert(set.HasEscaped(alloca4));
   // Check that the other two allocas haven't escaped
-  assert(!set.GetPointerObject(alloca1).HasEscaped());
-  assert(!set.GetPointerObject(alloca2).HasEscaped());
+  assert(!set.HasEscaped(alloca1));
+  assert(!set.HasEscaped(alloca2));
 
   // Make sure only the escaped allocas are marked as pointing to external
-  assert(!set.GetPointerObject(alloca1).PointsToExternal());
-  assert(!set.GetPointerObject(alloca2).PointsToExternal());
-  assert(set.GetPointerObject(alloca3).PointsToExternal());
-  assert(set.GetPointerObject(alloca4).PointsToExternal());
+  assert(!set.IsPointingToExternal(alloca1));
+  assert(!set.IsPointingToExternal(alloca2));
+  assert(set.IsPointingToExternal(alloca3));
+  assert(set.IsPointingToExternal(alloca4));
 
   // %10 should also point to external, since it might have been loaded from external
-  assert(set.GetPointerObject(reg[10]).PointsToExternal());
+  assert(set.IsPointingToExternal(reg[10]));
 }
 
 static int
@@ -624,6 +679,7 @@ TestPointerObjectSet()
 {
   TestFlagFunctions();
   TestCreatePointerObjects();
+  TestPointerObjectUnification();
   TestAddToPointsToSet();
   TestMakePointsToSetSuperset();
   TestMarkAllPointeesAsEscaped();

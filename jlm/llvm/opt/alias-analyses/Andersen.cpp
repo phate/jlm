@@ -779,11 +779,11 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
 
     // Create a memory PointerObject representing the target of the external symbol
     // We can assume that two external symbols don't alias, clang does.
-    const PointerObject::Index importObject = Set_->CreateImportMemoryObject(argument);
+    const auto importObjectPO = Set_->CreateImportMemoryObject(argument);
 
     // Create a register PointerObject representing the address value itself
-    const PointerObject::Index importRegister = Set_->CreateRegisterPointerObject(argument);
-    Constraints_->AddPointerPointeeConstraint(importRegister, importObject);
+    const auto importRegisterPO = Set_->CreateRegisterPointerObject(argument);
+    Constraints_->AddPointerPointeeConstraint(importRegisterPO, importObjectPO);
   }
 
   AnalyzeRegion(rootRegion);
@@ -943,10 +943,10 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
 
   // Helper function for attaching PointsToGraph nodes to their pointees, based on the
   // PointerObject's points-to set.
-  auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObject::Index index)
+  auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObjectIndex index)
   {
     // Add all PointsToGraph nodes who should point to external to the list
-    if (set.GetPointerObject(index).PointsToExternal())
+    if (set.IsPointingToExternal(index))
       pointsToExternal.push_back(&node);
 
     for (const auto targetIdx : set.GetPointsToSet(index).Items())
@@ -958,7 +958,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   };
 
   // First group RVSDG registers by the PointerObject they are mapped to
-  std::unordered_map<PointerObject::Index, util::HashSet<const rvsdg::output *>> outputsInRegister;
+  std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::output *>> outputsInRegister;
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
     outputsInRegister[registerIdx].Insert(outputNode);
@@ -973,14 +973,14 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
 
   // Now add all edges from memory node to memory node.
   // Also checks and informs the PointsToGraph which memory nodes are marked as escaping the module
-  for (PointerObject::Index idx = 0; idx < set.NumPointerObjects(); idx++)
+  for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
     if (memoryNodes[idx] == nullptr)
       continue; // Skip all nodes that are not MemoryNodes
 
     applyPointsToSet(*memoryNodes[idx], idx);
 
-    if (set.GetPointerObject(idx).HasEscaped())
+    if (set.HasEscaped(idx))
     {
       memoryNodes[idx]->MarkAsModuleEscaping();
       escapedMemoryNodes.push_back(memoryNodes[idx]);
