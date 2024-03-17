@@ -732,24 +732,6 @@ public:
     return it != LocationMap_.end();
   }
 
-  void
-  MarkAsEscaped(const rvsdg::output & output)
-  {
-    auto & outputLocation = GetRegisterLocation(output);
-    outputLocation.MarkAsEscaped();
-
-    auto & rootLocation = GetRootLocation(outputLocation);
-    if (!rootLocation.GetPointsTo())
-    {
-    }
-
-    if (rootLocation.GetPointsTo())
-    {
-      rootLocation.GetPointsTo()->SetPointsToFlags(
-          PointsToFlags::PointsToEscapedMemory | PointsToFlags::PointsToExternalMemory);
-    }
-  }
-
   std::string
   ToDot() const
   {
@@ -1221,8 +1203,7 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 
     if (ShouldHandle(callArgument))
     {
-      auto & argumentLocation = Context_->GetRegisterLocation(callArgument);
-      argumentLocation.MarkAsEscaped();
+      MarkAsEscaped(callArgument);
     }
   }
 
@@ -1484,8 +1465,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 
       if (ShouldHandle(operand))
       {
-        auto & operandLocation = Context_->GetRegisterLocation(operand);
-        operandLocation.MarkAsEscaped();
+        MarkAsEscaped(operand);
       }
     }
   }
@@ -1747,8 +1727,7 @@ Steensgaard::AnalyzeExports(const rvsdg::graph & graph)
   for (size_t n = 0; n < rootRegion->nresults(); n++)
   {
     auto & result = *rootRegion->result(n);
-    auto & resultLocation = Context_->GetRegisterLocation(*result.origin());
-    resultLocation.MarkAsEscaped();
+    MarkAsEscaped(*result.origin());
   }
 }
 
@@ -1798,6 +1777,23 @@ Steensgaard::Analyze(
   Context_.reset();
 
   return pointsToGraph;
+}
+
+void
+Steensgaard::MarkAsEscaped(const rvsdg::output & output)
+{
+  auto & outputLocation = Context_->GetRegisterLocation(output);
+  outputLocation.MarkAsEscaped();
+
+  auto & rootLocation = Context_->GetRootLocation(outputLocation);
+  if (!rootLocation.GetPointsTo())
+  {
+    auto & dummyLocation = Context_->InsertDummyLocation();
+    rootLocation.SetPointsTo(dummyLocation);
+  }
+
+  rootLocation.GetPointsTo()->SetPointsToFlags(
+      PointsToFlags::PointsToEscapedMemory | PointsToFlags::PointsToExternalMemory);
 }
 
 void
@@ -1992,13 +1988,13 @@ Steensgaard::ConstructPointsToGraph() const
 
       auto & pointsToGraphNode = *locationMap[location];
 
-      if (pointsToUnknown)
+      if (pointsToUnknown && !Location::Is<LambdaLocation>(*location))
         pointsToGraphNode.AddEdge(pointsToGraph->GetUnknownMemoryNode());
 
-      if (pointsToExternalMemory)
+      if (pointsToExternalMemory && !Location::Is<LambdaLocation>(*location))
         pointsToGraphNode.AddEdge(pointsToGraph->GetExternalMemoryNode());
 
-      if (pointsToEscapedMemory)
+      if (pointsToEscapedMemory && !Location::Is<LambdaLocation>(*location))
       {
         for (auto & escapedMemoryNode : escapedMemoryNodes.Items())
           pointsToGraphNode.AddEdge(*escapedMemoryNode);

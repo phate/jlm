@@ -1195,9 +1195,18 @@ TestLinkedList()
 
     auto & allocaNode = pointsToGraph.GetAllocaNode(test.GetAlloca());
     auto & deltaMyListNode = pointsToGraph.GetDeltaNode(test.GetDeltaMyList());
+    auto & lambdaNextNode = pointsToGraph.GetLambdaNode(test.GetLambdaNext());
+    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    assertTargets(allocaNode, { &allocaNode, &deltaMyListNode });
-    assertTargets(deltaMyListNode, { &allocaNode, &deltaMyListNode });
+    std::unordered_set<const jlm::llvm::aa::PointsToGraph::Node *> expectedMemoryNodes = {
+      &allocaNode,
+      &deltaMyListNode,
+      &lambdaNextNode,
+      &externalMemoryNode
+    };
+
+    assertTargets(allocaNode, expectedMemoryNodes);
+    assertTargets(deltaMyListNode, expectedMemoryNodes);
   };
 
   jlm::tests::LinkedListTest test;
