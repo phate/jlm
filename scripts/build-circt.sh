@@ -71,8 +71,5 @@ cmake -G Ninja \
 	-DVERILATOR_DISABLE=ON \
 	-DCMAKE_INSTALL_PREFIX=${CIRCT_INSTALL}
 ninja -C ${CIRCT_BUILD_DIR}
-###
-# FIXME: This check lead to failing CI piplines
-###
 # ninja -C ${CIRCT_BUILD_DIR} check-circt
 ninja -C ${CIRCT_BUILD_DIR} install
