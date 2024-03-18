@@ -41,11 +41,11 @@ while [[ "$#" -ge 1 ]] ; do
 			CIRCT_INSTALL=$(readlink -m "$1")
 			shift
 			;;
-	  --llvm-lit-path)
-	    shift
-	    LLVM_LIT_PATH=$(readlink -m "$1")
-	    shift
-	    ;;
+    --llvm-lit-path)
+      shift
+      LLVM_LIT_PATH=$(readlink -m "$1")
+      shift
+      ;;
 		--get-commit-hash)
 			commit >&2
 			exit 1
