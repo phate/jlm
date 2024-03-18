@@ -66,6 +66,7 @@ cmake -G Ninja \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	-DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
 	-DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
+	-DLLVM_EXTERNAL_LIT=/usr/local/bin/lit \
 	-DLLVM_LIT_ARGS="-v --show-unsupported" \
 	-DVERILATOR_DISABLE=ON \
 	-DCMAKE_INSTALL_PREFIX=${CIRCT_INSTALL}
