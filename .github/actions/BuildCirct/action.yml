@@ -4,20 +4,20 @@ description: "Builds CIRCT, which is used for the HLS backend"
 runs:
   using: "composite"
   steps:
-    - name: "Get the commit used for building CIRCT and use it as the cache key"
-      id: get-circt-hash
-      run: |
-        echo "hash=$(./scripts/build-circt.sh --get-commit-hash)" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: "Try to fetch CIRCT from the cache"
-      id: cache-circt
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ github.workspace }}/build-circt/circt
-        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
-
+    #    - name: "Get the commit used for building CIRCT and use it as the cache key"
+    #      id: get-circt-hash
+    #      run: |
+    #        echo "hash=$(./scripts/build-circt.sh --get-commit-hash)" >> $GITHUB_OUTPUT
+    #      shell: bash
+    #
+    #    - name: "Try to fetch CIRCT from the cache"
+    #      id: cache-circt
+    #      uses: actions/cache@v4
+    #      with:
+    #        path: |
+    #          ${{ github.workspace }}/build-circt/circt
+    #        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
+    #
     - name: "Install LLVM, Clang, MLIR, and Ninja"
       uses: ./.github/actions/InstallPackages
       with:
