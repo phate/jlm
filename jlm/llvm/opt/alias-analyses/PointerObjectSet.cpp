@@ -141,7 +141,12 @@ PointerObjectIndex
 PointerObjectSet::CreateImportMemoryObject(const rvsdg::argument & importNode)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
-  return ImportMap_[&importNode] = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+  ImportMap_[&importNode] = importMemoryObject;
+
+  // Memory objects defined in other modules are definitely not private to this module
+  MarkAsEscaped(importMemoryObject);
+  return importMemoryObject;
 }
 
 const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &

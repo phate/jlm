@@ -102,6 +102,15 @@ TestCreatePointerObjects()
   assert(set.GetPointerObjectKind(lambda0) == PointerObjectKind::FunctionMemoryObject);
   assert(set.GetPointerObjectKind(import0) == PointerObjectKind::ImportMemoryObject);
 
+  // Most pointer objects don't start out as escaped
+  assert(!set.HasEscaped(dummy0) && !set.IsPointingToExternal(dummy0));
+  assert(!set.HasEscaped(alloca0) && !set.IsPointingToExternal(alloca0));
+  assert(!set.HasEscaped(malloc0) && !set.IsPointingToExternal(malloc0));
+  assert(!set.HasEscaped(delta0) && !set.IsPointingToExternal(delta0));
+  assert(!set.HasEscaped(lambda0) && !set.IsPointingToExternal(lambda0));
+  // But import memory objects have always escaped
+  assert(set.HasEscaped(import0) && set.IsPointingToExternal(import0));
+
   // Registers have helper function for looking up existing PointerObjects
   assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
   assert(set.GetRegisterPointerObject(rvsdg.GetDeltaOutput()) == register0);
@@ -119,13 +128,35 @@ TestCreatePointerObjects()
   assert(set.GetGlobalMap().at(&rvsdg.GetDeltaNode()) == delta0);
   assert(set.GetFunctionMap().LookupKey(&rvsdg.GetLambdaNode()) == lambda0);
   assert(set.GetImportMap().at(&rvsdg.GetImportOutput()) == import0);
-
-  // Imported objects should have been marked as escaped
-  assert(set.HasEscaped(import0));
 }
 
 static void
 TestPointerObjectUnification()
+{
+  using namespace jlm::llvm::aa;
+
+  PointerObjectSet set;
+  auto dummy0 = set.CreateDummyRegisterPointerObject();
+  auto dummy1 = set.CreateDummyRegisterPointerObject();
+  assert(set.GetUnificationRoot(dummy0) == dummy0);
+
+  auto root = set.UnifyPointerObjects(dummy0, dummy1);
+  assert(set.GetUnificationRoot(dummy0) == root);
+  assert(set.GetUnificationRoot(dummy1) == root);
+  assert(set.UnifyPointerObjects(dummy0, dummy1) == root);
+
+  auto dummy2 = set.CreateDummyRegisterPointerObject();
+  auto dummy3 = set.CreateDummyRegisterPointerObject();
+  set.UnifyPointerObjects(dummy0, dummy2);
+  auto newRoot = set.UnifyPointerObjects(dummy1, dummy3);
+  assert(set.GetUnificationRoot(dummy0) == newRoot);
+  assert(set.GetUnificationRoot(dummy1) == newRoot);
+  assert(set.GetUnificationRoot(dummy2) == newRoot);
+  assert(set.GetUnificationRoot(dummy3) == newRoot);
+}
+
+static void
+TestPointerObjectUnificationPointees()
 {
   using namespace jlm::llvm::aa;
 
@@ -141,21 +172,16 @@ TestPointerObjectUnification()
   assert(set.GetPointsToSet(alloca0).Size() == 1);
   assert(set.GetPointsToSet(delta0).Size() == 0);
 
-  auto root = set.UnifyPointerObjects(delta0, alloca0);
-  assert(set.GetUnificationRoot(delta0) == root);
-  assert(set.GetUnificationRoot(alloca0) == root);
+  set.UnifyPointerObjects(delta0, alloca0);
 
   // Now both should share points-to sets
   assert(set.GetPointsToSet(alloca0).Contains(lambda0));
   assert(set.GetPointsToSet(delta0).Contains(lambda0));
 
   // Marking one as pointing to external marks all as pointing to external
-  auto notRoot = alloca0 + delta0 - root;
-  assert(set.MarkAsPointingToExternal(notRoot));
-  assert(set.IsPointingToExternal(root));
-  assert(set.IsPointingToExternal(notRoot));
-
-  assert(!set.MarkAsPointingToExternal(root));
+  assert(set.MarkAsPointingToExternal(alloca0));
+  assert(set.IsPointingToExternal(alloca0));
+  assert(set.IsPointingToExternal(delta0));
 
   // Adding a new pointee adds it to all members
   auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
@@ -680,6 +706,7 @@ TestPointerObjectSet()
   TestFlagFunctions();
   TestCreatePointerObjects();
   TestPointerObjectUnification();
+  TestPointerObjectUnificationPointees();
   TestAddToPointsToSet();
   TestMakePointsToSetSuperset();
   TestMarkAllPointeesAsEscaped();

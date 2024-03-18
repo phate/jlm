@@ -71,10 +71,6 @@ class PointerObjectSet final
           PointsToExternal(0)
     {
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
-
-      // Memory objects from other modules are definitely not private to this module
-      if (kind == PointerObjectKind::ImportMemoryObject)
-        HasEscaped = 1;
     }
 
     /**
