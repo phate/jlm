@@ -30,12 +30,12 @@ while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
 		--build-path)
 			shift
-			CIRCT_BUILD="${PWD}/$1"
+			CIRCT_BUILD="$1"
 			shift
 			;;
 		--install-path)
 			shift
-			CIRCT_INSTALL="${PWD}/$1"
+			CIRCT_INSTALL="$1"
 			shift
 			;;
 		--get-commit-hash)
