@@ -57,7 +57,7 @@ runs:
       if: ${{inputs.install-llvm == 'true'}}
       run: |
         sudo apt-get install llvm-16-dev
-        pip install "lit~=16"
+        pip install "lit~=16.0"
       shell: bash
 
     - name: "Install clang package"
