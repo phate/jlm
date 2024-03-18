@@ -8,6 +8,7 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR=${SCRIPT_DIR}/..
 CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
 CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
+LLVM_LIT_PATH=/usr/local/bin
 
 function commit()
 {
@@ -22,6 +23,8 @@ function usage()
 	echo "                        [${CIRCT_BUILD}]"
 	echo "  --install-path PATH   The path where to install CIRCT."
 	echo "                        [${CIRCT_INSTALL}]"
+	echo "  --llvm-lit-path PATH  The path to LLVM lit tool."
+	echo "                        [${LLVM_LIT_PATH}]"
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
 }
@@ -38,6 +41,11 @@ while [[ "$#" -ge 1 ]] ; do
 			CIRCT_INSTALL=$(readlink -m "$1")
 			shift
 			;;
+	  --llvm-lit-path)
+	    shift
+	    LLVM_LIT_PATH=$(readlink -m "$1")
+	    shift
+	    ;;
 		--get-commit-hash)
 			commit >&2
 			exit 1
@@ -66,7 +74,7 @@ cmake -G Ninja \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	-DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
 	-DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
-	-DLLVM_EXTERNAL_LIT=~/.local/bin \
+	-DLLVM_EXTERNAL_LIT="${LLVM_LIT_PATH}" \
 	-DLLVM_LIT_ARGS="-v --show-unsupported" \
 	-DVERILATOR_DISABLE=ON \
 	-DCMAKE_INSTALL_PREFIX=${CIRCT_INSTALL}

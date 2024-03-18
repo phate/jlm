@@ -30,5 +30,6 @@ runs:
       run: |
         ./scripts/build-circt.sh \
           --build-path ${{ github.workspace }}/build-circt \
-          --install-path ${{ github.workspace }}/build-circt/circt
+          --install-path ${{ github.workspace }}/build-circt/circt \
+          --llvm-lit-path ~/.local/bin
       shell: bash
