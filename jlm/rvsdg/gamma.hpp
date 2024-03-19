@@ -442,12 +442,12 @@ public:
   }
 
   /**
-   * Determines whether the gamma output is invariant.
+   * Determines whether a gamma output is invariant.
    *
    * A gamma output is invariant if its value directly originates from gamma inputs and the origin
-   * for all these inputs is the same.
+   * of all these inputs is the same.
    *
-   * @param invariantOrigin The invariant value if the gamma output is invariant and \p
+   * @param invariantOrigin The origin of the gamma inputs if the gamma output is invariant and \p
    * invariantOrigin is unequal NULL.
    * @return True if the gamma output is invariant, otherwise false.
    */
