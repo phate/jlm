@@ -440,6 +440,19 @@ public:
     JLM_ASSERT(result->output() == this);
     return result;
   }
+
+  /**
+   * Determines whether the gamma output is invariant.
+   *
+   * A gamma output is invariant if its value directly originates from gamma inputs and the origin
+   * for all these inputs is the same.
+   *
+   * @param invariantOrigin The invariant value if the gamma output is invariant and \p
+   * invariantOrigin is unequal NULL.
+   * @return True if the gamma output is invariant, otherwise false.
+   */
+  bool
+  IsInvariant(rvsdg::output ** invariantOrigin = nullptr) const noexcept;
 };
 
 static inline bool
