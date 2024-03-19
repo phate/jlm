@@ -23,7 +23,7 @@ function usage()
 	echo "                        [${CIRCT_BUILD}]"
 	echo "  --install-path PATH   The path where to install CIRCT."
 	echo "                        [${CIRCT_INSTALL}]"
-	echo "  --llvm-lit-path PATH  The path to LLVM lit tool."
+	echo "  --llvm-lit-path PATH  The path to the LLVM lit tool."
 	echo "                        [${LLVM_LIT_PATH}]"
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
