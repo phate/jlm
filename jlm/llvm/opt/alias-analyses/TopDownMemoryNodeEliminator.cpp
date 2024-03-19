@@ -451,7 +451,7 @@ TopDownMemoryNodeEliminator::CreateAndEliminate(
 void
 TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule & rvsdgModule)
 {
-  InitializeLiveNodes(rvsdgModule);
+  InitializeLiveNodesTailLambdas(rvsdgModule);
   EliminateTopDownRootRegion(*rvsdgModule.Rvsdg().root());
 }
 
@@ -536,7 +536,8 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const lambda::node & la
 
   if (Context_->HasAnnotatedLiveNodes(lambdaNode))
   {
-    // The live nodes were annotated by the InitializeLiveNodes method and/or from the call sides
+    // The live nodes were annotated by the InitializeLiveNodesTailLambdas method and/or from the
+    // call sides
     auto & liveNodes = Context_->GetLiveNodes(lambdaSubregion);
     provisioning.AddRegionEntryNodes(lambdaSubregion, liveNodes);
   }
@@ -819,21 +820,21 @@ TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodes(const RvsdgModule & rvsdgModule)
+TopDownMemoryNodeEliminator::InitializeLiveNodesTailLambdas(const RvsdgModule & rvsdgModule)
 {
   auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
     {
-      InitializeLiveNodesLambda(*lambdaNode);
+      InitializeLiveNodesTailLambda(*lambdaNode);
     }
     else if (auto phiNode = dynamic_cast<const phi::node *>(node))
     {
       auto lambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
       for (auto & phiLambdaNode : lambdaNodes)
       {
-        InitializeLiveNodesLambda(*phiLambdaNode);
+        InitializeLiveNodesTailLambda(*phiLambdaNode);
       }
     }
     else if (dynamic_cast<const delta::node *>(node))
@@ -848,15 +849,19 @@ TopDownMemoryNodeEliminator::InitializeLiveNodes(const RvsdgModule & rvsdgModule
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesLambda(const lambda::node & lambdaNode)
+TopDownMemoryNodeEliminator::InitializeLiveNodesTailLambda(const lambda::node & tailLambdaNode)
 {
-  auto & lambdaSubregion = *lambdaNode.subregion();
+  auto & lambdaSubregion = *tailLambdaNode.subregion();
   auto & seedProvisioning = Context_->GetSeedProvisioning();
 
-  auto memoryNodes = seedProvisioning.GetLambdaEntryNodes(lambdaNode);
+  auto memoryNodes = seedProvisioning.GetLambdaEntryNodes(tailLambdaNode);
+
+  // Alloca node can never be alive at beginning of a tail lambda. They only become alive
+  // within a lambda of the RVSDG module.
   memoryNodes.RemoveWhere(IsAllocaNode);
+
   Context_->AddLiveNodes(lambdaSubregion, memoryNodes);
-  Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
+  Context_->AddLiveNodesAnnotatedLambda(tailLambdaNode);
 }
 
 bool

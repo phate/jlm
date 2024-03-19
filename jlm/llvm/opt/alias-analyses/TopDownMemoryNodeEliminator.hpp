@@ -169,11 +169,25 @@ private:
       const CallNode & indirectCall,
       const CallTypeClassifier & callTypeClassifier);
 
+  /**
+   * Collects for every tail-lambda all the memory nodes that would be alive at the beginning of a
+   * tail-lambda's execution. A tail-lambda is a lambda that is only dead or exported, i.e., no
+   * other node in \p rvsdgModule depends on it.
+   *
+   * @param rvsdgModule RVSDG module the analysis is performed on.
+   */
   void
-  InitializeLiveNodes(const RvsdgModule & rvsdgModule);
+  InitializeLiveNodesTailLambdas(const RvsdgModule & rvsdgModule);
 
+  /**
+   * Initializes the memory nodes that are alive at the beginning of every tail-lambda.
+   *
+   * @param tailLambdaNode Lambda node for which the memory nodes are initialized.
+   *
+   * @see InitializeLiveNodesTailLambdas()
+   */
   void
-  InitializeLiveNodesLambda(const lambda::node & lambdaNode);
+  InitializeLiveNodesTailLambda(const lambda::node & tailLambdaNode);
 
   /**
    * The function checks the following invariants:
