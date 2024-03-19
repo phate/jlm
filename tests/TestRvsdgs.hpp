@@ -804,8 +804,7 @@ private:
   jlm::rvsdg::simple_node * AllocaPz_;
 };
 
-/** \brief ExternalCallTest
- *
+/**
  * This function sets up an RVSDG representing the following program:
  *
  * \code{.c}
@@ -822,7 +821,7 @@ private:
  * It uses a single memory state to sequentialize the respective memory operations within each
  * function.
  */
-class ExternalCallTest final : public RvsdgTest
+class ExternalCallTest1 final : public RvsdgTest
 {
 public:
   [[nodiscard]] const jlm::llvm::lambda::node &
@@ -852,6 +851,71 @@ private:
   jlm::llvm::CallNode * CallG_;
 
   jlm::rvsdg::argument * ExternalGArgument_;
+};
+
+/**
+ * This function sets up an RVSDG representing the following program:
+ *
+ * \code{.c}
+ *   #include <stdint.h>
+ *
+ *   typedef struct myStruct
+ *   {
+ *     uint32_t i;
+ *     uint32_t ** p1;
+ *     uint32_t ** p2;
+ *   } myStruct;
+ *
+ *   extern void
+ *   f(myStruct * s);
+ *
+ *   void
+ *   g()
+ *   {
+ *     myStruct s;
+ *     f(&s);
+ *     uint32_t * tmp = *s.p1;
+ *     *s.p1 = *s.p2;
+ *     *s.p2 = tmp;
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations within each
+ * function.
+ */
+class ExternalCallTest2 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] jlm::llvm::lambda::node &
+  LambdaG()
+  {
+    JLM_ASSERT(LambdaG_ != nullptr);
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] jlm::llvm::CallNode &
+  CallF()
+  {
+    JLM_ASSERT(CallF_ != nullptr);
+    return *CallF_;
+  }
+
+  [[nodiscard]] jlm::rvsdg::argument &
+  ExternalF()
+  {
+    JLM_ASSERT(ExternalFArgument_ != nullptr);
+    return *ExternalFArgument_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::lambda::node * LambdaG_ = {};
+
+  jlm::llvm::CallNode * CallF_ = {};
+
+  jlm::rvsdg::argument * ExternalFArgument_ = {};
 };
 
 /** \brief GammaTest class
