@@ -14,12 +14,26 @@
 namespace jlm::llvm::aa
 {
 
-PointerObject::Index
+/**
+ * Flag that enables unification logic.
+ * When enabled, each points-to set lookup needs to perform a find operation.
+ * When disabled, attempting to call UnifyPointerObjects panics.
+ */
+static constexpr bool ENABLE_UNIFICATION = true;
+
+PointerObjectIndex
 PointerObjectSet::AddPointerObject(PointerObjectKind kind)
 {
-  JLM_ASSERT(PointerObjects_.size() < std::numeric_limits<PointerObject::Index>::max());
+  JLM_ASSERT(PointerObjects_.size() < std::numeric_limits<PointerObjectIndex>::max());
+  PointerObjectIndex index = PointerObjects_.size();
+
   PointerObjects_.emplace_back(kind);
-  PointsToSets_.emplace_back(); // Add empty points-to-set
+  if constexpr (ENABLE_UNIFICATION)
+  {
+    PointerObjectParents_.push_back(index);
+    PointerObjectRank_.push_back(0);
+  }
+  PointsToSets_.emplace_back(); // Add empty points-to set
   return PointerObjects_.size() - 1;
 }
 
@@ -35,33 +49,19 @@ PointerObjectSet::NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept
   size_t count = 0;
   for (auto & pointerObject : PointerObjects_)
   {
-    count += pointerObject.GetKind() == kind;
+    count += pointerObject.Kind == kind;
   }
   return count;
 }
 
-PointerObject &
-PointerObjectSet::GetPointerObject(PointerObject::Index index)
-{
-  JLM_ASSERT(index < NumPointerObjects());
-  return PointerObjects_[index];
-}
-
-const PointerObject &
-PointerObjectSet::GetPointerObject(PointerObject::Index index) const
-{
-  JLM_ASSERT(index < NumPointerObjects());
-  return PointerObjects_[index];
-}
-
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
   return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
 {
   const auto it = RegisterMap_.find(&rvsdgOutput);
@@ -69,7 +69,7 @@ PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) co
   return it->second;
 }
 
-std::optional<PointerObject::Index>
+std::optional<PointerObjectIndex>
 PointerObjectSet::TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
 {
   if (const auto it = RegisterMap_.find(&rvsdgOutput); it != RegisterMap_.end())
@@ -80,41 +80,41 @@ PointerObjectSet::TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 void
 PointerObjectSet::MapRegisterToExistingPointerObject(
     const rvsdg::output & rvsdgOutput,
-    PointerObject::Index pointerObject)
+    PointerObjectIndex pointerObject)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
-  JLM_ASSERT(GetPointerObject(pointerObject).GetKind() == PointerObjectKind::Register);
+  JLM_ASSERT(GetPointerObjectKind(pointerObject) == PointerObjectKind::Register);
   RegisterMap_[&rvsdgOutput] = pointerObject;
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateDummyRegisterPointerObject()
 {
   return AddPointerObject(PointerObjectKind::Register);
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode)
 {
   JLM_ASSERT(AllocaMap_.count(&allocaNode) == 0);
   return AllocaMap_[&allocaNode] = AddPointerObject(PointerObjectKind::AllocaMemoryObject);
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateMallocMemoryObject(const rvsdg::node & mallocNode)
 {
   JLM_ASSERT(MallocMap_.count(&mallocNode) == 0);
   return MallocMap_[&mallocNode] = AddPointerObject(PointerObjectKind::MallocMemoryObject);
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode)
 {
   JLM_ASSERT(GlobalMap_.count(&deltaNode) == 0);
   return GlobalMap_[&deltaNode] = AddPointerObject(PointerObjectKind::GlobalMemoryObject);
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 {
   JLM_ASSERT(!FunctionMap_.HasKey(&lambdaNode));
@@ -123,7 +123,7 @@ PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
   return pointerObject;
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::GetFunctionMemoryObject(const lambda::node & lambdaNode) const
 {
   JLM_ASSERT(FunctionMap_.HasKey(&lambdaNode));
@@ -131,114 +131,234 @@ PointerObjectSet::GetFunctionMemoryObject(const lambda::node & lambdaNode) const
 }
 
 const lambda::node &
-PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObject::Index index) const
+PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const
 {
   JLM_ASSERT(FunctionMap_.HasValue(index));
   return *FunctionMap_.LookupValue(index);
 }
 
-PointerObject::Index
+PointerObjectIndex
 PointerObjectSet::CreateImportMemoryObject(const rvsdg::argument & importNode)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
-  return ImportMap_[&importNode] = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+  ImportMap_[&importNode] = importMemoryObject;
+
+  // Memory objects defined in other modules are definitely not private to this module
+  MarkAsEscaped(importMemoryObject);
+  return importMemoryObject;
 }
 
-const std::unordered_map<const rvsdg::output *, PointerObject::Index> &
+const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
 PointerObjectSet::GetRegisterMap() const noexcept
 {
   return RegisterMap_;
 }
 
-const std::unordered_map<const rvsdg::node *, PointerObject::Index> &
+const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
 PointerObjectSet::GetAllocaMap() const noexcept
 {
   return AllocaMap_;
 }
 
-const std::unordered_map<const rvsdg::node *, PointerObject::Index> &
+const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
 PointerObjectSet::GetMallocMap() const noexcept
 {
   return MallocMap_;
 }
 
-const std::unordered_map<const delta::node *, PointerObject::Index> &
+const std::unordered_map<const delta::node *, PointerObjectIndex> &
 PointerObjectSet::GetGlobalMap() const noexcept
 {
   return GlobalMap_;
 }
 
-const util::BijectiveMap<const lambda::node *, PointerObject::Index> &
+const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
 PointerObjectSet::GetFunctionMap() const noexcept
 {
   return FunctionMap_;
 }
 
-const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
+const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
 PointerObjectSet::GetImportMap() const noexcept
 {
   return ImportMap_;
 }
 
-const util::HashSet<PointerObject::Index> &
-PointerObjectSet::GetPointsToSet(PointerObject::Index idx) const
+PointerObjectKind
+PointerObjectSet::GetPointerObjectKind(PointerObjectIndex index) const noexcept
 {
-  JLM_ASSERT(idx < NumPointerObjects());
-  return PointsToSets_[idx];
+  JLM_ASSERT(index < NumPointerObjects());
+  return PointerObjects_[index].Kind;
+}
+
+bool
+PointerObjectSet::CanPointerObjectPoint(PointerObjectIndex index) const noexcept
+{
+  JLM_ASSERT(index < NumPointerObjects());
+  return PointerObjects_[index].CanPoint();
+}
+
+bool
+PointerObjectSet::CanPointerObjectBePointee(PointerObjectIndex index) const noexcept
+{
+  JLM_ASSERT(index < NumPointerObjects());
+  return PointerObjects_[index].CanBePointee();
+}
+
+bool
+PointerObjectSet::HasEscaped(PointerObjectIndex index) const noexcept
+{
+  JLM_ASSERT(index < NumPointerObjects());
+  return PointerObjects_[index].HasEscaped;
+}
+
+bool
+PointerObjectSet::MarkAsEscaped(PointerObjectIndex index)
+{
+  JLM_ASSERT(index < NumPointerObjects());
+  if (PointerObjects_[index].HasEscaped)
+    return false;
+  PointerObjects_[index].HasEscaped = true;
+
+  // Pointer objects that have addresses can be written to from outside the module
+  if (CanPointerObjectBePointee(index))
+    MarkAsPointingToExternal(index);
+
+  return true;
+}
+
+bool
+PointerObjectSet::IsPointingToExternal(PointerObjectIndex index) const noexcept
+{
+  return PointerObjects_[GetUnificationRoot(index)].PointsToExternal;
+}
+
+bool
+PointerObjectSet::MarkAsPointingToExternal(PointerObjectIndex index)
+{
+  if (!CanPointerObjectPoint(index))
+    return false;
+
+  auto parent = GetUnificationRoot(index);
+  if (PointerObjects_[parent].PointsToExternal)
+    return false;
+  PointerObjects_[parent].PointsToExternal = true;
+  return true;
+}
+
+PointerObjectIndex
+PointerObjectSet::GetUnificationRoot(PointerObjectIndex index) const noexcept
+{
+  if constexpr (ENABLE_UNIFICATION)
+  {
+    JLM_ASSERT(index < NumPointerObjects());
+
+    // Technique known as path halving, gives same asymptotic performance as full path compression
+    while (PointerObjectParents_[index] != index)
+    {
+      auto & parent = PointerObjectParents_[index];
+      auto grandparent = PointerObjectParents_[parent];
+      index = parent = grandparent;
+    }
+  }
+
+  return index;
+}
+
+PointerObjectIndex
+PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectIndex object2)
+{
+  if constexpr (!ENABLE_UNIFICATION)
+    JLM_UNREACHABLE("Unification is not enabled");
+
+  JLM_ASSERT(CanPointerObjectPoint(object1));
+  JLM_ASSERT(CanPointerObjectPoint(object2));
+
+  PointerObjectIndex newRoot = GetUnificationRoot(object1);
+  PointerObjectIndex oldRoot = GetUnificationRoot(object2);
+
+  if (newRoot == oldRoot)
+    return newRoot;
+
+  // Make sure the rank continues to be an upper bound for height.
+  // If they have different rank, the root should be the one with the highest rank.
+  // Equal rank forces the new root to increase its rank
+  if (PointerObjectRank_[newRoot] < PointerObjectRank_[oldRoot])
+    std::swap(newRoot, oldRoot);
+  else if (PointerObjectRank_[newRoot] == PointerObjectRank_[oldRoot])
+    PointerObjectRank_[newRoot]++;
+
+  PointerObjectParents_[oldRoot] = newRoot;
+
+  PointsToSets_[newRoot].UnionWith(PointsToSets_[oldRoot]);
+  PointsToSets_[oldRoot].Clear();
+
+  if (IsPointingToExternal(oldRoot))
+    MarkAsPointingToExternal(newRoot);
+
+  return newRoot;
+}
+
+const util::HashSet<PointerObjectIndex> &
+PointerObjectSet::GetPointsToSet(PointerObjectIndex index) const
+{
+  return PointsToSets_[GetUnificationRoot(index)];
 }
 
 // Makes pointee a member of P(pointer)
 bool
-PointerObjectSet::AddToPointsToSet(PointerObject::Index pointer, PointerObject::Index pointee)
+PointerObjectSet::AddToPointsToSet(PointerObjectIndex pointer, PointerObjectIndex pointee)
 {
   JLM_ASSERT(pointer < NumPointerObjects());
   JLM_ASSERT(pointee < NumPointerObjects());
   // Assert the pointer object is a possible pointee
-  JLM_ASSERT(GetPointerObject(pointee).CanBePointee());
+  JLM_ASSERT(CanPointerObjectBePointee(pointee));
 
   // If the pointer PointerObject can not point to anything, silently ignore
-  if (!GetPointerObject(pointer).CanPoint())
+  if (!CanPointerObjectPoint(pointer))
     return false;
 
-  return PointsToSets_[pointer].Insert(pointee);
+  return PointsToSets_[GetUnificationRoot(pointer)].Insert(pointee);
 }
 
 // Makes P(superset) a superset of P(subset)
 bool
-PointerObjectSet::MakePointsToSetSuperset(
-    PointerObject::Index superset,
-    PointerObject::Index subset)
+PointerObjectSet::MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset)
 {
-  JLM_ASSERT(superset < NumPointerObjects());
-  JLM_ASSERT(subset < NumPointerObjects());
-
   // If the superset PointerObject can't point to anything, silently ignore
-  if (!GetPointerObject(superset).CanPoint())
+  if (!CanPointerObjectPoint(superset))
     return false;
 
-  // If the superset PointerObject can't point to anything, silently ignore
-  if (!GetPointerObject(superset).CanPoint())
+  // If the subset PointerObject can't point to anything, silently ignore
+  if (!CanPointerObjectPoint(subset))
     return false;
 
-  auto & P_super = PointsToSets_[superset];
-  const auto & P_sub = PointsToSets_[subset];
+  auto supersetParent = GetUnificationRoot(superset);
+  auto subsetParent = GetUnificationRoot(subset);
+
+  if (supersetParent == subsetParent)
+    return false;
+
+  auto & P_super = PointsToSets_[supersetParent];
+  auto & P_sub = PointsToSets_[subsetParent];
 
   bool modified = P_super.UnionWith(P_sub);
 
   // If the external node is in the subset, it must also be part of the superset
-  if (GetPointerObject(subset).PointsToExternal())
-    modified |= GetPointerObject(superset).MarkAsPointsToExternal();
+  if (IsPointingToExternal(subsetParent))
+    modified |= MarkAsPointingToExternal(supersetParent);
 
   return modified;
 }
 
-// Markes all x in P(pointer) as escaped
+// Marks all x in P(pointer) as escaped
 bool
-PointerObjectSet::MarkAllPointeesAsEscaped(PointerObject::Index pointer)
+PointerObjectSet::MarkAllPointeesAsEscaped(PointerObjectIndex pointer)
 {
   bool modified = false;
-  for (PointerObject::Index pointee : PointsToSets_[pointer].Items())
-    modified |= GetPointerObject(pointee).MarkAsEscaped();
+  for (PointerObjectIndex pointee : GetPointsToSet(pointer).Items())
+    modified |= MarkAsEscaped(pointee);
 
   return modified;
 }
@@ -255,12 +375,12 @@ bool
 StoreConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   bool modified = false;
-  for (PointerObject::Index x : set.GetPointsToSet(Pointer_).Items())
+  for (PointerObjectIndex x : set.GetPointsToSet(Pointer_).Items())
     modified |= set.MakePointsToSetSuperset(x, Value_);
 
   // If external in P(Pointer1_), P(external) should become a superset of P(Pointer2)
   // In practice, this means everything in P(Pointer2) escapes
-  if (set.GetPointerObject(Pointer_).PointsToExternal())
+  if (set.IsPointingToExternal(Pointer_))
     modified |= set.MarkAllPointeesAsEscaped(Value_);
 
   return modified;
@@ -271,12 +391,12 @@ bool
 LoadConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   bool modified = false;
-  for (PointerObject::Index x : set.GetPointsToSet(Pointer_).Items())
+  for (PointerObjectIndex x : set.GetPointsToSet(Pointer_).Items())
     modified |= set.MakePointsToSetSuperset(Value_, x);
 
   // P(pointer) "contains" external, then P(loaded) should also "contain" it
-  if (set.GetPointerObject(Pointer_).PointsToExternal())
-    modified |= set.GetPointerObject(Value_).MarkAsPointsToExternal();
+  if (set.IsPointingToExternal(Pointer_))
+    modified |= set.MarkAsPointingToExternal(Value_);
 
   return modified;
 }
@@ -331,7 +451,7 @@ static void
 HandleCallingImportedFunction(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    [[maybe_unused]] PointerObject::Index imported,
+    [[maybe_unused]] PointerObjectIndex imported,
     MarkAsEscaped & markAsEscaped,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
@@ -345,7 +465,7 @@ HandleCallingImportedFunction(
  * Passes the points-to-sets of the arguments into the function subregion,
  * and passes the points-to-sets of the function's return values back to the CallNode's outputs.
  * Passing pointees is performed by calling the provided \p makeSuperset functor, with signature
- *   void(PointerObject::Index superset, PointerObject::Index subset)
+ *   void(PointerObjectIndex superset, PointerObjectIndex subset)
  * @param set the PointerObjectSet representing this module.
  * @param callNode the RVSDG CallNode that represents the function call itself
  * @param lambda the PointerObject of FunctionMemoryObject kind that might be called.
@@ -356,7 +476,7 @@ static void
 HandleCallingLambdaFunction(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    PointerObject::Index lambda,
+    PointerObjectIndex lambda,
     MakeSuperset & makeSuperset)
 {
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
@@ -404,25 +524,25 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
 {
   bool modified = false;
 
-  const auto MakeSuperset = [&](PointerObject::Index superset, PointerObject::Index subset)
+  const auto MakeSuperset = [&](PointerObjectIndex superset, PointerObjectIndex subset)
   {
     modified |= set.MakePointsToSetSuperset(superset, subset);
   };
 
-  const auto MarkAsEscaped = [&](PointerObject::Index index)
+  const auto MarkAsEscaped = [&](PointerObjectIndex index)
   {
-    modified |= set.GetPointerObject(index).MarkAsEscaped();
+    modified |= set.MarkAsEscaped(index);
   };
 
-  const auto MarkAsPointsToExternal = [&](PointerObject::Index index)
+  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
   {
-    modified |= set.GetPointerObject(index).MarkAsPointsToExternal();
+    modified |= set.MarkAsPointingToExternal(index);
   };
 
   // For each possible function target, connect parameters and return values to the call node
   for (const auto target : set.GetPointsToSet(Pointer_).Items())
   {
-    const auto kind = set.GetPointerObject(target).GetKind();
+    const auto kind = set.GetPointerObjectKind(target);
     if (kind == PointerObjectKind::ImportMemoryObject)
       HandleCallingImportedFunction(set, CallNode_, target, MarkAsEscaped, MarkAsPointsToExternal);
     else if (kind == PointerObjectKind::FunctionMemoryObject)
@@ -430,7 +550,7 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
   }
 
   // If we might be calling an external function
-  if (set.GetPointerObject(Pointer_).PointsToExternal())
+  if (set.IsPointingToExternal(Pointer_))
     HandleCallingExternalFunction(set, CallNode_, MarkAsEscaped, MarkAsPointsToExternal);
 
   return modified;
@@ -439,12 +559,12 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
 bool
 EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
 {
-  std::queue<PointerObject::Index> escapers;
+  std::queue<PointerObjectIndex> escapers;
 
   // First add all already escaped PointerObjects to the queue
-  for (PointerObject::Index idx = 0; idx < set.NumPointerObjects(); idx++)
+  for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
-    if (set.GetPointerObject(idx).HasEscaped())
+    if (set.HasEscaped(idx))
       escapers.push(idx);
   }
 
@@ -453,12 +573,12 @@ EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
   // For all escapers, check if they point to any PointerObjects not marked as escaped
   while (!escapers.empty())
   {
-    const PointerObject::Index escaper = escapers.front();
+    const PointerObjectIndex escaper = escapers.front();
     escapers.pop();
 
-    for (PointerObject::Index pointee : set.GetPointsToSet(escaper).Items())
+    for (PointerObjectIndex pointee : set.GetPointsToSet(escaper).Items())
     {
-      if (set.GetPointerObject(pointee).MarkAsEscaped())
+      if (set.MarkAsEscaped(pointee))
       {
         // Add the newly marked PointerObject to the queue, in case the flag can be propagated
         escapers.push(pointee);
@@ -485,12 +605,12 @@ template<typename MarkAsEscapedFunctor, typename MarkAsPointsToExternalFunctor>
 static void
 HandleEscapedFunction(
     PointerObjectSet & set,
-    PointerObject::Index lambda,
+    PointerObjectIndex lambda,
     MarkAsEscapedFunctor & markAsEscaped,
     MarkAsPointsToExternalFunctor & markAsPointsToExternal)
 {
-  JLM_ASSERT(set.GetPointerObject(lambda).GetKind() == PointerObjectKind::FunctionMemoryObject);
-  JLM_ASSERT(set.GetPointerObject(lambda).HasEscaped());
+  JLM_ASSERT(set.GetPointerObjectKind(lambda) == PointerObjectKind::FunctionMemoryObject);
+  JLM_ASSERT(set.HasEscaped(lambda));
 
   // We now go through the lambda's inner region and apply the necessary flags
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
@@ -504,7 +624,7 @@ HandleEscapedFunction(
       continue;
 
     // Nothing to be done if it is already marked as points to external
-    if (set.GetPointerObject(argumentPO.value()).PointsToExternal())
+    if (set.IsPointingToExternal(argumentPO.value()))
       continue;
 
     markAsPointsToExternal(argumentPO.value());
@@ -518,7 +638,7 @@ HandleEscapedFunction(
       continue;
 
     // Nothing to be done if it is already marked as escaped
-    if (set.GetPointerObject(resultPO.value()).HasEscaped())
+    if (set.HasEscaped(resultPO.value()))
       continue;
 
     // Mark the result register as escaped
@@ -531,21 +651,21 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
 {
   bool modified = false;
 
-  const auto markAsEscaped = [&](PointerObject::Index index)
+  const auto markAsEscaped = [&](PointerObjectIndex index)
   {
-    set.GetPointerObject(index).MarkAsEscaped();
+    set.MarkAsEscaped(index);
     modified = true;
   };
 
-  const auto markAsPointsToExternal = [&](PointerObject::Index index)
+  const auto markAsPointsToExternal = [&](PointerObjectIndex index)
   {
-    set.GetPointerObject(index).MarkAsPointsToExternal();
+    set.MarkAsPointingToExternal(index);
     modified = true;
   };
 
   for (const auto [lambda, lambdaPO] : set.GetFunctionMap())
   {
-    if (set.GetPointerObject(lambdaPO).HasEscaped())
+    if (set.HasEscaped(lambdaPO))
       HandleEscapedFunction(set, lambdaPO, markAsEscaped, markAsPointsToExternal);
   }
 
@@ -554,30 +674,29 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
 
 void
 PointerObjectConstraintSet::AddPointerPointeeConstraint(
-    PointerObject::Index pointer,
-    PointerObject::Index pointee)
+    PointerObjectIndex pointer,
+    PointerObjectIndex pointee)
 {
   // All set constraints are additive, so simple constraints like this can be directly applied.
   Set_.AddToPointsToSet(pointer, pointee);
 }
 
 void
-PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObject::Index pointer)
+PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObjectIndex pointer)
 {
   // Flags are never removed, so adding the flag now ensures it will be included.
-  Set_.GetPointerObject(pointer).MarkAsPointsToExternal();
+  Set_.MarkAsPointingToExternal(pointer);
 }
 
 void
-PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex)
+PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObjectIndex registerIndex)
 {
   // Registers themselves can't escape in the classical sense, since they don't have an address.
   // (CanBePointee() is false)
   // When marked as Escaped, it instead means that the contents of the register has escaped.
   // This allows Escaped-flag propagation to mark any pointee the register might hold as escaped.
-  auto & registerPointerObject = Set_.GetPointerObject(registerIndex);
-  JLM_ASSERT(registerPointerObject.GetKind() == PointerObjectKind::Register);
-  registerPointerObject.MarkAsEscaped();
+  JLM_ASSERT(Set_.GetPointerObjectKind(registerIndex) == PointerObjectKind::Register);
+  Set_.MarkAsEscaped(registerIndex);
 }
 
 void
@@ -597,12 +716,12 @@ PointerObjectConstraintSet::SolveUsingWorklist()
 {
   // Create auxiliary superset graph.
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
-  std::vector<util::HashSet<PointerObject::Index>> supersetEdges(Set_.NumPointerObjects());
+  std::vector<util::HashSet<PointerObjectIndex>> supersetEdges(Set_.NumPointerObjects());
 
   // Create quick lookup tables for Load, Store and function call constraints.
   // Lookup is indexed by the constraint's pointer
-  std::vector<std::vector<PointerObject::Index>> storeConstraints(Set_.NumPointerObjects());
-  std::vector<std::vector<PointerObject::Index>> loadConstraints(Set_.NumPointerObjects());
+  std::vector<std::vector<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
+  std::vector<std::vector<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
   std::vector<std::vector<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
 
   for (const auto & constraint : Constraints_)
@@ -643,13 +762,13 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   }
 
   // The worklist, initialized with every object
-  util::LrfWorklist<PointerObject::Index> worklist;
-  for (PointerObject::Index i = 0; i < Set_.NumPointerObjects(); i++)
+  util::LrfWorklist<PointerObjectIndex> worklist;
+  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
     worklist.PushWorkItem(i);
 
   // Helper function for adding superset edges, propagating everything currently in the subset.
   // The superset is added to the work list if its points-to set or flags are changed.
-  const auto AddSupersetEdge = [&](PointerObject::Index superset, PointerObject::Index subset)
+  const auto AddSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
   {
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
@@ -664,16 +783,16 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   };
 
   // Helper function for flagging a pointer object as escaped. Adds to the worklist if changed
-  const auto MarkAsEscaped = [&](PointerObject::Index index)
+  const auto MarkAsEscaped = [&](PointerObjectIndex index)
   {
-    if (Set_.GetPointerObject(index).MarkAsEscaped())
+    if (Set_.MarkAsEscaped(index))
       worklist.PushWorkItem(index);
   };
 
   // Helper function for flagging a pointer as pointing to external. Adds to the worklist if changed
-  const auto MarkAsPointsToExternal = [&](PointerObject::Index index)
+  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
   {
-    if (Set_.GetPointerObject(index).MarkAsPointsToExternal())
+    if (Set_.MarkAsPointingToExternal(index))
       worklist.PushWorkItem(index);
   };
 
@@ -698,7 +817,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
         AddSupersetEdge(pointee, value);
 
       // If P(n) contains "external", the contents of the written value escapes
-      if (Set_.GetPointerObject(n).PointsToExternal())
+      if (Set_.IsPointingToExternal(n))
         MarkAsEscaped(value);
     }
 
@@ -710,7 +829,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
         AddSupersetEdge(value, pointee);
 
       // If P(n) contains "external", the loaded value may also point to external
-      if (Set_.GetPointerObject(n).PointsToExternal())
+      if (Set_.IsPointingToExternal(n))
         MarkAsPointsToExternal(value);
     }
 
@@ -720,7 +839,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
       // Connect the inputs and outputs of the callNode to every possible function pointee
       for (const auto pointee : Set_.GetPointsToSet(n).Items())
       {
-        const auto kind = Set_.GetPointerObject(pointee).GetKind();
+        const auto kind = Set_.GetPointerObjectKind(pointee);
         if (kind == PointerObjectKind::ImportMemoryObject)
           HandleCallingImportedFunction(
               Set_,
@@ -733,7 +852,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
       }
 
       // If P(n) contains "external", handle calling external functions
-      if (Set_.GetPointerObject(n).PointsToExternal())
+      if (Set_.IsPointingToExternal(n))
         HandleCallingExternalFunction(Set_, *callNode, MarkAsEscaped, MarkAsPointsToExternal);
     }
 
@@ -745,13 +864,13 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     }
 
     // If escaped, propagate escaped flag to all pointees
-    if (Set_.GetPointerObject(n).HasEscaped())
+    if (Set_.HasEscaped(n))
     {
       for (const auto pointee : Set_.GetPointsToSet(n).Items())
         MarkAsEscaped(pointee);
 
       // Escaped functions also need to flag arguments and results in the function body
-      if (Set_.GetPointerObject(n).GetKind() == PointerObjectKind::FunctionMemoryObject)
+      if (Set_.GetPointerObjectKind(n) == PointerObjectKind::FunctionMemoryObject)
         HandleEscapedFunction(Set_, n, MarkAsEscaped, MarkAsPointsToExternal);
     }
   }
