@@ -25,37 +25,21 @@ class TopDownMemoryNodeEliminator::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(util::filepath sourceFile)
-      : util::Statistics(Statistics::Id::TopDownMemoryNodeEliminator),
-        NumRvsdgNodes_(0),
-        SourceFile_(std::move(sourceFile))
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::TopDownMemoryNodeEliminator, sourceFile)
   {}
 
   void
   Start(const rvsdg::graph & graph) noexcept
   {
-    NumRvsdgNodes_ = rvsdg::nnodes(graph.root());
-    Timer_.start();
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddTimer(Label::Timer).start();
   }
 
   void
   Stop() noexcept
   {
-    Timer_.stop();
-  }
-
-  [[nodiscard]] std::string
-  ToString() const override
-  {
-    return util::strfmt(
-        "TopDownMemoryNodeEliminator ",
-        SourceFile_.to_str(),
-        " ",
-        "#RvsdgNodes:",
-        NumRvsdgNodes_,
-        " ",
-        "Time[ns]:",
-        Timer_.ns());
+    GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<Statistics>
@@ -63,11 +47,6 @@ public:
   {
     return std::make_unique<Statistics>(sourceFile);
   }
-
-private:
-  size_t NumRvsdgNodes_;
-  util::filepath SourceFile_;
-  util::timer Timer_;
 };
 
 /** \brief Memory node provisioning of TopDownMemoryNodeEliminator

@@ -40,7 +40,8 @@ GetStatisticsIdNames()
     { Statistics::Id::RvsdgDestruction, "RVSDGDESTRUCTION" },
     { Statistics::Id::RvsdgOptimization, "RVSDGOPTIMIZATION" },
     { Statistics::Id::SteensgaardAnalysis, "SteensgaardAnalysis" },
-    { Statistics::Id::ThetaGammaInversion, "IVT" }
+    { Statistics::Id::ThetaGammaInversion, "IVT" },
+    { Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
   };
   // Make sure every Statistic is mentioned in the mapping
   auto lastIdx = static_cast<size_t>(Statistics::Id::LastEnumValue);
