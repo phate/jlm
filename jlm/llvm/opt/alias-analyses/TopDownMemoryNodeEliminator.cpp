@@ -451,7 +451,10 @@ TopDownMemoryNodeEliminator::CreateAndEliminate(
 void
 TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule & rvsdgModule)
 {
-  InitializeLiveNodesTailLambdas(rvsdgModule);
+  // Initialize the memory nodes that are alive at beginning of every tail-lambda
+  InitializeLiveNodesOfTailLambdas(rvsdgModule);
+
+  // Start the processing of the RVSDG module
   EliminateTopDownRootRegion(*rvsdgModule.Rvsdg().root());
 }
 
@@ -536,7 +539,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const lambda::node & la
 
   if (Context_->HasAnnotatedLiveNodes(lambdaNode))
   {
-    // The live nodes were annotated by the InitializeLiveNodesTailLambdas method and/or from the
+    // The live nodes were annotated by the InitializeLiveNodesOfTailLambdas method and/or from the
     // call sides
     auto & liveNodes = Context_->GetLiveNodes(lambdaSubregion);
     provisioning.AddRegionEntryNodes(lambdaSubregion, liveNodes);
@@ -820,21 +823,21 @@ TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesTailLambdas(const RvsdgModule & rvsdgModule)
+TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(const RvsdgModule & rvsdgModule)
 {
   auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
     {
-      InitializeLiveNodesTailLambda(*lambdaNode);
+      InitializeLiveNodesOfTailLambda(*lambdaNode);
     }
     else if (auto phiNode = dynamic_cast<const phi::node *>(node))
     {
       auto lambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
       for (auto & phiLambdaNode : lambdaNodes)
       {
-        InitializeLiveNodesTailLambda(*phiLambdaNode);
+        InitializeLiveNodesOfTailLambda(*phiLambdaNode);
       }
     }
     else if (dynamic_cast<const delta::node *>(node))
@@ -849,7 +852,7 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesTailLambdas(const RvsdgModule & 
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesTailLambda(const lambda::node & tailLambdaNode)
+TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(const lambda::node & tailLambdaNode)
 {
   auto & lambdaSubregion = *tailLambdaNode.subregion();
   auto & seedProvisioning = Context_->GetSeedProvisioning();
