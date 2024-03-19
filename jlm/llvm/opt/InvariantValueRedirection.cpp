@@ -92,8 +92,11 @@ InvariantValueRedirection::RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node 
   {
     auto & gammaOutput = *it;
 
-    if (auto origin = is_invariant(&gammaOutput))
-      it->divert_users(origin);
+    rvsdg::output * invariantOrigin = nullptr;
+    if (gammaOutput.IsInvariant(&invariantOrigin))
+    {
+      it->divert_users(invariantOrigin);
+    }
   }
 }
 
