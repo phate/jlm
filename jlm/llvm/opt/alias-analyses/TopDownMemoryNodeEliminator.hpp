@@ -113,9 +113,23 @@ private:
   void
   EliminateTopDown(const RvsdgModule & rvsdgModule);
 
+  /**
+   * Processes the inter-procedural RVSDG nodes (lambda, phi, and delta nodes) in the root region
+   * or a phi subregion bottom-up. The bottom-up visitation ensures that all call nodes are
+   * visited before the respective lambda nodes are visited.
+   *
+   * @param region The RVSDG root region or a phi subregion.
+   */
   void
   EliminateTopDownRootRegion(rvsdg::region & region);
 
+  /**
+   * Processes the intra-procedural nodes in a lambda, theta, or gamma subregion top-down. The
+   * top-down visitation ensures that the live memory nodes are added to the live sets when the
+   * respective RVSDG nodes appear in the execution.
+   *
+   * @param region A lambda, theta, or gamma subregion.
+   */
   void
   EliminateTopDownRegion(rvsdg::region & region);
 

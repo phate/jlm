@@ -461,6 +461,12 @@ TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule & rvsdgModule)
 void
 TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::region & region)
 {
+  JLM_ASSERT(region.IsRootRegion() || rvsdg::is<phi::operation>(region.node()));
+
+  // Process the lambda, phi, and delta nodes bottom-up.
+  // This ensures that we visit all the call nodes before we visit the respective lambda nodes.
+  // The tail-lambdas (lambda nodes without calls in the RVSDG module) have already been visited and
+  // initialized by InitializeLiveNodesOfTailLambdas().
   rvsdg::bottomup_traverser traverser(&region);
   for (auto & node : traverser)
   {
@@ -486,6 +492,14 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::region & region)
 void
 TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::region & region)
 {
+  auto isLambdaSubregion = rvsdg::is<lambda::operation>(region.node());
+  auto isThetaSubregion = rvsdg::is<rvsdg::theta_op>(region.node());
+  auto isGammaSubregion = rvsdg::is<rvsdg::gamma_op>(region.node());
+  JLM_ASSERT(isLambdaSubregion || isThetaSubregion || isGammaSubregion);
+
+  // Process the intra-procedural nodes top-down.
+  // This ensures that we add the live memory nodes to the live sets when the respective RVSDG nodes
+  // appear in the visitation.
   rvsdg::topdown_traverser traverser(&region);
   for (auto & node : traverser)
   {
@@ -859,8 +873,7 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(const lambda::node 
 
   auto memoryNodes = seedProvisioning.GetLambdaEntryNodes(tailLambdaNode);
 
-  // Alloca node can never be alive at beginning of a tail lambda. They only become alive
-  // within a lambda of the RVSDG module.
+  // FIXME: Escaped alloca nodes cannot be removed
   memoryNodes.RemoveWhere(IsAllocaNode);
 
   Context_->AddLiveNodes(lambdaSubregion, memoryNodes);
