@@ -138,17 +138,19 @@ public:
    * Converts a PointerObjectSet into PointsToGraph nodes,
    * and points-to-graph set memberships into edges.
    *
-   * Note that registers sharing PointerObject, become separate PointsToGraph nodes.
-   *
    * In the PointerObjectSet, the PointsToExternal flag encodes pointing to an address available
    * outside the module. This may however be the address of a memory object within the module, that
    * has escaped. In the final PointsToGraph, any node marked as pointing to external, will get an
    * edge to the special "external" node, as well as to every memory object node marked as escaped.
    *
+   * @param set the PointerObjectSet to convert
+   * @param statistics if not null, it will collect statistics about the process
    * @return the newly created PointsToGraph
    */
   static std::unique_ptr<PointsToGraph>
-  ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set, Statistics & statistics);
+  ConstructPointsToGraphFromPointerObjectSet(
+      const PointerObjectSet & set,
+      Statistics * statistics = nullptr);
 
 private:
   void

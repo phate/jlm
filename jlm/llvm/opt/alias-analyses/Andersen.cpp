@@ -841,7 +841,7 @@ Andersen::AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & 
     JLM_UNREACHABLE("Unknown solver");
 
   statistics->StartPointsToGraphConstructionStatistics();
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, statistics.get());
   statistics->StopPointsToGraphConstructionStatistics(*result);
 
   statistics->StopAndersenStatistics();
@@ -899,7 +899,7 @@ Andersen::Analyze(const RvsdgModule & module)
 std::unique_ptr<PointsToGraph>
 Andersen::ConstructPointsToGraphFromPointerObjectSet(
     const PointerObjectSet & set,
-    Statistics & statistics)
+    Statistics * statistics)
 {
   auto pointsToGraph = PointsToGraph::Create();
 
@@ -957,11 +957,14 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     }
   };
 
-  // First group RVSDG registers by the PointerObject they are mapped to
+  // First group RVSDG registers by the PointerObject they are mapped to.
+  // If the PointerObject is part of a unification, all Register PointerObjects in the unification
+  // share points-to set, so they can all become one RegisterNode in the PointsToGraph.
   std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::output *>> outputsInRegister;
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
-    outputsInRegister[registerIdx].Insert(outputNode);
+    auto root = set.GetUnificationRoot(registerIdx);
+    outputsInRegister[root].Insert(outputNode);
   }
 
   // Create PointsToGraph::RegisterNodes for each PointerObject of register kind, and add edges
@@ -988,7 +991,9 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   }
 
   // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
-  statistics.StartExternalToAllEscapedStatistics();
+  if (statistics)
+    statistics->StartExternalToAllEscapedStatistics();
+
   for (const auto source : pointsToExternal)
   {
     for (const auto target : escapedMemoryNodes)
@@ -998,7 +1003,9 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     // Add an edge to the special PointsToGraph node called "external" as well
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
-  statistics.StopExternalToAllEscapedStatistics();
+
+  if (statistics)
+    statistics->StopExternalToAllEscapedStatistics();
 
   return pointsToGraph;
 }
