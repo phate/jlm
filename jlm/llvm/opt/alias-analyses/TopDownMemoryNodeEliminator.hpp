@@ -126,7 +126,7 @@ private:
   /**
    * Processes the intra-procedural nodes in a lambda, theta, or gamma subregion top-down. The
    * top-down visitation ensures that the live memory nodes are added to the live sets when the
-   * respective RVSDG nodes appear in the execution.
+   * respective RVSDG nodes appear in the execution order.
    *
    * @param region A lambda, theta, or gamma subregion.
    */

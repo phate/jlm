@@ -340,12 +340,23 @@ public:
     return std::move(Provisioning_);
   }
 
+  /**
+   *
+   * @param region The region of interest.
+   * @return Return the points-to graph memory nodes that are considered live in \p region.
+   */
   const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetLiveNodes(const rvsdg::region & region) noexcept
   {
     return GetOrCreateLiveNodesSet(region);
   }
 
+  /**
+   * Adds points-to graph memory nodes to the live set of \p region.
+   *
+   * @param region The region for which to add the memory nodes.
+   * @param memoryNodes The memory nodes to add.
+   */
   void
   AddLiveNodes(
       const rvsdg::region & region,
@@ -355,12 +366,23 @@ public:
     liveNodes.UnionWith(memoryNodes);
   }
 
+  /**
+   * Determines whether \p lambdaNode has annotated live nodes.
+   *
+   * @param lambdaNode The lambda node for which to check.
+   * @return True if \p lambdaNode has annotated live nodes, otherwise false.
+   */
   bool
   HasAnnotatedLiveNodes(const lambda::node & lambdaNode) const noexcept
   {
     return LiveNodesAnnotatedLambdaNodes_.Contains(&lambdaNode);
   }
 
+  /**
+   * Marks \p lambdaNode as having annotated live nodes.
+   *
+   * @param lambdaNode The lambda node which is marked.
+   */
   void
   AddLiveNodesAnnotatedLambda(const lambda::node & lambdaNode)
   {
@@ -398,7 +420,8 @@ private:
   std::unordered_map<const rvsdg::region *, util::HashSet<const PointsToGraph::MemoryNode *>>
       LiveNodes_;
 
-  // Keeps track of all lambda nodes where we annotated live nodes BEFORE traversing its subregion.
+  // Keeps track of all lambda nodes where we annotated live nodes BEFORE traversing the lambda
+  // subregion.
   util::HashSet<const lambda::node *> LiveNodesAnnotatedLambdaNodes_;
 };
 
@@ -553,16 +576,21 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const lambda::node & la
 
   if (Context_->HasAnnotatedLiveNodes(lambdaNode))
   {
-    // The live nodes were annotated by the InitializeLiveNodesOfTailLambdas method and/or from the
-    // call sides
+    // Live nodes were annotated. This means that either:
+    // 1. This lambda node has direct calls that were already handled due to bottom-up visitation.
+    // 2. This lambda is a tail-lambda and live nodes were annotated by
+    // InitializeLiveNodesOfTailLambdas()
     auto & liveNodes = Context_->GetLiveNodes(lambdaSubregion);
     provisioning.AddRegionEntryNodes(lambdaSubregion, liveNodes);
   }
   else
   {
-    // The lambda node has only indirect calls (no direct calls or exported). We therefore have no
-    // idea what memory nodes are live at its entry. Thus, we need to be conservative and simply say
-    // that all memory nodes from the seed provisioning are live.
+    // Live nodes were not annotated. This means that:
+    // 1. This lambda has no direct calls (but potentially only indirect calls)
+    // 2. This lambda is dead and is not used at all
+    //
+    // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
+    // conservative and simply say that all memory nodes from the seed provisioning are live.
     auto & seedLambdaEntryNodes = seedProvisioning.GetLambdaEntryNodes(lambdaNode);
     Context_->AddLiveNodes(lambdaSubregion, seedLambdaEntryNodes);
     provisioning.AddRegionEntryNodes(lambdaSubregion, seedLambdaEntryNodes);
@@ -578,14 +606,21 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const lambda::node & lam
 
   if (Context_->HasAnnotatedLiveNodes(lambdaNode))
   {
+    // Live nodes were annotated. This means that either:
+    // 1. This lambda node has direct calls that were already handled due to bottom-up visitation.
+    // 2. This lambda is a tail-lambda and live nodes were annotated by
+    // InitializeLiveNodesOfTailLambdas()
     auto & entryNodes = provisioning.GetLambdaEntryNodes(lambdaNode);
     provisioning.AddRegionExitNodes(lambdaSubregion, entryNodes);
   }
   else
   {
-    // The lambda node has only indirect calls (no direct calls or exported). We therefore have no
-    // idea what memory nodes are live or dead at its exit. Thus, we need to be conservative and
-    // simply say that all memory nodes from the seed provisioning are live.
+    // Live nodes were not annotated. This means that:
+    // 1. This lambda has no direct calls (but potentially only indirect calls)
+    // 2. This lambda is dead and is not used at all
+    //
+    // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
+    // conservative and simply say that all memory nodes from the seed provisioning are live.
     auto & seedLambdaExitNodes = seedProvisioning.GetLambdaExitNodes(lambdaNode);
     provisioning.AddRegionExitNodes(lambdaSubregion, seedLambdaExitNodes);
   }
@@ -594,7 +629,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const lambda::node & lam
 void
 TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
 {
-  auto computeLiveNodes = [&](const rvsdg::region & phiSubregion)
+  auto unifyLiveNodes = [&](const rvsdg::region & phiSubregion)
   {
     std::vector<const lambda::node *> lambdaNodes;
     util::HashSet<const PointsToGraph::MemoryNode *> liveNodes;
@@ -608,7 +643,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
         auto & lambdaLiveNodes = Context_->GetLiveNodes(lambdaSubregion);
         liveNodes.UnionWith(lambdaLiveNodes);
       }
-      else if (dynamic_cast<const delta::node *>(&node))
+      else if (is<delta::operation>(&node))
       {
         // Nothing needs to be done.
       }
@@ -628,8 +663,11 @@ TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
 
   auto & phiSubregion = *phiNode.subregion();
 
+  // Compute initial live node solution for all lambda nodes in the phi
   EliminateTopDownRootRegion(phiSubregion);
-  computeLiveNodes(phiSubregion);
+  // Unify the live node sets from all lambda nodes in the phi
+  unifyLiveNodes(phiSubregion);
+  // Ensure that the unified live node sets are propagated to every lambda
   EliminateTopDownRootRegion(phiSubregion);
 }
 
@@ -744,6 +782,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownAlloca(const rvsdg::simple_node & n
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
+  // We found an alloca node. Add the respective points-to graph memory node to the live nodes.
   auto & allocaNode = Context_->GetPointsToGraph().GetAllocaNode(node);
   Context_->AddLiveNodes(*node.region(), { &allocaNode });
 }
