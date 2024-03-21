@@ -99,12 +99,8 @@ public:
   {
     auto callTypeClassifier = CallNode::ClassifyCall(callNode);
 
-    if (callTypeClassifier->IsNonRecursiveDirectCall())
-    {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-      return GetLambdaEntryNodes(lambdaNode);
-    }
-    else if (callTypeClassifier->IsRecursiveDirectCall())
+    if (callTypeClassifier->IsNonRecursiveDirectCall()
+        || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
       return GetLambdaEntryNodes(lambdaNode);
@@ -126,12 +122,8 @@ public:
   {
     auto callTypeClassifier = CallNode::ClassifyCall(callNode);
 
-    if (callTypeClassifier->IsNonRecursiveDirectCall())
-    {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-      return GetLambdaExitNodes(lambdaNode);
-    }
-    else if (callTypeClassifier->IsRecursiveDirectCall())
+    if (callTypeClassifier->IsNonRecursiveDirectCall()
+        || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
       return GetLambdaExitNodes(lambdaNode);
