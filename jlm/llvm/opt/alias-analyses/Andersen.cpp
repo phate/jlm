@@ -841,7 +841,7 @@ Andersen::AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & 
     JLM_UNREACHABLE("Unknown solver");
 
   statistics->StartPointsToGraphConstructionStatistics();
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, statistics.get());
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
   statistics->StopPointsToGraphConstructionStatistics(*result);
 
   statistics->StopAndersenStatistics();
@@ -899,7 +899,7 @@ Andersen::Analyze(const RvsdgModule & module)
 std::unique_ptr<PointsToGraph>
 Andersen::ConstructPointsToGraphFromPointerObjectSet(
     const PointerObjectSet & set,
-    Statistics * statistics)
+    Statistics & statistics)
 {
   auto pointsToGraph = PointsToGraph::Create();
 
@@ -991,9 +991,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   }
 
   // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
-  if (statistics)
-    statistics->StartExternalToAllEscapedStatistics();
-
+  statistics.StartExternalToAllEscapedStatistics();
   for (const auto source : pointsToExternal)
   {
     for (const auto target : escapedMemoryNodes)
@@ -1003,11 +1001,17 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     // Add an edge to the special PointsToGraph node called "external" as well
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
-
-  if (statistics)
-    statistics->StopExternalToAllEscapedStatistics();
+  statistics.StopExternalToAllEscapedStatistics();
 
   return pointsToGraph;
+}
+
+std::unique_ptr<PointsToGraph>
+Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
+{
+  // Create a throwaway instance of statistics
+  auto statistics = Statistics::Create(jlm::util::filepath(""));
+  return ConstructPointsToGraphFromPointerObjectSet(set, *statistics);
 }
 
 }

@@ -144,13 +144,14 @@ public:
    * edge to the special "external" node, as well as to every memory object node marked as escaped.
    *
    * @param set the PointerObjectSet to convert
-   * @param statistics if not null, it will collect statistics about the process
+   * @param statistics the statistics instance used to collect statistics about the process
    * @return the newly created PointsToGraph
    */
-  static std::unique_ptr<PointsToGraph>
-  ConstructPointsToGraphFromPointerObjectSet(
-      const PointerObjectSet & set,
-      Statistics * statistics = nullptr);
+  [[nodiscard]] static std::unique_ptr<PointsToGraph>
+  ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set, Statistics & statistics);
+
+  [[nodiscard]] static std::unique_ptr<PointsToGraph>
+  ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set);
 
 private:
   void
