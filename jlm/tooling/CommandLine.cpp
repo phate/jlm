@@ -182,10 +182,10 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
     const std::string & commandLineArgument)
 {
   try
-        {
-        return GetStatisticsIdCommandLineArguments().LookupValue(commandLineArgument);
-         }
-        catch (...)
+  {
+    return GetStatisticsIdCommandLineArguments().LookupValue(commandLineArgument);
+  }
+  catch (...)
   {
     throw util::error("Unknown command line argument: " + commandLineArgument);
   }
@@ -196,8 +196,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsI
 {
   try{
     return GetStatisticsIdCommandLineArguments().LookupKey(statisticsId).data();
-   }
-        catch (...)
+  }
+  catch (...)
   {
     throw util::error("Unknown statistics identifier");
   }
