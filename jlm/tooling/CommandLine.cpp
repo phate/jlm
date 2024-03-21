@@ -194,7 +194,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
 const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsId)
 {
-  try{
+  try
+  {
     return GetStatisticsIdCommandLineArguments().LookupKey(statisticsId).data();
   }
   catch (...)
