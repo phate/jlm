@@ -1010,8 +1010,8 @@ std::unique_ptr<PointsToGraph>
 Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
 {
   // Create a throwaway instance of statistics
-  auto statistics = Statistics::Create(jlm::util::filepath(""));
-  return ConstructPointsToGraphFromPointerObjectSet(set, *statistics);
+  Statistics statistics(jlm::util::filepath(""));
+  return ConstructPointsToGraphFromPointerObjectSet(set, statistics);
 }
 
 }
