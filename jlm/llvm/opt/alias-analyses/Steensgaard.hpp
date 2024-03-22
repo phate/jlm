@@ -145,6 +145,17 @@ private:
   AnalyzeExtractValue(const rvsdg::simple_node & node);
 
   /**
+   * Marks register \p output as escaping the module. This indicates that the pointer in \p output
+   * is going outside the module, where we do not know what happens with it. Consequently, the
+   * locations that \p output points to need to be marked as points-to-external and
+   * points-to-escaped.
+   *
+   * @param output The register that is marked as escaping.
+   */
+  void
+  MarkAsEscaped(const rvsdg::output & output);
+
+  /**
    * Propagates the points-to flags throughout the disjoint set location graph.
    *
    * AnalyzeRvsdg() builds a disjoint set location graph, where each set is annotated with points-to

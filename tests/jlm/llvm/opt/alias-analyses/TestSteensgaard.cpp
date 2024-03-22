@@ -580,10 +580,10 @@ TestIndirectCall2()
 }
 
 static void
-TestExternalCall()
+TestExternalCall1()
 {
   auto validatePointsToGraph = [](const jlm::llvm::aa::PointsToGraph & pointsToGraph,
-                                  const jlm::tests::ExternalCallTest & test)
+                                  const jlm::tests::ExternalCallTest1 & test)
   {
     assert(pointsToGraph.NumAllocaNodes() == 2);
     assert(pointsToGraph.NumLambdaNodes() == 1);
@@ -603,13 +603,37 @@ TestExternalCall()
     assertTargets(callResult, { &lambdaF, &externalMemory });
   };
 
-  jlm::tests::ExternalCallTest test;
+  jlm::tests::ExternalCallTest1 test;
   // jlm::rvsdg::view(test.graph().root(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph) << std::flush;
 
   validatePointsToGraph(*pointsToGraph, test);
+}
+
+static void
+TestExternalCall2()
+{
+  // Arrange
+  jlm::tests::ExternalCallTest2 test;
+  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::flush;
+
+  // Act
+  auto pointsToGraph = RunSteensgaard(test.module());
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
+
+  // Assert
+  assert(pointsToGraph->NumAllocaNodes() == 1);
+  assert(pointsToGraph->NumLambdaNodes() == 1);
+  assert(pointsToGraph->NumImportNodes() == 3);
+  assert(pointsToGraph->NumRegisterNodes() == 7);
+
+  for (auto & registerNode : pointsToGraph->RegisterNodes())
+  {
+    assert(registerNode.NumTargets() != 0);
+  }
 }
 
 static void
@@ -1171,9 +1195,18 @@ TestLinkedList()
 
     auto & allocaNode = pointsToGraph.GetAllocaNode(test.GetAlloca());
     auto & deltaMyListNode = pointsToGraph.GetDeltaNode(test.GetDeltaMyList());
+    auto & lambdaNextNode = pointsToGraph.GetLambdaNode(test.GetLambdaNext());
+    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
-    assertTargets(allocaNode, { &allocaNode, &deltaMyListNode });
-    assertTargets(deltaMyListNode, { &allocaNode, &deltaMyListNode });
+    std::unordered_set<const jlm::llvm::aa::PointsToGraph::Node *> expectedMemoryNodes = {
+      &allocaNode,
+      &deltaMyListNode,
+      &lambdaNextNode,
+      &externalMemoryNode
+    };
+
+    assertTargets(allocaNode, expectedMemoryNodes);
+    assertTargets(deltaMyListNode, expectedMemoryNodes);
   };
 
   jlm::tests::LinkedListTest test;
@@ -1238,9 +1271,12 @@ TestSteensgaardAnalysis()
 
   TestCall1();
   TestCall2();
+
   TestIndirectCall();
   TestIndirectCall2();
-  TestExternalCall();
+
+  TestExternalCall1();
+  TestExternalCall2();
 
   TestGamma();
 

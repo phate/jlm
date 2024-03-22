@@ -52,26 +52,4 @@ is_gamma_result(const rvsdg::input * input)
 
 }
 
-/*
-  FIXME: This function should be defined in librvsdg.
-*/
-static inline jlm::rvsdg::output *
-is_invariant(const jlm::rvsdg::gamma_output * output)
-{
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output->result(0)->origin());
-  if (!argument)
-    return nullptr;
-
-  size_t n;
-  auto origin = argument->input()->origin();
-  for (n = 1; n < output->nresults(); n++)
-  {
-    auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output->result(n)->origin());
-    if (argument == nullptr || argument->input()->origin() != origin)
-      break;
-  }
-
-  return n == output->nresults() ? origin : nullptr;
-}
-
 #endif

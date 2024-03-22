@@ -462,9 +462,9 @@ TestIndirectCall2()
 }
 
 static void
-TestExternalCall()
+TestExternalCall1()
 {
-  jlm::tests::ExternalCallTest test;
+  jlm::tests::ExternalCallTest1 test;
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumAllocaNodes() == 2);
@@ -909,7 +909,7 @@ TestAndersen()
   TestCall2();
   TestIndirectCall1();
   TestIndirectCall2();
-  TestExternalCall();
+  TestExternalCall1();
   TestGamma();
   TestTheta();
   TestDelta1();

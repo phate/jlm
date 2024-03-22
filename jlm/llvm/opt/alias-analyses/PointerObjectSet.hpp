@@ -38,128 +38,7 @@ enum class PointerObjectKind : uint8_t
   COUNT
 };
 
-/**
- * Class representing a single entry in the PointerObjectSet.
- */
-class PointerObject final
-{
-  PointerObjectKind Kind_ : util::BitWidthOfEnum(PointerObjectKind::COUNT);
-
-  // May point to a memory object defined outside the module, or any escaped memory object
-  uint8_t PointsToExternal_ : 1;
-
-  // This memory object's address is known outside the module.
-  // If set and Kind_ is Register, it only means the pointees of the Reigister have escaped.
-  uint8_t HasEscaped_ : 1;
-
-public:
-  using Index = std::uint32_t;
-
-  explicit PointerObject(PointerObjectKind kind)
-      : Kind_(kind),
-        PointsToExternal_(0),
-        HasEscaped_(0)
-  {
-    JLM_ASSERT(kind != PointerObjectKind::COUNT);
-
-    // Memory objects from other modules are definitely not private to this module
-    if (kind == PointerObjectKind::ImportMemoryObject)
-      MarkAsEscaped();
-  }
-
-  [[nodiscard]] PointerObjectKind
-  GetKind() const noexcept
-  {
-    return Kind_;
-  }
-
-  /**
-   * Some PointerObjects are not capable of pointing to anything else.
-   * Their points-to-set will always be empty, and constraints that attempt
-   * to add pointees should be no-ops that are silently ignored.
-   * The same applies to attempts at setting the PointsToExternal-flag.
-   * @return true if this PointerObject can point to other PointerObjects
-   */
-  [[nodiscard]] bool
-  CanPoint() const noexcept
-  {
-    return Kind_ != PointerObjectKind::FunctionMemoryObject;
-  }
-
-  /**
-   * Some PointerObjects don't have addresses, and can as such not be pointed to.
-   * Any attempt at adding them to a points-to-set is a fatal error.
-   * @return true if this PointerObject can be pointed to by another PointerObject
-   */
-  [[nodiscard]] bool
-  CanBePointee() const noexcept
-  {
-    return Kind_ != PointerObjectKind::Register;
-  }
-
-  /**
-   * When the PointsToExternal-flag is set, the PointerObject possibly points to a storage
-   * instance declared outside to module, or to a memory object from this same module, that has
-   * escaped.
-   * @return true if the PointsToExternal flag is set.
-   */
-  [[nodiscard]] bool
-  PointsToExternal() const noexcept
-  {
-    return PointsToExternal_;
-  }
-
-  /**
-   * Sets the PointsToExternal-flag, if possible.
-   * If CanPoint() is false, this is a no-op.
-   * @return true if the PointsToExternal flag was modified, otherwise false
-   */
-  bool
-  MarkAsPointsToExternal() noexcept
-  {
-    if (!CanPoint())
-      return false;
-
-    bool modified = !PointsToExternal_;
-    PointsToExternal_ = 1;
-    return modified;
-  }
-
-  /**
-   * When set, the PointerObject's value is accessible from outside the module.
-   * Anything it points to can also be accessed outside the module, and should also be marked as
-   * escaped.
-   *
-   * If CanBePointee() is true, this PointerObjects's address is available outside the module,
-   * and can potentially be written to. Therefore, HasEscaped implies the PointsToEscaped flag,
-   * if it is possible to set it.
-   *
-   * @return true if the PointerObject is marked as having escaped
-   */
-  [[nodiscard]] bool
-  HasEscaped() const noexcept
-  {
-    return HasEscaped_;
-  }
-
-  /**
-   * Sets the HasEscaped-flag, indicating that this PointerObject's value is available outside
-   * the module. If CanBePointee() is true, its address is also escaped, and PointsToExternal
-   * will be set as well, if possible.
-   *
-   * @see HasEscaped()
-   * @return true if the HasEscaped or PointsToExternal flags were modified, otherwise false.
-   */
-  bool
-  MarkAsEscaped() noexcept
-  {
-    bool modified = !HasEscaped_;
-    HasEscaped_ = 1;
-    if (CanBePointee())
-      modified |= MarkAsPointsToExternal();
-    return modified;
-  }
-};
+using PointerObjectIndex = uint32_t;
 
 /**
  * A class containing a set of PointerObjects, and their points-to-sets,
@@ -168,30 +47,91 @@ public:
  */
 class PointerObjectSet final
 {
+  /**
+   * Struct used internally to store information about each PointerObject.
+   * When PointerObjects are unified, some flags are shared.
+   * This is handled by the accessor methods defined on PointerObjectSet
+   */
+  struct PointerObject final
+  {
+    // The kind of pointer object
+    PointerObjectKind Kind : util::BitWidthOfEnum(PointerObjectKind::COUNT);
+
+    // This memory object's address is known outside the module.
+    // If CanBePointee() is false, this object has no address, but its value has escaped.
+    uint8_t HasEscaped : 1;
+
+    // If this PointerObject is the parent of its own unification,
+    // and this flag is set, this pointer object is pointing to external.
+    uint8_t PointsToExternal : 1;
+
+    explicit PointerObject(PointerObjectKind kind)
+        : Kind(kind),
+          HasEscaped(0),
+          PointsToExternal(0)
+    {
+      JLM_ASSERT(kind != PointerObjectKind::COUNT);
+    }
+
+    /**
+     * Some PointerObjects are not capable of pointing to anything else.
+     * Their points-to-set will always be empty, and constraints that attempt
+     * to add pointees should be no-ops that are silently ignored.
+     * The same applies to attempts at setting the PointsToExternal-flag.
+     * @return true if this PointerObject can point to other PointerObjects
+     */
+    [[nodiscard]] bool
+    CanPoint() const noexcept
+    {
+      return Kind != PointerObjectKind::FunctionMemoryObject;
+    }
+
+    /**
+     * Some PointerObjects don't have addresses, and can as such not be pointed to.
+     * Any attempt at adding them to a points-to-set is a fatal error.
+     * @return true if this PointerObject can be pointed to by another PointerObject
+     */
+    [[nodiscard]] bool
+    CanBePointee() const noexcept
+    {
+      return Kind != PointerObjectKind::Register;
+    }
+  };
+
   // All PointerObjects in the set
   std::vector<PointerObject> PointerObjects_;
 
+  // The parent of each PointerObject in the disjoint-set forest. Roots are their own parent.
+  // Marked as mutable to allow path compression in const qualified methods.
+  mutable std::vector<PointerObjectIndex> PointerObjectParents_;
+
+  // Metadata enabling union by rank, where rank is an upper bound for tree height
+  // Size of a disjoint set is at least 2^rank, making a uint8_t plenty big enough.
+  std::vector<uint8_t> PointerObjectRank_;
+
   // For each PointerObject, a set of the other PointerObjects it points to
-  std::vector<util::HashSet<PointerObject::Index>> PointsToSets_;
+  // Only unification roots may have a non-empty set,
+  // other PointerObjects refer to their root's set.
+  std::vector<util::HashSet<PointerObjectIndex>> PointsToSets_;
 
   // Mapping from register to PointerObject
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
-  std::unordered_map<const rvsdg::output *, PointerObject::Index> RegisterMap_;
+  std::unordered_map<const rvsdg::output *, PointerObjectIndex> RegisterMap_;
 
-  std::unordered_map<const rvsdg::node *, PointerObject::Index> AllocaMap_;
+  std::unordered_map<const rvsdg::node *, PointerObjectIndex> AllocaMap_;
 
-  std::unordered_map<const rvsdg::node *, PointerObject::Index> MallocMap_;
+  std::unordered_map<const rvsdg::node *, PointerObjectIndex> MallocMap_;
 
-  std::unordered_map<const delta::node *, PointerObject::Index> GlobalMap_;
+  std::unordered_map<const delta::node *, PointerObjectIndex> GlobalMap_;
 
-  util::BijectiveMap<const lambda::node *, PointerObject::Index> FunctionMap_;
+  util::BijectiveMap<const lambda::node *, PointerObjectIndex> FunctionMap_;
 
-  std::unordered_map<const rvsdg::argument *, PointerObject::Index> ImportMap_;
+  std::unordered_map<const rvsdg::argument *, PointerObjectIndex> ImportMap_;
 
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   AddPointerObject(PointerObjectKind kind);
 
 public:
@@ -199,21 +139,10 @@ public:
   NumPointerObjects() const noexcept;
 
   /**
-   * Returns the number of PointerObjects in the set matching the specified \p kind.
-   * @return the number of matches
+   * @return the number of PointerObjects in the set matching the specified \p kind.
    */
   [[nodiscard]] size_t
   NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept;
-
-  /**
-   * Gets the PointerObject associated with the given \p index
-   * @return a reference to the PointerObject with the given index
-   */
-  [[nodiscard]] PointerObject &
-  GetPointerObject(PointerObject::Index index);
-
-  [[nodiscard]] const PointerObject &
-  GetPointerObject(PointerObject::Index index) const;
 
   /**
    * Creates a PointerObject of Register kind and maps the rvsdg output to the new PointerObject.
@@ -221,7 +150,7 @@ public:
    * @param rvsdgOutput the rvsdg output associated with the register PointerObject
    * @return the index of the new PointerObject in the PointerObjectSet
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
 
   /**
@@ -229,7 +158,7 @@ public:
    * @param rvsdgOutput an rvsdg::output that already corresponds to a PointerObject in the set
    * @return the index of the PointerObject associated with the rvsdg::output
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
 
   /**
@@ -238,7 +167,7 @@ public:
    * @param rvsdgOutput the rvsdg::output that might correspond to a PointerObject in the set
    * @return the index of the PointerObject associated with rvsdgOutput, if it exists
    */
-  [[nodiscard]] std::optional<PointerObject::Index>
+  [[nodiscard]] std::optional<PointerObjectIndex>
   TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
 
   /**
@@ -250,7 +179,7 @@ public:
   void
   MapRegisterToExistingPointerObject(
       const rvsdg::output & rvsdgOutput,
-      PointerObject::Index pointerObject);
+      PointerObjectIndex pointerObject);
 
   /**
    * Creates a PointerObject of Register kind, without any association to any node in the program.
@@ -259,16 +188,16 @@ public:
    * @see Andersen::AnalyzeMemcpy.
    * @return the index of the new PointerObject
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateDummyRegisterPointerObject();
 
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateAllocaMemoryObject(const rvsdg::node & allocaNode);
 
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateMallocMemoryObject(const rvsdg::node & mallocNode);
 
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateGlobalMemoryObject(const delta::node & deltaNode);
 
   /**
@@ -277,7 +206,7 @@ public:
    * @param lambdaNode the RVSDG node defining the function,
    * @return the index of the new PointerObject in the PointerObjectSet
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateFunctionMemoryObject(const lambda::node & lambdaNode);
 
   /**
@@ -285,7 +214,7 @@ public:
    * @param lambdaNode the lambda node associated with the existing PointerObject
    * @return the index of the associated PointerObject
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetFunctionMemoryObject(const lambda::node & lambdaNode) const;
 
   /**
@@ -294,31 +223,99 @@ public:
    * @return the lambda node associated with the PointerObject
    */
   [[nodiscard]] const lambda::node &
-  GetLambdaNodeFromFunctionMemoryObject(PointerObject::Index index) const;
+  GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   CreateImportMemoryObject(const rvsdg::argument & importNode);
 
-  const std::unordered_map<const rvsdg::output *, PointerObject::Index> &
+  const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::node *, PointerObject::Index> &
+  const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
   GetAllocaMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::node *, PointerObject::Index> &
+  const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
   GetMallocMap() const noexcept;
 
-  const std::unordered_map<const delta::node *, PointerObject::Index> &
+  const std::unordered_map<const delta::node *, PointerObjectIndex> &
   GetGlobalMap() const noexcept;
 
-  const util::BijectiveMap<const lambda::node *, PointerObject::Index> &
+  const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::argument *, PointerObject::Index> &
+  const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
-  [[nodiscard]] const util::HashSet<PointerObject::Index> &
-  GetPointsToSet(PointerObject::Index idx) const;
+  /**
+   * @return the kind of the PointerObject with the given \p index
+   */
+  [[nodiscard]] PointerObjectKind
+  GetPointerObjectKind(PointerObjectIndex index) const noexcept;
+
+  /**
+   * @return true if the PointerObject with the given \p index can point, otherwise false
+   */
+  [[nodiscard]] bool
+  CanPointerObjectPoint(PointerObjectIndex index) const noexcept;
+
+  /**
+   * @return true if the PointerObject with the given \p index can be a pointee, otherwise false
+   */
+  [[nodiscard]] bool
+  CanPointerObjectBePointee(PointerObjectIndex index) const noexcept;
+
+  /**
+   * @return true if the PointerObject with the given \p index has escaped, otherwise false
+   */
+  [[nodiscard]] bool
+  HasEscaped(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as having escaped the module.
+   * @return true if the flag was changed by this operation
+   */
+  bool
+  MarkAsEscaped(PointerObjectIndex index);
+
+  /**
+   * @return true if the PointerObject with the given \p index points to external, otherwise false
+   */
+  [[nodiscard]] bool
+  IsPointingToExternal(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as pointing to external.
+   * If the PointerObject has CanPoint() = false, this is a no-op.
+   * @return true if the flag was changed by this operation
+   */
+  bool
+  MarkAsPointingToExternal(PointerObjectIndex index);
+
+  /**
+   * @return the root in the unification the PointerObject with the given \p index belongs to.
+   * PointerObjects that have not been unified will always be their own root.
+   */
+  [[nodiscard]] PointerObjectIndex
+  GetUnificationRoot(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Unifies two PointerObjects, such that they will forever share their set of pointees.
+   * If any object in the unification points to external, they will all point to external.
+   * The HasEscaped flags are not shared, and can still be set individually.
+   * Only PointerObjects where CanPoint() is true may be unified.
+   * If the objects already belong to the same disjoint set, this is a no-op.
+   * @param object1 the index of the first PointerObject to unify
+   * @param object2 the index of the second PointerObject to unify
+   * @return the index of the root PointerObject in the unification
+   */
+  PointerObjectIndex
+  UnifyPointerObjects(PointerObjectIndex object1, PointerObjectIndex object2);
+
+  /**
+   * @return the PointsToSet of the PointerObject with the given \p index.
+   */
+  [[nodiscard]] const util::HashSet<PointerObjectIndex> &
+  GetPointsToSet(PointerObjectIndex index) const;
 
   /**
    * Adds \p pointee to P(\p pointer)
@@ -330,7 +327,7 @@ public:
    * @return true if P(\p pointer) was changed by this operation
    */
   bool
-  AddToPointsToSet(PointerObject::Index pointer, PointerObject::Index pointee);
+  AddToPointsToSet(PointerObjectIndex pointer, PointerObjectIndex pointee);
 
   /**
    * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference
@@ -343,7 +340,7 @@ public:
    * @return true if P(\p superset) was modified by this operation
    */
   bool
-  MakePointsToSetSuperset(PointerObject::Index superset, PointerObject::Index subset);
+  MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
 
   /**
    * Adds the Escaped flag to all PointerObjects in the P(\p pointer) set
@@ -351,7 +348,7 @@ public:
    * @return true if any PointerObjects had their flag modified by this operation
    */
   bool
-  MarkAllPointeesAsEscaped(PointerObject::Index pointer);
+  MarkAllPointeesAsEscaped(PointerObjectIndex pointer);
 };
 
 /**
@@ -361,11 +358,11 @@ public:
  */
 class SupersetConstraint final
 {
-  PointerObject::Index Superset_;
-  PointerObject::Index Subset_;
+  PointerObjectIndex Superset_;
+  PointerObjectIndex Subset_;
 
 public:
-  SupersetConstraint(PointerObject::Index superset, PointerObject::Index subset)
+  SupersetConstraint(PointerObjectIndex superset, PointerObjectIndex subset)
       : Superset_(superset),
         Subset_(subset)
   {}
@@ -373,7 +370,7 @@ public:
   /**
    * @return the PointerObject that should point to everything the subset points to
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetSuperset() const noexcept
   {
     return Superset_;
@@ -383,7 +380,7 @@ public:
    * @param superset the new PointerObject that should point to everything the subset points to
    */
   void
-  SetSuperset(PointerObject::Index superset)
+  SetSuperset(PointerObjectIndex superset)
   {
     Superset_ = superset;
   }
@@ -391,7 +388,7 @@ public:
   /**
    * @return the PointerObject whose points-to set should be contained within the superset
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetSubset() const noexcept
   {
     return Subset_;
@@ -401,7 +398,7 @@ public:
    * @param subset the new PointerObject whose points-to set should be contained within the superset
    */
   void
-  SetSubset(PointerObject::Index subset)
+  SetSubset(PointerObjectIndex subset)
   {
     Subset_ = subset;
   }
@@ -423,11 +420,11 @@ public:
  */
 class StoreConstraint final
 {
-  PointerObject::Index Pointer_;
-  PointerObject::Index Value_;
+  PointerObjectIndex Pointer_;
+  PointerObjectIndex Value_;
 
 public:
-  StoreConstraint(PointerObject::Index pointer, PointerObject::Index value)
+  StoreConstraint(PointerObjectIndex pointer, PointerObjectIndex value)
       : Pointer_(pointer),
         Value_(value)
   {}
@@ -435,7 +432,7 @@ public:
   /**
    * @return the PointerObject representing the value written by the store instruction
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetValue() const noexcept
   {
     return Value_;
@@ -445,7 +442,7 @@ public:
    * @param value the new PointerObject representing the value written by the store instruction
    */
   void
-  SetValue(PointerObject::Index value)
+  SetValue(PointerObjectIndex value)
   {
     Value_ = value;
   }
@@ -453,7 +450,7 @@ public:
   /**
    * @return the PointerObject representing the pointer written to by the store instruction
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetPointer() const noexcept
   {
     return Pointer_;
@@ -463,7 +460,7 @@ public:
    * @param pointer the new PointerObject representing the pointer written to by the store.
    */
   void
-  SetPointer(PointerObject::Index pointer)
+  SetPointer(PointerObjectIndex pointer)
   {
     Pointer_ = pointer;
   }
@@ -485,11 +482,11 @@ public:
  */
 class LoadConstraint final
 {
-  PointerObject::Index Value_;
-  PointerObject::Index Pointer_;
+  PointerObjectIndex Value_;
+  PointerObjectIndex Pointer_;
 
 public:
-  LoadConstraint(PointerObject::Index value, PointerObject::Index pointer)
+  LoadConstraint(PointerObjectIndex value, PointerObjectIndex pointer)
       : Value_(value),
         Pointer_(pointer)
   {}
@@ -497,7 +494,7 @@ public:
   /**
    * @return the PointerObject representing the value returned by the load instruction
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetValue() const noexcept
   {
     return Value_;
@@ -507,7 +504,7 @@ public:
    * @param value the new PointerObject representing the value returned by the load instruction
    */
   void
-  SetValue(PointerObject::Index value)
+  SetValue(PointerObjectIndex value)
   {
     Value_ = value;
   }
@@ -515,7 +512,7 @@ public:
   /**
    * @return the PointerObject representing the pointer loaded by the load instruction
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetPointer() const noexcept
   {
     return Pointer_;
@@ -525,7 +522,7 @@ public:
    * @param pointer the new PointerObject representing the pointer loaded by the load instruction.
    */
   void
-  SetPointer(PointerObject::Index pointer)
+  SetPointer(PointerObjectIndex pointer)
   {
     Pointer_ = pointer;
   }
@@ -559,7 +556,7 @@ class FunctionCallConstraint final
   /**
    * A PointerObject of Register kind, representing the function pointer being called
    */
-  PointerObject::Index Pointer_;
+  PointerObjectIndex Pointer_;
 
   /**
    * The RVSDG node representing the function call
@@ -567,7 +564,7 @@ class FunctionCallConstraint final
   const jlm::llvm::CallNode & CallNode_;
 
 public:
-  FunctionCallConstraint(PointerObject::Index pointer, const jlm::llvm::CallNode & callNode)
+  FunctionCallConstraint(PointerObjectIndex pointer, const jlm::llvm::CallNode & callNode)
       : Pointer_(pointer),
         CallNode_(callNode)
   {}
@@ -575,7 +572,7 @@ public:
   /**
    * @return the PointerObject representing the function pointer being called
    */
-  [[nodiscard]] PointerObject::Index
+  [[nodiscard]] PointerObjectIndex
   GetPointer() const noexcept
   {
     return Pointer_;
@@ -585,7 +582,7 @@ public:
    * @param pointer the new PointerObject representing the function pointer being called
    */
   void
-  SetPointer(PointerObject::Index pointer)
+  SetPointer(PointerObjectIndex pointer)
   {
     Pointer_ = pointer;
   }
@@ -677,14 +674,14 @@ public:
    * @param pointee the PointerObject that should be in the points-to-set
    */
   void
-  AddPointerPointeeConstraint(PointerObject::Index pointer, PointerObject::Index pointee);
+  AddPointerPointeeConstraint(PointerObjectIndex pointer, PointerObjectIndex pointee);
 
   /**
    * Adds a constraint making \p pointer flagged as pointing to external
    * @param pointer the PointerObject that should be marked as pointing to external
    */
   void
-  AddPointsToExternalConstraint(PointerObject::Index pointer);
+  AddPointsToExternalConstraint(PointerObjectIndex pointer);
 
   /**
    * Ensures that any PointerObject in P(registerIndex) will be marked as escaped.
@@ -692,7 +689,7 @@ public:
    * may point to
    */
   void
-  AddRegisterContentEscapedConstraint(PointerObject::Index registerIndex);
+  AddRegisterContentEscapedConstraint(PointerObjectIndex registerIndex);
 
   /**
    * Generic add function for all struct based constraints

@@ -289,12 +289,54 @@ TestPruneOutputs()
   assert(gammaNode->subregion(1)->result(1)->output() == gammaOutput2);
 }
 
+static void
+TestIsInvariant()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph rvsdg;
+  jlm::tests::valuetype vt;
+  ctltype ct(2);
+
+  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto v0 = rvsdg.add_import({ vt, "" });
+  auto v1 = rvsdg.add_import({ vt, "" });
+
+  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaInput0 = gammaNode->add_entryvar(v0);
+  auto gammaInput1 = gammaNode->add_entryvar(v1);
+  auto gammaInput2 = gammaNode->add_entryvar(v1);
+
+  auto gammaOutput0 =
+      gammaNode->add_exitvar({ gammaInput0->argument(0), gammaInput0->argument(1) });
+  auto gammaOutput1 =
+      gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
+  auto gammaOutput2 =
+      gammaNode->add_exitvar({ gammaInput0->argument(0), gammaInput2->argument(1) });
+
+  // Act & Assert
+  assert(gammaOutput0->IsInvariant());
+  output * invariantOrigin = nullptr;
+  gammaOutput0->IsInvariant(&invariantOrigin);
+  assert(invariantOrigin == v0);
+
+  assert(gammaOutput1->IsInvariant(&invariantOrigin));
+  assert(invariantOrigin == v1);
+
+  invariantOrigin = nullptr;
+  assert(!gammaOutput2->IsInvariant(&invariantOrigin));
+  // invariantOrigin should not have been touched as gammaOutput2 is not invariant
+  assert(invariantOrigin == nullptr);
+}
+
 static int
 test_main()
 {
   test_gamma();
   TestRemoveGammaOutputsWhere();
   TestPruneOutputs();
+  TestIsInvariant();
 
   test_predicate_reduction();
   test_invariant_reduction();
