@@ -6,16 +6,9 @@
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
-
-static bool
-IsAllocaNode(const PointsToGraph::MemoryNode * memoryNode) noexcept
-{
-  return PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(*memoryNode);
-}
 
 /** \brief Collect statistics about TopDownMemoryNodeEliminator pass
  *
@@ -899,13 +892,19 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(const RvsdgModule 
 void
 TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(const lambda::node & tailLambdaNode)
 {
+  auto IsUnescapedAllocaNode = [&](const PointsToGraph::MemoryNode * memoryNode)
+  {
+    auto & escapedMemoryNodes = Context_->GetPointsToGraph().GetEscapedMemoryNodes();
+
+    return PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(*memoryNode)
+        && !escapedMemoryNodes.Contains(memoryNode);
+  };
+
   auto & lambdaSubregion = *tailLambdaNode.subregion();
   auto & seedProvisioning = Context_->GetSeedProvisioning();
 
   auto memoryNodes = seedProvisioning.GetLambdaEntryNodes(tailLambdaNode);
-
-  // FIXME: Escaped alloca nodes cannot be removed
-  memoryNodes.RemoveWhere(IsAllocaNode);
+  memoryNodes.RemoveWhere(IsUnescapedAllocaNode);
 
   Context_->AddLiveNodes(lambdaSubregion, memoryNodes);
   Context_->AddLiveNodesAnnotatedLambda(tailLambdaNode);
