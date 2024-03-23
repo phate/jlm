@@ -2362,4 +2362,64 @@ private:
   llvm::lambda::node * LambdaMain_;
 };
 
+/**
+ * The class sets up an RVSDG module corresponding to the code:
+ *
+ * \code{.c}
+ *   #include <stdint.h>
+ *
+ *   uint32_t* h(uint32_t, ...);
+ *
+ *
+ *   static void
+ *   f(uint32_t * i)
+ *   {
+ *     uint32_t* x = h(1, i);
+ *     *x = 3;
+ *   }
+ *
+ *   void
+ *   g()
+ *   {
+ *     uint32_t i = 5;
+ *     f(&i);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations.
+ */
+class VariadicFunctionTest1 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] llvm::lambda::node &
+  LambdaF() const noexcept
+  {
+    JLM_ASSERT(LambdaF_ != nullptr);
+    return *LambdaF_;
+  }
+
+  [[nodiscard]] llvm::lambda::node &
+  LambdaG() const noexcept
+  {
+    JLM_ASSERT(LambdaG_ != nullptr);
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] rvsdg::argument &
+  ImportH() const noexcept
+  {
+    JLM_ASSERT(ImportH_ != nullptr);
+    return *ImportH_;
+  }
+
+private:
+  std::unique_ptr<llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  llvm::lambda::node * LambdaF_ = {};
+  llvm::lambda::node * LambdaG_ = {};
+
+  rvsdg::argument * ImportH_ = {};
+};
+
 }
