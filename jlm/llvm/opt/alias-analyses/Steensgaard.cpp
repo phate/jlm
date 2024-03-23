@@ -1004,9 +1004,11 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeExtractValue(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node) || is<valist_op>(&node))
   {
-    // Nothing needs to be done as these operations do not affect points-to sets
+    // Nothing needs to be done:
+    // 1. FreeOperation and ptrcmp_op do not affect points-to sets
+    // 2. valist_op are handled along with call nodes
   }
   else
   {
