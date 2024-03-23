@@ -233,7 +233,7 @@ public:
   operator=(StateMap &&) = delete;
 
   bool
-  Contains(const PointsToGraph::MemoryNode & memoryNode) const noexcept
+  HasState(const PointsToGraph::MemoryNode & memoryNode) const noexcept
   {
     return states_.find(&memoryNode) != states_.end();
   }
@@ -241,7 +241,7 @@ public:
   MemoryNodeStatePair *
   GetState(const PointsToGraph::MemoryNode & memoryNode) noexcept
   {
-    JLM_ASSERT(Contains(memoryNode));
+    JLM_ASSERT(HasState(memoryNode));
     return &states_.at(&memoryNode);
   }
 
@@ -255,15 +255,16 @@ public:
     return memoryNodeStatePairs;
   }
 
-  void
+  MemoryNodeStatePair *
   InsertState(const PointsToGraph::MemoryNode & memoryNode, jlm::rvsdg::output & state)
   {
-    JLM_ASSERT(!Contains(memoryNode));
+    JLM_ASSERT(!HasState(memoryNode));
 
     auto pair = std::make_pair<const PointsToGraph::MemoryNode *, MemoryNodeStatePair>(
         &memoryNode,
         { memoryNode, state });
     states_.insert(pair);
+    return GetState(memoryNode);
   }
 
   static std::unique_ptr<StateMap>
@@ -304,10 +305,17 @@ public:
   RegionalizedStateMap &
   operator=(RegionalizedStateMap &&) = delete;
 
-  void
+  StateMap::MemoryNodeStatePair *
   InsertState(const PointsToGraph::MemoryNode & memoryNode, jlm::rvsdg::output & state)
   {
-    GetStateMap(*state.region()).InsertState(memoryNode, state);
+    return GetStateMap(*state.region()).InsertState(memoryNode, state);
+  }
+
+  StateMap::MemoryNodeStatePair *
+  InsertUndefinedState(jlm::rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  {
+    auto & undefinedState = GetOrInsertUndefinedMemoryState(region);
+    return InsertState(memoryNode, undefinedState);
   }
 
   void
@@ -330,6 +338,12 @@ public:
       const jlm::util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
+  }
+
+  bool
+  HasState(const rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  {
+    return GetStateMap(region).HasState(memoryNode);
   }
 
   StateMap::MemoryNodeStatePair *
@@ -366,6 +380,34 @@ public:
   }
 
 private:
+  jlm::rvsdg::output &
+  GetOrInsertUndefinedMemoryState(jlm::rvsdg::region & region)
+  {
+    return HasUndefinedMemoryState(region) ? GetUndefinedMemoryState(region)
+                                           : InsertUndefinedMemoryState(region);
+  }
+
+  bool
+  HasUndefinedMemoryState(const jlm::rvsdg::region & region) const noexcept
+  {
+    return UndefinedMemoryStates_.find(&region) != UndefinedMemoryStates_.end();
+  }
+
+  jlm::rvsdg::output &
+  GetUndefinedMemoryState(const jlm::rvsdg::region & region) const noexcept
+  {
+    JLM_ASSERT(HasUndefinedMemoryState(region));
+    return *UndefinedMemoryStates_.find(&region)->second;
+  }
+
+  jlm::rvsdg::output &
+  InsertUndefinedMemoryState(jlm::rvsdg::region & region) noexcept
+  {
+    auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType());
+    UndefinedMemoryStates_[&region] = undefinedMemoryState;
+    return *undefinedMemoryState;
+  }
+
   StateMap &
   GetStateMap(const jlm::rvsdg::region & region) const noexcept
   {
@@ -383,6 +425,7 @@ private:
   std::unordered_map<const jlm::rvsdg::region *, std::unique_ptr<StateMap>> StateMaps_;
   std::unordered_map<const jlm::rvsdg::region *, std::unique_ptr<MemoryNodeCache>>
       MemoryNodeCacheMaps_;
+  std::unordered_map<const jlm::rvsdg::region *, jlm::rvsdg::output *> UndefinedMemoryStates_;
 
   const MemoryNodeProvisioning & MemoryNodeProvisioning_;
 };
@@ -568,12 +611,23 @@ void
 MemoryStateEncoder::EncodeAlloca(const jlm::rvsdg::simple_node & allocaNode)
 {
   JLM_ASSERT(is<alloca_op>(&allocaNode));
-  auto & stateMap = Context_->GetRegionalizedStateMap();
 
+  auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & allocaMemoryNode =
       Context_->GetMemoryNodeProvisioning().GetPointsToGraph().GetAllocaNode(allocaNode);
-  auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
-  memoryNodeStatePair->ReplaceState(*allocaNode.output(1));
+  auto & allocaNodeStateOutput = *allocaNode.output(1);
+
+  if (stateMap.HasState(*allocaNode.region(), allocaMemoryNode))
+  {
+    // The state for the alloca memory node should already exist in case of lifetime agnostic
+    // provisioning.
+    auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
+    memoryNodeStatePair->ReplaceState(allocaNodeStateOutput);
+  }
+  else
+  {
+    stateMap.InsertState(allocaMemoryNode, allocaNodeStateOutput);
+  }
 }
 
 void
@@ -666,9 +720,24 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
   auto EncodeEntry = [this](const CallNode & callNode)
   {
     auto region = callNode.region();
+    auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
     auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetCallEntryNodes(callNode);
 
-    auto memoryNodeStatePairs = Context_->GetRegionalizedStateMap().GetStates(*region, memoryNodes);
+    std::vector<StateMap::MemoryNodeStatePair *> memoryNodeStatePairs;
+    for (auto memoryNode : memoryNodes.Items())
+    {
+      if (regionalizedStateMap.HasState(*region, *memoryNode))
+      {
+        memoryNodeStatePairs.emplace_back(regionalizedStateMap.GetState(*region, *memoryNode));
+      }
+      else
+      {
+        // The state might not exist on the call side in case of lifetime aware provisioning
+        memoryNodeStatePairs.emplace_back(
+            regionalizedStateMap.InsertUndefinedState(*region, *memoryNode));
+      }
+    }
+
     auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
     auto state = CallEntryMemStateOperator::Create(region, states);
     callNode.GetMemoryStateInput()->divert_to(state);

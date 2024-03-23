@@ -297,7 +297,8 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
-    { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" }
+    { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
+    { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);

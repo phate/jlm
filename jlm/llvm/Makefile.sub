@@ -49,6 +49,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
+    jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/inlining.cpp \
@@ -169,6 +170,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
 	tests/jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
+	tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
 	tests/jlm/llvm/opt/test-cne \
 	tests/jlm/llvm/opt/TestDeadNodeElimination \
 	tests/jlm/llvm/opt/test-inlining \

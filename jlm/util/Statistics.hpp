@@ -52,6 +52,7 @@ public:
     RvsdgOptimization,
     SteensgaardAnalysis,
     ThetaGammaInversion,
+    TopDownMemoryNodeEliminator,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
