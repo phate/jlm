@@ -957,11 +957,14 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     }
   };
 
-  // First group RVSDG registers by the PointerObject they are mapped to
+  // First group RVSDG registers by the PointerObject they are mapped to.
+  // If the PointerObject is part of a unification, all Register PointerObjects in the unification
+  // share points-to set, so they can all become one RegisterNode in the PointsToGraph.
   std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::output *>> outputsInRegister;
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
-    outputsInRegister[registerIdx].Insert(outputNode);
+    auto root = set.GetUnificationRoot(registerIdx);
+    outputsInRegister[root].Insert(outputNode);
   }
 
   // Create PointsToGraph::RegisterNodes for each PointerObject of register kind, and add edges
@@ -1001,6 +1004,14 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   statistics.StopExternalToAllEscapedStatistics();
 
   return pointsToGraph;
+}
+
+std::unique_ptr<PointsToGraph>
+Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
+{
+  // Create a throwaway instance of statistics
+  Statistics statistics(jlm::util::filepath(""));
+  return ConstructPointsToGraphFromPointerObjectSet(set, statistics);
 }
 
 }

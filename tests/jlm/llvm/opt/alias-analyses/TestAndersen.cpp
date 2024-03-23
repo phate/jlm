@@ -8,6 +8,7 @@
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -893,6 +894,91 @@ TestStatistics()
   assert(statistics.GetTimerElapsedNanoseconds("AnalysisTimer") > 0);
 }
 
+static void
+TestConstructPointsToGraph()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::AllMemoryNodesTest rvsdg;
+  rvsdg.InitializeTest();
+
+  // Arrange a very standard set of memory objects and registers
+  PointerObjectSet set;
+  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  auto allocaR = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
+  auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+  auto importR = set.CreateRegisterPointerObject(rvsdg.GetImportOutput());
+  auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
+  auto lambdaR = set.CreateRegisterPointerObject(rvsdg.GetLambdaOutput());
+  auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode());
+  auto mallocR = set.CreateRegisterPointerObject(rvsdg.GetMallocOutput());
+  set.AddToPointsToSet(allocaR, alloca0);
+  set.AddToPointsToSet(importR, import0);
+  set.AddToPointsToSet(lambdaR, lambda0);
+  set.AddToPointsToSet(mallocR, malloc0);
+
+  // Make an exception for the delta node: Map its output to importR's PointerObject instead
+  [[maybe_unused]] auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
+  set.MapRegisterToExistingPointerObject(rvsdg.GetDeltaOutput(), importR);
+
+  // Make alloca0 point to lambda0
+  set.AddToPointsToSet(alloca0, lambda0);
+
+  // create a dummy node
+  auto dummy = set.CreateDummyRegisterPointerObject();
+
+  // Unify allocaR with dummy, and importR with dummy
+  set.UnifyPointerObjects(dummy, allocaR);
+  set.UnifyPointerObjects(dummy, importR);
+
+  // Unify a register and a memory object
+  set.UnifyPointerObjects(lambdaR, malloc0);
+
+  // Mark a register as pointing to external
+  set.MarkAsPointingToExternal(mallocR);
+  // And a memory object as escaped
+  set.MarkAsEscaped(delta0);
+
+  auto ptg = Andersen::ConstructPointsToGraphFromPointerObjectSet(set);
+
+  // Assert
+  auto & allocaNode = ptg->GetAllocaNode(rvsdg.GetAllocaNode());
+  auto & allocaRNode = ptg->GetRegisterNode(rvsdg.GetAllocaOutput());
+  auto & importNode = ptg->GetImportNode(rvsdg.GetImportOutput());
+  auto & importRNode = ptg->GetRegisterNode(rvsdg.GetImportOutput());
+  auto & lambdaNode = ptg->GetLambdaNode(rvsdg.GetLambdaNode());
+  auto & lambdaRNode = ptg->GetRegisterNode(rvsdg.GetLambdaOutput());
+  auto & mallocNode = ptg->GetMallocNode(rvsdg.GetMallocNode());
+  auto & mallocRNode = ptg->GetRegisterNode(rvsdg.GetMallocOutput());
+  auto & deltaNode = ptg->GetDeltaNode(rvsdg.GetDeltaNode());
+  auto & deltaRNode = ptg->GetRegisterNode(rvsdg.GetDeltaOutput());
+
+  // Make sure unification causes allocaR to point to all of its pointees
+  assert(TargetsExactly(allocaRNode, { &allocaNode, &importNode }));
+  // The unified registers should share RegisterNode
+  assert(&allocaRNode == &importRNode);
+  // deltaR was mapped to importR, so it too should share RegisterNode
+  assert(&allocaRNode == &deltaRNode);
+
+  // alloca0 -> lambda0
+  assert(TargetsExactly(allocaNode, { &lambdaNode }));
+
+  // Unifying a register with a non-register does not affect it
+  assert(lambdaRNode.GetOutputs().Size() == 1);
+  // But it does share pointees with the other nodes
+  assert(TargetsExactly(mallocNode, { &lambdaNode }));
+
+  // deltaNode has escaped, and should be pointed to by mallocR and itself, as well as import0
+  assert(deltaNode.NumSources() == 3);
+
+  auto & externalMemory = ptg->GetExternalMemoryNode();
+  // deltaNode and importNode point to everything that has escaped
+  assert(TargetsExactly(deltaNode, { &deltaNode, &importNode, &externalMemory }));
+  assert(TargetsExactly(importNode, { &deltaNode, &importNode, &externalMemory }));
+  // mallocR points to mallocNode, as well as everything that has escaped
+  assert(TargetsExactly(mallocRNode, { &mallocNode, &deltaNode, &importNode, &externalMemory }));
+}
+
 static int
 TestAndersen()
 {
@@ -923,6 +1009,7 @@ TestAndersen()
   TestMemcpy();
   TestLinkedList();
   TestStatistics();
+  TestConstructPointsToGraph();
 
   return 0;
 }
