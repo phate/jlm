@@ -3746,7 +3746,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto five = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 5);
 
     auto allocaResults = alloca_op::create(rvsdg::bit32, one, 4);
-    auto merge = MemStateMergeOperator::Create({ allocaResults[1], LambdaG_->fctargument(1) });
+    auto merge = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
     auto storeResults = StoreNode::Create(allocaResults[0], five, { merge }, 4);
 
