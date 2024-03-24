@@ -14,15 +14,27 @@ namespace jlm::llvm::aa
 {
 
 /**
- * Determines whether \p output should be handled by the Steensgaard analysis.
+ * Determines whether \p output%s type is or contains a pointer type.
  *
  * @param output An rvsdg::output.
- * @return True if \p output should handled, otherwise false.
+ * @return True if \p output%s type is or contains a pointer type, otherwise false.
  */
 static bool
-ShouldHandle(const rvsdg::output & output)
+HasOrContainsPointerType(const rvsdg::output & output)
 {
   return IsOrContains<PointerType>(output.type());
+}
+
+/**
+ * Determines whether \p output%s type is a variadic argument type.
+ *
+ * @param output An rvsdg::output.
+ * @return True if \p output%s type is a variadic argument type, otherwise false.
+ */
+static bool
+HasVariadicArgumentType(const rvsdg::output & output)
+{
+  return is<varargtype>(output.type());
 }
 
 /**
@@ -37,7 +49,7 @@ ShouldHandle(const rvsdg::simple_node & node)
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     auto & origin = *node.input(n)->origin();
-    if (ShouldHandle(origin))
+    if (HasOrContainsPointerType(origin))
     {
       return true;
     }
@@ -1004,9 +1016,11 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeExtractValue(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node) || is<valist_op>(&node))
   {
-    // Nothing needs to be done as these operations do not affect points-to sets
+    // Nothing needs to be done:
+    // 1. FreeOperation and ptrcmp_op do not affect points-to sets
+    // 2. valist_op are handled along with call nodes
   }
   else
   {
@@ -1078,7 +1092,7 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
   auto & result = *loadNode.GetValueOutput();
   auto & address = *loadNode.GetAddressInput()->origin();
 
-  if (!ShouldHandle(result))
+  if (!HasOrContainsPointerType(result))
     return;
 
   auto & addressLocation = Context_->GetLocation(address);
@@ -1101,7 +1115,7 @@ Steensgaard::AnalyzeStore(const StoreNode & storeNode)
   auto & address = *storeNode.GetAddressInput()->origin();
   auto & value = *storeNode.GetValueInput()->origin();
 
-  if (!ShouldHandle(value))
+  if (!HasOrContainsPointerType(value))
     return;
 
   auto & addressLocation = Context_->GetLocation(address);
@@ -1161,7 +1175,7 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
     auto & callArgument = *callNode.input(n)->origin();
     auto & lambdaArgument = *lambdaNode.fctargument(n - 1);
 
-    if (ShouldHandle(callArgument))
+    if (HasOrContainsPointerType(callArgument))
     {
       auto & callArgumentLocation = Context_->GetLocation(callArgument);
       auto & lambdaArgumentLocation =
@@ -1179,7 +1193,7 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
     auto & callResult = *callNode.output(n);
     auto & lambdaResult = *subregion->result(n)->origin();
 
-    if (ShouldHandle(callResult))
+    if (HasOrContainsPointerType(callResult))
     {
       auto & callResultLocation =
           Context_->GetOrInsertRegisterLocation(callResult, PointsToFlags::PointsToNone);
@@ -1194,22 +1208,35 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
 void
 Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 {
-  // FIXME: What about varargs
+  // Mark arguments of external function call as escaped
   for (size_t n = 1; n < callNode.NumArguments(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
 
-    if (ShouldHandle(callArgument))
+    if (HasOrContainsPointerType(callArgument))
     {
       MarkAsEscaped(callArgument);
     }
+    else if (HasVariadicArgumentType(callArgument))
+    {
+      // Mark variadic arguments as escaped
+      auto & valistNode = *rvsdg::node_output::node(&callArgument);
+      JLM_ASSERT(is<valist_op>(&valistNode));
+
+      for (size_t i = 0; i < valistNode.ninputs(); i++)
+      {
+        auto & origin = *valistNode.input(i)->origin();
+        MarkAsEscaped(origin);
+      }
+    }
   }
 
+  // Mark results of external function call as pointing to escaped and external
   for (size_t n = 0; n < callNode.NumResults(); n++)
   {
     auto & callResult = *callNode.Result(n);
 
-    if (ShouldHandle(callResult))
+    if (HasOrContainsPointerType(callResult))
     {
       Context_->GetOrInsertRegisterLocation(
           callResult,
@@ -1229,7 +1256,7 @@ Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
   {
     auto & callResult = *callNode.output(n);
 
-    if (ShouldHandle(callResult))
+    if (HasOrContainsPointerType(callResult))
     {
       Context_->GetOrInsertRegisterLocation(
           callResult,
@@ -1258,7 +1285,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
   auto & operand = *node.input(0)->origin();
   auto & result = *node.output(0);
 
-  if (ShouldHandle(operand))
+  if (HasOrContainsPointerType(operand))
   {
     auto & operandLocation = Context_->GetLocation(operand);
     auto & resultLocation = Context_->InsertRegisterLocation(result, PointsToFlags::PointsToNone);
@@ -1286,7 +1313,7 @@ Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
 
   auto & result = *node.output(0);
 
-  if (ShouldHandle(result))
+  if (HasOrContainsPointerType(result))
   {
     // FIXME: Have a look at this operation again to ensure that the flags add up.
     Context_->InsertRegisterLocation(
@@ -1311,7 +1338,7 @@ Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node)
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto & output = *node.output(0);
 
-  if (ShouldHandle(output))
+  if (HasOrContainsPointerType(output))
   {
     // ConstantAggregateZero cannot point to any memory location. We therefore only insert a
     // register node for it, but let this node not point to anything.
@@ -1325,7 +1352,7 @@ Steensgaard::AnalyzeUndef(const jlm::rvsdg::simple_node & node)
   JLM_ASSERT(is<UndefValueOperation>(&node));
   auto & output = *node.output(0);
 
-  if (ShouldHandle(output))
+  if (HasOrContainsPointerType(output))
   {
     // UndefValue cannot point to any memory location. We therefore only insert a register node for
     // it, but let this node not point to anything.
@@ -1419,7 +1446,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   {
     auto & origin = *cv.origin();
 
-    if (ShouldHandle(origin))
+    if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
@@ -1434,7 +1461,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   {
     for (auto & argument : lambda.fctarguments())
     {
-      if (ShouldHandle(argument))
+      if (HasOrContainsPointerType(argument))
       {
         Context_->GetOrInsertRegisterLocation(argument, PointsToFlags::PointsToNone);
       }
@@ -1445,7 +1472,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     // FIXME: We also end up in this case when the lambda has only direct calls, but is exported.
     for (auto & argument : lambda.fctarguments())
     {
-      if (ShouldHandle(argument))
+      if (HasOrContainsPointerType(argument))
         Context_->GetOrInsertRegisterLocation(
             argument,
             PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory);
@@ -1461,7 +1488,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
     {
       auto & operand = *result.origin();
 
-      if (ShouldHandle(operand))
+      if (HasOrContainsPointerType(operand))
       {
         MarkAsEscaped(operand);
       }
@@ -1483,7 +1510,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
   {
     auto & origin = *input.origin();
 
-    if (ShouldHandle(origin))
+    if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
@@ -1515,7 +1542,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
   {
     auto & origin = *cv->origin();
 
-    if (ShouldHandle(origin))
+    if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
       auto & argumentLocation =
@@ -1529,7 +1556,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
   {
     auto & argument = *rv->argument();
 
-    if (ShouldHandle(argument))
+    if (HasOrContainsPointerType(argument))
     {
       Context_->InsertRegisterLocation(argument, PointsToFlags::PointsToNone);
     }
@@ -1544,7 +1571,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
     auto & output = *rv.output();
     auto & result = *rv->result();
 
-    if (ShouldHandle(argument))
+    if (HasOrContainsPointerType(argument))
     {
       auto & originLocation = Context_->GetLocation(*result.origin());
       auto & argumentLocation = Context_->GetLocation(argument);
@@ -1564,7 +1591,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
   {
     auto & origin = *ev->origin();
 
-    if (ShouldHandle(origin))
+    if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(*ev->origin());
       for (auto & argument : *ev)
@@ -1585,7 +1612,7 @@ Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
   {
     auto & output = *ex.output();
 
-    if (ShouldHandle(output))
+    if (HasOrContainsPointerType(output))
     {
       auto & outputLocation = Context_->InsertRegisterLocation(output, PointsToFlags::PointsToNone);
       for (auto & result : *ex)
@@ -1602,7 +1629,7 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
 {
   for (auto thetaOutput : theta)
   {
-    if (ShouldHandle(*thetaOutput))
+    if (HasOrContainsPointerType(*thetaOutput))
     {
       auto & originLocation = Context_->GetLocation(*thetaOutput->input()->origin());
       auto & argumentLocation =
@@ -1616,7 +1643,7 @@ Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
 
   for (auto thetaOutput : theta)
   {
-    if (ShouldHandle(*thetaOutput))
+    if (HasOrContainsPointerType(*thetaOutput))
     {
       auto & originLocation = Context_->GetLocation(*thetaOutput->result()->origin());
       auto & argumentLocation = Context_->GetLocation(*thetaOutput->argument());
@@ -1665,7 +1692,7 @@ Steensgaard::AnalyzeRegion(jlm::rvsdg::region & region)
   for (size_t n = 0; n < region.narguments(); n++)
   {
     auto & argument = *region.argument(n);
-    if (ShouldHandle(argument))
+    if (HasOrContainsPointerType(argument))
     {
       JLM_ASSERT(Context_->HasRegisterLocation(argument));
     }
@@ -1707,7 +1734,7 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
   {
     auto & argument = *rootRegion->argument(n);
 
-    if (ShouldHandle(argument))
+    if (HasOrContainsPointerType(argument))
     {
       auto & importLocation = Context_->InsertImportLocation(argument);
       auto & registerLocation =

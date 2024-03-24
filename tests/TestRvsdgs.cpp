@@ -3683,4 +3683,84 @@ LambdaCallArgumentMismatch::SetupRvsdg()
   return rvsdgModule;
 }
 
+std::unique_ptr<llvm::RvsdgModule>
+VariadicFunctionTest1::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+  rvsdg.node_normal_form(typeid(rvsdg::operation))->set_mutable(false);
+
+  PointerType pointerType;
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  varargtype varArgType;
+  FunctionType lambdaHType(
+      { &jlm::rvsdg::bit32, &varArgType, &iOStateType, &memoryStateType, &loopStateType },
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaFType(
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaGType(
+      { &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+
+  // Setup h()
+  ImportH_ = rvsdg.add_import(impport(lambdaHType, "h", linkage::external_linkage));
+
+  // Setup f()
+  {
+    LambdaF_ = lambda::node::create(rvsdg.root(), lambdaFType, "f", linkage::internal_linkage);
+    auto iArgument = LambdaF_->fctargument(0);
+    auto iOStateArgument = LambdaF_->fctargument(1);
+    auto memoryStateArgument = LambdaF_->fctargument(2);
+    auto loopStateArgument = LambdaF_->fctargument(3);
+    auto lambdaHArgument = LambdaF_->add_ctxvar(ImportH_);
+
+    auto one = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 1);
+    auto three = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 3);
+
+    auto varArgList = valist_op::Create(*LambdaF_->subregion(), { iArgument });
+
+    auto callHResults = CallNode::Create(
+        lambdaHArgument,
+        lambdaHType,
+        { one, varArgList, iOStateArgument, memoryStateArgument, loopStateArgument });
+    CallH_ = util::AssertedCast<llvm::CallNode>(rvsdg::node_output::node(callHResults[0]));
+
+    auto storeResults = StoreNode::Create(callHResults[0], three, { callHResults[2] }, 4);
+
+    LambdaF_->finalize({ callHResults[1], storeResults[0], callHResults[3] });
+  }
+
+  // Setup g()
+  {
+    LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
+    auto iOStateArgument = LambdaG_->fctargument(0);
+    auto memoryStateArgument = LambdaG_->fctargument(1);
+    auto loopStateArgument = LambdaG_->fctargument(2);
+    auto lambdaFArgument = LambdaG_->add_ctxvar(LambdaF_->output());
+
+    auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
+    auto five = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 5);
+
+    auto allocaResults = alloca_op::create(rvsdg::bit32, one, 4);
+    auto merge = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
+    AllocaNode_ = rvsdg::node_output::node(allocaResults[0]);
+
+    auto storeResults = StoreNode::Create(allocaResults[0], five, { merge }, 4);
+
+    auto callFResults = CallNode::Create(
+        lambdaFArgument,
+        lambdaFType,
+        { allocaResults[0], iOStateArgument, storeResults[0], loopStateArgument });
+
+    LambdaG_->finalize(callFResults);
+  }
+
+  return rvsdgModule;
+}
+
 }
