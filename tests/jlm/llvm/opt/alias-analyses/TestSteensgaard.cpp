@@ -1232,6 +1232,31 @@ TestLambdaCallArgumentMismatch()
 }
 
 static void
+TestVariadicFunction1()
+{
+  // Arrange and Act
+  jlm::tests::VariadicFunctionTest1 test;
+  auto pointsToGraph = RunSteensgaard(test.module());
+
+  // Assert
+  assert(pointsToGraph->NumAllocaNodes() == 1);
+  assert(pointsToGraph->NumLambdaNodes() == 2);
+  assert(pointsToGraph->NumImportNodes() == 1);
+  assert(pointsToGraph->NumRegisterNodes() == 5);
+
+  auto & allocaMemoryNode = pointsToGraph->GetAllocaNode(test.GetAllocaNode());
+  auto & externalMemoryNode = pointsToGraph->GetExternalMemoryNode();
+
+  auto & callOutput = pointsToGraph->GetRegisterNode(*test.GetCallH().output(0));
+
+  auto & escapedMemoryNodes = pointsToGraph->GetEscapedMemoryNodes();
+  assert(escapedMemoryNodes.Size() == 1);
+  assert(escapedMemoryNodes.Contains(&allocaMemoryNode));
+
+  assertTargets(callOutput, { &allocaMemoryNode, &externalMemoryNode });
+}
+
+static void
 TestStatistics()
 {
   // Arrange
@@ -1303,6 +1328,8 @@ TestSteensgaardAnalysis()
   TestLinkedList();
 
   TestLambdaCallArgumentMismatch();
+
+  TestVariadicFunction1();
 
   TestStatistics();
 
