@@ -26,6 +26,18 @@ HasOrContainsPointerType(const rvsdg::output & output)
 }
 
 /**
+ * Determines whether \p output%s type is a variadic argument type.
+ *
+ * @param output An rvsdg::output.
+ * @return True if \p output%s type is a variadic argument type, otherwise false.
+ */
+static bool
+HasVariadicArgumentType(const rvsdg::output & output)
+{
+  return is<varargtype>(output.type());
+}
+
+/**
  * Determines whether \p node should be handled by the Steensgaard analysis.
  *
  * @param node An rvsdg::simple_node.
@@ -1196,7 +1208,7 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
 void
 Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 {
-  // FIXME: What about varargs
+  // Mark arguments of external function call as escaped
   for (size_t n = 1; n < callNode.NumArguments(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
@@ -1205,8 +1217,21 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
     {
       MarkAsEscaped(callArgument);
     }
+    else if (HasVariadicArgumentType(callArgument))
+    {
+      // Mark variadic arguments as escaped
+      auto & valistNode = *rvsdg::node_output::node(&callArgument);
+      JLM_ASSERT(is<valist_op>(&valistNode));
+
+      for (size_t i = 0; i < valistNode.ninputs(); i++)
+      {
+        auto & origin = *valistNode.input(i)->origin();
+        MarkAsEscaped(origin);
+      }
+    }
   }
 
+  // Mark results of external function call as pointing to escaped and external
   for (size_t n = 0; n < callNode.NumResults(); n++)
   {
     auto & callResult = *callNode.Result(n);
