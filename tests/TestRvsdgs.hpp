@@ -2392,24 +2392,38 @@ class VariadicFunctionTest1 final : public RvsdgTest
 {
 public:
   [[nodiscard]] llvm::lambda::node &
-  LambdaF() const noexcept
+  GetLambdaF() const noexcept
   {
     JLM_ASSERT(LambdaF_ != nullptr);
     return *LambdaF_;
   }
 
   [[nodiscard]] llvm::lambda::node &
-  LambdaG() const noexcept
+  GetLambdaG() const noexcept
   {
     JLM_ASSERT(LambdaG_ != nullptr);
     return *LambdaG_;
   }
 
   [[nodiscard]] rvsdg::argument &
-  ImportH() const noexcept
+  GetImportH() const noexcept
   {
     JLM_ASSERT(ImportH_ != nullptr);
     return *ImportH_;
+  }
+
+  [[nodiscard]] llvm::CallNode &
+  GetCallH() const noexcept
+  {
+    JLM_ASSERT(CallH_ != nullptr);
+    return *CallH_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaNode() const noexcept
+  {
+    JLM_ASSERT(AllocaNode_ != nullptr);
+    return *AllocaNode_;
   }
 
 private:
@@ -2420,6 +2434,10 @@ private:
   llvm::lambda::node * LambdaG_ = {};
 
   rvsdg::argument * ImportH_ = {};
+
+  llvm::CallNode * CallH_ = {};
+
+  rvsdg::node * AllocaNode_ = {};
 };
 
 }

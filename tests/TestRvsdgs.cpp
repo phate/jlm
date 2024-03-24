@@ -3728,6 +3728,7 @@ VariadicFunctionTest1::SetupRvsdg()
         lambdaHArgument,
         lambdaHType,
         { one, varArgList, iOStateArgument, memoryStateArgument, loopStateArgument });
+    CallH_ = util::AssertedCast<llvm::CallNode>(rvsdg::node_output::node(callHResults[0]));
 
     auto storeResults = StoreNode::Create(callHResults[0], three, { callHResults[2] }, 4);
 
@@ -3747,6 +3748,7 @@ VariadicFunctionTest1::SetupRvsdg()
 
     auto allocaResults = alloca_op::create(rvsdg::bit32, one, 4);
     auto merge = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
+    AllocaNode_ = rvsdg::node_output::node(allocaResults[0]);
 
     auto storeResults = StoreNode::Create(allocaResults[0], five, { merge }, 4);
 
