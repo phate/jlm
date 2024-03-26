@@ -3763,4 +3763,180 @@ VariadicFunctionTest1::SetupRvsdg()
   return rvsdgModule;
 }
 
+std::unique_ptr<jlm::llvm::RvsdgModule>
+VariadicFunctionTest2::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create(
+      { &rvsdg::bit32, &rvsdg::bit32, &pointerType, &pointerType }));
+  auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
+  arraytype arrayType(*structType, 1);
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  varargtype varArgType;
+  FunctionType lambdaLlvmLifetimeStartType(
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaLlvmLifetimeEndType(
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaVaStartType(
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaVaEndType(
+      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
+      { &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaFstType(
+      { &rvsdg::bit32, &varArgType, &iOStateType, &memoryStateType, &loopStateType },
+      { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+  FunctionType lambdaGType(
+      { &iOStateType, &memoryStateType, &loopStateType },
+      { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+
+  auto llvmLifetimeStart =
+      rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
+  auto llvmLifetimeEnd =
+      rvsdg.add_import(impport(pointerType, "llvm.lifetime.end.p0", linkage::external_linkage));
+  auto llvmVaStart =
+      rvsdg.add_import(impport(pointerType, "llvm.va_start", linkage::external_linkage));
+  auto llvmVaEnd = rvsdg.add_import(impport(pointerType, "llvm.va_end", linkage::external_linkage));
+
+  // Setup function fst()
+  {
+    LambdaFst_ =
+        lambda::node::create(rvsdg.root(), lambdaFstType, "fst", linkage::internal_linkage);
+    auto iOStateArgument = LambdaFst_->fctargument(2);
+    auto memoryStateArgument = LambdaFst_->fctargument(3);
+    auto loopStateArgument = LambdaFst_->fctargument(4);
+    auto llvmLifetimeStartArgument = LambdaFst_->add_ctxvar(llvmLifetimeStart);
+    auto llvmLifetimeEndArgument = LambdaFst_->add_ctxvar(llvmLifetimeEnd);
+    auto llvmVaStartArgument = LambdaFst_->add_ctxvar(llvmVaStart);
+    auto llvmVaEndArgument = LambdaFst_->add_ctxvar(llvmVaEnd);
+
+    auto one = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 32, 1);
+    auto twentyFour = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 64, 24);
+    auto fortyOne = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 32, 41);
+
+    auto allocaResults = alloca_op::create(arrayType, one, 16);
+    auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
+    AllocaNode_ = rvsdg::node_output::node(allocaResults[0]);
+
+    auto callLLvmLifetimeStartResults = CallNode::Create(
+        llvmLifetimeStartArgument,
+        lambdaLlvmLifetimeStartType,
+        { twentyFour, allocaResults[0], iOStateArgument, memoryState, loopStateArgument });
+    auto callVaStartResults = CallNode::Create(
+        llvmVaStartArgument,
+        lambdaVaStartType,
+        { allocaResults[0],
+          callLLvmLifetimeStartResults[0],
+          callLLvmLifetimeStartResults[1],
+          callLLvmLifetimeStartResults[2] });
+
+    auto loadResults =
+        LoadNode::Create(allocaResults[0], { callVaStartResults[1] }, rvsdg::bit32, 16);
+    auto icmpResult = rvsdg::bitult_op::create(32, loadResults[0], fortyOne);
+    auto matchResult = rvsdg::match_op::Create(*icmpResult, { { 1, 1 } }, 0, 2);
+
+    auto gammaNode = rvsdg::gamma_node::create(matchResult, 2);
+    auto gammaVaAddress = gammaNode->add_entryvar(allocaResults[0]);
+    auto gammaLoadResult = gammaNode->add_entryvar(loadResults[0]);
+    auto gammaMemoryState = gammaNode->add_entryvar(loadResults[1]);
+
+    // gamma subregion 0
+    auto zero = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 0);
+    auto two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 2);
+    auto eight = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 8);
+    auto gepResult1 = GetElementPtrOperation::Create(
+        gammaVaAddress->argument(0),
+        { zero, two },
+        *structType,
+        pointerType);
+    auto loadResultsGamma0 =
+        LoadNode::Create(gepResult1, { gammaMemoryState->argument(0) }, pointerType, 8);
+    auto gepResult2 =
+        GetElementPtrOperation::Create(loadResultsGamma0[0], { eight }, rvsdg::bit8, pointerType);
+    auto storeResultsGamma0 =
+        StoreNode::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
+
+    // gamma subregion 1
+    zero = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 64, 0);
+    auto eightBit32 = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 8);
+    auto three = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 3);
+    gepResult1 = GetElementPtrOperation::Create(
+        gammaVaAddress->argument(1),
+        { zero, three },
+        *structType,
+        pointerType);
+    auto loadResultsGamma1 =
+        LoadNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
+    auto & zextResult = zext_op::Create(*gammaLoadResult->argument(1), rvsdg::bit64);
+    gepResult2 = GetElementPtrOperation::Create(
+        loadResultsGamma1[0],
+        { &zextResult },
+        rvsdg::bit8,
+        pointerType);
+    auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult->argument(1), eightBit32);
+    auto storeResultsGamma1 =
+        StoreNode::Create(gammaVaAddress->argument(1), addResult, { loadResultsGamma1[1] }, 16);
+
+    auto gammaAddress = gammaNode->add_exitvar({ loadResultsGamma0[0], gepResult2 });
+    auto gammaOutputMemoryState =
+        gammaNode->add_exitvar({ storeResultsGamma0[0], storeResultsGamma1[0] });
+
+    loadResults = LoadNode::Create(gammaAddress, { gammaOutputMemoryState }, rvsdg::bit32, 4);
+    auto callVaEndResults = CallNode::Create(
+        llvmVaEndArgument,
+        lambdaVaEndType,
+        { allocaResults[0], callVaStartResults[0], loadResults[1], callVaStartResults[2] });
+    auto callLLvmLifetimeEndResults = CallNode::Create(
+        llvmLifetimeEndArgument,
+        lambdaLlvmLifetimeEndType,
+        { twentyFour,
+          allocaResults[0],
+          callVaEndResults[0],
+          callVaEndResults[1],
+          callVaEndResults[2] });
+
+    LambdaFst_->finalize({ loadResults[0],
+                           callLLvmLifetimeEndResults[0],
+                           callLLvmLifetimeEndResults[1],
+                           callLLvmLifetimeEndResults[2] });
+  }
+
+  // Setup function g()
+  {
+    LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
+    auto iOStateArgument = LambdaG_->fctargument(0);
+    auto memoryStateArgument = LambdaG_->fctargument(1);
+    auto loopStateArgument = LambdaG_->fctargument(2);
+    auto lambdaFstArgument = LambdaG_->add_ctxvar(LambdaFst_->output());
+
+    auto zero = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 0);
+    auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
+    auto two = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 2);
+    auto three = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 3);
+
+    auto vaListResult = valist_op::Create(*LambdaG_->subregion(), { zero, one, two });
+
+    auto callFstResults = CallNode::Create(
+        lambdaFstArgument,
+        lambdaFstType,
+        { three, vaListResult, iOStateArgument, memoryStateArgument, loopStateArgument });
+
+    LambdaG_->finalize(callFstResults);
+  }
+
+  return rvsdgModule;
+}
+
 }
