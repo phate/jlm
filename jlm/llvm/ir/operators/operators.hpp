@@ -1798,6 +1798,22 @@ public:
     ConstantArray op(*vt, elements.size());
     return tac::create(op, elements);
   }
+
+  static rvsdg::output *
+  Create(const std::vector<rvsdg::output *> & operands)
+  {
+    if (operands.empty())
+      throw util::error("Expected at least one element.\n");
+
+    auto valueType = dynamic_cast<const rvsdg::valuetype *>(&operands[0]->type());
+    if (!valueType)
+    {
+      throw util::error("Expected value type.\n");
+    }
+
+    ConstantArray operation(*valueType, operands.size());
+    return rvsdg::simple_node::create_normalized(operands[0]->region(), operation, operands)[0];
+  }
 };
 
 /* ConstantAggregateZero operator */
