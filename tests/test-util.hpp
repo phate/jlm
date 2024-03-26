@@ -30,10 +30,10 @@ namespace jlm::tests
 {
 
 static inline void
-print(const llvm::Module & module)
+print(const ::llvm::Module & module)
 {
-  llvm::raw_os_ostream os(std::cout);
-  module.print(os, NULL);
+  ::llvm::raw_os_ostream os(std::cout);
+  module.print(os, nullptr);
 }
 
 }
