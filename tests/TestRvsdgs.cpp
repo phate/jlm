@@ -3822,10 +3822,11 @@ VariadicFunctionTest2::SetupRvsdg()
     auto llvmVaStartArgument = LambdaFst_->add_ctxvar(llvmVaStart);
     auto llvmVaEndArgument = LambdaFst_->add_ctxvar(llvmVaEnd);
 
+    auto one = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 32, 1);
     auto twentyFour = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 64, 24);
     auto fortyOne = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 32, 41);
 
-    auto allocaResults = alloca_op::create(arrayType, twentyFour, 16);
+    auto allocaResults = alloca_op::create(arrayType, one, 16);
     auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
     auto callLLvmLifetimeStartResults = CallNode::Create(
@@ -3848,7 +3849,7 @@ VariadicFunctionTest2::SetupRvsdg()
     auto gammaNode = rvsdg::gamma_node::create(matchResult, 2);
     auto gammaVaAddress = gammaNode->add_entryvar(allocaResults[0]);
     auto gammaLoadResult = gammaNode->add_entryvar(loadResults[0]);
-    auto gammaMemoryState = gammaNode->add_entryvar(callVaStartResults[1]);
+    auto gammaMemoryState = gammaNode->add_entryvar(loadResults[1]);
 
     // gamma subregion 0
     auto zero = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 0);
