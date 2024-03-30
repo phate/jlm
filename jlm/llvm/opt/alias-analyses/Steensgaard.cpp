@@ -746,20 +746,26 @@ public:
         auto pointsToLabel = jlm::util::strfmt("{pt:", (intptr_t)location->GetPointsTo(), "}");
         auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
 
-        setLabel += location == rootLocation ? jlm::util::strfmt(
-                                                   "*",
-                                                   locationLabel,
-                                                   unknownLabel,
-                                                   pointsToEscapedMemoryLabel,
-                                                   escapesModuleLabel,
-                                                   pointsToLabel,
-                                                   "*\\n")
-                                             : jlm::util::strfmt(
-                                                   locationLabel,
-                                                   unknownLabel,
-                                                   pointsToEscapedMemoryLabel,
-                                                   escapesModuleLabel,
-                                                   "\\n");
+        if (location == rootLocation)
+        {
+          setLabel += jlm::util::strfmt(
+              "*",
+              locationLabel,
+              unknownLabel,
+              pointsToEscapedMemoryLabel,
+              escapesModuleLabel,
+              pointsToLabel,
+              "*\\n");
+        }
+        else
+        {
+          setLabel += jlm::util::strfmt(
+              locationLabel,
+              unknownLabel,
+              pointsToEscapedMemoryLabel,
+              escapesModuleLabel,
+              "\\n");
+        }
       }
 
       return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
