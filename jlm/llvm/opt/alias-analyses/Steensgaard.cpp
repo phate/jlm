@@ -26,18 +26,6 @@ HasOrContainsPointerType(const rvsdg::output & output)
 }
 
 /**
- * Determines whether \p output%s type is a variadic argument type.
- *
- * @param output An rvsdg::output.
- * @return True if \p output%s type is a variadic argument type, otherwise false.
- */
-static bool
-HasVariadicArgumentType(const rvsdg::output & output)
-{
-  return is<varargtype>(output.type());
-}
-
-/**
  * Determines whether \p node should be handled by the Steensgaard analysis.
  *
  * @param node An rvsdg::simple_node.
@@ -758,16 +746,20 @@ public:
         auto pointsToLabel = jlm::util::strfmt("{pt:", (intptr_t)location->GetPointsTo(), "}");
         auto locationLabel = jlm::util::strfmt((intptr_t)location, " : ", location->DebugString());
 
-        setLabel += location == rootLocation
-                      ? jlm::util::strfmt(
-                          "*",
-                          locationLabel,
-                          unknownLabel,
-                          pointsToEscapedMemoryLabel,
-                          escapesModuleLabel,
-                          pointsToLabel,
-                          "*\\n")
-                      : jlm::util::strfmt(locationLabel, escapesModuleLabel, "\\n");
+        setLabel += location == rootLocation ? jlm::util::strfmt(
+                                                   "*",
+                                                   locationLabel,
+                                                   unknownLabel,
+                                                   pointsToEscapedMemoryLabel,
+                                                   escapesModuleLabel,
+                                                   pointsToLabel,
+                                                   "*\\n")
+                                             : jlm::util::strfmt(
+                                                   locationLabel,
+                                                   unknownLabel,
+                                                   pointsToEscapedMemoryLabel,
+                                                   escapesModuleLabel,
+                                                   "\\n");
       }
 
       return jlm::util::strfmt("{ ", (intptr_t)&set, " [label = \"", setLabel, "\"]; }");
@@ -1016,11 +1008,13 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeExtractValue(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node) || is<valist_op>(&node))
+  else if (is<valist_op>(&node))
   {
-    // Nothing needs to be done:
-    // 1. FreeOperation and ptrcmp_op do not affect points-to sets
-    // 2. valist_op are handled along with call nodes
+    AnalyzeVaList(node);
+  }
+  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  {
+    // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
   }
   else
   {
@@ -1034,45 +1028,10 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
-  std::function<bool(const jlm::rvsdg::valuetype &)> IsVaListAlloca =
-      [&](const jlm::rvsdg::valuetype & type)
-  {
-    auto structType = dynamic_cast<const StructType *>(&type);
-
-    if (structType != nullptr && structType->GetName() == "struct.__va_list_tag")
-      return true;
-
-    if (structType != nullptr)
-    {
-      auto & declaration = structType->GetDeclaration();
-
-      for (size_t n = 0; n < declaration.NumElements(); n++)
-      {
-        if (IsVaListAlloca(declaration.GetElement(n)))
-          return true;
-      }
-    }
-
-    if (auto arrayType = dynamic_cast<const arraytype *>(&type))
-      return IsVaListAlloca(arrayType->element_type());
-
-    return false;
-  };
-
   auto & allocaOutputLocation =
       Context_->InsertRegisterLocation(*node.output(0), PointsToFlags::PointsToNone);
   auto & allocaLocation = Context_->InsertAllocaLocation(node);
   allocaOutputLocation.SetPointsTo(allocaLocation);
-
-  auto & op = *dynamic_cast<const alloca_op *>(&node.operation());
-
-  // FIXME: We should discover such an alloca already at construction time and not by traversing the
-  // type here.
-  if (IsVaListAlloca(op.value_type()))
-  {
-    // FIXME: We should be able to do better than just pointing to unknown.
-    allocaLocation.SetPointsToFlags(PointsToFlags::PointsToUnknownMemory);
-  }
 }
 
 void
@@ -1168,8 +1127,9 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
     return;
   }
 
-  // FIXME: What about varargs
   // Handle call node operands
+  //
+  // Variadic arguments are taken care of in AnalyzeVaList().
   for (size_t n = 1; n < callNode.ninputs(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
@@ -1209,6 +1169,8 @@ void
 Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 {
   // Mark arguments of external function call as escaped
+  //
+  // Variadic arguments are taken care of in AnalyzeVaList().
   for (size_t n = 1; n < callNode.NumArguments(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
@@ -1216,18 +1178,6 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
     if (HasOrContainsPointerType(callArgument))
     {
       MarkAsEscaped(callArgument);
-    }
-    else if (HasVariadicArgumentType(callArgument))
-    {
-      // Mark variadic arguments as escaped
-      auto & valistNode = *rvsdg::node_output::node(&callArgument);
-      JLM_ASSERT(is<valist_op>(&valistNode));
-
-      for (size_t i = 0; i < valistNode.ninputs(); i++)
-      {
-        auto & origin = *valistNode.input(i)->origin();
-        MarkAsEscaped(origin);
-      }
     }
   }
 
@@ -1250,6 +1200,8 @@ Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
 {
   // Nothing can be done for the call/lambda arguments, as it is
   // an indirect call and the lambda node cannot be retrieved.
+  //
+  // Variadic arguments are taken care of in AnalyzeVaList().
 
   // Handle call node results
   for (size_t n = 0; n < callNode.noutputs(); n++)
@@ -1435,6 +1387,27 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
   {
     // Unifies the underlying memory of srcMemory and dstMemory
     Context_->Join(*srcAddress.GetPointsTo(), *dstAddress.GetPointsTo());
+  }
+}
+
+void
+Steensgaard::AnalyzeVaList(const rvsdg::simple_node & node)
+{
+  JLM_ASSERT(is<valist_op>(&node));
+
+  // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
+  // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
+  // to external. All we need to do is mark all pointees of pointer varargs as escaping. When the
+  // pointers are re-created inside the function, they will be marked as pointing to external.
+
+  for (size_t n = 0; n < node.ninputs(); n++)
+  {
+    auto & origin = *node.input(n)->origin();
+
+    if (HasOrContainsPointerType(origin))
+    {
+      MarkAsEscaped(origin);
+    }
   }
 }
 
