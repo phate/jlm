@@ -1336,16 +1336,18 @@ Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
   JLM_ASSERT(is<ConstantArray>(&node));
 
   auto & output = *node.output(0);
+  if (!HasOrContainsPointerType(output))
+    return;
+
+  auto & outputLocation = Context_->InsertRegisterLocation(output, PointsToFlags::PointsToNone);
+
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     auto & operand = *node.input(n)->origin();
+    JLM_ASSERT(HasOrContainsPointerType(operand));
 
-    if (Context_->HasRegisterLocation(operand))
-    {
-      auto & operandLocation = Context_->GetLocation(operand);
-      auto & outputLocation = Context_->InsertRegisterLocation(output, PointsToFlags::PointsToNone);
-      Context_->Join(outputLocation, operandLocation);
-    }
+    auto & operandLocation = Context_->GetLocation(operand);
+    Context_->Join(outputLocation, operandLocation);
   }
 }
 
@@ -1355,14 +1357,17 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
   JLM_ASSERT(is<ConstantStruct>(&node));
 
   auto & output = *node.output(0);
+  if (!HasOrContainsPointerType(output))
+    return;
+
+  auto & outputLocation = Context_->InsertRegisterLocation(output, PointsToFlags::PointsToNone);
+
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     auto & operand = *node.input(n)->origin();
-
-    if (Context_->HasRegisterLocation(operand))
+    if (HasOrContainsPointerType(operand))
     {
       auto & operandLocation = Context_->GetLocation(operand);
-      auto & outputLocation = Context_->InsertRegisterLocation(output, PointsToFlags::PointsToNone);
       Context_->Join(outputLocation, operandLocation);
     }
   }
@@ -1518,7 +1523,7 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
   auto & origin = *delta.result()->origin();
-  if (Context_->HasRegisterLocation(origin))
+  if (HasOrContainsPointerType(origin))
   {
     auto & originLocation = Context_->GetLocation(origin);
     Context_->Join(deltaLocation, originLocation);
