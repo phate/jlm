@@ -986,6 +986,10 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeBits2ptr(node);
   }
+  else if (is<ptr2bits_op>(&node))
+  {
+    AnalyzePtr2Bits(node);
+  }
   else if (is<ConstantPointerNullOperation>(&node))
   {
     AnalyzeConstantPointerNull(node);
@@ -1262,6 +1266,14 @@ Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node)
       // The register location already points to unknown memory. Unknown memory is a superset of
       // escaped memory, and therefore we can simply set escaped memory to false.
       PointsToFlags::PointsToUnknownMemory | PointsToFlags::PointsToExternalMemory);
+}
+
+void
+Steensgaard::AnalyzePtr2Bits(const rvsdg::simple_node & node)
+{
+  JLM_ASSERT(is<ptr2bits_op>(&node));
+
+  MarkAsEscaped(*node.input(0)->origin());
 }
 
 void
