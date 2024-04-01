@@ -1257,6 +1257,32 @@ TestVariadicFunction1()
 }
 
 static void
+TestVariadicFunction2()
+{
+  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+
+  // Arrange
+  jlm::tests::VariadicFunctionTest2 test;
+  std::cout << jlm::rvsdg::view(test.module().Rvsdg().root(), outputMap) << std::flush;
+
+  // Act
+  auto pointsToGraph = RunSteensgaard(test.module());
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap);
+
+  // Assert
+  assert(pointsToGraph->NumAllocaNodes() == 1);
+  assert(pointsToGraph->NumLambdaNodes() == 2);
+  assert(pointsToGraph->NumImportNodes() == 4);
+  assert(pointsToGraph->NumRegisterNodes() == 8);
+
+  auto & allocaMemoryNode = pointsToGraph->GetAllocaNode(test.GetAllocaNode());
+
+  auto escapedMemoryNodes = pointsToGraph->GetEscapedMemoryNodes();
+  assert(escapedMemoryNodes.Size() == 1);
+  assert(escapedMemoryNodes.Contains(&allocaMemoryNode));
+}
+
+static void
 TestStatistics()
 {
   // Arrange
@@ -1330,6 +1356,7 @@ TestSteensgaardAnalysis()
   TestLambdaCallArgumentMismatch();
 
   TestVariadicFunction1();
+  TestVariadicFunction2();
 
   TestStatistics();
 

@@ -790,16 +790,33 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const variable * operand, const jlm::rvsdg::type & type)
   {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&operand->type());
-    if (!st)
-      throw jlm::util::error("expected bitstring type.");
+    auto operandBitType = CheckAndExtractBitType(operand->type());
+    auto resultBitType = CheckAndExtractBitType(type);
 
-    auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(&type);
-    if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+    zext_op operation(operandBitType.nbits(), resultBitType.nbits());
+    return tac::create(operation, { operand });
+  }
 
-    zext_op op(st->nbits(), dt->nbits());
-    return tac::create(op, { operand });
+  static rvsdg::output &
+  Create(rvsdg::output & operand, const rvsdg::type & resultType)
+  {
+    auto operandBitType = CheckAndExtractBitType(operand.type());
+    auto resultBitType = CheckAndExtractBitType(resultType);
+
+    zext_op operation(operandBitType.nbits(), resultBitType.nbits());
+    return *rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand })[0];
+  }
+
+private:
+  static const rvsdg::bittype &
+  CheckAndExtractBitType(const rvsdg::type & type)
+  {
+    if (auto bitType = dynamic_cast<const rvsdg::bittype *>(&type))
+    {
+      return *bitType;
+    }
+
+    throw util::type_error("bittype", type.debug_string());
   }
 };
 
@@ -1780,6 +1797,22 @@ public:
 
     ConstantArray op(*vt, elements.size());
     return tac::create(op, elements);
+  }
+
+  static rvsdg::output *
+  Create(const std::vector<rvsdg::output *> & operands)
+  {
+    if (operands.empty())
+      throw util::error("Expected at least one element.\n");
+
+    auto valueType = dynamic_cast<const rvsdg::valuetype *>(&operands[0]->type());
+    if (!valueType)
+    {
+      throw util::error("Expected value type.\n");
+    }
+
+    ConstantArray operation(*valueType, operands.size());
+    return rvsdg::simple_node::create_normalized(operands[0]->region(), operation, operands)[0];
   }
 };
 

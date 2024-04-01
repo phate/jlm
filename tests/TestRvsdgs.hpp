@@ -2440,4 +2440,68 @@ private:
   rvsdg::node * AllocaNode_ = {};
 };
 
+/**
+ * This class sets up an RVSDG representing the following code:
+ *
+ * \code{.c}
+ *   #include <stdarg.h>
+ *   #include <stdio.h>
+ *   #include <stdint.h>
+ *
+ *   static int
+ *   fst(int n, ...)
+ *   {
+ *     va_list arguments;
+ *     va_start(arguments, n);
+ *     int tmp = va_arg(arguments, int);
+ *     va_end(arguments);
+ *
+ *     return tmp;
+ *   }
+ *
+ *   int
+ *   g()
+ *   {
+ *     return fst(3, 0, 1, 2);
+ *   }
+ * \endcode
+ *
+ * It uses a single memory state to sequentialize the respective memory operations within each
+ * function. The code produced by the compiler for variadic functions is architecture specific. This
+ * function sets up the code that was produced for x64.
+ */
+class VariadicFunctionTest2 final : public RvsdgTest
+{
+public:
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetLambdaFst() const noexcept
+  {
+    JLM_ASSERT(LambdaFst_ != nullptr);
+    return *LambdaFst_;
+  }
+
+  [[nodiscard]] const jlm::llvm::lambda::node &
+  GetLambdaG() const noexcept
+  {
+    JLM_ASSERT(LambdaG_ != nullptr);
+    return *LambdaG_;
+  }
+
+  [[nodiscard]] rvsdg::node &
+  GetAllocaNode() const noexcept
+  {
+    JLM_ASSERT(AllocaNode_ != nullptr);
+    return *AllocaNode_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::lambda::node * LambdaFst_ = {};
+  jlm::llvm::lambda::node * LambdaG_ = {};
+
+  rvsdg::node * AllocaNode_ = {};
+};
+
 }

@@ -144,6 +144,9 @@ private:
   void
   AnalyzeExtractValue(const rvsdg::simple_node & node);
 
+  void
+  AnalyzeVaList(const rvsdg::simple_node & node);
+
   /**
    * Marks register \p output as escaping the module. This indicates that the pointer in \p output
    * is going outside the module, where we do not know what happens with it. Consequently, the

@@ -195,7 +195,31 @@ public:
     return mapping_.end();
   }
 
+  static output *
+  Create(
+      output & predicate,
+      const std::unordered_map<uint64_t, uint64_t> & mapping,
+      uint64_t defaultAlternative,
+      size_t numAlternatives)
+  {
+    auto bitType = CheckAndExtractBitType(predicate.type());
+
+    match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
+    return rvsdg::simple_node::create_normalized(predicate.region(), operation, { &predicate })[0];
+  }
+
 private:
+  static const bittype &
+  CheckAndExtractBitType(const rvsdg::type & type)
+  {
+    if (auto bitType = dynamic_cast<const bittype *>(&type))
+    {
+      return *bitType;
+    }
+
+    throw util::type_error("bittype", type.debug_string());
+  }
+
   uint64_t default_alternative_;
   std::unordered_map<uint64_t, uint64_t> mapping_;
 };
