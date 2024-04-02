@@ -427,7 +427,8 @@ public:
   {
     if (nbits() != other.nbits())
     {
-      const std::string & msg = "Unequal number of bits in ne, " + std::to_string(nbits()) + " != " + std::to_string(other.nbits());
+      const std::string & msg = "Unequal number of bits in ne, " + std::to_string(nbits())
+                              + " != " + std::to_string(other.nbits());
       throw jlm::util::error(msg);
     }
 
