@@ -628,7 +628,6 @@ public:
    * Otherwise creates a new location for register \p output with PointsToFlags::PointsToNone.
    *
    * @param output A register.
-   * @param pointsToFlags The points-to flags associated with the newly created location.
    * @return A Location.
    *
    * \note It is deliberate that only GetOrInsertRegisterLocation() instead of also
