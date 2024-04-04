@@ -170,8 +170,7 @@ private:
 
     if (divisor.nbits() != nbits())
       throw jlm::util::error(
-          "Unequal number of bits in udiv, " + std::to_string(divisor.nbits())
-          + " != " + std::to_string(nbits()));
+          jlm::util::strfmt("Unequal number of bits in udiv, ", divisor.nbits(), " != ", nbits()));
 
     /*
       FIXME: This should check whether divisor is zero, not whether nbits() is zero.
@@ -385,8 +384,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in ult, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in ult, ", nbits(), " != ", other.nbits()));
 
     char v = land(lnot(data_[0]), other[0]);
     for (size_t n = 1; n < nbits(); n++)
@@ -409,8 +407,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in ule, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in ule, ", nbits(), " != ", other.nbits()));
 
     char v = '1';
     for (size_t n = 0; n < nbits(); n++)
@@ -433,8 +430,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in ne, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in ne, ", nbits(), " != ", other.nbits()));
 
     char v = '0';
     for (size_t n = 0; n < nbits(); n++)
@@ -477,8 +473,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in add, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in add, ", nbits(), " != ", other.nbits()));
 
     char c = '0';
     bitvalue_repr sum = repeat(nbits(), 'X');
@@ -496,8 +491,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in land, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in land, ", nbits(), " != ", other.nbits()));
 
     bitvalue_repr result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
@@ -511,8 +505,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in lor, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in lor, ", nbits(), " != ", other.nbits()));
 
     bitvalue_repr result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
@@ -526,8 +519,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in lxor, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in lxor, ", nbits(), " != ", other.nbits()));
 
     bitvalue_repr result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
@@ -661,8 +653,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in mul, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in mul, ", nbits(), " != ", other.nbits()));
 
     bitvalue_repr product(2 * nbits(), 0);
     mul(*this, other, product);
@@ -674,8 +665,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in umulh, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in umulh, ", nbits(), " != ", other.nbits()));
 
     bitvalue_repr product(4 * nbits(), 0);
     bitvalue_repr factor1 = this->zext(nbits());
@@ -689,8 +679,7 @@ public:
   {
     if (nbits() != other.nbits())
       throw jlm::util::error(
-          "Unequal number of bits in smulh, " + std::to_string(nbits())
-          + " != " + std::to_string(other.nbits()));
+          jlm::util::strfmt("Unequal number of bits in smulh, ", nbits(), " != ", other.nbits()));
 
     bitvalue_repr product(4 * nbits(), 0);
     bitvalue_repr factor1 = this->sext(nbits());
