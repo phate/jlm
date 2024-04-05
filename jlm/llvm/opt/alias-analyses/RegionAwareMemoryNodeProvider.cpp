@@ -10,8 +10,6 @@
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-#include <typeindex>
-
 namespace jlm::llvm::aa
 {
 
