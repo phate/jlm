@@ -184,6 +184,9 @@ private:
   void
   ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
 
+  static bool
+  ShouldCreateRegionSummary(const rvsdg::region & region);
+
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 };
 

@@ -529,14 +529,8 @@ RegionAwareMemoryNodeProvider::Create(
 void
 RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::region & region)
 {
-  auto shouldCreateRegionSummary = [](auto & region)
-  {
-    return !region.IsRootRegion() && !is<phi_op>(region.node())
-        && !is<delta::operation>(region.node());
-  };
-
   RegionSummary * regionSummary = nullptr;
-  if (shouldCreateRegionSummary(region))
+  if (ShouldCreateRegionSummary(region))
   {
     regionSummary = &Provisioning_->AddRegionSummary(RegionSummary::Create(region));
   }
@@ -856,6 +850,13 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
       JLM_UNREACHABLE("Unhandled node type!");
     }
   }
+}
+
+bool
+RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::region & region)
+{
+  return !region.IsRootRegion() && !is<phi_op>(region.node())
+      && !is<delta::operation>(region.node());
 }
 
 }
