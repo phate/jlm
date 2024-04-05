@@ -50,48 +50,6 @@ public:
     AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
-  [[nodiscard]] size_t
-  NumRvsdgNodes() const noexcept
-  {
-    return GetMeasurementValue<uint64_t>(Label::NumRvsdgNodes);
-  }
-
-  [[nodiscard]] size_t
-  NumRvsdgRegions() const noexcept
-  {
-    return GetMeasurementValue<uint64_t>(NumRvsdgRegionsLabel_);
-  }
-
-  [[nodiscard]] size_t
-  NumPointsToGraphMemoryNodes() const noexcept
-  {
-    return GetMeasurementValue<uint64_t>(Label::NumPointsToGraphMemoryNodes);
-  }
-
-  [[nodiscard]] size_t
-  GetAnnotationStatisticsTime() const noexcept
-  {
-    return GetTimer(AnnotationTimerLabel_).ns();
-  }
-
-  [[nodiscard]] size_t
-  GetPropagationPass1Time() const noexcept
-  {
-    return GetTimer(PropagationPass1TimerLabel_).ns();
-  }
-
-  [[nodiscard]] size_t
-  GetPropagationPass2Time() const noexcept
-  {
-    return GetTimer(PropagationPass2TimerLabel_).ns();
-  }
-
-  [[nodiscard]] size_t
-  GetResolveUnknownMemoryNodeReferencesTime() const noexcept
-  {
-    return GetTimer(ResolveUnknownMemoryReferenceTimerLabel_).ns();
-  }
-
   void
   StartAnnotationStatistics() noexcept
   {
