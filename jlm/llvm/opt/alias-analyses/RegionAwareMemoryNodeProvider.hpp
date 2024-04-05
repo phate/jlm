@@ -8,8 +8,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/util/Statistics.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -106,13 +104,13 @@ private:
    * @param region The to be annotated region.
    */
   void
-  AnnotateRegion(jlm::rvsdg::region & region);
+  AnnotateRegion(rvsdg::region & region);
 
   void
-  AnnotateSimpleNode(const jlm::rvsdg::simple_node & provider);
+  AnnotateSimpleNode(const rvsdg::simple_node & provider);
 
   void
-  AnnotateStructuralNode(const jlm::rvsdg::structural_node & structuralNode);
+  AnnotateStructuralNode(const rvsdg::structural_node & structuralNode);
 
   void
   AnnotateLoad(const LoadNode & loadNode);
@@ -121,19 +119,19 @@ private:
   AnnotateStore(const StoreNode & storeNode);
 
   void
-  AnnotateAlloca(const jlm::rvsdg::simple_node & allocaNode);
+  AnnotateAlloca(const rvsdg::simple_node & allocaNode);
 
   void
-  AnnotateMalloc(const jlm::rvsdg::simple_node & mallocNode);
+  AnnotateMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  AnnotateFree(const jlm::rvsdg::simple_node & freeNode);
+  AnnotateFree(const rvsdg::simple_node & freeNode);
 
   void
   AnnotateCall(const CallNode & callNode);
 
   void
-  AnnotateMemcpy(const jlm::rvsdg::simple_node & memcpyNode);
+  AnnotateMemcpy(const rvsdg::simple_node & memcpyNode);
 
   /**
    *  Propagates the utilized memory locations and simple RVSDG nodes that reference unknown memory
@@ -160,7 +158,7 @@ private:
   Propagate(const RvsdgModule & rvsdgModule);
 
   void
-  PropagateRegion(const jlm::rvsdg::region & region);
+  PropagateRegion(const rvsdg::region & region);
 
   void
   PropagatePhi(const phi::node & phiNode);

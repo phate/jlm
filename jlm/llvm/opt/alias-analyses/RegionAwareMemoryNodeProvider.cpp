@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::llvm::aa
 {
