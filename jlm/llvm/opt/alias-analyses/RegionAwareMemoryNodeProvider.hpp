@@ -8,8 +8,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/util/Statistics.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -106,13 +104,13 @@ private:
    * @param region The to be annotated region.
    */
   void
-  AnnotateRegion(jlm::rvsdg::region & region);
+  AnnotateRegion(rvsdg::region & region);
 
   void
-  AnnotateSimpleNode(const jlm::rvsdg::simple_node & provider);
+  AnnotateSimpleNode(const rvsdg::simple_node & provider);
 
   void
-  AnnotateStructuralNode(const jlm::rvsdg::structural_node & structuralNode);
+  AnnotateStructuralNode(const rvsdg::structural_node & structuralNode);
 
   void
   AnnotateLoad(const LoadNode & loadNode);
@@ -121,19 +119,19 @@ private:
   AnnotateStore(const StoreNode & storeNode);
 
   void
-  AnnotateAlloca(const jlm::rvsdg::simple_node & allocaNode);
+  AnnotateAlloca(const rvsdg::simple_node & allocaNode);
 
   void
-  AnnotateMalloc(const jlm::rvsdg::simple_node & mallocNode);
+  AnnotateMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  AnnotateFree(const jlm::rvsdg::simple_node & freeNode);
+  AnnotateFree(const rvsdg::simple_node & freeNode);
 
   void
   AnnotateCall(const CallNode & callNode);
 
   void
-  AnnotateMemcpy(const jlm::rvsdg::simple_node & memcpyNode);
+  AnnotateMemcpy(const rvsdg::simple_node & memcpyNode);
 
   /**
    *  Propagates the utilized memory locations and simple RVSDG nodes that reference unknown memory
@@ -160,7 +158,7 @@ private:
   Propagate(const RvsdgModule & rvsdgModule);
 
   void
-  PropagateRegion(const jlm::rvsdg::region & region);
+  PropagateRegion(const rvsdg::region & region);
 
   void
   PropagatePhi(const phi::node & phiNode);
@@ -184,180 +182,10 @@ private:
   void
   ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
 
+  static bool
+  ShouldCreateRegionSummary(const rvsdg::region & region);
+
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
-};
-
-/** \brief Region-aware memory node provider statistics
- *
- * The statistics collected when running the region-aware memory node provider.
- *
- * @see RegionAwareMemoryNodeProvider
- */
-class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics
-{
-  const char * NumRvsdgRegionsLabel_ = "#RvsdgRegions";
-
-  const char * AnnotationTimerLabel_ = "AnnotationTime";
-  const char * PropagationPass1TimerLabel_ = "PropagationPass1Time";
-  const char * PropagationPass2TimerLabel_ = "PropagationPass2Time";
-  const char * ResolveUnknownMemoryReferenceTimerLabel_ = "ResolveUnknownMemoryReferenceTime";
-
-public:
-  ~Statistics() override = default;
-
-  explicit Statistics(
-      const util::StatisticsCollector & statisticsCollector,
-      const RvsdgModule & rvsdgModule,
-      const PointsToGraph & pointsToGraph)
-      : util::Statistics(
-          Statistics::Id::RegionAwareMemoryNodeProvisioning,
-          rvsdgModule.SourceFileName()),
-        StatisticsCollector_(statisticsCollector)
-  {
-    if (!IsDemanded())
-      return;
-
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(rvsdgModule.Rvsdg().root()));
-    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::region::NumRegions(*rvsdgModule.Rvsdg().root()));
-    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
-  }
-
-  [[nodiscard]] size_t
-  NumRvsdgNodes() const noexcept
-  {
-    return GetMeasurementValue<uint64_t>(Label::NumRvsdgNodes);
-  }
-
-  [[nodiscard]] size_t
-  NumRvsdgRegions() const noexcept
-  {
-    return GetMeasurementValue<uint64_t>(NumRvsdgRegionsLabel_);
-  }
-
-  [[nodiscard]] size_t
-  NumPointsToGraphMemoryNodes() const noexcept
-  {
-    return GetMeasurementValue<uint64_t>(Label::NumPointsToGraphMemoryNodes);
-  }
-
-  [[nodiscard]] size_t
-  GetAnnotationStatisticsTime() const noexcept
-  {
-    return GetTimer(AnnotationTimerLabel_).ns();
-  }
-
-  [[nodiscard]] size_t
-  GetPropagationPass1Time() const noexcept
-  {
-    return GetTimer(PropagationPass1TimerLabel_).ns();
-  }
-
-  [[nodiscard]] size_t
-  GetPropagationPass2Time() const noexcept
-  {
-    return GetTimer(PropagationPass2TimerLabel_).ns();
-  }
-
-  [[nodiscard]] size_t
-  GetResolveUnknownMemoryNodeReferencesTime() const noexcept
-  {
-    return GetTimer(ResolveUnknownMemoryReferenceTimerLabel_).ns();
-  }
-
-  void
-  StartAnnotationStatistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    AddTimer(AnnotationTimerLabel_).start();
-  }
-
-  void
-  StopAnnotationStatistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    GetTimer(AnnotationTimerLabel_).stop();
-  }
-
-  void
-  StartPropagationPass1Statistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    AddTimer(PropagationPass1TimerLabel_).start();
-  }
-
-  void
-  StopPropagationPass1Statistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    GetTimer(PropagationPass1TimerLabel_).stop();
-  }
-
-  void
-  StartResolveUnknownMemoryNodeReferencesStatistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    AddTimer(ResolveUnknownMemoryReferenceTimerLabel_).start();
-  }
-
-  void
-  StopResolveUnknownMemoryNodeReferencesStatistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    GetTimer(ResolveUnknownMemoryReferenceTimerLabel_).stop();
-  }
-
-  void
-  StartPropagationPass2Statistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    AddTimer(PropagationPass2TimerLabel_).start();
-  }
-
-  void
-  StopPropagationPass2Statistics() noexcept
-  {
-    if (!IsDemanded())
-      return;
-
-    GetTimer(PropagationPass2TimerLabel_).stop();
-  }
-
-  static std::unique_ptr<Statistics>
-  Create(
-      const util::StatisticsCollector & statisticsCollector,
-      const RvsdgModule & rvsdgModule,
-      const PointsToGraph & pointsToGraph)
-  {
-    return std::make_unique<Statistics>(statisticsCollector, rvsdgModule, pointsToGraph);
-  }
-
-private:
-  /**
-   * Checks if the pass statistics are demanded.
-   *
-   * @return True if the pass statistic is demanded, otherwise false.
-   */
-  [[nodiscard]] bool
-  IsDemanded() const noexcept
-  {
-    return StatisticsCollector_.GetSettings().IsDemanded(GetId());
-  }
-
-  const util::StatisticsCollector & StatisticsCollector_;
 };
 
 }
