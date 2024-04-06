@@ -9,6 +9,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
 RunSteensgaard(jlm::llvm::RvsdgModule & rvsdgModule)
@@ -1424,45 +1425,34 @@ TestEscapedMemory3()
 static void
 TestStatistics()
 {
-  /*
-   * Arrange
-   */
-  jlm::tests::LoadTest1 test;
-  jlm::util::filepath filePath("/tmp/TestDisabledStatistics");
-  std::remove(filePath.to_str().c_str());
+  using namespace jlm;
 
+  // Arrange
+  tests::LoadTest1 test;
   auto pointsToGraph = RunSteensgaard(test.module());
 
-  jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      filePath,
-      { jlm::util::Statistics::Id::RegionAwareMemoryNodeProvisioning });
-  jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
+  util::StatisticsCollectorSettings statisticsCollectorSettings(
+      { util::Statistics::Id::RegionAwareMemoryNodeProvisioning });
+  util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
-  /*
-   * Act
-   */
+  // Act
   jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(
       test.module(),
       *pointsToGraph,
       statisticsCollector);
 
-  /*
-   * Assert
-   */
+  // Assert
   assert(statisticsCollector.NumCollectedStatistics() == 1);
+  auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  auto & memoryNodeProvisioningStatistics =
-      dynamic_cast<const jlm::llvm::aa::RegionAwareMemoryNodeProvider::Statistics &>(
-          *statisticsCollector.CollectedStatistics().begin());
+  assert(statistics.GetMeasurementValue<size_t>("#RvsdgNodes") == 3);
+  assert(statistics.GetMeasurementValue<size_t>("#RvsdgRegions") == 2);
+  assert(statistics.GetMeasurementValue<size_t>("#PointsToGraphMemoryNodes") == 2);
 
-  assert(memoryNodeProvisioningStatistics.NumRvsdgNodes() == 3);
-  assert(memoryNodeProvisioningStatistics.NumRvsdgRegions() == 2);
-  assert(memoryNodeProvisioningStatistics.NumPointsToGraphMemoryNodes() == 2);
-
-  assert(memoryNodeProvisioningStatistics.GetAnnotationStatisticsTime() != 0);
-  assert(memoryNodeProvisioningStatistics.GetPropagationPass1Time() != 0);
-  assert(memoryNodeProvisioningStatistics.GetPropagationPass2Time() != 0);
-  assert(memoryNodeProvisioningStatistics.GetResolveUnknownMemoryNodeReferencesTime() != 0);
+  assert(statistics.HasTimer("AnnotationTime"));
+  assert(statistics.HasTimer("PropagationPass1Time"));
+  assert(statistics.HasTimer("PropagationPass2Time"));
+  assert(statistics.HasTimer("ResolveUnknownMemoryReferenceTime"));
 }
 
 static int
