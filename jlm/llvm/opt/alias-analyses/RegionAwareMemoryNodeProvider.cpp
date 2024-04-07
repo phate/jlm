@@ -898,8 +898,8 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
         {
           subregionSummary.AddMemoryNodes(memoryNodes);
           subregionSummary.AddUnknownMemoryNodeReferences(unknownMemoryNodeReferences);
-          RegionSummary::Propagate(regionSummary, subregionSummary);
         }
+        RegionSummary::Propagate(regionSummary, subregionSummary);
       }
     }
   };
