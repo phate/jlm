@@ -995,4 +995,64 @@ RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::region & r
       && !is<delta::operation>(region.node());
 }
 
+std::string
+RegionAwareMemoryNodeProvider::ToRegionTree(
+    const rvsdg::graph & rvsdg,
+    const RegionAwareMemoryNodeProvisioning & provisioning)
+{
+  auto toString = [](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+  {
+    std::string s = "{";
+    for (auto & memoryNode : memoryNodes.Items())
+    {
+      s += util::strfmt(memoryNode, ", ");
+    }
+    s += "}";
+    return s;
+  };
+
+  auto indent = [](size_t depth)
+  {
+    return std::string(depth, '-');
+  };
+
+  std::function<std::string(const jlm::rvsdg::region *, size_t)> toRegionTree =
+      [&](const jlm::rvsdg::region * region, size_t depth)
+  {
+    std::string subtree;
+    if (region->node())
+    {
+      subtree += util::strfmt(indent(depth), region, "\n");
+    }
+    else
+    {
+      subtree = "ROOT\n";
+    }
+
+    depth += 1;
+    if (provisioning.ContainsRegionSummary(*region))
+    {
+      auto & regionSummary = provisioning.GetRegionSummary(*region);
+      auto & memoryNodes = regionSummary.GetMemoryNodes();
+      subtree += util::strfmt(indent(depth), "MemoryNodes: ", toString(memoryNodes), "\n");
+    }
+
+    for (const auto & node : region->nodes)
+    {
+      if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+      {
+        subtree += util::strfmt(indent(depth), structuralNode->operation().debug_string(), "\n");
+        for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+        {
+          subtree += toRegionTree(structuralNode->subregion(n), depth + 1);
+        }
+      }
+    }
+
+    return subtree;
+  };
+
+  return toRegionTree(rvsdg.root(), 0);
+}
+
 }
