@@ -15,6 +15,36 @@
 #include <jlm/llvm/ir/operators/store.hpp>
 
 static void
+TestCopy()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  MemoryStateType memoryType;
+  jlm::tests::valuetype valueType;
+  PointerType pointerType;
+
+  jlm::rvsdg::graph graph;
+  auto address1 = graph.add_import({ pointerType, "address1" });
+  auto memoryState1 = graph.add_import({ memoryType, "memoryState1" });
+
+  auto address2 = graph.add_import({ pointerType, "address2" });
+  auto memoryState2 = graph.add_import({ memoryType, "memoryState2" });
+
+  auto loadResults = LoadNode::Create(address1, { memoryState1 }, valueType, 4);
+
+  // Act
+  auto node = jlm::rvsdg::node_output::node(loadResults[0]);
+  auto loadNode = jlm::util::AssertedCast<const LoadNode>(node);
+  auto copiedNode = loadNode->copy(graph.root(), { address2, memoryState2 });
+
+  // Assert
+  auto copiedLoadNode = dynamic_cast<const LoadNode *>(copiedNode);
+  assert(copiedLoadNode != nullptr);
+  assert(loadNode->GetOperation() == copiedLoadNode->GetOperation());
+}
+
+static void
 TestLoadAllocaReduction()
 {
   using namespace jlm::llvm;
@@ -277,6 +307,8 @@ TestLoadLoadReduction()
 static int
 TestLoad()
 {
+  TestCopy();
+
   TestLoadAllocaReduction();
   TestMultipleOriginReduction();
   TestLoadStoreStateReduction();
