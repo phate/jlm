@@ -124,6 +124,9 @@ private:
   AnalyzeBits2ptr(const rvsdg::simple_node & node);
 
   void
+  AnalyzePtr2Bits(const rvsdg::simple_node & node);
+
+  void
   AnalyzeConstantPointerNull(const rvsdg::simple_node & node);
 
   void

@@ -82,3 +82,19 @@ jobs:
         run: cd jlm-eval-suite && make apply-llvm-git-patch
       - name: Run llvm-test-suite-andersen
         run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen
+
+  llvm-test-suite-steensgaard-agnostic:
+    if: contains(github.event.pull_request.title, '[SteensgaardAgnostic]')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+      - name: Clone jlm-test-suite
+        run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
+      - name: Update submodules
+        run: make -C jlm-eval-suite submodule
+      - name: Apply patch
+        run: cd jlm-eval-suite && make apply-llvm-git-patch
+      - name: Run llvm-test-suite-steensgaard-agnostic
+        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-steensgaard-agnostic

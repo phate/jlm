@@ -9,16 +9,146 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-
-#include <typeindex>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::llvm::aa
 {
 
+/** \brief Region-aware memory node provider statistics
+ *
+ * The statistics collected when running the region-aware memory node provider.
+ *
+ * @see RegionAwareMemoryNodeProvider
+ */
+class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics
+{
+  const char * NumRvsdgRegionsLabel_ = "#RvsdgRegions";
+
+  const char * AnnotationTimerLabel_ = "AnnotationTime";
+  const char * PropagationPass1TimerLabel_ = "PropagationPass1Time";
+  const char * PropagationPass2TimerLabel_ = "PropagationPass2Time";
+  const char * ResolveUnknownMemoryReferenceTimerLabel_ = "ResolveUnknownMemoryReferenceTime";
+
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(
+      const util::StatisticsCollector & statisticsCollector,
+      const RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph)
+      : util::Statistics(
+          Statistics::Id::RegionAwareMemoryNodeProvisioning,
+          rvsdgModule.SourceFileName()),
+        StatisticsCollector_(statisticsCollector)
+  {
+    if (!IsDemanded())
+      return;
+
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(rvsdgModule.Rvsdg().root()));
+    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::region::NumRegions(*rvsdgModule.Rvsdg().root()));
+    AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
+  }
+
+  void
+  StartAnnotationStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    AddTimer(AnnotationTimerLabel_).start();
+  }
+
+  void
+  StopAnnotationStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    GetTimer(AnnotationTimerLabel_).stop();
+  }
+
+  void
+  StartPropagationPass1Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    AddTimer(PropagationPass1TimerLabel_).start();
+  }
+
+  void
+  StopPropagationPass1Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    GetTimer(PropagationPass1TimerLabel_).stop();
+  }
+
+  void
+  StartResolveUnknownMemoryNodeReferencesStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    AddTimer(ResolveUnknownMemoryReferenceTimerLabel_).start();
+  }
+
+  void
+  StopResolveUnknownMemoryNodeReferencesStatistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    GetTimer(ResolveUnknownMemoryReferenceTimerLabel_).stop();
+  }
+
+  void
+  StartPropagationPass2Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    AddTimer(PropagationPass2TimerLabel_).start();
+  }
+
+  void
+  StopPropagationPass2Statistics() noexcept
+  {
+    if (!IsDemanded())
+      return;
+
+    GetTimer(PropagationPass2TimerLabel_).stop();
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(
+      const util::StatisticsCollector & statisticsCollector,
+      const RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph)
+  {
+    return std::make_unique<Statistics>(statisticsCollector, rvsdgModule, pointsToGraph);
+  }
+
+private:
+  /**
+   * Checks if the pass statistics are demanded.
+   *
+   * @return True if the pass statistic is demanded, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDemanded() const noexcept
+  {
+    return StatisticsCollector_.GetSettings().IsDemanded(GetId());
+  }
+
+  const util::StatisticsCollector & StatisticsCollector_;
+};
+
 class RegionSummary final
 {
 public:
-  explicit RegionSummary(const jlm::rvsdg::region & region)
+  explicit RegionSummary(const rvsdg::region & region)
       : Region_(&region)
   {}
 
@@ -38,7 +168,7 @@ public:
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const jlm::rvsdg::simple_node *> &
+  [[nodiscard]] const util::HashSet<const rvsdg::simple_node *> &
   GetUnknownMemoryNodeReferences() const noexcept
   {
     return UnknownMemoryNodeReferences_;
@@ -56,7 +186,7 @@ public:
     return RecursiveCalls_;
   }
 
-  const util::HashSet<const jlm::rvsdg::structural_node *> &
+  const util::HashSet<const rvsdg::structural_node *> &
   GetStructuralNodes() const
   {
     return StructuralNodes_;
@@ -69,7 +199,7 @@ public:
   }
 
   void
-  AddUnknownMemoryNodeReferences(const util::HashSet<const jlm::rvsdg::simple_node *> & nodes)
+  AddUnknownMemoryNodeReferences(const util::HashSet<const rvsdg::simple_node *> & nodes)
   {
     UnknownMemoryNodeReferences_.UnionWith(nodes);
   }
@@ -93,12 +223,12 @@ public:
   }
 
   void
-  AddStructuralNode(const jlm::rvsdg::structural_node & structuralNode)
+  AddStructuralNode(const rvsdg::structural_node & structuralNode)
   {
     StructuralNodes_.Insert(&structuralNode);
   }
 
-  [[nodiscard]] const jlm::rvsdg::region &
+  [[nodiscard]] const rvsdg::region &
   GetRegion() const noexcept
   {
     return *Region_;
@@ -112,19 +242,19 @@ public:
   }
 
   static std::unique_ptr<RegionSummary>
-  Create(const jlm::rvsdg::region & region)
+  Create(const rvsdg::region & region)
   {
     return std::make_unique<RegionSummary>(region);
   }
 
 private:
-  const jlm::rvsdg::region * Region_;
+  const rvsdg::region * Region_;
   util::HashSet<const PointsToGraph::MemoryNode *> MemoryNodes_;
-  util::HashSet<const jlm::rvsdg::simple_node *> UnknownMemoryNodeReferences_;
+  util::HashSet<const rvsdg::simple_node *> UnknownMemoryNodeReferences_;
 
   util::HashSet<const CallNode *> RecursiveCalls_;
   util::HashSet<const CallNode *> NonRecursiveCalls_;
-  util::HashSet<const jlm::rvsdg::structural_node *> StructuralNodes_;
+  util::HashSet<const rvsdg::structural_node *> StructuralNodes_;
 };
 
 /** \brief Memory node provisioning of region-aware memory node provider
@@ -133,7 +263,7 @@ private:
 class RegionAwareMemoryNodeProvisioning final : public MemoryNodeProvisioning
 {
   using RegionSummaryMap =
-      std::unordered_map<const jlm::rvsdg::region *, std::unique_ptr<RegionSummary>>;
+      std::unordered_map<const rvsdg::region *, std::unique_ptr<RegionSummary>>;
 
   class RegionSummaryConstIterator final
   {
@@ -226,14 +356,14 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const jlm::rvsdg::region & region) const override
+  GetRegionEntryNodes(const rvsdg::region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const jlm::rvsdg::region & region) const override
+  GetRegionExitNodes(const rvsdg::region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
@@ -244,12 +374,8 @@ public:
   {
     auto callTypeClassifier = CallNode::ClassifyCall(callNode);
 
-    if (callTypeClassifier->IsNonRecursiveDirectCall())
-    {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-      return GetLambdaEntryNodes(lambdaNode);
-    }
-    else if (callTypeClassifier->IsRecursiveDirectCall())
+    if (callTypeClassifier->IsNonRecursiveDirectCall()
+        || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
       return GetLambdaEntryNodes(lambdaNode);
@@ -272,12 +398,8 @@ public:
   {
     auto callTypeClassifier = CallNode::ClassifyCall(callNode);
 
-    if (callTypeClassifier->IsNonRecursiveDirectCall())
-    {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
-      return GetLambdaExitNodes(lambdaNode);
-    }
-    else if (callTypeClassifier->IsRecursiveDirectCall())
+    if (callTypeClassifier->IsNonRecursiveDirectCall()
+        || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
       return GetLambdaExitNodes(lambdaNode);
@@ -296,7 +418,7 @@ public:
   }
 
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const jlm::rvsdg::output & output) const override
+  GetOutputNodes(const rvsdg::output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.type()));
 
@@ -316,26 +438,26 @@ public:
   }
 
   [[nodiscard]] bool
-  ContainsRegionSummary(const jlm::rvsdg::region & region) const
+  ContainsRegionSummary(const rvsdg::region & region) const
   {
     return RegionSummaries_.find(&region) != RegionSummaries_.end();
   }
 
   bool
-  ContainsExternalFunctionNodes(const jlm::rvsdg::argument & import) const
+  ContainsExternalFunctionNodes(const rvsdg::argument & import) const
   {
     return ExternalFunctionNodes_.find(&import) != ExternalFunctionNodes_.end();
   }
 
   [[nodiscard]] RegionSummary &
-  GetRegionSummary(const jlm::rvsdg::region & region) const
+  GetRegionSummary(const rvsdg::region & region) const
   {
     JLM_ASSERT(ContainsRegionSummary(region));
     return *RegionSummaries_.find(&region)->second;
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetExternalFunctionNodes(const jlm::rvsdg::argument & import) const
+  GetExternalFunctionNodes(const rvsdg::argument & import) const
   {
     JLM_ASSERT(ContainsExternalFunctionNodes(import));
 
@@ -355,7 +477,7 @@ public:
 
   void
   AddExternalFunctionNodes(
-      const jlm::rvsdg::argument & import,
+      const rvsdg::argument & import,
       util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
   {
     JLM_ASSERT(!ContainsExternalFunctionNodes(import));
@@ -465,20 +587,18 @@ private:
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetIndirectCallNodes(const CallNode & callNode) const
   {
-    /*
-     * We have no idea about the function of an indirect call. This means that we have to be
-     * conservative and sequentialize this indirect call with respect to all memory references that
-     * came before and after it. These references should have been routed through the region the
-     * indirect call node lives in. Thus, we can just use here the memory nodes of the region of the
-     * indirect call node.
-     */
+    // We have no idea about the function of an indirect call. This means that we have to be
+    // conservative and sequentialize this indirect call with respect to all memory references that
+    // came before and after it. These references should have been routed through the region the
+    // indirect call node lives in. Thus, we can just use here the memory nodes of the region of the
+    // indirect call node.
     auto & regionSummary = GetRegionSummary(*callNode.region());
     return regionSummary.GetMemoryNodes();
   }
 
   RegionSummaryMap RegionSummaries_;
   const PointsToGraph & PointsToGraph_;
-  std::unordered_map<const jlm::rvsdg::argument *, util::HashSet<const PointsToGraph::MemoryNode *>>
+  std::unordered_map<const rvsdg::argument *, util::HashSet<const PointsToGraph::MemoryNode *>>
       ExternalFunctionNodes_;
 };
 
@@ -537,23 +657,17 @@ RegionAwareMemoryNodeProvider::Create(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateRegion(jlm::rvsdg::region & region)
+RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::region & region)
 {
-  auto shouldCreateRegionSummary = [](auto & region)
-  {
-    return !region.IsRootRegion() && !jlm::rvsdg::is<phi_op>(region.node())
-        && !jlm::rvsdg::is<delta::operation>(region.node());
-  };
-
   RegionSummary * regionSummary = nullptr;
-  if (shouldCreateRegionSummary(region))
+  if (ShouldCreateRegionSummary(region))
   {
     regionSummary = &Provisioning_->AddRegionSummary(RegionSummary::Create(region));
   }
 
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
     {
       if (regionSummary)
       {
@@ -562,7 +676,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(jlm::rvsdg::region & region)
 
       AnnotateStructuralNode(*structuralNode);
     }
-    else if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node *>(&node))
+    else if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
     {
       AnnotateSimpleNode(*simpleNode);
     }
@@ -574,53 +688,36 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(jlm::rvsdg::region & region)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const jlm::rvsdg::simple_node & simpleNode)
+RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & simpleNode)
 {
-  auto annotateLoad = [](auto & provider, auto & simpleNode)
+  if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
   {
-    provider.AnnotateLoad(*util::AssertedCast<const LoadNode>(&simpleNode));
-  };
-  auto annotateStore = [](auto & provider, auto & simpleNode)
+    AnnotateLoad(*loadNode);
+  }
+  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
   {
-    provider.AnnotateStore(*util::AssertedCast<const StoreNode>(&simpleNode));
-  };
-  auto annotateAlloca = [](auto & provider, auto & simpleNode)
+    AnnotateStore(*storeNode);
+  }
+  else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
   {
-    provider.AnnotateAlloca(simpleNode);
-  };
-  auto annotateMalloc = [](auto & provider, auto & simpleNode)
+    AnnotateCall(*callNode);
+  }
+  else if (is<alloca_op>(&simpleNode))
   {
-    provider.AnnotateMalloc(simpleNode);
-  };
-  auto annotateFree = [](auto & provider, auto & simpleNode)
+    AnnotateAlloca(simpleNode);
+  }
+  else if (is<malloc_op>(&simpleNode))
   {
-    provider.AnnotateFree(simpleNode);
-  };
-  auto annotateCall = [](auto & provider, auto & simpleNode)
+    AnnotateMalloc(simpleNode);
+  }
+  else if (is<FreeOperation>(&simpleNode))
   {
-    provider.AnnotateCall(*util::AssertedCast<const CallNode>(&simpleNode));
-  };
-  auto annotateMemcpy = [](auto & provider, auto & simpleNode)
+    AnnotateFree(simpleNode);
+  }
+  else if (is<Memcpy>(&simpleNode))
   {
-    provider.AnnotateMemcpy(simpleNode);
-  };
-
-  static std::unordered_map<
-      std::type_index,
-      std::function<void(RegionAwareMemoryNodeProvider &, const jlm::rvsdg::simple_node &)>>
-      nodes({ { typeid(LoadOperation), annotateLoad },
-              { typeid(StoreOperation), annotateStore },
-              { typeid(alloca_op), annotateAlloca },
-              { typeid(malloc_op), annotateMalloc },
-              { typeid(FreeOperation), annotateFree },
-              { typeid(CallOperation), annotateCall },
-              { typeid(Memcpy), annotateMemcpy } });
-
-  auto & operation = simpleNode.operation();
-  if (nodes.find(typeid(operation)) == nodes.end())
-    return;
-
-  nodes[typeid(operation)](*this, simpleNode);
+    AnnotateMemcpy(simpleNode);
+  }
 }
 
 void
@@ -640,9 +737,9 @@ RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateAlloca(const jlm::rvsdg::simple_node & allocaNode)
+RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaNode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<alloca_op>(allocaNode.operation()));
+  JLM_ASSERT(is<alloca_op>(allocaNode.operation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetAllocaNode(allocaNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*allocaNode.region());
@@ -650,9 +747,9 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const jlm::rvsdg::simple_node & al
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMalloc(const jlm::rvsdg::simple_node & mallocNode)
+RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocNode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<malloc_op>(mallocNode.operation()));
+  JLM_ASSERT(is<malloc_op>(mallocNode.operation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetMallocNode(mallocNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*mallocNode.region());
@@ -660,9 +757,9 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const jlm::rvsdg::simple_node & ma
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateFree(const jlm::rvsdg::simple_node & freeNode)
+RegionAwareMemoryNodeProvider::AnnotateFree(const rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<FreeOperation>(freeNode.operation()));
+  JLM_ASSERT(is<FreeOperation>(freeNode.operation()));
 
   auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
@@ -672,71 +769,51 @@ RegionAwareMemoryNodeProvider::AnnotateFree(const jlm::rvsdg::simple_node & free
 void
 RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 {
-  auto annotateNonRecursiveDirectCall =
-      [](auto & provider, auto & callNode, auto & callTypeClassifier)
-  {
-    JLM_ASSERT(
-        callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::NonRecursiveDirectCall);
+  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  auto callType = callTypeClassifier->GetCallType();
 
-    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
+  if (callType == CallTypeClassifier::CallType::NonRecursiveDirectCall)
+  {
+    auto & regionSummary = Provisioning_->GetRegionSummary(*callNode.region());
     regionSummary.AddNonRecursiveDirectCall(callNode);
-  };
-  auto annotateRecursiveDirectCall = [](auto & provider, auto & callNode, auto & callTypeClassifier)
+  }
+  else if (callType == CallTypeClassifier::CallType::RecursiveDirectCall)
   {
-    JLM_ASSERT(
-        callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::RecursiveDirectCall);
-
-    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
+    auto & regionSummary = Provisioning_->GetRegionSummary(*callNode.region());
     regionSummary.AddRecursiveDirectCall(callNode);
-  };
-  auto annotateExternalCall = [](auto & provider, auto & callNode, auto & callTypeClassifier)
+  }
+  else if (callType == CallTypeClassifier::CallType::IndirectCall)
   {
-    JLM_ASSERT(callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::ExternalCall);
-
-    auto & pointsToGraph = provider.Provisioning_->GetPointsToGraph();
+    auto & regionSummary = Provisioning_->GetRegionSummary(*callNode.region());
+    regionSummary.AddMemoryNodes({ &Provisioning_->GetPointsToGraph().GetExternalMemoryNode() });
+    regionSummary.AddUnknownMemoryNodeReferences({ &callNode });
+  }
+  else if (callType == CallTypeClassifier::CallType::ExternalCall)
+  {
+    auto & pointsToGraph = Provisioning_->GetPointsToGraph();
 
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
     memoryNodes.UnionWith(pointsToGraph.GetEscapedMemoryNodes());
     memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
 
-    auto & import = callTypeClassifier.GetImport();
-    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
+    auto & import = callTypeClassifier->GetImport();
+    auto & regionSummary = Provisioning_->GetRegionSummary(*callNode.region());
     regionSummary.AddMemoryNodes(memoryNodes);
-    if (!provider.Provisioning_->ContainsExternalFunctionNodes(import))
+    if (!Provisioning_->ContainsExternalFunctionNodes(import))
     {
-      provider.Provisioning_->AddExternalFunctionNodes(import, memoryNodes);
+      Provisioning_->AddExternalFunctionNodes(import, memoryNodes);
     }
-  };
-  auto annotateIndirectCall = [](auto & provider, auto & callNode, auto & callTypeClassifier)
+  }
+  else
   {
-    JLM_ASSERT(callTypeClassifier.GetCallType() == CallTypeClassifier::CallType::IndirectCall);
-
-    auto & regionSummary = provider.Provisioning_->GetRegionSummary(*callNode.region());
-    regionSummary.AddMemoryNodes(
-        { &provider.Provisioning_->GetPointsToGraph().GetExternalMemoryNode() });
-    regionSummary.AddUnknownMemoryNodeReferences({ &callNode });
-  };
-
-  static std::unordered_map<
-      CallTypeClassifier::CallType,
-      std::function<
-          void(RegionAwareMemoryNodeProvider &, const CallNode &, const CallTypeClassifier &)>>
-      callTypes(
-          { { CallTypeClassifier::CallType::NonRecursiveDirectCall,
-              annotateNonRecursiveDirectCall },
-            { CallTypeClassifier::CallType::RecursiveDirectCall, annotateRecursiveDirectCall },
-            { CallTypeClassifier::CallType::IndirectCall, annotateIndirectCall },
-            { CallTypeClassifier::CallType::ExternalCall, annotateExternalCall } });
-
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
-  JLM_ASSERT(callTypes.find(callTypeClassifier->GetCallType()) != callTypes.end());
-  callTypes[callTypeClassifier->GetCallType()](*this, callNode, *callTypeClassifier);
+    JLM_UNREACHABLE("Unhandled call type!");
+  }
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jlm::rvsdg::simple_node & memcpyNode)
+RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<Memcpy>(memcpyNode.operation()));
+  JLM_ASSERT(is<Memcpy>(memcpyNode.operation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
@@ -748,14 +825,11 @@ RegionAwareMemoryNodeProvider::AnnotateMemcpy(const jlm::rvsdg::simple_node & me
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStructuralNode(
-    const jlm::rvsdg::structural_node & structuralNode)
+RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::structural_node & structuralNode)
 {
-  if (jlm::rvsdg::is<delta::operation>(&structuralNode))
+  if (is<delta::operation>(&structuralNode))
   {
-    /*
-     * Nothing needs to be done for delta nodes.
-     */
+    // Nothing needs to be done for delta nodes.
     return;
   }
 
@@ -768,7 +842,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(
 void
 RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
 {
-  jlm::rvsdg::topdown_traverser traverser(rvsdgModule.Rvsdg().root());
+  rvsdg::topdown_traverser traverser(rvsdgModule.Rvsdg().root());
   for (auto & node : traverser)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
@@ -781,9 +855,7 @@ RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
     }
     else if (dynamic_cast<const delta::node *>(node))
     {
-      /*
-       * Nothing needs to be done for delta nodes.
-       */
+      // Nothing needs to be done for delta nodes.
       continue;
     }
     else
@@ -799,13 +871,13 @@ void
 RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 {
   std::function<void(
-      const jlm::rvsdg::region &,
+      const rvsdg::region &,
       const util::HashSet<const PointsToGraph::MemoryNode *> &,
-      const util::HashSet<const jlm::rvsdg::simple_node *> &)>
+      const util::HashSet<const rvsdg::simple_node *> &)>
       assignAndPropagateMemoryNodes =
-          [&](const jlm::rvsdg::region & region,
+          [&](const rvsdg::region & region,
               const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
-              const util::HashSet<const jlm::rvsdg::simple_node *> & unknownMemoryNodeReferences)
+              const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(region);
     for (auto structuralNode : regionSummary.GetStructuralNodes().Items())
@@ -832,7 +904,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
   auto lambdaNodes = phi::node::ExtractLambdaNodes(phiNode);
 
   util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-  util::HashSet<const jlm::rvsdg::simple_node *> unknownMemoryNodeReferences;
+  util::HashSet<const rvsdg::simple_node *> unknownMemoryNodeReferences;
   for (auto & lambdaNode : lambdaNodes)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(*lambdaNode->subregion());
@@ -844,7 +916,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::PropagateRegion(const jlm::rvsdg::region & region)
+RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::region & region)
 {
   auto & regionSummary = Provisioning_->GetRegionSummary(region);
   for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
@@ -901,15 +973,20 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
     }
     else if (dynamic_cast<const delta::node *>(node))
     {
-      /*
-       * Nothing needs to be done for delta nodes.
-       */
+      // Nothing needs to be done for delta nodes.
     }
     else
     {
       JLM_UNREACHABLE("Unhandled node type!");
     }
   }
+}
+
+bool
+RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::region & region)
+{
+  return !region.IsRootRegion() && !is<phi_op>(region.node())
+      && !is<delta::operation>(region.node());
 }
 
 }
