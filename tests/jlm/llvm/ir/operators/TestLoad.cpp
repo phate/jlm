@@ -14,11 +14,12 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 
-static inline void
+static void
 TestLoadAllocaReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   MemoryStateType mt;
   jlm::rvsdg::bittype bt(32);
 
@@ -38,6 +39,7 @@ TestLoadAllocaReduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_load_alloca_reducible(true);
   graph.normalize();
@@ -45,18 +47,20 @@ TestLoadAllocaReduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   auto node = jlm::rvsdg::node_output::node(ex->origin());
-  assert(jlm::rvsdg::is<LoadOperation>(node));
+  assert(is<LoadOperation>(node));
   assert(node->ninputs() == 3);
   assert(node->input(1)->origin() == alloca1[1]);
   assert(node->input(2)->origin() == mux[0]);
 }
 
-static inline void
+static void
 TestMultipleOriginReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   MemoryStateType mt;
   jlm::tests::valuetype vt;
   PointerType pt;
@@ -75,22 +79,25 @@ TestMultipleOriginReduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_multiple_origin_reducible(true);
   graph.normalize();
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   auto node = jlm::rvsdg::node_output::node(ex->origin());
   assert(is<LoadOperation>(node));
   assert(node->ninputs() == 2);
 }
 
-static inline void
+static void
 TestLoadStoreStateReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::rvsdg::bittype bt(32);
 
   jlm::rvsdg::graph graph;
@@ -113,6 +120,7 @@ TestLoadStoreStateReduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_load_store_state_reducible(true);
   graph.normalize();
@@ -120,6 +128,7 @@ TestLoadStoreStateReduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   auto node = jlm::rvsdg::node_output::node(ex1->origin());
   assert(is<LoadOperation>(node));
   assert(node->ninputs() == 2);
@@ -129,11 +138,12 @@ TestLoadStoreStateReduction()
   assert(node->ninputs() == 2);
 }
 
-static inline void
+static void
 TestLoadStoreAllocaReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   MemoryStateType mt;
   jlm::rvsdg::bittype bt(32);
 
@@ -153,21 +163,24 @@ TestLoadStoreAllocaReduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_load_store_alloca_reducible(true);
   graph.normalize();
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   assert(value->origin() == graph.root()->argument(0));
   assert(rstate->origin() == alloca[1]);
 }
 
-static inline void
+static void
 TestLoadStoreReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
@@ -189,12 +202,14 @@ TestLoadStoreReduction()
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_load_store_reducible(true);
   graph.normalize();
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   assert(graph.root()->nnodes() == 1);
   assert(x1->origin() == v);
   assert(x2->origin() == s1);
@@ -205,6 +220,7 @@ TestLoadLoadReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
@@ -233,6 +249,7 @@ TestLoadLoadReduction()
 
   jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   nf->set_mutable(true);
   nf->set_load_load_state_reducible(true);
   graph.normalize();
@@ -240,6 +257,7 @@ TestLoadLoadReduction()
 
   jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   assert(graph.root()->nnodes() == 6);
 
   auto ld = jlm::rvsdg::node_output::node(x1->origin());
