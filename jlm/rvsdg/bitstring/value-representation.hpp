@@ -8,6 +8,7 @@
 #define JLM_RVSDG_BITSTRING_VALUE_REPRESENTATION_HPP
 
 #include <jlm/util/common.hpp>
+#include <jlm/util/strfmt.hpp>
 
 #include <cstdint>
 #include <cstring>
