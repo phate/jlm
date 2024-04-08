@@ -148,7 +148,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/operators/TestFree \
 	tests/jlm/llvm/ir/operators/TestGetElementPtr \
 	tests/jlm/llvm/ir/operators/TestLambda \
-	tests/jlm/llvm/ir/operators/test-load \
+	tests/jlm/llvm/ir/operators/TestLoad \
 	tests/jlm/llvm/ir/operators/TestPhi \
 	tests/jlm/llvm/ir/operators/test-sext \
 	tests/jlm/llvm/ir/operators/test-store \
