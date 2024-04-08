@@ -15,7 +15,7 @@
 #include <jlm/llvm/ir/operators/store.hpp>
 
 static inline void
-test_load_alloca_reduction()
+TestLoadAllocaReduction()
 {
   using namespace jlm::llvm;
 
@@ -53,7 +53,7 @@ test_load_alloca_reduction()
 }
 
 static inline void
-test_multiple_origin_reduction()
+TestMultipleOriginReduction()
 {
   using namespace jlm::llvm;
 
@@ -87,7 +87,7 @@ test_multiple_origin_reduction()
 }
 
 static inline void
-test_load_store_state_reduction()
+TestLoadStoreStateReduction()
 {
   using namespace jlm::llvm;
 
@@ -130,7 +130,7 @@ test_load_store_state_reduction()
 }
 
 static inline void
-test_load_store_alloca_reduction()
+TestLoadStoreAllocaReduction()
 {
   using namespace jlm::llvm;
 
@@ -164,7 +164,7 @@ test_load_store_alloca_reduction()
 }
 
 static inline void
-test_load_store_reduction()
+TestLoadStoreReduction()
 {
   using namespace jlm::llvm;
 
@@ -201,7 +201,7 @@ test_load_store_reduction()
 }
 
 static void
-test_load_load_reduction()
+TestLoadLoadReduction()
 {
   using namespace jlm::llvm;
 
@@ -257,16 +257,16 @@ test_load_load_reduction()
 }
 
 static int
-test()
+TestLoad()
 {
-  test_load_alloca_reduction();
-  test_multiple_origin_reduction();
-  test_load_store_state_reduction();
-  test_load_store_alloca_reduction();
-  test_load_store_reduction();
-  test_load_load_reduction();
+  TestLoadAllocaReduction();
+  TestMultipleOriginReduction();
+  TestLoadStoreStateReduction();
+  TestLoadStoreAllocaReduction();
+  TestLoadStoreReduction();
+  TestLoadLoadReduction();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLoad", test)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLoad", TestLoad)
