@@ -33,6 +33,13 @@ LoadOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new LoadOperation(*this));
 }
 
+rvsdg::node *
+LoadNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+{
+  auto loadResults = LoadNode::Create(*region, GetOperation(), operands);
+  return rvsdg::node_output::node(loadResults[0]);
+}
+
 /* load normal form */
 
 /*

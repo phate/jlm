@@ -324,6 +324,9 @@ public:
     return valueOutput;
   }
 
+  rvsdg::node *
+  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::output * address,
