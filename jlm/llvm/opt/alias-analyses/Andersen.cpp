@@ -36,9 +36,6 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumLoadConstraints_ = "#LoadConstraints";
   inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
 
-  inline static const char * NumUnificationsOVS_ = "#Unifications(OVS)";
-  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
-
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
 
@@ -100,32 +97,6 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
-  }
-
-  void
-  StartOfflineVariableSubstitution() noexcept
-  {
-    AddTimer(OfflineVariableSubstitutionTimer_).start();
-  }
-
-  void
-  StopOfflineVariableSubstitution(size_t numUnifications) noexcept
-  {
-    GetTimer(OfflineVariableSubstitutionTimer_).stop();
-    AddMeasurement(NumUnificationsOVS_, numUnifications);
-  }
-
-  void
-  StartOfflineConstraintNormalization() noexcept
-  {
-    AddTimer(OfflineConstraintNormalizationTimer_).start();
-  }
-
-  void
-  StopOfflineConstraintNormalization(size_t numConstraintsRemoved) noexcept
-  {
-    GetTimer(OfflineConstraintNormalizationTimer_).stop();
-    AddMeasurement(NumConstraintsRemovedOfflineNorm_, numConstraintsRemoved);
   }
 
   void
