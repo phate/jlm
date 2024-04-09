@@ -99,7 +99,7 @@ public:
     }
 
   private:
-    Solver Solver_ = Solver::Worklist;
+    Solver Solver_;
   };
 
   ~Andersen() noexcept override = default;
@@ -262,7 +262,7 @@ private:
    * @param statistics the Statistics instance used to track info about the analysis
    */
   void
-  SolveConstraints(Configuration config, Statistics & statistics);
+  SolveConstraints(const Configuration & config, Statistics & statistics);
 
   Configuration Config_ = Configuration::WorklistSolverConfiguration();
 

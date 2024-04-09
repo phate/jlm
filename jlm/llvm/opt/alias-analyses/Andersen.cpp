@@ -824,7 +824,7 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 }
 
 void
-Andersen::SolveConstraints(Configuration config, Statistics & statistics)
+Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
 {
   if (config.GetSolver() == Configuration::Solver::Naive)
   {
