@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * Copyright 2023, 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -349,6 +349,14 @@ public:
    */
   bool
   MarkAllPointeesAsEscaped(PointerObjectIndex pointer);
+
+  /**
+   * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
+   * flags, unifications and points-to sets.
+   * @return an owned clone of this
+   */
+  [[nodiscard]] std::unique_ptr<PointerObjectSet>
+  Clone() const;
 };
 
 /**
@@ -722,6 +730,14 @@ public:
    */
   size_t
   SolveNaively();
+
+  /**
+   * Creates a clone of this constraint set, and the underlying PointerObjectSet.
+   * The result is an identical copy, containing no references to the original.
+   * @return the cloned PointerObjectSet and PointerObjectConstraintSet
+   */
+  std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>>
+  Clone() const;
 
 private:
   // The PointerObjectSet being built upon

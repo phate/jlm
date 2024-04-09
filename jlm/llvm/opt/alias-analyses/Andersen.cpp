@@ -36,11 +36,16 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumLoadConstraints_ = "#LoadConstraints";
   inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
 
+  inline static const char * NumUnificationsOVS_ = "#Unifications(OVS)";
+  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
+
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
+  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
+  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
   inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
   inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
   inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
@@ -95,6 +100,32 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
+  }
+
+  void
+  StartOfflineVariableSubstitution() noexcept
+  {
+    AddTimer(OfflineVariableSubstitutionTimer_).start();
+  }
+
+  void
+  StopOfflineVariableSubstitution(size_t numUnifications) noexcept
+  {
+    GetTimer(OfflineVariableSubstitutionTimer_).stop();
+    AddMeasurement(NumUnificationsOVS_, numUnifications);
+  }
+
+  void
+  StartOfflineConstraintNormalization() noexcept
+  {
+    AddTimer(OfflineConstraintNormalizationTimer_).start();
+  }
+
+  void
+  StopOfflineConstraintNormalization(size_t numConstraintsRemoved) noexcept
+  {
+    GetTimer(OfflineConstraintNormalizationTimer_).stop();
+    AddMeasurement(NumConstraintsRemovedOfflineNorm_, numConstraintsRemoved);
   }
 
   void
@@ -742,6 +773,7 @@ Andersen::AnalyzeRegion(rvsdg::region & region)
   // PointerObjects for any of the node's outputs of pointer type
   for (const auto node : traverser)
   {
+
     if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
       AnalyzeSimpleNode(*simpleNode);
     else if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(node))
@@ -812,81 +844,98 @@ Andersen::GetConfiguration() const
   return Config_;
 }
 
-std::unique_ptr<PointsToGraph>
-Andersen::AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+void
+Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 {
-  auto statistics = Statistics::Create(module.SourceFileName());
-  statistics->StartAndersenStatistics(module.Rvsdg());
-
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
 
-  statistics->StartSetAndConstraintBuildingStatistics();
+  statistics.StartSetAndConstraintBuildingStatistics();
   AnalyzeRvsdg(module.Rvsdg());
-  statistics->StopSetAndConstraintBuildingStatistics(*Set_, *Constraints_);
+  statistics.StopSetAndConstraintBuildingStatistics(*Set_, *Constraints_);
+}
 
-  if (Config_.GetSolver() == Configuration::Solver::Naive)
+void
+Andersen::SolveConstraints(Configuration config, Statistics & statistics)
+{
+  if (config.GetSolver() == Configuration::Solver::Naive)
   {
-    statistics->StartConstraintSolvingNaiveStatistics();
+    statistics.StartConstraintSolvingNaiveStatistics();
     size_t numIterations = Constraints_->SolveNaively();
-    statistics->StopConstraintSolvingNaiveStatistics(numIterations);
+    statistics.StopConstraintSolvingNaiveStatistics(numIterations);
   }
-  else if (Config_.GetSolver() == Configuration::Solver::Worklist)
+  else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
-    statistics->StartConstraintSolvingWorklistStatistics();
+    statistics.StartConstraintSolvingWorklistStatistics();
     size_t numWorkItems = Constraints_->SolveUsingWorklist();
-    statistics->StopConstraintSolvingWorklistStatistics(numWorkItems);
+    statistics.StopConstraintSolvingWorklistStatistics(numWorkItems);
   }
   else
     JLM_UNREACHABLE("Unknown solver");
-
-  statistics->StartPointsToGraphConstructionStatistics();
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
-  statistics->StopPointsToGraphConstructionStatistics(*result);
-
-  statistics->StopAndersenStatistics();
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  Constraints_.reset();
-  Set_.reset();
-  return result;
 }
 
 std::unique_ptr<PointsToGraph>
 Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto pointsToGraph = AnalyzeModule(module, statisticsCollector);
+  auto statistics = Statistics::Create(module.SourceFileName());
+  statistics->StartAndersenStatistics(module.Rvsdg());
 
-  // If a double check is requested, and the current configuration differs from the default naive
-  if (std::getenv(CHECK_AGAINST_NAIVE_SOLVER) != nullptr
-      && Config_ != Configuration::NaiveSolverConfiguration())
+  AnalyzeModule(module, *statistics);
+
+  // If double-checking against the naive solver is enabled, make a copy of the set and constraints
+  const bool checkAgainstNaive = std::getenv(CHECK_AGAINST_NAIVE_SOLVER)
+                              && Config_ != Configuration::NaiveSolverConfiguration();
+  std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
+  if (checkAgainstNaive)
+    copy = Constraints_->Clone();
+
+  SolveConstraints(Config_, *statistics);
+
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+
+  statistics->StopAndersenStatistics();
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  // Solve again if double-checking against naive is enabled
+  if (checkAgainstNaive)
   {
-    std::cerr << "Comparing Andersen's PointsToGraph to a naivley solved PointsToGraph"
-              << std::endl;
+    std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
+    // Restore the problem to before solving started
+    Set_ = std::move(copy.first);
+    Constraints_ = std::move(copy.second);
 
-    // Temporarily switch to the default naive configuration
-    auto customConfig = Config_;
-    Config_ = Configuration::NaiveSolverConfiguration();
+    // Create a separate Statistics instance for naive statistics
+    auto naiveStatistics = Statistics::Create(module.SourceFileName());
+    SolveConstraints(Configuration::NaiveSolverConfiguration(), *naiveStatistics);
 
-    auto naivePointsToGraph = AnalyzeModule(module, statisticsCollector);
+    auto naiveResult = ConstructPointsToGraphFromPointerObjectSet(*Set_, *naiveStatistics);
 
+    statisticsCollector.CollectDemandedStatistics(std::move(naiveStatistics));
+
+    // Check if the PointsToGraphs are identical
     bool error = false;
-    if (!naivePointsToGraph->IsSupergraphOf(*pointsToGraph))
+    if (!naiveResult->IsSupergraphOf(*result))
     {
       std::cerr << "The naive PointsToGraph is NOT a supergraph of the PointsToGraph" << std::endl;
       error = true;
     }
-    if (!pointsToGraph->IsSupergraphOf(*naivePointsToGraph))
+    if (!result->IsSupergraphOf(*naiveResult))
     {
       std::cerr << "The PointsToGraph is NOT a supergraph of the naive PointsToGraph" << std::endl;
       error = true;
     }
-    JLM_ASSERT(!error);
-
-    Config_ = customConfig;
+    if (error)
+    {
+      std::cout << PointsToGraph::ToDot(*result) << std::endl;
+      std::cout << PointsToGraph::ToDot(*naiveResult) << std::endl;
+      JLM_UNREACHABLE("PointsToGraph double checking uncovered differences!");
+    }
   }
 
-  return pointsToGraph;
+  // Cleanup
+  Constraints_.reset();
+  Set_.reset();
+  return result;
 }
 
 std::unique_ptr<PointsToGraph>
@@ -901,6 +950,8 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     const PointerObjectSet & set,
     Statistics & statistics)
 {
+  statistics.StartPointsToGraphConstructionStatistics();
+
   auto pointsToGraph = PointsToGraph::Create();
 
   // memory nodes are the nodes that can be pointed to in the points-to graph.
@@ -1003,6 +1054,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   }
   statistics.StopExternalToAllEscapedStatistics();
 
+  statistics.StopPointsToGraphConstructionStatistics(*pointsToGraph);
   return pointsToGraph;
 }
 

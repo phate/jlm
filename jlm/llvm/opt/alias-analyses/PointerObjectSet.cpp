@@ -363,6 +363,12 @@ PointerObjectSet::MarkAllPointeesAsEscaped(PointerObjectIndex pointer)
   return modified;
 }
 
+std::unique_ptr<PointerObjectSet>
+PointerObjectSet::Clone() const
+{
+  return std::make_unique<PointerObjectSet>(*this);
+}
+
 // Makes P(superset) a superset of P(subset)
 bool
 SupersetConstraint::ApplyDirectly(PointerObjectSet & set)
@@ -906,6 +912,16 @@ PointerObjectConstraintSet::SolveNaively()
   }
 
   return numIterations;
+}
+
+std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>>
+PointerObjectConstraintSet::Clone() const
+{
+  auto setClone = Set_.Clone();
+  auto constraintClone = std::make_unique<PointerObjectConstraintSet>(*setClone);
+  for (auto constraint : Constraints_)
+    constraintClone->AddConstraint(constraint);
+  return std::make_pair(std::move(setClone), std::move(constraintClone));
 }
 
 } // namespace jlm::llvm::aa
