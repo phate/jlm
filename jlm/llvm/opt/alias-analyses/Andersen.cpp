@@ -742,7 +742,6 @@ Andersen::AnalyzeRegion(rvsdg::region & region)
   // PointerObjects for any of the node's outputs of pointer type
   for (const auto node : traverser)
   {
-
     if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
       AnalyzeSimpleNode(*simpleNode);
     else if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(node))
