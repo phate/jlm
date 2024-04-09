@@ -41,8 +41,6 @@ class Andersen::Statistics final : public util::Statistics
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
-  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
-  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
   inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
   inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
   inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
