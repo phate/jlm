@@ -36,8 +36,7 @@ LoadOperation::copy() const
 rvsdg::node *
 LoadNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
-  auto loadResults = LoadNode::Create(*region, GetOperation(), operands);
-  return rvsdg::node_output::node(loadResults[0]);
+  return &CreateNode(*region, GetOperation(), operands);
 }
 
 /* load normal form */
