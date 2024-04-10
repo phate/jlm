@@ -290,6 +290,53 @@ TestMarkAllPointeesAsEscaped()
   assert(!set.HasEscaped(alloca2));
 }
 
+static void
+TestClonePointerObjectSet()
+{
+  using namespace jlm::llvm::aa;
+  jlm::tests::AllMemoryNodesTest rvsdg;
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  const auto register0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
+  const auto dummy0 = set.CreateDummyRegisterPointerObject();
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  const auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode());
+  const auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
+  const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
+  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+
+  set.AddToPointsToSet(register0, alloca0);
+  set.UnifyPointerObjects(delta0, import0);
+
+  auto clonedSet = set.Clone();
+
+  // All mappings are identical, since PointerObjects are referenced by index
+  assert(clonedSet->NumPointerObjects() == set.NumPointerObjects());
+  assert(clonedSet->GetRegisterMap() == set.GetRegisterMap());
+  assert(clonedSet->GetAllocaMap() == set.GetAllocaMap());
+  assert(clonedSet->GetMallocMap() == set.GetMallocMap());
+  assert(clonedSet->GetGlobalMap() == set.GetGlobalMap());
+  assert(clonedSet->GetFunctionMap() == set.GetFunctionMap());
+  assert(clonedSet->GetImportMap() == set.GetImportMap());
+
+  // In the cloned set, each points-to set should be identical
+  assert(clonedSet->GetPointsToSet(register0) == set.GetPointsToSet(register0));
+
+  // Unifications are maintained
+  assert(clonedSet->GetUnificationRoot(delta0) == clonedSet->GetUnificationRoot(import0));
+
+  // Additional changes only affect the set they are applied to
+  set.AddToPointsToSet(register0, lambda0);
+  assert(!clonedSet->GetPointsToSet(register0).Contains(lambda0));
+
+  clonedSet->UnifyPointerObjects(delta0, dummy0);
+  assert(set.GetUnificationRoot(delta0) != set.GetUnificationRoot(dummy0));
+
+  set.MarkAsPointingToExternal(malloc0);
+  assert(!clonedSet->IsPointingToExternal(malloc0));
+}
+
 // Test the SupersetConstraint's Apply function
 static void
 TestSupersetConstraint()
@@ -700,6 +747,41 @@ TestPointerObjectConstraintSetSolve(bool useWorklist)
   assert(set.IsPointingToExternal(reg[10]));
 }
 
+static void
+TestClonePointerObjectConstraintSet()
+{
+  using namespace jlm::llvm::aa;
+  jlm::tests::AllMemoryNodesTest rvsdg;
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  const auto register0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  set.AddToPointsToSet(register0, alloca0);
+
+  // Create a dummy register that will point to alloca0 after solving
+  const auto dummy0 = set.CreateDummyRegisterPointerObject();
+
+  PointerObjectConstraintSet constraints(set);
+  constraints.AddConstraint(SupersetConstraint(dummy0, register0));
+
+  // Make a clone of everything
+  auto [setClone, constraintsClone] = constraints.Clone();
+
+  // Modifying the copy doesn't affect the original
+  constraintsClone->AddConstraint(LoadConstraint(register0, alloca0));
+  assert(constraintsClone->GetConstraints().size() == 2);
+  assert(constraints.GetConstraints().size() == 1);
+
+  // Solving only affects the PointerObjectSet belonging to that constraint set
+  constraints.SolveNaively();
+  assert(set.GetPointsToSet(dummy0).Contains(alloca0));
+  assert(setClone->GetPointsToSet(dummy0).IsEmpty());
+
+  constraintsClone->SolveNaively();
+  assert(setClone->GetPointsToSet(dummy0).Contains(alloca0));
+}
+
 static int
 TestPointerObjectSet()
 {
@@ -710,6 +792,7 @@ TestPointerObjectSet()
   TestAddToPointsToSet();
   TestMakePointsToSetSuperset();
   TestMarkAllPointeesAsEscaped();
+  TestClonePointerObjectSet();
   TestSupersetConstraint();
   TestStoreConstraintDirectly();
   TestLoadConstraintDirectly();
@@ -719,6 +802,7 @@ TestPointerObjectSet()
   TestAddRegisterContentEscapedConstraint();
   TestPointerObjectConstraintSetSolve(false);
   TestPointerObjectConstraintSetSolve(true);
+  TestClonePointerObjectConstraintSet();
   return 0;
 }
 

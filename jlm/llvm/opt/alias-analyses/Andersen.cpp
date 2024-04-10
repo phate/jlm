@@ -812,81 +812,98 @@ Andersen::GetConfiguration() const
   return Config_;
 }
 
-std::unique_ptr<PointsToGraph>
-Andersen::AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+void
+Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 {
-  auto statistics = Statistics::Create(module.SourceFileName());
-  statistics->StartAndersenStatistics(module.Rvsdg());
-
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
 
-  statistics->StartSetAndConstraintBuildingStatistics();
+  statistics.StartSetAndConstraintBuildingStatistics();
   AnalyzeRvsdg(module.Rvsdg());
-  statistics->StopSetAndConstraintBuildingStatistics(*Set_, *Constraints_);
+  statistics.StopSetAndConstraintBuildingStatistics(*Set_, *Constraints_);
+}
 
-  if (Config_.GetSolver() == Configuration::Solver::Naive)
+void
+Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
+{
+  if (config.GetSolver() == Configuration::Solver::Naive)
   {
-    statistics->StartConstraintSolvingNaiveStatistics();
+    statistics.StartConstraintSolvingNaiveStatistics();
     size_t numIterations = Constraints_->SolveNaively();
-    statistics->StopConstraintSolvingNaiveStatistics(numIterations);
+    statistics.StopConstraintSolvingNaiveStatistics(numIterations);
   }
-  else if (Config_.GetSolver() == Configuration::Solver::Worklist)
+  else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
-    statistics->StartConstraintSolvingWorklistStatistics();
+    statistics.StartConstraintSolvingWorklistStatistics();
     size_t numWorkItems = Constraints_->SolveUsingWorklist();
-    statistics->StopConstraintSolvingWorklistStatistics(numWorkItems);
+    statistics.StopConstraintSolvingWorklistStatistics(numWorkItems);
   }
   else
     JLM_UNREACHABLE("Unknown solver");
-
-  statistics->StartPointsToGraphConstructionStatistics();
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
-  statistics->StopPointsToGraphConstructionStatistics(*result);
-
-  statistics->StopAndersenStatistics();
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  Constraints_.reset();
-  Set_.reset();
-  return result;
 }
 
 std::unique_ptr<PointsToGraph>
 Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto pointsToGraph = AnalyzeModule(module, statisticsCollector);
+  auto statistics = Statistics::Create(module.SourceFileName());
+  statistics->StartAndersenStatistics(module.Rvsdg());
 
-  // If a double check is requested, and the current configuration differs from the default naive
-  if (std::getenv(CHECK_AGAINST_NAIVE_SOLVER) != nullptr
-      && Config_ != Configuration::NaiveSolverConfiguration())
+  AnalyzeModule(module, *statistics);
+
+  // If double-checking against the naive solver is enabled, make a copy of the set and constraints
+  const bool checkAgainstNaive = std::getenv(CHECK_AGAINST_NAIVE_SOLVER)
+                              && Config_ != Configuration::NaiveSolverConfiguration();
+  std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
+  if (checkAgainstNaive)
+    copy = Constraints_->Clone();
+
+  SolveConstraints(Config_, *statistics);
+
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+
+  statistics->StopAndersenStatistics();
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  // Solve again if double-checking against naive is enabled
+  if (checkAgainstNaive)
   {
-    std::cerr << "Comparing Andersen's PointsToGraph to a naivley solved PointsToGraph"
-              << std::endl;
+    std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
+    // Restore the problem to before solving started
+    Set_ = std::move(copy.first);
+    Constraints_ = std::move(copy.second);
 
-    // Temporarily switch to the default naive configuration
-    auto customConfig = Config_;
-    Config_ = Configuration::NaiveSolverConfiguration();
+    // Create a separate Statistics instance for naive statistics
+    auto naiveStatistics = Statistics::Create(module.SourceFileName());
+    SolveConstraints(Configuration::NaiveSolverConfiguration(), *naiveStatistics);
 
-    auto naivePointsToGraph = AnalyzeModule(module, statisticsCollector);
+    auto naiveResult = ConstructPointsToGraphFromPointerObjectSet(*Set_, *naiveStatistics);
 
+    statisticsCollector.CollectDemandedStatistics(std::move(naiveStatistics));
+
+    // Check if the PointsToGraphs are identical
     bool error = false;
-    if (!naivePointsToGraph->IsSupergraphOf(*pointsToGraph))
+    if (!naiveResult->IsSupergraphOf(*result))
     {
       std::cerr << "The naive PointsToGraph is NOT a supergraph of the PointsToGraph" << std::endl;
       error = true;
     }
-    if (!pointsToGraph->IsSupergraphOf(*naivePointsToGraph))
+    if (!result->IsSupergraphOf(*naiveResult))
     {
       std::cerr << "The PointsToGraph is NOT a supergraph of the naive PointsToGraph" << std::endl;
       error = true;
     }
-    JLM_ASSERT(!error);
-
-    Config_ = customConfig;
+    if (error)
+    {
+      std::cout << PointsToGraph::ToDot(*result) << std::endl;
+      std::cout << PointsToGraph::ToDot(*naiveResult) << std::endl;
+      JLM_UNREACHABLE("PointsToGraph double checking uncovered differences!");
+    }
   }
 
-  return pointsToGraph;
+  // Cleanup
+  Constraints_.reset();
+  Set_.reset();
+  return result;
 }
 
 std::unique_ptr<PointsToGraph>
@@ -901,6 +918,8 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     const PointerObjectSet & set,
     Statistics & statistics)
 {
+  statistics.StartPointsToGraphConstructionStatistics();
+
   auto pointsToGraph = PointsToGraph::Create();
 
   // memory nodes are the nodes that can be pointed to in the points-to graph.
@@ -1003,6 +1022,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   }
   statistics.StopExternalToAllEscapedStatistics();
 
+  statistics.StopPointsToGraphConstructionStatistics(*pointsToGraph);
   return pointsToGraph;
 }
 
