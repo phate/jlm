@@ -774,8 +774,8 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
       continue;
 
     // TODO: Mark the created ImportMemoryObject based on it being a function or a variable
-    // Functions and non-pointer typed globals can not point to other MemoryObjects, so CanPoint()
-    // should be false
+    // Functions and non-pointer typed globals can not point to other MemoryObjects,
+    // so letting them be ShouldTrackPointees() == false aids analysis.
 
     // Create a memory PointerObject representing the target of the external symbol
     // We can assume that two external symbols don't alias, clang does.
@@ -964,6 +964,10 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // PointerObject's points-to set.
   auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObjectIndex index)
   {
+    // PointerObjects marked as not tracking pointees should not point to anything
+    if (!set.ShouldTrackPointees(index))
+      return;
+
     // Add all PointsToGraph nodes who should point to external to the list
     if (set.IsPointingToExternal(index))
       pointsToExternal.push_back(&node);
