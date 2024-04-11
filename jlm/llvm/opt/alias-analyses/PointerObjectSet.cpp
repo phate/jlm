@@ -764,13 +764,27 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
     auto & node = graph.CreateNode();
     nodes[i] = &node;
 
-    if (Set_.IsPointerObjectRegister(i))
+    std::ostringstream label;
+    label << i;
+
+    auto kind = Set_.GetPointerObjectKind(i);
+    if (kind == PointerObjectKind::Register)
       node.SetShape(util::Node::Shape::Oval);
     else
       node.SetShape(util::Node::Shape::Rectangle);
 
-    std::ostringstream label;
-    label << i << "\n";
+    if (kind == PointerObjectKind::AllocaMemoryObject)
+      label << " A";
+    else if (kind == PointerObjectKind::MallocMemoryObject)
+      label << " M";
+    else if (kind == PointerObjectKind::FunctionMemoryObject)
+      label << " F";
+    else if (kind == PointerObjectKind::GlobalMemoryObject)
+      label << " G";
+    else if (kind == PointerObjectKind::ImportMemoryObject)
+      label << " I";
+
+    label << "\n";
 
     if (Set_.IsUnificationRoot(i))
     {
@@ -789,7 +803,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
       label << "}";
 
       if (Set_.HasPointeesEscaping(i))
-        label << "\nescaping";
+        label << "e";
     }
     else
     {
@@ -797,7 +811,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
     }
 
     if (!Set_.ShouldTrackPointees(i))
-      label << "\nNOT TRACKING";
+      label << "\nNOTRACK";
 
     node.SetLabel(label.str());
 
@@ -835,7 +849,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
     {
       auto callConstraintIndex = nextCallConstraintIndex++;
       auto & pointerNode = *nodes[callConstraint->GetPointer()];
-      pointerNode.AppendToLabel(util::strfmt("callTarget", callConstraintIndex));
+      pointerNode.AppendToLabel(util::strfmt("call", callConstraintIndex, " target"));
 
       // Connect all registers that correspond to inputs and outputs of the call, to the call target
       auto & callNode = callConstraint->GetCallNode();
@@ -843,7 +857,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
       {
         if (auto inputRegister = Set_.TryGetRegisterPointerObject(*callNode.Argument(i)->origin()))
         {
-          const auto label = util::strfmt("callInput", callConstraintIndex, ".", i);
+          const auto label = util::strfmt("call", callConstraintIndex, " input", i);
           nodes[*inputRegister]->AppendToLabel(label);
         }
       }
@@ -851,7 +865,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
       {
         if (auto outputRegister = Set_.TryGetRegisterPointerObject(*callNode.Result(i)))
         {
-          const auto label = util::strfmt("callOutput", callConstraintIndex, ".", i);
+          const auto label = util::strfmt("call", callConstraintIndex, " output", i);
           nodes[*outputRegister]->AppendToLabel(label);
         }
       }
@@ -871,7 +885,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
     {
       if (auto argumentRegister = Set_.TryGetRegisterPointerObject(*function->fctargument(i)))
       {
-        const auto label = util::strfmt("argument", functionIndex, ".", i);
+        const auto label = util::strfmt("function", functionIndex, " arg", i);
         nodes[*argumentRegister]->AppendToLabel(label);
       }
     }
@@ -879,7 +893,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) con
     {
       if (auto resultRegister = Set_.TryGetRegisterPointerObject(*function->fctresult(i)->origin()))
       {
-        const auto label = util::strfmt("result", functionIndex, ".", i);
+        const auto label = util::strfmt("function", functionIndex, " res", i);
         nodes[*resultRegister]->AppendToLabel(label);
       }
     }
