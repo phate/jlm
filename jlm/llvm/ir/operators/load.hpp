@@ -324,6 +324,9 @@ public:
     return valueOutput;
   }
 
+  rvsdg::node *
+  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::output * address,
@@ -337,7 +340,7 @@ public:
     operands.insert(operands.end(), states.begin(), states.end());
 
     LoadOperation loadOperation(loadedType, states.size(), alignment);
-    return rvsdg::outputs(new LoadNode(*address->region(), loadOperation, operands));
+    return Create(*address->region(), loadOperation, operands);
   }
 
   static std::vector<rvsdg::output *>
@@ -346,7 +349,16 @@ public:
       const LoadOperation & loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(new LoadNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+  }
+
+  static LoadNode &
+  CreateNode(
+      rvsdg::region & region,
+      const LoadOperation & loadOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return *(new LoadNode(region, loadOperation, operands));
   }
 
 private:

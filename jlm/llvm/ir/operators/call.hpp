@@ -397,6 +397,9 @@ public:
     return loopState;
   }
 
+  rvsdg::node *
+  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+
   static std::vector<jlm::rvsdg::output *>
   Create(
       jlm::rvsdg::output * function,
@@ -410,7 +413,7 @@ public:
     std::vector<jlm::rvsdg::output *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 
-    return jlm::rvsdg::outputs(new CallNode(*function->region(), callOperation, operands));
+    return Create(*function->region(), callOperation, operands);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -419,9 +422,18 @@ public:
       const CallOperation & callOperation,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
+    return jlm::rvsdg::outputs(&CreateNode(region, callOperation, operands));
+  }
+
+  static CallNode &
+  CreateNode(
+      jlm::rvsdg::region & region,
+      const CallOperation & callOperation,
+      const std::vector<jlm::rvsdg::output *> & operands)
+  {
     CheckFunctionType(callOperation.GetFunctionType());
 
-    return jlm::rvsdg::outputs(new CallNode(region, callOperation, operands));
+    return *(new CallNode(region, callOperation, operands));
   }
 
   /**

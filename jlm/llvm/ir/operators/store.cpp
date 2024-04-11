@@ -32,6 +32,12 @@ StoreOperation::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new StoreOperation(*this));
 }
 
+rvsdg::node *
+StoreNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+{
+  return &CreateNode(*region, GetOperation(), operands);
+}
+
 /* store normal form */
 
 static bool

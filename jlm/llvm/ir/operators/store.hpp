@@ -269,6 +269,9 @@ public:
     return valueInput;
   }
 
+  rvsdg::node *
+  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+
   static std::vector<jlm::rvsdg::output *>
   Create(
       jlm::rvsdg::output * address,
@@ -282,7 +285,7 @@ public:
     operands.insert(operands.end(), states.begin(), states.end());
 
     StoreOperation storeOperation(storedType, states.size(), alignment);
-    return jlm::rvsdg::outputs(new StoreNode(*address->region(), storeOperation, operands));
+    return Create(*address->region(), storeOperation, operands);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -291,7 +294,16 @@ public:
       const StoreOperation & storeOperation,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
-    return jlm::rvsdg::outputs(new StoreNode(region, storeOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, storeOperation, operands));
+  }
+
+  static StoreNode &
+  CreateNode(
+      jlm::rvsdg::region & region,
+      const StoreOperation & storeOperation,
+      const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    return *(new StoreNode(region, storeOperation, operands));
   }
 
 private:
