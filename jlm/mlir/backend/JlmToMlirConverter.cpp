@@ -1,10 +1,13 @@
 /*
+ * Copyright 2024 Louis Maurin <louis7maurin@gmail.com>
  * Copyright 2023 Magnus Sjalander <work@sjalander.com>
  * See COPYING for terms of redistribution.
  */
 
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
@@ -12,6 +15,9 @@
 
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/IR/Verifier.h>
+
+#include "JlmToMlirConverter.hpp"
+#include <unistd.h>
 
 namespace jlm::mlir
 {
@@ -40,6 +46,27 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath
 ::mlir::rvsdg::OmegaNode
 JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 {
+  // // load llvm dialect
+  // ::mlir::DialectRegistry registry;
+  // registry.insert<::mlir::LLVM::LLVMDialect>();
+  // registry.insert<::mlir::rvsdg::RVSDGDialect>();
+  // ::mlir::MLIRContext context(registry);
+
+  // // Create a new MLIR module
+  // auto module = ::mlir::ModuleOp::create(Builder_->getUnknownLoc());
+
+  // // Create a new MLIR builder
+  // Builder_ = std::make_unique<::mlir::OpBuilder>(&context);
+
+  // // Convert the RVSDG module to MLIR
+  // auto omega = ConvertOmega(rvsdgModule.Rvsdg());
+
+  // // Add the omega node to the module
+  // module.push_back(omega);
+
+  // // Return the module
+  // return omega;
+
   return ConvertOmega(rvsdgModule.Rvsdg());
 }
 
@@ -54,7 +81,6 @@ JlmToMlirConverter::ConvertOmega(const rvsdg::graph & graph)
   auto omegaResult =
       Builder_->create<::mlir::rvsdg::OmegaResult>(Builder_->getUnknownLoc(), regionResults);
   omegaBlock.push_back(omegaResult);
-
   return omega;
 }
 
@@ -70,15 +96,27 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
   std::unordered_map<rvsdg::node *, ::mlir::Value> nodes;
+  // ::mlir::Value * previous_node = nullptr;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
-    // TODO
-    // Get the inputs of the node
-    // for (size_t i=0; i < rvsdgNode->ninputs(); i++)
-    //{
-    //  ::llvm::outs() << rvsdgNode->input(i) << "\n";
-    //}
-    nodes[rvsdgNode] = ConvertNode(*rvsdgNode, block);
+
+    // TODO try change to pointers
+    ::llvm::SmallVector<::mlir::Value> inputs;
+    for (size_t i = 0; i < rvsdgNode->ninputs(); i++)
+    {
+      if (auto output = dynamic_cast<jlm::rvsdg::simple_output *>(rvsdgNode->input(i)->origin()))
+      {
+        inputs.push_back(nodes[output->node()]);
+      }
+      else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(rvsdgNode->input(i)->origin()))
+      {
+        inputs.push_back(block.getArgument(arg->index()));
+      }
+
+      //  rvsdgNode->input(i)->origin()->debug_string();
+    }
+    nodes[rvsdgNode] = ConvertNode(*rvsdgNode, block, inputs);
+    // previous_node = &(nodes[rvsdgNode]);
   }
 
   ::llvm::SmallVector<::mlir::Value> results;
@@ -102,11 +140,14 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
 }
 
 ::mlir::Value
-JlmToMlirConverter::ConvertNode(const rvsdg::node & node, ::mlir::Block & block)
+JlmToMlirConverter::ConvertNode(
+    const rvsdg::node & node,
+    ::mlir::Block & block,
+    ::llvm::SmallVector<::mlir::Value> inputs)
 {
   if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
   {
-    return ConvertSimpleNode(*simpleNode, block);
+    return ConvertSimpleNode(*simpleNode, block, inputs);
   }
   else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
   {
@@ -120,11 +161,14 @@ JlmToMlirConverter::ConvertNode(const rvsdg::node & node, ::mlir::Block & block)
 }
 
 ::mlir::Value
-JlmToMlirConverter::ConvertSimpleNode(const rvsdg::simple_node & node, ::mlir::Block & block)
+JlmToMlirConverter::ConvertSimpleNode(
+    const rvsdg::simple_node & node,
+    ::mlir::Block & block,
+    ::llvm::SmallVector<::mlir::Value> inputs)
 {
-  if (auto bitsOp = dynamic_cast<const rvsdg::bitconstant_op *>(&(node.operation())))
+  if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&(node.operation())))
   {
-    auto value = bitsOp->value();
+    auto value = bitOp->value();
     auto constOp = Builder_->create<::mlir::arith::ConstantIntOp>(
         Builder_->getUnknownLoc(),
         value.to_uint(),
@@ -132,6 +176,180 @@ JlmToMlirConverter::ConvertSimpleNode(const rvsdg::simple_node & node, ::mlir::B
     block.push_back(constOp);
 
     return constOp;
+  }
+  else if (auto bitOp = dynamic_cast<const rvsdg::bitbinary_op *>(&(node.operation())))
+  {
+    if (dynamic_cast<const rvsdg::bitadd_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::LLVM::AddOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitand_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::AndIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitashr_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::ShRUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitmul_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::MulIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitor_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::OrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitsdiv_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::DivSIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitshl_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::ShLIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitshr_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::ShRUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitsmod_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::RemSIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitsmulh_op *>(bitOp))
+    {
+      assert(false && "Binary bit bitOp smulh not supported");
+    }
+    else if (dynamic_cast<const rvsdg::bitsub_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::SubIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitudiv_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::DivUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitumod_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::RemUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else if (dynamic_cast<const rvsdg::bitumulh_op *>(bitOp))
+    {
+      assert(false && "Binary bit bitOp umulh not supported");
+    }
+    else if (dynamic_cast<const rvsdg::bitxor_op *>(bitOp))
+    {
+      auto MlirOp =
+          Builder_->create<::mlir::arith::XOrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+      block.push_back(MlirOp);
+      return MlirOp;
+    }
+    else
+    {
+      auto message =
+          util::strfmt("Unknown binary bitop on simple node: ", node.operation().debug_string());
+      JLM_UNREACHABLE(message.c_str());
+    }
+
+    // fprintf(fd, "type : %s\n", bitsOp->type().debug_string().c_str());
+  }
+  else if (auto bitCompOp = dynamic_cast<const rvsdg::bitcompare_op *>(&(node.operation())))
+  {
+    ::mlir::arith::CmpIPredicate comp_type;
+    if (dynamic_cast<const rvsdg::biteq_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::eq;
+    }
+    else if (dynamic_cast<const rvsdg::bitne_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::ne;
+    }
+    else if (dynamic_cast<const rvsdg::bitsge_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::sge;
+    }
+    else if (dynamic_cast<const rvsdg::bitsgt_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::sgt;
+    }
+    else if (dynamic_cast<const rvsdg::bitsle_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::sle;
+    }
+    else if (dynamic_cast<const rvsdg::bitslt_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::slt;
+    }
+    else if (dynamic_cast<const rvsdg::bituge_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::uge;
+    }
+    else if (dynamic_cast<const rvsdg::bitugt_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::ugt;
+    }
+    else if (dynamic_cast<const rvsdg::bitule_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::ule;
+    }
+    else if (dynamic_cast<const rvsdg::bitult_op *>(bitCompOp))
+    {
+      comp_type = ::mlir::arith::CmpIPredicate::ult;
+    }
+    else
+    {
+      assert(false && "Unknown bitcompare operation");
+    }
+    auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        comp_type,
+        inputs[0],
+        inputs[1]);
+    block.push_back(MlirOp);
+    return MlirOp;
+  }
+  else if (auto bitOp = dynamic_cast<const jlm::llvm::zext_op *>(&(node.operation())))
+  {
+    auto MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
+        Builder_->getUnknownLoc(),
+        Builder_->getIntegerType(bitOp->ndstbits()),
+        inputs[0]);
+    block.push_back(MlirOp);
+    return MlirOp;
   }
   else
   {

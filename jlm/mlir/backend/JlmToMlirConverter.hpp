@@ -17,6 +17,7 @@
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -30,6 +31,7 @@ public:
     Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
+    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
 
@@ -85,10 +87,14 @@ private:
    * Converts an RVSDG node to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
+//TODO change doc
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Value
-  ConvertNode(const rvsdg::node & node, ::mlir::Block & block);
+  ConvertNode(
+      const rvsdg::node & node,
+      ::mlir::Block & block,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG simple_node to an MLIR RVSDG operation.
@@ -97,7 +103,10 @@ private:
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Value
-  ConvertSimpleNode(const rvsdg::simple_node & node, ::mlir::Block & block);
+  ConvertSimpleNode(
+      const rvsdg::simple_node & node,
+      ::mlir::Block & block,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode.

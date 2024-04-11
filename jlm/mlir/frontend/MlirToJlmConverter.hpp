@@ -16,6 +16,7 @@
 #include <RVSDG/RVSDGPasses.h>
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -107,7 +108,7 @@ private:
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::region & rvsdgRegion,
-      std::vector<const rvsdg::output *> & inputs);
+      std::vector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
