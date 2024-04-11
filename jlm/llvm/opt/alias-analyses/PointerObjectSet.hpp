@@ -58,43 +58,70 @@ class PointerObjectSet final
     PointerObjectKind Kind : util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
     // This memory object's address is known outside the module.
-    // If CanBePointee() is false, this object has no address, but its value has escaped.
+    // Can only be true on memory objects.
     uint8_t HasEscaped : 1;
 
-    // If this PointerObject is the parent of its own unification,
-    // and this flag is set, this pointer object is pointing to external.
+    // Any pointee of this PointerObject has its address escaped.
+    // The unification root is the source of truth for this flag!
+    // This flag is implied by HasEscaped
+    uint8_t PointeesEscaping : 1;
+
+    // If set, this pointer object is pointing to external.
+    // The unification root is the source of truth for this flag!
+    // This flag is implied by HasEscaped
     uint8_t PointsToExternal : 1;
 
     explicit PointerObject(PointerObjectKind kind)
         : Kind(kind),
           HasEscaped(0),
+          PointeesEscaping(0),
           PointsToExternal(0)
     {
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
+
+      if (!ShouldTrackPointees())
+      {
+        // No attempt is made at tracking pointees, so use these flags to inform others
+        PointeesEscaping = 1;
+        PointsToExternal = 1;
+      }
     }
 
     /**
-     * Some PointerObjects are not capable of pointing to anything else.
-     * Their points-to-set will always be empty, and constraints that attempt
-     * to add pointees should be no-ops that are silently ignored.
-     * The same applies to attempts at setting the PointsToExternal-flag.
-     * @return true if this PointerObject can point to other PointerObjects
+     * If a PointerObject is marked with both PointsToExternal and PointeesEscaping,
+     * its final points-to set will be identical to the set of escaped memory objects.
+     * There is no need to track its pointees, since all pointees can be marked as HasEscaped,
+     * and instead be an implicit pointee.
+     * @return true if this PointerObject's points-to set can be tracked fully implicitly.
      */
     [[nodiscard]] bool
-    CanPoint() const noexcept
+    CanTrackPointeesImplicitly() const noexcept
+    {
+      return PointsToExternal && PointeesEscaping;
+    }
+
+    /**
+     * Some memory objects can only be pointed to, but never themselves contain pointers.
+     * To avoid tracking their pointees, they are instead marked as both PointsToExternal and
+     * PointeesEscaping. This makes their points-to set equivalent to the set of all escaped
+     * memory objects, which means the set of explicit pointees can be empty.
+     * When converting the analysis result to a PointsToGraph, these PointerObjects get no pointees.
+     * @return true if the analysis should attempt track the points-to set of this PointerObject.
+     */
+    [[nodiscard]] bool
+    ShouldTrackPointees() const noexcept
     {
       return Kind != PointerObjectKind::FunctionMemoryObject;
     }
 
     /**
-     * Some PointerObjects don't have addresses, and can as such not be pointed to.
-     * Any attempt at adding them to a points-to-set is a fatal error.
-     * @return true if this PointerObject can be pointed to by another PointerObject
+     * Registers are the only PointerObjects that may not be pointed to, only point.
+     * @return true if the kind of this PointerObject is Register, false otherwise
      */
     [[nodiscard]] bool
-    CanBePointee() const noexcept
+    IsRegister() const noexcept
     {
-      return Kind != PointerObjectKind::Register;
+      return Kind == PointerObjectKind::Register;
     }
   };
 
@@ -256,26 +283,42 @@ public:
    * @return true if the PointerObject with the given \p index can point, otherwise false
    */
   [[nodiscard]] bool
-  CanPointerObjectPoint(PointerObjectIndex index) const noexcept;
+  ShouldTrackPointees(PointerObjectIndex index) const noexcept;
 
   /**
-   * @return true if the PointerObject with the given \p index can be a pointee, otherwise false
+   * @return true if the PointerObject with the given \p index is a Register
    */
   [[nodiscard]] bool
-  CanPointerObjectBePointee(PointerObjectIndex index) const noexcept;
+  IsPointerObjectRegister(PointerObjectIndex index) const noexcept;
 
   /**
-   * @return true if the PointerObject with the given \p index has escaped, otherwise false
+   * @return true if the PointerObject with the given \p index has its address escaped
    */
   [[nodiscard]] bool
   HasEscaped(PointerObjectIndex index) const noexcept;
 
   /**
    * Marks the PointerObject with the given \p index as having escaped the module.
-   * @return true if the flag was changed by this operation
+   * Can only be called on non-register PointerObjects.
+   * Implies both the PointeesEscaping flag, and the PointsToExternal flag.
+   * @return true if the flag was changed by this operation, false otherwise
    */
   bool
   MarkAsEscaped(PointerObjectIndex index);
+
+  /**
+   * @return true if the PointerObject with the given \p index makes all its pointees escape
+   */
+  [[nodiscard]] bool
+  HasPointeesEscaping(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as having all pointees escaping.
+   * The flag is applied to the unification root.
+   * @return true if the flag was changed by this operation, false otherwise
+   */
+  bool
+  MarkAsPointeesEscaping(PointerObjectIndex index);
 
   /**
    * @return true if the PointerObject with the given \p index points to external, otherwise false
@@ -285,8 +328,8 @@ public:
 
   /**
    * Marks the PointerObject with the given \p index as pointing to external.
-   * If the PointerObject has CanPoint() = false, this is a no-op.
-   * @return true if the flag was changed by this operation
+   * The flag is applied to the unification root.
+   * @return true if the flag was changed by this operation, false otherwise
    */
   bool
   MarkAsPointingToExternal(PointerObjectIndex index);
@@ -299,10 +342,15 @@ public:
   GetUnificationRoot(PointerObjectIndex index) const noexcept;
 
   /**
+   * @return true if the PointerObject with the given \p index is its own unification root
+   */
+  [[nodiscard]] bool
+  IsUnificationRoot(PointerObjectIndex index) const noexcept;
+
+  /**
    * Unifies two PointerObjects, such that they will forever share their set of pointees.
    * If any object in the unification points to external, they will all point to external.
    * The HasEscaped flags are not shared, and can still be set individually.
-   * Only PointerObjects where CanPoint() is true may be unified.
    * If the objects already belong to the same disjoint set, this is a no-op.
    * @param object1 the index of the first PointerObject to unify
    * @param object2 the index of the second PointerObject to unify
@@ -335,20 +383,11 @@ public:
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
    * as well
    *
-   * If the superset is of a PointerObjectKind that can't point, this is a no-op.
    *
-   * @return true if P(\p superset) was modified by this operation
+   * @return true if P(\p superset) or any flags were modified by this operation
    */
   bool
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
-
-  /**
-   * Adds the Escaped flag to all PointerObjects in the P(\p pointer) set
-   * @param pointer the pointer whose pointees should be marked as escaped
-   * @return true if any PointerObjects had their flag modified by this operation
-   */
-  bool
-  MarkAllPointeesAsEscaped(PointerObjectIndex pointer);
 
   /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
@@ -548,7 +587,7 @@ public:
  *
  * It follows the given pseudocode:
  * for f in P(CallTarget):
- *   if f is not a lambda, or the signature doesn't match:
+ *   if f is not a lambda:
  *     continue
  *   for each function argument/input pair (a, i):
  *     make P(a) a superset of P(i)
@@ -614,7 +653,7 @@ public:
 
 /**
  * Helper class representing the global constraint:
- *   For all PointerObjects x marked as escaping, all pointees in P(x) are escaping
+ *   For all PointerObjects x marked as PointeesEscaping, all pointees in P(x) are escaping
  */
 class EscapeFlagConstraint final
 {
@@ -652,7 +691,7 @@ public:
 /**
  * A class for adding and applying constraints to the points-to-sets of the PointerObjectSet.
  * Unlike the set modification methods on PointerObjectSet, constraints can be added in any order,
- * with the same result. Use SolveNaively() to calculate the final points-to-sets.
+ * with the same result. Multiple solvers can be used to solve for the final points-to sets.
  *
  * Some additional constraints on the PointerObject flags are built in.
  */
@@ -663,7 +702,8 @@ public:
       std::variant<SupersetConstraint, StoreConstraint, LoadConstraint, FunctionCallConstraint>;
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
-      : Set_(set)
+      : Set_(set),
+        Constraints_()
   {}
 
   PointerObjectConstraintSet(const PointerObjectConstraintSet & other) = delete;
@@ -716,7 +756,7 @@ public:
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
-   *  - Hardekopf et al. 2007, "The Ant and the Grasshopper".
+   *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
    * @return the total number of work items handled by the WorkList algorithm
    */
   size_t
