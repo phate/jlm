@@ -496,23 +496,60 @@ public:
    * 1. The collections of memory nodes of all subregions of a structural node should be contained
    * in the collection of memory nodes of the region the structural node is contained in.
    *
-   * 2. The collection of memory nodes of a lambda region should be contained in the collection of
-   * memory nodes of the regions of all direct calls to this lambda.
-   *
-   * 3. The collections of unknown memory reference nodes of all subregions of a structural node
+   * 2. The collections of unknown memory reference nodes of all subregions of a structural node
    * should be contained in the collection of unknown memory reference nodes of the region the
    * structural node is contained in.
    *
-   * 4. The collection of unknown memory reference nodes of a lambda region should be contained in
+   * @param provisioning \see RegionAwareMemoryNodeProvisioning
+   * @return Returns true if all invariants are fulfilled, otherwise false.
+   */
+  static bool
+  CheckStructuralNodeInvariants(const RegionAwareMemoryNodeProvisioning & provisioning)
+  {
+    for (auto & regionSummary : provisioning.GetRegionSummaries())
+    {
+      for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
+      {
+        auto & regionMemoryNodes = regionSummary.GetMemoryNodes();
+        auto & regionUnknownMemoryNodeReferences = regionSummary.GetUnknownMemoryNodeReferences();
+
+        for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+        {
+          auto & subregion = *structuralNode->subregion(n);
+          auto & subregionSummary = provisioning.GetRegionSummary(subregion);
+          auto & subregionMemoryNodes = subregionSummary.GetMemoryNodes();
+          auto & subregionUnknownMemoryNodeReferences =
+              subregionSummary.GetUnknownMemoryNodeReferences();
+
+          if (!subregionMemoryNodes.IsSubsetOf(regionMemoryNodes)
+              || !subregionUnknownMemoryNodeReferences.IsSubsetOf(
+                  regionUnknownMemoryNodeReferences))
+          {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * This function checks the following two invariants:
+   *
+   * 1. The collection of memory nodes of a lambda region should be contained in the collection of
+   * memory nodes of the regions of all direct calls to this lambda.
+   *
+   * 2. The collection of unknown memory reference nodes of a lambda region should be contained in
    * the collection of memory nodes of the regions of all direct calls to this lambda.
    *
    * @param provisioning \see RegionAwareMemoryNodeProvisioning
    * @return Returns true if all invariants are fulfilled, otherwise false.
    */
   static bool
-  CheckInvariants(const RegionAwareMemoryNodeProvisioning & provisioning)
+  CheckCallInvariants(const RegionAwareMemoryNodeProvisioning & provisioning)
   {
-    auto CheckInvariantsCall = [&](auto & callNode)
+    auto checkInvariants = [&](auto & callNode)
     {
       auto & regionSummary = provisioning.GetRegionSummary(*callNode.region());
       auto & regionMemoryNodes = regionSummary.GetMemoryNodes();
@@ -529,43 +566,11 @@ public:
           && lambdaRegionUnknownMemoryNodeReferences.IsSubsetOf(regionUnknownMemoryNodeReferences);
     };
 
-    auto CheckInvariantsStructuralNode = [&](auto & structuralNode)
-    {
-      auto & regionSummary = provisioning.GetRegionSummary(*structuralNode.region());
-      auto & regionMemoryNodes = regionSummary.GetMemoryNodes();
-      auto & regionUnknownMemoryNodeReferences = regionSummary.GetUnknownMemoryNodeReferences();
-
-      for (size_t n = 0; n < structuralNode.nsubregions(); n++)
-      {
-        auto & subregion = *structuralNode.subregion(n);
-        auto & subregionSummary = provisioning.GetRegionSummary(subregion);
-        auto & subregionMemoryNodes = subregionSummary.GetMemoryNodes();
-        auto & subregionUnknownMemoryNodeReferences =
-            subregionSummary.GetUnknownMemoryNodeReferences();
-
-        if (!subregionMemoryNodes.IsSubsetOf(regionMemoryNodes)
-            || !subregionUnknownMemoryNodeReferences.IsSubsetOf(regionUnknownMemoryNodeReferences))
-        {
-          return false;
-        }
-      }
-
-      return true;
-    };
-
     for (auto & regionSummary : provisioning.GetRegionSummaries())
     {
-      for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
-      {
-        if (!CheckInvariantsStructuralNode(*structuralNode))
-        {
-          return false;
-        }
-      }
-
       for (auto & callNode : regionSummary.GetNonRecursiveCalls().Items())
       {
-        if (!CheckInvariantsCall(*callNode))
+        if (!checkInvariants(*callNode))
         {
           return false;
         }
@@ -573,7 +578,7 @@ public:
 
       for (auto & callNode : regionSummary.GetRecursiveCalls().Items())
       {
-        if (!CheckInvariantsCall(*callNode))
+        if (!checkInvariants(*callNode))
         {
           return false;
         }
@@ -864,7 +869,8 @@ RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
     }
   }
 
-  JLM_ASSERT(RegionAwareMemoryNodeProvisioning::CheckInvariants(*Provisioning_));
+  JLM_ASSERT(RegionAwareMemoryNodeProvisioning::CheckStructuralNodeInvariants(*Provisioning_));
+  JLM_ASSERT(RegionAwareMemoryNodeProvisioning::CheckCallInvariants(*Provisioning_));
 }
 
 void
@@ -892,8 +898,8 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
         {
           subregionSummary.AddMemoryNodes(memoryNodes);
           subregionSummary.AddUnknownMemoryNodeReferences(unknownMemoryNodeReferences);
-          RegionSummary::Propagate(regionSummary, subregionSummary);
         }
+        RegionSummary::Propagate(regionSummary, subregionSummary);
       }
     }
   };
@@ -987,6 +993,66 @@ RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::region & r
 {
   return !region.IsRootRegion() && !is<phi_op>(region.node())
       && !is<delta::operation>(region.node());
+}
+
+std::string
+RegionAwareMemoryNodeProvider::ToRegionTree(
+    const rvsdg::graph & rvsdg,
+    const RegionAwareMemoryNodeProvisioning & provisioning)
+{
+  auto toString = [](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+  {
+    std::string s = "{";
+    for (auto & memoryNode : memoryNodes.Items())
+    {
+      s += util::strfmt(memoryNode, ", ");
+    }
+    s += "}";
+    return s;
+  };
+
+  auto indent = [](size_t depth)
+  {
+    return std::string(depth, '-');
+  };
+
+  std::function<std::string(const jlm::rvsdg::region *, size_t)> toRegionTree =
+      [&](const jlm::rvsdg::region * region, size_t depth)
+  {
+    std::string subtree;
+    if (region->node())
+    {
+      subtree += util::strfmt(indent(depth), region, "\n");
+    }
+    else
+    {
+      subtree = "ROOT\n";
+    }
+
+    depth += 1;
+    if (provisioning.ContainsRegionSummary(*region))
+    {
+      auto & regionSummary = provisioning.GetRegionSummary(*region);
+      auto & memoryNodes = regionSummary.GetMemoryNodes();
+      subtree += util::strfmt(indent(depth), "MemoryNodes: ", toString(memoryNodes), "\n");
+    }
+
+    for (const auto & node : region->nodes)
+    {
+      if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+      {
+        subtree += util::strfmt(indent(depth), structuralNode->operation().debug_string(), "\n");
+        for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+        {
+          subtree += toRegionTree(structuralNode->subregion(n), depth + 1);
+        }
+      }
+    }
+
+    return subtree;
+  };
+
+  return toRegionTree(rvsdg.root(), 0);
 }
 
 }
