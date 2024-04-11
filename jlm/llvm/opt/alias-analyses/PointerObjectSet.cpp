@@ -281,6 +281,12 @@ PointerObjectSet::GetUnificationRoot(PointerObjectIndex index) const noexcept
   return index;
 }
 
+bool
+PointerObjectSet::IsUnificationRoot(PointerObjectIndex index) const noexcept
+{
+  return GetUnificationRoot(index) == index;
+}
+
 PointerObjectIndex
 PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectIndex object2)
 {
@@ -598,7 +604,7 @@ EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
   // First add all unification roots marked as PointeesEscaping
   for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
-    if (set.GetUnificationRoot(idx) == idx && set.HasPointeesEscaping(idx))
+    if (set.IsUnificationRoot(idx) && set.HasPointeesEscaping(idx))
       pointeeEscapers.push(idx);
   }
 
@@ -798,7 +804,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   util::LrfWorklist<PointerObjectIndex> worklist;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
-    if (Set_.GetUnificationRoot(i) == i)
+    if (Set_.IsUnificationRoot(i))
       worklist.PushWorkItem(i);
   }
 

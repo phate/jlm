@@ -342,6 +342,12 @@ public:
   GetUnificationRoot(PointerObjectIndex index) const noexcept;
 
   /**
+   * @return true if the PointerObject with the given \p index is its own unification root
+   */
+  [[nodiscard]] bool
+  IsUnificationRoot(PointerObjectIndex index) const noexcept;
+
+  /**
    * Unifies two PointerObjects, such that they will forever share their set of pointees.
    * If any object in the unification points to external, they will all point to external.
    * The HasEscaped flags are not shared, and can still be set individually.

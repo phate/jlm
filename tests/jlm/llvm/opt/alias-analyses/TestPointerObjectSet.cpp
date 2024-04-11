@@ -134,12 +134,21 @@ TestPointerObjectUnification()
   PointerObjectSet set;
   auto dummy0 = set.CreateDummyRegisterPointerObject();
   auto dummy1 = set.CreateDummyRegisterPointerObject();
-  assert(set.GetUnificationRoot(dummy0) == dummy0);
+  assert(set.IsUnificationRoot(dummy0));
 
   auto root = set.UnifyPointerObjects(dummy0, dummy1);
   assert(set.GetUnificationRoot(dummy0) == root);
   assert(set.GetUnificationRoot(dummy1) == root);
+
+  // Exactly one of the PointerObjects is the root
+  assert((root == dummy0) != (root == dummy1));
+  assert(set.IsUnificationRoot(root));
+
+  // Trying to unify again gives the same root
   assert(set.UnifyPointerObjects(dummy0, dummy1) == root);
+
+  auto notRoot = dummy0 + dummy1 - root;
+  assert(!set.IsUnificationRoot(notRoot));
 
   auto dummy2 = set.CreateDummyRegisterPointerObject();
   auto dummy3 = set.CreateDummyRegisterPointerObject();
