@@ -13,6 +13,48 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
+TestCopy()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  jlm::tests::valuetype valueType;
+  iostatetype iOStateType;
+  MemoryStateType memoryStateType;
+  loopstatetype loopStateType;
+  FunctionType functionType(
+      { &valueType, &iOStateType, &memoryStateType, &loopStateType },
+      { &valueType, &iOStateType, &memoryStateType, &loopStateType });
+
+  jlm::rvsdg::graph rvsdg;
+  auto function1 = rvsdg.add_import({ PointerType(), "function1" });
+  auto value1 = rvsdg.add_import({ valueType, "value1" });
+  auto iOState1 = rvsdg.add_import({ iOStateType, "iOState1" });
+  auto memoryState1 = rvsdg.add_import({ memoryStateType, "memoryState1" });
+  auto loopState1 = rvsdg.add_import({ loopStateType, "loopState1" });
+
+  auto function2 = rvsdg.add_import({ PointerType(), "function2" });
+  auto value2 = rvsdg.add_import({ valueType, "value2" });
+  auto iOState2 = rvsdg.add_import({ iOStateType, "iOState2" });
+  auto memoryState2 = rvsdg.add_import({ memoryStateType, "memoryState2" });
+  auto loopState2 = rvsdg.add_import({ loopStateType, "loopState2" });
+
+  auto callResults =
+      CallNode::Create(function1, functionType, { value1, iOState1, memoryState1, loopState1 });
+
+  // Act
+  auto node = jlm::rvsdg::node_output::node(callResults[0]);
+  auto callNode = jlm::util::AssertedCast<const CallNode>(node);
+  auto copiedNode =
+      callNode->copy(rvsdg.root(), { function2, value2, iOState2, memoryState2, loopState2 });
+
+  // Assert
+  auto copiedCallNode = dynamic_cast<const CallNode *>(copiedNode);
+  assert(copiedNode != nullptr);
+  assert(callNode->GetOperation() == copiedCallNode->GetOperation());
+}
+
+static void
 TestCallNodeAccessors()
 {
   using namespace jlm::llvm;
@@ -502,6 +544,8 @@ TestCallTypeClassifierRecursiveDirectCall()
 static int
 Test()
 {
+  TestCopy();
+
   TestCallNodeAccessors();
   TestCallTypeClassifierIndirectCall();
   TestCallTypeClassifierNonRecursiveDirectCall();

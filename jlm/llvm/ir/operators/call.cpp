@@ -142,9 +142,11 @@ CallOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new CallOperation(*this));
 }
 
-/**
- * CallNode class
- */
+rvsdg::node *
+CallNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+{
+  return &CreateNode(*region, GetOperation(), operands);
+}
 
 rvsdg::output *
 CallNode::TraceFunctionInput(const CallNode & callNode)
