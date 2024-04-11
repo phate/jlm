@@ -826,6 +826,9 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 void
 Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
 {
+  jlm::util::GraphWriter writer;
+  Constraints_->DrawSubsetGraph(writer);
+
   if (config.GetSolver() == Configuration::Solver::Naive)
   {
     statistics.StartConstraintSolvingNaiveStatistics();
@@ -840,6 +843,12 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   }
   else
     JLM_UNREACHABLE("Unknown solver");
+
+  auto & graph = Constraints_->DrawSubsetGraph(writer);
+  graph.AppendToLabel("After Solving");
+
+  if (std::getenv(DUMP_SUBSET_GRAPH))
+    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
 }
 
 std::unique_ptr<PointsToGraph>
@@ -853,6 +862,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   // If double-checking against the naive solver is enabled, make a copy of the set and constraints
   const bool checkAgainstNaive = std::getenv(CHECK_AGAINST_NAIVE_SOLVER)
                               && Config_ != Configuration::NaiveSolverConfiguration();
+
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
   if (checkAgainstNaive)
     copy = Constraints_->Clone();

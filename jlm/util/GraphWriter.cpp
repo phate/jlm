@@ -167,6 +167,19 @@ GraphElement::SetLabel(std::string label)
   Label_ = std::move(label);
 }
 
+void
+GraphElement::AppendToLabel(const std::string_view text, const char * sep)
+{
+  if (HasLabel())
+  {
+    Label_.append(sep).append(text);
+  }
+  else
+  {
+    Label_ = text;
+  }
+}
+
 bool
 GraphElement::HasLabel() const
 {
@@ -228,6 +241,18 @@ GraphElement::SetAttributeGraphElement(const std::string & attribute, const Grap
 {
   JLM_ASSERT(&GetGraph().GetGraphWriter() == &element.GetGraph().GetGraphWriter());
   AttributeMap_[attribute] = &element;
+}
+
+bool
+GraphElement::HasAttribute(const std::string & attribute) const
+{
+  return AttributeMap_.find(attribute) != AttributeMap_.end();
+}
+
+bool
+GraphElement::RemoveAttribute(const std::string & attribute)
+{
+  return AttributeMap_.erase(attribute);
 }
 
 void
@@ -402,6 +427,12 @@ Node::GetGraph()
 }
 
 void
+Node::SetShape(std::string shape)
+{
+  SetAttribute("shape", std::move(shape));
+}
+
+void
 Node::SetFillColor(std::string color)
 {
   SetAttribute("style", "filled");
@@ -551,6 +582,12 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 
   for (size_t i = 0; i < outputPorts; i++)
     CreateOutputPort();
+}
+
+void
+InOutNode::SetShape(std::string shape)
+{
+  throw jlm::util::error("InOutNodes can not have custom shapes set");
 }
 
 InputPort &
@@ -905,6 +942,25 @@ Edge::GetOtherEnd(const Port & end)
 }
 
 void
+Edge::SetStyle(std::string style)
+{
+  SetAttribute("style", std::move(style));
+}
+
+void
+Edge::SetArrowhead(std::string arrow)
+{
+  SetAttribute("arrowhead", std::move(arrow));
+}
+
+void
+Edge::SetArrowtail(std::string arrow)
+{
+  // When outputting dot, the "dir" attribute will be automatically changed to make the tail visible
+  SetAttribute("arrowtail", std::move(arrow));
+}
+
+void
 Edge::OutputDot(std::ostream & out, size_t indent) const
 {
   out << Indent(indent);
@@ -912,8 +968,20 @@ Edge::OutputDot(std::ostream & out, size_t indent) const
   out << " -> ";
   To_.OutputDotPortId(out);
   out << "[";
-  if (!Directed_)
+
+  const bool hasHeadarrow = HasAttribute("arrowhead") || Directed_;
+  const bool hasTailarrow = HasAttribute("arrowtail");
+  if (hasHeadarrow && hasTailarrow)
+    out << "dir=both ";
+  else if (hasHeadarrow)
+  {
+    // dir=forward is the default in digraphs
+  }
+  else if (hasTailarrow)
+    out << "dir=back ";
+  else
     out << "dir=none ";
+
   if (HasLabel())
   {
     out << "label=";

@@ -32,6 +32,12 @@ TestGraphElement()
   assert(!graph.HasLabel());
   assert(graph.GetLabelOr("default") == std::string("default"));
 
+  // Test label appending
+  graph.AppendToLabel("Text");
+  assert(graph.GetLabel() == "Text");
+  graph.AppendToLabel("Text2", "\n");
+  assert(graph.GetLabel() == "Text\nText2");
+
   // Test assigning a program object to a graph element
   int myInt = 0;
   graph.SetProgramObject(&myInt);
@@ -39,8 +45,15 @@ TestGraphElement()
 
   // Set attributes
   graph.SetAttribute("color", "\"brown\"");
+  graph.SetAttribute("colour", "\"british brown\"");
   graph.SetAttributeGraphElement("graph", graph);
   graph.SetAttributeObject("another graph", &myInt);
+
+  assert(graph.HasAttribute("color"));
+  assert(graph.RemoveAttribute("colour"));
+  assert(!graph.HasAttribute("colour"));
+  // Removing the attribute again returns false
+  assert(!graph.RemoveAttribute("colour"));
 
   // Finalizing and getting a unique id
   assert(!graph.IsFinalized());
@@ -78,12 +91,21 @@ TestNode()
 
   node.SetLabel("MyNode");
 
+  node.SetShape(Node::Shape::Rectangle);
+  assert(node.HasAttribute("shape"));
+
   node.Finalize();
 
   std::ostringstream out;
   node.Output(out, GraphOutputFormat::ASCII, 0);
   auto string = out.str();
   assert(StringContains(string, "MyNode"));
+
+  std::ostringstream out2;
+  node.Output(out2, GraphOutputFormat::Dot, 0);
+  auto string2 = out2.str();
+  assert(StringContains(string2, "label=MyNode"));
+  assert(StringContains(string2, "shape=rect"));
 }
 
 static void
@@ -183,6 +205,11 @@ TestEdge()
 
   edge0.SetAttribute("color", Colors::Red);
 
+  auto & edge2 = graph.CreateUndirectedEdge(node2, node0);
+  edge2.SetArrowhead("odot");
+  edge2.SetArrowtail("normal");
+  edge2.SetStyle(Edge::Style::Tapered);
+
   graph.Finalize();
 
   std::ostringstream out0;
@@ -197,6 +224,14 @@ TestEdge()
   auto string1 = out1.str();
   assert(StringContains(string1, "node1 -> node2"));
   assert(StringContains(string1, jlm::util::strfmt("dir=none")));
+
+  std::ostringstream out2;
+  edge2.OutputDot(out2, 0);
+  auto string2 = out2.str();
+  assert(StringContains(string2, "dir=both"));
+  assert(StringContains(string2, "arrowhead=odot"));
+  assert(StringContains(string2, "arrowtail=normal"));
+  assert(StringContains(string2, "style=tapered"));
 }
 
 static void

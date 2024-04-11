@@ -751,6 +751,143 @@ PointerObjectConstraintSet::GetConstraints() const noexcept
   return Constraints_;
 }
 
+jlm::util::Graph &
+PointerObjectConstraintSet::DrawSubsetGraph(jlm::util::GraphWriter & writer) const
+{
+  auto & graph = writer.CreateGraph();
+  graph.SetLabel("Andersen subset graph");
+
+  // Create nodes for each PointerObject
+  std::vector<jlm::util::Node *> nodes(Set_.NumPointerObjects());
+  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+  {
+    auto & node = graph.CreateNode();
+    nodes[i] = &node;
+
+    if (Set_.IsPointerObjectRegister(i))
+      node.SetShape(util::Node::Shape::Oval);
+    else
+      node.SetShape(util::Node::Shape::Rectangle);
+
+    std::ostringstream label;
+    label << i << "\n";
+
+    if (Set_.IsUnificationRoot(i))
+    {
+      label << "{";
+      bool sep = false;
+      for (auto pointee : Set_.GetPointsToSet(i).Items())
+      {
+        if (sep)
+          label << ", ";
+        sep = true;
+        label << pointee;
+      }
+      // Add a + if pointing to external
+      if (Set_.IsPointingToExternal(i))
+        label << (sep ? ", +" : "+");
+      label << "}";
+
+      if (Set_.HasPointeesEscaping(i))
+        label << "\nescaping";
+    }
+    else
+    {
+      label << "#" << Set_.GetUnificationRoot(i);
+    }
+
+    if (!Set_.ShouldTrackPointees(i))
+      label << "\nNOT TRACKING";
+
+    node.SetLabel(label.str());
+
+    if (Set_.HasEscaped(i))
+      node.SetFillColor("#FFFF99");
+  }
+
+  // Draw edges for constraints
+  size_t nextCallConstraintIndex = 0;
+  for (auto constraint : Constraints_)
+  {
+    if (auto * supersetConstraint = std::get_if<SupersetConstraint>(&constraint))
+    {
+      graph.CreateDirectedEdge(
+          *nodes[supersetConstraint->GetSubset()],
+          *nodes[supersetConstraint->GetSuperset()]);
+    }
+    else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
+    {
+      auto & edge = graph.CreateDirectedEdge(
+          *nodes[storeConstraint->GetValue()],
+          *nodes[storeConstraint->GetPointer()]);
+      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetArrowhead("normalodot");
+    }
+    else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
+    {
+      auto & edge = graph.CreateDirectedEdge(
+          *nodes[loadConstraint->GetPointer()],
+          *nodes[loadConstraint->GetValue()]);
+      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetArrowtail("odot");
+    }
+    else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
+    {
+      auto callConstraintIndex = nextCallConstraintIndex++;
+      auto & pointerNode = *nodes[callConstraint->GetPointer()];
+      pointerNode.AppendToLabel(util::strfmt("callTarget", callConstraintIndex));
+
+      // Connect all registers that correspond to inputs and outputs of the call, to the call target
+      auto & callNode = callConstraint->GetCallNode();
+      for (size_t i = 0; i < callNode.NumArguments(); i++)
+      {
+        if (auto inputRegister = Set_.TryGetRegisterPointerObject(*callNode.Argument(i)->origin()))
+        {
+          const auto label = util::strfmt("callInput", callConstraintIndex, ".", i);
+          nodes[*inputRegister]->AppendToLabel(label);
+        }
+      }
+      for (size_t i = 0; i < callNode.NumResults(); i++)
+      {
+        if (auto outputRegister = Set_.TryGetRegisterPointerObject(*callNode.Result(i)))
+        {
+          const auto label = util::strfmt("callOutput", callConstraintIndex, ".", i);
+          nodes[*outputRegister]->AppendToLabel(label);
+        }
+      }
+    }
+  }
+
+  // Add labels to indicate registers that are arguments and results of functions
+  size_t nextFunctionIndex = 0;
+  for (auto [function, pointerObject] : Set_.GetFunctionMap())
+  {
+    JLM_ASSERT(Set_.GetPointerObjectKind(pointerObject) == PointerObjectKind::FunctionMemoryObject);
+    const auto functionIndex = nextFunctionIndex++;
+    nodes[pointerObject]->AppendToLabel(util::strfmt("function", functionIndex));
+
+    // Add labels to registers corresponding to arguments and results of the function
+    for (size_t i = 0; i < function->nfctarguments(); i++)
+    {
+      if (auto argumentRegister = Set_.TryGetRegisterPointerObject(*function->fctargument(i)))
+      {
+        const auto label = util::strfmt("argument", functionIndex, ".", i);
+        nodes[*argumentRegister]->AppendToLabel(label);
+      }
+    }
+    for (size_t i = 0; i < function->nfctresults(); i++)
+    {
+      if (auto resultRegister = Set_.TryGetRegisterPointerObject(*function->fctresult(i)->origin()))
+      {
+        const auto label = util::strfmt("result", functionIndex, ".", i);
+        nodes[*resultRegister]->AppendToLabel(label);
+      }
+    }
+  }
+
+  return graph;
+}
+
 size_t
 PointerObjectConstraintSet::SolveUsingWorklist()
 {

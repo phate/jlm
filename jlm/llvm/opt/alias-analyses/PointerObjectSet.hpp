@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/GraphWriter.hpp>
 #include <jlm/util/HashSet.hpp>
 #include <jlm/util/Math.hpp>
 
@@ -383,7 +384,6 @@ public:
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
    * as well
    *
-   *
    * @return true if P(\p superset) or any flags were modified by this operation
    */
   bool
@@ -751,6 +751,13 @@ public:
    */
   [[nodiscard]] const std::vector<ConstraintVariant> &
   GetConstraints() const noexcept;
+
+  /**
+   * Creates a subset graph containing all PointerObjects, their current points-to sets,
+   * and edges representing the current set of constraints.
+   */
+  jlm::util::Graph &
+  DrawSubsetGraph(jlm::util::GraphWriter & writer) const;
 
   /**
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.

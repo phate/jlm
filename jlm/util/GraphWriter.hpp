@@ -93,6 +93,13 @@ public:
   SetLabel(std::string label);
 
   /**
+   * Appends the given \p text to the element's label.
+   * If the current label is non-empty, the separator string \p sep in inserted between them.
+   */
+  void
+  AppendToLabel(const std::string_view text, const char * sep = "\n");
+
+  /**
    * @return true if this graph element has a non-empty label
    */
   [[nodiscard]] bool
@@ -164,6 +171,19 @@ public:
    */
   void
   SetAttributeGraphElement(const std::string & attribute, const GraphElement & element);
+
+  /**
+   * @return true if an attribute with the given name \p attribute is defined
+   */
+  [[nodiscard]] bool
+  HasAttribute(const std::string & attribute) const;
+
+  /**
+   * Removes the attribute with the given name \p attribute, if it exists.
+   * @return true if the attribute existed, and was removed, false otherwise
+   */
+  bool
+  RemoveAttribute(const std::string & attribute);
 
   /**
    * Claims a unique id suffix for the element, if it doesn't already have one.
@@ -308,6 +328,29 @@ public:
   Graph &
   GetGraph() override;
 
+  /**
+   * Sets the shape to be used when rendering the node
+   * @see Node::Shape
+   */
+  virtual void
+  SetShape(std::string shape);
+
+  /**
+   * A collection of common GraphViz node shapes.
+   * See https://graphviz.org/doc/info/shapes.html for more.
+   */
+  struct Shape
+  {
+    static inline const char * const Rectangle = "rect";
+    static inline const char * const Circle = "circle";
+    static inline const char * const Oval = "oval";
+    static inline const char * const Point = "point";
+    static inline const char * const Plain = "plain";
+    static inline const char * const Plaintext = "plaintext";
+    static inline const char * const Triangle = "triangle";
+    static inline const char * const DoubleCircle = "doublecircle";
+  };
+
   void
   SetFillColor(std::string color) override;
 
@@ -429,6 +472,11 @@ class InOutNode : public Node
 
 public:
   ~InOutNode() override = default;
+
+  /**
+   * InOutNodes use HTML tables when rendering, so setting the shape is disabled
+   */
+  void SetShape(std::string) override;
 
   InputPort &
   CreateInputPort();
@@ -603,6 +651,45 @@ public:
    */
   [[nodiscard]] Port &
   GetOtherEnd(const Port & end);
+
+  /**
+   * Sets the style of the edge
+   * @see Edge::Style for a list of possible styles
+   */
+  void
+  SetStyle(std::string style);
+
+  /**
+   * The set of available edge styles in GraphViz.
+   */
+  struct Style
+  {
+    static inline const char * const Solid = "solid";
+    static inline const char * const Dashed = "dashed";
+    static inline const char * const Dotted = "dotted";
+    static inline const char * const Invisible = "invis";
+    static inline const char * const Bold = "bold";
+    static inline const char * const Tapered = "tapered";
+  };
+
+  /**
+   * Customizes the look of the edge at the head end.
+   * For a normal arrow, use "normal". Other common options are "box", "diamond" and "dot".
+   * Prefix the string with "o" to get outline only. Prefix with "l" or "r" to only get one half.
+   * Concatenate multiple strings to get longer arrows, with the tipmost arrow listed first.
+   * For full a description of the grammar, see https://graphviz.org/doc/info/arrows.html
+   * @param arrow a string describing the look of the edge head.
+   */
+  void
+  SetArrowhead(std::string arrow);
+
+  /**
+   * Customizes the look of the edge at the tail end.
+   * @param arrow a string describing the look of the edge tail.
+   * @see Edge::SetArrowhead() for a short description of the grammar
+   */
+  void
+  SetArrowtail(std::string arrow);
 
   /**
    * Outputs the edge in dot format. In ASCII, edges are not implicitly encoded by nodes/ports.
@@ -859,22 +946,22 @@ private:
  */
 namespace Colors
 {
-inline const char * Black = "#000000";
-inline const char * Blue = "#0000FF";
-inline const char * Coral = "#FF7F50";
-inline const char * CornflowerBlue = "#6495ED";
-inline const char * Firebrick = " #B22222";
-inline const char * Gold = "#FFD700";
-inline const char * Gray = "#BEBEBE";
-inline const char * Green = "#00FF00";
-inline const char * Orange = "#FFA500";
-inline const char * Purple = "#A020F0";
-inline const char * Red = "#FF0000";
-inline const char * Brown = "#8B4513"; // X11's Saddle Brown
-inline const char * SkyBlue = "#87CEEB";
-inline const char * White = "#FFFFFF";
-inline const char * Yellow = "#FFFF00";
-};
+inline const char * const Black = "#000000";
+inline const char * const Blue = "#0000FF";
+inline const char * const Coral = "#FF7F50";
+inline const char * const CornflowerBlue = "#6495ED";
+inline const char * const Firebrick = " #B22222";
+inline const char * const Gold = "#FFD700";
+inline const char * const Gray = "#BEBEBE";
+inline const char * const Green = "#00FF00";
+inline const char * const Orange = "#FFA500";
+inline const char * const Purple = "#A020F0";
+inline const char * const Red = "#FF0000";
+inline const char * const Brown = "#8B4513"; // X11's Saddle Brown
+inline const char * const SkyBlue = "#87CEEB";
+inline const char * const White = "#FFFFFF";
+inline const char * const Yellow = "#FFFF00";
+}
 
 }
 #endif // JLM_UTIL_GRAPHWRITER_HPP
