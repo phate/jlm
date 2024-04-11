@@ -14,11 +14,43 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 
-static inline void
-test_store_mux_reduction()
+static void
+TestCopy()
 {
   using namespace jlm::llvm;
 
+  jlm::tests::valuetype valueType;
+  PointerType pointerType;
+  MemoryStateType memoryStateType;
+
+  jlm::rvsdg::graph graph;
+  auto address1 = graph.add_import({ pointerType, "address1" });
+  auto value1 = graph.add_import({ valueType, "value1" });
+  auto memoryState1 = graph.add_import({ memoryStateType, "state1" });
+
+  auto address2 = graph.add_import({ pointerType, "address2" });
+  auto value2 = graph.add_import({ valueType, "value2" });
+  auto memoryState2 = graph.add_import({ memoryStateType, "state2" });
+
+  auto storeResults = StoreNode::Create(address1, value1, { memoryState1 }, 4);
+
+  // Act
+  auto node = jlm::rvsdg::node_output::node(storeResults[0]);
+  auto storeNode = jlm::util::AssertedCast<const StoreNode>(node);
+  auto copiedNode = storeNode->copy(graph.root(), { address2, value2, memoryState2 });
+
+  // Assert
+  auto copiedStoreNode = dynamic_cast<const StoreNode *>(copiedNode);
+  assert(copiedNode != nullptr);
+  assert(storeNode->GetOperation() == copiedStoreNode->GetOperation());
+}
+
+static void
+TestStoreMuxReduction()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
   jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
@@ -42,6 +74,7 @@ test_store_mux_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   snf->set_mutable(true);
   snf->set_store_mux_reducible(true);
   graph.normalize();
@@ -49,6 +82,7 @@ test_store_mux_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   auto muxnode = jlm::rvsdg::node_output::node(ex->origin());
   assert(is<MemStateMergeOperator>(muxnode));
   assert(muxnode->ninputs() == 3);
@@ -60,11 +94,12 @@ test_store_mux_reduction()
   assert(jlm::rvsdg::is<StoreOperation>(n2->operation()));
 }
 
-static inline void
-test_multiple_origin_reduction()
+static void
+TestMultipleOriginReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
@@ -85,6 +120,7 @@ test_multiple_origin_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   snf->set_mutable(true);
   snf->set_multiple_origin_reducible(true);
   graph.normalize();
@@ -92,15 +128,17 @@ test_multiple_origin_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   auto node = jlm::rvsdg::node_output::node(ex->origin());
   assert(jlm::rvsdg::is<StoreOperation>(node->operation()) && node->ninputs() == 3);
 }
 
-static inline void
-test_store_alloca_reduction()
+static void
+TestStoreAllocaReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::tests::valuetype vt;
   MemoryStateType mt;
   jlm::rvsdg::bittype bt(32);
@@ -126,6 +164,7 @@ test_store_alloca_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   snf->set_mutable(true);
   snf->set_store_alloca_reducible(true);
   graph.normalize();
@@ -133,6 +172,7 @@ test_store_alloca_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   bool has_add_import = false;
   for (size_t n = 0; n < graph.root()->nresults(); n++)
   {
@@ -142,11 +182,12 @@ test_store_alloca_reduction()
   assert(has_add_import);
 }
 
-static inline void
-test_store_store_reduction()
+static void
+TestStoreStoreReduction()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   jlm::tests::valuetype vt;
   PointerType pt;
   MemoryStateType mt;
@@ -164,6 +205,7 @@ test_store_store_reduction()
 
   jlm::rvsdg::view(graph.root(), stdout);
 
+  // Act
   auto nf = StoreOperation::GetNormalForm(&graph);
   nf->set_store_store_reducible(true);
   graph.normalize();
@@ -171,19 +213,22 @@ test_store_store_reduction()
 
   jlm::rvsdg::view(graph.root(), stdout);
 
+  // Assert
   assert(graph.root()->nnodes() == 1);
   assert(jlm::rvsdg::node_output::node(ex->origin())->input(1)->origin() == v2);
 }
 
 static int
-test()
+TestStore()
 {
-  test_store_mux_reduction();
-  test_store_alloca_reduction();
-  test_multiple_origin_reduction();
-  test_store_store_reduction();
+  TestCopy();
+
+  TestStoreMuxReduction();
+  TestStoreAllocaReduction();
+  TestMultipleOriginReduction();
+  TestStoreStoreReduction();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-store", test)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestStore", TestStore)

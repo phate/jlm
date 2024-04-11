@@ -48,18 +48,6 @@ public:
         : Solver_(solver)
     {}
 
-    void
-    SetSolver(Solver solver)
-    {
-      Solver_ = solver;
-    }
-
-    [[nodiscard]] Solver
-    GetSolver() const
-    {
-      return Solver_;
-    }
-
     [[nodiscard]] bool
     operator==(const Configuration & other) const
     {
@@ -72,12 +60,38 @@ public:
       return !operator==(other);
     }
 
+    /**
+     * Sets which solver algorithm to use.
+     * Not all solvers are compatible with all online techniques.
+     */
+    void
+    SetSolver(Solver solver)
+    {
+      Solver_ = solver;
+    }
+
+    [[nodiscard]] Solver
+    GetSolver() const noexcept
+    {
+      return Solver_;
+    }
+
+    /**
+     * Creates a solver configuration using the worklist solver,
+     * with the default set of offline and online techniques enabled.
+     * @return the solver configuration
+     */
     [[nodiscard]] static Configuration
     WorklistSolverConfiguration()
     {
       return Configuration(Solver::Worklist);
     }
 
+    /**
+     * Creates a solver configuration using the naive solver,
+     * with all offline and online speedup techniques disabled.
+     * @return the solver configuration
+     */
     [[nodiscard]] static Configuration
     NaiveSolverConfiguration()
     {
@@ -232,8 +246,23 @@ private:
   void
   AnalyzeRvsdg(const rvsdg::graph & graph);
 
-  std::unique_ptr<PointsToGraph>
-  AnalyzeModule(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector);
+  /**
+   * Traverses the given module, and initializes the members Set_ and Constraints_ with
+   * PointerObjects and constraints corresponding to the module.
+   * @param module the module to analyze
+   * @param statistics the Statistics instance used to track info about the analysis
+   */
+  void
+  AnalyzeModule(const RvsdgModule & module, Statistics & statistics);
+
+  /**
+   * Works with the members Set_ and Constraints_, and solves the constraint problem
+   * using the techniques and solver specified in the given configuration
+   * @param config settings for the solving
+   * @param statistics the Statistics instance used to track info about the analysis
+   */
+  void
+  SolveConstraints(const Configuration & config, Statistics & statistics);
 
   Configuration Config_ = Configuration::WorklistSolverConfiguration();
 
