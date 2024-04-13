@@ -193,17 +193,17 @@ PointerObjectSet::GetPointerObjectKind(PointerObjectIndex index) const noexcept
 }
 
 bool
-PointerObjectSet::CanPointerObjectPoint(PointerObjectIndex index) const noexcept
+PointerObjectSet::ShouldTrackPointees(PointerObjectIndex index) const noexcept
 {
   JLM_ASSERT(index < NumPointerObjects());
-  return PointerObjects_[index].CanPoint();
+  return PointerObjects_[index].ShouldTrackPointees();
 }
 
 bool
-PointerObjectSet::CanPointerObjectBePointee(PointerObjectIndex index) const noexcept
+PointerObjectSet::IsPointerObjectRegister(PointerObjectIndex index) const noexcept
 {
   JLM_ASSERT(index < NumPointerObjects());
-  return PointerObjects_[index].CanBePointee();
+  return PointerObjects_[index].IsRegister();
 }
 
 bool
@@ -216,15 +216,33 @@ PointerObjectSet::HasEscaped(PointerObjectIndex index) const noexcept
 bool
 PointerObjectSet::MarkAsEscaped(PointerObjectIndex index)
 {
-  JLM_ASSERT(index < NumPointerObjects());
+  // Registers do not have addresses, and can as such not escape
+  JLM_ASSERT(!IsPointerObjectRegister(index));
   if (PointerObjects_[index].HasEscaped)
     return false;
+
   PointerObjects_[index].HasEscaped = true;
 
-  // Pointer objects that have addresses can be written to from outside the module
-  if (CanPointerObjectBePointee(index))
-    MarkAsPointingToExternal(index);
+  // Flags implied by escaping
+  MarkAsPointeesEscaping(index);
+  MarkAsPointingToExternal(index);
 
+  return true;
+}
+
+[[nodiscard]] bool
+PointerObjectSet::HasPointeesEscaping(PointerObjectIndex index) const noexcept
+{
+  return PointerObjects_[GetUnificationRoot(index)].PointeesEscaping;
+}
+
+bool
+PointerObjectSet::MarkAsPointeesEscaping(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  if (PointerObjects_[root].PointeesEscaping)
+    return false;
+  PointerObjects_[root].PointeesEscaping = true;
   return true;
 }
 
@@ -237,23 +255,20 @@ PointerObjectSet::IsPointingToExternal(PointerObjectIndex index) const noexcept
 bool
 PointerObjectSet::MarkAsPointingToExternal(PointerObjectIndex index)
 {
-  if (!CanPointerObjectPoint(index))
+  auto root = GetUnificationRoot(index);
+  if (PointerObjects_[root].PointsToExternal)
     return false;
-
-  auto parent = GetUnificationRoot(index);
-  if (PointerObjects_[parent].PointsToExternal)
-    return false;
-  PointerObjects_[parent].PointsToExternal = true;
+  PointerObjects_[root].PointsToExternal = true;
   return true;
 }
 
 PointerObjectIndex
 PointerObjectSet::GetUnificationRoot(PointerObjectIndex index) const noexcept
 {
+  JLM_ASSERT(index < NumPointerObjects());
+
   if constexpr (ENABLE_UNIFICATION)
   {
-    JLM_ASSERT(index < NumPointerObjects());
-
     // Technique known as path halving, gives same asymptotic performance as full path compression
     while (PointerObjectParents_[index] != index)
     {
@@ -266,14 +281,17 @@ PointerObjectSet::GetUnificationRoot(PointerObjectIndex index) const noexcept
   return index;
 }
 
+bool
+PointerObjectSet::IsUnificationRoot(PointerObjectIndex index) const noexcept
+{
+  return GetUnificationRoot(index) == index;
+}
+
 PointerObjectIndex
 PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectIndex object2)
 {
   if constexpr (!ENABLE_UNIFICATION)
     JLM_UNREACHABLE("Unification is not enabled");
-
-  JLM_ASSERT(CanPointerObjectPoint(object1));
-  JLM_ASSERT(CanPointerObjectPoint(object2));
 
   PointerObjectIndex newRoot = GetUnificationRoot(object1);
   PointerObjectIndex oldRoot = GetUnificationRoot(object2);
@@ -294,8 +312,11 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
   PointsToSets_[newRoot].UnionWith(PointsToSets_[oldRoot]);
   PointsToSets_[oldRoot].Clear();
 
+  // Ensure any flags set on the points-to set continue to be set in the new unification
   if (IsPointingToExternal(oldRoot))
     MarkAsPointingToExternal(newRoot);
+  if (HasPointeesEscaping(oldRoot))
+    MarkAsPointeesEscaping(newRoot);
 
   return newRoot;
 }
@@ -312,53 +333,32 @@ PointerObjectSet::AddToPointsToSet(PointerObjectIndex pointer, PointerObjectInde
 {
   JLM_ASSERT(pointer < NumPointerObjects());
   JLM_ASSERT(pointee < NumPointerObjects());
-  // Assert the pointer object is a possible pointee
-  JLM_ASSERT(CanPointerObjectBePointee(pointee));
+  // Assert we are not trying to point to a register
+  JLM_ASSERT(!IsPointerObjectRegister(pointee));
 
-  // If the pointer PointerObject can not point to anything, silently ignore
-  if (!CanPointerObjectPoint(pointer))
-    return false;
+  const auto pointerRoot = GetUnificationRoot(pointer);
 
-  return PointsToSets_[GetUnificationRoot(pointer)].Insert(pointee);
+  return PointsToSets_[pointerRoot].Insert(pointee);
 }
 
 // Makes P(superset) a superset of P(subset)
 bool
 PointerObjectSet::MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset)
 {
-  // If the superset PointerObject can't point to anything, silently ignore
-  if (!CanPointerObjectPoint(superset))
+  auto supersetRoot = GetUnificationRoot(superset);
+  auto subsetRoot = GetUnificationRoot(subset);
+
+  if (supersetRoot == subsetRoot)
     return false;
 
-  // If the subset PointerObject can't point to anything, silently ignore
-  if (!CanPointerObjectPoint(subset))
-    return false;
-
-  auto supersetParent = GetUnificationRoot(superset);
-  auto subsetParent = GetUnificationRoot(subset);
-
-  if (supersetParent == subsetParent)
-    return false;
-
-  auto & P_super = PointsToSets_[supersetParent];
-  auto & P_sub = PointsToSets_[subsetParent];
+  auto & P_super = PointsToSets_[supersetRoot];
+  auto & P_sub = PointsToSets_[subsetRoot];
 
   bool modified = P_super.UnionWith(P_sub);
 
   // If the external node is in the subset, it must also be part of the superset
-  if (IsPointingToExternal(subsetParent))
-    modified |= MarkAsPointingToExternal(supersetParent);
-
-  return modified;
-}
-
-// Marks all x in P(pointer) as escaped
-bool
-PointerObjectSet::MarkAllPointeesAsEscaped(PointerObjectIndex pointer)
-{
-  bool modified = false;
-  for (PointerObjectIndex pointee : GetPointsToSet(pointer).Items())
-    modified |= MarkAsEscaped(pointee);
+  if (IsPointingToExternal(subsetRoot))
+    modified |= MarkAsPointingToExternal(supersetRoot);
 
   return modified;
 }
@@ -384,10 +384,10 @@ StoreConstraint::ApplyDirectly(PointerObjectSet & set)
   for (PointerObjectIndex x : set.GetPointsToSet(Pointer_).Items())
     modified |= set.MakePointsToSetSuperset(x, Value_);
 
-  // If external in P(Pointer1_), P(external) should become a superset of P(Pointer2)
-  // In practice, this means everything in P(Pointer2) escapes
+  // If external in P(pointer), P(external) should become a superset of P(value)
+  // In practice, this means everything in P(value) escapes
   if (set.IsPointingToExternal(Pointer_))
-    modified |= set.MarkAllPointeesAsEscaped(Value_);
+    modified |= set.MarkAsPointeesEscaping(Value_);
 
   return modified;
 }
@@ -412,15 +412,15 @@ LoadConstraint::ApplyDirectly(PointerObjectSet & set)
  * possibly being sent to and retrieved from unknown code.
  * @param set the PointerObjectSet representing this module.
  * @param callNode the RVSDG CallNode that represents the function call itself
- * @param markAsEscaped the function to call when a PointerObject should be marked as escaped
+ * @param markAsPointeesEscaping the function to call when marking a register as pointees escaping
  * @param markAsPointsToExternal called to flag a PointerObject as pointing to external
  */
-template<typename MarkAsEscaped, typename MarkAsPointsToExternal>
+template<typename MarkAsPointeesEscaping, typename MarkAsPointsToExternal>
 void
 HandleCallingExternalFunction(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    MarkAsEscaped & markAsEscaped,
+    MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
 
@@ -431,7 +431,7 @@ HandleCallingExternalFunction(
     const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
 
     if (inputRegisterPO)
-      markAsEscaped(inputRegisterPO.value());
+      markAsPointeesEscaping(inputRegisterPO.value());
   }
 
   for (size_t n = 0; n < callNode.NumResults(); n++)
@@ -449,21 +449,77 @@ HandleCallingExternalFunction(
  * @param set the PointerObjectSet representing this module.
  * @param callNode the RVSDG CallNode that represents the function call itself
  * @param imported the PointerObject of ImportMemoryObject kind that might be called.
- * @param markAsEscaped the function to call when a PointerObject should be marked as escaped
+ * @param markAsPointeesEscaping the function to call when marking a register as pointees escaping
  * @param markAsPointsToExternal called to flag a PointerObject as pointing to external
  */
-template<typename MarkAsEscaped, typename MarkAsPointsToExternal>
+template<typename MarkAsPointeesEscaping, typename MarkAsPointsToExternal>
 static void
 HandleCallingImportedFunction(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
     [[maybe_unused]] PointerObjectIndex imported,
-    MarkAsEscaped & markAsEscaped,
+    MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
   // FIXME: Add special handling of common library functions
   // Otherwise we don't know anything about the function
-  return HandleCallingExternalFunction(set, callNode, markAsEscaped, markAsPointsToExternal);
+  return HandleCallingExternalFunction(
+      set,
+      callNode,
+      markAsPointeesEscaping,
+      markAsPointsToExternal);
+}
+
+/**
+ * Pairs up call node inputs and function body argument, and calls the provided \p makeSuperset
+ * to make the function body arguments include all pointees the call node may pass in.
+ */
+template<typename MakeSupersetFunctor>
+static void
+HandleLambdaCallParameters(
+    PointerObjectSet & set,
+    const jlm::llvm::CallNode & callNode,
+    const lambda::node & lambdaNode,
+    MakeSupersetFunctor & makeSuperset)
+{
+  for (size_t n = 0; n < callNode.NumArguments() && n < lambdaNode.nfctarguments(); n++)
+  {
+    const auto & inputRegister = *callNode.Argument(n)->origin();
+    const auto & argumentRegister = *lambdaNode.fctargument(n);
+
+    const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
+    const auto argumentRegisterPO = set.TryGetRegisterPointerObject(argumentRegister);
+    if (!inputRegisterPO || !argumentRegisterPO)
+      continue;
+
+    makeSuperset(*argumentRegisterPO, *inputRegisterPO);
+  }
+}
+
+/**
+ * Pairs up function body results and call node outputs, and calls the provided \p makeSuperset
+ * to make the call node output include all possible returned pointees.
+ */
+template<typename MakeSupersetFunctor>
+static void
+HandleLambdaCallReturnValues(
+    PointerObjectSet & set,
+    const jlm::llvm::CallNode & callNode,
+    const lambda::node & lambdaNode,
+    MakeSupersetFunctor & makeSuperset)
+{
+  for (size_t n = 0; n < callNode.NumResults() && n < lambdaNode.nfctresults(); n++)
+  {
+    const auto & outputRegister = *callNode.Result(n);
+    const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
+
+    const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
+    const auto resultRegisterPO = set.TryGetRegisterPointerObject(resultRegister);
+    if (!outputRegisterPO || !resultRegisterPO)
+      continue;
+
+    makeSuperset(*outputRegisterPO, *resultRegisterPO);
+  }
 }
 
 /**
@@ -477,51 +533,24 @@ HandleCallingImportedFunction(
  * @param lambda the PointerObject of FunctionMemoryObject kind that might be called.
  * @param makeSuperset the function to call to make one points-to set a superset of another
  */
-template<typename MakeSuperset>
+template<typename MakeSupersetFunctor>
 static void
 HandleCallingLambdaFunction(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
     PointerObjectIndex lambda,
-    MakeSuperset & makeSuperset)
+    MakeSupersetFunctor & makeSuperset)
 {
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
 
-  // If the number of parameters or number of results doesn't line up,
-  // assume this is not the function we are calling.
-  // Note that the number of arguments and results include 3 state edges: memory, loop and IO.
-  // Varargs are properly handled, since they get merged by a valist_op node before the CallNode.
-  if (lambdaNode.nfctarguments() != callNode.NumArguments()
-      || lambdaNode.nfctresults() != callNode.NumResults())
-    return;
+  // LLVM allows calling functions even when the number of arguments don't match,
+  // so we instead pair up as many parameters and return values as possible
 
   // Pass all call node inputs to the function's subregion
-  for (size_t n = 0; n < callNode.NumArguments(); n++)
-  {
-    const auto & inputRegister = *callNode.Argument(n)->origin();
-    const auto & argumentRegister = *lambdaNode.fctargument(n);
-
-    const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
-    const auto argumentRegisterPO = set.TryGetRegisterPointerObject(argumentRegister);
-    if (!inputRegisterPO || !argumentRegisterPO)
-      continue;
-
-    makeSuperset(argumentRegisterPO.value(), inputRegisterPO.value());
-  }
+  HandleLambdaCallParameters(set, callNode, lambdaNode, makeSuperset);
 
   // Pass the function's subregion results to the output of the call node
-  for (size_t n = 0; n < callNode.NumResults(); n++)
-  {
-    const auto & outputRegister = *callNode.Result(n);
-    const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
-
-    const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
-    const auto resultRegisterPO = set.TryGetRegisterPointerObject(resultRegister);
-    if (!outputRegisterPO || !resultRegisterPO)
-      continue;
-
-    makeSuperset(outputRegisterPO.value(), resultRegisterPO.value());
-  }
+  HandleLambdaCallReturnValues(set, callNode, lambdaNode, makeSuperset);
 }
 
 // Connects function calls to every possible target function
@@ -535,9 +564,9 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
     modified |= set.MakePointsToSetSuperset(superset, subset);
   };
 
-  const auto MarkAsEscaped = [&](PointerObjectIndex index)
+  const auto MarkAsPointeesEscaping = [&](PointerObjectIndex index)
   {
-    modified |= set.MarkAsEscaped(index);
+    modified |= set.MarkAsPointeesEscaping(index);
   };
 
   const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
@@ -550,14 +579,19 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
   {
     const auto kind = set.GetPointerObjectKind(target);
     if (kind == PointerObjectKind::ImportMemoryObject)
-      HandleCallingImportedFunction(set, CallNode_, target, MarkAsEscaped, MarkAsPointsToExternal);
+      HandleCallingImportedFunction(
+          set,
+          CallNode_,
+          target,
+          MarkAsPointeesEscaping,
+          MarkAsPointsToExternal);
     else if (kind == PointerObjectKind::FunctionMemoryObject)
       HandleCallingLambdaFunction(set, CallNode_, target, MakeSuperset);
   }
 
   // If we might be calling an external function
   if (set.IsPointingToExternal(Pointer_))
-    HandleCallingExternalFunction(set, CallNode_, MarkAsEscaped, MarkAsPointsToExternal);
+    HandleCallingExternalFunction(set, CallNode_, MarkAsPointeesEscaping, MarkAsPointsToExternal);
 
   return modified;
 }
@@ -565,30 +599,36 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
 bool
 EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
 {
-  std::queue<PointerObjectIndex> escapers;
+  std::queue<PointerObjectIndex> pointeeEscapers;
 
-  // First add all already escaped PointerObjects to the queue
+  // First add all unification roots marked as PointeesEscaping
   for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
-    if (set.HasEscaped(idx))
-      escapers.push(idx);
+    if (set.IsUnificationRoot(idx) && set.HasPointeesEscaping(idx))
+      pointeeEscapers.push(idx);
   }
 
   bool modified = false;
 
-  // For all escapers, check if they point to any PointerObjects not marked as escaped
-  while (!escapers.empty())
+  // For all pointee escapers, check if they point to any PointerObjects not marked as escaped
+  while (!pointeeEscapers.empty())
   {
-    const PointerObjectIndex escaper = escapers.front();
-    escapers.pop();
+    const PointerObjectIndex pointeeEscaper = pointeeEscapers.front();
+    pointeeEscapers.pop();
 
-    for (PointerObjectIndex pointee : set.GetPointsToSet(escaper).Items())
+    for (PointerObjectIndex pointee : set.GetPointsToSet(pointeeEscaper).Items())
     {
-      if (set.MarkAsEscaped(pointee))
+      const auto unificationRoot = set.GetUnificationRoot(pointee);
+      const bool prevHasPointeesEscaping = set.HasPointeesEscaping(unificationRoot);
+
+      modified |= set.MarkAsEscaped(pointee);
+
+      // If the pointee's unification root previously didn't have the PointeesEscaping flag,
+      // add it to the queue
+      if (!prevHasPointeesEscaping)
       {
-        // Add the newly marked PointerObject to the queue, in case the flag can be propagated
-        escapers.push(pointee);
-        modified = true;
+        JLM_ASSERT(set.HasPointeesEscaping(unificationRoot));
+        pointeeEscapers.push(unificationRoot);
       }
     }
   }
@@ -597,22 +637,22 @@ EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
 }
 
 /**
- * Given an escaped function, the results should be marked as escaped,
+ * Given an escaped function, the results registers should be marked as escaping pointees,
  * and all arguments as pointing to external, provided they are of types we track the pointees of.
  * The modifications are made using the provided functors, which are called only if any flags are
  * missing. Each functor takes a single parameter:
  *   The index of a PointerObject of Register kind that is missing the specified flag.
  * @param set the PointerObjectSet representing this module
  * @param lambda the escaped PointerObject of function kind
- * @param markAsEscaped the function to call when a PointerObject should be marked as escaped
+ * @param markAsPointeesEscaping the function to call when marking a register as pointees escaping
  * @param markAsPointsToExternal called to flag a PointerObject as pointing to external
  */
-template<typename MarkAsEscapedFunctor, typename MarkAsPointsToExternalFunctor>
+template<typename MarkAsPointeesEscapingFunctor, typename MarkAsPointsToExternalFunctor>
 static void
 HandleEscapedFunction(
     PointerObjectSet & set,
     PointerObjectIndex lambda,
-    MarkAsEscapedFunctor & markAsEscaped,
+    MarkAsPointeesEscapingFunctor & markAsPointeesEscaping,
     MarkAsPointsToExternalFunctor & markAsPointsToExternal)
 {
   JLM_ASSERT(set.GetPointerObjectKind(lambda) == PointerObjectKind::FunctionMemoryObject);
@@ -647,8 +687,8 @@ HandleEscapedFunction(
     if (set.HasEscaped(resultPO.value()))
       continue;
 
-    // Mark the result register as escaped
-    markAsEscaped(resultPO.value());
+    // Mark the result register as escaping any pointees it may have
+    markAsPointeesEscaping(resultPO.value());
   }
 }
 
@@ -657,22 +697,20 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
 {
   bool modified = false;
 
-  const auto markAsEscaped = [&](PointerObjectIndex index)
+  const auto markAsPointeesEscaping = [&](PointerObjectIndex index)
   {
-    set.MarkAsEscaped(index);
-    modified = true;
+    modified |= set.MarkAsPointeesEscaping(index);
   };
 
   const auto markAsPointsToExternal = [&](PointerObjectIndex index)
   {
-    set.MarkAsPointingToExternal(index);
-    modified = true;
+    modified |= set.MarkAsPointingToExternal(index);
   };
 
   for (const auto [lambda, lambdaPO] : set.GetFunctionMap())
   {
     if (set.HasEscaped(lambdaPO))
-      HandleEscapedFunction(set, lambdaPO, markAsEscaped, markAsPointsToExternal);
+      HandleEscapedFunction(set, lambdaPO, markAsPointeesEscaping, markAsPointsToExternal);
   }
 
   return modified;
@@ -697,12 +735,8 @@ PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObjectIndex poi
 void
 PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObjectIndex registerIndex)
 {
-  // Registers themselves can't escape in the classical sense, since they don't have an address.
-  // (CanBePointee() is false)
-  // When marked as Escaped, it instead means that the contents of the register has escaped.
-  // This allows Escaped-flag propagation to mark any pointee the register might hold as escaped.
-  JLM_ASSERT(Set_.GetPointerObjectKind(registerIndex) == PointerObjectKind::Register);
-  Set_.MarkAsEscaped(registerIndex);
+  JLM_ASSERT(Set_.IsPointerObjectRegister(registerIndex));
+  Set_.MarkAsPointeesEscaping(registerIndex);
 }
 
 void
@@ -721,13 +755,16 @@ size_t
 PointerObjectConstraintSet::SolveUsingWorklist()
 {
   // Create auxiliary superset graph.
+  // All edges must have their tail be a unification root.
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
   std::vector<util::HashSet<PointerObjectIndex>> supersetEdges(Set_.NumPointerObjects());
 
   // Create quick lookup tables for Load, Store and function call constraints.
   // Lookup is indexed by the constraint's pointer
-  std::vector<std::vector<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
-  std::vector<std::vector<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
+  // The constraints need to be added to the unification root, as only unification roots
+  // are allowed on the worklist.
+  std::vector<util::HashSet<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
+  std::vector<util::HashSet<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
   std::vector<std::vector<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
 
   for (const auto & constraint : Constraints_)
@@ -735,47 +772,49 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     if (const auto * ssConstraint = std::get_if<SupersetConstraint>(&constraint))
     {
       // Superset constraints become edges in the superset graph
-      const auto superset = ssConstraint->GetSuperset();
-      const auto subset = ssConstraint->GetSubset();
-      JLM_ASSERT(superset < Set_.NumPointerObjects() && subset < Set_.NumPointerObjects());
+      auto superset = Set_.GetUnificationRoot(ssConstraint->GetSuperset());
+      auto subset = Set_.GetUnificationRoot(ssConstraint->GetSubset());
 
       supersetEdges[subset].Insert(superset);
     }
     else if (const auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
     {
-      const auto pointer = storeConstraint->GetPointer();
-      const auto value = storeConstraint->GetValue();
-      JLM_ASSERT(pointer < Set_.NumPointerObjects() && value < Set_.NumPointerObjects());
+      auto pointer = Set_.GetUnificationRoot(storeConstraint->GetPointer());
+      auto value = Set_.GetUnificationRoot(storeConstraint->GetValue());
 
-      storeConstraints[pointer].push_back(value);
+      storeConstraints[pointer].Insert(value);
     }
     else if (const auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
     {
-      const auto pointer = loadConstraint->GetPointer();
-      const auto value = loadConstraint->GetValue();
-      JLM_ASSERT(pointer < Set_.NumPointerObjects() && value < Set_.NumPointerObjects());
+      auto pointer = Set_.GetUnificationRoot(loadConstraint->GetPointer());
+      auto value = Set_.GetUnificationRoot(loadConstraint->GetValue());
 
-      loadConstraints[pointer].push_back(value);
+      loadConstraints[pointer].Insert(value);
     }
     else if (const auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
     {
-      const auto pointer = callConstraint->GetPointer();
+      auto pointer = Set_.GetUnificationRoot(callConstraint->GetPointer());
       const auto & callNode = callConstraint->GetCallNode();
-      JLM_ASSERT(pointer < Set_.NumPointerObjects());
 
       callConstraints[pointer].push_back(&callNode);
     }
   }
 
-  // The worklist, initialized with every object
+  // The worklist, initialized with every unification root
   util::LrfWorklist<PointerObjectIndex> worklist;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
-    worklist.PushWorkItem(i);
+  {
+    if (Set_.IsUnificationRoot(i))
+      worklist.PushWorkItem(i);
+  }
 
   // Helper function for adding superset edges, propagating everything currently in the subset.
-  // The superset is added to the work list if its points-to set or flags are changed.
+  // The superset's root is added to the work list if its points-to set or flags are changed.
   const auto AddSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
   {
+    superset = Set_.GetUnificationRoot(superset);
+    subset = Set_.GetUnificationRoot(subset);
+
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
       return;
@@ -788,19 +827,25 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     worklist.PushWorkItem(superset);
   };
 
-  // Helper function for flagging a pointer object as escaped. Adds to the worklist if changed
-  const auto MarkAsEscaped = [&](PointerObjectIndex index)
+  // Helper function for marking a PointerObject such that all its pointees will escape
+  const auto MarkAsPointeesEscaping = [&](PointerObjectIndex index)
   {
-    if (Set_.MarkAsEscaped(index))
+    index = Set_.GetUnificationRoot(index);
+    if (Set_.MarkAsPointeesEscaping(index))
       worklist.PushWorkItem(index);
   };
 
   // Helper function for flagging a pointer as pointing to external. Adds to the worklist if changed
   const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
   {
+    index = Set_.GetUnificationRoot(index);
     if (Set_.MarkAsPointingToExternal(index))
       worklist.PushWorkItem(index);
   };
+
+  // Ensure that all functions that have already escaped have informed their arguments and results
+  // The worklist will only inform functions if their HasEscaped flag changes
+  EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
 
   // Count of the total number of work items fired
   size_t numWorkItems = 0;
@@ -809,14 +854,23 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   // - It has never been fired
   // - It has pointees added since the last time it was fired
   // - It has been marked as pointing to external since last time it was fired
-  // - It has been marked as escaping since the last time it was fired
+  // - It has been marked as escaping all pointees since last time it was fired
+  // All work items are unification roots, or were unification roots when added
   while (worklist.HasMoreWorkItems())
   {
     const auto n = worklist.PopWorkItem();
     numWorkItems++;
 
+    // Only visit unification roots
+    const auto root = Set_.GetUnificationRoot(n);
+    if (n != root)
+    {
+      worklist.PushWorkItem(root);
+      continue;
+    }
+
     // Stores on the form *n = value.
-    for (const auto value : storeConstraints[n])
+    for (const auto value : storeConstraints[n].Items())
     {
       // This loop ensures *P(n) supseteq P(value)
       for (const auto pointee : Set_.GetPointsToSet(n).Items())
@@ -824,11 +878,11 @@ PointerObjectConstraintSet::SolveUsingWorklist()
 
       // If P(n) contains "external", the contents of the written value escapes
       if (Set_.IsPointingToExternal(n))
-        MarkAsEscaped(value);
+        MarkAsPointeesEscaping(value);
     }
 
     // Loads on the form value = *n.
-    for (const auto value : loadConstraints[n])
+    for (const auto value : loadConstraints[n].Items())
     {
       // This loop ensures P(value) supseteq *P(n)
       for (const auto pointee : Set_.GetPointsToSet(n).Items())
@@ -851,7 +905,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
               Set_,
               *callNode,
               pointee,
-              MarkAsEscaped,
+              MarkAsPointeesEscaping,
               MarkAsPointsToExternal);
         else if (kind == PointerObjectKind::FunctionMemoryObject)
           HandleCallingLambdaFunction(Set_, *callNode, pointee, AddSupersetEdge);
@@ -859,25 +913,46 @@ PointerObjectConstraintSet::SolveUsingWorklist()
 
       // If P(n) contains "external", handle calling external functions
       if (Set_.IsPointingToExternal(n))
-        HandleCallingExternalFunction(Set_, *callNode, MarkAsEscaped, MarkAsPointsToExternal);
+        HandleCallingExternalFunction(
+            Set_,
+            *callNode,
+            MarkAsPointeesEscaping,
+            MarkAsPointsToExternal);
     }
 
     // Propagate P(n) along all edges n -> superset
-    for (const auto superset : supersetEdges[n].Items())
+    for (auto superset : supersetEdges[n].Items())
     {
+      // FIXME: Replace edges going to non-roots
+      superset = Set_.GetUnificationRoot(superset);
       if (Set_.MakePointsToSetSuperset(superset, n))
         worklist.PushWorkItem(superset);
     }
 
-    // If escaped, propagate escaped flag to all pointees
-    if (Set_.HasEscaped(n))
+    // If n is marked as PointeesEscaping, add the escaped flag to all pointees
+    if (Set_.HasPointeesEscaping(n))
     {
       for (const auto pointee : Set_.GetPointsToSet(n).Items())
-        MarkAsEscaped(pointee);
+      {
+        const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
+        const bool prevPointeesEscaping = Set_.HasPointeesEscaping(pointeeRoot);
 
-      // Escaped functions also need to flag arguments and results in the function body
-      if (Set_.GetPointerObjectKind(n) == PointerObjectKind::FunctionMemoryObject)
-        HandleEscapedFunction(Set_, n, MarkAsEscaped, MarkAsPointsToExternal);
+        // Mark the pointee itself as escaped, not the pointee's unifiction root!
+        if (!Set_.MarkAsEscaped(pointee))
+          continue;
+
+        // If the PointerObject we just marked as escaped is a function, inform it about escaping
+        if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
+          HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
+
+        // If the pointee's unification root previously didn't have the PointeesEscaping flag,
+        // add the unification root to the worklist
+        if (!prevPointeesEscaping)
+        {
+          JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
+          worklist.PushWorkItem(pointeeRoot);
+        }
+      }
     }
   }
 

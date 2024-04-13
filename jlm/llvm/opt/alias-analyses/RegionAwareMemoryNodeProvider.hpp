@@ -185,6 +185,18 @@ private:
   static bool
   ShouldCreateRegionSummary(const rvsdg::region & region);
 
+  /**
+   * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the
+   * RegionAwareMemoryNodeProvider.
+   *
+   * @param rvsdg The RVSDG that is converted to a region tree.
+   * @param provisioning The provisioning used for annotating the region tree.
+   *
+   * @return A string that contains the region tree.
+   */
+  static std::string
+  ToRegionTree(const rvsdg::graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
+
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 };
 

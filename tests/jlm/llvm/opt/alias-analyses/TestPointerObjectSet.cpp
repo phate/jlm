@@ -23,17 +23,16 @@ TestFlagFunctions()
   PointerObjectSet set;
   auto registerPO = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
 
-  // Registers may only point, not be pointee
-  assert(set.CanPointerObjectPoint(registerPO));
-  assert(!set.CanPointerObjectBePointee(registerPO));
+  assert(set.ShouldTrackPointees(registerPO));
+  assert(set.IsPointerObjectRegister(registerPO));
 
-  // Escaping flag
-  assert(!set.HasEscaped(registerPO));
-  assert(set.MarkAsEscaped(registerPO));
-  assert(set.HasEscaped(registerPO));
+  // PointeesEscaping flag
+  assert(!set.HasPointeesEscaping(registerPO));
+  assert(set.MarkAsPointeesEscaping(registerPO));
+  assert(set.HasPointeesEscaping(registerPO));
   // Trying to set the flag again returns false
-  assert(!set.MarkAsEscaped(registerPO));
-  assert(set.HasEscaped(registerPO));
+  assert(!set.MarkAsPointeesEscaping(registerPO));
+  assert(set.HasPointeesEscaping(registerPO));
 
   // PointsToExternal flag. For registers, the two flags are completely independent.
   assert(!set.IsPointingToExternal(registerPO));
@@ -46,27 +45,25 @@ TestFlagFunctions()
   // Test that Escaped implies PointsToExternal, for memory objects
   auto allocaPO = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
 
-  // alloca may both point and be a pointee
-  assert(set.CanPointerObjectPoint(allocaPO));
-  assert(set.CanPointerObjectBePointee(allocaPO));
+  // alloca may both point
+  assert(set.ShouldTrackPointees(allocaPO));
+  assert(!set.IsPointerObjectRegister(allocaPO));
 
-  // Escaping means another module can write a pointer to you -> set the points to external flag
+  // Escaping means another module can write a pointer to you.
+  // This implies another module might override it with pointers to external.
+  // It also implies any pointees should also escape
   assert(!set.IsPointingToExternal(allocaPO));
+  assert(!set.HasPointeesEscaping(allocaPO));
   assert(set.MarkAsEscaped(allocaPO));
   assert(set.IsPointingToExternal(allocaPO));
-  // Already marked as pointing to external
+  assert(set.HasPointeesEscaping(allocaPO));
+  // Already marked with these flags, trying to set them again makes no difference
   assert(!set.MarkAsPointingToExternal(allocaPO));
+  assert(!set.MarkAsPointeesEscaping(allocaPO));
 
-  // Test that Functions, who have CanPoint() == false, can not be made to PointToExternal
+  // The analysis should not bother tracking the pointees of lambdas
   auto lambdaPO = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
-
-  // functions may only be pointees
-  assert(!set.CanPointerObjectPoint(lambdaPO));
-  assert(set.CanPointerObjectBePointee(lambdaPO));
-
-  // Adding the points to external flag does not work
-  assert(!set.MarkAsPointingToExternal(lambdaPO));
-  assert(!set.IsPointingToExternal(lambdaPO));
+  assert(!set.ShouldTrackPointees(lambdaPO));
 }
 
 // Test creating pointer objects for each type of memory node
@@ -107,7 +104,6 @@ TestCreatePointerObjects()
   assert(!set.HasEscaped(alloca0) && !set.IsPointingToExternal(alloca0));
   assert(!set.HasEscaped(malloc0) && !set.IsPointingToExternal(malloc0));
   assert(!set.HasEscaped(delta0) && !set.IsPointingToExternal(delta0));
-  assert(!set.HasEscaped(lambda0) && !set.IsPointingToExternal(lambda0));
   // But import memory objects have always escaped
   assert(set.HasEscaped(import0) && set.IsPointingToExternal(import0));
 
@@ -138,12 +134,21 @@ TestPointerObjectUnification()
   PointerObjectSet set;
   auto dummy0 = set.CreateDummyRegisterPointerObject();
   auto dummy1 = set.CreateDummyRegisterPointerObject();
-  assert(set.GetUnificationRoot(dummy0) == dummy0);
+  assert(set.IsUnificationRoot(dummy0));
 
   auto root = set.UnifyPointerObjects(dummy0, dummy1);
   assert(set.GetUnificationRoot(dummy0) == root);
   assert(set.GetUnificationRoot(dummy1) == root);
+
+  // Exactly one of the PointerObjects is the root
+  assert((root == dummy0) != (root == dummy1));
+  assert(set.IsUnificationRoot(root));
+
+  // Trying to unify again gives the same root
   assert(set.UnifyPointerObjects(dummy0, dummy1) == root);
+
+  auto notRoot = dummy0 + dummy1 - root;
+  assert(!set.IsUnificationRoot(notRoot));
 
   auto dummy2 = set.CreateDummyRegisterPointerObject();
   auto dummy3 = set.CreateDummyRegisterPointerObject();
@@ -183,6 +188,11 @@ TestPointerObjectUnificationPointees()
   assert(set.IsPointingToExternal(alloca0));
   assert(set.IsPointingToExternal(delta0));
 
+  // Marking one as pointees escaping marks all as pointees escaping
+  assert(set.MarkAsPointeesEscaping(delta0));
+  assert(set.HasPointeesEscaping(alloca0));
+  assert(set.HasPointeesEscaping(delta0));
+
   // Adding a new pointee adds it to all members
   auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
   assert(set.AddToPointsToSet(delta0, import0));
@@ -216,11 +226,6 @@ TestAddToPointsToSet()
 
   // Trying to add it again returns false
   assert(!set.AddToPointsToSet(reg0, alloca0));
-
-  // Trying to make a function (CanPoint() == false) point to something is a no-op
-  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
-  assert(!set.AddToPointsToSet(function0, alloca0));
-  assert(set.GetPointsToSet(function0).Size() == 0);
 }
 
 // Test the PointerObjectSet method for making one points-to-set a superset of another
@@ -257,37 +262,6 @@ TestMakePointsToSetSuperset()
   set.AddToPointsToSet(reg1, alloca2);
   assert(set.MakePointsToSetSuperset(reg0, reg1));
   assert(set.GetPointsToSet(reg0).Contains(alloca2));
-
-  // Trying to make a function's points-to-set a superset is a no-op
-  // Since functions have CanPoint() == false.
-  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetFunction());
-  assert(!set.MakePointsToSetSuperset(function0, reg0));
-  assert(set.GetPointsToSet(function0).IsEmpty());
-}
-
-// Test the PointerObjectSet method for marking all pointees of the given pointer as escaped
-static void
-TestMarkAllPointeesAsEscaped()
-{
-  using namespace jlm::llvm::aa;
-
-  jlm::tests::NAllocaNodesTest rvsdg(3);
-  rvsdg.InitializeTest();
-
-  PointerObjectSet set;
-  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  const auto reg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
-  const auto alloca1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  const auto alloca2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-
-  set.AddToPointsToSet(reg0, alloca0);
-  set.AddToPointsToSet(reg0, alloca1);
-  assert(set.MarkAllPointeesAsEscaped(reg0));
-
-  assert(set.HasEscaped(alloca0));
-  assert(set.HasEscaped(alloca1));
-  assert(!set.HasEscaped(reg0));
-  assert(!set.HasEscaped(alloca2));
 }
 
 static void
@@ -502,11 +476,14 @@ TestEscapedFunctionConstraint()
   assert(!set.HasEscaped(exportedFunctionPO));
 
   set.MarkAsEscaped(exportedFunctionPO);
+
+  // Use both EscapedFunctionConstraint and EscapeFlagConstraint to propagate flags
   result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
+  result &= EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
 
   // Now the local function has been marked as escaped as well, since it is the return value
   assert(result);
-  assert(set.HasEscaped(localFunctionRegisterPO));
+  assert(set.HasEscaped(localFunctionPO));
 }
 
 static void
@@ -791,7 +768,6 @@ TestPointerObjectSet()
   TestPointerObjectUnificationPointees();
   TestAddToPointsToSet();
   TestMakePointsToSetSuperset();
-  TestMarkAllPointeesAsEscaped();
   TestClonePointerObjectSet();
   TestSupersetConstraint();
   TestStoreConstraintDirectly();

@@ -8,7 +8,6 @@
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/Statistics.hpp>
 
