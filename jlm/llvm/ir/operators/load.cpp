@@ -100,48 +100,6 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
   return false;
 }
 
-/*
-  a s = alloca_op
-  ss = store_op a ... s
-  v sl = load_op a ss
-  =>
-  v s
-*/
-static bool
-is_load_store_alloca_reducible(const std::vector<rvsdg::output *> & operands)
-{
-  if (operands.size() != 2)
-    return false;
-
-  auto address = operands[0];
-  auto state = operands[1];
-
-  auto alloca = rvsdg::node_output::node(address);
-  if (!is<alloca_op>(alloca))
-    return false;
-
-  auto store = rvsdg::node_output::node(state);
-  if (!is<StoreOperation>(store))
-    return false;
-
-  if (store->input(0)->origin() != alloca->output(0))
-    return false;
-
-  if (store->ninputs() != 3)
-    return false;
-
-  if (store->input(2)->origin() != alloca->output(1))
-    return false;
-
-  if (alloca->output(1)->nusers() != 1)
-    return false;
-
-  if (address->nusers() != 2)
-    return false;
-
-  return true;
-}
-
 static bool
 is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 {
@@ -278,17 +236,6 @@ perform_load_store_reduction(
   results.insert(results.end(), std::next(operands.begin()), operands.end());
 
   return results;
-}
-
-static std::vector<rvsdg::output *>
-perform_load_store_alloca_reduction(
-    const LoadOperation & op,
-    const std::vector<rvsdg::output *> & operands)
-{
-  auto allocanode = rvsdg::node_output::node(operands[0]);
-  auto storenode = rvsdg::node_output::node(operands[1]);
-
-  return { storenode->input(1)->origin(), allocanode->output(1) };
 }
 
 static std::vector<rvsdg::output *>
@@ -489,8 +436,7 @@ load_normal_form::load_normal_form(
       enable_load_alloca_(false),
       enable_load_load_state_(false),
       enable_multiple_origin_(false),
-      enable_load_store_state_(false),
-      enable_load_store_alloca_(false)
+      enable_load_store_state_(false)
 {}
 
 bool
@@ -538,13 +484,6 @@ load_normal_form::normalize_node(rvsdg::node * node) const
     return false;
   }
 
-  if (get_load_store_alloca_reducible() && is_load_store_alloca_reducible(operands))
-  {
-    divert_users(node, perform_load_store_alloca_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
   if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
   {
     divert_users(node, perform_load_load_state_reduction(*op, operands));
@@ -581,9 +520,6 @@ load_normal_form::normalized_create(
 
   if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
     return perform_multiple_origin_reduction(*lop, operands);
-
-  if (get_load_store_alloca_reducible() && is_load_store_alloca_reducible(operands))
-    return perform_load_store_alloca_reduction(*lop, operands);
 
   if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
     return perform_load_load_state_reduction(*lop, operands);
