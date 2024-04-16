@@ -456,6 +456,12 @@ public:
     return *RegionSummaries_.find(&region)->second;
   }
 
+  [[nodiscard]] RegionSummary *
+  TryGetRegionSummary(const rvsdg::region & region) const
+  {
+    return ContainsRegionSummary(region) ? &GetRegionSummary(region) : nullptr;
+  }
+
   const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetExternalFunctionNodes(const rvsdg::argument & import) const
   {
@@ -618,7 +624,6 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
     util::StatisticsCollector & statisticsCollector)
 {
   Provisioning_ = RegionAwareMemoryNodeProvisioning::Create(pointsToGraph);
-
   auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, pointsToGraph);
 
   statistics->StartAnnotationStatistics();
@@ -664,21 +669,15 @@ RegionAwareMemoryNodeProvider::Create(
 void
 RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::region & region)
 {
-  RegionSummary * regionSummary = nullptr;
   if (ShouldCreateRegionSummary(region))
   {
-    regionSummary = &Provisioning_->AddRegionSummary(RegionSummary::Create(region));
+    Provisioning_->AddRegionSummary(RegionSummary::Create(region));
   }
 
   for (auto & node : region.nodes)
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
     {
-      if (regionSummary)
-      {
-        regionSummary->AddStructuralNode(*structuralNode);
-      }
-
       AnnotateStructuralNode(*structuralNode);
     }
     else if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
@@ -838,6 +837,11 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::structural_no
     return;
   }
 
+  if (auto regionSummary = Provisioning_->TryGetRegionSummary(*structuralNode.region()))
+  {
+    regionSummary->AddStructuralNode(structuralNode);
+  }
+
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
     AnnotateRegion(*structuralNode.subregion(n));
@@ -876,10 +880,15 @@ RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
 void
 RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 {
+  auto lambdaNodes = phi::node::ExtractLambdaNodes(phiNode);
+  if (lambdaNodes.empty())
+  {
+    // Nothing needs to be done if the phi node only contains delta nodes.
+    return;
+  }
+
   auto & phiNodeSubregion = *phiNode.subregion();
   PropagateRegion(phiNodeSubregion);
-
-  auto lambdaNodes = phi::node::ExtractLambdaNodes(phiNode);
 
   util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
   util::HashSet<const rvsdg::simple_node *> unknownMemoryNodeReferences;
