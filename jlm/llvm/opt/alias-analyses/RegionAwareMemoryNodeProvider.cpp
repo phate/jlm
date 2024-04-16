@@ -876,34 +876,6 @@ RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
 void
 RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 {
-  std::function<void(
-      const rvsdg::region &,
-      const util::HashSet<const PointsToGraph::MemoryNode *> &,
-      const util::HashSet<const rvsdg::simple_node *> &)>
-      assignAndPropagateMemoryNodes =
-          [&](const rvsdg::region & region,
-              const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
-              const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences)
-  {
-    auto & regionSummary = Provisioning_->GetRegionSummary(region);
-    for (auto structuralNode : regionSummary.GetStructuralNodes().Items())
-    {
-      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
-      {
-        auto & subregion = *structuralNode->subregion(n);
-        assignAndPropagateMemoryNodes(subregion, memoryNodes, unknownMemoryNodeReferences);
-
-        auto & subregionSummary = Provisioning_->GetRegionSummary(subregion);
-        if (subregionSummary.GetRecursiveCalls().Size() != 0)
-        {
-          subregionSummary.AddMemoryNodes(memoryNodes);
-          subregionSummary.AddUnknownMemoryNodeReferences(unknownMemoryNodeReferences);
-        }
-        RegionSummary::Propagate(regionSummary, subregionSummary);
-      }
-    }
-  };
-
   auto & phiNodeSubregion = *phiNode.subregion();
   PropagateRegion(phiNodeSubregion);
 
@@ -918,7 +890,32 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
     unknownMemoryNodeReferences.UnionWith(regionSummary.GetUnknownMemoryNodeReferences());
   }
 
-  assignAndPropagateMemoryNodes(phiNodeSubregion, memoryNodes, unknownMemoryNodeReferences);
+  AssignAndPropagateMemoryNodes(phiNodeSubregion, memoryNodes, unknownMemoryNodeReferences);
+}
+
+void
+RegionAwareMemoryNodeProvider::AssignAndPropagateMemoryNodes(
+    const rvsdg::region & region,
+    const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
+    const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences)
+{
+  auto & regionSummary = Provisioning_->GetRegionSummary(region);
+  for (auto structuralNode : regionSummary.GetStructuralNodes().Items())
+  {
+    for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+    {
+      auto & subregion = *structuralNode->subregion(n);
+      AssignAndPropagateMemoryNodes(subregion, memoryNodes, unknownMemoryNodeReferences);
+
+      auto & subregionSummary = Provisioning_->GetRegionSummary(subregion);
+      if (subregionSummary.GetRecursiveCalls().Size() != 0)
+      {
+        subregionSummary.AddMemoryNodes(memoryNodes);
+        subregionSummary.AddUnknownMemoryNodeReferences(unknownMemoryNodeReferences);
+      }
+      RegionSummary::Propagate(regionSummary, subregionSummary);
+    }
+  }
 }
 
 void
