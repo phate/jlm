@@ -8,7 +8,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
     jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
     jlm/hls/backend/rhls2firrtl/json-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/mlirgen.cpp \
+    jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
     \
     jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
@@ -41,7 +41,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/json-hls.hpp \
-	jlm/hls/backend/rhls2firrtl/mlirgen.hpp \
+	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
 	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
 	\
 	jlm/hls/backend/rvsdg2rhls/add-buffers.hpp \
