@@ -25,21 +25,9 @@ add_buffers(jlm::rvsdg::region * region, bool pass_through)
     }
     else if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (jlm::rvsdg::is<hls::buffer_op>(node))
+      if (jlm::rvsdg::is<hls::load_op>(node) || jlm::rvsdg::is<hls::decoupled_load_op>(node))
       {
-        continue;
-      }
-      else if (is_constant(node))
-      {
-        continue;
-      }
-      else if (jlm::rvsdg::is<hls::print_op>(node))
-      {
-        continue;
-      }
-      for (size_t i = 0; i < node->noutputs(); ++i)
-      {
-        auto out = node->output(i);
+        auto out = node->output(0);
         JLM_ASSERT(out->nusers() == 1);
         if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(*out->begin()))
         {
@@ -53,7 +41,7 @@ add_buffers(jlm::rvsdg::region * region, bool pass_through)
         jlm::rvsdg::output * new_out;
         if (pass_through)
         {
-          new_out = buffer_op::create(*out, 10, true)[0];
+          new_out = buffer_op::create(*out, 20, true)[0];
         }
         else
         {
@@ -62,6 +50,36 @@ add_buffers(jlm::rvsdg::region * region, bool pass_through)
         for (auto user : old_users)
         {
           user->divert_to(new_out);
+        }
+      }
+      if (jlm::rvsdg::is<hls::fork_op>(node) || jlm::rvsdg::is<hls::state_gate_op>(node))
+      {
+        for (size_t i = 0; i < node->noutputs(); ++i)
+        {
+          auto out = node->output(i);
+          JLM_ASSERT(out->nusers() == 1);
+          if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(*out->begin()))
+          {
+            auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->operation());
+            if (buf && (buf->pass_through || !pass_through))
+            {
+              continue;
+            }
+          }
+          std::vector<jlm::rvsdg::input *> old_users(out->begin(), out->end());
+          jlm::rvsdg::output * new_out;
+          if (pass_through)
+          {
+            new_out = buffer_op::create(*out, 10, true)[0];
+          }
+          else
+          {
+            new_out = buffer_op::create(*out, 1, false)[0];
+          }
+          for (auto user : old_users)
+          {
+            user->divert_to(new_out);
+          }
         }
       }
     }
@@ -76,4 +94,4 @@ add_buffers(llvm::RvsdgModule & rm, bool pass_through)
   add_buffers(root, pass_through);
 }
 
-}
+} // namespace hls::hls

@@ -20,6 +20,6 @@ namespace jlm::hls
 void
 ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule);
 
-}
+} // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_GAMMACONVERSION_HPP

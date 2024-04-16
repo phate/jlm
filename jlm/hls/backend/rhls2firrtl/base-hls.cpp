@@ -125,6 +125,10 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
   {
     return 1;
   }
+  else if (dynamic_cast<const bundletype *>(type))
+  {
+    return 0; // TODO: fix this ugly hack needed for get_node_name
+  }
   else
   {
     throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");
@@ -175,4 +179,4 @@ BaseHLS::get_base_file_name(const llvm::RvsdgModule & rm)
   return base_file_name;
 }
 
-}
+} // namespace jlm::hls

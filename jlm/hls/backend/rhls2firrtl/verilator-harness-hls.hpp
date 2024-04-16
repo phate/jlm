@@ -29,8 +29,20 @@ private:
 
   std::string
   convert_to_c_type_postfix(const jlm::rvsdg::type * type);
+
+  void
+  get_function_header(
+      std::ostringstream & cpp,
+      const llvm::lambda::node * ln,
+      const std::string & function_name);
+
+  void
+  call_function(
+      std::ostringstream & cpp,
+      const llvm::lambda::node * ln,
+      const std::string & function_name);
 };
 
-}
+} // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP

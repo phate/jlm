@@ -26,14 +26,17 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rm);
 
 void
-dump_ref(llvm::RvsdgModule & rhls);
+rvsdg2ref(llvm::RvsdgModule & rm, std::string path);
 
-const rvsdg::output *
-trace_call(rvsdg::input * input);
+void
+dump_ref(llvm::RvsdgModule & rhls, std::string & path);
+
+const jlm::rvsdg::output *
+trace_call(jlm::rvsdg::input * input);
 
 std::unique_ptr<llvm::RvsdgModule>
 split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name);
 
-}
+} // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP

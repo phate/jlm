@@ -78,4 +78,4 @@ ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule)
   ConvertThetaNodesInRegion(*rvsdgModule.Rvsdg().root());
 }
 
-}
+} // namespace jlm::hls

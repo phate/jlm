@@ -31,7 +31,7 @@ DotHLS::argument_to_dot(jlm::rvsdg::argument * port)
   auto name = get_port_name(port);
 
   auto dot =
-      "{rank=source; " + name
+      name
       + " [shape=plaintext label=<\n"
         "            <TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\" CELLPADDING=\"0\">\n"
         "                <TR>\n"
@@ -40,7 +40,7 @@ DotHLS::argument_to_dot(jlm::rvsdg::argument * port)
       + "</FONT></TD>\n"
         "                </TR>\n"
         "            </TABLE>\n"
-        ">];}\n";
+        ">];\n";
   return dot;
 }
 
@@ -170,9 +170,14 @@ std::string
 DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::type & type, bool back)
 {
   auto color = "black";
+  JLM_ASSERT(src != "" && snk != "");
   if (dynamic_cast<const jlm::rvsdg::ctltype *>(&type))
   {
     color = "green";
+  }
+  else if (dynamic_cast<const llvm::MemoryStateType *>(&type))
+  {
+    color = "blue";
   }
   if (!back)
   {
@@ -186,7 +191,7 @@ DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::type & type, bo
          "constraint=false];\n";
   //	return snk + " -> " + src + " [style=\"\", arrowhead=\"normal\", color=" + color +
   //		   ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black,
-  //  dir=back];\n";
+  // dir=back];\n";
 }
 
 std::string
@@ -227,6 +232,9 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     }
     else if (auto ln = dynamic_cast<hls::loop_node *>(node))
     {
+      // need to prepare output here again, because inputs might not have been resolved yet, because
+      // nodes in outer loop were not yet processed.
+      prepare_loop_out_port(ln);
       dot << loop_to_dot(ln);
     }
     else
@@ -241,10 +249,21 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
     auto mx = dynamic_cast<const hls::mux_op *>(&node->operation());
-    if (mx && !mx->discarding && mx->loop)
+    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->operation());
+    if ((mx && !mx->discarding && mx->loop) || lc)
     {
       dot << get_node_name(node) << " ";
     }
+    //        // also have the fork after the pred buf here
+    //        auto fork = dynamic_cast<const hls::fork_op*>(&node->operation());
+    //        if(fork){
+    //            auto origin_out =
+    //            dynamic_cast<jlm::rvsdg::node_output*>(node->input(0)->origin()); if(origin_out &&
+    //            dynamic_cast<const
+    //            predicate_buffer_op*>(&origin_out->node()->operation())){
+    //                dot << get_node_name(node) << " ";
+    //            }
+    //        }
   }
   dot << "}\n";
   // all loop branches at one level
@@ -274,7 +293,14 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
         auto origin = output_map[node->input(i)->origin()];
         // implement edge as back edge when it produces a cycle
         bool back = mx && !mx->discarding && mx->loop
-                 && (i == 0 || i == 2); // back_outputs.count(node->input(i)->origin());
+                 && (/*i==0||*/ i == 2); // back_outputs.count(node->input(i)->origin());
+        auto origin_out = dynamic_cast<jlm::rvsdg::node_output *>(node->input(i)->origin());
+        if (origin_out
+            && dynamic_cast<const predicate_buffer_op *>(&origin_out->node()->operation()))
+        {
+          //
+          back = true;
+        }
         dot << edge(origin, in_name, node->input(i)->type(), back);
       }
     }
@@ -344,6 +370,18 @@ DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
   {
     dot << argument_to_dot(sr->argument(i));
   }
+  // order arguments horizontally
+  dot << "{rank=source; ";
+  for (size_t i = 0; i < sr->narguments(); ++i)
+  {
+    if (i > 0)
+    {
+      dot << " -> ";
+    }
+    dot << get_port_name(sr->argument(i));
+  }
+  dot << "[style = invis]}";
+
   for (size_t i = 0; i < sr->nresults(); ++i)
   {
     dot << result_to_dot(sr->result(i));
@@ -352,10 +390,12 @@ DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
   dot << "color=\"#80b3ff\"\n";
   dot << "penwidth=6\n";
 
+  // process arguments
   for (size_t i = 0; i < sr->narguments(); ++i)
   {
     output_map[sr->argument(i)] = get_port_name(sr->argument(i));
   }
+  // process nodes
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
     if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
@@ -377,6 +417,7 @@ DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
     }
     else if (auto ln = dynamic_cast<hls::loop_node *>(node))
     {
+      // the only structural nodes left are loop nodes
       prepare_loop_out_port(ln);
       dot << loop_to_dot(ln);
     }
@@ -386,6 +427,7 @@ DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
           "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
     }
   }
+  // process results
   for (size_t i = 0; i < sr->nresults(); ++i)
   {
     auto origin = output_map[sr->result(i)->origin()];
@@ -397,4 +439,4 @@ DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
   return dot.str();
 }
 
-}
+} // namespace jlm::hls

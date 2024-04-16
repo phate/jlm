@@ -5,7 +5,8 @@
 
 #include <jlm/hls/backend/rhls2firrtl/dot-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp>
-#include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
+#include <jlm/hls/backend/rhls2firrtl/json-hls.hpp>
+#include <jlm/hls/backend/rhls2firrtl/mlirgen.hpp>
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
@@ -73,13 +74,14 @@ main(int argc, char ** argv)
   if (commandLineOptions.OutputFormat_
       == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Firrtl)
   {
+    jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.to_str() + ".ref.ll");
     jlm::hls::rvsdg2rhls(*rvsdgModule);
 
     std::string output;
     if (commandLineOptions.UseCirct_)
     {
-      jlm::hls::RhlsToFirrtlConverter hls;
-      output = hls.ToString(*rvsdgModule);
+      jlm::hls::MLIRGen hls;
+      output = hls.run(*rvsdgModule);
     }
     else
     {
@@ -90,6 +92,10 @@ main(int argc, char ** argv)
 
     jlm::hls::VerilatorHarnessHLS vhls;
     stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
+
+    // TODO: hide behind flag
+    jlm::hls::JsonHLS jhls;
+    stringToFile(jhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".json");
   }
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)

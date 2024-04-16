@@ -18,6 +18,6 @@ add_sinks(rvsdg::region * region);
 void
 add_sinks(jlm::llvm::RvsdgModule & rm);
 
-}
+} // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP

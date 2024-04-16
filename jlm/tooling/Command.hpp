@@ -594,6 +594,12 @@ public:
   }
 
   [[nodiscard]] util::filepath
+  RefFile() const noexcept
+  {
+    return OutputFolder_.to_str() + ".ref.ll";
+  }
+
+  [[nodiscard]] util::filepath
   HarnessFile() const noexcept
   {
     return OutputFolder_.to_str() + ".harness.cpp";

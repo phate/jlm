@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/types.hpp"
 #include <jlm/hls/ir/hls.hpp>
 
 namespace jlm::hls
@@ -48,22 +47,21 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
   auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  jlm::rvsdg::substitution_map rmap;
   auto loop = create(region, false);
 
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
     auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->type());
-    rmap.insert(input(i), loop->input(i));
+    smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto narg = jlm::rvsdg::argument::create(loop->subregion(), inp, oarg->port());
-    rmap.insert(oarg, narg);
+    smap.insert(oarg, narg);
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
     auto out = jlm::rvsdg::structural_output::create(loop, output(i)->type());
-    rmap.insert(output(i), out);
+    smap.insert(output(i), out);
     smap.insert(output(i), out);
   }
   for (size_t i = 0; i < subregion()->narguments(); ++i)
@@ -72,27 +70,27 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
       auto na = loop->add_backedge(arg->type());
-      rmap.insert(ba, na);
+      smap.insert(ba, na);
     }
   }
 
-  subregion()->copy(loop->subregion(), rmap, false, false);
-  loop->_predicate_buffer = rmap.lookup(_predicate_buffer);
+  subregion()->copy(loop->subregion(), smap, false, false);
+  loop->_predicate_buffer = dynamic_cast<jlm::rvsdg::node_output *>(smap.lookup(_predicate_buffer));
   // redirect backedges
   for (size_t i = 0; i < subregion()->narguments(); ++i)
   {
     auto arg = subregion()->argument(i);
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
-      auto na = dynamic_cast<backedge_argument *>(rmap.lookup(ba));
-      na->result()->divert_to(rmap.lookup(ba->result()->origin()));
+      auto na = dynamic_cast<backedge_argument *>(smap.lookup(ba));
+      na->result()->divert_to(smap.lookup(ba->result()->origin()));
     }
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
     auto outp = output(i);
     auto res = outp->results.begin().ptr();
-    auto origin = rmap.lookup(res->origin());
+    auto origin = smap.lookup(res->origin());
     jlm::rvsdg::result::create(loop->subregion(), origin, loop->output(i), res->port());
   }
   nf->set_mutable(true);
@@ -121,7 +119,8 @@ loop_node::create(jlm::rvsdg::region * parent, bool init)
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
     auto pre_buffer = hls::buffer_op::create(*pred_arg, 2)[0];
-    ln->_predicate_buffer = hls::predicate_buffer_op::create(*pre_buffer)[0];
+    ln->_predicate_buffer =
+        dynamic_cast<jlm::rvsdg::node_output *>(hls::predicate_buffer_op::create(*pre_buffer)[0]);
   }
   return ln;
 }
@@ -136,7 +135,7 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
 }
 
 std::unique_ptr<bundletype>
-get_mem_req_type(const rvsdg::valuetype & elementType, bool write)
+get_mem_req_type(const jlm::rvsdg::valuetype & elementType, bool write)
 {
   auto elements = new std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>>();
   elements->emplace_back("addr", llvm::PointerType::Create());
@@ -158,4 +157,5 @@ get_mem_res_type(const jlm::rvsdg::valuetype & dataType)
   elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
   return std::make_unique<bundletype>(elements);
 }
-}
+
+} // namespace jlm::hls

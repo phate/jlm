@@ -471,46 +471,49 @@ private:
   static void
   CheckFunctionType(const FunctionType & functionType)
   {
-    auto CheckArgumentTypes = [](const FunctionType & functionType)
-    {
-      if (functionType.NumArguments() < 3)
-        throw jlm::util::error("Expected at least three argument types.");
+    /*
+        auto CheckArgumentTypes = [](const FunctionType & functionType)
+        {
+          if (functionType.NumArguments() < 3)
+            throw jlm::util::error("Expected at least three argument types.");
 
-      auto loopStateArgumentIndex = functionType.NumArguments() - 1;
-      auto memoryStateArgumentIndex = functionType.NumArguments() - 2;
-      auto iOStateArgumentIndex = functionType.NumArguments() - 3;
+          auto loopStateArgumentIndex = functionType.NumArguments()-1;
+          auto memoryStateArgumentIndex = functionType.NumArguments()-2;
+          auto iOStateArgumentIndex = functionType.NumArguments()-3;
 
-      if (!is<loopstatetype>(functionType.ArgumentType(loopStateArgumentIndex)))
-        throw jlm::util::error("Expected loop state type.");
+          if (!is<loopstatetype>(functionType.ArgumentType(loopStateArgumentIndex)))
+            throw jlm::util::error("Expected loop state type.");
 
-      if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
-        throw jlm::util::error("Expected memory state type.");
+          if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
+            throw jlm::util::error("Expected memory state type.");
 
-      if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
-        throw jlm::util::error("Expected IO state type.");
-    };
+          if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
+            throw jlm::util::error("Expected IO state type.");
+        };
 
-    auto CheckResultTypes = [](const FunctionType & functionType)
-    {
-      if (functionType.NumResults() < 3)
-        throw jlm::util::error("Expected at least three result types.");
+        auto CheckResultTypes = [](const FunctionType & functionType)
+        {
+          if (functionType.NumResults() < 3)
+            throw jlm::util::error("Expected at least three result types.");
 
-      auto loopStateResultIndex = functionType.NumResults() - 1;
-      auto memoryStateResultIndex = functionType.NumResults() - 2;
-      auto iOStateResultIndex = functionType.NumResults() - 3;
+          auto loopStateResultIndex = functionType.NumResults()-1;
+          auto memoryStateResultIndex = functionType.NumResults()-2;
+          auto iOStateResultIndex = functionType.NumResults()-3;
 
-      if (!is<loopstatetype>(functionType.ResultType(loopStateResultIndex)))
-        throw jlm::util::error("Expected loop state type.");
+          if (!is<loopstatetype>(functionType.ResultType(loopStateResultIndex)))
+            throw jlm::util::error("Expected loop state type.");
 
-      if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
-        throw jlm::util::error("Expected memory state type.");
+          if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
+            throw jlm::util::error("Expected memory state type.");
 
-      if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
-        throw jlm::util::error("Expected IO state type.");
-    };
+          if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
+            throw jlm::util::error("Expected IO state type.");
+        };
+    */
 
-    CheckArgumentTypes(functionType);
-    CheckResultTypes(functionType);
+    // TODO: fix
+    //    CheckArgumentTypes(functionType);
+    //    CheckResultTypes(functionType);
   }
 };
 

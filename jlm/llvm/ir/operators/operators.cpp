@@ -1232,7 +1232,8 @@ MemStateSplitOperator::~MemStateSplitOperator()
 bool
 MemStateSplitOperator::operator==(const rvsdg::operation & other) const noexcept
 {
-  return is<MemStateSplitOperator>(other);
+  return is<MemStateSplitOperator>(other)
+      && dynamic_cast<const MemStateSplitOperator *>(&other)->nresults() == nresults();
 }
 
 std::string

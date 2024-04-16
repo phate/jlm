@@ -6,12 +6,13 @@
 #ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 #define JLM_HLS_BACKEND_RHLS2FIRRTL_BASE_HLS_HPP
 
-#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/region.hpp>
 
 #include <fstream>
+#include <jlm/hls/ir/hls.hpp>
 
 namespace jlm::hls
 {
@@ -30,6 +31,9 @@ public:
     create_node_names(get_hls_lambda(rm)->subregion());
     return get_text(rm);
   }
+
+  static int
+  JlmSize(const jlm::rvsdg::type * type);
 
 private:
   virtual std::string
@@ -50,9 +54,6 @@ protected:
 
   const llvm::lambda::node *
   get_hls_lambda(llvm::RvsdgModule & rm);
-
-  int
-  JlmSize(const jlm::rvsdg::type * type);
 
   void
   create_node_names(jlm::rvsdg::region * r);
@@ -123,6 +124,30 @@ protected:
     }
     return results;
   }
+
+  //            std::vector<jlm::rvsdg::argument*> get_state_args(const llvm::lambda::node *
+  //            lambda){
+  //                std::vector<jlm::rvsdg::argument*> args;
+  //                for (size_t i = 0; i < lambda->subregion()->narguments(); ++i) {
+  //                    auto argtype = &lambda->subregion()->argument(i)->type();
+  //                    if(dynamic_cast<const jlm::rvsdg::statetype *>(argtype)){
+  //                        args.push_back(lambda->subregion()->argument(i));
+  //                    }
+  //                }
+  //                return args;
+  //            }
+  //
+  //            std::vector<jlm::rvsdg::result*> get_state_results(const llvm::lambda::node *
+  //            lambda){
+  //                std::vector<jlm::rvsdg::result*> results;
+  //                for (size_t i = 0; i < lambda->subregion()->nresults(); ++i) {
+  //                    auto argtype = &lambda->subregion()->result(i)->type();
+  //                    if(dynamic_cast<const jlm::rvsdg::statetype *>(argtype)){
+  //                        results.push_back(lambda->subregion()->result(i));
+  //                    }
+  //                }
+  //                return results;
+  //            }
 };
 
 }

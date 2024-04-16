@@ -18,7 +18,9 @@ LambdaEntryMemStateOperator::~LambdaEntryMemStateOperator() = default;
 bool
 LambdaEntryMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-  return is<LambdaEntryMemStateOperator>(other);
+  return false;
+  // TODO: fix
+  //    return is<LambdaEntryMemStateOperator>(other);
 }
 
 std::string

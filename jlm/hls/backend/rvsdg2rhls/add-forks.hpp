@@ -18,5 +18,6 @@ add_forks(rvsdg::region * region);
 void
 add_forks(llvm::RvsdgModule & rm);
 
-}
+} // namespace hls::hls
+
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_FORKS_HPP

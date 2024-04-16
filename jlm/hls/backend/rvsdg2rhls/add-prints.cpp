@@ -131,4 +131,4 @@ convert_prints(
   }
 }
 
-}
+} // namespace hls::hls

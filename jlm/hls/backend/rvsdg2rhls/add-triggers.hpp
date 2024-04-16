@@ -25,6 +25,6 @@ add_triggers(rvsdg::region * region);
 void
 add_triggers(llvm::RvsdgModule & rm);
 
-}
+} // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_TRIGGERS_HPP

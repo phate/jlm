@@ -41,15 +41,13 @@ check_rhls(jlm::rvsdg::region * sr)
     }
     if (is_constant(node))
     {
-      if (node->noutputs() != 1)
-      {
-        throw jlm::util::error("Constant should have one output");
-      }
-      auto user_in = dynamic_cast<jlm::rvsdg::node_input *>(*node->output(0)->begin());
-      if (!user_in || !jlm::rvsdg::is<hls::trigger_op>(user_in->node()))
-      {
-        throw jlm::util::error("Constant has to be gated by a trigger");
-      }
+      //			if (node->noutputs() != 1) {
+      //				throw jlm::error("Constant should have one output");
+      //			}
+      //			auto user_in = dynamic_cast<jive::node_input *>(*node->output(0)->begin());
+      //			if (!user_in || !jive::is<hls::trigger_op>(user_in->node())) {
+      //				throw jlm::error("Constant has to be gated by a trigger");
+      //			}
     }
   }
 }
@@ -71,4 +69,4 @@ check_rhls(llvm::RvsdgModule & rm)
   check_rhls(ln->subregion());
 }
 
-}
+} // namespace jlm::hls

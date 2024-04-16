@@ -17,6 +17,6 @@ check_rhls(jlm::rvsdg::region * sr);
 void
 check_rhls(llvm::RvsdgModule & rm);
 
-}
+} // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_CHECK_RHLS_HPP

@@ -3,42 +3,53 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
+#include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/theta.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
-
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
-#include "jlm/llvm/opt/reduction.hpp"
 #include <regex>
 
-namespace jlm::hls
-{
-
 void
-split_opt(llvm::RvsdgModule & rm)
+split_opt(jlm::llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
@@ -68,7 +79,22 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
   dne.run(rm, statisticsCollector);
   cne.run(rm, statisticsCollector);
   ivr.run(rm, statisticsCollector);
+  dne.run(rm, statisticsCollector);
+  cne.run(rm, statisticsCollector);
+  dne.run(rm, statisticsCollector);
+  //    aa.run(rm, sd);
 }
+
+void
+dump_xml(jlm::llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
+{
+  auto xml_file = fopen(file_name.c_str(), "w");
+  jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), xml_file);
+  fclose(xml_file);
+}
+
+namespace jlm
+{
 
 bool
 function_match(llvm::lambda::node * ln, const std::string & function_name)
@@ -120,14 +146,14 @@ inline_calls(jlm::rvsdg::region * region)
         inline_calls(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<const llvm::CallOperation *>(&(node->operation())))
+    else if (dynamic_cast<const jlm::llvm::CallOperation *>(&(node->operation())))
     {
-      auto traced = jlm::hls::trace_call(node->input(0));
+      auto traced = trace_call(node->input(0));
       auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(traced);
       if (!so)
       {
         auto arg = dynamic_cast<const jlm::rvsdg::argument *>(traced);
-        auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
+        auto ip = dynamic_cast<const jlm::rvsdg::impport *>(&arg->port());
         if (ip)
         {
           if (ip->name().rfind("decouple_", 0) == 0)
@@ -138,9 +164,9 @@ inline_calls(jlm::rvsdg::region * region)
           throw jlm::util::error("can not inline external function " + ip->name());
         }
       }
-      JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
+      //                JLM_ASSERT(jlm::is<jlm::llvm::lambda::operation>(so->node()));
       auto ln = dynamic_cast<const jlm::rvsdg::structural_output *>(traced)->node();
-      llvm::inlineCall(
+      jlm::llvm::inlineCall(
           dynamic_cast<jlm::rvsdg::simple_node *>(node),
           dynamic_cast<const llvm::lambda::node *>(ln));
       // restart for this region
@@ -190,14 +216,14 @@ convert_alloca(jlm::rvsdg::region * region)
       }
       auto delta = db->finalize(cout);
       region->graph()->add_export(delta, { delta_type, delta_name });
-      auto delta_local = route_to_region(delta, region);
+      auto delta_local = jlm::hls::route_to_region(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
       auto mux_node = llvm::input_node(mux_in);
-      if (dynamic_cast<const llvm::MemStateMergeOperator *>(&mux_node->operation()))
+      if (dynamic_cast<const jlm::llvm::MemStateMergeOperator *>(&mux_node->operation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(mux_node->ninputs() == 2);
@@ -294,13 +320,15 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 
   return lambda;
 }
+}
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
-split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
+jlm::hls::split_hls_function(jlm::llvm::RvsdgModule & rm, const std::string & function_name)
 {
   // TODO: use a different datastructure for rhls?
   // create a copy of rm
-  auto rhls = llvm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
+  auto rhls =
+      jlm::llvm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
   std::cout << "processing " << rm.SourceFileName().name() << "\n";
   auto root = rm.Rvsdg().root();
   for (auto node : jlm::rvsdg::topdown_traverser(root))
@@ -312,8 +340,10 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         continue;
       }
       inline_calls(ln->subregion());
+      dump_xml(rm, "post_inline.rvsdg");
       split_opt(rm);
-      convert_alloca(ln->subregion());
+      dump_xml(rm, "post_opt.rvsdg");
+      //            convert_alloca(ln->subregion());
       jlm::rvsdg::substitution_map smap;
       for (size_t i = 0; i < ln->ninputs(); ++i)
       {
@@ -322,7 +352,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         {
           // handle decouple stuff
           auto arg = dynamic_cast<const jlm::rvsdg::argument *>(ln->input(i)->origin());
-          auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
+          auto ip = dynamic_cast<const jlm::llvm::impport *>(&arg->port());
           auto new_arg = rhls->Rvsdg().add_import(*ip);
           smap.insert(ln->input(i)->origin(), new_arg);
           continue;
@@ -380,38 +410,60 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rhls)
+jlm::hls::rvsdg2ref(jlm::llvm::RvsdgModule & rhls, std::string path)
 {
-  pre_opt(rhls);
-
-  //	add_prints(rhls);
-  //	dump_ref(rhls);
-
-  // run conversion on copy
-  RemoveUnusedStates(rhls);
-  //  mem_sep_argument(rhls);
-  // main conversion steps
-  add_triggers(rhls); // TODO: remove
-  ConvertGammaNodes(rhls);
-  ConvertThetaNodes(rhls);
-  // rhls optimization
-  EliminateDeadNodes(rhls);
-  // enforce 1:1 input output relationship
-  add_sinks(rhls);
-  add_forks(rhls);
-  //  add_buffers(rhls, true);
-  // ensure that all rhls rules are met
-  check_rhls(rhls);
+  dump_ref(rhls, path);
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls)
+jlm::hls::rvsdg2rhls(jlm::llvm::RvsdgModule & rhls)
+{
+  pre_opt(rhls);
+  //    dump_dot(rhls, "post-opt.dot");
+  merge_gamma(rhls);
+  //    dump_dot(rhls, "merged-gamma.dot");
+
+  //    jlm::hls::mem_sep(rhls);
+  jlm::hls::mem_sep_argument(rhls);
+  //    dump_dot(rhls, "mem-sep.dot");
+  // run conversion on copy
+  jlm::hls::remove_unused_state(rhls);
+  //    dump_dot(rhls, "removed-state.dot");
+  // main conversion steps
+  //	jlm::hls::add_triggers(rhls); // TODO: is this needed?
+  jlm::hls::ConvertGammaNodes(rhls);
+  //    dump_dot(rhls, "gamma-converted.dot");
+  jlm::hls::ConvertThetaNodes(rhls);
+  //    dump_dot(rhls, "theta-converted.dot");
+  // rhls optimization
+  jlm::hls::dne(rhls);
+  jlm::hls::alloca_conv(rhls);
+  //    dump_dot(rhls, "alloca-converted.dot");
+  jlm::hls::mem_queue(rhls);
+  //    dump_dot(rhls, "memory-queue.dot");
+  jlm::hls::MemoryConverter(rhls);
+  //    dump_dot(rhls, "memory-converted.dot");
+  jlm::hls::memstate_conv(rhls);
+  //    dump_dot(rhls, "memory-state-converted.dot");
+  jlm::hls::remove_redundant_buf(rhls);
+  //    dump_dot(rhls, "removed-redundant-buffers.dot");
+  // enforce 1:1 input output relationship
+  jlm::hls::add_sinks(rhls);
+  jlm::hls::add_forks(rhls);
+  jlm::hls::add_buffers(rhls, true);
+  // ensure that all rhls rules are met
+  jlm::hls::check_rhls(rhls);
+}
+
+void
+jlm::hls::dump_ref(jlm::llvm::RvsdgModule & rhls, std::string & path)
 {
   auto reference =
-      llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
+      jlm::llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
   jlm::rvsdg::substitution_map smap;
   rhls.Rvsdg().root()->copy(reference->Rvsdg().root(), smap, true, true);
-  convert_prints(*reference);
+  pre_opt(*reference);
+  instrument_ref(*reference);
   for (size_t i = 0; i < reference->Rvsdg().root()->narguments(); ++i)
   {
     auto arg = reference->Rvsdg().root()->argument(i);
@@ -423,8 +475,6 @@ dump_ref(llvm::RvsdgModule & rhls)
   auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
   auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
   std::error_code EC;
-  ::llvm::raw_fd_ostream os(reference->SourceFileName().base() + ".ref.ll", EC);
+  ::llvm::raw_fd_ostream os(path, EC);
   lm2->print(os, nullptr);
-}
-
 }
