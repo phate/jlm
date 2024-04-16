@@ -17,7 +17,6 @@
 #include <mlir/IR/Verifier.h>
 
 #include "JlmToMlirConverter.hpp"
-#include <unistd.h>
 
 namespace jlm::mlir
 {
@@ -46,27 +45,6 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath
 ::mlir::rvsdg::OmegaNode
 JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 {
-  // // load llvm dialect
-  // ::mlir::DialectRegistry registry;
-  // registry.insert<::mlir::LLVM::LLVMDialect>();
-  // registry.insert<::mlir::rvsdg::RVSDGDialect>();
-  // ::mlir::MLIRContext context(registry);
-
-  // // Create a new MLIR module
-  // auto module = ::mlir::ModuleOp::create(Builder_->getUnknownLoc());
-
-  // // Create a new MLIR builder
-  // Builder_ = std::make_unique<::mlir::OpBuilder>(&context);
-
-  // // Convert the RVSDG module to MLIR
-  // auto omega = ConvertOmega(rvsdgModule.Rvsdg());
-
-  // // Add the omega node to the module
-  // module.push_back(omega);
-
-  // // Return the module
-  // return omega;
-
   return ConvertOmega(rvsdgModule.Rvsdg());
 }
 
@@ -96,27 +74,9 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
   std::unordered_map<rvsdg::node *, ::mlir::Value> nodes;
-  // ::mlir::Value * previous_node = nullptr;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
-
-    // TODO try change to pointers
-    ::llvm::SmallVector<::mlir::Value> inputs;
-    for (size_t i = 0; i < rvsdgNode->ninputs(); i++)
-    {
-      if (auto output = dynamic_cast<jlm::rvsdg::simple_output *>(rvsdgNode->input(i)->origin()))
-      {
-        inputs.push_back(nodes[output->node()]);
-      }
-      else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(rvsdgNode->input(i)->origin()))
-      {
-        inputs.push_back(block.getArgument(arg->index()));
-      }
-
-      //  rvsdgNode->input(i)->origin()->debug_string();
-    }
-    nodes[rvsdgNode] = ConvertNode(*rvsdgNode, block, inputs);
-    // previous_node = &(nodes[rvsdgNode]);
+    nodes[rvsdgNode] = ConvertNode(*rvsdgNode, block, nodes);
   }
 
   ::llvm::SmallVector<::mlir::Value> results;
@@ -143,8 +103,27 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
 JlmToMlirConverter::ConvertNode(
     const rvsdg::node & node,
     ::mlir::Block & block,
-    ::llvm::SmallVector<::mlir::Value> inputs)
+    std::unordered_map<rvsdg::node *, ::mlir::Value> nodes)
 {
+  // Create a list of inputs to the MLIR operation
+  // TODO try to change to pointers
+  ::llvm::SmallVector<::mlir::Value> inputs;
+  for (size_t i = 0; i < node.ninputs(); i++)
+  {
+    if (auto output = dynamic_cast<jlm::rvsdg::simple_output *>(node.input(i)->origin()))
+    {
+      inputs.push_back(nodes[output->node()]);
+    }
+    else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(node.input(i)->origin()))
+    {
+      inputs.push_back(block.getArgument(arg->index()));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled origin type.");
+    }
+  }
+
   if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
   {
     return ConvertSimpleNode(*simpleNode, block, inputs);
@@ -160,202 +139,167 @@ JlmToMlirConverter::ConvertNode(
   }
 }
 
+::mlir::Operation *
+JlmToMlirConverter::ConvertBitBinaryNode(
+    const jlm::rvsdg::simple_op & bitOp,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  ::mlir::Operation * MlirOp;
+  if (jlm::rvsdg::is<const rvsdg::bitadd_op>(bitOp))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::AddOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitand_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::AndIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitashr_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::ShRUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitmul_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::MulIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitor_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::OrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitsdiv_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::DivSIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitshl_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::ShLIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitshr_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::ShRUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitsmod_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::RemSIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitsmulh_op>(bitOp))
+  {
+    JLM_UNREACHABLE("Binary bit bitOp smulh not supported");
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitsub_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::SubIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitudiv_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::DivUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitumod_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::RemUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitumulh_op>(bitOp))
+  {
+    JLM_UNREACHABLE("Binary bit bitOp umulh not supported");
+  }
+  else if (jlm::rvsdg::is<const rvsdg::bitxor_op>(bitOp))
+  {
+    MlirOp =
+        Builder_->create<::mlir::arith::XOrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unknown binary bitop");
+  }
+
+  return MlirOp;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::BitCompareNode(
+    const jlm::rvsdg::simple_op & bitOp,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  ::mlir::arith::CmpIPredicate compPredicate;
+  if (jlm::rvsdg::is<const rvsdg::biteq_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::eq;
+  else if (jlm::rvsdg::is<const rvsdg::bitne_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::ne;
+  else if (jlm::rvsdg::is<const rvsdg::bitsge_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::sge;
+  else if (jlm::rvsdg::is<const rvsdg::bitsgt_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::sgt;
+  else if (jlm::rvsdg::is<const rvsdg::bitsle_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::sle;
+  else if (jlm::rvsdg::is<const rvsdg::bitslt_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::slt;
+  else if (jlm::rvsdg::is<const rvsdg::bituge_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::uge;
+  else if (jlm::rvsdg::is<const rvsdg::bitugt_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::ugt;
+  else if (jlm::rvsdg::is<const rvsdg::bitule_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::ule;
+  else if (jlm::rvsdg::is<const rvsdg::bitult_op>(bitOp))
+    compPredicate = ::mlir::arith::CmpIPredicate::ult;
+  else
+    JLM_UNREACHABLE("Unknown bitcompare operation");
+
+  auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
+      Builder_->getUnknownLoc(),
+      compPredicate,
+      inputs[0],
+      inputs[1]);
+  return MlirOp;
+}
+
 ::mlir::Value
 JlmToMlirConverter::ConvertSimpleNode(
     const rvsdg::simple_node & node,
     ::mlir::Block & block,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
+  ::mlir::Operation * MlirOp;
   if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&(node.operation())))
   {
     auto value = bitOp->value();
-    auto constOp = Builder_->create<::mlir::arith::ConstantIntOp>(
+    MlirOp = Builder_->create<::mlir::arith::ConstantIntOp>(
         Builder_->getUnknownLoc(),
         value.to_uint(),
         value.nbits());
-    block.push_back(constOp);
-
-    return constOp;
   }
-  else if (auto bitOp = dynamic_cast<const rvsdg::bitbinary_op *>(&(node.operation())))
+  else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(node.operation()))
   {
-    if (dynamic_cast<const rvsdg::bitadd_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::LLVM::AddOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitand_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::AndIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitashr_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::ShRUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitmul_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::MulIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitor_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::OrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitsdiv_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::DivSIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitshl_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::ShLIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitshr_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::ShRUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitsmod_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::RemSIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitsmulh_op *>(bitOp))
-    {
-      assert(false && "Binary bit bitOp smulh not supported");
-    }
-    else if (dynamic_cast<const rvsdg::bitsub_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::SubIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitudiv_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::DivUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitumod_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::RemUIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else if (dynamic_cast<const rvsdg::bitumulh_op *>(bitOp))
-    {
-      assert(false && "Binary bit bitOp umulh not supported");
-    }
-    else if (dynamic_cast<const rvsdg::bitxor_op *>(bitOp))
-    {
-      auto MlirOp =
-          Builder_->create<::mlir::arith::XOrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
-      block.push_back(MlirOp);
-      return MlirOp;
-    }
-    else
-    {
-      auto message =
-          util::strfmt("Unknown binary bitop on simple node: ", node.operation().debug_string());
-      JLM_UNREACHABLE(message.c_str());
-    }
-
-    // fprintf(fd, "type : %s\n", bitsOp->type().debug_string().c_str());
+    MlirOp = ConvertBitBinaryNode(node.operation(), inputs);
   }
-  else if (auto bitCompOp = dynamic_cast<const rvsdg::bitcompare_op *>(&(node.operation())))
+  else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(node.operation()))
   {
-    ::mlir::arith::CmpIPredicate comp_type;
-    if (dynamic_cast<const rvsdg::biteq_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::eq;
-    }
-    else if (dynamic_cast<const rvsdg::bitne_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::ne;
-    }
-    else if (dynamic_cast<const rvsdg::bitsge_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::sge;
-    }
-    else if (dynamic_cast<const rvsdg::bitsgt_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::sgt;
-    }
-    else if (dynamic_cast<const rvsdg::bitsle_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::sle;
-    }
-    else if (dynamic_cast<const rvsdg::bitslt_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::slt;
-    }
-    else if (dynamic_cast<const rvsdg::bituge_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::uge;
-    }
-    else if (dynamic_cast<const rvsdg::bitugt_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::ugt;
-    }
-    else if (dynamic_cast<const rvsdg::bitule_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::ule;
-    }
-    else if (dynamic_cast<const rvsdg::bitult_op *>(bitCompOp))
-    {
-      comp_type = ::mlir::arith::CmpIPredicate::ult;
-    }
-    else
-    {
-      assert(false && "Unknown bitcompare operation");
-    }
-    auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
-        Builder_->getUnknownLoc(),
-        comp_type,
-        inputs[0],
-        inputs[1]);
-    block.push_back(MlirOp);
-    return MlirOp;
+    MlirOp = BitCompareNode(node.operation(), inputs);
   }
   else if (auto bitOp = dynamic_cast<const jlm::llvm::zext_op *>(&(node.operation())))
   {
-    auto MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
+    MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
         Builder_->getUnknownLoc(),
         Builder_->getIntegerType(bitOp->ndstbits()),
         inputs[0]);
-    block.push_back(MlirOp);
-    return MlirOp;
   }
   else
   {
     auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());
     JLM_UNREACHABLE(message.c_str());
   }
+
+  block.push_back(MlirOp);
+  return ::mlir::Value(MlirOp->getResult(0));
 }
 
 ::mlir::Value

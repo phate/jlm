@@ -17,8 +17,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <llvm/Support/raw_os_ostream.h>
 
-#include <jlm/rvsdg/view.hpp>
-
 namespace jlm::mlir
 {
 
@@ -30,7 +28,7 @@ MlirToJlmConverter::ReadAndConvertMlir(const util::filepath & filePath)
   auto result = ::mlir::parseSourceFile(filePath.to_str(), block.get(), config);
   if (result.failed())
   {
-    throw util::error("Parsing MLIR input file failed.");
+    JLM_ASSERT("Parsing MLIR input file failed.");
   }
   return ConvertMlir(block);
 }
@@ -41,17 +39,12 @@ MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
   ConvertBlock(*block, *rvsdgModule->Rvsdg().root());
 
-  jlm::rvsdg::view(rvsdgModule->Rvsdg().root(), stdout);
-  // (*block).getOperations().begin()->dump();
-
   return rvsdgModule;
 }
 
 std::vector<jlm::rvsdg::output *>
 MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdgRegion)
 {
-  // std::cout << "***** Region dump *****\n";
-  // region.getOps().begin()->dump();
   // MLIR use blocks as the innermost "container"
   // In the RVSDG Dialect a region should contain one and only one block
   JLM_ASSERT(region.getBlocks().size() == 1);
@@ -68,7 +61,6 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgReg
   std::unordered_map<::mlir::Operation *, rvsdg::node *> operations;
   for (auto & mlirOp : block.getOperations())
   {
-    std::cout << "Converting operation: " << mlirOp.getName().getStringRef().str() << "\n";
     std::vector<jlm::rvsdg::output *> inputs;
     for (auto operand : mlirOp.getOperands())
     {
@@ -89,8 +81,6 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgReg
     if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
     {
       operations[&mlirOp] = node;
-      // std::cout << "Converted operation: " << mlirOp.getName().getStringRef().str() << "\n";
-      // std::cout << "Converted to: " << node->operation().debug_string().c_str() << "\n";
     }
   }
 
@@ -116,6 +106,175 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgReg
 }
 
 rvsdg::node *
+MlirToJlmConverter::ConvertCmpIOp(
+    ::mlir::arith::CmpIOp & CompOp,
+    std::vector<rvsdg::output *> & inputs,
+    size_t nbits)
+{
+  if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::eq)
+  {
+    return rvsdg::node_output::node(rvsdg::biteq_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ne)
+  {
+    return rvsdg::node_output::node(rvsdg::bitne_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sge)
+  {
+    return rvsdg::node_output::node(rvsdg::bitsge_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sgt)
+  {
+    return rvsdg::node_output::node(rvsdg::bitsgt_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sle)
+  {
+    return rvsdg::node_output::node(rvsdg::bitsle_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::slt)
+  {
+    return rvsdg::node_output::node(rvsdg::bitslt_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::uge)
+  {
+    return rvsdg::node_output::node(rvsdg::bituge_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ugt)
+  {
+    return rvsdg::node_output::node(rvsdg::bitugt_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ule)
+  {
+    return rvsdg::node_output::node(rvsdg::bitule_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ult)
+  {
+    return rvsdg::node_output::node(rvsdg::bitult_op::create(nbits, inputs[0], inputs[1]));
+  }
+  else
+  {
+    JLM_UNREACHABLE("frontend : Unknown comparison predicate.");
+  }
+}
+
+rvsdg::node *
+MlirToJlmConverter::ConvertBitBinaryNode(
+    ::mlir::Operation & mlirOperation,
+    std::vector<rvsdg::output *> & inputs)
+{
+  if (auto castedOp = ::mlir::dyn_cast<::mlir::LLVM::AddOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitadd_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitadd_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AndIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitand_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitashr_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::MulIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitmul_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::OrIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitor_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::DivSIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitsdiv_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShLIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitshl_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitshr_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::RemSIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitsmod_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::SubIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitsub_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::DivUIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitudiv_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::RemUIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitumod_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::XOrIOp>(&mlirOperation))
+  {
+    return rvsdg::node_output::node(rvsdg::bitxor_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0],
+        inputs[1]));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
+  {
+    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
+    if (!st)
+      JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
+    auto op = llvm::zext_op(st->nbits(), castedOp.getType().cast<::mlir::IntegerType>().getWidth());
+
+    return rvsdg::node_output::node(
+        rvsdg::simple_node::create_normalized(inputs[0]->region(), op, inputs)[0]);
+  }
+
+  return nullptr;
+}
+
+rvsdg::node *
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
     rvsdg::region & rvsdgRegion,
@@ -134,9 +293,8 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
   {
     auto type = constant.getType();
-    // std::cout << "Casted to ConstantIntOp with t value: " << constant.value() << "\n";
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
-    auto integerType = type.isIntOrFloat() ? type.cast<::mlir::IntegerType>() : nullptr;
+    auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
     return rvsdg::node_output::node(
         rvsdg::create_bitconstant(&rvsdgRegion, integerType.getWidth(), constant.value()));
@@ -145,203 +303,24 @@ MlirToJlmConverter::ConvertOperation(
   // Binary Comparision operations
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
-    if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::eq)
-    {
-      return rvsdg::node_output::node(rvsdg::biteq_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::ne)
-    {
-      auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
-      if (!st)
-        throw jlm::util::error("frontend : expected bitstring type for ne operation.");
-      return rvsdg::node_output::node(rvsdg::bitne_op::create(st->nbits(), inputs[0], inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::sge)
-    {
-      return rvsdg::node_output::node(rvsdg::bitsge_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::sgt)
-    {
-      return rvsdg::node_output::node(rvsdg::bitsgt_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::sle)
-    {
-      return rvsdg::node_output::node(rvsdg::bitsle_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::slt)
-    {
-      return rvsdg::node_output::node(rvsdg::bitslt_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::uge)
-    {
-      return rvsdg::node_output::node(rvsdg::bituge_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::ugt)
-    {
-      return rvsdg::node_output::node(rvsdg::bitugt_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::ule)
-    {
-      return rvsdg::node_output::node(rvsdg::bitule_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else if (ComOp.getPredicate() == ::mlir::arith::CmpIPredicate::ult)
-    {
-      return rvsdg::node_output::node(rvsdg::bitult_op::create(
-          (size_t)ComOp.getOperandTypes()[0].cast<::mlir::IntegerType>().getWidth(),
-          inputs[0],
-          inputs[1]));
-    }
-    else
-    {
-      auto message = util::strfmt(
-          "Comparision Predicate not implemented:",
-          stringifyCmpIPredicate(ComOp.getPredicate()).str(),
-          "\n");
-      JLM_UNREACHABLE(message.c_str());
-    }
+    auto type = ComOp.getOperandTypes()[0];
+    JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
+    auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
+
+    return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
   }
 
   /* #region Arithmetic Integer Operation*/
-  // TODO try to replace the big else if copying of code with a template or something cleaner
   //! Here the LLVM dialect where only implemented for AddOp. Other operation should maybe be
   //! imported Need to choose which one of mlir::arith or mlir::LLVM to use for the MLIR
   //! representation
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::LLVM::AddOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitadd_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::AddIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitadd_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::AndIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitand_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitashr_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::MulIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitmul_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::OrIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitor_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::DivSIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitsdiv_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::ShLIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitshl_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitshr_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::RemSIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitsmod_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::SubIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitsub_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::DivUIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitudiv_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::RemUIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitumod_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto andOp = ::mlir::dyn_cast<::mlir::arith::XOrIOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitxor_op::create(
-        (size_t)andOp.getType().cast<::mlir::IntegerType>().getWidth(),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto Op = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
-  {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
-    if (!st)
-      throw jlm::util::error("frontend : expected bitstring type for ExtUIOp operation.");
-    auto op = llvm::zext_op(st->nbits(), Op.getType().cast<::mlir::IntegerType>().getWidth());
-
-    return rvsdg::node_output::node(
-        rvsdg::simple_node::create_normalized(inputs[0]->region(), op, inputs)[0]);
-  }
+  rvsdg::node * convertedNode = ConvertBitBinaryNode(mlirOperation, inputs);
+  // If the operation was converted it means it has been casted to a bit binary operation
+  if (convertedNode)
+    return convertedNode;
   /* #endregion */
 
-  else if (
-      ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
+  if (::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation))
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node

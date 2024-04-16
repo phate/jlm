@@ -98,6 +98,28 @@ private:
   ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion);
 
   /**
+   * Converts an MLIR integer comparison operation into an RVSDG node.
+   * \param CompOp The MLIR comparison operation to be converted.
+   * \param inputs The inputs for the RVSDG node.
+   * \param nbits The number of bits in the comparison.
+   * \result The converted RVSDG node.
+   */
+  rvsdg::node *
+  ConvertCmpIOp(
+      ::mlir::arith::CmpIOp & CompOp,
+      std::vector<rvsdg::output *> & inputs,
+      size_t nbits);
+
+  /**
+   * Converts an MLIR integer binary operation into an RVSDG node.
+   * \param mlirOperation The MLIR operation to be converted.
+   * \param inputs The inputs for the RVSDG node.
+   * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
+   */
+  rvsdg::node *
+  ConvertBitBinaryNode(::mlir::Operation & mlirOperation, std::vector<rvsdg::output *> & inputs);
+
+  /**
    * Converts an MLIR operation into an RVSDG node.
    * \param mlirOperation The MLIR operation to be converted.
    * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.

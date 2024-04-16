@@ -9,6 +9,7 @@
 // JLM
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
 
 // MLIR RVSDG dialects
 #include <JLM/JLMDialect.h>
@@ -87,14 +88,35 @@ private:
    * Converts an RVSDG node to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-//TODO change doc
-   * \return The converted MLIR RVSDG operation.
+   * \param inputs The inputs to the node.
+   * \param nodes A map of RVSDG nodes to their corresponding MLIR RVSDG values from previously
+   * converted nodes used to retrieve the node inputs. \return The converted MLIR RVSDG operation.
    */
   ::mlir::Value
   ConvertNode(
       const rvsdg::node & node,
       ::mlir::Block & block,
+      std::unordered_map<rvsdg::node *, ::mlir::Value> nodes);
+
+  /**
+   * Converts an RVSDG binary_op to an MLIR RVSDG operation.
+   * \param bitOp The RVSDG bitbinary_op to be converted
+   * \param inputs The inputs to the bitbinary_op.
+   * \return The converted MLIR RVSDG operation.
+   */
+  ::mlir::Operation *
+  ConvertBitBinaryNode(
+      const jlm::rvsdg::simple_op & bitOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
+
+  /**
+   * Converts an RVSDG bitcompare_op to an MLIR RVSDG operation.
+   * \param bitOp The RVSDG bitcompare_op to be converted
+   * \param inputs The inputs to the bitcompare_op.
+   * \return The converted MLIR RVSDG operation.
+   */
+  ::mlir::Operation *
+  BitCompareNode(const jlm::rvsdg::simple_op & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG simple_node to an MLIR RVSDG operation.

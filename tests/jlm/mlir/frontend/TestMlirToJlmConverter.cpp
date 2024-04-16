@@ -15,7 +15,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-static void
+static int
 TestLambda()
 {
   {
@@ -126,6 +126,7 @@ TestLambda()
       assert(is<bitconstant_op>(convertedLambda->subregion()->nodes.first()));
     }
   }
+  return 0;
 }
 
 /** \brief TestDivOperation
@@ -134,7 +135,7 @@ TestLambda()
  * lambda block and do a graph traversal.
  * This function is similar to the TestAddOperation function in the backend tests.
  */
-static void
+static int
 TestDivOperation()
 {
   {
@@ -316,6 +317,7 @@ TestDivOperation()
       assert(dynamic_cast<const bittype *>(&DivInput1Constant->result(0).type())->nbits() == 32);
     }
   }
+  return 0;
 }
 
 /** \brief TestCompZeroExt
@@ -325,7 +327,7 @@ TestDivOperation()
  * similar to the TestComZeroExt function in the backend tests.
  *
  */
-static void
+static int
 TestCompZeroExt()
 {
   {
@@ -541,18 +543,9 @@ TestCompZeroExt()
       assert(dynamic_cast<const bittype *>(&Const1Op->result(0).type())->nbits() == 32);
     }
   }
-}
-
-static int
-Test()
-{
-  std::cout << "*** Running TestLambda() ***" << std::endl;
-  TestLambda();
-  std::cout << "*** Running TestDivOperation() ***" << std::endl;
-  TestDivOperation();
-  std::cout << "*** Running TestCompZeroExt() ***" << std::endl;
-  TestCompZeroExt();
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgGen", Test)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgLambdaGen", TestLambda)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgDivOperationGen", TestDivOperation)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgCompZeroExtGen", TestCompZeroExt)

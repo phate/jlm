@@ -11,7 +11,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
-static void
+static int
 TestLambda()
 {
   using namespace jlm::llvm;
@@ -97,6 +97,7 @@ TestLambda()
 
     omega->destroy();
   }
+  return 0;
 }
 
 /** \brief useChainsUpTraverse
@@ -135,7 +136,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
  * constants. The users trace goes through the operation first operand user recursively to trace the
  * nodes.
  */
-static void
+static int
 TestAddOperation()
 {
   using namespace jlm::llvm;
@@ -229,6 +230,7 @@ TestAddOperation()
 
     omega->destroy();
   }
+  return 0;
 }
 
 /** \brief TestAddOperation
@@ -237,7 +239,7 @@ TestAddOperation()
  * and comparison operation, test the types of the operations
  * and do the use chain traversal.
  */
-static void
+static int
 TestComZeroExt()
 {
   using namespace jlm::llvm;
@@ -380,19 +382,9 @@ TestComZeroExt()
 
     omega->destroy();
   }
-}
-
-static int
-Test()
-{
-  std::cout << "*** Running TestLambda() ***" << std::endl;
-  TestLambda();
-  std::cout << "*** Running TestAddOperation() ***" << std::endl;
-  TestAddOperation();
-  std::cout << "*** Running TestComZeroExt() ***" << std::endl;
-  TestComZeroExt();
-
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirGen", Test)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirLambdaGen", TestLambda)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirAddOperationGen", TestAddOperation)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirComZeroExtGen", TestComZeroExt)
