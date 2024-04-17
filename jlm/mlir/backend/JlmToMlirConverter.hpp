@@ -88,7 +88,6 @@ private:
    * Converts an RVSDG node to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-   * \param inputs The inputs to the node.
    * \param nodes A map of RVSDG nodes to their corresponding MLIR RVSDG values from previously
    * converted nodes used to retrieve the node inputs. \return The converted MLIR RVSDG operation.
    */
@@ -122,6 +121,7 @@ private:
    * Converts an RVSDG simple_node to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
+   * \param inputs The inputs to the simple_node.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Value
