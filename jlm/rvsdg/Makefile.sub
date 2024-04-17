@@ -66,7 +66,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \
-    tests/jlm/rvsdg/bitstring/bitstring \
+	tests/jlm/rvsdg/bitstring/bitstring \
 	tests/jlm/rvsdg/test-binary \
 	tests/jlm/rvsdg/test-bottomup \
 	tests/jlm/rvsdg/test-cse \
