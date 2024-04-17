@@ -1623,6 +1623,38 @@ private:
   jlm::rvsdg::simple_node * PdAlloca_;
 };
 
+/**
+ * This function sets up an RVSDG representing the following code snippet:
+ *
+ * \code{.c}
+ *   #include <stdlib.h>
+ *
+ *   struct myStruct {
+ *     struct myStruct *other;
+ *   };
+ *
+ *   struct myStruct myArray[] = {
+ *     {NULL},
+ *     {&myArray[0]}
+ *   };
+ * \endcode
+ */
+class PhiWithDeltaTest final : public RvsdgTest
+{
+  [[nodiscard]] const jlm::llvm::delta::node &
+  GetDelta() const noexcept
+  {
+    JLM_ASSERT(Delta_ != nullptr);
+    return *Delta_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  jlm::llvm::delta::node * Delta_ = {};
+};
+
 /** \brief ExternalMemoryTest class
  *
  * This function sets up an RVSDG representing the following code snippet:
