@@ -16,8 +16,6 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/IR/Verifier.h>
 
-#include "JlmToMlirConverter.hpp"
-
 namespace jlm::mlir
 {
 
