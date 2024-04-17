@@ -1530,12 +1530,22 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const std::vector<const variable *> & elements, const jlm::rvsdg::type & type)
   {
-    auto rt = dynamic_cast<const StructType *>(&type);
-    if (!rt)
-      throw jlm::util::error("expected struct type.");
+    auto & structType = CheckAndExtractStructType(type);
 
-    ConstantStruct op(*rt);
+    ConstantStruct op(structType);
     return tac::create(op, elements);
+  }
+
+  static rvsdg::output &
+  Create(
+      rvsdg::region & region,
+      const std::vector<rvsdg::output *> & operands,
+      const rvsdg::type & resultType)
+  {
+    auto & structType = CheckAndExtractStructType(resultType);
+
+    ConstantStruct operation(structType);
+    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
   }
 
 private:
@@ -1547,6 +1557,17 @@ private:
       ports.push_back(type.GetDeclaration().GetElement(n));
 
     return ports;
+  }
+
+  static const StructType &
+  CheckAndExtractStructType(const rvsdg::type & type)
+  {
+    if (auto structType = dynamic_cast<const StructType *>(&type))
+    {
+      return *structType;
+    }
+
+    throw util::type_error("StructType", type.debug_string());
   }
 };
 
