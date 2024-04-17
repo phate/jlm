@@ -9,6 +9,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static std::unique_ptr<jlm::llvm::aa::PointsToGraph>
@@ -1163,6 +1164,25 @@ TestPhi2()
 }
 
 static void
+TestPhiWithDelta()
+{
+  // Assert
+  jlm::tests::PhiWithDeltaTest test;
+  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::flush;
+
+  auto pointsToGraph = RunSteensgaard(test.module());
+  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
+
+  // Act
+  auto provisioning =
+      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+
+  // Assert
+  // Nothing needs to be validated as there are only phi and delta nodes in the RVSDG.
+}
+
+static void
 TestMemcpy()
 {
   /*
@@ -1482,6 +1502,7 @@ TestRegionAwareMemoryNodeProvider()
 
   TestPhi1();
   TestPhi2();
+  TestPhiWithDelta();
 
   TestEscapedMemory1();
   TestEscapedMemory2();
