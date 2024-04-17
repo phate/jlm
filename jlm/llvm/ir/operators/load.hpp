@@ -85,18 +85,6 @@ public:
   }
 
   inline void
-  set_load_store_alloca_reducible(bool enable) noexcept
-  {
-    enable_load_store_alloca_ = enable;
-  }
-
-  inline bool
-  get_load_store_alloca_reducible() const noexcept
-  {
-    return enable_load_store_alloca_;
-  }
-
-  inline void
   set_load_store_reducible(bool enable) noexcept
   {
     enable_load_store_ = enable;
@@ -127,7 +115,6 @@ private:
   bool enable_load_load_state_;
   bool enable_multiple_origin_;
   bool enable_load_store_state_;
-  bool enable_load_store_alloca_;
 };
 
 /** \brief LoadOperation class

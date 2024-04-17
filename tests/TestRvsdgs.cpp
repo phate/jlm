@@ -2532,6 +2532,51 @@ PhiTest2::SetupRvsdg()
 }
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
+PhiWithDeltaTest::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  PointerType pointerType;
+  auto & structDeclaration =
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &pointerType }));
+  auto structType = StructType::Create("myStruct", false, structDeclaration);
+  auto arrayType = arraytype(*structType, 2);
+
+  jlm::llvm::phi::builder pb;
+  pb.begin(rvsdg.root());
+  auto myArrayRecVar = pb.add_recvar(pointerType);
+
+  auto delta = delta::node::Create(
+      pb.subregion(),
+      arrayType,
+      "myArray",
+      linkage::external_linkage,
+      "",
+      false);
+  auto myArrayArgument = delta->add_ctxvar(myArrayRecVar->argument());
+
+  auto aggregateZero = ConstantAggregateZero::Create(*delta->subregion(), *structType);
+  auto & constantStruct =
+      ConstantStruct::Create(*delta->subregion(), { myArrayArgument }, *structType);
+  auto constantArray = ConstantArray::Create({ aggregateZero, &constantStruct });
+
+  auto deltaOutput = delta->finalize(constantArray);
+  Delta_ = deltaOutput->node();
+  myArrayRecVar->result()->divert_to(deltaOutput);
+
+  auto phiNode = pb.end();
+  rvsdg.add_export(phiNode->output(0), { PointerType(), "myArray" });
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<jlm::llvm::RvsdgModule>
 ExternalMemoryTest::SetupRvsdg()
 {
   using namespace jlm::llvm;

@@ -169,43 +169,6 @@ TestLoadStoreStateReduction()
 }
 
 static void
-TestLoadStoreAllocaReduction()
-{
-  using namespace jlm::llvm;
-
-  // Arrange
-  MemoryStateType mt;
-  jlm::rvsdg::bittype bt(32);
-
-  jlm::rvsdg::graph graph;
-  auto nf = LoadOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_store_alloca_reducible(false);
-
-  auto size = graph.add_import({ bt, "v" });
-
-  auto alloca = alloca_op::create(bt, size, 4);
-  auto store = StoreNode::Create(alloca[0], size, { alloca[1] }, 4);
-  auto load = LoadNode::Create(alloca[0], store, bt, 4);
-
-  auto value = graph.add_export(load[0], { load[0]->type(), "l" });
-  auto rstate = graph.add_export(load[1], { mt, "s" });
-
-  //	jlm::rvsdg::view(graph.root(), stdout);
-
-  // Act
-  nf->set_mutable(true);
-  nf->set_load_store_alloca_reducible(true);
-  graph.normalize();
-
-  //	jlm::rvsdg::view(graph.root(), stdout);
-
-  // Assert
-  assert(value->origin() == graph.root()->argument(0));
-  assert(rstate->origin() == alloca[1]);
-}
-
-static void
 TestLoadStoreReduction()
 {
   using namespace jlm::llvm;
@@ -312,7 +275,6 @@ TestLoad()
   TestLoadAllocaReduction();
   TestMultipleOriginReduction();
   TestLoadStoreStateReduction();
-  TestLoadStoreAllocaReduction();
   TestLoadStoreReduction();
   TestLoadLoadReduction();
 

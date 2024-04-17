@@ -164,6 +164,19 @@ private:
   PropagatePhi(const phi::node & phiNode);
 
   /**
+   * Assigns and propagates memory nodes as well as unknown memory node references in a phi::node.
+   *
+   * @param region The phi::node subregion.
+   * @param memoryNodes The memory nodes to propagate.
+   * @param unknownMemoryNodeReferences The unknown memory node references to propagate.
+   */
+  void
+  AssignAndPropagateMemoryNodes(
+      const rvsdg::region & region,
+      const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
+      const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences);
+
+  /**
    * Resolves all references to unknown memory locations.
    *
    * After the propagation phase, the tail lambda regions contain all memory locations and simple
