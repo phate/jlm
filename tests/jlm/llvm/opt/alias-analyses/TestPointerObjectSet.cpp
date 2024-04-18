@@ -681,6 +681,8 @@ TestDrawSubsetGraph()
   assert(StringContains(functionNode.GetLabel(), "function0"));
   // Since functions don't track pointees, they should have NOTRACK
   assert(StringContains(functionNode.GetLabel(), "NOTRACK"));
+  // They should also both point to external, and escape all pointees
+  assert(StringContains(functionNode.GetLabel(), "{+}e"));
 
   // Check that the import PointerObject has a fill color, since it has escaped
   auto & importNode = graph.GetNode(import0);
