@@ -219,12 +219,9 @@ JlmOptCommandLineOptions::ToCommandLineArgument(InputFormat inputFormat)
 const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 {
-  static std::unordered_map<OutputFormat, const char *> map({ { OutputFormat::Llvm, "llvm" },
-                                                              { OutputFormat::Mlir, "mlir" },
-                                                              { OutputFormat::Xml, "xml" } });
-
-  if (map.find(outputFormat) != map.end())
-    return map[outputFormat];
+  auto & mapping = GetOutputFormatCommandLineArguments();
+  if (mapping.find(outputFormat) != mapping.end())
+    return mapping.at(outputFormat).data();
 
   throw util::error("Unknown output format");
 }
@@ -307,6 +304,22 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
   return mapping;
 }
 
+const std::unordered_map<JlmOptCommandLineOptions::OutputFormat, std::string_view> &
+JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
+{
+  static std::unordered_map<OutputFormat, std::string_view> mapping = {
+    { OutputFormat::Ascii, "ascii" },
+    { OutputFormat::Llvm, "llvm" },
+    { OutputFormat::Mlir, "mlir" },
+    { OutputFormat::Xml, "xml" }
+  };
+
+  auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
+  auto lastIndex = static_cast<size_t>(OutputFormat::LastEnumValue);
+  JLM_ASSERT(mapping.size() == lastIndex - firstIndex - 1);
+  return mapping;
+}
+
 void
 JlmHlsCommandLineOptions::Reset() noexcept
 {
@@ -330,6 +343,17 @@ CreateStatisticsOption(util::Statistics::Id statisticsId, const char * descripti
   return ::clEnumValN(
       statisticsId,
       JlmOptCommandLineOptions::ToCommandLineArgument(statisticsId),
+      description);
+}
+
+static ::llvm::cl::OptionEnumValue
+CreateOutputFormatOption(
+    JlmOptCommandLineOptions::OutputFormat outputFormat,
+    const char * description)
+{
+  return ::clEnumValN(
+      outputFormat,
+      JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat),
       description);
 }
 
@@ -812,29 +836,19 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   auto inputFormat = JlmOptCommandLineOptions::InputFormat::Llvm;
 #endif
 
-  auto llvmOutputFormat = JlmOptCommandLineOptions::OutputFormat::Llvm;
-  auto xmlOutputFormat = JlmOptCommandLineOptions::OutputFormat::Xml;
-
   cl::opt<JlmOptCommandLineOptions::OutputFormat> outputFormat(
       "output-format",
       cl::desc("Select output format:"),
       cl::values(
-          ::clEnumValN(
-              llvmOutputFormat,
-              JlmOptCommandLineOptions::ToCommandLineArgument(llvmOutputFormat),
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Ascii, "Output Ascii"),
+          CreateOutputFormatOption(
+              JlmOptCommandLineOptions::OutputFormat::Llvm,
               "Output LLVM IR [default]"),
 #ifdef ENABLE_MLIR
-          ::clEnumValN(
-              JlmOptCommandLineOptions::OutputFormat::Mlir,
-              JlmOptCommandLineOptions::ToCommandLineArgument(
-                  JlmOptCommandLineOptions::OutputFormat::Mlir),
-              "Output MLIR"),
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Mlir, "Output MLIR"),
 #endif
-          ::clEnumValN(
-              xmlOutputFormat,
-              JlmOptCommandLineOptions::ToCommandLineArgument(xmlOutputFormat),
-              "Output XML")),
-      cl::init(llvmOutputFormat));
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
+      cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;

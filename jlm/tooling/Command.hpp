@@ -392,6 +392,12 @@ private:
       util::StatisticsCollector & statisticsCollector);
 
   static void
+  PrintAsAscii(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
   PrintAsXml(
       const llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,

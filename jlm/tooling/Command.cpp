@@ -20,14 +20,13 @@
 #endif
 
 #include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
 #include <sys/stat.h>
 
-#include <filesystem>
+#include <fstream>
 #include <unordered_map>
 
 namespace jlm::tooling
@@ -398,6 +397,26 @@ JlmOptCommand::ParseInputFile(
 }
 
 void
+JlmOptCommand::PrintAsAscii(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector &)
+{
+  auto ascii = rvsdg::view(rvsdgModule.Rvsdg().root());
+
+  if (outputFile == "")
+  {
+    std::cout << ascii << std::flush;
+  }
+  else
+  {
+    std::ofstream fileStream(outputFile.to_str());
+    fileStream << ascii;
+    fileStream.close();
+  }
+}
+
+void
 JlmOptCommand::PrintAsXml(
     const llvm::RvsdgModule & rvsdgModule,
     const util::filepath & outputFile,
@@ -458,7 +477,11 @@ JlmOptCommand::PrintRvsdgModule(
     const JlmOptCommandLineOptions::OutputFormat & outputFormat,
     util::StatisticsCollector & statisticsCollector)
 {
-  if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Xml)
+  if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Ascii)
+  {
+    PrintAsAscii(rvsdgModule, outputFile, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Xml)
   {
     PrintAsXml(rvsdgModule, outputFile, statisticsCollector);
   }
