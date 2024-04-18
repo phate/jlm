@@ -55,9 +55,9 @@ public:
   {}
 
   void
-  StartAndersenStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartAndersenStatistics(const rvsdg::graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodes, jlm::rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(AnalysisTimer_).start();
   }
 
@@ -826,7 +826,7 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 void
 Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
 {
-  jlm::util::GraphWriter writer;
+  util::GraphWriter writer;
   Constraints_->DrawSubsetGraph(writer);
 
   if (config.GetSolver() == Configuration::Solver::Naive)
@@ -1044,7 +1044,7 @@ std::unique_ptr<PointsToGraph>
 Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
 {
   // Create a throwaway instance of statistics
-  Statistics statistics(jlm::util::filepath(""));
+  Statistics statistics(util::filepath(""));
   return ConstructPointsToGraphFromPointerObjectSet(set, statistics);
 }
 

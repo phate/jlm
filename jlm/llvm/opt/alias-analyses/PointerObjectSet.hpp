@@ -756,8 +756,8 @@ public:
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
    * and edges representing the current set of constraints.
    */
-  jlm::util::Graph &
-  DrawSubsetGraph(jlm::util::GraphWriter & writer) const;
+  util::Graph &
+  DrawSubsetGraph(util::GraphWriter & writer) const;
 
   /**
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.

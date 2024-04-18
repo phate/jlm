@@ -45,15 +45,15 @@ TestGraphElement()
 
   // Set attributes
   graph.SetAttribute("color", "\"brown\"");
-  graph.SetAttribute("colour", "\"british brown\"");
+  graph.SetAttribute("taste", "sweet");
   graph.SetAttributeGraphElement("graph", graph);
   graph.SetAttributeObject("another graph", &myInt);
 
-  assert(graph.HasAttribute("color"));
-  assert(graph.RemoveAttribute("colour"));
-  assert(!graph.HasAttribute("colour"));
+  assert(graph.HasAttribute("taste"));
+  assert(graph.RemoveAttribute("taste"));
+  assert(!graph.HasAttribute("taste"));
   // Removing the attribute again returns false
-  assert(!graph.RemoveAttribute("colour"));
+  assert(!graph.RemoveAttribute("taste"));
 
   // Finalizing and getting a unique id
   assert(!graph.IsFinalized());
@@ -158,6 +158,7 @@ TestInOutNode()
   // Also test subgraphs, and connecting argument nodes and result nodes to outside ports
   auto & subgraph = node.CreateSubgraph();
   assert(node.NumSubgraphs() == 1);
+  assert(&node.GetSubgraph(0) == &subgraph);
   auto & argumentNode = subgraph.CreateArgumentNode();
   argumentNode.SetLabel("CTX");
   argumentNode.SetOutsideSource(node.GetInputPort(0));
@@ -168,6 +169,8 @@ TestInOutNode()
   subgraph.CreateDirectedEdge(argumentNode, resultNode);
 
   graph.Finalize();
+  assert(node.IsFinalized());
+  assert(subgraph.IsFinalized());
 
   std::ostringstream out;
   node.Output(out, GraphOutputFormat::ASCII, 0);
@@ -203,11 +206,18 @@ TestEdge()
   assert(&edge0.GetOtherEnd(node0) == &node1);
   assert(&edge0.GetOtherEnd(node1) == &node0);
 
+  assert(graph.NumEdges() == 2);
+  assert(&graph.GetEdge(0) == &edge0);
+
+  assert(graph.GetEdgeBetween(node0, node1) == &edge0);
+  assert(graph.GetEdgeBetween(node1, node2) == &edge1);
+  assert(graph.GetEdgeBetween(node2, node0) == nullptr);
+
   edge0.SetAttribute("color", Colors::Red);
 
   auto & edge2 = graph.CreateUndirectedEdge(node2, node0);
-  edge2.SetArrowhead("odot");
-  edge2.SetArrowtail("normal");
+  edge2.SetArrowHead("odot");
+  edge2.SetArrowTail("normal");
   edge2.SetStyle(Edge::Style::Tapered);
 
   graph.Finalize();
@@ -235,7 +245,45 @@ TestEdge()
 }
 
 static void
-TestGraph()
+TestGraphCreateNodes()
+{
+  using namespace jlm::util;
+  GraphWriter writer;
+  auto & graph = writer.CreateGraph();
+
+  // Test node creation and count
+  assert(graph.NumNodes() == 0);
+  auto & node = graph.CreateNode();
+  assert(graph.NumNodes() == 1);
+  assert(&graph.GetNode(0) == &node);
+
+  // Test InOutNode creation and count
+  auto & inOutNode = graph.CreateInOutNode(1, 1);
+  assert(graph.NumNodes() == 2);
+  assert(&graph.GetNode(1) == &inOutNode);
+
+  // Test argument node creation and count
+  assert(graph.NumArgumentNodes() == 0);
+  auto & argumentNode = graph.CreateArgumentNode();
+  assert(graph.NumArgumentNodes() == 1);
+  assert(&graph.GetArgumentNode(0) == &argumentNode);
+
+  // Test result node creation and count
+  assert(graph.NumResultNodes() == 0);
+  auto & resultNode = graph.CreateResultNode();
+  assert(graph.NumResultNodes() == 1);
+  assert(&graph.GetResultNode(0) == &resultNode);
+
+  // Test finalizing reaching every node
+  graph.Finalize();
+  assert(node.IsFinalized());
+  assert(argumentNode.IsFinalized());
+  assert(resultNode.IsFinalized());
+  assert(inOutNode.IsFinalized());
+}
+
+static void
+TestGraphAttributes()
 {
   using namespace jlm::util;
   GraphWriter writer;
@@ -244,28 +292,19 @@ TestGraph()
 
   assert(&graph.GetGraphWriter() == &writer);
   auto & node = graph.CreateNode();
-  auto & argumentNode = graph.CreateArgumentNode();
-  auto & resultNode = graph.CreateResultNode();
-  auto & inOutNode = graph.CreateInOutNode(1, 1);
 
-  auto & subgraph = inOutNode.CreateSubgraph();
-  assert(subgraph.IsSubgraph());
-  assert(!graph.IsSubgraph());
-
+  // Test associating a GraphElement with a pointer, and retrieving it
   int myInt;
   node.SetProgramObject(&myInt);
   assert(&graph.GetFromProgramObject<Node>(&myInt) == &node);
 
+  // Set some attributes, to test that they appear in the final output
   graph.SetAttributeObject("friend", &myInt);
-  graph.SetAttributeGraphElement("foe", argumentNode);
+  graph.SetAttributeGraphElement("foe", graph);
 
   graph.Finalize();
-  assert(node.IsFinalized());
-  assert(argumentNode.IsFinalized());
-  assert(resultNode.IsFinalized());
-  assert(inOutNode.IsFinalized());
-  assert(subgraph.IsFinalized());
 
+  // Test that the Dot output of the graph contains everything specified
   std::ostringstream out;
   graph.Output(out, jlm::util::GraphOutputFormat::Dot, 0);
   auto string = out.str();
@@ -274,11 +313,7 @@ TestGraph()
 
   // Nodes referred to in attributes
   assert(StringContains(string, "friend=node0"));
-  assert(StringContains(string, "foe=a0"));
-
-  // Make sure the other nodes are also mentioned
-  assert(StringContains(string, "r0"));
-  assert(StringContains(string, "node1"));
+  assert(StringContains(string, "foe=graph0"));
 }
 
 static void
@@ -286,20 +321,24 @@ TestGraphWriterClass()
 {
   using namespace jlm::util;
   GraphWriter writer;
+
   auto & graph0 = writer.CreateGraph();
   auto & graph1 = writer.CreateGraph();
+  assert(writer.NumGraphs() == 2);
+  assert(&writer.GetGraph(0) == &graph0);
 
   auto & node0 = graph0.CreateNode();
   auto & node1 = graph1.CreateNode();
 
+  // Test retrieving a GraphElement from its associated program object pointer
   int myInt;
   node1.SetProgramObject(&myInt);
-
   assert(writer.GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&myInt)) == &node1);
 
   // Refer to program objects mapped to elements in other graphs
   node0.SetAttributeObject("friend", &myInt);
 
+  // Render all the graphs to dot, which first finalizes the graphs to assign unique IDs
   std::ostringstream out;
   writer.OutputAllGraphs(out, GraphOutputFormat::Dot);
   auto string = out.str();
@@ -321,7 +360,8 @@ TestGraphWriter()
   TestASCIIEdges();
   TestInOutNode();
   TestEdge();
-  TestGraph();
+  TestGraphCreateNodes();
+  TestGraphAttributes();
   TestGraphWriterClass();
 
   return 0;
