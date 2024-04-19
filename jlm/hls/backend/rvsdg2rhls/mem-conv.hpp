@@ -28,9 +28,9 @@ MemoryConverter(llvm::RvsdgModule & rm);
  * response (arguemnts) ports
  * @param argumentIndex The index of the reponse (argument) port to be connected
  * @param smap The substitution map for the lambda node
- * @param load_nodes The load nodes to be connected to the reponse port
- * @param store_nodes The store nodes to be connected to the reponse port
- * @param decouple_nodes The decouple nodes to be connected to the reponse port
+ * @param originalLoadNodes The load nodes to be connected to the reponse port
+ * @param originalStoreNodes The store nodes to be connected to the reponse port
+ * @param originalDecoupledNodes The decouple nodes to be connected to the reponse port
  * @result The request output to which the memory operations are connected
  */
 jlm::rvsdg::output *
