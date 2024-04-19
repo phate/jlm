@@ -2736,7 +2736,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
     // Found the source node
     return o;
   }
-  else if (auto a = dynamic_cast<jlm::rvsdg::argument *>(origin))
+  else if (dynamic_cast<jlm::rvsdg::argument *>(origin))
   {
     throw std::logic_error("Encountered pass through argument - should be eliminated");
   }

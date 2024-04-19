@@ -43,7 +43,7 @@ find_slice_output(jlm::rvsdg::output * output, std::unordered_set<jlm::rvsdg::no
     JLM_ASSERT(slice.count(no->node()));
     find_slice_node(no->node(), slice);
   }
-  else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(output))
+  else if (dynamic_cast<jlm::rvsdg::argument *>(output))
   {
     if (auto be = dynamic_cast<backedge_argument *>(output))
     {
@@ -112,7 +112,7 @@ is_slice_exclusive_input_(
       return false;
     }
   }
-  else if (auto arg = dynamic_cast<jlm::rvsdg::result *>(source))
+  else if (dynamic_cast<jlm::rvsdg::result *>(source))
   {
     if (auto be = dynamic_cast<backedge_result *>(source))
     {
