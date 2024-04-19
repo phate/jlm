@@ -249,9 +249,13 @@ separate_load_edge(
           for (size_t i = 0; i < sn->noutputs(); ++i)
           {
             // dummy user for edge
-            jlm::hls::sink_op::create(*load_branch_out[i])[0];
+            auto dummy_user_tmp = jlm::hls::sink_op::create(*load_branch_out[i]);
+            // Sink ops doesn't have any outputs so we get an empty vector back
+            // But we are not allowed to discard the vector and can't have unused variables
+            // So adding a meaningless assert to get it to compile
+            assert(dummy_user_tmp.size() == 0);
             auto dummy_user =
-                dynamic_cast<jlm::rvsdg::simple_input *>(*load_branch_out[i]->begin())->node();
+              dynamic_cast<jlm::rvsdg::simple_input *>(*load_branch_out[i]->begin())->node();
             // need both load and common edge here
             load_branch_out[i] = separate_load_edge(
                 sn->output(i),
