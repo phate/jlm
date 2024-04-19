@@ -238,7 +238,7 @@ find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
-  jlm::rvsdg::argument * response_function;
+  jlm::rvsdg::argument * response_function = nullptr;
   for (size_t i = 0; i < lambda->ncvarguments(); ++i)
   {
     auto ip = lambda->cvargument(i)->input();
