@@ -255,7 +255,7 @@ separate_load_edge(
             // So adding a meaningless assert to get it to compile
             assert(dummy_user_tmp.size() == 0);
             auto dummy_user =
-              dynamic_cast<jlm::rvsdg::simple_input *>(*load_branch_out[i]->begin())->node();
+                dynamic_cast<jlm::rvsdg::simple_input *>(*load_branch_out[i]->begin())->node();
             // need both load and common edge here
             load_branch_out[i] = separate_load_edge(
                 sn->output(i),
