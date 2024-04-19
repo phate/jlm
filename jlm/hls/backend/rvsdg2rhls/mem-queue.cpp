@@ -155,7 +155,7 @@ route_to_region(jlm::rvsdg::region * target, jlm::rvsdg::output * out)
   std::deque<jlm::rvsdg::region *> out_regions = get_parent_regions(out->region());
   assert(target_regions.front() == out_regions.front());
   // remove common ancestor regions
-  jlm::rvsdg::region * common_region;
+  jlm::rvsdg::region * common_region = nullptr;
   while (!target_regions.empty() && !out_regions.empty()
          && target_regions.front() == out_regions.front())
   {
