@@ -248,7 +248,7 @@ find_decouple_response(
       response_function = lambda->cvargument(i);
     }
   }
-  JLM_ASSERT(response_function);
+  JLM_ASSERT(response_function == nullptr);
   std::vector<jlm::rvsdg::simple_node *> reponse_calls;
   std::unordered_set<jlm::rvsdg::output *> visited;
   trace_function_calls(response_function, reponse_calls, visited);

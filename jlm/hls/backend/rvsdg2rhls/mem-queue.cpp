@@ -163,6 +163,7 @@ route_to_region(jlm::rvsdg::region * target, jlm::rvsdg::output * out)
     target_regions.pop_front();
     out_regions.pop_front();
   }
+  JLM_ASSERT(common_region == nullptr);
   auto common_loop = dynamic_cast<jlm::hls::loop_node *>(common_region->node());
   assert(common_loop);
   // route out to convergence point from out
