@@ -7,6 +7,7 @@
 #define JLM_UTIL_GRAPHWRITER_HPP
 
 #include <jlm/util/common.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 #include <iostream>
 #include <memory>
@@ -93,6 +94,13 @@ public:
   SetLabel(std::string label);
 
   /**
+   * Appends the given \p text to the element's label.
+   * If the current label is non-empty, the separator string \p sep is inserted between them.
+   */
+  void
+  AppendToLabel(std::string_view text, std::string_view sep = "\n");
+
+  /**
    * @return true if this graph element has a non-empty label
    */
   [[nodiscard]] bool
@@ -107,8 +115,8 @@ public:
   /**
    * @return the graph element's label, or if it is empty, the string \p otherwise
    */
-  [[nodiscard]] const char *
-  GetLabelOr(const char * otherwise) const;
+  [[nodiscard]] std::string_view
+  GetLabelOr(std::string_view otherwise) const;
 
   /**
    * @return the unique suffix assigned to this element when finalized.
@@ -164,6 +172,38 @@ public:
    */
   void
   SetAttributeGraphElement(const std::string & attribute, const GraphElement & element);
+
+  /**
+   * @return true if an attribute with the given name \p attribute is defined
+   */
+  [[nodiscard]] bool
+  HasAttribute(const std::string & attribute) const;
+
+  /**
+   * Retrieves the value of the given \p attribute, as a string.
+   * If the attribute holds a program object or another graph element, the string "?" is returned.
+   * @return the attribute's string value or "?"
+   * @throws jlm::util::error if the attribute doesn't exist
+   * @see GetAttributeOr to provide a fallback value
+   */
+  [[nodiscard]] std::string_view
+  GetAttribute(const std::string & attribute);
+
+  /**
+   * Retrieves the value of the given \p attribute, as a string.
+   * If the attribute doesn't exist, the string \p otherwise is returned.
+   * If the attribute holds a program object or another graph element, the string "?" is returned.
+   * @return the attribute's string value, "?", or otherwise
+   */
+  [[nodiscard]] std::string_view
+  GetAttributeOr(const std::string & attribute, std::string_view otherwise);
+
+  /**
+   * Removes the attribute with the given name \p attribute, if it exists.
+   * @return true if the attribute existed, and was removed, false otherwise
+   */
+  bool
+  RemoveAttribute(const std::string & attribute);
 
   /**
    * Claims a unique id suffix for the element, if it doesn't already have one.
@@ -234,6 +274,12 @@ public:
    */
   [[nodiscard]] virtual bool
   CanBeEdgeTail() const;
+
+  /**
+   * @return a list of all edges where one end is attached to this port.
+   */
+  [[nodiscard]] const std::vector<Edge *> &
+  GetConnections() const;
 
   /**
    * @return true if any edges are leaving this port, or any non-directed edges are present
@@ -307,6 +353,29 @@ public:
    */
   Graph &
   GetGraph() override;
+
+  /**
+   * Sets the shape to be used when rendering the node
+   * @see Node::Shape
+   */
+  virtual void
+  SetShape(std::string shape);
+
+  /**
+   * A collection of common GraphViz node shapes.
+   * See https://graphviz.org/doc/info/shapes.html for more.
+   */
+  struct Shape
+  {
+    static inline const char * const Rectangle = "rect";
+    static inline const char * const Circle = "circle";
+    static inline const char * const Oval = "oval";
+    static inline const char * const Point = "point";
+    static inline const char * const Plain = "plain";
+    static inline const char * const Plaintext = "plaintext";
+    static inline const char * const Triangle = "triangle";
+    static inline const char * const DoubleCircle = "doublecircle";
+  };
 
   void
   SetFillColor(std::string color) override;
@@ -430,6 +499,11 @@ class InOutNode : public Node
 public:
   ~InOutNode() override = default;
 
+  /**
+   * InOutNodes use HTML tables when rendering, so setting the shape is disabled
+   */
+  void SetShape(std::string) override;
+
   InputPort &
   CreateInputPort();
 
@@ -448,12 +522,22 @@ public:
   OutputPort &
   GetOutputPort(size_t index);
 
+  /**
+   * Creates a new subgraph and
+   * @return a reference to the newly created subgraph
+   */
   Graph &
   CreateSubgraph();
 
+  /**
+   * @return the number of subgraphs in this node
+   */
   size_t
   NumSubgraphs() const;
 
+  /**
+   * @return the subgraph with the given \p index, which must be lower than NumSubgraphs()
+   */
   Graph &
   GetSubgraph(size_t index);
 
@@ -605,6 +689,45 @@ public:
   GetOtherEnd(const Port & end);
 
   /**
+   * Sets the style of the edge
+   * @see Edge::Style for a list of possible styles
+   */
+  void
+  SetStyle(std::string style);
+
+  /**
+   * The set of available edge styles in GraphViz.
+   */
+  struct Style
+  {
+    static inline const char * const Solid = "solid";
+    static inline const char * const Dashed = "dashed";
+    static inline const char * const Dotted = "dotted";
+    static inline const char * const Invisible = "invis";
+    static inline const char * const Bold = "bold";
+    static inline const char * const Tapered = "tapered";
+  };
+
+  /**
+   * Customizes the look of the edge at the head end.
+   * For a normal arrow, use "normal". Other common options are "box", "diamond" and "dot".
+   * Prefix the string with "o" to get outline only. Prefix with "l" or "r" to only get one half.
+   * Concatenate multiple strings to get longer arrows, with the tipmost arrow listed first.
+   * For full a description of the grammar, see https://graphviz.org/doc/info/arrows.html
+   * @param arrow a string describing the look of the edge head.
+   */
+  void
+  SetArrowHead(std::string arrow);
+
+  /**
+   * Customizes the look of the edge at the tail end.
+   * @param arrow a string describing the look of the edge tail.
+   * @see Edge::SetArrowHead() for a short description of the grammar
+   */
+  void
+  SetArrowTail(std::string arrow);
+
+  /**
    * Outputs the edge in dot format. In ASCII, edges are not implicitly encoded by nodes/ports.
    */
   void
@@ -662,11 +785,59 @@ public:
   [[nodiscard]] InOutNode &
   CreateInOutNode(size_t inputPorts, size_t outputPorts);
 
+  /**
+   * @return the number of nodes in the graph, excluding argument and result nodes.
+   */
+  [[nodiscard]] size_t
+  NumNodes() const noexcept;
+
+  /**
+   * Retrieves the node with the given \p index, which must be lower than NumNodes().
+   * Argument nodes and result nodes are not accessed through this function.
+   * @return a reference to the node
+   */
+  [[nodiscard]] Node &
+  GetNode(size_t index);
+
+  /**
+   * Adds a new argument node to the graph.
+   * @return a reference to the new argument node
+   */
   [[nodiscard]] ArgumentNode &
   CreateArgumentNode();
 
+  /**
+   * @return the number of argument nodes in the graph
+   */
+  [[nodiscard]] size_t
+  NumArgumentNodes() const noexcept;
+
+  /**
+   * Retrieves the argument node with the given \p index, which must be less than NumArgumentNodes()
+   * @return a reference to the argument node
+   */
+  [[nodiscard]] Node &
+  GetArgumentNode(size_t index);
+
+  /**
+   * Adds a new result node to the graph.
+   * @return a reference to the new result node
+   */
   [[nodiscard]] ResultNode &
   CreateResultNode();
+
+  /**
+   * @return the number of result nodes in the graph
+   */
+  [[nodiscard]] size_t
+  NumResultNodes() const noexcept;
+
+  /**
+   * Retrieves the result node with the given \p index, which must be less than NumResultNodes()
+   * @return a reference to the result node
+   */
+  [[nodiscard]] Node &
+  GetResultNode(size_t index);
 
   /**
    * Creates a new edge between from and to. Both ports must belong to this graph.
@@ -691,7 +862,7 @@ public:
   }
 
   /**
-   * Creates a new edge between \p a and \p b.
+   * Creates a new undirected edge between \p a and \p b.
    * The ordering of a and b may affect graph layout.
    * @return a reference to the newly created edge.
    * @see CreateEdge
@@ -701,6 +872,28 @@ public:
   {
     return CreateEdge(a, b, false);
   }
+
+  /**
+   * @return the number of edges in the graph
+   */
+  [[nodiscard]] size_t
+  NumEdges() const noexcept;
+
+  /**
+   * Retrieves the edge with the given \p index, which must be lower than NumEdges()
+   * @return a reference to the edge
+   */
+  [[nodiscard]] Edge &
+  GetEdge(size_t index);
+
+  /**
+   * Retrieves an edge connecting ports a and b. If the edge is directed, it must go from a, to b.
+   * @param a the first port
+   * @param b the second port
+   * @return a reference to an edge connecting a and b, or nullptr if no such edge exists.
+   */
+  [[nodiscard]] Edge *
+  GetEdgeBetween(Port & a, Port & b);
 
   /**
    * Retrieves the GraphElement in this graph associated with a given ProgramObject.
@@ -809,8 +1002,24 @@ public:
   GraphWriter &
   operator=(GraphWriter && other) = delete;
 
+  /**
+   * Creates a new graph and appends it to the GraphWriter's list of graphs.
+   * @return a reference to the newly created graph
+   */
   [[nodiscard]] Graph &
   CreateGraph();
+
+  /**
+   * @return the number of graphs in the GraphWriter
+   */
+  [[nodiscard]] size_t
+  NumGraphs() const noexcept;
+
+  /**
+   * @return a reference to the graph with the given \p index, which must be lower than NumGraphs()
+   */
+  [[nodiscard]] Graph &
+  GetGraph(size_t index);
 
   /**
    * Attempts to find a GraphElement in one of the graphs that is associated with \p object
@@ -859,22 +1068,22 @@ private:
  */
 namespace Colors
 {
-inline const char * Black = "#000000";
-inline const char * Blue = "#0000FF";
-inline const char * Coral = "#FF7F50";
-inline const char * CornflowerBlue = "#6495ED";
-inline const char * Firebrick = " #B22222";
-inline const char * Gold = "#FFD700";
-inline const char * Gray = "#BEBEBE";
-inline const char * Green = "#00FF00";
-inline const char * Orange = "#FFA500";
-inline const char * Purple = "#A020F0";
-inline const char * Red = "#FF0000";
-inline const char * Brown = "#8B4513"; // X11's Saddle Brown
-inline const char * SkyBlue = "#87CEEB";
-inline const char * White = "#FFFFFF";
-inline const char * Yellow = "#FFFF00";
-};
+inline const char * const Black = "#000000";
+inline const char * const Blue = "#0000FF";
+inline const char * const Coral = "#FF7F50";
+inline const char * const CornflowerBlue = "#6495ED";
+inline const char * const Firebrick = " #B22222";
+inline const char * const Gold = "#FFD700";
+inline const char * const Gray = "#BEBEBE";
+inline const char * const Green = "#00FF00";
+inline const char * const Orange = "#FFA500";
+inline const char * const Purple = "#A020F0";
+inline const char * const Red = "#FF0000";
+inline const char * const Brown = "#8B4513"; // X11's Saddle Brown
+inline const char * const SkyBlue = "#87CEEB";
+inline const char * const White = "#FFFFFF";
+inline const char * const Yellow = "#FFFF00";
+}
 
 }
 #endif // JLM_UTIL_GRAPHWRITER_HPP

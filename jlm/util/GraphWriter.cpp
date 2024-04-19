@@ -3,8 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/util/common.hpp>
 #include <jlm/util/GraphWriter.hpp>
+
+#include <jlm/util/common.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::util
 {
@@ -167,6 +169,19 @@ GraphElement::SetLabel(std::string label)
   Label_ = std::move(label);
 }
 
+void
+GraphElement::AppendToLabel(std::string_view text, std::string_view sep)
+{
+  if (HasLabel())
+  {
+    Label_.append(sep).append(text);
+  }
+  else
+  {
+    Label_ = text;
+  }
+}
+
 bool
 GraphElement::HasLabel() const
 {
@@ -179,11 +194,11 @@ GraphElement::GetLabel() const
   return Label_;
 }
 
-const char *
-GraphElement::GetLabelOr(const char * otherwise) const
+std::string_view
+GraphElement::GetLabelOr(std::string_view otherwise) const
 {
   if (HasLabel())
-    return Label_.c_str();
+    return Label_;
   return otherwise;
 }
 
@@ -228,6 +243,42 @@ GraphElement::SetAttributeGraphElement(const std::string & attribute, const Grap
 {
   JLM_ASSERT(&GetGraph().GetGraphWriter() == &element.GetGraph().GetGraphWriter());
   AttributeMap_[attribute] = &element;
+}
+
+bool
+GraphElement::HasAttribute(const std::string & attribute) const
+{
+  return AttributeMap_.find(attribute) != AttributeMap_.end();
+}
+
+std::string_view
+GraphElement::GetAttribute(const std::string & attribute)
+{
+  auto it = AttributeMap_.find(attribute);
+  if (it == AttributeMap_.end())
+    throw jlm::util::error(strfmt("No attribute '", attribute, "' found"));
+  if (auto stringValue = std::get_if<std::string>(&it->second))
+    return *stringValue;
+  // Attributes that hold GraphElements or pointers to program objects become question marks
+  return "?";
+}
+
+std::string_view
+GraphElement::GetAttributeOr(const std::string & attribute, std::string_view otherwise)
+{
+  auto it = AttributeMap_.find(attribute);
+  if (it == AttributeMap_.end())
+    return otherwise;
+  if (auto stringValue = std::get_if<std::string>(&it->second))
+    return *stringValue;
+  // Attributes that hold GraphElements or pointers to program objects become question marks
+  return "?";
+}
+
+bool
+GraphElement::RemoveAttribute(const std::string & attribute)
+{
+  return AttributeMap_.erase(attribute);
 }
 
 void
@@ -317,6 +368,12 @@ Port::CanBeEdgeTail() const
   return true;
 }
 
+const std::vector<Edge *> &
+Port::GetConnections() const
+{
+  return Connections_;
+}
+
 void
 Port::OnEdgeAdded(jlm::util::Edge & edge)
 {
@@ -399,6 +456,12 @@ Graph &
 Node::GetGraph()
 {
   return Graph_;
+}
+
+void
+Node::SetShape(std::string shape)
+{
+  SetAttribute("shape", std::move(shape));
 }
 
 void
@@ -551,6 +614,12 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 
   for (size_t i = 0; i < outputPorts; i++)
     CreateOutputPort();
+}
+
+void
+InOutNode::SetShape(std::string shape)
+{
+  throw jlm::util::error("InOutNodes can not have custom shapes set");
 }
 
 InputPort &
@@ -905,6 +974,25 @@ Edge::GetOtherEnd(const Port & end)
 }
 
 void
+Edge::SetStyle(std::string style)
+{
+  SetAttribute("style", std::move(style));
+}
+
+void
+Edge::SetArrowHead(std::string arrow)
+{
+  SetAttribute("arrowhead", std::move(arrow));
+}
+
+void
+Edge::SetArrowTail(std::string arrow)
+{
+  // When outputting dot, the "dir" attribute will be automatically changed to make the tail visible
+  SetAttribute("arrowtail", std::move(arrow));
+}
+
+void
 Edge::OutputDot(std::ostream & out, size_t indent) const
 {
   out << Indent(indent);
@@ -912,8 +1000,20 @@ Edge::OutputDot(std::ostream & out, size_t indent) const
   out << " -> ";
   To_.OutputDotPortId(out);
   out << "[";
-  if (!Directed_)
+
+  const bool hasHeadArrow = HasAttribute("arrowhead") || Directed_;
+  const bool hasTailArrow = HasAttribute("arrowtail");
+  if (hasHeadArrow && hasTailArrow)
+    out << "dir=both ";
+  else if (hasHeadArrow)
+  {
+    // dir=forward is the default in digraphs
+  }
+  else if (hasTailArrow)
+    out << "dir=back ";
+  else
     out << "dir=none ";
+
   if (HasLabel())
   {
     out << "label=";
@@ -982,6 +1082,19 @@ Graph::CreateInOutNode(size_t inputPorts, size_t outputPorts)
   return *node;
 }
 
+size_t
+Graph::NumNodes() const noexcept
+{
+  return Nodes_.size();
+}
+
+Node &
+Graph::GetNode(size_t index)
+{
+  JLM_ASSERT(index < NumNodes());
+  return *Nodes_[index];
+}
+
 ArgumentNode &
 Graph::CreateArgumentNode()
 {
@@ -990,12 +1103,38 @@ Graph::CreateArgumentNode()
   return *node;
 }
 
+size_t
+Graph::NumArgumentNodes() const noexcept
+{
+  return ArgumentNodes_.size();
+}
+
+Node &
+Graph::GetArgumentNode(size_t index)
+{
+  JLM_ASSERT(index < NumArgumentNodes());
+  return *ArgumentNodes_[index];
+}
+
 ResultNode &
 Graph::CreateResultNode()
 {
   auto node = new ResultNode(*this);
   ResultNodes_.emplace_back(node);
   return *node;
+}
+
+size_t
+Graph::NumResultNodes() const noexcept
+{
+  return ResultNodes_.size();
+}
+
+Node &
+Graph::GetResultNode(size_t index)
+{
+  JLM_ASSERT(index < NumResultNodes());
+  return *ResultNodes_[index];
 }
 
 Edge &
@@ -1009,6 +1148,32 @@ Graph::CreateEdge(Port & from, Port & to, bool directed)
   auto edge = new Edge(from, to, directed);
   Edges_.emplace_back(edge);
   return *edge;
+}
+
+size_t
+Graph::NumEdges() const noexcept
+{
+  return Edges_.size();
+}
+
+Edge &
+Graph::GetEdge(size_t index)
+{
+  JLM_ASSERT(index < NumEdges());
+  return *Edges_[index];
+}
+
+Edge *
+Graph::GetEdgeBetween(Port & a, Port & b)
+{
+  for (auto edge : a.GetConnections())
+  {
+    if (edge->IsDirected() && &edge->GetFrom() != &a)
+      continue;
+    if (&edge->GetOtherEnd(a) == &b)
+      return edge;
+  }
+  return nullptr;
 }
 
 GraphElement *
@@ -1185,6 +1350,19 @@ GraphWriter::CreateGraph()
   auto graph = new Graph(*this);
   Graphs_.emplace_back(graph);
   return *graph;
+}
+
+size_t
+GraphWriter::NumGraphs() const noexcept
+{
+  return Graphs_.size();
+}
+
+Graph &
+GraphWriter::GetGraph(size_t index)
+{
+  JLM_ASSERT(index < NumGraphs());
+  return *Graphs_[index];
 }
 
 Graph &
