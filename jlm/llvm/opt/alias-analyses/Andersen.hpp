@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Håvard Krogstie <krogstie.havard@gmail.com>
+ * Copyright 2023, 2024 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -30,7 +30,12 @@ public:
    * by running analysis again with the naive solver and no extra processing.
    * Any differences in the produced PointsToGraph result in an error.
    */
-  static inline const char * CHECK_AGAINST_NAIVE_SOLVER = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
+  static inline const char * const CHECK_AGAINST_NAIVE_SOLVER = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
+
+  /**
+   * Environment variable that will trigger dumping the subset graph before and after solving.
+   */
+  static inline const char * const DUMP_SUBSET_GRAPH = "JLM_ANDERSEN_DUMP_SUBSET_GRAPH";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
