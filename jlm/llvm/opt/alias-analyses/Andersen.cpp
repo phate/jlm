@@ -36,11 +36,16 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumLoadConstraints_ = "#LoadConstraints";
   inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
 
+  inline static const char * NumUnificationsOVS_ = "#Unifications(OVS)";
+  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
+
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
+  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
+  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
   inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
   inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
   inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
@@ -95,6 +100,32 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
+  }
+
+  void
+  StartOfflineVariableSubstitution() noexcept
+  {
+    AddTimer(OfflineVariableSubstitutionTimer_).start();
+  }
+
+  void
+  StopOfflineVariableSubstitution(size_t numUnifications) noexcept
+  {
+    GetTimer(OfflineVariableSubstitutionTimer_).stop();
+    AddMeasurement(NumUnificationsOVS_, numUnifications);
+  }
+
+  void
+  StartOfflineConstraintNormalization() noexcept
+  {
+    AddTimer(OfflineConstraintNormalizationTimer_).start();
+  }
+
+  void
+  StopOfflineConstraintNormalization(size_t numConstraintsRemoved) noexcept
+  {
+    GetTimer(OfflineConstraintNormalizationTimer_).stop();
+    AddMeasurement(NumConstraintsRemovedOfflineNorm_, numConstraintsRemoved);
   }
 
   void
@@ -828,6 +859,26 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
 {
   util::GraphWriter writer;
   Constraints_->DrawSubsetGraph(writer);
+
+  if (config.DoOfflineVariableSubstitution())
+  {
+    statistics.StartOfflineVariableSubstitution();
+    auto numUnifications = Constraints_->DoOfflineVariableSubstitution();
+    statistics.StopOfflineVariableSubstitution(numUnifications);
+
+    auto & graph = Constraints_->DrawSubsetGraph(writer);
+    graph.AppendToLabel("After Offline Variable Substitution");
+  }
+
+  if (config.DoOfflineConstraintNormalization())
+  {
+    statistics.StartOfflineConstraintNormalization();
+    auto numConstraintsRemoved = Constraints_->NormalizeConstraints();
+    statistics.StopOfflineConstraintNormalization(numConstraintsRemoved);
+
+    auto & graph = Constraints_->DrawSubsetGraph(writer);
+    graph.AppendToLabel("After Offline Constraint Normalization");
+  }
 
   if (config.GetSolver() == Configuration::Solver::Naive)
   {

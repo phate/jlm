@@ -56,7 +56,9 @@ public:
     [[nodiscard]] bool
     operator==(const Configuration & other) const
     {
-      return Solver_ == other.Solver_;
+      return DoOfflineVariableSubstitution_ == other.DoOfflineVariableSubstitution_
+          && DoOfflineConstraintNormalization_ == other.DoOfflineConstraintNormalization_
+          && Solver_ == other.Solver_;
     }
 
     [[nodiscard]] bool
@@ -82,6 +84,39 @@ public:
     }
 
     /**
+     * Enables or disables the use of offline variable substitution to pre-process
+     * the constraint set before applying the solving algorithm.
+     * The substitution only performs constraint variable unification,
+     * which may create opportunities for constraint normalization.
+     */
+    void
+    SetDoOfflineVariableSubstitution(bool value) {
+      DoOfflineVariableSubstitution_ = value;
+    }
+
+    [[nodiscard]] bool
+    DoOfflineVariableSubstitution() const noexcept
+    {
+      return DoOfflineVariableSubstitution_;
+    }
+
+    /**
+     * Enables or disables offline constraint normalization.
+     * If enabled, it is the last step in offline processing.
+     * @see PointerObjectConstraintSet::NormalizeConstraints()
+     */
+    void
+    SetDoOfflineConstraintNormalization(bool value) {
+      DoOfflineConstraintNormalization_ = value;
+    }
+
+    [[nodiscard]] bool
+    DoOfflineConstraintNormalization() const noexcept
+    {
+      return DoOfflineConstraintNormalization_;
+    }
+
+    /**
      * Creates a solver configuration using the worklist solver,
      * with the default set of offline and online techniques enabled.
      * @return the solver configuration
@@ -100,10 +135,15 @@ public:
     [[nodiscard]] static Configuration
     NaiveSolverConfiguration()
     {
-      return Configuration(Solver::Naive);
+      auto config = Configuration(Solver::Naive);
+      config.SetDoOfflineVariableSubstitution(false);
+      config.SetDoOfflineConstraintNormalization(false);
+      return config;
     }
 
   private:
+    bool DoOfflineVariableSubstitution_ = true;
+    bool DoOfflineConstraintNormalization_ = true;
     Solver Solver_;
   };
 

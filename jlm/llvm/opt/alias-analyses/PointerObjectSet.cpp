@@ -10,6 +10,7 @@
 
 #include <limits>
 #include <queue>
+#include <set>
 
 namespace jlm::llvm::aa
 {
@@ -716,11 +717,18 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
   return modified;
 }
 
+bool
+PointerObjectConstraintSet::IsFrozen()
+{
+  return ConstraintSetFrozen_;
+}
+
 void
 PointerObjectConstraintSet::AddPointerPointeeConstraint(
     PointerObjectIndex pointer,
     PointerObjectIndex pointee)
 {
+  JLM_ASSERT(!IsFrozen());
   // All set constraints are additive, so simple constraints like this can be directly applied.
   Set_.AddToPointsToSet(pointer, pointee);
 }
@@ -728,6 +736,7 @@ PointerObjectConstraintSet::AddPointerPointeeConstraint(
 void
 PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObjectIndex pointer)
 {
+  JLM_ASSERT(!IsFrozen());
   // Flags are never removed, so adding the flag now ensures it will be included.
   Set_.MarkAsPointingToExternal(pointer);
 }
@@ -735,6 +744,7 @@ PointerObjectConstraintSet::AddPointsToExternalConstraint(PointerObjectIndex poi
 void
 PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObjectIndex registerIndex)
 {
+  JLM_ASSERT(!IsFrozen());
   JLM_ASSERT(Set_.IsPointerObjectRegister(registerIndex));
   Set_.MarkAsPointeesEscaping(registerIndex);
 }
@@ -742,6 +752,7 @@ PointerObjectConstraintSet::AddRegisterContentEscapedConstraint(PointerObjectInd
 void
 PointerObjectConstraintSet::AddConstraint(ConstraintVariant c)
 {
+  JLM_ASSERT(!IsFrozen());
   Constraints_.push_back(c);
 }
 
@@ -956,6 +967,307 @@ PointerObjectConstraintSet::DrawSubsetGraph(util::GraphWriter & writer) const
   LabelFunctionsArgumentsAndReturnValues(Set_, graph);
 
   return graph;
+}
+
+size_t
+PointerObjectConstraintSet::DoOfflineVariableSubstitution()
+{
+  // Performing unification on direct nodes relies on all subset edges being known offline.
+  // This is only safe if no more constraints are added to the node in the future.
+  ConstraintSetFrozen_ = true;
+
+  // For each PointerObject v, create two nodes: n(v) and n(*v)
+  // The index of n(v) is the index of v, while n(*v) is the index of v + derefNodeOffset
+  const size_t derefNodeOffset = Set_.NumPointerObjects();
+  const size_t totalNodeCount = Set_.NumPointerObjects() * 2;
+
+  std::vector<util::HashSet<PointerObjectIndex>> successors(totalNodeCount);
+
+  // Direct nodes are nodes in the subset graph where all subset predecessors are known offline.
+  // They can:
+  //  - only be n(v) nodes, where v is a register
+  //  - not be the return value of a function call
+  //  - not be an argument of a function body
+  std::vector<bool> isDirectNode(totalNodeCount, false);
+
+  // Initialize all registers as direct nodes
+  for (auto [_, index] : Set_.GetRegisterMap())
+    isDirectNode[index] = false; // TODO: Disabled direct nodes temporarily
+
+  // Mark all function argument register nodes as not direct
+  for (auto [lambda, _] : Set_.GetFunctionMap())
+  {
+    for (size_t n = 0; n < lambda->nfctarguments(); n++)
+    {
+      auto argumentPO = Set_.TryGetRegisterPointerObject(*lambda->fctargument(n));
+      if (argumentPO)
+        isDirectNode[*argumentPO] = false;
+    }
+  }
+
+  // Create the offline subset graph, and mark all registers that are not direct
+  for (auto constraint : Constraints_)
+  {
+    if (auto * supersetConstraint = std::get_if<SupersetConstraint>(&constraint))
+    {
+      auto subset = Set_.GetUnificationRoot(supersetConstraint->GetSubset());
+      auto superset = Set_.GetUnificationRoot(supersetConstraint->GetSuperset());
+
+      successors[subset].Insert(superset);
+      // Also add an edge for *subset -> *superset
+      successors[subset + derefNodeOffset].Insert(superset + derefNodeOffset);
+    }
+    else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
+    {
+      auto pointer = Set_.GetUnificationRoot(storeConstraint->GetPointer());
+      auto value = Set_.GetUnificationRoot(storeConstraint->GetValue());
+
+      // Add an edge for value -> *pointer
+      successors[value].Insert(pointer + derefNodeOffset);
+    }
+    else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
+    {
+      auto value = Set_.GetUnificationRoot(loadConstraint->GetValue());
+      auto pointer = Set_.GetUnificationRoot(loadConstraint->GetPointer());
+
+      // Add an edge for *pointer -> value
+      successors[pointer + derefNodeOffset].Insert(value);
+    }
+    else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
+    {
+      auto & callNode = callConstraint->GetCallNode();
+      // FIXME: Maybe add a method PointerObjectConstraintSet::ReplaceDirectCalls() to replace
+      // trivial FunctionCallConstraints with subset constraints before getting to this stage
+
+      // Mark all results of function calls as non-direct nodes
+      for (size_t n = 0; n < callNode.NumResults(); n++)
+      {
+        auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.Result(n));
+        if (resultPO)
+          isDirectNode[*resultPO] = false;
+      }
+    }
+  }
+
+  // Non-recursive implementation of Tarjan's SCC
+  const int64_t NOT_VISITED = -1;
+  const int64_t SCC_FINISHED = -2;
+  std::vector<int64_t> order(totalNodeCount, NOT_VISITED);
+  int64_t nextOrder = 0;
+  // The lowest order seen through any path of edges that do not enter finished SCCs
+  std::vector<int64_t> lowLink(totalNodeCount);
+
+  // The DFS stack is a regular DFS traversal stack
+  std::stack<size_t> dfsStack;
+  // The SCC stack is only popped once an SCC is found
+  std::stack<size_t> sccStack;
+
+  // What SCC each node ends up in
+  std::vector<size_t> sccIndex(totalNodeCount);
+  // Partially ordered reverse topological order (each SCC is a continuous sub-array)
+  std::vector<size_t> reverseTopologicalOrder;
+  // true if all nodes in the given SCC are direct
+  std::vector<bool> isDirectSCC;
+
+  // Find SCCs
+  for (size_t startNode = 0; startNode < totalNodeCount; startNode++)
+  {
+    // Only start DFSs at unvisited nodes
+    if (order[startNode] != NOT_VISITED)
+      continue;
+
+    dfsStack.push(startNode);
+    while (!dfsStack.empty())
+    {
+      auto node = dfsStack.top();
+
+      if (order[node] == NOT_VISITED) // This is the first time node is visited
+      {
+        sccStack.push(node);
+        order[node] = nextOrder++;
+        lowLink[node] = order[node];
+
+        for (auto next : successors[node].Items())
+        {
+          // Visit nodes that have not been visited before
+          if (order[next] == NOT_VISITED)
+            dfsStack.push(next);
+        }
+      }
+      else // This is the second time node is visited, all children have been processed
+      {
+        dfsStack.pop();
+        for (auto next : successors[node].Items())
+        {
+          // Ignore edges to nodes that are already part of a finished SCC
+          if (order[next] == SCC_FINISHED)
+            continue;
+          lowLink[node] = std::min(lowLink[node], lowLink[next]);
+        }
+
+        // This node is the root of an SCC
+        if (lowLink[node] == order[node])
+        {
+          // Are all nodes in the SCC direct nodes?
+          bool allDirect = true;
+          const auto thisSccIndex = isDirectSCC.size();
+
+          while (true)
+          {
+            auto top = sccStack.top();
+            sccStack.pop();
+            order[top] = SCC_FINISHED;
+            sccIndex[top] = thisSccIndex;
+            allDirect = allDirect && isDirectNode[top];
+            reverseTopologicalOrder.push_back(top);
+
+            if (top == node)
+              break;
+          }
+
+          isDirectSCC.push_back(allDirect);
+        }
+      }
+    }
+  }
+  JLM_ASSERT(sccStack.empty());
+
+  // Now visit all SCCs in topological order and assign equivalence set labels
+  int64_t nextEquivalenceSetLabel = 0;
+  const int64_t NO_EQUIVALENCE_SET_LABEL = -1;
+  std::vector<int64_t> equivalenceSetLabels(isDirectSCC.size(), NO_EQUIVALENCE_SET_LABEL);
+
+  // If all predecessors of a direct SCC share equivalence set label, use that label.
+  const int64_t NO_PREDECESSOR_YET = -1;   // Value used when no predecessor label has been seen
+  const int64_t SEVERAL_PREDECESSORS = -2; // Value used when different predecessors have been seen
+  std::vector<int64_t> predecessorEquivalenceLabels(isDirectSCC.size(), NO_PREDECESSOR_YET);
+
+  // Iterate over each SCC in topological order, and each node within the SCC.
+  // This ensures all predecessor SCCs are know about before visiting each SCC.
+  for (auto node = reverseTopologicalOrder.rbegin(); node != reverseTopologicalOrder.rend(); ++node)
+  {
+    const auto scc = sccIndex[*node];
+
+    // If this SCC has not been visited in the topological order traversal, give it a label
+    if (equivalenceSetLabels[scc] == NO_EQUIVALENCE_SET_LABEL)
+    {
+      // Check if the SCC is direct, and all predecessors share a single equivalence label.
+      // Otherwise, give it a new unique equivalence set label.
+      if (isDirectSCC[scc] && predecessorEquivalenceLabels[scc] != NO_PREDECESSOR_YET
+          && predecessorEquivalenceLabels[scc] != SEVERAL_PREDECESSORS)
+      {
+        equivalenceSetLabels[scc] = predecessorEquivalenceLabels[scc];
+      }
+      else
+      {
+        equivalenceSetLabels[scc] = nextEquivalenceSetLabel++;
+      }
+    }
+
+    // Inform all successors of this node about this SCC's equivalence label
+    for (auto successor : successors[*node].Items())
+    {
+      const auto successorSCC = sccIndex[successor];
+      if (predecessorEquivalenceLabels[successorSCC] == SEVERAL_PREDECESSORS)
+        continue;
+
+      if (predecessorEquivalenceLabels[successorSCC] == NO_PREDECESSOR_YET)
+      {
+        predecessorEquivalenceLabels[successorSCC] = equivalenceSetLabels[scc];
+      }
+      else if (predecessorEquivalenceLabels[successorSCC] != equivalenceSetLabels[scc])
+      {
+        predecessorEquivalenceLabels[successorSCC] = SEVERAL_PREDECESSORS;
+      }
+    }
+  }
+
+  // Finally unify all PointerObjects with equal equivalence label
+  size_t numUnifications = 0;
+
+  std::vector<std::optional<PointerObjectIndex>> unificationRoot(
+      nextEquivalenceSetLabel,
+      std::nullopt);
+  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+  {
+    const auto equivalenceSetLabel = equivalenceSetLabels[sccIndex[i]];
+
+    // If other nodes with the same equivalence set label have been seen, unify it with i
+    if (unificationRoot[equivalenceSetLabel])
+    {
+      unificationRoot[equivalenceSetLabel] =
+          Set_.UnifyPointerObjects(i, *unificationRoot[equivalenceSetLabel]);
+      numUnifications++;
+    }
+    else
+      unificationRoot[equivalenceSetLabel] = i;
+  }
+
+  return numUnifications;
+}
+
+size_t
+PointerObjectConstraintSet::NormalizeConstraints()
+{
+  // The new list of constraint, preserving the order of constraints that are not deleted.
+  std::vector<ConstraintVariant> newConstraints;
+
+  // Sets used to avoid adding duplicates of any constraints
+  std::set<std::pair<PointerObjectIndex, PointerObjectIndex>> addedSupersetConstraints;
+  std::set<std::pair<PointerObjectIndex, PointerObjectIndex>> addedStoreConstraints;
+  std::set<std::pair<PointerObjectIndex, PointerObjectIndex>> addedLoadConstraints;
+  std::set<std::pair<PointerObjectIndex, const CallNode *>> addedCallConstraints;
+
+  for (auto constraint : Constraints_)
+  {
+    // Update all PointerObjectIndex fields to point to unification roots
+    if (auto * supersetConstraint = std::get_if<SupersetConstraint>(&constraint))
+    {
+      auto supersetRoot = Set_.GetUnificationRoot(supersetConstraint->GetSuperset());
+      auto subsetRoot = Set_.GetUnificationRoot(supersetConstraint->GetSubset());
+
+      // Skip no-op constraints
+      if (supersetRoot == subsetRoot)
+        continue;
+
+      auto [_, added] = addedSupersetConstraints.insert({ supersetRoot, subsetRoot });
+      if (added)
+        newConstraints.emplace_back(SupersetConstraint(supersetRoot, subsetRoot));
+    }
+    else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
+    {
+      auto pointerRoot = Set_.GetUnificationRoot(storeConstraint->GetPointer());
+      auto valueRoot = Set_.GetUnificationRoot(storeConstraint->GetValue());
+
+      auto [_, added] = addedStoreConstraints.insert({ pointerRoot, valueRoot });
+      if (added)
+        newConstraints.emplace_back(StoreConstraint(pointerRoot, valueRoot));
+    }
+    else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
+    {
+      auto valueRoot = Set_.GetUnificationRoot(loadConstraint->GetValue());
+      auto pointerRoot = Set_.GetUnificationRoot(loadConstraint->GetPointer());
+
+      auto [_, added] = addedLoadConstraints.insert({ pointerRoot, valueRoot });
+      if (added)
+        newConstraints.emplace_back(LoadConstraint(valueRoot, pointerRoot));
+    }
+    else if (auto * functionCallConstraint = std::get_if<FunctionCallConstraint>(&constraint))
+    {
+      auto pointerRoot = Set_.GetUnificationRoot(functionCallConstraint->GetPointer());
+      auto & callNode = functionCallConstraint->GetCallNode();
+
+      auto [_, added] = addedCallConstraints.insert({ pointerRoot, &callNode });
+      if (added)
+        newConstraints.emplace_back(FunctionCallConstraint(pointerRoot, callNode));
+    }
+    else
+      JLM_UNREACHABLE("Unknown Constraint variant");
+  }
+
+  size_t reduction = Constraints_.size() - newConstraints.size();
+  Constraints_ = std::move(newConstraints);
+  return reduction;
 }
 
 size_t
@@ -1203,6 +1515,7 @@ PointerObjectConstraintSet::Clone() const
   auto constraintClone = std::make_unique<PointerObjectConstraintSet>(*setClone);
   for (auto constraint : Constraints_)
     constraintClone->AddConstraint(constraint);
+  constraintClone->ConstraintSetFrozen_ = ConstraintSetFrozen_;
   return std::make_pair(std::move(setClone), std::move(constraintClone));
 }
 
