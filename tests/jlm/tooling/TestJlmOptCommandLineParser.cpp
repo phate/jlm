@@ -76,7 +76,7 @@ TestOutputFormatToCommandLineArgument()
   {
     auto outputFormat = static_cast<JlmOptCommandLineOptions::OutputFormat>(n);
 
-    // throws exception on failure
+    // throws exception / asserts on failure
     JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
   }
 

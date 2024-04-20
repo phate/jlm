@@ -220,10 +220,7 @@ const char *
 JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 {
   auto & mapping = GetOutputFormatCommandLineArguments();
-  if (mapping.find(outputFormat) != mapping.end())
-    return mapping.at(outputFormat).data();
-
-  throw util::error("Unknown output format");
+  return mapping.at(outputFormat).data();
 }
 
 llvm::optimization *
