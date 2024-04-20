@@ -33,7 +33,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   auto memoryState = graph.add_import({ memoryStateType, "memoryState" });
 
   auto storeResults = StoreNode::Create(address, value, { memoryState }, 4);
-  auto loadResults = LoadNode::Create(address, storeResults, jlm::rvsdg::bit8, 4);
+  auto loadResults = LoadNode::Create(address, storeResults, jlm::rvsdg::bit8, false, 4);
 
   auto exportedValue = graph.add_export(loadResults[0], { jlm::rvsdg::bit8, "v" });
   graph.add_export(loadResults[1], { memoryStateType, "s" });

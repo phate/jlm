@@ -126,9 +126,14 @@ class LoadOperation final : public rvsdg::simple_op
 public:
   ~LoadOperation() noexcept override;
 
-  LoadOperation(const rvsdg::valuetype & loadedType, size_t numStates, size_t alignment)
+  LoadOperation(
+      const rvsdg::valuetype & loadedType,
+      size_t numStates,
+      bool isVolatile,
+      size_t alignment)
       : simple_op(CreateOperandPorts(numStates), CreateResultPorts(loadedType, numStates)),
-        alignment_(alignment)
+        alignment_(alignment),
+        IsVolatile_(isVolatile)
   {}
 
   bool
@@ -164,6 +169,12 @@ public:
     return alignment_;
   }
 
+  [[nodiscard]] bool
+  IsVolatile() const noexcept
+  {
+    return IsVolatile_;
+  }
+
   static load_normal_form *
   GetNormalForm(rvsdg::graph * graph) noexcept
   {
@@ -176,11 +187,12 @@ public:
       const variable * address,
       const variable * state,
       const rvsdg::valuetype & loadedType,
+      bool isVolatile,
       size_t alignment)
   {
     CheckAddressType(address->type());
 
-    LoadOperation operation(loadedType, 1, alignment);
+    LoadOperation operation(loadedType, 1, isVolatile, alignment);
     return tac::create(operation, { address, state });
   }
 
@@ -211,6 +223,7 @@ private:
   }
 
   size_t alignment_;
+  bool IsVolatile_;
 };
 
 class LoadNode final : public rvsdg::simple_node
@@ -319,6 +332,7 @@ public:
       rvsdg::output * address,
       const std::vector<rvsdg::output *> & states,
       const rvsdg::valuetype & loadedType,
+      bool isVolatile,
       size_t alignment)
   {
     CheckAddressType(address->type());
@@ -326,7 +340,7 @@ public:
     std::vector<rvsdg::output *> operands({ address });
     operands.insert(operands.end(), states.begin(), states.end());
 
-    LoadOperation loadOperation(loadedType, states.size(), alignment);
+    LoadOperation loadOperation(loadedType, states.size(), isVolatile, alignment);
     return Create(*address->region(), loadOperation, operands);
   }
 

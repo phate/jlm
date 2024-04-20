@@ -31,7 +31,7 @@ TestCopy()
   auto address2 = graph.add_import({ pointerType, "address2" });
   auto memoryState2 = graph.add_import({ memoryType, "memoryState2" });
 
-  auto loadResults = LoadNode::Create(address1, { memoryState1 }, valueType, 4);
+  auto loadResults = LoadNode::Create(address1, { memoryState1 }, valueType, false, 4);
 
   // Act
   auto node = jlm::rvsdg::node_output::node(loadResults[0]);
@@ -63,7 +63,7 @@ TestLoadAllocaReduction()
   auto alloca1 = alloca_op::create(bt, size, 4);
   auto alloca2 = alloca_op::create(bt, size, 4);
   auto mux = jlm::rvsdg::create_state_mux(mt, { alloca1[1] }, 1);
-  auto value = LoadNode::Create(alloca1[0], { alloca1[1], alloca2[1], mux[0] }, bt, 4)[0];
+  auto value = LoadNode::Create(alloca1[0], { alloca1[1], alloca2[1], mux[0] }, bt, false, 4)[0];
 
   auto ex = graph.add_export(value, { value->type(), "l" });
 
@@ -103,7 +103,7 @@ TestMultipleOriginReduction()
   auto a = graph.add_import({ pt, "a" });
   auto s = graph.add_import({ mt, "s" });
 
-  auto load = LoadNode::Create(a, { s, s, s, s }, vt, 4)[0];
+  auto load = LoadNode::Create(a, { s, s, s, s }, vt, false, 4)[0];
 
   auto ex = graph.add_export(load, { load->type(), "l" });
 
@@ -142,8 +142,8 @@ TestLoadStoreStateReduction()
   auto store1 = StoreNode::Create(alloca1[0], size, { alloca1[1] }, 4);
   auto store2 = StoreNode::Create(alloca2[0], size, { alloca2[1] }, 4);
 
-  auto value1 = LoadNode::Create(alloca1[0], { store1[0], store2[0] }, bt, 4)[0];
-  auto value2 = LoadNode::Create(alloca1[0], { store1[0] }, bt, 8)[0];
+  auto value1 = LoadNode::Create(alloca1[0], { store1[0], store2[0] }, bt, false, 4)[0];
+  auto value2 = LoadNode::Create(alloca1[0], { store1[0] }, bt, false, 8)[0];
 
   auto ex1 = graph.add_export(value1, { value1->type(), "l1" });
   auto ex2 = graph.add_export(value2, { value2->type(), "l2" });
@@ -188,7 +188,7 @@ TestLoadStoreReduction()
   auto s = graph.add_import({ mt, "state" });
 
   auto s1 = StoreNode::Create(a, v, { s }, 4)[0];
-  auto load = LoadNode::Create(a, { s1 }, vt, 4);
+  auto load = LoadNode::Create(a, { s1 }, vt, false, 4);
 
   auto x1 = graph.add_export(load[0], { load[0]->type(), "value" });
   auto x2 = graph.add_export(load[1], { load[1]->type(), "state" });
@@ -231,10 +231,10 @@ TestLoadLoadReduction()
   auto s2 = graph.add_import({ mt, "s2" });
 
   auto st1 = StoreNode::Create(a1, v1, { s1 }, 4);
-  auto ld1 = LoadNode::Create(a2, { s1 }, vt, 4);
-  auto ld2 = LoadNode::Create(a3, { s2 }, vt, 4);
+  auto ld1 = LoadNode::Create(a2, { s1 }, vt, false, 4);
+  auto ld2 = LoadNode::Create(a3, { s2 }, vt, false, 4);
 
-  auto ld3 = LoadNode::Create(a4, { st1[0], ld1[1], ld2[1] }, vt, 4);
+  auto ld3 = LoadNode::Create(a4, { st1[0], ld1[1], ld2[1] }, vt, false, 4);
 
   auto x1 = graph.add_export(ld3[1], { mt, "s" });
   auto x2 = graph.add_export(ld3[2], { mt, "s" });

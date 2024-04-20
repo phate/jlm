@@ -596,12 +596,13 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Load);
   auto instruction = static_cast<::llvm::LoadInst *>(i);
 
-  /* FIXME: volatile */
+  auto isVolatile = instruction->isVolatile();
   auto alignment = instruction->getAlign().value();
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ConvertType(instruction->getType(), ctx);
 
-  tacs.push_back(LoadOperation::Create(address, ctx.memory_state(), *loadedType, alignment));
+  tacs.push_back(
+      LoadOperation::Create(address, ctx.memory_state(), *loadedType, isVolatile, alignment));
   auto value = tacs.back()->result(0);
   auto state = tacs.back()->result(1);
 

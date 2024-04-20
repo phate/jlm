@@ -142,7 +142,7 @@ TestCallTypeClassifierIndirectCall()
 
     auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), { alloca[1] }, 8);
 
-    auto load = LoadNode::Create(alloca[0], store, pt, 8);
+    auto load = LoadNode::Create(alloca[0], store, pt, false, 8);
 
     auto callResults = CallNode::Create(
         load[0],
@@ -487,11 +487,11 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     auto gepnm1 =
         GetElementPtrOperation::Create(resultev->argument(0), { nm1 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm1 = LoadNode::Create(gepnm1, { callfibm2Results[1] }, jlm::rvsdg::bit64, 8);
+    auto ldnm1 = LoadNode::Create(gepnm1, { callfibm2Results[1] }, jlm::rvsdg::bit64, false, 8);
 
     auto gepnm2 =
         GetElementPtrOperation::Create(resultev->argument(0), { nm2 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm2 = LoadNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
+    auto ldnm2 = LoadNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, false, 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 

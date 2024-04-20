@@ -18,13 +18,14 @@ LoadOperation::operator==(const operation & other) const noexcept
 {
   auto op = dynamic_cast<const LoadOperation *>(&other);
   return op && op->narguments() == narguments() && op->GetPointerType() == GetPointerType()
-      && op->GetAlignment() == GetAlignment();
+      && op->GetAlignment() == GetAlignment() && op->IsVolatile() == IsVolatile();
 }
 
 std::string
 LoadOperation::debug_string() const
 {
-  return "LOAD";
+  auto volatileLabel = IsVolatile() ? "[volatile]" : "";
+  return util::strfmt("LOAD", volatileLabel);
 }
 
 std::unique_ptr<rvsdg::operation>
@@ -247,6 +248,7 @@ perform_load_mux_reduction(const LoadOperation & op, const std::vector<rvsdg::ou
       operands[0],
       rvsdg::operands(memStateMergeNode),
       op.GetLoadedType(),
+      op.IsVolatile(),
       op.GetAlignment());
 
   std::vector<rvsdg::output *> states = { std::next(ld.begin()), ld.end() };
@@ -273,7 +275,12 @@ perform_load_alloca_reduction(
       otherstates.push_back(operands[n]);
   }
 
-  auto ld = LoadNode::Create(operands[0], loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNode::Create(
+      operands[0],
+      loadstates,
+      op.GetLoadedType(),
+      op.IsVolatile(),
+      op.GetAlignment());
 
   std::vector<rvsdg::output *> results(1, ld[0]);
   results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -300,7 +307,12 @@ perform_load_store_state_reduction(
       new_loadstates.push_back(state);
   }
 
-  auto ld = LoadNode::Create(operands[0], new_loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNode::Create(
+      operands[0],
+      new_loadstates,
+      op.GetLoadedType(),
+      op.IsVolatile(),
+      op.GetAlignment());
 
   results[0] = ld[0];
   for (size_t n = 1, s = 1; n < results.size(); n++)
@@ -331,7 +343,12 @@ perform_multiple_origin_reduction(
     seen_state.insert(state);
   }
 
-  auto ld = LoadNode::Create(operands[0], new_loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNode::Create(
+      operands[0],
+      new_loadstates,
+      op.GetLoadedType(),
+      op.IsVolatile(),
+      op.GetAlignment());
 
   results[0] = ld[0];
   for (size_t n = 1, s = 1; n < results.size(); n++)
@@ -409,7 +426,12 @@ perform_load_load_state_reduction(
   for (size_t n = 1; n < operands.size(); n++)
     ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
 
-  auto ld = LoadNode::Create(operands[0], ldstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNode::Create(
+      operands[0],
+      ldstates,
+      op.GetLoadedType(),
+      op.IsVolatile(),
+      op.GetAlignment());
   for (size_t n = 0; n < mxstates.size(); n++)
   {
     auto & states = mxstates[n];

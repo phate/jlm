@@ -288,8 +288,9 @@ convert(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
+  auto isVolatile = operation.IsVolatile();
   auto type = convert_type(operation.GetLoadedType(), ctx);
-  auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]));
+  auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]), isVolatile);
   loadInstruction->setAlignment(::llvm::Align(operation.GetAlignment()));
   return loadInstruction;
 }

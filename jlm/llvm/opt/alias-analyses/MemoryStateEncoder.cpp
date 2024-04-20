@@ -666,6 +666,7 @@ MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
       address,
       inStates,
       loadOperation.GetLoadedType(),
+      loadOperation.IsVolatile(),
       loadOperation.GetAlignment());
   oldResult->divert_users(outputs[0]);
 
