@@ -184,7 +184,7 @@ dead_nonspec_gamma(jlm::rvsdg::node * ndmux_node)
     // same control origin + all inputs to branch
     ndmux_node->output(0)->divert_users(origin_branch->input(1)->origin());
     remove(ndmux_node);
-    JLM_ASSERT(origin_branch == nullptr);
+    JLM_ASSERT(origin_branch != nullptr);
     remove(origin_branch);
     return true;
   }
