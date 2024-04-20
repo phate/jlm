@@ -173,6 +173,13 @@ is_load_store_reducible(
     const LoadOperation & loadOperation,
     const std::vector<rvsdg::output *> & operands)
 {
+  // We cannot apply this reduction to volatile loads as the load is rendered dead and could be
+  // removed.
+  if (loadOperation.IsVolatile())
+  {
+    return false;
+  }
+
   // We do not need to check further if no state edge is provided to the load
   if (operands.size() < 2)
   {
@@ -360,24 +367,30 @@ perform_multiple_origin_reduction(
   return results;
 }
 
-/*
-  _ so1 = load_op _ si1
-  _ so2 = load_op _ so1
-  _ so3 = load_op _ so2
-  =>
-  _ so1 = load_op _ si1
-  _ so2 = load_op _ si1
-  _ so3 = load_op _ si1
-*/
+// ... so1 = load_op ... si1
+// ... so2 = load_op ... so1
+// ... = any_op so2
+// =>
+// ... so1 = load_op ... si1
+// ... so2 = load_op ... si1
+// so3 = MemoryStateMergeOperator so1 so2
+// ... = any_op so3
 static bool
-is_load_load_state_reducible(const std::vector<rvsdg::output *> & operands)
+is_load_load_state_reducible(
+    const LoadOperation & loadOperation,
+    const std::vector<rvsdg::output *> & operands)
 {
   JLM_ASSERT(operands.size() >= 2);
 
   for (size_t n = 1; n < operands.size(); n++)
   {
-    if (is<LoadOperation>(rvsdg::node_output::node(operands[n])))
-      return true;
+    auto node = rvsdg::node_output::node(operands[n]);
+    if (auto loadNode = dynamic_cast<const LoadNode *>(node))
+    {
+      // We cannot apply this reduction to volatile loads as it potentially changes the
+      // ordering of the loads with respect to each other.
+      return !loadOperation.IsVolatile() && !loadNode->GetOperation().IsVolatile();
+    }
   }
 
   return false;
@@ -506,7 +519,7 @@ load_normal_form::normalize_node(rvsdg::node * node) const
     return false;
   }
 
-  if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
+  if (get_load_load_state_reducible() && is_load_load_state_reducible(*op, operands))
   {
     divert_users(node, perform_load_load_state_reduction(*op, operands));
     remove(node);
@@ -543,7 +556,7 @@ load_normal_form::normalized_create(
   if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
     return perform_multiple_origin_reduction(*lop, operands);
 
-  if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
+  if (get_load_load_state_reducible() && is_load_load_state_reducible(*lop, operands))
     return perform_load_load_state_reduction(*lop, operands);
 
   return simple_normal_form::normalized_create(region, op, operands);
