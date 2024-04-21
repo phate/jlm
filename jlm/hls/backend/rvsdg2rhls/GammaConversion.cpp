@@ -172,4 +172,4 @@ ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule)
   ConvertGammaNodesInRegion(*rvsdgModule.Rvsdg().root());
 }
 
-} // namespace jlm::hls
+}

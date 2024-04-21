@@ -61,4 +61,4 @@ add_forks(llvm::RvsdgModule & rm)
   add_forks(root);
 }
 
-} // namespace hls::hls
+}

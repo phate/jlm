@@ -18,6 +18,6 @@ add_buffers(rvsdg::region * region, bool pass_through);
 void
 add_buffers(llvm::RvsdgModule & rm, bool pass_through);
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_BUFFERS_HPP

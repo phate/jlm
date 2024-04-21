@@ -150,4 +150,4 @@ add_triggers(llvm::RvsdgModule & rm)
   add_triggers(root);
 }
 
-} // namespace jlm::hls
+}

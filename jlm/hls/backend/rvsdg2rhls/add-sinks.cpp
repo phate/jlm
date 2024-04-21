@@ -50,4 +50,4 @@ add_sinks(llvm::RvsdgModule & rm)
   add_sinks(root);
 }
 
-} // namespace hls::hls
+}

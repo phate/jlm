@@ -14,15 +14,11 @@ namespace jlm::hls
 
 class DotHLS : public BaseHLS
 {
-public:
   std::string
   extension() override;
 
   std::string
   get_text(llvm::RvsdgModule & rm) override;
-
-  std::string
-  subregion_to_dot(jlm::rvsdg::region * sr);
 
 private:
   std::string
@@ -43,9 +39,12 @@ private:
   void
   prepare_loop_out_port(hls::loop_node * ln);
 
+  std::string
+  subregion_to_dot(jlm::rvsdg::region * sr);
+
   int loop_ctr = 0;
 };
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_HLS_BACKEND_RHLS2FIRRTL_DOT_HLS_HPP

@@ -30,6 +30,6 @@ convert_prints(
 rvsdg::output *
 route_to_region(rvsdg::output * output, rvsdg::region * region);
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP
