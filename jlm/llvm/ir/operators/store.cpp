@@ -41,6 +41,13 @@ StoreNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & ope
 
 /* store normal form */
 
+// so3 = memoryStateMerge si1 si2
+// so4 = store a v so3
+// ... = anyOp so4
+// =>
+// so1 so2 = store a v si1 si2
+// so3 = memoryStateMerge so1 so2
+// ... = anyOp so3
 static bool
 is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
 {
@@ -60,6 +67,12 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
   return true;
 }
 
+// so1 = store1 a v1 si1
+// so2 = store2 a v2 so2
+// ... = anyOp so2
+// =>
+// so1 = store a v2 si1
+// ... = anyOp so1
 static bool
 is_store_store_reducible(
     const StoreOperation & op,
@@ -67,30 +80,46 @@ is_store_store_reducible(
 {
   JLM_ASSERT(operands.size() > 2);
 
-  auto storenode = jlm::rvsdg::node_output::node(operands[2]);
-  if (!is<StoreOperation>(storenode))
+  auto storeNode = dynamic_cast<const StoreNode *>(jlm::rvsdg::node_output::node(operands[2]));
+  if (!storeNode)
     return false;
 
-  if (op.NumStates() != storenode->noutputs())
+  if (op.NumStates() != storeNode->noutputs())
     return false;
 
-  /* check for same address */
-  if (operands[0] != storenode->input(0)->origin())
+  if (op.IsVolatile() && storeNode->GetOperation().IsVolatile())
+  {
+    // We cannot apply this reduction to volatile stores as a store is rendered dead and could be
+    // removed
+    return false;
+  }
+
+  // check for same address
+  if (operands[0] != storeNode->GetAddressInput()->origin())
     return false;
 
   for (size_t n = 2; n < operands.size(); n++)
   {
-    if (jlm::rvsdg::node_output::node(operands[n]) != storenode || operands[n]->nusers() != 1)
+    auto node = jlm::rvsdg::node_output::node(operands[n]);
+    if (node != storeNode || operands[n]->nusers() != 1)
       return false;
   }
 
-  auto other = static_cast<const StoreOperation *>(&storenode->operation());
-  JLM_ASSERT(op.GetAlignment() == other->GetAlignment());
+  JLM_ASSERT(op.GetAlignment() == storeNode->GetAlignment());
   return true;
 }
 
+// a si1 = alloca ...
+// so1 ... soN = store a v si1 ... siN
+// ... = anyOp so1 ... soN
+// =>
+// a si1 = alloca ...
+// so1 = store a v si1
+// ... = anyOp so1 ... soN
 static bool
-is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
+is_store_alloca_reducible(
+    const StoreOperation & storeOperation,
+    const std::vector<jlm::rvsdg::output *> & operands)
 {
   if (operands.size() == 3)
     return false;
@@ -108,9 +137,18 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
   if (alloca->output(1)->nusers() != 1)
     return false;
 
+  // It should NOT happen that a store node with an address directly from an alloca node is
+  // marked as volatile, but I was wrong before. This assert is here to ensure that the reduction is
+  // not just blindly applied in such a case as it could mean that we potentially change the order
+  // of volatile memory accesses.
+  JLM_ASSERT(storeOperation.IsVolatile() == false);
+
   return true;
 }
 
+// ... = store a v si1 si1 si1 si2 ...
+// =>
+// ... = store a v si1 si2 ...
 static bool
 is_multiple_origin_reducible(const std::vector<jlm::rvsdg::output *> & operands)
 {
@@ -230,7 +268,7 @@ store_normal_form::normalize_node(jlm::rvsdg::node * node) const
     return false;
   }
 
-  if (get_store_alloca_reducible() && is_store_alloca_reducible(operands))
+  if (get_store_alloca_reducible() && is_store_alloca_reducible(*op, operands))
   {
     divert_users(node, perform_store_alloca_reduction(*op, operands));
     node->region()->remove_node(node);
@@ -279,7 +317,7 @@ store_normal_form::normalized_create(
   if (get_store_mux_reducible() && is_store_mux_reducible(operands))
     return perform_store_mux_reduction(*sop, operands);
 
-  if (get_store_alloca_reducible() && is_store_alloca_reducible(operands))
+  if (get_store_alloca_reducible() && is_store_alloca_reducible(*sop, operands))
     return perform_store_alloca_reduction(*sop, operands);
 
   if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
