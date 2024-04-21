@@ -17,13 +17,14 @@ StoreOperation::operator==(const operation & other) const noexcept
 {
   auto op = dynamic_cast<const StoreOperation *>(&other);
   return op && op->NumStates() == NumStates() && op->GetPointerType() == GetPointerType()
-      && op->GetAlignment() == GetAlignment();
+      && op->GetAlignment() == GetAlignment() && op->IsVolatile() == IsVolatile();
 }
 
 std::string
 StoreOperation::debug_string() const
 {
-  return "STORE";
+  auto isVolatileLabel = IsVolatile() ? "[volatile]" : "";
+  return util::strfmt("STORE", isVolatileLabel);
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
@@ -127,8 +128,12 @@ perform_store_mux_reduction(
   auto memStateMergeNode = jlm::rvsdg::node_output::node(operands[2]);
   auto memStateMergeOperands = jlm::rvsdg::operands(memStateMergeNode);
 
-  auto states =
-      StoreNode::Create(operands[0], operands[1], memStateMergeOperands, op.GetAlignment());
+  auto states = StoreNode::Create(
+      operands[0],
+      operands[1],
+      memStateMergeOperands,
+      op.IsVolatile(),
+      op.GetAlignment());
   return { MemStateMergeOperator::Create(states) };
 }
 
@@ -142,7 +147,7 @@ perform_store_store_reduction(
 
   auto storeops = jlm::rvsdg::operands(storenode);
   std::vector<jlm::rvsdg::output *> states(std::next(std::next(storeops.begin())), storeops.end());
-  return StoreNode::Create(operands[0], operands[1], states, op.GetAlignment());
+  return StoreNode::Create(operands[0], operands[1], states, op.IsVolatile(), op.GetAlignment());
 }
 
 static std::vector<jlm::rvsdg::output *>
@@ -157,7 +162,8 @@ perform_store_alloca_reduction(
       std::next(std::next(operands.begin())),
       operands.end());
 
-  auto outputs = StoreNode::Create(address, value, { alloca_state }, op.GetAlignment());
+  auto outputs =
+      StoreNode::Create(address, value, { alloca_state }, op.IsVolatile(), op.GetAlignment());
   states.erase(alloca_state);
   states.insert(outputs[0]);
   return { states.begin(), states.end() };
@@ -175,6 +181,7 @@ perform_multiple_origin_reduction(
       operands[0],
       operands[1],
       { states.begin(), states.end() },
+      op.IsVolatile(),
       op.GetAlignment());
 }
 

@@ -305,7 +305,8 @@ convert_store(
   JLM_ASSERT(is<StoreOperation>(op) && args.size() >= 2);
   auto store = static_cast<const StoreOperation *>(&op);
 
-  auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
+  auto isVolatile = store->IsVolatile();
+  auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]), isVolatile);
   i->setAlignment(::llvm::Align(store->GetAlignment()));
   return nullptr;
 }

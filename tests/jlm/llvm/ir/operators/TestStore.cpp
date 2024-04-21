@@ -32,7 +32,7 @@ TestCopy()
   auto value2 = graph.add_import({ valueType, "value2" });
   auto memoryState2 = graph.add_import({ memoryStateType, "state2" });
 
-  auto storeResults = StoreNode::Create(address1, value1, { memoryState1 }, 4);
+  auto storeResults = StoreNode::Create(address1, value1, { memoryState1 }, false, 4);
 
   // Act
   auto node = jlm::rvsdg::node_output::node(storeResults[0]);
@@ -68,7 +68,7 @@ TestStoreMuxReduction()
   auto s3 = graph.add_import({ mt, "s3" });
 
   auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
-  auto state = StoreNode::Create(a, v, { mux }, 4);
+  auto state = StoreNode::Create(a, v, { mux }, false, 4);
 
   auto ex = graph.add_export(state[0], { state[0]->type(), "s" });
 
@@ -114,7 +114,7 @@ TestMultipleOriginReduction()
   auto v = graph.add_import({ vt, "v" });
   auto s = graph.add_import({ mt, "s" });
 
-  auto states = StoreNode::Create(a, v, { s, s, s, s }, 4);
+  auto states = StoreNode::Create(a, v, { s, s, s, s }, false, 4);
 
   auto ex = graph.add_export(states[0], { states[0]->type(), "s" });
 
@@ -155,8 +155,8 @@ TestStoreAllocaReduction()
 
   auto alloca1 = alloca_op::create(vt, size, 4);
   auto alloca2 = alloca_op::create(vt, size, 4);
-  auto states1 = StoreNode::Create(alloca1[0], value, { alloca1[1], alloca2[1], s }, 4);
-  auto states2 = StoreNode::Create(alloca2[0], value, states1, 4);
+  auto states1 = StoreNode::Create(alloca1[0], value, { alloca1[1], alloca2[1], s }, false, 4);
+  auto states2 = StoreNode::Create(alloca2[0], value, states1, false, 4);
 
   graph.add_export(states2[0], { states2[0]->type(), "s1" });
   graph.add_export(states2[1], { states2[1]->type(), "s2" });
@@ -198,8 +198,8 @@ TestStoreStoreReduction()
   auto v2 = graph.add_import({ vt, "value" });
   auto s = graph.add_import({ mt, "state" });
 
-  auto s1 = StoreNode::Create(a, v1, { s }, 4)[0];
-  auto s2 = StoreNode::Create(a, v2, { s1 }, 4)[0];
+  auto s1 = StoreNode::Create(a, v1, { s }, false, 4)[0];
+  auto s2 = StoreNode::Create(a, v2, { s1 }, false, 4)[0];
 
   auto ex = graph.add_export(s2, { s2->type(), "state" });
 

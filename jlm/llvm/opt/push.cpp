@@ -355,7 +355,8 @@ pushout_store(jlm::rvsdg::node * storenode)
   }
 
   /* create new store and redirect theta output users */
-  auto nstates = StoreNode::Create(address, nvalue, states, storeop->GetAlignment());
+  auto nstates =
+      StoreNode::Create(address, nvalue, states, storeop->IsVolatile(), storeop->GetAlignment());
   for (size_t n = 0; n < states.size(); n++)
   {
     std::unordered_set<jlm::rvsdg::input *> users;

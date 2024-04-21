@@ -689,7 +689,12 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outStates = StoreNode::Create(address, value, inStates, storeOperation.GetAlignment());
+  auto outStates = StoreNode::Create(
+      address,
+      value,
+      inStates,
+      storeOperation.IsVolatile(),
+      storeOperation.GetAlignment());
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, outStates);
 }

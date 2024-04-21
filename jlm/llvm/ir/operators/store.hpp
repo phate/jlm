@@ -88,11 +88,16 @@ class StoreOperation final : public jlm::rvsdg::simple_op
 public:
   ~StoreOperation() noexcept override;
 
-  StoreOperation(const jlm::rvsdg::valuetype & storedType, size_t numStates, size_t alignment)
+  StoreOperation(
+      const jlm::rvsdg::valuetype & storedType,
+      size_t numStates,
+      bool isVolatile,
+      size_t alignment)
       : simple_op(
           CreateOperandPorts(storedType, numStates),
           std::vector<jlm::rvsdg::port>(numStates, { MemoryStateType::Create() })),
-        Alignment_(alignment)
+        Alignment_(alignment),
+        IsVolatile_(isVolatile)
   {}
 
   bool
@@ -128,6 +133,12 @@ public:
     return Alignment_;
   }
 
+  [[nodiscard]] bool
+  IsVolatile() const noexcept
+  {
+    return IsVolatile_;
+  }
+
   static store_normal_form *
   GetNormalForm(jlm::rvsdg::graph * graph) noexcept
   {
@@ -136,11 +147,16 @@ public:
   }
 
   static std::unique_ptr<llvm::tac>
-  Create(const variable * address, const variable * value, const variable * state, size_t alignment)
+  Create(
+      const variable * address,
+      const variable * value,
+      const variable * state,
+      bool isVolatile,
+      size_t alignment)
   {
     auto & storedType = CheckAndExtractStoredType(value->type());
 
-    StoreOperation op(storedType, 1, alignment);
+    StoreOperation op(storedType, 1, isVolatile, alignment);
     return tac::create(op, { address, value, state });
   }
 
@@ -164,6 +180,7 @@ private:
   }
 
   size_t Alignment_;
+  bool IsVolatile_;
 };
 
 /** \brief StoreNode class
@@ -277,6 +294,7 @@ public:
       jlm::rvsdg::output * address,
       jlm::rvsdg::output * value,
       const std::vector<jlm::rvsdg::output *> & states,
+      bool isVolatile,
       size_t alignment)
   {
     auto & storedType = CheckAndExtractStoredType(value->type());
@@ -284,7 +302,7 @@ public:
     std::vector<jlm::rvsdg::output *> operands({ address, value });
     operands.insert(operands.end(), states.begin(), states.end());
 
-    StoreOperation storeOperation(storedType, states.size(), alignment);
+    StoreOperation storeOperation(storedType, states.size(), isVolatile, alignment);
     return Create(*address->region(), storeOperation, operands);
   }
 
