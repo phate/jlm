@@ -6,6 +6,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/util/TarjanSCC.hpp>
 #include <jlm/util/Worklist.hpp>
 
 #include <limits>
@@ -308,16 +309,18 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
   else if (PointerObjectRank_[newRoot] == PointerObjectRank_[oldRoot])
     PointerObjectRank_[newRoot]++;
 
-  PointerObjectParents_[oldRoot] = newRoot;
-
-  PointsToSets_[newRoot].UnionWith(PointsToSets_[oldRoot]);
-  PointsToSets_[oldRoot].Clear();
-
   // Ensure any flags set on the points-to set continue to be set in the new unification
   if (IsPointingToExternal(oldRoot))
     MarkAsPointingToExternal(newRoot);
   if (HasPointeesEscaping(oldRoot))
     MarkAsPointeesEscaping(newRoot);
+
+  // Perform the actual unification
+  PointerObjectParents_[oldRoot] = newRoot;
+
+  // Copy over all pointees, and clean the pointee set from the old root
+  PointsToSets_[newRoot].UnionWith(PointsToSets_[oldRoot]);
+  PointsToSets_[oldRoot].Clear();
 
   return newRoot;
 }
@@ -969,38 +972,27 @@ PointerObjectConstraintSet::DrawSubsetGraph(util::GraphWriter & writer) const
   return graph;
 }
 
-size_t
-PointerObjectConstraintSet::DoOfflineVariableSubstitution()
+// Helper function for DoOfflineVariableSubstitution()
+std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
+PointerObjectConstraintSet::CreateOVSSubsetGraph()
 {
-  // Performing unification on direct nodes relies on all subset edges being known offline.
-  // This is only safe if no more constraints are added to the node in the future.
-  ConstraintSetFrozen_ = true;
-
-  // For each PointerObject v, create two nodes: n(v) and n(*v)
-  // The index of n(v) is the index of v, while n(*v) is the index of v + derefNodeOffset
+  // The index of n(v) is the index of the PointerObject v
+  // The index of n(*v) is the index of v + derefNodeOffset
   const size_t derefNodeOffset = Set_.NumPointerObjects();
   const size_t totalNodeCount = Set_.NumPointerObjects() * 2;
-
   std::vector<util::HashSet<PointerObjectIndex>> successors(totalNodeCount);
-
-  // Direct nodes are nodes in the subset graph where all subset predecessors are known offline.
-  // They can:
-  //  - only be n(v) nodes, where v is a register
-  //  - not be the return value of a function call
-  //  - not be an argument of a function body
   std::vector<bool> isDirectNode(totalNodeCount, false);
 
   // Initialize all registers as direct nodes
   for (auto [_, index] : Set_.GetRegisterMap())
-    isDirectNode[index] = false; // TODO: Disabled direct nodes temporarily
+    isDirectNode[index] = true;
 
   // Mark all function argument register nodes as not direct
   for (auto [lambda, _] : Set_.GetFunctionMap())
   {
     for (size_t n = 0; n < lambda->nfctarguments(); n++)
     {
-      auto argumentPO = Set_.TryGetRegisterPointerObject(*lambda->fctargument(n));
-      if (argumentPO)
+      if (auto argumentPO = Set_.TryGetRegisterPointerObject(*lambda->fctargument(n)))
         isDirectNode[*argumentPO] = false;
     }
   }
@@ -1036,124 +1028,55 @@ PointerObjectConstraintSet::DoOfflineVariableSubstitution()
     else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
     {
       auto & callNode = callConstraint->GetCallNode();
-      // FIXME: Maybe add a method PointerObjectConstraintSet::ReplaceDirectCalls() to replace
-      // trivial FunctionCallConstraints with subset constraints before getting to this stage
-
       // Mark all results of function calls as non-direct nodes
       for (size_t n = 0; n < callNode.NumResults(); n++)
       {
-        auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.Result(n));
-        if (resultPO)
+        if (auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.Result(n)))
           isDirectNode[*resultPO] = false;
       }
     }
   }
 
-  // Non-recursive implementation of Tarjan's SCC
-  const int64_t NOT_VISITED = -1;
-  const int64_t SCC_FINISHED = -2;
-  std::vector<int64_t> order(totalNodeCount, NOT_VISITED);
-  int64_t nextOrder = 0;
-  // The lowest order seen through any path of edges that do not enter finished SCCs
-  std::vector<int64_t> lowLink(totalNodeCount);
+  return { totalNodeCount, std::move(successors), std::move(isDirectNode) };
+}
 
-  // The DFS stack is a regular DFS traversal stack
-  std::stack<size_t> dfsStack;
-  // The SCC stack is only popped once an SCC is found
-  std::stack<size_t> sccStack;
-
-  // What SCC each node ends up in
-  std::vector<size_t> sccIndex(totalNodeCount);
-  // Partially ordered reverse topological order (each SCC is a continuous sub-array)
-  std::vector<size_t> reverseTopologicalOrder;
-  // true if all nodes in the given SCC are direct
-  std::vector<bool> isDirectSCC;
-
-  // Find SCCs
-  for (size_t startNode = 0; startNode < totalNodeCount; startNode++)
-  {
-    // Only start DFSs at unvisited nodes
-    if (order[startNode] != NOT_VISITED)
-      continue;
-
-    dfsStack.push(startNode);
-    while (!dfsStack.empty())
-    {
-      auto node = dfsStack.top();
-
-      if (order[node] == NOT_VISITED) // This is the first time node is visited
-      {
-        sccStack.push(node);
-        order[node] = nextOrder++;
-        lowLink[node] = order[node];
-
-        for (auto next : successors[node].Items())
-        {
-          // Visit nodes that have not been visited before
-          if (order[next] == NOT_VISITED)
-            dfsStack.push(next);
-        }
-      }
-      else // This is the second time node is visited, all children have been processed
-      {
-        dfsStack.pop();
-        for (auto next : successors[node].Items())
-        {
-          // Ignore edges to nodes that are already part of a finished SCC
-          if (order[next] == SCC_FINISHED)
-            continue;
-          lowLink[node] = std::min(lowLink[node], lowLink[next]);
-        }
-
-        // This node is the root of an SCC
-        if (lowLink[node] == order[node])
-        {
-          // Are all nodes in the SCC direct nodes?
-          bool allDirect = true;
-          const auto thisSccIndex = isDirectSCC.size();
-
-          while (true)
-          {
-            auto top = sccStack.top();
-            sccStack.pop();
-            order[top] = SCC_FINISHED;
-            sccIndex[top] = thisSccIndex;
-            allDirect = allDirect && isDirectNode[top];
-            reverseTopologicalOrder.push_back(top);
-
-            if (top == node)
-              break;
-          }
-
-          isDirectSCC.push_back(allDirect);
-        }
-      }
-    }
-  }
-  JLM_ASSERT(sccStack.empty());
-
-  // Now visit all SCCs in topological order and assign equivalence set labels
+/**
+ * Part of Offline Variable Substitution, works on the OVS subset graph.
+ * Takes the set of SCCs in the graph, and assigns equivalence set labels to each SCC.
+ * If all predecessors of a direct SCC have the same equivalence set label, that label is used.
+ * @return a vector of equivalence set labels assigned to each SCC
+ * @see PointerObjectConstraintSet::DoOfflineVariableSubstitution()
+ */
+static std::vector<int64_t>
+AssignOVSEquivalenceSetLabels(
+    std::vector<util::HashSet<PointerObjectIndex>> & successors,
+    size_t numSccs,
+    std::vector<size_t> & sccIndex,
+    std::vector<size_t> & topologicalOrder,
+    std::vector<bool> & sccHasDirectNodesOnly)
+{
+  // Visit all SCCs in topological order and assign equivalence set labels
   int64_t nextEquivalenceSetLabel = 0;
   const int64_t NO_EQUIVALENCE_SET_LABEL = -1;
-  std::vector<int64_t> equivalenceSetLabels(isDirectSCC.size(), NO_EQUIVALENCE_SET_LABEL);
+  std::vector<int64_t> equivalenceSetLabels(numSccs, NO_EQUIVALENCE_SET_LABEL);
 
   // If all predecessors of a direct SCC share equivalence set label, use that label.
   const int64_t NO_PREDECESSOR_YET = -1;   // Value used when no predecessor label has been seen
   const int64_t SEVERAL_PREDECESSORS = -2; // Value used when different predecessors have been seen
-  std::vector<int64_t> predecessorEquivalenceLabels(isDirectSCC.size(), NO_PREDECESSOR_YET);
+  std::vector<int64_t> predecessorEquivalenceLabels(numSccs, NO_PREDECESSOR_YET);
 
   // Iterate over each SCC in topological order, and each node within the SCC.
   // This ensures all predecessor SCCs are know about before visiting each SCC.
-  for (auto node = reverseTopologicalOrder.rbegin(); node != reverseTopologicalOrder.rend(); ++node)
+  for (auto node : topologicalOrder)
   {
-    const auto scc = sccIndex[*node];
+    const auto scc = sccIndex[node];
 
     // If this SCC has not been visited in the topological order traversal, give it a label
     if (equivalenceSetLabels[scc] == NO_EQUIVALENCE_SET_LABEL)
     {
       // Check if the SCC is direct, and all predecessors share a single equivalence label.
       // Otherwise, give it a new unique equivalence set label.
-      if (isDirectSCC[scc] && predecessorEquivalenceLabels[scc] != NO_PREDECESSOR_YET
+      if (sccHasDirectNodesOnly[scc] && predecessorEquivalenceLabels[scc] != NO_PREDECESSOR_YET
           && predecessorEquivalenceLabels[scc] != SEVERAL_PREDECESSORS)
       {
         equivalenceSetLabels[scc] = predecessorEquivalenceLabels[scc];
@@ -1165,7 +1088,7 @@ PointerObjectConstraintSet::DoOfflineVariableSubstitution()
     }
 
     // Inform all successors of this node about this SCC's equivalence label
-    for (auto successor : successors[*node].Items())
+    for (auto successor : successors[node].Items())
     {
       const auto successorSCC = sccIndex[successor];
       if (predecessorEquivalenceLabels[successorSCC] == SEVERAL_PREDECESSORS)
@@ -1182,12 +1105,58 @@ PointerObjectConstraintSet::DoOfflineVariableSubstitution()
     }
   }
 
+  return equivalenceSetLabels;
+}
+
+size_t
+PointerObjectConstraintSet::DoOfflineVariableSubstitution()
+{
+  // Performing unification on direct nodes relies on all subset edges being known offline.
+  // This is only safe if no more constraints are added to the node in the future.
+  ConstraintSetFrozen_ = true;
+
+  // For each PointerObject v, creates two nodes: n(v) and n(*v), and creates edges between them
+  auto subsetGraph = CreateOVSSubsetGraph();
+  auto totalNodeCount = std::get<0>(subsetGraph);
+  auto & successors = std::get<1>(subsetGraph);
+  auto & isDirectNode = std::get<2>(subsetGraph);
+
+  auto GetSuccessors = [&](size_t node)
+  {
+    return successors[node].Items();
+  };
+
+  // Output vectors from Tarjan's SCC algorithm
+  std::vector<size_t> sccIndex;
+  std::vector<size_t> topologicalOrder;
+  auto numSccs = util::FindStronglyConnectedComponents(
+      totalNodeCount,
+      GetSuccessors,
+      sccIndex,
+      topologicalOrder);
+
+  // Find out which SCCs only contain direct nodes
+  std::vector<bool> sccHasDirectNodesOnly(numSccs, true);
+  for (size_t node = 0; node < totalNodeCount; node++)
+  {
+    if (!isDirectNode[node])
+      sccHasDirectNodesOnly[sccIndex[node]] = false;
+  }
+
+  // Give each SCC an equivalence set label
+  auto equivalenceSetLabels = AssignOVSEquivalenceSetLabels(
+      successors,
+      numSccs,
+      sccIndex,
+      topologicalOrder,
+      sccHasDirectNodesOnly);
+
   // Finally unify all PointerObjects with equal equivalence label
   size_t numUnifications = 0;
-
   std::vector<std::optional<PointerObjectIndex>> unificationRoot(
-      nextEquivalenceSetLabel,
+      equivalenceSetLabels.size(),
       std::nullopt);
+
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
     const auto equivalenceSetLabel = equivalenceSetLabels[sccIndex[i]];

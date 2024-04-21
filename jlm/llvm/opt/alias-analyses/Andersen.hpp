@@ -90,7 +90,8 @@ public:
      * which may create opportunities for constraint normalization.
      */
     void
-    SetDoOfflineVariableSubstitution(bool value) {
+    SetDoOfflineVariableSubstitution(bool value)
+    {
       DoOfflineVariableSubstitution_ = value;
     }
 
@@ -106,7 +107,8 @@ public:
      * @see PointerObjectConstraintSet::NormalizeConstraints()
      */
     void
-    SetDoOfflineConstraintNormalization(bool value) {
+    SetDoOfflineConstraintNormalization(bool value)
+    {
       DoOfflineConstraintNormalization_ = value;
     }
 

@@ -832,6 +832,24 @@ public:
   Clone() const;
 
 private:
+  /**
+   * Creates the special subset graph containing both regular nodes and dereference nodes,
+   * used by DoOfflineVariableSubstitution().
+   *
+   * Some nodes are marked as direct, when all subset predecessors are known offline.
+   * They can:
+   *  - only be n(v) nodes, where v is a register
+   *  - not be the return value of a function call
+   *  - not be an argument of a function body
+   *
+   *  @return a tuple containing:
+   *   - the total number of nodes N
+   *   - a vector of length N containing the successors of each node
+   *   - a boolean vector of length N, containing true on direct nodes, and false otherwise
+   */
+  std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
+  CreateOVSSubsetGraph();
+
   // The PointerObjectSet being built upon
   PointerObjectSet & Set_;
 

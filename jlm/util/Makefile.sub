@@ -18,6 +18,7 @@ libutil_HEADERS = \
     jlm/util/Math.hpp \
     jlm/util/Statistics.hpp \
     jlm/util/strfmt.hpp \
+    jlm/util/TarjanSCC.hpp \
     jlm/util/time.hpp \
     jlm/util/Worklist.hpp \
 
@@ -31,6 +32,7 @@ libutil_TESTS += \
 	tests/jlm/util/TestHashSet \
 	tests/jlm/util/TestMath \
 	tests/jlm/util/TestStatistics \
+	tests/jlm/util/TestTarjanSCC \
 	tests/jlm/util/TestTimer \
 	tests/jlm/util/TestWorklist \
 
