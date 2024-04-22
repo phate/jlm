@@ -32,10 +32,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: "Install valgrind"
-        uses: ./.github/actions/InstallPackages
-        with:
-          install-valgrind: true
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
         with:
