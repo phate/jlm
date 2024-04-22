@@ -63,6 +63,30 @@ TestOptimizationIdToOptimizationTranslation()
 }
 
 static int
+TestOutputFormatToCommandLineArgument()
+{
+  using namespace jlm::tooling;
+
+  // Arrange
+  auto start = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::FirstEnumValue) + 1;
+  auto end = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::LastEnumValue);
+
+  // Act & Assert
+  for (size_t n = start; n != end; n++)
+  {
+    auto outputFormat = static_cast<JlmOptCommandLineOptions::OutputFormat>(n);
+
+    // throws exception / asserts on failure
+    JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
+  }
+
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/tooling/TestJlmOptCommandLineParser-TestOutputFormatToCommandLineArgument",
+    TestOutputFormatToCommandLineArgument)
+
+static int
 Test()
 {
   TestOptimizationCommandLineArgumentConversion();

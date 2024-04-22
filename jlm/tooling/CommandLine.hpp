@@ -49,9 +49,14 @@ public:
 
   enum class OutputFormat
   {
+    FirstEnumValue, // must always be the first enum value, used for iteration
+
+    Ascii,
     Llvm,
     Mlir,
-    Xml
+    Xml,
+
+    LastEnumValue // must always be the last enum value, used for iteration
   };
 
   enum class OptimizationId
@@ -198,6 +203,9 @@ private:
 
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
   GetStatisticsIdCommandLineArguments();
+
+  static const std::unordered_map<OutputFormat, std::string_view> &
+  GetOutputFormatCommandLineArguments();
 };
 
 class JlcCommandLineOptions final : public CommandLineOptions
