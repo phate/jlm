@@ -290,6 +290,14 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(bitOp->ndstbits()),
         inputs[0]);
   }
+  else if (auto bitOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
+  {
+    MlirOp = Builder_->create<::mlir::rvsdg::Match>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1]);
+
+  }
   else
   {
     auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());
