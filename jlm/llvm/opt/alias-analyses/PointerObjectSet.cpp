@@ -751,6 +751,213 @@ PointerObjectConstraintSet::GetConstraints() const noexcept
   return Constraints_;
 }
 
+/**
+ * Creates a label describing the PointerObject with the given \p index in the given \p set.
+ * The label includes the index and the PointerObjectKind.
+ * The PointerObject's pointees are included, or a reference to the unification root.
+ * Helper function used by DrawSubsetGraph.
+ */
+static std::string
+CreateSubsetGraphNodeLabel(PointerObjectSet & set, PointerObjectIndex index)
+{
+  std::ostringstream label;
+  label << index;
+
+  auto kind = set.GetPointerObjectKind(index);
+  if (kind == PointerObjectKind::AllocaMemoryObject)
+    label << " A";
+  else if (kind == PointerObjectKind::MallocMemoryObject)
+    label << " M";
+  else if (kind == PointerObjectKind::FunctionMemoryObject)
+    label << " F";
+  else if (kind == PointerObjectKind::GlobalMemoryObject)
+    label << " G";
+  else if (kind == PointerObjectKind::ImportMemoryObject)
+    label << " I";
+  else if (kind != PointerObjectKind::Register)
+    JLM_UNREACHABLE("Unknown PointerObject kind");
+
+  label << "\n";
+
+  if (set.IsUnificationRoot(index))
+  {
+    label << "{";
+    bool sep = false;
+    for (auto pointee : set.GetPointsToSet(index).Items())
+    {
+      if (sep)
+        label << ", ";
+      sep = true;
+      label << pointee;
+    }
+    // Add a + if pointing to external
+    if (set.IsPointingToExternal(index))
+      label << (sep ? ", +" : "+");
+    label << "}";
+
+    if (set.HasPointeesEscaping(index))
+      label << "e";
+  }
+  else
+  {
+    label << "#" << set.GetUnificationRoot(index);
+  }
+
+  if (!set.ShouldTrackPointees(index))
+    label << "\nNOTRACK";
+
+  return label.str();
+}
+
+/**
+ * Creates GraphWriter nodes for each PointerObject in the set, with appropriate shape and label.
+ * Memory objects are rectangular, registers are oval. Escaped nodes have a yellow fill.
+ * Helper function used by DrawSubsetGraph.
+ */
+static void
+CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
+{
+  // Ensure the index of nodes line up with the index of the corresponding PointerObject
+  JLM_ASSERT(graph.NumNodes() == 0);
+
+  // Create nodes for each PointerObject
+  for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
+  {
+    auto & node = graph.CreateNode();
+
+    node.SetLabel(CreateSubsetGraphNodeLabel(set, i));
+
+    if (set.IsPointerObjectRegister(i))
+      node.SetShape(util::Node::Shape::Oval);
+    else
+      node.SetShape(util::Node::Shape::Rectangle);
+
+    if (set.HasEscaped(i))
+      node.SetFillColor("#FFFF99");
+  }
+}
+
+/**
+ * Creates edges representing the different constraints in the subset graph.
+ * Subset constraints become normal edges.
+ * Load and store constraints become dashed edges with a circle on the end being dereferenced.
+ * Function call constraints append to the labels to the nodes involved in the function call.
+ * Helper function used by DrawSubsetGraph.
+ */
+static void
+CreateSubsetGraphEdges(
+    const PointerObjectSet & set,
+    const std::vector<PointerObjectConstraintSet::ConstraintVariant> & constraints,
+    util::Graph & graph)
+{
+  // Draw edges for constraints
+  size_t nextCallConstraintIndex = 0;
+  for (auto & constraint : constraints)
+  {
+    if (auto * supersetConstraint = std::get_if<SupersetConstraint>(&constraint))
+    {
+      graph.CreateDirectedEdge(
+          graph.GetNode(supersetConstraint->GetSubset()),
+          graph.GetNode(supersetConstraint->GetSuperset()));
+    }
+    else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
+    {
+      auto & edge = graph.CreateDirectedEdge(
+          graph.GetNode(storeConstraint->GetValue()),
+          graph.GetNode(storeConstraint->GetPointer()));
+      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetArrowHead("normalodot");
+    }
+    else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
+    {
+      auto & edge = graph.CreateDirectedEdge(
+          graph.GetNode(loadConstraint->GetPointer()),
+          graph.GetNode(loadConstraint->GetValue()));
+      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetArrowTail("odot");
+    }
+    else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
+    {
+      auto callConstraintIndex = nextCallConstraintIndex++;
+      auto & pointerNode = graph.GetNode(callConstraint->GetPointer());
+      pointerNode.AppendToLabel(util::strfmt("call", callConstraintIndex, " target"));
+
+      // Connect all registers that correspond to inputs and outputs of the call, to the call target
+      auto & callNode = callConstraint->GetCallNode();
+      for (size_t i = 0; i < callNode.NumArguments(); i++)
+      {
+        if (auto inputRegister = set.TryGetRegisterPointerObject(*callNode.Argument(i)->origin()))
+        {
+          const auto label = util::strfmt("call", callConstraintIndex, " input", i);
+          graph.GetNode(*inputRegister).AppendToLabel(label);
+        }
+      }
+      for (size_t i = 0; i < callNode.NumResults(); i++)
+      {
+        if (auto outputRegister = set.TryGetRegisterPointerObject(*callNode.Result(i)))
+        {
+          const auto label = util::strfmt("call", callConstraintIndex, " output", i);
+          graph.GetNode(*outputRegister).AppendToLabel(label);
+        }
+      }
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unknown constraint type");
+    }
+  }
+}
+
+/**
+ * Appends to the labels of all nodes that represent parts of functions.
+ * This includes nodes representing the function itself, e.g. "function4",
+ * nodes representing the functions arguments, e.g. "function4 arg2",
+ * and nodes representing values returned from the function, e.g. "function4 res0".
+ * Helper function used by DrawSubsetGraph.
+ */
+static void
+LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::Graph & graph)
+{
+  size_t nextFunctionIndex = 0;
+  for (auto [function, pointerObject] : set.GetFunctionMap())
+  {
+    JLM_ASSERT(set.GetPointerObjectKind(pointerObject) == PointerObjectKind::FunctionMemoryObject);
+    const auto functionIndex = nextFunctionIndex++;
+    graph.GetNode(pointerObject).AppendToLabel(util::strfmt("function", functionIndex));
+
+    // Add labels to registers corresponding to arguments and results of the function
+    for (size_t i = 0; i < function->nfctarguments(); i++)
+    {
+      if (auto argumentRegister = set.TryGetRegisterPointerObject(*function->fctargument(i)))
+      {
+        const auto label = util::strfmt("function", functionIndex, " arg", i);
+        graph.GetNode(*argumentRegister).AppendToLabel(label);
+      }
+    }
+    for (size_t i = 0; i < function->nfctresults(); i++)
+    {
+      if (auto resultRegister = set.TryGetRegisterPointerObject(*function->fctresult(i)->origin()))
+      {
+        const auto label = util::strfmt("function", functionIndex, " res", i);
+        graph.GetNode(*resultRegister).AppendToLabel(label);
+      }
+    }
+  }
+}
+
+util::Graph &
+PointerObjectConstraintSet::DrawSubsetGraph(util::GraphWriter & writer) const
+{
+  auto & graph = writer.CreateGraph();
+  graph.SetLabel("Andersen subset graph");
+
+  CreateSubsetGraphNodes(Set_, graph);
+  CreateSubsetGraphEdges(Set_, Constraints_, graph);
+  LabelFunctionsArgumentsAndReturnValues(Set_, graph);
+
+  return graph;
+}
+
 size_t
 PointerObjectConstraintSet::SolveUsingWorklist()
 {

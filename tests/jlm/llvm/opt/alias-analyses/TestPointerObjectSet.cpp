@@ -11,6 +11,12 @@
 
 #include <cassert>
 
+static bool
+StringContains(std::string_view haystack, std::string_view needle)
+{
+  return haystack.find(needle) != std::string::npos;
+}
+
 // Test the flag functions on the PointerObject class
 static void
 TestFlagFunctions()
@@ -599,6 +605,90 @@ TestAddRegisterContentEscapedConstraint()
   assert(set.HasEscaped(alloca1));
 }
 
+static void
+TestDrawSubsetGraph()
+{
+  using namespace jlm::llvm::aa;
+  using namespace jlm::util;
+  jlm::tests::AllMemoryNodesTest rvsdg;
+  rvsdg.InitializeTest();
+
+  // Arrange
+  PointerObjectSet set;
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  const auto allocaReg0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
+
+  const auto dummy0 = set.CreateDummyRegisterPointerObject();
+  const auto dummy1 = set.CreateDummyRegisterPointerObject();
+  const auto root = set.UnifyPointerObjects(dummy0, dummy1);
+  const auto nonRoot = dummy0 + dummy1 - root;
+
+  const auto storeValue = set.CreateDummyRegisterPointerObject();
+  const auto storePointer = set.CreateDummyRegisterPointerObject();
+
+  const auto loadValue = set.CreateDummyRegisterPointerObject();
+  const auto loadPointer = set.CreateDummyRegisterPointerObject();
+
+  const auto function0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
+
+  const auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
+
+  PointerObjectConstraintSet constraints(set);
+  constraints.AddPointsToExternalConstraint(nonRoot);
+  constraints.AddPointerPointeeConstraint(allocaReg0, alloca0);
+  constraints.AddConstraint(SupersetConstraint(import0, allocaReg0));
+  constraints.AddConstraint(StoreConstraint(storePointer, storeValue));
+  constraints.AddConstraint(LoadConstraint(loadValue, loadPointer));
+
+  // Act
+  GraphWriter writer;
+  auto & graph = constraints.DrawSubsetGraph(writer);
+
+  // Assert
+  assert(graph.NumNodes() == set.NumPointerObjects());
+
+  // Check that the unified node that is not the root, contains the index of the root
+  assert(StringContains(graph.GetNode(nonRoot).GetLabel(), "#" + std::to_string(root)));
+
+  // Check that the unification root's label indicates pointing to external
+  assert(StringContains(graph.GetNode(root).GetLabel(), "{+}"));
+
+  // Check that allocaReg0 points to alloca0
+  assert(StringContains(graph.GetNode(allocaReg0).GetLabel(), strfmt("{", alloca0, "}")));
+
+  // Check that a regular edge connects allocaReg0 to the importNode
+  auto * supersetEdge = graph.GetEdgeBetween(graph.GetNode(allocaReg0), graph.GetNode(import0));
+  assert(supersetEdge);
+  assert(supersetEdge->IsDirected());
+  assert(supersetEdge->GetAttributeOr("style", "solid") == "solid");
+
+  // Check that a store edge connects storeValue to storePointer
+  auto * storeEdge = graph.GetEdgeBetween(graph.GetNode(storeValue), graph.GetNode(storePointer));
+  assert(storeEdge);
+  assert(storeEdge->IsDirected());
+  assert(storeEdge->GetAttributeOr("style", Edge::Style::Dashed) == Edge::Style::Dashed);
+  assert(StringContains(storeEdge->GetAttribute("arrowhead"), "dot"));
+
+  // Check that a load edge connects loadPointer to loadValue
+  auto * loadEdge = graph.GetEdgeBetween(graph.GetNode(loadPointer), graph.GetNode(loadValue));
+  assert(loadEdge);
+  assert(loadEdge->IsDirected());
+  assert(loadEdge->GetAttributeOr("style", Edge::Style::Dashed) == Edge::Style::Dashed);
+  assert(StringContains(loadEdge->GetAttribute("arrowtail"), "dot"));
+
+  // Check that the function contains the word "function0"
+  auto & functionNode = graph.GetNode(function0);
+  assert(StringContains(functionNode.GetLabel(), "function0"));
+  // Since functions don't track pointees, they should have NOTRACK
+  assert(StringContains(functionNode.GetLabel(), "NOTRACK"));
+  // They should also both point to external, and escape all pointees
+  assert(StringContains(functionNode.GetLabel(), "{+}e"));
+
+  // Check that the import PointerObject has a fill color, since it has escaped
+  auto & importNode = graph.GetNode(import0);
+  assert(importNode.HasAttribute("fillcolor"));
+}
+
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
 static void
 TestPointerObjectConstraintSetSolve(bool useWorklist)
@@ -776,6 +866,7 @@ TestPointerObjectSet()
   TestFunctionCallConstraint();
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
+  TestDrawSubsetGraph();
   TestPointerObjectConstraintSetSolve(false);
   TestPointerObjectConstraintSetSolve(true);
   TestClonePointerObjectConstraintSet();
