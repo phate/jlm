@@ -185,10 +185,12 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    return main_time;  // Note does conversion to real, to match SystemC\n"
          "}\n"
          "V_NAME *top;\n"
+         "#ifdef TRACE_SIGNALS\n"
          "#ifdef FST\n"
          "VerilatedFstC *tfp;\n"
          "#else\n"
          "VerilatedVcdC *tfp;\n"
+         "#endif\n"
          "#endif\n"
          "bool terminate = false;\n"
          "\n"
@@ -198,7 +200,9 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "\n"
          "void verilator_finish() {\n"
          "    // Final model cleanup\n"
+         "#ifdef TRACE_SIGNALS\n"
          "    tfp->dump(main_time * 2);\n"
+         "#endif\n"
          "    top->final();\n"
          "\n"
          "    //  Coverage analysis (since test passed)\n"
@@ -206,7 +210,9 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    Verilated::mkdir(\"logs\");\n"
          "    VerilatedCov::write(\"logs/coverage.dat\");\n"
          "#endif\n"
+         "#ifdef TRACE_SIGNALS\n"
          "    tfp->close();\n"
+         "#endif\n"
          "    // Destroy model\n"
          "    delete top;\n"
          "    top = NULL;\n"
@@ -262,6 +268,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "\n"
          "    // Construct the Verilated model, from Vtop.h generated from Verilating \"top.v\"\n"
          "    top = new V_NAME;  // Or use a const unique_ptr, or the VL_UNIQUE_PTR wrapper\n"
+         "#ifdef TRACE_SIGNALS\n"
          "#ifdef FST\n"
          "    tfp = new VerilatedFstC;\n"
          "    top->trace(tfp, 99);   // Trace 99 levels of hierarchy\n"
@@ -270,6 +277,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    tfp = new VerilatedVcdC;\n"
          "    top->trace(tfp, 99);   // Trace 99 levels of hierarchy\n"
          "    tfp->open(xstr(V_NAME)\".vcd\");\n"
+         "#endif\n"
          "#endif\n"
          "\n"
          "    top->i_valid = 0;\n";
@@ -324,7 +332,9 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   }
   cpp << "    top->eval();\n"
          "    // dump before trying to access memory\n"
-         "    tfp->dump(main_time * 2);\n";
+         "#ifdef TRACE_SIGNALS\n"
+         "    tfp->dump(main_time * 2);\n"
+         "#endif\n";
   for (size_t i = 0; i < mem_ports.size(); ++i)
   {
     cpp << "    if (" << mem_ports[i].res_valid() << " && " << mem_ports[i].res_ready()
@@ -438,8 +448,10 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   cpp << "    assert(!Verilated::gotFinish());\n"
          "    top->clk = 0;\n"
          "    top->eval();\n"
+         "#ifdef TRACE_SIGNALS\n"
          "    tfp->dump(main_time * 2 + 1);\n"
          "//    tfp->flush();\n"
+         "#endif\n"
          "    main_time++;\n"
          "}\n"
          "\n"
