@@ -6,7 +6,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
-#include <jlm/util/TarjanSCC.hpp>
+#include <jlm/util/TarjanScc.hpp>
 #include <jlm/util/Worklist.hpp>
 
 #include <limits>
@@ -974,7 +974,7 @@ PointerObjectConstraintSet::DrawSubsetGraph(util::GraphWriter & writer) const
 
 // Helper function for DoOfflineVariableSubstitution()
 std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
-PointerObjectConstraintSet::CreateOVSSubsetGraph()
+PointerObjectConstraintSet::CreateOvsSubsetGraph()
 {
   // The index of n(v) is the index of the PointerObject v
   // The index of n(*v) is the index of v + derefNodeOffset
@@ -1035,6 +1035,8 @@ PointerObjectConstraintSet::CreateOVSSubsetGraph()
           isDirectNode[*resultPO] = false;
       }
     }
+    else
+      JLM_UNREACHABLE("Unknown constraint variant");
   }
 
   return { totalNodeCount, std::move(successors), std::move(isDirectNode) };
@@ -1045,10 +1047,10 @@ PointerObjectConstraintSet::CreateOVSSubsetGraph()
  * Takes the set of SCCs in the graph, and assigns equivalence set labels to each SCC.
  * If all predecessors of a direct SCC have the same equivalence set label, that label is used.
  * @return a vector of equivalence set labels assigned to each SCC
- * @see PointerObjectConstraintSet::DoOfflineVariableSubstitution()
+ * @see PointerObjectConstraintSet::IsOfflineVariableSubstitutionEnabled()
  */
 static std::vector<int64_t>
-AssignOVSEquivalenceSetLabels(
+AssignOvsEquivalenceSetLabels(
     std::vector<util::HashSet<PointerObjectIndex>> & successors,
     size_t numSccs,
     std::vector<size_t> & sccIndex,
@@ -1066,7 +1068,7 @@ AssignOVSEquivalenceSetLabels(
   std::vector<int64_t> predecessorEquivalenceLabels(numSccs, NO_PREDECESSOR_YET);
 
   // Iterate over each SCC in topological order, and each node within the SCC.
-  // This ensures all predecessor SCCs are know about before visiting each SCC.
+  // This ensures all predecessor SCCs are known before visiting each SCC.
   for (auto node : topologicalOrder)
   {
     const auto scc = sccIndex[node];
@@ -1109,14 +1111,14 @@ AssignOVSEquivalenceSetLabels(
 }
 
 size_t
-PointerObjectConstraintSet::DoOfflineVariableSubstitution()
+PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
 {
   // Performing unification on direct nodes relies on all subset edges being known offline.
   // This is only safe if no more constraints are added to the node in the future.
   ConstraintSetFrozen_ = true;
 
   // For each PointerObject v, creates two nodes: n(v) and n(*v), and creates edges between them
-  auto subsetGraph = CreateOVSSubsetGraph();
+  auto subsetGraph = CreateOvsSubsetGraph();
   auto totalNodeCount = std::get<0>(subsetGraph);
   auto & successors = std::get<1>(subsetGraph);
   auto & isDirectNode = std::get<2>(subsetGraph);
@@ -1135,7 +1137,7 @@ PointerObjectConstraintSet::DoOfflineVariableSubstitution()
       sccIndex,
       topologicalOrder);
 
-  // Find out which SCCs only contain direct nodes
+  // Find out which SCCs contain only direct nodes, as described in CreateOvsSubsetGraph()
   std::vector<bool> sccHasDirectNodesOnly(numSccs, true);
   for (size_t node = 0; node < totalNodeCount; node++)
   {
@@ -1144,7 +1146,7 @@ PointerObjectConstraintSet::DoOfflineVariableSubstitution()
   }
 
   // Give each SCC an equivalence set label
-  auto equivalenceSetLabels = AssignOVSEquivalenceSetLabels(
+  auto equivalenceSetLabels = AssignOvsEquivalenceSetLabels(
       successors,
       numSccs,
       sccIndex,
@@ -1178,14 +1180,14 @@ PointerObjectConstraintSet::DoOfflineVariableSubstitution()
 size_t
 PointerObjectConstraintSet::NormalizeConstraints()
 {
-  // The new list of constraint, preserving the order of constraints that are not deleted.
+  // The new list of constraints, preserving the order of constraints that are not deleted.
   std::vector<ConstraintVariant> newConstraints;
 
   // Sets used to avoid adding duplicates of any constraints
-  std::set<std::pair<PointerObjectIndex, PointerObjectIndex>> addedSupersetConstraints;
-  std::set<std::pair<PointerObjectIndex, PointerObjectIndex>> addedStoreConstraints;
-  std::set<std::pair<PointerObjectIndex, PointerObjectIndex>> addedLoadConstraints;
-  std::set<std::pair<PointerObjectIndex, const CallNode *>> addedCallConstraints;
+  util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedSupersetConstraints;
+  util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedStoreConstraints;
+  util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedLoadConstraints;
+  util::HashSet<std::pair<PointerObjectIndex, const CallNode *>> addedCallConstraints;
 
   for (auto constraint : Constraints_)
   {
@@ -1199,8 +1201,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       if (supersetRoot == subsetRoot)
         continue;
 
-      auto [_, added] = addedSupersetConstraints.insert({ supersetRoot, subsetRoot });
-      if (added)
+      if (addedSupersetConstraints.Insert({ supersetRoot, subsetRoot }))
         newConstraints.emplace_back(SupersetConstraint(supersetRoot, subsetRoot));
     }
     else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
@@ -1208,8 +1209,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       auto pointerRoot = Set_.GetUnificationRoot(storeConstraint->GetPointer());
       auto valueRoot = Set_.GetUnificationRoot(storeConstraint->GetValue());
 
-      auto [_, added] = addedStoreConstraints.insert({ pointerRoot, valueRoot });
-      if (added)
+      if (addedStoreConstraints.Insert({ pointerRoot, valueRoot }))
         newConstraints.emplace_back(StoreConstraint(pointerRoot, valueRoot));
     }
     else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
@@ -1217,8 +1217,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       auto valueRoot = Set_.GetUnificationRoot(loadConstraint->GetValue());
       auto pointerRoot = Set_.GetUnificationRoot(loadConstraint->GetPointer());
 
-      auto [_, added] = addedLoadConstraints.insert({ pointerRoot, valueRoot });
-      if (added)
+      if (addedLoadConstraints.Insert({ pointerRoot, valueRoot }))
         newConstraints.emplace_back(LoadConstraint(valueRoot, pointerRoot));
     }
     else if (auto * functionCallConstraint = std::get_if<FunctionCallConstraint>(&constraint))
@@ -1226,8 +1225,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       auto pointerRoot = Set_.GetUnificationRoot(functionCallConstraint->GetPointer());
       auto & callNode = functionCallConstraint->GetCallNode();
 
-      auto [_, added] = addedCallConstraints.insert({ pointerRoot, &callNode });
-      if (added)
+      if (addedCallConstraints.Insert({ pointerRoot, &callNode }))
         newConstraints.emplace_back(FunctionCallConstraint(pointerRoot, callNode));
     }
     else

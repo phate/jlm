@@ -18,13 +18,14 @@ namespace jlm::util
 
 /**
  * Implementation of Tarjan's algorithm for finding strongly connected components in linear time.
- * Each node is assigned an SCC, with scc indices starting at 0.
- * An SCC has a lower index than all its predecessor SCCs, and a larger index than its successors.
+ * Each node is assigned a strongly connected component (SCC), with SCC indices starting at 0.
+ * SCC indices are assigned such that, for each edge A -> B in the original graph,
+ * sccIndex[A] >= sccIndex[B]. They are equal iff A and B belong to the same SCC, i.e.
+ * the original graph contains a path from A to B, and from B to A.
  *
  * In addition to assigning SCCs, a partial topological ordering of nodes is returned.
- * All nodes belonging to a given SCC are in a continuous subsequence.
- * All nodes belonging to predecessor SCCs come earlier in the list,
- * and all nodes belonging to successor SCCs come later.
+ * The ordering is a list of all nodes, sorted by descending SCC index.
+ * Within a single SCC, the ordering of nodes is arbitrary.
  *
  * @tparam SuccessorFunctor a functor with the signature (size_t) -> iterable<size_t>
  * @param numNodes the number of nodes. Nodes are indexed from 0 to numNodes-1

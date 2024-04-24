@@ -56,8 +56,8 @@ public:
     [[nodiscard]] bool
     operator==(const Configuration & other) const
     {
-      return DoOfflineVariableSubstitution_ == other.DoOfflineVariableSubstitution_
-          && DoOfflineConstraintNormalization_ == other.DoOfflineConstraintNormalization_
+      return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
+          && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
           && Solver_ == other.Solver_;
     }
 
@@ -90,15 +90,15 @@ public:
      * which may create opportunities for constraint normalization.
      */
     void
-    SetDoOfflineVariableSubstitution(bool value)
+    EnableOfflineVariableSubstitution(bool enable)
     {
-      DoOfflineVariableSubstitution_ = value;
+      EnableOfflineVariableSubstitution_ = enable;
     }
 
     [[nodiscard]] bool
-    DoOfflineVariableSubstitution() const noexcept
+    IsOfflineVariableSubstitutionEnabled() const noexcept
     {
-      return DoOfflineVariableSubstitution_;
+      return EnableOfflineVariableSubstitution_;
     }
 
     /**
@@ -107,15 +107,15 @@ public:
      * @see PointerObjectConstraintSet::NormalizeConstraints()
      */
     void
-    SetDoOfflineConstraintNormalization(bool value)
+    EnableOfflineConstraintNormalization(bool enable)
     {
-      DoOfflineConstraintNormalization_ = value;
+      EnableOfflineConstraintNormalization_ = enable;
     }
 
     [[nodiscard]] bool
-    DoOfflineConstraintNormalization() const noexcept
+    IsOfflineConstraintNormalizationEnabled() const noexcept
     {
-      return DoOfflineConstraintNormalization_;
+      return EnableOfflineConstraintNormalization_;
     }
 
     /**
@@ -138,14 +138,14 @@ public:
     NaiveSolverConfiguration()
     {
       auto config = Configuration(Solver::Naive);
-      config.SetDoOfflineVariableSubstitution(false);
-      config.SetDoOfflineConstraintNormalization(false);
+      config.EnableOfflineVariableSubstitution(false);
+      config.EnableOfflineConstraintNormalization(false);
       return config;
     }
 
   private:
-    bool DoOfflineVariableSubstitution_ = true;
-    bool DoOfflineConstraintNormalization_ = true;
+    bool EnableOfflineVariableSubstitution_ = true;
+    bool EnableOfflineConstraintNormalization_ = true;
     Solver Solver_;
   };
 

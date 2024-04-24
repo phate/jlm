@@ -780,18 +780,20 @@ public:
    *  n(*v) represents the union of points-to sets of all pointees of v
    *  Edges in the graph represent points-to set inclusion.
    *
-   * SCCs are collapsed into single equivalence sets. n(*v) nodes are not included.
+   * In this graph, strongly connected components (SCCs) are collapsed into single equivalence sets.
    *
    * If an SCC consists of only "direct" nodes, and all predecessors share equivalence
    * set label, the SCC gets the same label.
+   * See PointerObjectConstraintSet::CreateOvsSubsetGraph() for a description of direct nodes.
    *
+   * All PointerObjects v1, ... vN where n(v1), ... n(vN) share equivalence set label, get unified.
    * The run time is linear in the amount of PointerObjects and constraints.
    *
    * @return the number PointerObject unifications made
    * @see NormalizeConstraints() call it afterwards to remove constraints made unnecessary.
    */
   size_t
-  DoOfflineVariableSubstitution();
+  PerformOfflineVariableSubstitution();
 
   /**
    * Traverses the list of constraints, and does the following:
@@ -833,8 +835,8 @@ public:
 
 private:
   /**
-   * Creates the special subset graph containing both regular nodes and dereference nodes,
-   * used by DoOfflineVariableSubstitution().
+   * Creates a special subset graph containing both regular nodes n(v) and dereference nodes n(*v).
+   * The graph is used by PointerObjectConstraintSet::PerformOfflineVariableSubstitution().
    *
    * Some nodes are marked as direct, when all subset predecessors are known offline.
    * They can:
@@ -848,7 +850,7 @@ private:
    *   - a boolean vector of length N, containing true on direct nodes, and false otherwise
    */
   std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
-  CreateOVSSubsetGraph();
+  CreateOvsSubsetGraph();
 
   // The PointerObjectSet being built upon
   PointerObjectSet & Set_;
