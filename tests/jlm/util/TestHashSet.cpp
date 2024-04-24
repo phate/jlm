@@ -63,6 +63,30 @@ TestUniquePointer()
 }
 
 static void
+TestPair()
+{
+  jlm::util::HashSet<std::pair<int, int>> hashSet{ { 1, 10 }, { 5, 50 } };
+
+  // Inserting new value
+  auto result = hashSet.Insert({ 7, 70 });
+  assert(result && hashSet.Size() == 3);
+
+  // Try inserting already inserted
+  result = hashSet.Insert({ 1, 10 });
+  assert(!result && hashSet.Size() == 3);
+
+  // Contains is only true in the correct order
+  assert(hashSet.Contains({ 5, 50 }));
+  assert(!hashSet.Contains({ 50, 5 }));
+
+  // Removing works
+  result = hashSet.Remove({ 5, 50 });
+  assert(result && hashSet.Size() == 2);
+  result = hashSet.Remove({ 5, 50 });
+  assert(!result && hashSet.Size() == 2);
+}
+
+static void
 TestIsSubsetOf()
 {
   jlm::util::HashSet<int> set12({ 1, 2 });
@@ -120,6 +144,7 @@ TestHashSet()
 {
   TestInt();
   TestUniquePointer();
+  TestPair();
   TestIsSubsetOf();
   TestUnionWith();
   TestIntersectWith();
