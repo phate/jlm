@@ -764,20 +764,17 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     arguments.push_back(create_varargs(i, tacs, ctx));
   arguments.push_back(ctx.iostate());
   arguments.push_back(ctx.memory_state());
-  arguments.push_back(ctx.loop_state());
 
   auto fctvar = ConvertValue(i->getCalledOperand(), tacs, ctx);
   auto call = CallOperation::create(fctvar, *ConvertFunctionType(ftype, ctx), arguments);
 
   auto result = call->result(0);
-  auto iostate = call->result(call->nresults() - 3);
-  auto memstate = call->result(call->nresults() - 2);
-  auto loopstate = call->result(call->nresults() - 1);
+  auto iostate = call->result(call->nresults() - 2);
+  auto memstate = call->result(call->nresults() - 1);
 
   tacs.push_back(std::move(call));
   tacs.push_back(assignment_op::create(iostate, ctx.iostate()));
   tacs.push_back(assignment_op::create(memstate, ctx.memory_state()));
-  tacs.push_back(assignment_op::create(loopstate, ctx.loop_state()));
 
   return result;
 }

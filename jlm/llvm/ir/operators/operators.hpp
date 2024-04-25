@@ -2372,63 +2372,6 @@ private:
   std::vector<unsigned> indices_;
 };
 
-/* loop state mux operator */
-
-class loopstatemux_op final : public jlm::rvsdg::simple_op
-{
-public:
-  virtual ~loopstatemux_op();
-
-  loopstatemux_op(size_t noperands, size_t nresults)
-      : simple_op(create_portvector(noperands), create_portvector(nresults))
-  {}
-
-  virtual bool
-  operator==(const operation & other) const noexcept override;
-
-  virtual std::string
-  debug_string() const override;
-
-  virtual std::unique_ptr<jlm::rvsdg::operation>
-  copy() const override;
-
-  static std::vector<jlm::rvsdg::output *>
-  create(const std::vector<jlm::rvsdg::output *> & operands, size_t nresults)
-  {
-    if (operands.empty())
-      throw jlm::util::error("Insufficient number of operands.");
-
-    auto region = operands.front()->region();
-    loopstatemux_op op(operands.size(), nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands);
-  }
-
-  static std::vector<jlm::rvsdg::output *>
-  create_split(jlm::rvsdg::output * operand, size_t nresults)
-  {
-    loopstatemux_op op(1, nresults);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand });
-  }
-
-  static jlm::rvsdg::output *
-  create_merge(const std::vector<jlm::rvsdg::output *> & operands)
-  {
-    if (operands.empty())
-      throw jlm::util::error("Insufficient number of operands.");
-
-    loopstatemux_op op(operands.size(), 1);
-    auto region = operands.front()->region();
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
-  }
-
-private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t size)
-  {
-    return std::vector<jlm::rvsdg::port>(size, loopstatetype());
-  }
-};
-
 /* MemState operator */
 
 class MemStateOperator : public jlm::rvsdg::simple_op

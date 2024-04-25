@@ -405,8 +405,6 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
         continue;
       if (rvsdg::is<MemoryStateType>(tac->result(0)->type()))
         continue;
-      if (rvsdg::is<loopstatetype>(tac->result(0)->type()))
-        continue;
 
       JLM_ASSERT(node->ninedges() == tac->noperands());
       auto & op = *static_cast<const llvm::phi_op *>(&tac->operation());

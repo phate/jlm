@@ -298,10 +298,9 @@ TestCallSummaryComputationDirectCalls()
   tests::valuetype vt;
   jlm::llvm::iostatetype iOStateType;
   jlm::llvm::MemoryStateType memoryStateType;
-  jlm::llvm::loopstatetype loopStateType;
   jlm::llvm::FunctionType functionType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &vt, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &vt, &iOStateType, &memoryStateType });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -315,12 +314,10 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
-    auto loopStateArgument = lambdaNode->fctargument(2);
 
     auto result = tests::create_testop(lambdaNode->subregion(), {}, { &vt })[0];
 
-    return lambdaNode->finalize(
-        { result, iOStateArgument, memoryStateArgument, loopStateArgument });
+    return lambdaNode->finalize({ result, iOStateArgument, memoryStateArgument });
   };
 
   auto SetupLambdaY = [&](jlm::llvm::lambda::output & lambdaX)
@@ -332,13 +329,12 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
-    auto loopStateArgument = lambdaNode->fctargument(2);
     auto lambdaXCv = lambdaNode->add_ctxvar(&lambdaX);
 
     auto callResults = jlm::llvm::CallNode::Create(
         lambdaXCv,
         functionType,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambdaNode->finalize(callResults);
     rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "y" });
@@ -355,26 +351,22 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
-    auto loopStateArgument = lambdaNode->fctargument(2);
     auto lambdaXCv = lambdaNode->add_ctxvar(&lambdaX);
     auto lambdaYCv = lambdaNode->add_ctxvar(&lambdaY);
 
     auto callXResults = jlm::llvm::CallNode::Create(
         lambdaXCv,
         functionType,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
-    auto callYResults = jlm::llvm::CallNode::Create(
-        lambdaYCv,
-        functionType,
-        { callXResults[1], callXResults[2], callXResults[3] });
+        { iOStateArgument, memoryStateArgument });
+    auto callYResults =
+        jlm::llvm::CallNode::Create(lambdaYCv, functionType, { callXResults[1], callXResults[2] });
 
     auto result = tests::create_testop(
         lambdaNode->subregion(),
         { callXResults[0], callYResults[0] },
         { &vt })[0];
 
-    auto lambdaOutput =
-        lambdaNode->finalize({ result, callYResults[1], callYResults[2], callYResults[3] });
+    auto lambdaOutput = lambdaNode->finalize({ result, callYResults[1], callYResults[2] });
     rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "z" });
 
     return lambdaOutput;

@@ -93,7 +93,6 @@ public:
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),
-        loop_state_(nullptr),
         memory_state_(nullptr)
   {}
 
@@ -131,18 +130,6 @@ public:
   set_memory_state(llvm::variable * state)
   {
     memory_state_ = state;
-  }
-
-  llvm::variable *
-  loop_state() const noexcept
-  {
-    return loop_state_;
-  }
-
-  void
-  set_loop_state(llvm::variable * state)
-  {
-    loop_state_ = state;
   }
 
   inline bool
@@ -239,7 +226,6 @@ private:
   ipgraph_node * node_;
   const llvm::variable * result_;
   llvm::variable * iostate_;
-  llvm::variable * loop_state_;
   llvm::variable * memory_state_;
   std::unordered_map<const ::llvm::Value *, const llvm::variable *> vmap_;
   std::unordered_map<const ::llvm::StructType *, const StructType::Declaration *> declarations_;
