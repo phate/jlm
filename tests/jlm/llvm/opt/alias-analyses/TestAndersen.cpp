@@ -68,7 +68,7 @@ TestStore1()
 
   assert(ptg->NumAllocaNodes() == 4);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 5);
+  assert(ptg->NumMappedRegisters() == 5);
 
   auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
   auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
@@ -107,7 +107,7 @@ TestStore2()
 
   assert(ptg->NumAllocaNodes() == 5);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 6);
+  assert(ptg->NumMappedRegisters() == 6);
 
   auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
   auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
@@ -149,7 +149,7 @@ TestLoad1()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 3);
+  assert(ptg->NumMappedRegisters() == 3);
 
   auto & loadResult = ptg->GetRegisterNode(*test.load_p->output(0));
 
@@ -173,7 +173,7 @@ TestLoad2()
 
   assert(ptg->NumAllocaNodes() == 5);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 8);
+  assert(ptg->NumMappedRegisters() == 8);
 
   auto & alloca_a = ptg->GetAllocaNode(*test.alloca_a);
   auto & alloca_b = ptg->GetAllocaNode(*test.alloca_b);
@@ -203,7 +203,7 @@ TestLoadFromUndef()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 2);
+  assert(ptg->NumMappedRegisters() == 2);
 
   auto & lambdaMemoryNode = ptg->GetLambdaNode(test.Lambda());
   auto & undefValueNode = ptg->GetRegisterNode(*test.UndefValueNode()->output(0));
@@ -219,7 +219,7 @@ TestGetElementPtr()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 2);
+  assert(ptg->NumMappedRegisters() == 4);
 
   // We only care about the getelemenptr's in this test, skipping the validation for all other nodes
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
@@ -241,7 +241,7 @@ TestBitCast()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 2);
+  assert(ptg->NumMappedRegisters() == 3);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
   auto & lambdaOut = ptg->GetRegisterNode(*test.lambda->output());
@@ -262,7 +262,7 @@ TestConstantPointerNull()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 3);
+  assert(ptg->NumMappedRegisters() == 3);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
   auto & lambdaOut = ptg->GetRegisterNode(*test.lambda->output());
@@ -284,7 +284,7 @@ TestBits2Ptr()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 4);
+  assert(ptg->NumMappedRegisters() == 5);
 
   auto & lambdaTestMemoryNode = ptg->GetLambdaNode(test.GetLambdaTest());
   auto & externalMemoryNode = ptg->GetExternalMemoryNode();
@@ -306,7 +306,7 @@ TestCall1()
 
   assert(ptg->NumAllocaNodes() == 3);
   assert(ptg->NumLambdaNodes() == 3);
-  assert(ptg->NumRegisterNodes() == 10);
+  assert(ptg->NumMappedRegisters() == 12);
 
   auto & alloca_x = ptg->GetAllocaNode(*test.alloca_x);
   auto & alloca_y = ptg->GetAllocaNode(*test.alloca_y);
@@ -362,7 +362,7 @@ TestCall2()
   assert(ptg->NumLambdaNodes() == 3);
   assert(ptg->NumMallocNodes() == 1);
   assert(ptg->NumImportNodes() == 0);
-  assert(ptg->NumRegisterNodes() == 7);
+  assert(ptg->NumMappedRegisters() == 11);
 
   auto & lambda_create = ptg->GetLambdaNode(*test.lambda_create);
   auto & lambda_create_out = ptg->GetRegisterNode(*test.lambda_create->output());
@@ -407,7 +407,7 @@ TestIndirectCall1()
 
   assert(ptg->NumLambdaNodes() == 4);
   assert(ptg->NumImportNodes() == 0);
-  assert(ptg->NumRegisterNodes() == 5);
+  assert(ptg->NumMappedRegisters() == 8);
 
   auto & lambda_three = ptg->GetLambdaNode(test.GetLambdaThree());
   auto & lambda_three_out = ptg->GetRegisterNode(*test.GetLambdaThree().output());
@@ -449,7 +449,7 @@ TestIndirectCall2()
   assert(ptg->NumAllocaNodes() == 3);
   assert(ptg->NumLambdaNodes() == 7);
   assert(ptg->NumDeltaNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 15);
+  assert(ptg->NumMappedRegisters() == 24);
 
   auto & lambdaThree = ptg->GetLambdaNode(test.GetLambdaThree());
   auto & lambdaThreeOutput = ptg->GetRegisterNode(*test.GetLambdaThree().output());
@@ -470,7 +470,7 @@ TestExternalCall1()
   assert(ptg->NumAllocaNodes() == 2);
   assert(ptg->NumLambdaNodes() == 1);
   assert(ptg->NumImportNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 9);
+  assert(ptg->NumMappedRegisters() == 10);
 
   auto & lambdaF = ptg->GetLambdaNode(test.LambdaF());
   auto & lambdaFArgument0 = ptg->GetRegisterNode(*test.LambdaF().fctargument(0));
@@ -493,7 +493,7 @@ TestGamma()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 7);
+  assert(ptg->NumMappedRegisters() == 15);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
 
@@ -528,7 +528,7 @@ TestTheta()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 3);
+  assert(ptg->NumMappedRegisters() == 5);
 
   auto & lambda = ptg->GetLambdaNode(*test.lambda);
   auto & lambdaArgument1 = ptg->GetRegisterNode(*test.lambda->fctargument(1));
@@ -558,7 +558,7 @@ TestDelta1()
 
   assert(ptg->NumDeltaNodes() == 1);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 4);
+  assert(ptg->NumMappedRegisters() == 6);
 
   auto & delta_f = ptg->GetDeltaNode(*test.delta_f);
   auto & pdelta_f = ptg->GetRegisterNode(*test.delta_f->output());
@@ -593,7 +593,7 @@ TestDelta2()
 
   assert(ptg->NumDeltaNodes() == 2);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 4);
+  assert(ptg->NumMappedRegisters() == 8);
 
   auto & delta_d1 = ptg->GetDeltaNode(*test.delta_d1);
   auto & delta_d1_out = ptg->GetRegisterNode(*test.delta_d1->output());
@@ -633,7 +633,7 @@ TestImports()
 
   assert(ptg->NumLambdaNodes() == 2);
   assert(ptg->NumImportNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 4);
+  assert(ptg->NumMappedRegisters() == 8);
 
   auto & d1 = ptg->GetImportNode(*test.import_d1);
   auto & import_d1 = ptg->GetRegisterNode(*test.import_d1);
@@ -673,7 +673,7 @@ TestPhi1()
 
   assert(ptg->NumAllocaNodes() == 1);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 5);
+  assert(ptg->NumMappedRegisters() == 16);
 
   auto & lambda_fib = ptg->GetLambdaNode(*test.lambda_fib);
   auto & lambda_fib_out = ptg->GetRegisterNode(*test.lambda_fib->output());
@@ -714,7 +714,7 @@ TestExternalMemory()
   const auto ptg = RunAndersen(test.module());
 
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 3);
+  assert(ptg->NumMappedRegisters() == 3);
 
   auto & lambdaF = ptg->GetLambdaNode(*test.LambdaF);
   auto & lambdaFArgument0 = ptg->GetRegisterNode(*test.LambdaF->fctargument(0));
@@ -734,7 +734,7 @@ TestEscapedMemory1()
 
   assert(ptg->NumDeltaNodes() == 4);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 7);
+  assert(ptg->NumMappedRegisters() == 10);
 
   auto & lambdaTestArgument0 = ptg->GetRegisterNode(*test.LambdaTest->fctargument(0));
   auto & lambdaTestCv0 = ptg->GetRegisterNode(*test.LambdaTest->cvargument(0));
@@ -764,7 +764,7 @@ TestEscapedMemory2()
   assert(ptg->NumImportNodes() == 2);
   assert(ptg->NumLambdaNodes() == 3);
   assert(ptg->NumMallocNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 8);
+  assert(ptg->NumMappedRegisters() == 10);
 
   auto returnAddressFunction = &ptg->GetLambdaNode(*test.ReturnAddressFunction);
   auto callExternalFunction1 = &ptg->GetLambdaNode(*test.CallExternalFunction1);
@@ -808,7 +808,7 @@ TestEscapedMemory3()
   assert(ptg->NumDeltaNodes() == 1);
   assert(ptg->NumImportNodes() == 1);
   assert(ptg->NumLambdaNodes() == 1);
-  assert(ptg->NumRegisterNodes() == 4);
+  assert(ptg->NumMappedRegisters() == 5);
 
   auto lambdaTest = &ptg->GetLambdaNode(*test.LambdaTest);
   auto deltaGlobal = &ptg->GetDeltaNode(*test.DeltaGlobal);
@@ -832,7 +832,7 @@ TestMemcpy()
 
   assert(ptg->NumDeltaNodes() == 2);
   assert(ptg->NumLambdaNodes() == 2);
-  assert(ptg->NumRegisterNodes() == 4);
+  assert(ptg->NumMappedRegisters() == 11);
 
   auto localArray = &ptg->GetDeltaNode(test.LocalArray());
   auto globalArray = &ptg->GetDeltaNode(test.GlobalArray());

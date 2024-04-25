@@ -234,6 +234,15 @@ public:
     return RegisterNodes_.size();
   }
 
+  /**
+   * @return the total number of registers that are represented by some RegisterNode
+   */
+  [[nodiscard]] size_t
+  NumMappedRegisters() const noexcept
+  {
+    return RegisterNodeMap_.size();
+  }
+
   size_t
   NumMemoryNodes() const noexcept
   {
