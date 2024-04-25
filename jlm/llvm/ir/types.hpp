@@ -563,33 +563,6 @@ public:
   debug_string() const override;
 };
 
-/* loop state type */
-
-class loopstatetype final : public jlm::rvsdg::statetype
-{
-public:
-  virtual ~loopstatetype();
-
-  constexpr loopstatetype() noexcept
-      : statetype()
-  {}
-
-  virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  virtual std::unique_ptr<jlm::rvsdg::type>
-  copy() const override;
-
-  virtual std::string
-  debug_string() const override;
-
-  static std::unique_ptr<jlm::rvsdg::type>
-  create()
-  {
-    return std::unique_ptr<jlm::rvsdg::type>(new loopstatetype());
-  }
-};
-
 /** \brief Input/Output state type
  *
  * This type is used for state edges that sequentialize input/output operations.

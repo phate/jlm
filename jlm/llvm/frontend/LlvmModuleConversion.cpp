@@ -357,13 +357,9 @@ create_cfg(::llvm::Function & f, context & ctx)
     auto & memtype = node->fcttype().ArgumentType(n++);
     auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
 
-    auto & looptype = node->fcttype().ArgumentType(n++);
-    auto loopstate = cfg.entry()->append_argument(argument::create("_l_", looptype));
-
     JLM_ASSERT(n == node->fcttype().NumArguments());
     ctx.set_iostate(iostate);
     ctx.set_memory_state(memstate);
-    ctx.set_loop_state(loopstate);
   };
 
   auto cfg = cfg::create(ctx.module());
@@ -384,13 +380,12 @@ create_cfg(::llvm::Function & f, context & ctx)
     entry_block->append_last(UndefValueOperation::Create(*type, "_r_"));
     result = entry_block->last()->result(0);
 
-    JLM_ASSERT(node->fcttype().NumResults() == 4);
+    JLM_ASSERT(node->fcttype().NumResults() == 3);
     JLM_ASSERT(result->type() == node->fcttype().ResultType(0));
     cfg->exit()->append_result(result);
   }
   cfg->exit()->append_result(ctx.iostate());
   cfg->exit()->append_result(ctx.memory_state());
-  cfg->exit()->append_result(ctx.loop_state());
 
   /* convert instructions */
   ctx.set_basic_block_map(bbmap);

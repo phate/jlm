@@ -40,7 +40,6 @@ TestLambda()
     ::llvm::SmallVector<mlir::Type> arguments;
     arguments.push_back(builder->getType<IOStateEdgeType>());
     arguments.push_back(builder->getType<MemStateEdgeType>());
-    arguments.push_back(builder->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef argumentsArray(arguments);
 
     // Handle function results
@@ -49,7 +48,6 @@ TestLambda()
     results.push_back(builder->getIntegerType(32));
     results.push_back(builder->getType<IOStateEdgeType>());
     results.push_back(builder->getType<MemStateEdgeType>());
-    results.push_back(builder->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef resultsArray(results);
 
     // LambdaNodes return a LambdaRefType
@@ -83,7 +81,6 @@ TestLambda()
     std::cout << "Adding arguments to the region" << std::endl;
     lambdaBlock->addArgument(builder->getType<IOStateEdgeType>(), builder->getUnknownLoc());
     lambdaBlock->addArgument(builder->getType<MemStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<LoopStateEdgeType>(), builder->getUnknownLoc());
 
     auto constOp = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 1, 32);
     lambdaBlock->push_back(constOp);
@@ -92,7 +89,6 @@ TestLambda()
     regionResults.push_back(constOp);
     regionResults.push_back(lambdaBlock->getArgument(0));
     regionResults.push_back(lambdaBlock->getArgument(1));
-    regionResults.push_back(lambdaBlock->getArgument(2));
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
@@ -161,7 +157,6 @@ TestDivOperation()
     arguments.push_back(builder->getIntegerType(32));
     arguments.push_back(builder->getType<IOStateEdgeType>());
     arguments.push_back(builder->getType<MemStateEdgeType>());
-    arguments.push_back(builder->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef argumentsArray(arguments);
 
     // Handle function results
@@ -170,7 +165,6 @@ TestDivOperation()
     results.push_back(builder->getIntegerType(32));
     results.push_back(builder->getType<IOStateEdgeType>());
     results.push_back(builder->getType<MemStateEdgeType>());
-    results.push_back(builder->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef resultsArray(results);
 
     // LambdaNodes return a LambdaRefType
@@ -205,7 +199,6 @@ TestDivOperation()
     lambdaBlock->addArgument(builder->getIntegerType(32), builder->getUnknownLoc());
     lambdaBlock->addArgument(builder->getType<IOStateEdgeType>(), builder->getUnknownLoc());
     lambdaBlock->addArgument(builder->getType<MemStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<LoopStateEdgeType>(), builder->getUnknownLoc());
 
     // ConstOp1 is not connected to anything
     auto constOp1 = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 20, 32);
@@ -227,10 +220,6 @@ TestDivOperation()
       {
         std::cout << "Argument " << i << " is a MemStateEdgeType" << std::endl;
       }
-      else if (arg.getType().isa<LoopStateEdgeType>())
-      {
-        std::cout << "Argument " << i << " is a LoopStateEdgeType" << std::endl;
-      }
       else if (arg.getType().isa<mlir::IntegerType>())
       {
         std::cout << "Argument " << i << " is an IntegerType" << std::endl;
@@ -249,7 +238,6 @@ TestDivOperation()
     regionResults.push_back(divideOp->getResult(0));
     regionResults.push_back(lambdaBlock->getArgument(1));
     regionResults.push_back(lambdaBlock->getArgument(2));
-    regionResults.push_back(lambdaBlock->getArgument(3));
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
@@ -353,7 +341,6 @@ TestCompZeroExt()
     arguments.push_back(builder->getIntegerType(32));
     arguments.push_back(builder->getType<IOStateEdgeType>());
     arguments.push_back(builder->getType<MemStateEdgeType>());
-    arguments.push_back(builder->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef argumentsArray(arguments);
 
     // Handle function results
@@ -362,7 +349,6 @@ TestCompZeroExt()
     results.push_back(builder->getIntegerType(32));
     results.push_back(builder->getType<IOStateEdgeType>());
     results.push_back(builder->getType<MemStateEdgeType>());
-    results.push_back(builder->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef resultsArray(results);
 
     // LambdaNodes return a LambdaRefType
@@ -397,7 +383,6 @@ TestCompZeroExt()
     lambdaBlock->addArgument(builder->getIntegerType(32), builder->getUnknownLoc());
     lambdaBlock->addArgument(builder->getType<IOStateEdgeType>(), builder->getUnknownLoc());
     lambdaBlock->addArgument(builder->getType<MemStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<LoopStateEdgeType>(), builder->getUnknownLoc());
 
     // ConstOp1 is connected to the second argument of the add operation
     auto constOp1 = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 20, 32);
@@ -432,7 +417,6 @@ TestCompZeroExt()
     regionResults.push_back(zeroExtOp->getResult(0));
     regionResults.push_back(lambdaBlock->getArgument(1));
     regionResults.push_back(lambdaBlock->getArgument(2));
-    regionResults.push_back(lambdaBlock->getArgument(3));
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
