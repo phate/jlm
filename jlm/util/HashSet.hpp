@@ -14,13 +14,33 @@ namespace jlm::util
 {
 
 /**
+ * Our own version of std::hash that also supports hashing std::pair
+ */
+template<typename T>
+struct Hash : std::hash<T>
+{
+};
+
+template<typename First, typename Second>
+struct Hash<std::pair<First, Second>>
+{
+  std::size_t
+  operator()(const std::pair<First, Second> & value) const noexcept
+  {
+    return std::hash<First>()(value.first) ^ std::hash<Second>()(value.second) << 1;
+  }
+};
+
+/**
  * Represents a set of values. A set is a collection that contains no duplicate elements, and whose
  * elements are in no particular order.
  * @tparam ItemType The type of the items in the hash set.
  */
-template<typename ItemType>
+template<typename ItemType, typename HashFunctor = Hash<ItemType>>
 class HashSet
 {
+  using InternalSet = std::unordered_set<ItemType, HashFunctor>;
+
   class ItemConstIterator final
   {
   public:
@@ -33,7 +53,7 @@ class HashSet
   private:
     friend HashSet;
 
-    explicit ItemConstIterator(const typename std::unordered_set<ItemType>::const_iterator & it)
+    explicit ItemConstIterator(const typename InternalSet::const_iterator & it)
         : It_(it)
     {}
 
@@ -84,7 +104,7 @@ class HashSet
     }
 
   private:
-    typename std::unordered_set<ItemType>::const_iterator It_;
+    typename InternalSet::const_iterator It_;
   };
 
 public:
@@ -92,12 +112,9 @@ public:
 
   HashSet() = default;
 
-  HashSet(std::initializer_list<ItemType> initializerList)
-      : Set_(initializerList)
-  {}
-
-  explicit HashSet(const std::unordered_set<ItemType> & other)
-      : Set_(other)
+  template<class InputIt>
+  HashSet(InputIt begin, InputIt end)
+      : Set_(begin, end)
   {}
 
   HashSet(const HashSet & other)
@@ -106,6 +123,15 @@ public:
 
   HashSet(HashSet && other) noexcept
       : Set_(std::move(other.Set_))
+  {}
+
+  HashSet(std::initializer_list<ItemType> initializerList)
+      : Set_(initializerList)
+  {}
+
+  template<typename OtherHashFunctor>
+  explicit HashSet(const std::unordered_set<ItemType, OtherHashFunctor> & other)
+      : Set_(other.begin(), other.end())
   {}
 
   HashSet &
@@ -201,7 +227,7 @@ public:
   Insert(ItemType item)
   {
     auto size = Size();
-    Set_.insert(std::move(item));
+    Set_.emplace(std::move(item));
     return (size != Size());
   }
 
@@ -322,7 +348,7 @@ public:
   }
 
 private:
-  std::unordered_set<ItemType> Set_;
+  InternalSet Set_;
 };
 
 }
