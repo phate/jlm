@@ -11,7 +11,6 @@
 
 #include <limits>
 #include <queue>
-#include <set>
 
 namespace jlm::llvm::aa
 {
