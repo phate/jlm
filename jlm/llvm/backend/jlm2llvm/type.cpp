@@ -42,8 +42,6 @@ convert(const FunctionType & functionType, context & ctx)
       continue;
     if (rvsdg::is<MemoryStateType>(argumentType))
       continue;
-    if (rvsdg::is<loopstatetype>(argumentType))
-      continue;
 
     argumentTypes.push_back(convert_type(argumentType, ctx));
   }

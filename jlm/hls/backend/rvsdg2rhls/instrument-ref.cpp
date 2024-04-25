@@ -72,7 +72,8 @@ instrument_ref(llvm::RvsdgModule & rm)
       { jlm::llvm::PointerType::Create().get(),
         &jlm::rvsdg::bit64,
         llvm::MemoryStateType::Create().get() },
-      { llvm::MemoryStateType::Create().get(), llvm::loopstatetype::create().get() });
+//      { llvm::MemoryStateType::Create().get(), llvm::loopstatetype::create().get() });
+      { llvm::MemoryStateType::Create().get() });
   jlm::llvm::impport load_imp(
       loadFunctionType,
       "reference_load",
@@ -84,7 +85,8 @@ instrument_ref(llvm::RvsdgModule & rm)
         &jlm::rvsdg::bit64,
         &jlm::rvsdg::bit64,
         jlm::llvm::MemoryStateType::Create().get() },
-      { jlm::llvm::MemoryStateType::Create().get(), jlm::llvm::loopstatetype::create().get() });
+//      { jlm::llvm::MemoryStateType::Create().get(), jlm::llvm::loopstatetype::create().get() });
+      { jlm::llvm::MemoryStateType::Create().get() });
   jlm::llvm::impport store_imp(
       storeFunctionType,
       "reference_store",
@@ -95,7 +97,8 @@ instrument_ref(llvm::RvsdgModule & rm)
       { jlm::llvm::PointerType::Create().get(),
         &jlm::rvsdg::bit64,
         jlm::llvm::MemoryStateType::Create().get() },
-      { jlm::llvm::MemoryStateType::Create().get(), jlm::llvm::loopstatetype::create().get() });
+//      { jlm::llvm::MemoryStateType::Create().get(), jlm::llvm::loopstatetype::create().get() });
+      { jlm::llvm::MemoryStateType::Create().get() });
   jlm::llvm::impport alloca_imp(
       allocaFunctionType,
       "reference_alloca",

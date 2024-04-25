@@ -301,29 +301,6 @@ scalablevectortype::copy() const
   return std::unique_ptr<jlm::rvsdg::type>(new scalablevectortype(*this));
 }
 
-/* loop state type */
-
-loopstatetype::~loopstatetype()
-{}
-
-bool
-loopstatetype::operator==(const jlm::rvsdg::type & other) const noexcept
-{
-  return dynamic_cast<const loopstatetype *>(&other) != nullptr;
-}
-
-std::string
-loopstatetype::debug_string() const
-{
-  return "loopstate";
-}
-
-std::unique_ptr<jlm::rvsdg::type>
-loopstatetype::copy() const
-{
-  return std::unique_ptr<jlm::rvsdg::type>(new loopstatetype(*this));
-}
-
 /* I/O state type */
 
 iostatetype::~iostatetype()

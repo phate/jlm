@@ -1178,29 +1178,6 @@ ExtractValue::copy() const
   return std::unique_ptr<rvsdg::operation>(new ExtractValue(*this));
 }
 
-/* loop state mux operator */
-
-loopstatemux_op::~loopstatemux_op()
-{}
-
-bool
-loopstatemux_op::operator==(const rvsdg::operation & other) const noexcept
-{
-  return dynamic_cast<const loopstatemux_op *>(&other) != nullptr;
-}
-
-std::string
-loopstatemux_op::debug_string() const
-{
-  return "LOOPSTATEMUX";
-}
-
-std::unique_ptr<rvsdg::operation>
-loopstatemux_op::copy() const
-{
-  return std::unique_ptr<rvsdg::operation>(new loopstatemux_op(*this));
-}
-
 /* MemStateMerge operator */
 
 MemStateMergeOperator::~MemStateMergeOperator()

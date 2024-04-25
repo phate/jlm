@@ -321,6 +321,15 @@ public:
   }
 
   /**
+   * @return The outputs of the call node.
+   */
+  [[nodiscard]] std::vector<rvsdg::output *>
+  Results() const noexcept
+  {
+    return rvsdg::outputs(this);
+  }
+
+  /**
    * @return The call node's function input.
    */
   [[nodiscard]] jlm::rvsdg::input *
@@ -337,7 +346,7 @@ public:
   [[nodiscard]] jlm::rvsdg::input *
   GetIoStateInput() const noexcept
   {
-    auto iOState = input(ninputs() - 3);
+    auto iOState = input(ninputs() - 2);
     JLM_ASSERT(is<iostatetype>(iOState->type()));
     return iOState;
   }
@@ -348,20 +357,9 @@ public:
   [[nodiscard]] jlm::rvsdg::input *
   GetMemoryStateInput() const noexcept
   {
-    auto memoryState = input(ninputs() - 2);
+    auto memoryState = input(ninputs() - 1);
     JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
     return memoryState;
-  }
-
-  /**
-   * @return The call node's loop state input.
-   */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetLoopStateInput() const noexcept
-  {
-    auto loopState = input(ninputs() - 1);
-    JLM_ASSERT(is<loopstatetype>(loopState->type()));
-    return loopState;
   }
 
   /**
@@ -370,7 +368,7 @@ public:
   [[nodiscard]] jlm::rvsdg::output *
   GetIoStateOutput() const noexcept
   {
-    auto iOState = output(noutputs() - 3);
+    auto iOState = output(noutputs() - 2);
     JLM_ASSERT(is<iostatetype>(iOState->type()));
     return iOState;
   }
@@ -381,20 +379,9 @@ public:
   [[nodiscard]] jlm::rvsdg::output *
   GetMemoryStateOutput() const noexcept
   {
-    auto memoryState = output(noutputs() - 2);
+    auto memoryState = output(noutputs() - 1);
     JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
     return memoryState;
-  }
-
-  /**
-   * @return The call node's loop state output.
-   */
-  [[nodiscard]] jlm::rvsdg::output *
-  GetLoopStateOutput() const noexcept
-  {
-    auto loopState = output(noutputs() - 1);
-    JLM_ASSERT(is<loopstatetype>(loopState->type()));
-    return loopState;
   }
 
   rvsdg::node *
@@ -402,38 +389,46 @@ public:
 
   static std::vector<jlm::rvsdg::output *>
   Create(
-      jlm::rvsdg::output * function,
+      rvsdg::output * function,
       const FunctionType & functionType,
-      const std::vector<jlm::rvsdg::output *> & arguments)
+      const std::vector<rvsdg::output *> & arguments)
   {
-    CheckFunctionInputType(function->type());
-    CheckFunctionType(functionType);
-
-    CallOperation callOperation(functionType);
-    std::vector<jlm::rvsdg::output *> operands({ function });
-    operands.insert(operands.end(), arguments.begin(), arguments.end());
-
-    return Create(*function->region(), callOperation, operands);
+    return CreateNode(function, functionType, arguments).Results();
   }
 
   static std::vector<jlm::rvsdg::output *>
   Create(
-      jlm::rvsdg::region & region,
+      rvsdg::region & region,
       const CallOperation & callOperation,
-      const std::vector<jlm::rvsdg::output *> & operands)
+      const std::vector<rvsdg::output *> & operands)
   {
-    return jlm::rvsdg::outputs(&CreateNode(region, callOperation, operands));
+    return CreateNode(region, callOperation, operands).Results();
   }
 
   static CallNode &
   CreateNode(
-      jlm::rvsdg::region & region,
+      rvsdg::region & region,
       const CallOperation & callOperation,
-      const std::vector<jlm::rvsdg::output *> & operands)
+      const std::vector<rvsdg::output *> & operands)
   {
     CheckFunctionType(callOperation.GetFunctionType());
 
     return *(new CallNode(region, callOperation, operands));
+  }
+
+  static CallNode &
+  CreateNode(
+      rvsdg::output * function,
+      const FunctionType & functionType,
+      const std::vector<rvsdg::output *> & arguments)
+  {
+    CheckFunctionInputType(function->type());
+
+    CallOperation callOperation(functionType);
+    std::vector<rvsdg::output *> operands({ function });
+    operands.insert(operands.end(), arguments.begin(), arguments.end());
+
+    return CreateNode(*function->region(), callOperation, operands);
   }
 
   /**
@@ -472,17 +467,13 @@ private:
   CheckFunctionType(const FunctionType & functionType)
   {
     /*
-        auto CheckArgumentTypes = [](const FunctionType & functionType)
-        {
-          if (functionType.NumArguments() < 3)
-            throw jlm::util::error("Expected at least three argument types.");
+    auto CheckArgumentTypes = [](const FunctionType & functionType)
+    {
+      if (functionType.NumArguments() < 2)
+        throw jlm::util::error("Expected at least three argument types.");
 
-          auto loopStateArgumentIndex = functionType.NumArguments()-1;
-          auto memoryStateArgumentIndex = functionType.NumArguments()-2;
-          auto iOStateArgumentIndex = functionType.NumArguments()-3;
-
-          if (!is<loopstatetype>(functionType.ArgumentType(loopStateArgumentIndex)))
-            throw jlm::util::error("Expected loop state type.");
+      auto memoryStateArgumentIndex = functionType.NumArguments() - 1;
+      auto iOStateArgumentIndex = functionType.NumArguments() - 2;
 
           if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
             throw jlm::util::error("Expected memory state type.");
@@ -491,17 +482,13 @@ private:
             throw jlm::util::error("Expected IO state type.");
         };
 
-        auto CheckResultTypes = [](const FunctionType & functionType)
-        {
-          if (functionType.NumResults() < 3)
-            throw jlm::util::error("Expected at least three result types.");
+    auto CheckResultTypes = [](const FunctionType & functionType)
+    {
+      if (functionType.NumResults() < 2)
+        throw jlm::util::error("Expected at least three result types.");
 
-          auto loopStateResultIndex = functionType.NumResults()-1;
-          auto memoryStateResultIndex = functionType.NumResults()-2;
-          auto iOStateResultIndex = functionType.NumResults()-3;
-
-          if (!is<loopstatetype>(functionType.ResultType(loopStateResultIndex)))
-            throw jlm::util::error("Expected loop state type.");
+      auto memoryStateResultIndex = functionType.NumResults() - 1;
+      auto iOStateResultIndex = functionType.NumResults() - 2;
 
           if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
             throw jlm::util::error("Expected memory state type.");

@@ -760,7 +760,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 4));
+    assert(is<CallOperation>(*call, 3, 3));
 
     auto call_entry_mux = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -781,7 +781,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 5, 4));
+    assert(is<CallOperation>(*call, 4, 3));
 
     auto call_entry_mux = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -790,7 +790,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
     call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 5, 4));
+    assert(is<CallOperation>(*call, 4, 3));
 
     call_entry_mux = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -817,7 +817,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 4));
+    assert(is<CallOperation>(*call, 3, 3));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
@@ -838,7 +838,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
-    assert(is<CallOperation>(*call, 5, 4));
+    assert(is<CallOperation>(*call, 4, 3));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
@@ -847,7 +847,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
 
     call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
-    assert(is<CallOperation>(*call, 5, 4));
+    assert(is<CallOperation>(*call, 4, 3));
 
     callEntryMerge = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
@@ -874,7 +874,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 4));
+    assert(is<CallOperation>(*call, 3, 3));
 
     auto call_entry_mux = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -895,7 +895,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 5, 4));
+    assert(is<CallOperation>(*call, 4, 3));
 
     auto call_entry_mux = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -904,7 +904,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<aa::CallExitMemStateOperator>(*call_exit_mux, 1, 5));
 
     call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
-    assert(is<CallOperation>(*call, 5, 4));
+    assert(is<CallOperation>(*call, 4, 3));
 
     call_entry_mux = jlm::rvsdg::node_output::node(call->input(3)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*call_entry_mux, 5, 1));
@@ -1554,7 +1554,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
 
     auto callF1 = input_node(*callEntryMerge->output(0)->begin());
-    assert(is<CallOperation>(*callF1, 4, 3));
+    assert(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit = input_node(*callF1->output(1)->begin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
@@ -1780,7 +1780,7 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 1, 1));
 
     auto callF1 = input_node(*callEntryMerge->output(0)->begin());
-    assert(is<CallOperation>(*callF1, 4, 3));
+    assert(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit = input_node(*callF1->output(1)->begin());
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 1));
@@ -1948,7 +1948,7 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 4));
+    assert(is<CallOperation>(*call, 3, 3));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 5, 1));
@@ -1995,7 +1995,7 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
    */
   {
     auto callNode = input_node(*test.LambdaG().cvargument(2)->begin());
-    assert(is<CallOperation>(*callNode, 4, 4));
+    assert(is<CallOperation>(*callNode, 3, 3));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(callNode->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 2, 1));
@@ -2044,7 +2044,7 @@ ValidateMemcpyTestSteensgaardAgnosticTopDown(const jlm::tests::MemcpyTest & test
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
-    assert(is<CallOperation>(*call, 4, 4));
+    assert(is<CallOperation>(*call, 3, 3));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(call->input(2)->origin());
     assert(is<aa::CallEntryMemStateOperator>(*callEntryMerge, 5, 1));
