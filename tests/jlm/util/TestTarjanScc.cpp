@@ -273,7 +273,7 @@ static int
 TestDiamondChainWithBackEdge()
 {
   // Back edges create one big SCC, the rest are single node SCCs
-  std::pair<size_t, size_t> backEdge{ 3*50, 3*3 };
+  std::pair<size_t, size_t> backEdge{ 3 * 50, 3 * 3 };
   auto [numNodes, numSccs, sccIndex] = CreateDiamondChain(100, backEdge);
 
   std::cerr << "numSccs: " << numSccs << std::endl;
