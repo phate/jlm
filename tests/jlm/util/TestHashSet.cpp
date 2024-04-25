@@ -10,7 +10,7 @@
 #include <cassert>
 #include <memory>
 
-static void
+static int
 TestInt()
 {
   jlm::util::HashSet<int> hashSet({ 0, 1, 2, 3, 4, 5, 6, 7 });
@@ -45,9 +45,13 @@ TestInt()
 
   hashSet.Clear();
   assert(hashSet.Size() == 0);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestInt", TestInt)
+
+static int
 TestUniquePointer()
 {
   jlm::util::HashSet<std::unique_ptr<int>> hashSet;
@@ -60,9 +64,13 @@ TestUniquePointer()
 
   hashSet.Clear();
   assert(hashSet.Size() == 0);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestUniquePointer", TestUniquePointer)
+
+static int
 TestPair()
 {
   jlm::util::HashSet<std::pair<int, int>> hashSet{ { 1, 10 }, { 5, 50 } };
@@ -84,9 +92,13 @@ TestPair()
   assert(result && hashSet.Size() == 2);
   result = hashSet.Remove({ 5, 50 });
   assert(!result && hashSet.Size() == 2);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestPair", TestPair)
+
+static int
 TestIsSubsetOf()
 {
   jlm::util::HashSet<int> set12({ 1, 2 });
@@ -100,9 +112,13 @@ TestIsSubsetOf()
   assert(set123.IsSubsetOf(set1234));
   assert(!set1234.IsSubsetOf(set12));
   assert(!set1234.IsSubsetOf(set123));
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestIsSubsetOf", TestIsSubsetOf)
+
+static int
 TestUnionWith()
 {
   using namespace jlm::util;
@@ -121,9 +137,13 @@ TestUnionWith()
 
   assert(set45.UnionWith(set123));
   assert(set45.Size() == 5);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestUnionWith", TestUnionWith)
+
+static int
 TestIntersectWith()
 {
   using namespace jlm::util;
@@ -137,19 +157,7 @@ TestIntersectWith()
 
   set123.IntersectWith(set45);
   assert(set123.Size() == 0);
-}
-
-static int
-TestHashSet()
-{
-  TestInt();
-  TestUniquePointer();
-  TestPair();
-  TestIsSubsetOf();
-  TestUnionWith();
-  TestIntersectWith();
-
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet", TestHashSet)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestIntersectWith", TestIntersectWith)
