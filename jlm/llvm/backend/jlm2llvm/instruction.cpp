@@ -192,8 +192,6 @@ convert(
       continue;
     if (rvsdg::is<MemoryStateType>(argument->type()))
       continue;
-    if (rvsdg::is<loopstatetype>(argument->type()))
-      continue;
 
     if (rvsdg::is<varargtype>(argument->type()))
     {
@@ -273,8 +271,6 @@ convert_phi(
   if (rvsdg::is<iostatetype>(phi.type()))
     return nullptr;
   if (rvsdg::is<MemoryStateType>(phi.type()))
-    return nullptr;
-  if (rvsdg::is<loopstatetype>(phi.type()))
     return nullptr;
 
   auto t = convert_type(phi.type(), ctx);

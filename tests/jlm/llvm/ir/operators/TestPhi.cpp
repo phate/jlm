@@ -22,22 +22,20 @@ TestPhiCreation()
   jlm::tests::valuetype vtype;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType f0type(
-      { &vtype, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &vtype, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType f1type(
-      { &vtype, &iOStateType, &memoryStateType, &loopStateType },
-      { &vtype, &iOStateType, &memoryStateType, &loopStateType });
+      { &vtype, &iOStateType, &memoryStateType },
+      { &vtype, &iOStateType, &memoryStateType });
 
   auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
   {
     auto lambda = lambda::node::create(region, f0type, name, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
-    return lambda->finalize({ iOStateArgument, memoryStateArgument, loopStateArgument });
+    return lambda->finalize({ iOStateArgument, memoryStateArgument });
   };
 
   auto SetupF2 = [&](jlm::rvsdg::region * region, jlm::rvsdg::argument * f2)
@@ -47,12 +45,9 @@ TestPhiCreation()
     auto valueArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
-    auto callResults = CallNode::Create(
-        ctxVarF2,
-        f1type,
-        { valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument });
+    auto callResults =
+        CallNode::Create(ctxVarF2, f1type, { valueArgument, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);
   };

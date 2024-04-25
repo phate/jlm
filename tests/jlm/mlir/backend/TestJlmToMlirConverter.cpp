@@ -28,20 +28,18 @@ TestLambda()
     std::cout << "Function Setup" << std::endl;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto constant = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
-    lambda->finalize({ constant, iOStateArgument, memoryStateArgument, loopStateArgument });
+    lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -77,7 +75,6 @@ TestLambda()
     }
     assert(arguments[0].getTypeID() == IOStateEdgeType::getTypeID());
     assert(arguments[1].getTypeID() == MemStateEdgeType::getTypeID());
-    assert(arguments[2].getTypeID() == LoopStateEdgeType::getTypeID());
     std::vector<mlir::Type> results;
     for (auto returnType : lambdaRefType->getReturnTypes())
     {
@@ -86,7 +83,6 @@ TestLambda()
     assert(results[0].getTypeID() == mlir::IntegerType::getTypeID());
     assert(results[1].getTypeID() == IOStateEdgeType::getTypeID());
     assert(results[2].getTypeID() == MemStateEdgeType::getTypeID());
-    assert(results[3].getTypeID() == LoopStateEdgeType::getTypeID());
 
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
@@ -153,16 +149,14 @@ TestAddOperation()
     std::cout << "Function Setup" << std::endl;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
@@ -170,7 +164,7 @@ TestAddOperation()
     auto constant2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto add = jlm::rvsdg::bitadd_op::create(32, constant1, constant2);
 
-    lambda->finalize({ add, iOStateArgument, memoryStateArgument, loopStateArgument });
+    lambda->finalize({ add, iOStateArgument, memoryStateArgument });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -256,16 +250,14 @@ TestComZeroExt()
     std::cout << "Function Setup" << std::endl;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit1, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit1, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
@@ -284,7 +276,7 @@ TestComZeroExt()
 
     auto comp = jlm::rvsdg::bitsgt_op::create(16, mul, mul);
 
-    lambda->finalize({ comp, iOStateArgument, memoryStateArgument, loopStateArgument });
+    lambda->finalize({ comp, iOStateArgument, memoryStateArgument });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
