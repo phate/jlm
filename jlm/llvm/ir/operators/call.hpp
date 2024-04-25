@@ -320,6 +320,9 @@ public:
     return output(n);
   }
 
+  /**
+   * @return The outputs of the call node.
+   */
   [[nodiscard]] std::vector<rvsdg::output *>
   Results() const noexcept
   {
