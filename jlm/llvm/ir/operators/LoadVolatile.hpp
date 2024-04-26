@@ -20,7 +20,7 @@ namespace jlm::llvm
  * externally visible side-effects. This I/O state allows the volatile load operation to be
  * sequentialized with respect to other volatile memory accesses and I/O operations. This additional
  * I/O state is the main reason why volatile loads are modeled as its own operation and volatile is
- * not just a flag at the normal @see{LoadOperation}.
+ * not just a flag at the normal \ref LoadOperation.
  */
 class LoadVolatileOperation final : public rvsdg::simple_op
 {
