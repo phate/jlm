@@ -1,13 +1,14 @@
-//
-// Created by david on 7/2/21.
-//
+/*
+ * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
-#include "jlm/hls/backend/rvsdg2rhls/mem-conv.hpp"
-#include "jlm/hls/backend/rvsdg2rhls/mem-sep.hpp"
-#include "jlm/llvm/ir/operators/lambda.hpp"
-#include "jlm/llvm/ir/operators/load.hpp"
-#include "jlm/llvm/ir/operators/store.hpp"
+#include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/store.hpp>
 #include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -179,8 +180,8 @@ trace_edge(
   while (true)
   {
     // each iteration should update common_edge and/or new_edge
-    assert(common_edge->nusers() == 1);
-    assert(new_edge->nusers() == 1);
+    JLM_ASSERT(common_edge->nusers() == 1);
+    JLM_ASSERT(new_edge->nusers() == 1);
     auto user = *common_edge->begin();
     auto new_next = *new_edge->begin();
     if (auto res = dynamic_cast<jlm::rvsdg::result *>(user))
@@ -221,7 +222,7 @@ trace_edge(
       auto op = &si->node()->operation();
       if (dynamic_cast<const jlm::llvm::StoreOperation *>(op))
       {
-        assert(sn->noutputs() == 1);
+        JLM_ASSERT(sn->noutputs() == 1);
         if (store_nodes.end() != std::find(store_nodes.begin(), store_nodes.end(), sn))
         {
           si->divert_to(new_edge);
@@ -236,7 +237,7 @@ trace_edge(
       }
       else if (dynamic_cast<const jlm::llvm::LoadOperation *>(op))
       {
-        assert(sn->noutputs() == 2);
+        JLM_ASSERT(sn->noutputs() == 2);
         if (load_nodes.end() != std::find(load_nodes.begin(), load_nodes.end(), sn))
         {
           auto new_next = *new_edge->begin();
@@ -253,20 +254,11 @@ trace_edge(
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(op))
       {
-        // TODO: verify this is the right type of function call
-        //                if(decouple_nodes.end() != std::find(decouple_nodes.begin(),
-        //                decouple_nodes.end(),sn)){
-        //                    auto new_next = *new_edge->begin();
-        //                    si->divert_to(new_edge);
-        //                    assert(sn->noutputs() == 2);
-        //                    sn->output(1)->divert_users(common_edge);
-        //                    new_next->divert_to(sn->output(1));
-        //                }
-        throw jlm::util::error("not implemented yet");
+        JLM_ASSERT("Decoupled nodes not implemented yet");
       }
       else
       {
-        assert(sn->noutputs() == 1);
+        JLM_ASSERT(sn->noutputs() == 1);
         common_edge = sn->output(0);
       }
     }
@@ -286,7 +278,7 @@ mem_sep_argument(jlm::rvsdg::region * region)
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
   {
-    // no memstate - i.e. no memory used
+    // no memstate - i.e., no memory used
     return;
   }
   auto state_user = *state_arg->begin();

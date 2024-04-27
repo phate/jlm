@@ -21,6 +21,6 @@ merge_gamma(llvm::RvsdgModule & rm);
 bool
 merge_gamma(jlm::rvsdg::gamma_node * gamma);
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_BACKEND_HLS_RVSDG2RHLS_MERGE_GAMMA_HPP

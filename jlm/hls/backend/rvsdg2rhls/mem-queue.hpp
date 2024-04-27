@@ -1,6 +1,7 @@
-//
-// Created by david on 7/2/21.
-//
+/*
+ * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_MEM_QUEUE_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_MEM_QUEUE_HPP
@@ -16,6 +17,6 @@ mem_queue(jlm::rvsdg::region * region);
 void
 mem_queue(llvm::RvsdgModule & rm);
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_BACKEND_HLS_RVSDG2RHLS_MEM_QUEUE_HPP

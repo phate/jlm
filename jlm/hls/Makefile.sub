@@ -2,8 +2,6 @@
 # See COPYING for terms of redistribution.
 
 libhls_SOURCES = \
-    jlm/hls/ir/hls.cpp \
-    \
     jlm/hls/backend/rhls2firrtl/base-hls.cpp \
     jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
     jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
@@ -32,11 +30,11 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     \
+    jlm/hls/ir/hls.cpp \
+    \
     jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
-	jlm/hls/ir/hls.hpp \
-	\
 	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
@@ -64,6 +62,8 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
 	\
+	jlm/hls/ir/hls.hpp \
+	\
 	jlm/hls/util/view.hpp \
 
 libhls_TESTS += \
@@ -72,11 +72,11 @@ libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
 
 libhls_TEST_LIBS += \
+	libjlmtest \
 	libhls \
 	libllvm \
 	librvsdg \
 	libutil \
-	libjlmtest \
 
 libhls_TEST_EXTRA_LDFLAGS = $(shell $(LLVMCONFIG) --ldflags --libs --system-libs)
 

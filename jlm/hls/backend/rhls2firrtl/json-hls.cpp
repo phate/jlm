@@ -24,10 +24,6 @@ JsonHLS::get_text(llvm::RvsdgModule & rm)
   json << "\"arguments\": [";
   for (size_t i = 0; i < reg_args.size(); ++i)
   {
-    //		if (dynamic_cast<const jive::statetype *>(&ln->type().ArgumentType(i))) {
-    //			continue;
-    //		}
-
     if (i != 0)
     {
       json << ", ";
@@ -35,29 +31,9 @@ JsonHLS::get_text(llvm::RvsdgModule & rm)
     json << JlmSize(&reg_args[i]->type());
   }
   json << "],\n";
-  //    json << "\"cvarguments\": [";
-  //    for (size_t i = 0; i < ln->ncvarguments(); ++i) {
-  //        size_t ix = ln->cvargument(i)->input()->argument()->index();
-  //        std::string name;
-  //        if(auto a = dynamic_cast<jive::argument *>(ln->input(i)->origin())){
-  //            if(auto ip = dynamic_cast<const impport*>(&a->port())){
-  //                name = ip->name();
-  //            }
-  //        } else{
-  //            throw jlm::error("Unsupported cvarg origin type type");
-  //        }
-  //        if(i!=0){
-  //            json << ", ";
-  //        }
-  //        json << "\"" << name << "\"";
-  //    }
-  //    json << "],\n";
   json << "\"results\": [";
   for (size_t i = 0; i < reg_results.size(); ++i)
   {
-    //        if (dynamic_cast<const jive::statetype *>(&ln->type().ResultType(i))) {
-    //            continue;
-    //        }
     if (i != 0)
     {
       json << ", ";

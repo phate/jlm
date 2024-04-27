@@ -94,4 +94,4 @@ add_buffers(llvm::RvsdgModule & rm, bool pass_through)
   add_buffers(root, pass_through);
 }
 
-} // namespace hls::hls
+}

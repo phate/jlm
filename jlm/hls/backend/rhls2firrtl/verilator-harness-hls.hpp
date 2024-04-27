@@ -43,6 +43,6 @@ private:
       const std::string & function_name);
 };
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP

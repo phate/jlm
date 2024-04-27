@@ -127,7 +127,8 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
   }
   else if (dynamic_cast<const bundletype *>(type))
   {
-    return 0; // TODO: fix this ugly hack needed for get_node_name
+    // TODO: fix this ugly hack needed for get_node_name
+    return 0;
   }
   else
   {
@@ -179,4 +180,4 @@ BaseHLS::get_base_file_name(const llvm::RvsdgModule & rm)
   return base_file_name;
 }
 
-} // namespace jlm::hls
+}

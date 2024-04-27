@@ -1,6 +1,7 @@
-//
-// Created by david on 7/2/21.
-//
+/*
+ * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/ir/hls.hpp>

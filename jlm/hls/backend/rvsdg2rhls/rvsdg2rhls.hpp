@@ -37,6 +37,6 @@ trace_call(jlm::rvsdg::input * input);
 std::unique_ptr<llvm::RvsdgModule>
 split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name);
 
-} // namespace jlm::hls
+}
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP

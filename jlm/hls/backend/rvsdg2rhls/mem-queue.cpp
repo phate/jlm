@@ -1,8 +1,8 @@
-//
-// Created by david on 7/2/21.
-//
+/*
+ * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
-#include <deque>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
@@ -15,6 +15,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
+
+#include <deque>
 
 void
 jlm::hls::mem_queue(llvm::RvsdgModule & rm)
@@ -37,7 +39,6 @@ find_load_store(
     jlm::rvsdg::output * op,
     std::vector<jlm::rvsdg::simple_node *> & load_nodes,
     std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    //        std::vector<jlm::rvsdg::simple_node *> &decouple_nodes,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
   if (!dynamic_cast<const jlm::llvm::MemoryStateType *>(&op->type()))
@@ -62,10 +63,6 @@ find_load_store(
       else if (dynamic_cast<const jlm::llvm::LoadOperation *>(&simplenode->operation()))
       {
         load_nodes.push_back(simplenode);
-        //            }  else if (auto co = dynamic_cast<const jlm::CallOperation
-        //            *>(&simplenode->operation())) {
-        //                // TODO: verify this is the right type of function call
-        //                decouple_nodes.push_back(simplenode);
       }
       for (size_t i = 0; i < simplenode->noutputs(); ++i)
       {
@@ -101,28 +98,28 @@ jlm::rvsdg::structural_output *
 find_loop_output(jlm::rvsdg::structural_input * sti)
 {
   auto sti_arg = sti->arguments.first();
-  assert(sti_arg->nusers() == 1);
+  JLM_ASSERT(sti_arg->nusers() == 1);
   auto user = *sti_arg->begin();
   auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user);
-  assert(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->operation()));
+  JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->operation()));
   for (size_t i = 1; i < 3; ++i)
   {
     auto arg = si->node()->input(i)->origin();
     if (auto ba = dynamic_cast<jlm::hls::backedge_argument *>(arg))
     {
       auto res = ba->result();
-      assert(res);
+      JLM_ASSERT(res);
       auto buffer_out = dynamic_cast<jlm::rvsdg::simple_output *>(res->origin());
-      assert(buffer_out);
-      assert(dynamic_cast<const jlm::hls::buffer_op *>(&buffer_out->node()->operation()));
+      JLM_ASSERT(buffer_out);
+      JLM_ASSERT(dynamic_cast<const jlm::hls::buffer_op *>(&buffer_out->node()->operation()));
       auto branch_out =
           dynamic_cast<jlm::rvsdg::simple_output *>(buffer_out->node()->input(0)->origin());
-      assert(branch_out);
-      assert(dynamic_cast<const jlm::hls::branch_op *>(&branch_out->node()->operation()));
+      JLM_ASSERT(branch_out);
+      JLM_ASSERT(dynamic_cast<const jlm::hls::branch_op *>(&branch_out->node()->operation()));
       // branch
       for (size_t j = 0; j < 2; ++j)
       {
-        assert(branch_out->node()->output(j)->nusers() == 1);
+        JLM_ASSERT(branch_out->node()->output(j)->nusers() == 1);
         auto result = dynamic_cast<jlm::rvsdg::result *>(*branch_out->node()->output(j)->begin());
         if (result)
         {
@@ -153,7 +150,7 @@ route_to_region(jlm::rvsdg::region * target, jlm::rvsdg::output * out)
   // create lists of nested regions
   std::deque<jlm::rvsdg::region *> target_regions = get_parent_regions(target);
   std::deque<jlm::rvsdg::region *> out_regions = get_parent_regions(out->region());
-  assert(target_regions.front() == out_regions.front());
+  JLM_ASSERT(target_regions.front() == out_regions.front());
   // remove common ancestor regions
   jlm::rvsdg::region * common_region = nullptr;
   while (!target_regions.empty() && !out_regions.empty()
@@ -165,7 +162,7 @@ route_to_region(jlm::rvsdg::region * target, jlm::rvsdg::output * out)
   }
   JLM_ASSERT(common_region != nullptr);
   auto common_loop = dynamic_cast<jlm::hls::loop_node *>(common_region->node());
-  assert(common_loop);
+  JLM_ASSERT(common_loop);
   // route out to convergence point from out
   jlm::rvsdg::output * common_out = jlm::hls::route_request(common_region, out);
   // add a backedge to prevent cycles
@@ -185,9 +182,7 @@ separate_load_edge(
     std::vector<jlm::rvsdg::output *> & store_addresses,
     std::vector<jlm::rvsdg::output *> & store_dequeues,
     std::vector<bool> & store_precedes,
-    bool * load_encountered
-    //        jlm::rvsdg::substitution_map & smap
-)
+    bool * load_encountered)
 {
   // follows along mem edge and routes addr edge through the same regions
   // redirects the supplied load to the new edge and adds it to stores
@@ -195,14 +190,14 @@ separate_load_edge(
   while (true)
   {
     // each iteration should update common_edge and/or new_edge
-    assert(mem_edge->nusers() == 1);
+    JLM_ASSERT(mem_edge->nusers() == 1);
     if (addr_edge->nusers() != 1)
     {
       dump_xml(addr_edge->region(), "no_users.rvsdg");
     }
-    assert(addr_edge->nusers() == 1);
-    assert(mem_edge != addr_edge);
-    assert(mem_edge->region() == addr_edge->region());
+    JLM_ASSERT(addr_edge->nusers() == 1);
+    JLM_ASSERT(mem_edge != addr_edge);
+    JLM_ASSERT(mem_edge->region() == addr_edge->region());
     auto user = *mem_edge->begin();
     auto addr_edge_user = *addr_edge->begin();
     if (dynamic_cast<jlm::rvsdg::result *>(user))
@@ -213,18 +208,18 @@ separate_load_edge(
     else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
     {
       auto loop_node = dynamic_cast<jlm::hls::loop_node *>(sti->node());
-      assert(loop_node);
+      JLM_ASSERT(loop_node);
       jlm::rvsdg::output * buffer;
 
       addr_edge = loop_node->add_loopvar(addr_edge, &buffer);
       addr_edge_user->divert_to(addr_edge);
       mem_edge = find_loop_output(sti);
       auto sti_arg = sti->arguments.first();
-      assert(sti_arg->nusers() == 1);
+      JLM_ASSERT(sti_arg->nusers() == 1);
       auto user = *sti_arg->begin();
       auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user);
-      assert(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->operation()));
-      assert(buffer->nusers() == 1);
+      JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->operation()));
+      JLM_ASSERT(buffer->nusers() == 1);
       separate_load_edge(
           si->node()->output(0),
           buffer,
@@ -254,7 +249,7 @@ separate_load_edge(
             // Sink ops doesn't have any outputs so we get an empty vector back
             // But we are not allowed to discard the vector and can't have unused variables
             // So adding a meaningless assert to get it to compile
-            assert(dummy_user_tmp.size() == 0);
+            JLM_ASSERT(dummy_user_tmp.size() == 0);
             auto dummy_user =
                 dynamic_cast<jlm::rvsdg::simple_input *>(*load_branch_out[i]->begin())->node();
             // need both load and common edge here
@@ -267,16 +262,15 @@ separate_load_edge(
                 store_dequeues,
                 store_precedes,
                 load_encountered);
-            assert(load_branch_out[i]->nusers() == 1);
-            assert(dummy_user->input(0)->origin() == load_branch_out[i]);
+            JLM_ASSERT(load_branch_out[i]->nusers() == 1);
+            JLM_ASSERT(dummy_user->input(0)->origin() == load_branch_out[i]);
             remove(dummy_user);
           }
           // create mux
-          assert(mem_edge->nusers() == 1);
-          auto mux_user = dynamic_cast<jlm::rvsdg::simple_input *>(*mem_edge->begin());
-          assert(mux_user);
+          JLM_ASSERT(mem_edge->nusers() == 1); auto mux_user = dynamic_cast<jlm::rvsdg::simple_input *>(*mem_edge->begin());
+          JLM_ASSERT(mux_user);
           auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&mux_user->node()->operation());
-          assert(mux_op);
+          JLM_ASSERT(mux_op);
           addr_edge = jlm::hls::mux_op::create(
               *mux_user->node()->input(0)->origin(),
               load_branch_out,
@@ -289,20 +283,20 @@ separate_load_edge(
         {
           // end of loop
           auto load_user_input = dynamic_cast<jlm::rvsdg::simple_input *>(addr_edge_user);
-          assert(load_user_input);
-          assert(dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->operation()));
+          JLM_ASSERT(load_user_input);
+          JLM_ASSERT(dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->operation()));
           return nullptr;
         }
       }
       else if (auto mx = dynamic_cast<const jlm::hls::mux_op *>(op))
       {
-        assert(!mx->loop);
+        JLM_ASSERT(!mx->loop);
         // end of gamma
         if (!new_mem_edge)
         {
           dump_xml(addr_edge->region(), "no_new_common_edge.rvsdg");
         }
-        assert(new_mem_edge);
+        JLM_ASSERT(new_mem_edge);
         *new_mem_edge = mem_edge;
         return addr_edge;
       }
@@ -314,7 +308,7 @@ separate_load_edge(
         store_addresses.push_back(route_to_region((*load)->region(), sg_out[0]));
         store_precedes.push_back(!*load_encountered);
         mem_edge = sn->output(0);
-        assert(mem_edge->nusers() == 1);
+        JLM_ASSERT(mem_edge->nusers() == 1);
         user = *mem_edge->begin();
         auto ui = dynamic_cast<jlm::rvsdg::simple_input *>(user);
         if (ui && dynamic_cast<const jlm::llvm::MemStateSplitOperator *>(&ui->node()->operation()))
@@ -343,7 +337,7 @@ separate_load_edge(
       }
       else if (auto lo = dynamic_cast<const jlm::llvm::LoadOperation *>(op))
       {
-        assert(sn->noutputs() == 2);
+        JLM_ASSERT(sn->noutputs() == 2);
         if (sn == *load)
         {
           // create state gate for addr edge
@@ -382,16 +376,7 @@ separate_load_edge(
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(op))
       {
-        // TODO: verify this is the right type of function call
-        //                if(decouple_nodes.end() != std::find(decouple_nodes.begin(),
-        //                decouple_nodes.end(),sn)){
-        //                    auto new_next = *new_edge->begin();
-        //                    si->divert_to(new_edge);
-        //                    assert(sn->noutputs() == 2);
-        //                    sn->output(1)->divert_users(common_edge);
-        //                    new_next->divert_to(sn->output(1));
-        //                }
-        throw jlm::util::error("not implemented yet");
+        JLM_ASSERT("Decoupled nodes not implemented yet");
       }
       else if (dynamic_cast<const jlm::llvm::MemStateMergeOperator *>(op))
       {
@@ -406,8 +391,6 @@ separate_load_edge(
       else
       {
         JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
-        //                assert(sn->noutputs() == 1);
-        //                common_edge = sn->output(0);
       }
     }
     else
@@ -423,7 +406,7 @@ process_loops(jlm::rvsdg::output * state_edge)
   while (true)
   {
     // each iteration should update state_edge
-    assert(state_edge->nusers() == 1);
+    JLM_ASSERT(state_edge->nusers() == 1);
     auto user = *state_edge->begin();
     if (dynamic_cast<jlm::rvsdg::result *>(user))
     {
@@ -446,34 +429,34 @@ process_loops(jlm::rvsdg::output * state_edge)
       else if (dynamic_cast<const jlm::hls::mux_op *>(op))
       {
         // end of gamma
-        assert(sn->noutputs() == 1);
+        JLM_ASSERT(sn->noutputs() == 1);
         return sn->output(0);
       }
       else if (dynamic_cast<const jlm::llvm::aa::LambdaExitMemStateOperator *>(op))
       {
         // end of lambda
-        assert(sn->noutputs() == 1);
+        JLM_ASSERT(sn->noutputs() == 1);
         return sn->output(0);
       }
       else if (dynamic_cast<const jlm::llvm::LoadOperation *>(op))
       {
         // load
-        assert(sn->noutputs() == 2);
+        JLM_ASSERT(sn->noutputs() == 2);
         state_edge = sn->output(1);
       }
       else
       {
-        assert(sn->noutputs() == 1);
+        JLM_ASSERT(sn->noutputs() == 1);
         state_edge = sn->output(0);
       }
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
     {
       auto ln = dynamic_cast<jlm::hls::loop_node *>(sti->node());
-      assert(ln);
+      JLM_ASSERT(ln);
       // update to output of loop
       auto mem_edge_after_loop = find_loop_output(sti);
-      assert(mem_edge_after_loop->nusers() == 1);
+      JLM_ASSERT(mem_edge_after_loop->nusers() == 1);
       auto common_user = *mem_edge_after_loop->begin();
 
       std::vector<jlm::rvsdg::simple_node *> load_nodes;
@@ -482,10 +465,6 @@ process_loops(jlm::rvsdg::output * state_edge)
       // this is a hack to keep search within the loop
       visited.insert(mem_edge_after_loop);
       find_load_store(&*sti->arguments.begin(), load_nodes, store_nodes, visited);
-      //            if(load_nodes.size()+store_nodes.size()<2){
-      //                state_edge = mem_edge_after_loop;
-      //                continue;
-      //            }
       auto split_states =
           jlm::llvm::MemStateSplitOperator::Create(sti->origin(), load_nodes.size() + 1);
       // handle common edge
@@ -511,15 +490,15 @@ process_loops(jlm::rvsdg::output * state_edge)
             store_dequeues,
             store_precedes,
             &load_encountered);
-        assert(load_encountered);
-        assert(store_nodes.size() == store_addresses.size());
-        assert(store_nodes.size() == store_dequeues.size());
+        JLM_ASSERT(load_encountered);
+        JLM_ASSERT(store_nodes.size() == store_addresses.size());
+        JLM_ASSERT(store_nodes.size() == store_dequeues.size());
         auto state_gate_addr_in =
             dynamic_cast<jlm::rvsdg::simple_output *>(load->input(0)->origin())->node()->input(0);
         for (size_t j = 0; j < store_nodes.size(); ++j)
         {
-          assert(state_gate_addr_in->origin()->region() == store_addresses[j]->region());
-          assert(store_dequeues[j]->region() == store_addresses[j]->region());
+          JLM_ASSERT(state_gate_addr_in->origin()->region() == store_addresses[j]->region());
+          JLM_ASSERT(store_dequeues[j]->region() == store_addresses[j]->region());
           state_gate_addr_in->divert_to(jlm::hls::addr_queue_op::create(
               *state_gate_addr_in->origin(),
               *store_addresses[j],
@@ -542,15 +521,15 @@ jlm::hls::mem_queue(jlm::rvsdg::region * region)
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
   {
-    // no memstate - i.e. no memory used
+    // no memstate - i.e., no memory used
     return;
   }
-  assert(state_arg->nusers() == 1);
+  JLM_ASSERT(state_arg->nusers() == 1);
   auto state_user = *state_arg->begin();
   auto entry_input = dynamic_cast<jlm::rvsdg::simple_input *>(state_user);
-  assert(entry_input);
+  JLM_ASSERT(entry_input);
   auto entry_node = entry_input->node();
-  assert(
+  JLM_ASSERT(
       dynamic_cast<const jlm::llvm::aa::LambdaEntryMemStateOperator *>(&entry_node->operation()));
   // for each state edge:
   //    for each outer loop (theta/loop in lambda region):

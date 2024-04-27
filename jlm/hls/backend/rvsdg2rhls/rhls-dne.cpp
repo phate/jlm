@@ -44,7 +44,7 @@ remove_unused_loop_outputs(loop_node * ln)
     auto out = ln->output(i);
     if (out->nusers() == 0)
     {
-      assert(out->results.size() == 1);
+      JLM_ASSERT(out->results.size() == 1);
       auto result = out->results.begin();
       sr->RemoveResult(result->index());
       ln->RemoveOutput(out->index());
@@ -63,7 +63,7 @@ remove_loop_passthrough(loop_node * ln)
   for (int i = ln->ninputs() - 1; i >= 0; --i)
   {
     auto in = ln->input(i);
-    assert(in->arguments.size() == 1);
+    JLM_ASSERT(in->arguments.size() == 1);
     auto arg = in->arguments.begin();
     if (arg->nusers() == 1)
     {
@@ -92,7 +92,7 @@ remove_unused_loop_inputs(loop_node * ln)
   for (int i = ln->ninputs() - 1; i >= 0; --i)
   {
     auto in = ln->input(i);
-    assert(in->arguments.size() == 1);
+    JLM_ASSERT(in->arguments.size() == 1);
     auto arg = in->arguments.begin();
     if (arg->nusers() == 0)
     {
@@ -109,7 +109,7 @@ remove_unused_loop_inputs(loop_node * ln)
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
       auto result = ba->result();
-      assert(result->type() == arg->type());
+      JLM_ASSERT(result->type() == arg->type());
       if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
       {
         sr->RemoveResult(result->index());
@@ -118,7 +118,7 @@ remove_unused_loop_inputs(loop_node * ln)
     }
     else
     {
-      assert(arg->nusers() != 0);
+      JLM_ASSERT(arg->nusers() != 0);
     }
   }
   return any_changed;

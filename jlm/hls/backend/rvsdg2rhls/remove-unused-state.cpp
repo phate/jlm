@@ -36,7 +36,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
       }
       else
       {
-        assert(structnode->nsubregions() == 1);
+        JLM_ASSERT(structnode->nsubregions() == 1);
         remove_unused_state(structnode->subregion(0));
       }
     }
@@ -179,7 +179,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   {
     auto arg = ln->subregion()->argument(i);
     auto argtype = &old_fcttype.ArgumentType(i);
-    assert(*argtype == arg->type());
+    JLM_ASSERT(*argtype == arg->type());
     if (!is_passthrough(arg))
     {
       new_argument_types.push_back(argtype);
@@ -190,7 +190,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   {
     auto res = ln->subregion()->result(i);
     auto restype = &old_fcttype.ResultType(i);
-    assert(*restype == res->type());
+    JLM_ASSERT(*restype == res->type());
     if (!is_passthrough(res))
     {
       new_result_types.push_back(&old_fcttype.ResultType(i));
@@ -235,8 +235,8 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   auto new_out = new_lambda->finalize(new_results);
 
   // TODO handle functions at other levels?
-  assert(ln->region() == ln->region()->graph()->root());
-  assert((*ln->output()->begin())->region() == ln->region()->graph()->root());
+  JLM_ASSERT(ln->region() == ln->region()->graph()->root());
+  JLM_ASSERT((*ln->output()->begin())->region() == ln->region()->graph()->root());
 
   //	ln->output()->divert_users(new_out); // can't divert since the type changed
   JLM_ASSERT(ln->output()->nusers() == 1);
