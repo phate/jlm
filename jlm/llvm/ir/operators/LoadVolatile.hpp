@@ -81,7 +81,7 @@ private:
   CreateOperandPorts(size_t numStates)
   {
     std::vector<rvsdg::port> ports({ PointerType(), iostatetype() });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType::Create() });
+    std::vector<rvsdg::port> states(numStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
@@ -90,7 +90,7 @@ private:
   CreateResultPorts(const rvsdg::valuetype & loadedType, size_t numStates)
   {
     std::vector<rvsdg::port> ports({ loadedType, iostatetype() });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType::Create() });
+    std::vector<rvsdg::port> states(numStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
