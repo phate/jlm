@@ -278,16 +278,50 @@ convert_phi(
 }
 
 static ::llvm::Value *
-convert(
-    const LoadOperation & operation,
-    const std::vector<const variable *> & args,
+CreateLoadInstruction(
+    const rvsdg::valuetype & loadedType,
+    const variable * address,
+    bool isVolatile,
+    size_t alignment,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto type = convert_type(operation.GetLoadedType(), ctx);
-  auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]));
-  loadInstruction->setAlignment(::llvm::Align(operation.GetAlignment()));
+  auto type = convert_type(loadedType, ctx);
+  auto loadInstruction = builder.CreateLoad(type, ctx.value(address), isVolatile);
+  loadInstruction->setAlignment(::llvm::Align(alignment));
   return loadInstruction;
+}
+
+static ::llvm::Value *
+convert(
+    const LoadOperation & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  return CreateLoadInstruction(
+      operation.GetLoadedType(),
+      operands[0],
+      false,
+      operation.GetAlignment(),
+      builder,
+      ctx);
+}
+
+static ::llvm::Value *
+convert(
+    const LoadVolatileOperation & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  return CreateLoadInstruction(
+      operation.GetLoadedType(),
+      operands[0],
+      true,
+      operation.GetAlignment(),
+      builder,
+      ctx);
 }
 
 static inline ::llvm::Value *
@@ -962,6 +996,7 @@ convert_operation(
             { typeid(branch_op), convert_branch },
             { typeid(phi_op), convert_phi },
             { typeid(LoadOperation), convert<LoadOperation> },
+            { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
             { typeid(StoreOperation), convert_store },
             { typeid(alloca_op), convert_alloca },
             { typeid(GetElementPtrOperation), convert_getelementptr },
