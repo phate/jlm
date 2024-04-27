@@ -16,9 +16,10 @@ LoadOperation::~LoadOperation() noexcept = default;
 bool
 LoadOperation::operator==(const operation & other) const noexcept
 {
-  auto op = dynamic_cast<const LoadOperation *>(&other);
-  return op && op->narguments() == narguments() && op->GetPointerType() == GetPointerType()
-      && op->GetAlignment() == GetAlignment();
+  auto operation = dynamic_cast<const LoadOperation *>(&other);
+  return operation && operation->narguments() == narguments()
+      && operation->GetLoadedType() == GetLoadedType()
+      && operation->GetAlignment() == GetAlignment();
 }
 
 std::string
