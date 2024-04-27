@@ -267,7 +267,8 @@ separate_load_edge(
             remove(dummy_user);
           }
           // create mux
-          JLM_ASSERT(mem_edge->nusers() == 1); auto mux_user = dynamic_cast<jlm::rvsdg::simple_input *>(*mem_edge->begin());
+          JLM_ASSERT(mem_edge->nusers() == 1);
+          auto mux_user = dynamic_cast<jlm::rvsdg::simple_input *>(*mem_edge->begin());
           JLM_ASSERT(mux_user);
           auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&mux_user->node()->operation());
           JLM_ASSERT(mux_op);
@@ -284,7 +285,8 @@ separate_load_edge(
           // end of loop
           auto load_user_input = dynamic_cast<jlm::rvsdg::simple_input *>(addr_edge_user);
           JLM_ASSERT(load_user_input);
-          JLM_ASSERT(dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->operation()));
+          JLM_ASSERT(
+              dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->operation()));
           return nullptr;
         }
       }
