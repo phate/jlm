@@ -29,6 +29,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/load.cpp \
+    jlm/llvm/ir/operators/LoadVolatile.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
@@ -108,6 +109,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/operators.hpp \
 	jlm/llvm/ir/operators/Phi.hpp \
 	jlm/llvm/ir/operators/load.hpp \
+	jlm/llvm/ir/operators/LoadVolatile.hpp \
 	jlm/llvm/ir/operators/gamma.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
@@ -129,11 +131,13 @@ libllvm_TESTS += \
 	tests/jlm/llvm/backend/llvm/r2j/test-empty-gamma \
 	tests/jlm/llvm/backend/llvm/r2j/test-partial-gamma \
 	tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
+	tests/jlm/llvm/frontend/llvm/LoadTests \
 	tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
 	tests/jlm/llvm/frontend/llvm/test-endless-loop \
 	tests/jlm/llvm/frontend/llvm/test-export \
@@ -142,6 +146,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/frontend/llvm/test-recursive-data \
 	tests/jlm/llvm/frontend/llvm/test-restructuring \
 	tests/jlm/llvm/frontend/llvm/test-select \
+	tests/jlm/llvm/ir/operators/LoadVolatileTests \
 	tests/jlm/llvm/ir/operators/TestCall \
 	tests/jlm/llvm/ir/operators/test-ConstantFP \
 	tests/jlm/llvm/ir/operators/test-delta \

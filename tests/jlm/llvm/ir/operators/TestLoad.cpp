@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
@@ -13,6 +14,34 @@
 #include <jlm/llvm/ir/operators/load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
+
+static int
+OperationEquality()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  MemoryStateType memoryType;
+  jlm::tests::valuetype valueType;
+  PointerType pointerType;
+
+  LoadOperation operation1(valueType, 2, 4);
+  LoadOperation operation2(pointerType, 2, 4);
+  LoadOperation operation3(valueType, 4, 4);
+  LoadOperation operation4(valueType, 2, 8);
+  jlm::tests::test_op operation5({ &pointerType }, { &pointerType });
+
+  // Assert
+  assert(operation1 == operation1);
+  assert(operation1 != operation2); // loaded type differs
+  assert(operation1 != operation3); // number of memory states differs
+  assert(operation1 != operation4); // alignment differs
+  assert(operation1 != operation5); // operation differs
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLoad-OperationEquality", OperationEquality)
 
 static void
 TestCopy()

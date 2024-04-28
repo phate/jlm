@@ -596,18 +596,42 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Load);
   auto instruction = static_cast<::llvm::LoadInst *>(i);
 
-  /* FIXME: volatile */
   auto alignment = instruction->getAlign().value();
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ConvertType(instruction->getType(), ctx);
 
-  tacs.push_back(LoadOperation::Create(address, ctx.memory_state(), *loadedType, alignment));
-  auto value = tacs.back()->result(0);
-  auto state = tacs.back()->result(1);
+  const tacvariable * loadedValue;
+  const tacvariable * memoryState;
+  const tacvariable * ioState = nullptr;
+  if (instruction->isVolatile())
+  {
+    auto loadVolatileTac = LoadVolatileOperation::Create(
+        address,
+        ctx.iostate(),
+        ctx.memory_state(),
+        *loadedType,
+        alignment);
+    tacs.push_back(std::move(loadVolatileTac));
 
-  tacs.push_back(assignment_op::create(state, ctx.memory_state()));
+    loadedValue = tacs.back()->result(0);
+    ioState = tacs.back()->result(1);
+    memoryState = tacs.back()->result(2);
+  }
+  else
+  {
+    auto loadTac = LoadOperation::Create(address, ctx.memory_state(), *loadedType, alignment);
+    tacs.push_back(std::move(loadTac));
+    loadedValue = tacs.back()->result(0);
+    memoryState = tacs.back()->result(1);
+  }
 
-  return value;
+  if (ioState)
+  {
+    tacs.push_back(assignment_op::create(ioState, ctx.iostate()));
+  }
+  tacs.push_back(assignment_op::create(memoryState, ctx.memory_state()));
+
+  return loadedValue;
 }
 
 static inline const variable *
