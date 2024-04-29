@@ -34,8 +34,8 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : simple_op(
-            CreateOperandPorts(storedType, numMemoryStates),
-            CreateResultPorts(numMemoryStates)),
+          CreateOperandPorts(storedType, numMemoryStates),
+          CreateResultPorts(numMemoryStates)),
         Alignment_(alignment)
   {}
 
