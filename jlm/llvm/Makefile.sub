@@ -140,6 +140,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
 	tests/jlm/llvm/frontend/llvm/LoadTests \
+    tests/jlm/llvm/frontend/llvm/StoreTests \
 	tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
 	tests/jlm/llvm/frontend/llvm/test-endless-loop \
 	tests/jlm/llvm/frontend/llvm/test-export \
