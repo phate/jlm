@@ -14,6 +14,7 @@
 namespace jlm::llvm
 {
 
+// FIXME: fix documentation for volatile flag
 /**
  * Represents the LLVM memcpy intrinsic.
  */
@@ -94,6 +95,81 @@ private:
   CreateResultPorts(size_t nMemoryStates)
   {
     return std::vector<rvsdg::port>(nMemoryStates, { MemoryStateType::Create() });
+  }
+};
+
+// FIXME: documentation
+class MemCpyVolatileOperation final : public rvsdg::simple_op
+{
+public:
+  bool
+  operator==(const operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  copy() const override;
+
+  static std::unique_ptr<llvm::tac>
+  CreateThreeAddressCode(
+      const variable & destination,
+      const variable & source,
+      const variable & length,
+      const variable & ioState,
+      const std::vector<const variable *> & memoryStates)
+  {
+    auto operandPorts = CheckAndCreateOperandPorts(length.type(), memoryStates.size());
+    auto resultPorts = CreateResultPorts(memoryStates.size());
+
+    std::vector<const variable *> operands = { &destination, &source, &length, &ioState };
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    MemCpyOperation op(operandPorts, resultPorts);
+    return tac::create(op, operands);
+  }
+
+  static rvsdg::simple_node &
+  CreateNode(
+      rvsdg::output & destination,
+      rvsdg::output & source,
+      rvsdg::output & length,
+      rvsdg::output & ioState,
+      const std::vector<rvsdg::output *> & memoryStates)
+  {
+    auto operandPorts = CheckAndCreateOperandPorts(length.type(), memoryStates.size());
+    auto resultPorts = CreateResultPorts(memoryStates.size());
+
+    std::vector<rvsdg::output *> operands = { &destination, &source, &length, &ioState };
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    MemCpyOperation op(operandPorts, resultPorts);
+    return *rvsdg::simple_node::create(destination.region(), op, operands);
+  }
+
+private:
+  static std::vector<rvsdg::port>
+  CheckAndCreateOperandPorts(const rvsdg::type & length, size_t numMemoryStates)
+  {
+    if (length != rvsdg::bit32 && length != rvsdg::bit64)
+      throw util::error("Expected 32 bit or 64 bit integer type.");
+
+    if (numMemoryStates == 0)
+      throw util::error("Number of memory states cannot be zero.");
+
+    PointerType pointerType;
+    std::vector<rvsdg::port> ports = { pointerType, pointerType, length, iostatetype() };
+    ports.insert(ports.end(), numMemoryStates, { MemoryStateType() });
+
+    return ports;
+  }
+
+  static std::vector<rvsdg::port>
+  CreateResultPorts(size_t numMemoryStates)
+  {
+    std::vector<rvsdg::port> ports(1, iostatetype());
+    ports.insert(ports.end(), numMemoryStates, { MemoryStateType() });
+    return ports;
   }
 };
 

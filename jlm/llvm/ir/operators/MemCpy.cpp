@@ -29,4 +29,23 @@ MemCpyOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new MemCpyOperation(*this));
 }
 
+bool
+MemCpyVolatileOperation::operator==(const operation & other) const noexcept
+{
+  // Avoid common node elimination for memcpy operator
+  return this == &other;
+}
+
+std::string
+MemCpyVolatileOperation::debug_string() const
+{
+  return "MemCpyVolatile";
+}
+
+std::unique_ptr<rvsdg::operation>
+MemCpyVolatileOperation::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new MemCpyVolatileOperation(*this));
+}
+
 }
