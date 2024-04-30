@@ -743,10 +743,10 @@ IsVolatile(const ::llvm::Value & value)
   auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
   JLM_ASSERT(constant != nullptr);
 
-  auto flag = convert_apint(constant->getValue()).to_uint();
-  JLM_ASSERT(flag == 0 || flag == 1);
+  auto apInt = constant->getValue();
+  JLM_ASSERT(apInt.isZero() || apInt.isOne());
 
-  return flag == 1;
+  return apInt == 1;
 }
 
 static const variable *
@@ -758,7 +758,7 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
   auto destination = ConvertValue(instruction->getArgOperand(0), tacs, ctx);
   auto source = ConvertValue(instruction->getArgOperand(1), tacs, ctx);
   auto length = ConvertValue(instruction->getArgOperand(2), tacs, ctx);
-  
+
   if (IsVolatile(*instruction->getArgOperand(3)))
   {
     tacs.push_back(MemCpyVolatileOperation::CreateThreeAddressCode(
