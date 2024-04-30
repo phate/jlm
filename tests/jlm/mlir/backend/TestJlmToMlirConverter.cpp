@@ -127,7 +127,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
 /** \brief TestAddOperation
  *
  * This test is similar to TestLambda, but it adds a add operation to the
- * lambda block and do a graph traversal.
+ * lambda block and does a graph traversal.
  * This function is similar to the TestDivOperation function in the frontend tests.
  *
  * This function tests the generation of an add operation using 2 bit constants as operands in the
@@ -236,8 +236,8 @@ TestAddOperation()
 /** \brief TestAddOperation
  *
  * This test is similar to previous tests, but uses a mul, zero extension
- * and comparison operation, test the types of the operations
- * and do the use chain traversal.
+ * and comparison operation, it tests operations types
+ * and does the use chain traversal.
  */
 static int
 TestComZeroExt()
