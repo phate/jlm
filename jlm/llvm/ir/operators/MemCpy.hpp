@@ -102,6 +102,14 @@ private:
 class MemCpyVolatileOperation final : public rvsdg::simple_op
 {
 public:
+  ~MemCpyVolatileOperation() noexcept override;
+
+  MemCpyVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
+      : rvsdg::simple_op(
+            CheckAndCreateOperandPorts(lengthType, numMemoryStates),
+            CreateResultPorts(numMemoryStates))
+  {}
+
   bool
   operator==(const operation & other) const noexcept override;
 
@@ -119,14 +127,11 @@ public:
       const variable & ioState,
       const std::vector<const variable *> & memoryStates)
   {
-    auto operandPorts = CheckAndCreateOperandPorts(length.type(), memoryStates.size());
-    auto resultPorts = CreateResultPorts(memoryStates.size());
-
     std::vector<const variable *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation op(operandPorts, resultPorts);
-    return tac::create(op, operands);
+    MemCpyVolatileOperation operation(length.type(), memoryStates.size());
+    return tac::create(operation, operands);
   }
 
   static rvsdg::simple_node &
@@ -137,30 +142,26 @@ public:
       rvsdg::output & ioState,
       const std::vector<rvsdg::output *> & memoryStates)
   {
-    auto operandPorts = CheckAndCreateOperandPorts(length.type(), memoryStates.size());
-    auto resultPorts = CreateResultPorts(memoryStates.size());
-
     std::vector<rvsdg::output *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation op(operandPorts, resultPorts);
-    return *rvsdg::simple_node::create(destination.region(), op, operands);
+    MemCpyVolatileOperation operation(length.type(), memoryStates.size());
+    return *rvsdg::simple_node::create(destination.region(), operation, operands);
   }
 
 private:
   static std::vector<rvsdg::port>
-  CheckAndCreateOperandPorts(const rvsdg::type & length, size_t numMemoryStates)
+  CheckAndCreateOperandPorts(const rvsdg::type & lengthType, size_t numMemoryStates)
   {
-    if (length != rvsdg::bit32 && length != rvsdg::bit64)
+    if (lengthType != rvsdg::bit32 && lengthType != rvsdg::bit64)
       throw util::error("Expected 32 bit or 64 bit integer type.");
 
     if (numMemoryStates == 0)
       throw util::error("Number of memory states cannot be zero.");
 
     PointerType pointerType;
-    std::vector<rvsdg::port> ports = { pointerType, pointerType, length, iostatetype() };
+    std::vector<rvsdg::port> ports = { pointerType, pointerType, lengthType, iostatetype() };
     ports.insert(ports.end(), numMemoryStates, { MemoryStateType() });
-
     return ports;
   }
 

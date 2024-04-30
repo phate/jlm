@@ -903,7 +903,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const Memcpy & op,
+    const MemCpyOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1051,7 +1051,7 @@ convert_operation(
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
             { typeid(FreeOperation), convert<FreeOperation> },
-            { typeid(Memcpy), convert<Memcpy> },
+            { typeid(MemCpyOperation), convert<MemCpyOperation> },
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },
             { typeid(fpext_op), convert_cast<::llvm::Instruction::FPExt> },

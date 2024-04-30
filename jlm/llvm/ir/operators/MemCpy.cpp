@@ -29,6 +29,8 @@ MemCpyOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new MemCpyOperation(*this));
 }
 
+MemCpyVolatileOperation::~MemCpyVolatileOperation() noexcept = default;
+
 bool
 MemCpyVolatileOperation::operator==(const operation & other) const noexcept
 {
