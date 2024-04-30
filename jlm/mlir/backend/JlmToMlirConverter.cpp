@@ -16,6 +16,9 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/IR/Verifier.h>
 
+#include <jlm/rvsdg/view.hpp>
+
+
 namespace jlm::mlir
 {
 
@@ -43,6 +46,8 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath
 ::mlir::rvsdg::OmegaNode
 JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 {
+  FILE * file = fopen("jlm_rvsdg.txt", "w");
+  jlm::rvsdg::view(*rvsdgModule.Rvsdg().root()->graph(), file);
   return ConvertOmega(rvsdgModule.Rvsdg());
 }
 
@@ -63,6 +68,9 @@ JlmToMlirConverter::ConvertOmega(const rvsdg::graph & graph)
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
 {
+  // std::cout << "Converting region: " << std::endl;
+  // jlm::rvsdg::view(*region.graph(), stdout);
+
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto type = ConvertType(region.argument(i)->type());
@@ -108,6 +116,12 @@ JlmToMlirConverter::ConvertNode(
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
   {
+    // if (auto output = dynamic_cast<jlm::rvsdg::valuetype *>(node.input(i)->origin()))
+    // {
+    //   auto outputNode = rvsdg::node_output::node(output);
+    //   JLM_ASSERT(nodes.find(outputNode) != nodes.end());
+    //   inputs.push_back(nodes[outputNode]);
+    // }
     if (auto output = dynamic_cast<jlm::rvsdg::simple_output *>(node.input(i)->origin()))
     {
       inputs.push_back(nodes[output->node()]);
@@ -118,7 +132,8 @@ JlmToMlirConverter::ConvertNode(
     }
     else
     {
-      JLM_UNREACHABLE("Unhandled origin type.");
+      auto message = util::strfmt("Unimplemented input type: ", node.input(i)->origin()->debug_string(), ": ", node.input(i)->origin()->type().debug_string(), " for node: ", node.operation().debug_string());
+      JLM_UNREACHABLE(message.c_str());
     }
   }
 
@@ -129,6 +144,10 @@ JlmToMlirConverter::ConvertNode(
   else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
   {
     return ConvertLambda(*lambda, block);
+  }
+  else if (auto gamma = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  {
+    return ConvertGamma(*gamma, block, inputs);
   }
   else
   {
@@ -290,12 +309,44 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(bitOp->ndstbits()),
         inputs[0]);
   }
-  else if (auto bitOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
+  else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
   {
+    // TODO check if I64Type correspond to uint64_t
+    // TODO Don't forget to pass the default alternative into MLIR
+    // std::vector<::mlir::Attribute> mappingVector;
+    
+    std::vector<::mlir::Attribute> mappingVector;
+    int index = 0;
+    for (auto mapping : *matchOp)
+    {
+      // std::vector<int64_t> pair;
+      // pair.push_back(mapping.first);
+      // pair.push_back(mapping.second);
+      // ::mlir::Attribute attr = Builder_->getI64VectorAttr(::llvm::ArrayRef(pair));
+      // mappingVector.push_back(attr);
+
+      //! mappingValues is in64_t but mapping is a pair of uint64_t
+      // ::llvm::SmallVector<int64_t> mappingValues;
+      // mappingValues.push_back(mapping.first);
+      // mappingValues.push_back(mapping.second);
+
+      ::mlir::rvsdg::MatchRuleAttr matchRule = ::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef((int64_t)mapping.first), mapping.second);
+
+      mappingVector.push_back(matchRule);
+
+      index ++;
+    }
+    //! The default alternative has an empty mapping
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef<int64_t>(), matchOp->default_alternative()));
+
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
         Builder_->getUnknownLoc(),
+        // Builder_->getIntegerType(matchOp->nbits()),
+        // inputs[0].getType(),
+        ConvertType(node.output(0)->type()),
         inputs[0],
-        inputs[1]);
+        ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector))
+    );
 
   }
   else
@@ -305,6 +356,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
 
   block.push_back(MlirOp);
+  //TODO Check if the result of the operation is always the first result
   return ::mlir::Value(MlirOp->getResult(0));
 }
 
@@ -360,6 +412,53 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   return lambda;
 }
 
+::mlir::Value
+JlmToMlirConverter::ConvertGamma(
+    const rvsdg::gamma_node & gammaNode,
+    ::mlir::Block & block,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  const rvsdg::gamma_op gammaOp = dynamic_cast<const rvsdg::gamma_op &>(gammaNode.operation());
+
+
+  ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
+  for (size_t i = 0; i < gammaNode.noutputs(); ++i)
+  {
+    typeRangeOuput.push_back(ConvertType(gammaNode.output(i)->type()));
+  }
+
+  ::mlir::Value predicate = inputs[0];
+  // Remove the predicate from the inputs
+  inputs.erase(inputs.begin());
+
+  ::mlir::rvsdg::GammaNode gamma = Builder_->create<::mlir::rvsdg::GammaNode>(
+      Builder_->getUnknownLoc(),
+      ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
+      predicate,
+      ::mlir::ValueRange(inputs),  // Inputs
+      static_cast<unsigned>(gammaOp.nalternatives())  // regionsCount
+      );
+  block.push_back(gamma);
+
+  for (size_t i = 0; i < gammaOp.nalternatives(); ++i)
+  {
+    auto & gammaBlock = gamma.getRegion(i).emplaceBlock();
+    auto regionResults = ConvertRegion(*gammaNode.subregion(i), gammaBlock);
+    auto gammaResult =
+        Builder_->create<::mlir::rvsdg::GammaResult>(Builder_->getUnknownLoc(), regionResults);
+    gammaBlock.push_back(gammaResult);
+  }
+
+
+
+  // gamma.dump();
+
+  // TODO Here we only return the first output of the gamma node
+  // Need to implement a way to return all the outputs
+  // Probably need to change the function ouput type (maybe a vector of values)
+  return gamma.getOutputs()[0];
+}
+
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::type & type)
 {
@@ -378,6 +477,12 @@ JlmToMlirConverter::ConvertType(const rvsdg::type & type)
   else if (rvsdg::is<llvm::MemoryStateType>(type))
   {
     return Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
+  }
+  // TODO recheck this
+  else if (auto clt = dynamic_cast<const rvsdg::ctltype *>(&type))
+  {
+    // return ::mlir::rvsdg::RVSDG_CTRLType::get(Builder_->getContext(), clt->nalternatives());
+    return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
   }
   else
   {

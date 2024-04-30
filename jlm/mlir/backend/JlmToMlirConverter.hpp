@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 // MLIR RVSDG dialects
 #include <JLM/JLMDialect.h>
@@ -138,6 +139,11 @@ private:
    */
   ::mlir::Value
   ConvertLambda(const llvm::lambda::node & node, ::mlir::Block & block);
+
+  //TODO documentation
+  ::mlir::Value
+  ConvertGamma(const rvsdg::gamma_node & gammaNode, ::mlir::Block & block, ::llvm::SmallVector<::mlir::Value> inputs);
+
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
