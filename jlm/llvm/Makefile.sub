@@ -30,6 +30,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/load.cpp \
     jlm/llvm/ir/operators/LoadVolatile.cpp \
+    jlm/llvm/ir/operators/MemCpy.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
@@ -111,6 +112,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/Phi.hpp \
 	jlm/llvm/ir/operators/load.hpp \
 	jlm/llvm/ir/operators/LoadVolatile.hpp \
+	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/gamma.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
