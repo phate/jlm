@@ -640,13 +640,36 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Store);
   auto instruction = static_cast<::llvm::StoreInst *>(i);
 
-  /* FIXME: volatile */
   auto alignment = instruction->getAlign().value();
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
-  tacs.push_back(StoreOperation::Create(address, value, ctx.memory_state(), alignment));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), ctx.memory_state()));
+  const tacvariable * memoryState;
+  const tacvariable * ioState = nullptr;
+  if (instruction->isVolatile())
+  {
+    auto storeVolatileTac = StoreVolatileOperation::Create(
+        address,
+        value,
+        ctx.iostate(),
+        ctx.memory_state(),
+        alignment);
+    tacs.push_back(std::move(storeVolatileTac));
+    ioState = tacs.back()->result(0);
+    memoryState = tacs.back()->result(1);
+  }
+  else
+  {
+    auto storeTac = StoreOperation::Create(address, value, ctx.memory_state(), alignment);
+    tacs.push_back(std::move(storeTac));
+    memoryState = tacs.back()->result(0);
+  }
+
+  if (ioState)
+  {
+    tacs.push_back(assignment_op::create(ioState, ctx.iostate()));
+  }
+  tacs.push_back(assignment_op::create(memoryState, ctx.memory_state()));
 
   return nullptr;
 }

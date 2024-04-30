@@ -18,6 +18,7 @@
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreVolatile.hpp>
 #include <jlm/llvm/ir/operators/theta.hpp>
 
 #endif
