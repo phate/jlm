@@ -741,12 +741,12 @@ static bool
 IsVolatile(const ::llvm::Value & value)
 {
   auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
-  JLM_ASSERT(constant != nullptr);
+  JLM_ASSERT(constant != nullptr && constant->getType()->getBitWidth() == 1);
 
   auto apInt = constant->getValue();
   JLM_ASSERT(apInt.isZero() || apInt.isOne());
 
-  return apInt == 1;
+  return apInt.isOne();
 }
 
 static const variable *
@@ -767,8 +767,9 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
         *length,
         *ioState,
         { memoryState }));
-    tacs.push_back(assignment_op::create(tacs.back()->result(0), ioState));
-    tacs.push_back(assignment_op::create(tacs.back()->result(1), memoryState));
+    auto & memCpyVolatileTac = *tacs.back();
+    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(0), ioState));
+    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(1), memoryState));
   }
   else
   {

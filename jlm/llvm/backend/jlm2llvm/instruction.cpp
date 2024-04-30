@@ -902,26 +902,6 @@ convert(
 }
 
 static ::llvm::Value *
-CreateMemCpy(
-    ::llvm::Value & destination,
-    ::llvm::Value & source,
-    ::llvm::Value & length,
-    bool isVolatile,
-    ::llvm::IRBuilder<> & builder)
-{
-  auto i1Type = ::llvm::IntegerType::get(builder.getContext(), 1);
-  auto isVolatileValue = ::llvm::ConstantInt::get(i1Type, isVolatile ? 1 : 0);
-
-  return builder.CreateMemCpy(
-      &destination,
-      ::llvm::MaybeAlign(),
-      &source,
-      ::llvm::MaybeAlign(),
-      &length,
-      isVolatileValue);
-}
-
-static ::llvm::Value *
 convert(
     const MemCpyOperation &,
     const std::vector<const variable *> & operands,
@@ -932,7 +912,13 @@ convert(
   auto & source = *ctx.value(operands[1]);
   auto & length = *ctx.value(operands[2]);
 
-  return CreateMemCpy(destination, source, length, false, builder);
+  return builder.CreateMemCpy(
+      &destination,
+      ::llvm::MaybeAlign(),
+      &source,
+      ::llvm::MaybeAlign(),
+      &length,
+      false);
 }
 
 static ::llvm::Value *
@@ -946,7 +932,13 @@ convert(
   auto & source = *ctx.value(operands[1]);
   auto & length = *ctx.value(operands[2]);
 
-  return CreateMemCpy(destination, source, length, true, builder);
+  return builder.CreateMemCpy(
+      &destination,
+      ::llvm::MaybeAlign(),
+      &source,
+      ::llvm::MaybeAlign(),
+      &length,
+      true);
 }
 
 static ::llvm::Value *
