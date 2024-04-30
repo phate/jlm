@@ -8,25 +8,25 @@
 namespace jlm::llvm
 {
 
-Memcpy::~Memcpy() = default;
+MemCpyOperation::~MemCpyOperation() = default;
 
 bool
-Memcpy::operator==(const operation & other) const noexcept
+MemCpyOperation::operator==(const operation & other) const noexcept
 {
   // Avoid common node elimination for memcpy operator
   return this == &other;
 }
 
 std::string
-Memcpy::debug_string() const
+MemCpyOperation::debug_string() const
 {
   return "MemCpy";
 }
 
 std::unique_ptr<rvsdg::operation>
-Memcpy::copy() const
+MemCpyOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new Memcpy(*this));
+  return std::unique_ptr<rvsdg::operation>(new MemCpyOperation(*this));
 }
 
 }

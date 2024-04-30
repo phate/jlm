@@ -718,7 +718,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & sim
   {
     AnnotateFree(simpleNode);
   }
-  else if (is<Memcpy>(&simpleNode))
+  else if (is<MemCpyOperation>(&simpleNode))
   {
     AnnotateMemcpy(simpleNode);
   }
@@ -817,7 +817,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<Memcpy>(memcpyNode.operation()));
+  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.operation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 

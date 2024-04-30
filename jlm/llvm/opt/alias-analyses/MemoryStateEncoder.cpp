@@ -598,7 +598,7 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
               { typeid(StoreOperation), EncodeStore },
               { typeid(CallOperation), EncodeCall },
               { typeid(FreeOperation), EncodeFree },
-              { typeid(Memcpy), EncodeMemcpy } });
+              { typeid(MemCpyOperation), EncodeMemcpy } });
 
   auto & operation = be.operation();
   if (nodes.find(typeid(operation)) == nodes.end())
@@ -761,7 +761,7 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
 void
 MemoryStateEncoder::EncodeMemcpy(const jlm::rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<Memcpy>(&memcpyNode));
+  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto destination = memcpyNode.input(0)->origin();
@@ -776,7 +776,7 @@ MemoryStateEncoder::EncodeMemcpy(const jlm::rvsdg::simple_node & memcpyNode)
   auto srcStates = StateMap::MemoryNodeStatePair::States(srcMemoryNodeStatePairs);
   inStates.insert(inStates.end(), srcStates.begin(), srcStates.end());
 
-  auto outStates = Memcpy::create(destination, source, length, isVolatile, inStates);
+  auto outStates = MemCpyOperation::create(destination, source, length, isVolatile, inStates);
 
   auto end = std::next(outStates.begin(), (ssize_t)destMemoryNodeStatePairs.size());
   StateMap::MemoryNodeStatePair::ReplaceStates(

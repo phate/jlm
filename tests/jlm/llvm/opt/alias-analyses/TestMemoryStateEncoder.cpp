@@ -1957,11 +1957,11 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
-      if (is<Memcpy>(node))
+      if (is<MemCpyOperation>(node))
         memcpy = node;
     }
     assert(memcpy != nullptr);
-    assert(is<Memcpy>(*memcpy, 8, 4));
+    assert(is<MemCpyOperation>(*memcpy, 8, 4));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpy->input(5)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
@@ -2004,7 +2004,7 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
     assert(is<aa::CallExitMemStateOperator>(*callExitSplit, 1, 2));
 
     auto memcpyNode = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
-    assert(is<Memcpy>(*memcpyNode, 8, 4));
+    assert(is<MemCpyOperation>(*memcpyNode, 8, 4));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpyNode->input(4)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
@@ -2053,11 +2053,11 @@ ValidateMemcpyTestSteensgaardAgnosticTopDown(const jlm::tests::MemcpyTest & test
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
-      if (is<Memcpy>(node))
+      if (is<MemCpyOperation>(node))
         memcpy = node;
     }
     assert(memcpy != nullptr);
-    assert(is<Memcpy>(*memcpy, 8, 4));
+    assert(is<MemCpyOperation>(*memcpy, 8, 4));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(memcpy->input(5)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));

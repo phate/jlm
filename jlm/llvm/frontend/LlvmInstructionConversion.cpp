@@ -747,7 +747,7 @@ convert_memcpy_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & c
   auto length = ConvertValue(i->getArgOperand(2), tacs, ctx);
   auto isVolatile = ConvertValue(i->getArgOperand(3), tacs, ctx);
 
-  tacs.push_back(Memcpy::create(destination, source, length, isVolatile, { memstate }));
+  tacs.push_back(MemCpyOperation::create(destination, source, length, isVolatile, { memstate }));
   tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
 
   return nullptr;

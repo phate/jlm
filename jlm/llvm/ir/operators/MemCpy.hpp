@@ -17,12 +17,12 @@ namespace jlm::llvm
 /**
  * Represents the LLVM memcpy intrinsic.
  */
-class Memcpy final : public rvsdg::simple_op
+class MemCpyOperation final : public rvsdg::simple_op
 {
 public:
-  ~Memcpy() override;
+  ~MemCpyOperation() override;
 
-  Memcpy(
+  MemCpyOperation(
       const std::vector<rvsdg::port> & operandPorts,
       const std::vector<rvsdg::port> & resultPorts)
       : simple_op(operandPorts, resultPorts)
@@ -51,7 +51,7 @@ public:
     std::vector<const variable *> operands = { destination, source, length, isVolatile };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    Memcpy op(operandPorts, resultPorts);
+    MemCpyOperation op(operandPorts, resultPorts);
     return tac::create(op, operands);
   }
 
@@ -69,7 +69,7 @@ public:
     std::vector<rvsdg::output *> operands = { destination, source, length, isVolatile };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    Memcpy op(operandPorts, resultPorts);
+    MemCpyOperation op(operandPorts, resultPorts);
     return rvsdg::simple_node::create_normalized(destination->region(), op, operands);
   }
 
