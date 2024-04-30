@@ -43,13 +43,12 @@ public:
       const variable * destination,
       const variable * source,
       const variable * length,
-      const variable * isVolatile,
       const std::vector<const variable *> & memoryStates)
   {
     auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
     auto resultPorts = CreateResultPorts(memoryStates.size());
 
-    std::vector<const variable *> operands = { destination, source, length, isVolatile };
+    std::vector<const variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyOperation op(operandPorts, resultPorts);
@@ -61,13 +60,12 @@ public:
       rvsdg::output * destination,
       rvsdg::output * source,
       rvsdg::output * length,
-      rvsdg::output * isVolatile,
       const std::vector<rvsdg::output *> & memoryStates)
   {
     auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
     auto resultPorts = CreateResultPorts(memoryStates.size());
 
-    std::vector<rvsdg::output *> operands = { destination, source, length, isVolatile };
+    std::vector<rvsdg::output *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyOperation op(operandPorts, resultPorts);
@@ -85,7 +83,7 @@ private:
       throw util::error("Number of memory states cannot be zero.");
 
     PointerType pointerType;
-    std::vector<rvsdg::port> ports = { pointerType, pointerType, length, rvsdg::bit1 };
+    std::vector<rvsdg::port> ports = { pointerType, pointerType, length };
     ports.insert(ports.end(), numMemoryStates, { MemoryStateType::Create() });
 
     return ports;

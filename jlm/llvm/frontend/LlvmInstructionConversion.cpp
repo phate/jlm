@@ -737,18 +737,44 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx
   return nullptr;
 }
 
-static const variable *
-convert_memcpy_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
+static bool
+IsVolatile(const ::llvm::Value & value)
 {
-  auto memstate = ctx.memory_state();
+  auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
+  JLM_ASSERT(constant != nullptr);
 
-  auto destination = ConvertValue(i->getArgOperand(0), tacs, ctx);
-  auto source = ConvertValue(i->getArgOperand(1), tacs, ctx);
-  auto length = ConvertValue(i->getArgOperand(2), tacs, ctx);
-  auto isVolatile = ConvertValue(i->getArgOperand(3), tacs, ctx);
+  auto flag = convert_apint(constant->getValue()).to_uint();
+  JLM_ASSERT(flag == 0 || flag == 1);
 
-  tacs.push_back(MemCpyOperation::create(destination, source, length, isVolatile, { memstate }));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  return flag == 1;
+}
+
+static const variable *
+convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, context & ctx)
+{
+  auto ioState = ctx.iostate();
+  auto memoryState = ctx.memory_state();
+
+  auto destination = ConvertValue(instruction->getArgOperand(0), tacs, ctx);
+  auto source = ConvertValue(instruction->getArgOperand(1), tacs, ctx);
+  auto length = ConvertValue(instruction->getArgOperand(2), tacs, ctx);
+  
+  if (IsVolatile(*instruction->getArgOperand(3)))
+  {
+    tacs.push_back(MemCpyVolatileOperation::CreateThreeAddressCode(
+        *destination,
+        *source,
+        *length,
+        *ioState,
+        { memoryState }));
+    tacs.push_back(assignment_op::create(tacs.back()->result(0), ioState));
+    tacs.push_back(assignment_op::create(tacs.back()->result(1), memoryState));
+  }
+  else
+  {
+    tacs.push_back(MemCpyOperation::create(destination, source, length, { memoryState }));
+    tacs.push_back(assignment_op::create(tacs.back()->result(0), memoryState));
+  }
 
   return nullptr;
 }

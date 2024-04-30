@@ -902,24 +902,51 @@ convert(
 }
 
 static ::llvm::Value *
+CreateMemCpy(
+    ::llvm::Value & destination,
+    ::llvm::Value & source,
+    ::llvm::Value & length,
+    bool isVolatile,
+    ::llvm::IRBuilder<> & builder)
+{
+  auto i1Type = ::llvm::IntegerType::get(builder.getContext(), 1);
+  auto isVolatileValue = ::llvm::ConstantInt::get(i1Type, isVolatile ? 1 : 0);
+
+  return builder.CreateMemCpy(
+      &destination,
+      ::llvm::MaybeAlign(),
+      &source,
+      ::llvm::MaybeAlign(),
+      &length,
+      isVolatileValue);
+}
+
+static ::llvm::Value *
 convert(
-    const MemCpyOperation & op,
+    const MemCpyOperation &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto destination = ctx.value(operands[0]);
-  auto source = ctx.value(operands[1]);
-  auto length = ctx.value(operands[2]);
-  auto isVolatile = ctx.value(operands[3]);
+  auto & destination = *ctx.value(operands[0]);
+  auto & source = *ctx.value(operands[1]);
+  auto & length = *ctx.value(operands[2]);
 
-  return builder.CreateMemCpy(
-      destination,
-      ::llvm::MaybeAlign(),
-      source,
-      ::llvm::MaybeAlign(),
-      length,
-      isVolatile);
+  return CreateMemCpy(destination, source, length, false, builder);
+}
+
+static ::llvm::Value *
+convert(
+    const MemCpyVolatileOperation &,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  auto & destination = *ctx.value(operands[0]);
+  auto & source = *ctx.value(operands[1]);
+  auto & length = *ctx.value(operands[2]);
+
+  return CreateMemCpy(destination, source, length, true, builder);
 }
 
 static ::llvm::Value *
@@ -1052,6 +1079,7 @@ convert_operation(
             { typeid(malloc_op), convert<malloc_op> },
             { typeid(FreeOperation), convert<FreeOperation> },
             { typeid(MemCpyOperation), convert<MemCpyOperation> },
+            { typeid(MemCpyVolatileOperation), convert<MemCpyVolatileOperation> },
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },
             { typeid(fpext_op), convert_cast<::llvm::Instruction::FPExt> },
