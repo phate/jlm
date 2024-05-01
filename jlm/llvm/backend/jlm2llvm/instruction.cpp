@@ -324,18 +324,45 @@ convert(
       ctx);
 }
 
-static inline ::llvm::Value *
-convert_store(
-    const rvsdg::simple_op & op,
-    const std::vector<const variable *> & args,
+static void
+CreateStoreInstruction(
+    const variable * address,
+    const variable * value,
+    bool isVolatile,
+    size_t alignment,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<StoreOperation>(op) && args.size() >= 2);
-  auto store = static_cast<const StoreOperation *>(&op);
+  auto storeInstruction = builder.CreateStore(ctx.value(value), ctx.value(address), isVolatile);
+  storeInstruction->setAlignment(::llvm::Align(alignment));
+}
 
-  auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
-  i->setAlignment(::llvm::Align(store->GetAlignment()));
+static inline ::llvm::Value *
+convert_store(
+    const rvsdg::simple_op & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  auto storeOperation = util::AssertedCast<const StoreOperation>(&operation);
+  CreateStoreInstruction(
+      operands[0],
+      operands[1],
+      false,
+      storeOperation->GetAlignment(),
+      builder,
+      ctx);
+  return nullptr;
+}
+
+static ::llvm::Value *
+convert(
+    const StoreVolatileOperation & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  CreateStoreInstruction(operands[0], operands[1], true, operation.GetAlignment(), builder, ctx);
   return nullptr;
 }
 
@@ -998,6 +1025,7 @@ convert_operation(
             { typeid(LoadOperation), convert<LoadOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
             { typeid(StoreOperation), convert_store },
+            { typeid(StoreVolatileOperation), convert<StoreVolatileOperation> },
             { typeid(alloca_op), convert_alloca },
             { typeid(GetElementPtrOperation), convert_getelementptr },
             { typeid(ConstantDataArray), convert<ConstantDataArray> },
