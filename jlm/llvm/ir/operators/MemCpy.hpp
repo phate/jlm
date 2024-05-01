@@ -14,9 +14,8 @@
 namespace jlm::llvm
 {
 
-// FIXME: fix documentation for volatile flag
 /**
- * Represents the LLVM memcpy intrinsic.
+ * Represents a LLVM memcpy intrinsic.
  */
 class MemCpyOperation final : public rvsdg::simple_op
 {
@@ -96,7 +95,17 @@ private:
   }
 };
 
-// FIXME: documentation
+/**
+ * Represents a volatile LLVM memcpy intrinsic
+ *
+ * In contrast to LLVM, a volatile memcpy requires in an RVSDG setting an I/O state as it
+ * incorporates externally visible side-effects. This I/O state allows the volatile memcpy operation
+ * to be sequentialized with respect to other volatile memory accesses and I/O operations. This
+ * additional I/O state is the main reason why volatile memcpys are modeled as its own operation and
+ * volatile is not just a flag at the normal \ref MemCpyOperation.
+ *
+ * @see MemCpyOperation
+ */
 class MemCpyVolatileOperation final : public rvsdg::simple_op
 {
 public:
