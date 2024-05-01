@@ -117,16 +117,17 @@ private:
   bool enable_load_store_state_;
 };
 
-/** \brief LoadOperation class
+/**
+ * Represents an LLVM load instruction.
  *
- * This operator is the Jlm equivalent of LLVM's load instruction.
+ * @see LoadVolatileOperation
  */
-class LoadOperation final : public rvsdg::simple_op
+class LoadNonVolatileOperation final : public rvsdg::simple_op
 {
 public:
-  ~LoadOperation() noexcept override;
+  ~LoadNonVolatileOperation() noexcept override;
 
-  LoadOperation(const rvsdg::valuetype & loadedType, size_t numStates, size_t alignment)
+  LoadNonVolatileOperation(const rvsdg::valuetype & loadedType, size_t numStates, size_t alignment)
       : simple_op(CreateOperandPorts(numStates), CreateResultPorts(loadedType, numStates)),
         alignment_(alignment)
   {}
@@ -168,7 +169,7 @@ public:
   GetNormalForm(rvsdg::graph * graph) noexcept
   {
     return jlm::util::AssertedCast<load_normal_form>(
-        graph->node_normal_form(typeid(LoadOperation)));
+        graph->node_normal_form(typeid(LoadNonVolatileOperation)));
   }
 
   static std::unique_ptr<llvm::tac>
@@ -180,7 +181,7 @@ public:
   {
     CheckAddressType(address->type());
 
-    LoadOperation operation(loadedType, 1, alignment);
+    LoadNonVolatileOperation operation(loadedType, 1, alignment);
     return tac::create(operation, { address, state });
   }
 
@@ -213,12 +214,12 @@ private:
   size_t alignment_;
 };
 
-class LoadNode final : public rvsdg::simple_node
+class LoadNonVolatileNode final : public rvsdg::simple_node
 {
 private:
   class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
   {
-    friend LoadNode;
+    friend LoadNonVolatileNode;
 
     constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
         : rvsdg::input::iterator<rvsdg::simple_input>(input)
@@ -236,7 +237,7 @@ private:
 
   class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
   {
-    friend LoadNode;
+    friend LoadNonVolatileNode;
 
     constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
         : rvsdg::output::iterator<rvsdg::simple_output>(output)
@@ -255,18 +256,18 @@ private:
   using MemoryStateInputRange = jlm::util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = jlm::util::iterator_range<MemoryStateOutputIterator>;
 
-  LoadNode(
+  LoadNonVolatileNode(
       rvsdg::region & region,
-      const LoadOperation & operation,
+      const LoadNonVolatileOperation & operation,
       const std::vector<rvsdg::output *> & operands)
       : simple_node(&region, operation, operands)
   {}
 
 public:
-  [[nodiscard]] const LoadOperation &
+  [[nodiscard]] const LoadNonVolatileOperation &
   GetOperation() const noexcept
   {
-    return *jlm::util::AssertedCast<const LoadOperation>(&operation());
+    return *jlm::util::AssertedCast<const LoadNonVolatileOperation>(&operation());
   }
 
   [[nodiscard]] MemoryStateInputRange
@@ -326,26 +327,26 @@ public:
     std::vector<rvsdg::output *> operands({ address });
     operands.insert(operands.end(), states.begin(), states.end());
 
-    LoadOperation loadOperation(loadedType, states.size(), alignment);
+    LoadNonVolatileOperation loadOperation(loadedType, states.size(), alignment);
     return Create(*address->region(), loadOperation, operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::region & region,
-      const LoadOperation & loadOperation,
+      const LoadNonVolatileOperation & loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
     return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
   }
 
-  static LoadNode &
+  static LoadNonVolatileNode &
   CreateNode(
       rvsdg::region & region,
-      const LoadOperation & loadOperation,
+      const LoadNonVolatileOperation & loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new LoadNode(region, loadOperation, operands));
+    return *(new LoadNonVolatileNode(region, loadOperation, operands));
   }
 
 private:

@@ -69,7 +69,7 @@ enable_store_reductions(jlm::rvsdg::graph & graph)
 static void
 enable_load_reductions(jlm::rvsdg::graph & graph)
 {
-  auto nf = LoadOperation::GetNormalForm(&graph);
+  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
   nf->set_load_store_reducible(true);

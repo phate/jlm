@@ -228,7 +228,7 @@ private:
   AnalyzeMalloc(const rvsdg::simple_node & node);
 
   void
-  AnalyzeLoad(const LoadNode & loadNode);
+  AnalyzeLoad(const LoadNonVolatileNode & loadNode);
 
   void
   AnalyzeStore(const StoreNode & storeNode);

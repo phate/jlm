@@ -294,7 +294,7 @@ CreateLoadInstruction(
 
 static ::llvm::Value *
 convert(
-    const LoadOperation & operation,
+    const LoadNonVolatileOperation & operation,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1022,7 +1022,7 @@ convert_operation(
             { typeid(assignment_op), convert_assignment },
             { typeid(branch_op), convert_branch },
             { typeid(phi_op), convert_phi },
-            { typeid(LoadOperation), convert<LoadOperation> },
+            { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
             { typeid(StoreOperation), convert_store },
             { typeid(StoreVolatileOperation), convert<StoreVolatileOperation> },

@@ -73,7 +73,7 @@ LoadConversion()
         assert(is<assignment_op>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
-      else if (is<LoadOperation>(*it))
+      else if (is<LoadNonVolatileOperation>(*it))
       {
         numLoadThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);

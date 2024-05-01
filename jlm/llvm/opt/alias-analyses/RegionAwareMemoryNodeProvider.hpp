@@ -113,7 +113,7 @@ private:
   AnnotateStructuralNode(const rvsdg::structural_node & structuralNode);
 
   void
-  AnnotateLoad(const LoadNode & loadNode);
+  AnnotateLoad(const LoadNonVolatileNode & loadNode);
 
   void
   AnnotateStore(const StoreNode & storeNode);
