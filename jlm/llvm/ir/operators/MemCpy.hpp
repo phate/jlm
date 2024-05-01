@@ -115,8 +115,8 @@ public:
 
   MemCpyVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : rvsdg::simple_op(
-            CheckAndCreateOperandPorts(lengthType, numMemoryStates),
-            CreateResultPorts(numMemoryStates))
+          CheckAndCreateOperandPorts(lengthType, numMemoryStates),
+          CreateResultPorts(numMemoryStates))
   {}
 
   bool

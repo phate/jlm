@@ -23,7 +23,7 @@ MemCpyConversion()
   // Arrange
   llvm::LLVMContext context;
   std::unique_ptr<Module> llvmModule(new Module("module", context));
-  
+
   auto int64Type = Type::getInt64Ty(context);
   auto pointerType = Type::getInt64PtrTy(context);
   auto voidType = Type::getVoidTy(context);
