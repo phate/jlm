@@ -15,7 +15,7 @@ namespace jlm::llvm
 {
 
 /**
- * Represents a LLVM memcpy intrinsic.
+ * Represents an LLVM memcpy intrinsic.
  *
  * @see MemCpyVolatileOperation
  */
