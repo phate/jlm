@@ -16,6 +16,8 @@ namespace jlm::llvm
 
 /**
  * Represents a LLVM memcpy intrinsic.
+ *
+ * @see MemCpyVolatileOperation
  */
 class MemCpyOperation final : public rvsdg::simple_op
 {
