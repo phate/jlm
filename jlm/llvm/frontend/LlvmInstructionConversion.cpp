@@ -737,6 +737,14 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx
   return nullptr;
 }
 
+/**
+ * In LLVM, the memcpy intrinsic is modeled as a call instruction. It expects four arguments, with
+ * the fourth argument being a ConstantInt of bit width 1 to encode the volatile flag for the memcpy
+ * instruction. This function takes this argument and converts it to a boolean flag.
+ *
+ * @param value The volatile argument of the memcpy intrinsic.
+ * @return Boolean flag indicating whether the memcpy is volatile.
+ */
 static bool
 IsVolatile(const ::llvm::Value & value)
 {
