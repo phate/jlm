@@ -466,7 +466,6 @@ private:
   static void
   CheckFunctionType(const FunctionType & functionType)
   {
-    /*
     auto CheckArgumentTypes = [](const FunctionType & functionType)
     {
       if (functionType.NumArguments() < 2)
@@ -475,12 +474,12 @@ private:
       auto memoryStateArgumentIndex = functionType.NumArguments() - 1;
       auto iOStateArgumentIndex = functionType.NumArguments() - 2;
 
-          if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
-            throw jlm::util::error("Expected memory state type.");
+      if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
+        throw jlm::util::error("Expected memory state type.");
 
-          if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
-            throw jlm::util::error("Expected IO state type.");
-        };
+      if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
+        throw jlm::util::error("Expected IO state type.");
+    };
 
     auto CheckResultTypes = [](const FunctionType & functionType)
     {
@@ -490,17 +489,15 @@ private:
       auto memoryStateResultIndex = functionType.NumResults() - 1;
       auto iOStateResultIndex = functionType.NumResults() - 2;
 
-          if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
-            throw jlm::util::error("Expected memory state type.");
+      if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
+        throw jlm::util::error("Expected memory state type.");
 
-          if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
-            throw jlm::util::error("Expected IO state type.");
-        };
-    */
+      if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
+        throw jlm::util::error("Expected IO state type.");
+    };
 
-    // TODO: fix
-    //    CheckArgumentTypes(functionType);
-    //    CheckResultTypes(functionType);
+    CheckArgumentTypes(functionType);
+    CheckResultTypes(functionType);
   }
 };
 

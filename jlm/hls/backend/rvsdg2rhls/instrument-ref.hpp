@@ -18,6 +18,7 @@ instrument_ref(llvm::RvsdgModule & rm);
 void
 instrument_ref(
     jlm::rvsdg::region * region,
+    jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
     llvm::FunctionType & loadFunctionType,
     jlm::rvsdg::output * store_func,
