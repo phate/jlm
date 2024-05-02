@@ -155,6 +155,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/frontend/llvm/test-restructuring \
 	tests/jlm/llvm/frontend/llvm/test-select \
 	tests/jlm/llvm/ir/operators/LoadVolatileTests \
+	tests/jlm/llvm/ir/operators/MemCpyTests \
 	tests/jlm/llvm/ir/operators/TestCall \
 	tests/jlm/llvm/ir/operators/test-ConstantFP \
 	tests/jlm/llvm/ir/operators/test-delta \

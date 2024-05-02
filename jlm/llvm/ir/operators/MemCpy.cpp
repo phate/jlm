@@ -13,8 +13,9 @@ MemCpyOperation::~MemCpyOperation() = default;
 bool
 MemCpyOperation::operator==(const operation & other) const noexcept
 {
-  // Avoid common node elimination for memcpy operator
-  return this == &other;
+  auto operation = dynamic_cast<const MemCpyOperation *>(&other);
+  return operation && operation->LengthType() == LengthType()
+      && operation->NumMemoryStates() == NumMemoryStates();
 }
 
 std::string

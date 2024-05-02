@@ -24,10 +24,10 @@ class MemCpyOperation final : public rvsdg::simple_op
 public:
   ~MemCpyOperation() override;
 
-  MemCpyOperation(
-      const std::vector<rvsdg::port> & operandPorts,
-      const std::vector<rvsdg::port> & resultPorts)
-      : simple_op(operandPorts, resultPorts)
+  MemCpyOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
+      : simple_op(
+            CheckAndCreateOperandPorts(lengthType, numMemoryStates),
+            CreateResultPorts(numMemoryStates))
   {}
 
   bool
@@ -39,6 +39,20 @@ public:
   [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
+  [[nodiscard]] const rvsdg::bittype &
+  LengthType() const noexcept
+  {
+    auto type = dynamic_cast<const rvsdg::bittype *>(&argument(2).type());
+    JLM_ASSERT(type != nullptr);
+    return *type;
+  }
+
+  [[nodiscard]] size_t
+  NumMemoryStates() const noexcept
+  {
+    return nresults();
+  }
+
   static std::unique_ptr<llvm::tac>
   create(
       const variable * destination,
@@ -46,14 +60,11 @@ public:
       const variable * length,
       const std::vector<const variable *> & memoryStates)
   {
-    auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
-    auto resultPorts = CreateResultPorts(memoryStates.size());
-
     std::vector<const variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation op(operandPorts, resultPorts);
-    return tac::create(op, operands);
+    MemCpyOperation operation(length->type(), memoryStates.size());
+    return tac::create(operation, operands);
   }
 
   static std::vector<rvsdg::output *>
@@ -63,14 +74,11 @@ public:
       rvsdg::output * length,
       const std::vector<rvsdg::output *> & memoryStates)
   {
-    auto operandPorts = CheckAndCreateOperandPorts(length->type(), memoryStates.size());
-    auto resultPorts = CreateResultPorts(memoryStates.size());
-
     std::vector<rvsdg::output *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation op(operandPorts, resultPorts);
-    return rvsdg::simple_node::create_normalized(destination->region(), op, operands);
+    MemCpyOperation operation(length->type(), memoryStates.size());
+    return rvsdg::simple_node::create_normalized(destination->region(), operation, operands);
   }
 
 private:
