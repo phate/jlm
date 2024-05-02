@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/view.hpp>

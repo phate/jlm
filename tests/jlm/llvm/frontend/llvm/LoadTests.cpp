@@ -7,7 +7,7 @@
 #include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/LoadVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>

@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 

@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 
@@ -41,7 +41,9 @@ OperationEquality()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLoad-OperationEquality", OperationEquality)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-OperationEquality",
+    OperationEquality)
 
 static void
 TestCopy()
@@ -311,4 +313,4 @@ TestLoad()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLoad", TestLoad)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests", TestLoad)
