@@ -76,9 +76,7 @@ enable_load_reductions(jlm::rvsdg::graph & graph)
   nf->set_load_alloca_reducible(true);
   nf->set_multiple_origin_reducible(true);
   nf->set_load_store_state_reducible(true);
-  // set_load_load_state_reducible throws a type_error
-  // github issue #307
-  nf->set_load_load_state_reducible(false);
+  nf->set_load_load_state_reducible(true);
 }
 
 static void
