@@ -84,7 +84,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
 
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
-  std::unordered_map<rvsdg::node *, ::llvm::SmallVector<::mlir::Value>> nodes;
+  std::unordered_map<rvsdg::node *, ::mlir::Operation *> nodes;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
     nodes[rvsdgNode] = ConvertNode(*rvsdgNode, block, nodes);
@@ -105,17 +105,18 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
       // The identified node should always exist in the hash map of nodes
       JLM_ASSERT(nodes.find(outputNode) != nodes.end());
       // TODO hundle gamma node with multiple outputs
-      results.push_back((nodes[outputNode])[0]);
+      results.push_back((nodes[outputNode])->getOpResult(output->index()));
     }
   }
+
   return results;
 }
 
-::llvm::SmallVector<::mlir::Value>
+::mlir::Operation *
 JlmToMlirConverter::ConvertNode(
     const rvsdg::node & node,
     ::mlir::Block & block,
-    std::unordered_map<rvsdg::node *, ::llvm::SmallVector<::mlir::Value>> nodes)
+    std::unordered_map<rvsdg::node *, ::mlir::Operation *> nodes)
 {
   // std::cout << "Converting node: " << node.operation().debug_string() << std::endl;
   // Create a list of inputs to the MLIR operation
@@ -123,13 +124,9 @@ JlmToMlirConverter::ConvertNode(
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
   {
-    if (jlm::rvsdg::gamma_output * gammaOutput = dynamic_cast<jlm::rvsdg::gamma_output *>(node.input(i)->origin()))
+    if (jlm::rvsdg::node_output * nodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(node.input(i)->origin()))
     {
-      inputs.push_back((nodes[gammaOutput->node()])[gammaOutput->index()]);
-    }
-    else if (auto output = dynamic_cast<jlm::rvsdg::simple_output *>(node.input(i)->origin()))
-    {
-      inputs.push_back((nodes[output->node()])[0]);
+      inputs.push_back(nodes[nodeOuput->node()]->getOpResult(nodeOuput->index()));
     }
     else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(node.input(i)->origin()))
     {
@@ -145,18 +142,16 @@ JlmToMlirConverter::ConvertNode(
   if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
   {
     // return ConvertSimpleNode(*simpleNode, block, inputs);
-    return ::llvm::SmallVector<::mlir::Value>(std::initializer_list<::mlir::Value>{ConvertSimpleNode(*simpleNode, block, inputs)});
+    return ConvertSimpleNode(*simpleNode, block, inputs);
 
   }
   else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
   {
     // return ConvertLambda(*lambda, block);
-    return ::llvm::SmallVector<::mlir::Value>(std::initializer_list<::mlir::Value>{ConvertLambda(*lambda, block)});
+    return ConvertLambda(*lambda, block);
   }
   else if (auto gamma = dynamic_cast<const rvsdg::gamma_node *>(&node))
   {
-    // return ConvertGamma(*gamma, block, inputs);
-    // return ::llvm::SmallVector<::mlir::Value>(ConvertGamma(*gamma, block, inputs));
     return ConvertGamma(*gamma, block, inputs);
   }
   else
@@ -289,7 +284,7 @@ JlmToMlirConverter::BitCompareNode(
   return MlirOp;
 }
 
-::mlir::Value
+::mlir::Operation *
 JlmToMlirConverter::ConvertSimpleNode(
     const rvsdg::simple_node & node,
     ::mlir::Block & block,
@@ -367,10 +362,10 @@ JlmToMlirConverter::ConvertSimpleNode(
 
   block.push_back(MlirOp);
   //TODO Check if the result of the operation is always the first result
-  return ::mlir::Value(MlirOp->getResult(0));
+  return MlirOp;
 }
 
-::mlir::Value
+::mlir::Operation *
 JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Type> arguments;
@@ -422,7 +417,7 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   return lambda;
 }
 
-::llvm::SmallVector<::mlir::Value>
+::mlir::Operation *
 JlmToMlirConverter::ConvertGamma(
     const rvsdg::gamma_node & gammaNode,
     ::mlir::Block & block,
@@ -460,7 +455,7 @@ JlmToMlirConverter::ConvertGamma(
     gammaBlock.push_back(gammaResult);
   }
 
-  return gamma.getOutputs();
+  return gamma;
 }
 
 ::mlir::Type

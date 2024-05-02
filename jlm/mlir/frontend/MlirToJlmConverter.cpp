@@ -15,7 +15,6 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <llvm/Support/raw_os_ostream.h>
 
 namespace jlm::mlir
 {
