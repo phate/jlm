@@ -19,8 +19,6 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/dae-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
-    jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
-    jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-sep.cpp \
     jlm/hls/backend/rvsdg2rhls/memstate-conv.cpp \
@@ -54,8 +52,6 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/dae-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
-	jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp \
-	jlm/hls/backend/rvsdg2rhls/mem-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-sep.hpp \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
