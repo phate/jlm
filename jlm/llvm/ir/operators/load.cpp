@@ -25,7 +25,7 @@ LoadNonVolatileOperation::operator==(const operation & other) const noexcept
 std::string
 LoadNonVolatileOperation::debug_string() const
 {
-  return "LOAD";
+  return "Load";
 }
 
 std::unique_ptr<rvsdg::operation>
