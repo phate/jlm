@@ -738,18 +738,53 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx
   return nullptr;
 }
 
-static const variable *
-convert_memcpy_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx)
+/**
+ * In LLVM, the memcpy intrinsic is modeled as a call instruction. It expects four arguments, with
+ * the fourth argument being a ConstantInt of bit width 1 to encode the volatile flag for the memcpy
+ * instruction. This function takes this argument and converts it to a boolean flag.
+ *
+ * @param value The volatile argument of the memcpy intrinsic.
+ * @return Boolean flag indicating whether the memcpy is volatile.
+ */
+static bool
+IsVolatile(const ::llvm::Value & value)
 {
-  auto memstate = ctx.memory_state();
+  auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
+  JLM_ASSERT(constant != nullptr && constant->getType()->getBitWidth() == 1);
 
-  auto destination = ConvertValue(i->getArgOperand(0), tacs, ctx);
-  auto source = ConvertValue(i->getArgOperand(1), tacs, ctx);
-  auto length = ConvertValue(i->getArgOperand(2), tacs, ctx);
-  auto isVolatile = ConvertValue(i->getArgOperand(3), tacs, ctx);
+  auto apInt = constant->getValue();
+  JLM_ASSERT(apInt.isZero() || apInt.isOne());
 
-  tacs.push_back(Memcpy::create(destination, source, length, isVolatile, { memstate }));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  return apInt.isOne();
+}
+
+static const variable *
+convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, context & ctx)
+{
+  auto ioState = ctx.iostate();
+  auto memoryState = ctx.memory_state();
+
+  auto destination = ConvertValue(instruction->getArgOperand(0), tacs, ctx);
+  auto source = ConvertValue(instruction->getArgOperand(1), tacs, ctx);
+  auto length = ConvertValue(instruction->getArgOperand(2), tacs, ctx);
+
+  if (IsVolatile(*instruction->getArgOperand(3)))
+  {
+    tacs.push_back(MemCpyVolatileOperation::CreateThreeAddressCode(
+        *destination,
+        *source,
+        *length,
+        *ioState,
+        { memoryState }));
+    auto & memCpyVolatileTac = *tacs.back();
+    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(0), ioState));
+    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(1), memoryState));
+  }
+  else
+  {
+    tacs.push_back(MemCpyOperation::create(destination, source, length, { memoryState }));
+    tacs.push_back(assignment_op::create(tacs.back()->result(0), memoryState));
+  }
 
   return nullptr;
 }

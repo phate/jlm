@@ -2999,11 +2999,10 @@ MemcpyTest::SetupRvsdg()
     auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType());
     auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType());
 
-    auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
     auto memcpyResults =
-        Memcpy::create(bcGlobalArray, bcLocalArray, twenty, zero, { memoryStateArgument });
+        MemCpyOperation::create(bcGlobalArray, bcLocalArray, twenty, { memoryStateArgument });
 
     auto & call = CallNode::CreateNode(
         functionFArgument,
@@ -3066,7 +3065,6 @@ MemcpyTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto cFalse = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
     auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto c128 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 128);
 
@@ -3078,7 +3076,7 @@ MemcpyTest2::SetupRvsdg()
     auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
     auto ldS1 = LoadNonVolatileNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
 
-    auto memcpyResults = Memcpy::create(ldS2[0], ldS1[0], c128, cFalse, { ldS1[1] });
+    auto memcpyResults = MemCpyOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
 
     auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0] });
 
@@ -3159,7 +3157,6 @@ MemcpyTest3::SetupRvsdg()
   auto iOStateArgument = Lambda_->fctargument(1);
   auto memoryStateArgument = Lambda_->fctargument(2);
 
-  auto cFalse = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 1, 0);
   auto eight = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 8);
   auto zero = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 0);
   auto minusFive = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, -5);
@@ -3168,7 +3165,7 @@ MemcpyTest3::SetupRvsdg()
   auto allocaResults = alloca_op::create(*structType, eight, 8);
   auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
-  auto memcpyResults = Memcpy::create(allocaResults[0], pArgument, eight, cFalse, { memoryState });
+  auto memcpyResults = MemCpyOperation::create(allocaResults[0], pArgument, eight, { memoryState });
 
   auto gep1 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, *structType, pointerType);
@@ -3177,7 +3174,7 @@ MemcpyTest3::SetupRvsdg()
   auto gep2 =
       GetElementPtrOperation::Create(allocaResults[0], { minusFive }, *structType, pointerType);
 
-  memcpyResults = Memcpy::create(ld[0], gep2, three, cFalse, { ld[1] });
+  memcpyResults = MemCpyOperation::create(ld[0], gep2, three, { ld[1] });
 
   auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0] });
 
