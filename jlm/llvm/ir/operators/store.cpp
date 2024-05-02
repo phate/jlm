@@ -15,9 +15,10 @@ StoreOperation::~StoreOperation() noexcept = default;
 bool
 StoreOperation::operator==(const operation & other) const noexcept
 {
-  auto op = dynamic_cast<const StoreOperation *>(&other);
-  return op && op->NumStates() == NumStates() && op->GetPointerType() == GetPointerType()
-      && op->GetAlignment() == GetAlignment();
+  auto operation = dynamic_cast<const StoreOperation *>(&other);
+  return operation && operation->narguments() == narguments()
+      && operation->GetStoredType() == GetStoredType()
+      && operation->GetAlignment() == GetAlignment();
 }
 
 std::string
