@@ -26,8 +26,8 @@ public:
 
   MemCpyOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : simple_op(
-            CheckAndCreateOperandPorts(lengthType, numMemoryStates),
-            CreateResultPorts(numMemoryStates))
+          CheckAndCreateOperandPorts(lengthType, numMemoryStates),
+          CreateResultPorts(numMemoryStates))
   {}
 
   bool
