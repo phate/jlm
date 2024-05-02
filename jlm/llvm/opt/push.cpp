@@ -158,7 +158,7 @@ is_gamma_top_pushable(const jlm::rvsdg::node * node)
     only possible to push a load out of a gamma node, if
     it is guaranteed to load from a valid address.
   */
-  if (is<LoadOperation>(node))
+  if (is<LoadNonVolatileOperation>(node))
     return true;
 
   return !has_side_effects(node);

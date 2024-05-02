@@ -619,7 +619,8 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   }
   else
   {
-    auto loadTac = LoadOperation::Create(address, ctx.memory_state(), *loadedType, alignment);
+    auto loadTac =
+        LoadNonVolatileOperation::Create(address, ctx.memory_state(), *loadedType, alignment);
     tacs.push_back(std::move(loadTac));
     loadedValue = tacs.back()->result(0);
     memoryState = tacs.back()->result(1);

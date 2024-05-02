@@ -998,7 +998,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeMalloc(node);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  else if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
   {
     AnalyzeLoad(*loadNode);
   }
@@ -1090,7 +1090,7 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
+Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
   auto & result = *loadNode.GetValueOutput();
   auto & address = *loadNode.GetAddressInput()->origin();

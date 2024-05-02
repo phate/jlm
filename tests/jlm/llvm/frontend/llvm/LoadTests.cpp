@@ -7,7 +7,7 @@
 #include <test-util.hpp>
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/LoadVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
@@ -73,7 +73,7 @@ LoadConversion()
         assert(is<assignment_op>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
-      else if (is<LoadOperation>(*it))
+      else if (is<LoadNonVolatileOperation>(*it))
       {
         numLoadThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);

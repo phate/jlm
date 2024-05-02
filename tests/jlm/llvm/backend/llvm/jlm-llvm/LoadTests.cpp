@@ -33,7 +33,7 @@ LoadConversion()
   auto basicBlock = basic_block::create(*cfg);
   size_t alignment = 4;
   auto loadTac = basicBlock->append_last(
-      LoadOperation::Create(addressArgument, memoryStateArgument, bit64Type, alignment));
+      LoadNonVolatileOperation::Create(addressArgument, memoryStateArgument, bit64Type, alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());

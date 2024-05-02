@@ -216,7 +216,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  else if (const auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
     AnalyzeLoad(*loadNode);
   else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
     AnalyzeStore(*storeNode);
@@ -283,7 +283,7 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNode & loadNode)
+Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
   const auto & addressRegister = *loadNode.GetAddressInput()->origin();
   const auto & outputRegister = *loadNode.GetValueOutput();
