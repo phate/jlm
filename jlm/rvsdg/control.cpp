@@ -110,6 +110,7 @@ std::string
 match_op::debug_string() const
 {
   std::string str("[");
+  str += util::strfmt(nalternatives(), ", ");
   for (const auto & pair : mapping_)
     str += jlm::util::strfmt(pair.first, " -> ", pair.second, ", ");
   str += jlm::util::strfmt(default_alternative_, "]");
