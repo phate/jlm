@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -54,7 +54,7 @@ private:
         {
           store_nodes.push_back(simplenode);
         }
-        else if (dynamic_cast<const jlm::llvm::LoadOperation *>(&simplenode->operation()))
+        else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
         {
           load_nodes.push_back(simplenode);
         }

@@ -7,7 +7,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 #include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/substitution.hpp>
@@ -78,7 +78,7 @@ gather_mem_nodes(jlm::rvsdg::region * region, std::vector<jlm::rvsdg::simple_nod
       {
         mem_nodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
       {
         mem_nodes.push_back(simplenode);
       }
@@ -235,7 +235,7 @@ trace_edge(
           common_edge = sn->output(0);
         }
       }
-      else if (dynamic_cast<const jlm::llvm::LoadOperation *>(op))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(op))
       {
         JLM_ASSERT(sn->noutputs() == 2);
         if (load_nodes.end() != std::find(load_nodes.begin(), load_nodes.end(), sn))
