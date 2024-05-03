@@ -111,40 +111,71 @@ is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
   return outputs;
 }
 
+static bool
+MapsToSingleValue(
+    uint64_t defaultAlternative,
+    const std::unordered_map<uint64_t, uint64_t> & mapping)
+{
+  JLM_ASSERT(!mapping.empty());
+
+  for (auto [_, value] : mapping)
+  {
+    if (value != defaultAlternative)
+      return false;
+  }
+
+  return true;
+}
+
 static void
 perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::structural_output *> & outputs)
 {
-  auto gamma = static_cast<jlm::rvsdg::gamma_node *>((*outputs.begin())->node());
-  auto origin = static_cast<node_output *>(gamma->predicate()->origin());
+  auto gamma = util::AssertedCast<gamma_node>((*outputs.begin())->node());
+  auto origin = util::AssertedCast<node_output>(gamma->predicate()->origin());
   auto match = origin->node();
   auto & match_op = to_match_op(match->operation());
 
-  std::unordered_map<uint64_t, uint64_t> map;
+  std::unordered_map<uint64_t, uint64_t> oldMapping;
   for (const auto & pair : match_op)
-    map[pair.second] = pair.first;
+    oldMapping[pair.second] = pair.first;
 
   for (auto xv = gamma->begin_exitvar(); xv != gamma->end_exitvar(); xv++)
   {
     if (outputs.find(xv.output()) == outputs.end())
       continue;
 
-    size_t defalt = 0;
-    size_t nalternatives = 0;
-    std::unordered_map<uint64_t, uint64_t> new_mapping;
+    size_t numAlternatives = 0;
+    uint64_t defaultAlternative = 0;
+    std::unordered_map<uint64_t, uint64_t> newMapping;
     for (size_t n = 0; n < xv->nresults(); n++)
     {
-      auto origin = static_cast<node_output *>(xv->result(n)->origin());
-      auto & value = to_ctlconstant_op(origin->node()->operation()).value();
-      nalternatives = value.nalternatives();
-      if (map.find(n) != map.end())
-        new_mapping[map[n]] = value.alternative();
+      auto resultOrigin = util::AssertedCast<node_output>(xv->result(n)->origin());
+      auto & value = to_ctlconstant_op(resultOrigin->node()->operation()).value();
+      numAlternatives = value.nalternatives();
+      if (oldMapping.find(n) != oldMapping.end())
+        newMapping[oldMapping[n]] = value.alternative();
       else
-        defalt = value.alternative();
+        defaultAlternative = value.alternative();
     }
 
-    auto origin = match->input(0)->origin();
-    auto m = jlm::rvsdg::match(match_op.nbits(), new_mapping, defalt, nalternatives, origin);
-    xv->divert_users(m);
+    output * newControlOperand;
+    if (MapsToSingleValue(defaultAlternative, newMapping))
+    {
+      auto value = newMapping.begin()->second;
+      newControlOperand = rvsdg::control_constant(match->region(), numAlternatives, value);
+    }
+    else
+    {
+      auto matchOperand = match->input(0)->origin();
+      newControlOperand = jlm::rvsdg::match(
+          match_op.nbits(),
+          newMapping,
+          defaultAlternative,
+          numAlternatives,
+          matchOperand);
+    }
+
+    xv->divert_users(newControlOperand);
   }
 }
 

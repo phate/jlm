@@ -147,6 +147,47 @@ test_control_constant_reduction()
   assert(node_output::node(ex2->origin()) == gamma);
 }
 
+static int
+ControlConstantReductionSameConstant()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph graph;
+  gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
+
+  auto x = graph.add_import({ bit1, "x" });
+
+  auto c = match(1, { { 0, 0 } }, 1, 2, x);
+
+  auto gamma = gamma_node::create(c, 2);
+
+  auto controlTrue0 = jlm::rvsdg::control_true(gamma->subregion(0));
+  auto controlTrue1 = jlm::rvsdg::control_true(gamma->subregion(1));
+
+  auto gammaOutput = gamma->add_exitvar({ controlTrue0, controlTrue1 });
+
+  auto graphExport = graph.add_export(gammaOutput, { gammaOutput->type(), "" });
+
+  jlm::rvsdg::view(graph.root(), stdout);
+
+  // Act
+  graph.normalize();
+  jlm::rvsdg::view(graph.root(), stdout);
+
+  // Assert
+  auto & operation = node_output::node(graphExport->origin())->operation();
+  auto controlConstantOperation = dynamic_cast<const ctlconstant_op *>(&operation);
+  assert(controlConstantOperation != nullptr);
+  assert(controlConstantOperation->value() == ctlvalue_repr(1, 2));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/test-gamma-ControlConstantReductionSameConstant",
+    ControlConstantReductionSameConstant)
+
 static void
 test_control_constant_reduction2()
 {
