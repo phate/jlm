@@ -1201,7 +1201,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
   {
     return MlirGenFork(node);
   }
-  else if (dynamic_cast<const llvm::LoadOperation *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&(node->operation())))
   {
     return MlirGenMem(node);
   }
@@ -1365,7 +1365,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
 
     // Memory instances will need to be connected to the main memory ports
     // So we keep track of them to handle them later
-    if (dynamic_cast<const llvm::LoadOperation *>(&(rvsdgNode->operation())))
+    if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&(rvsdgNode->operation())))
     {
       memInstances.insert(instance);
     }

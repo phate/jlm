@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <jlm/rvsdg/view.hpp>
@@ -22,7 +22,7 @@ TestSuccess()
   MemoryStateType mt;
 
   jlm::rvsdg::graph graph;
-  auto nf = LoadOperation::GetNormalForm(&graph);
+  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
@@ -32,7 +32,7 @@ TestSuccess()
   auto s3 = graph.add_import({ mt, "s3" });
 
   auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
-  auto ld = LoadNode::Create(a, { mux }, vt, 4);
+  auto ld = LoadNonVolatileNode::Create(a, { mux }, vt, 4);
 
   auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
   auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s" });
@@ -49,7 +49,7 @@ TestSuccess()
 
   // Assert
   auto load = jlm::rvsdg::node_output::node(ex1->origin());
-  assert(is<LoadOperation>(load));
+  assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 4);
   assert(load->input(1)->origin() == s1);
   assert(load->input(2)->origin() == s2);
@@ -76,7 +76,7 @@ TestWrongNumberOfOperands()
   MemoryStateType mt;
 
   jlm::rvsdg::graph graph;
-  auto nf = LoadOperation::GetNormalForm(&graph);
+  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
@@ -85,7 +85,7 @@ TestWrongNumberOfOperands()
   auto s2 = graph.add_import({ mt, "s2" });
 
   auto merge = MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
-  auto ld = LoadNode::Create(a, { merge, merge }, vt, 4);
+  auto ld = LoadNonVolatileNode::Create(a, { merge, merge }, vt, 4);
 
   auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
   auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s1" });
@@ -121,13 +121,13 @@ TestLoadWithoutStates()
   PointerType pointerType;
 
   jlm::rvsdg::graph graph;
-  auto nf = LoadOperation::GetNormalForm(&graph);
+  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
   auto address = graph.add_import({ pointerType, "address" });
 
-  auto loadResults = LoadNode::Create(address, {}, valueType, 4);
+  auto loadResults = LoadNonVolatileNode::Create(address, {}, valueType, 4);
 
   auto ex = graph.add_export(loadResults[0], { valueType, "v" });
 
@@ -143,7 +143,7 @@ TestLoadWithoutStates()
 
   // Assert
   auto load = jlm::rvsdg::node_output::node(ex->origin());
-  assert(is<LoadOperation>(load));
+  assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 1);
 }
 

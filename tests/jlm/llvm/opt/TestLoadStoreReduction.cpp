@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/store.hpp>
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -24,7 +24,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   MemoryStateType memoryStateType;
 
   jlm::rvsdg::graph graph;
-  auto nf = LoadOperation::GetNormalForm(&graph);
+  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_store_reducible(false);
 
@@ -33,7 +33,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   auto memoryState = graph.add_import({ memoryStateType, "memoryState" });
 
   auto storeResults = StoreNode::Create(address, value, { memoryState }, 4);
-  auto loadResults = LoadNode::Create(address, storeResults, jlm::rvsdg::bit8, 4);
+  auto loadResults = LoadNonVolatileNode::Create(address, storeResults, jlm::rvsdg::bit8, 4);
 
   auto exportedValue = graph.add_export(loadResults[0], { jlm::rvsdg::bit8, "v" });
   graph.add_export(loadResults[1], { memoryStateType, "s" });
@@ -50,7 +50,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
 
   // Assert
   auto load = jlm::rvsdg::node_output::node(exportedValue->origin());
-  assert(is<LoadOperation>(load));
+  assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 2);
   auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
   assert(is<StoreOperation>(store));

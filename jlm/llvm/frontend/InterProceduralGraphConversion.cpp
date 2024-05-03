@@ -536,7 +536,8 @@ ConvertThreeAddressCode(
             { typeid(select_op), ConvertSelect },
             { typeid(branch_op), ConvertBranch },
             { typeid(CallOperation), Convert<CallNode, CallOperation> },
-            { typeid(LoadOperation), Convert<LoadNode, LoadOperation> },
+            { typeid(LoadNonVolatileOperation),
+              Convert<LoadNonVolatileNode, LoadNonVolatileOperation> },
             { typeid(StoreOperation), Convert<StoreNode, StoreOperation> } });
 
   auto & op = threeAddressCode.operation();

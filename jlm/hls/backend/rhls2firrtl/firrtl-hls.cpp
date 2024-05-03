@@ -800,7 +800,7 @@ FirrtlHLS::node_to_firrtl(const jlm::rvsdg::node * node, const int depth)
   }
   if (auto n = dynamic_cast<const jlm::rvsdg::simple_node *>(node))
   {
-    if (dynamic_cast<const llvm::LoadOperation *>(&(n->operation())))
+    if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&(n->operation())))
     {
       return mem_node_to_firrtl(n);
     }

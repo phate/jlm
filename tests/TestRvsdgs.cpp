@@ -138,8 +138,9 @@ LoadTest1::SetupRvsdg()
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
-  auto ld1 = LoadNode::Create(fct->fctargument(0), { fct->fctargument(1) }, pointerType, 4);
-  auto ld2 = LoadNode::Create(ld1[0], { ld1[1] }, jlm::rvsdg::bit32, 4);
+  auto ld1 =
+      LoadNonVolatileNode::Create(fct->fctargument(0), { fct->fctargument(1) }, pointerType, 4);
+  auto ld2 = LoadNonVolatileNode::Create(ld1[0], { ld1[1] }, jlm::rvsdg::bit32, 4);
 
   fct->finalize(ld2);
 
@@ -194,8 +195,8 @@ LoadTest2::SetupRvsdg()
   auto y_amp_b = StoreNode::Create(y[0], b[0], x_amp_a, 4);
   auto p_amp_x = StoreNode::Create(p[0], x[0], y_amp_b, 4);
 
-  auto ld1 = LoadNode::Create(p[0], p_amp_x, pointerType, 4);
-  auto ld2 = LoadNode::Create(ld1[0], { ld1[1] }, pointerType, 4);
+  auto ld1 = LoadNonVolatileNode::Create(p[0], p_amp_x, pointerType, 4);
+  auto ld2 = LoadNonVolatileNode::Create(ld1[0], { ld1[1] }, pointerType, 4);
   auto y_star_p = StoreNode::Create(y[0], ld2[0], { ld2[1] }, 4);
 
   fct->finalize({ y_star_p[0] });
@@ -239,7 +240,7 @@ LoadFromUndefTest::SetupRvsdg()
 
   auto undefValue = UndefValueOperation::Create(*Lambda_->subregion(), pointerType);
   auto loadResults =
-      LoadNode::Create(undefValue, { Lambda_->fctargument(0) }, jlm::rvsdg::bit32, 4);
+      LoadNonVolatileNode::Create(undefValue, { Lambda_->fctargument(0) }, jlm::rvsdg::bit32, 4);
 
   Lambda_->finalize(loadResults);
   rvsdg.add_export(Lambda_->output(), { pointerType, "f" });
@@ -278,11 +279,11 @@ GetElementPtrTest::SetupRvsdg()
 
   auto gepx =
       GetElementPtrOperation::Create(fct->fctargument(0), { zero, zero }, structType, pointerType);
-  auto ldx = LoadNode::Create(gepx, { fct->fctargument(1) }, jlm::rvsdg::bit32, 4);
+  auto ldx = LoadNonVolatileNode::Create(gepx, { fct->fctargument(1) }, jlm::rvsdg::bit32, 4);
 
   auto gepy =
       GetElementPtrOperation::Create(fct->fctargument(0), { zero, one }, structType, pointerType);
-  auto ldy = LoadNode::Create(gepy, { ldx[1] }, jlm::rvsdg::bit32, 4);
+  auto ldy = LoadNonVolatileNode::Create(gepy, { ldx[1] }, jlm::rvsdg::bit32, 4);
 
   auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);
 
@@ -467,8 +468,12 @@ CallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto ld1 = LoadNode::Create(pointerArgument1, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
-    auto ld2 = LoadNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
+    auto ld1 = LoadNonVolatileNode::Create(
+        pointerArgument1,
+        { memoryStateArgument },
+        jlm::rvsdg::bit32,
+        4);
+    auto ld2 = LoadNonVolatileNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
 
@@ -492,8 +497,12 @@ CallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto ld1 = LoadNode::Create(pointerArgument1, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
-    auto ld2 = LoadNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
+    auto ld1 = LoadNonVolatileNode::Create(
+        pointerArgument1,
+        { memoryStateArgument },
+        jlm::rvsdg::bit32,
+        4);
+    auto ld2 = LoadNonVolatileNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
 
     auto diff = jlm::rvsdg::bitsub_op::create(32, ld1[0], ld2[0]);
 
@@ -969,9 +978,12 @@ IndirectCallTest2::SetupRvsdg()
         functionY.node()->type(),
         { pyAlloca[0], callX.GetIoStateOutput(), callX.GetMemoryStateOutput() });
 
-    auto loadG1 =
-        LoadNode::Create(globalG1Cv, { callY.GetMemoryStateOutput() }, jlm::rvsdg::bit32, 4);
-    auto loadG2 = LoadNode::Create(globalG2Cv, { loadG1[1] }, jlm::rvsdg::bit32, 4);
+    auto loadG1 = LoadNonVolatileNode::Create(
+        globalG1Cv,
+        { callY.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
+    auto loadG2 = LoadNonVolatileNode::Create(globalG2Cv, { loadG1[1] }, jlm::rvsdg::bit32, 4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callX.Result(0), callY.Result(0));
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
@@ -1114,8 +1126,8 @@ ExternalCallTest1::SetupRvsdg()
     auto storePath = StoreNode::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
     auto storeMode = StoreNode::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
 
-    auto loadPath = LoadNode::Create(allocaPath[0], storeMode, pointerType, 4);
-    auto loadMode = LoadNode::Create(allocaMode[0], { loadPath[1] }, pointerType, 4);
+    auto loadPath = LoadNonVolatileNode::Create(allocaPath[0], storeMode, pointerType, 4);
+    auto loadMode = LoadNonVolatileNode::Create(allocaMode[0], { loadPath[1] }, pointerType, 4);
 
     auto & callG = CallNode::CreateNode(
         functionGCv,
@@ -1209,17 +1221,19 @@ ExternalCallTest2::SetupRvsdg()
   auto gepResult1 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, one }, *structType, pointerType);
   auto loadResults1 =
-      LoadNode::Create(gepResult1, { CallF_->GetMemoryStateOutput() }, pointerType, 8);
-  auto loadResults2 = LoadNode::Create(loadResults1[0], { loadResults1[1] }, pointerType, 8);
+      LoadNonVolatileNode::Create(gepResult1, { CallF_->GetMemoryStateOutput() }, pointerType, 8);
+  auto loadResults2 =
+      LoadNonVolatileNode::Create(loadResults1[0], { loadResults1[1] }, pointerType, 8);
 
   auto gepResult2 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, two }, *structType, pointerType);
-  auto loadResults3 = LoadNode::Create(gepResult2, { loadResults2[1] }, pointerType, 8);
-  auto loadResults4 = LoadNode::Create(loadResults1[0], { loadResults3[1] }, pointerType, 8);
+  auto loadResults3 = LoadNonVolatileNode::Create(gepResult2, { loadResults2[1] }, pointerType, 8);
+  auto loadResults4 =
+      LoadNonVolatileNode::Create(loadResults1[0], { loadResults3[1] }, pointerType, 8);
 
   auto storeResults1 = StoreNode::Create(loadResults1[0], loadResults4[0], { loadResults4[1] }, 8);
 
-  auto loadResults5 = LoadNode::Create(gepResult2, { storeResults1[0] }, pointerType, 8);
+  auto loadResults5 = LoadNonVolatileNode::Create(gepResult2, { storeResults1[0] }, pointerType, 8);
   auto storeResults2 = StoreNode::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
 
   auto & callLLvmLifetimeEnd = CallNode::CreateNode(
@@ -1264,8 +1278,8 @@ GammaTest::SetupRvsdg()
   auto tmp1 = gammanode->add_exitvar({ p1ev->argument(0), p3ev->argument(1) });
   auto tmp2 = gammanode->add_exitvar({ p2ev->argument(0), p4ev->argument(1) });
 
-  auto ld1 = LoadNode::Create(tmp1, { fct->fctargument(5) }, jlm::rvsdg::bit32, 4);
-  auto ld2 = LoadNode::Create(tmp2, { ld1[1] }, jlm::rvsdg::bit32, 4);
+  auto ld1 = LoadNonVolatileNode::Create(tmp1, { fct->fctargument(5) }, jlm::rvsdg::bit32, 4);
+  auto ld2 = LoadNonVolatileNode::Create(tmp2, { ld1[1] }, jlm::rvsdg::bit32, 4);
   auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
 
   fct->finalize({ sum, ld2[1] });
@@ -1308,7 +1322,7 @@ GammaTest2::SetupRvsdg()
       auto gammaInputMemoryState = gammaNode->add_entryvar(memoryState);
 
       // gamma subregion 0
-      auto loadXResults = LoadNode::Create(
+      auto loadXResults = LoadNonVolatileNode::Create(
           gammaInputX->argument(0),
           { gammaInputMemoryState->argument(0) },
           jlm::rvsdg::bit32,
@@ -1319,7 +1333,7 @@ GammaTest2::SetupRvsdg()
           StoreNode::Create(gammaInputZ->argument(0), one, { loadXResults[1] }, 4);
 
       // gamma subregion 1
-      auto loadYResults = LoadNode::Create(
+      auto loadYResults = LoadNonVolatileNode::Create(
           gammaInputY->argument(1),
           { gammaInputMemoryState->argument(1) },
           jlm::rvsdg::bit32,
@@ -1367,8 +1381,11 @@ GammaTest2::SetupRvsdg()
     auto [gammaOutputA, gammaOutputMemoryState] =
         SetupGamma(predicate, xArgument, yArgument, allocaZResults[0], memoryState);
 
-    auto loadZResults =
-        LoadNode::Create(allocaZResults[0], { gammaOutputMemoryState }, jlm::rvsdg::bit32, 4);
+    auto loadZResults = LoadNonVolatileNode::Create(
+        allocaZResults[0],
+        { gammaOutputMemoryState },
+        jlm::rvsdg::bit32,
+        4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, gammaOutputA, loadZResults[0]);
 
@@ -1550,7 +1567,8 @@ DeltaTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto ld = LoadNode::Create(pointerArgument, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
+    auto ld =
+        LoadNonVolatileNode::Create(pointerArgument, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
 
     return lambda->finalize({ ld[0], iOStateArgument, ld[1] });
   };
@@ -1757,10 +1775,11 @@ DeltaTest3::SetupRvsdg()
     auto g1CtxVar = lambda->add_ctxvar(&g1);
     auto g2CtxVar = lambda->add_ctxvar(&g2);
 
-    auto loadResults = LoadNode::Create(g2CtxVar, { memoryStateArgument }, PointerType(), 8);
+    auto loadResults =
+        LoadNonVolatileNode::Create(g2CtxVar, { memoryStateArgument }, PointerType(), 8);
     auto storeResults = StoreNode::Create(g2CtxVar, loadResults[0], { loadResults[1] }, 8);
 
-    loadResults = LoadNode::Create(g1CtxVar, storeResults, jlm::rvsdg::bit32, 8);
+    loadResults = LoadNonVolatileNode::Create(g1CtxVar, storeResults, jlm::rvsdg::bit32, 8);
     auto truncResult = trunc_op::create(16, loadResults[0]);
 
     return lambda->finalize({ truncResult, iOStateArgument, loadResults[1] });
@@ -1954,12 +1973,15 @@ PhiTest1::SetupRvsdg()
 
     auto gepnm1 =
         GetElementPtrOperation::Create(resultev->argument(0), { nm1 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm1 =
-        LoadNode::Create(gepnm1, { callFibm2.GetMemoryStateOutput() }, jlm::rvsdg::bit64, 8);
+    auto ldnm1 = LoadNonVolatileNode::Create(
+        gepnm1,
+        { callFibm2.GetMemoryStateOutput() },
+        jlm::rvsdg::bit64,
+        8);
 
     auto gepnm2 =
         GetElementPtrOperation::Create(resultev->argument(0), { nm2 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm2 = LoadNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
+    auto ldnm2 = LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
@@ -2212,8 +2234,11 @@ PhiTest2::SetupRvsdg()
         recFunctionType,
         { pcAlloca[0], iOStateArgument, pcMerge });
 
-    auto loadX =
-        LoadNode::Create(xArgument, { callA.GetMemoryStateOutput() }, jlm::rvsdg::bit32, 4);
+    auto loadX = LoadNonVolatileNode::Create(
+        xArgument,
+        { callA.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callA.Result(0), loadX[0]);
 
@@ -2557,9 +2582,10 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto contextVariableB = lambda->add_ctxvar(&deltaB);
 
-    auto loadResults1 = LoadNode::Create(pointerArgument, { memoryStateArgument }, pointerType, 4);
+    auto loadResults1 =
+        LoadNonVolatileNode::Create(pointerArgument, { memoryStateArgument }, pointerType, 4);
     auto loadResults2 =
-        LoadNode::Create(loadResults1[0], { loadResults1[1] }, jlm::rvsdg::bit32, 4);
+        LoadNonVolatileNode::Create(loadResults1[0], { loadResults1[1] }, jlm::rvsdg::bit32, 4);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto storeResults = StoreNode::Create(contextVariableB, five, { loadResults2[1] }, 4);
@@ -2570,7 +2596,8 @@ EscapedMemoryTest1::SetupRvsdg()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<LoadNode>(jlm::rvsdg::node_output::node(loadResults1[0])));
+        jlm::util::AssertedCast<LoadNonVolatileNode>(
+            jlm::rvsdg::node_output::node(loadResults1[0])));
   };
 
   auto deltaA = SetupDeltaA();
@@ -2718,8 +2745,11 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction2Type,
         { iOStateArgument, memoryStateArgument });
 
-    auto loadResults =
-        LoadNode::Create(call.Result(0), { call.GetMemoryStateOutput() }, jlm::rvsdg::bit32, 4);
+    auto loadResults = LoadNonVolatileNode::Create(
+        call.Result(0),
+        { call.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
 
     auto lambdaOutput =
         lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
@@ -2729,7 +2759,7 @@ EscapedMemoryTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        jlm::util::AssertedCast<jlm::llvm::LoadNode>(
+        jlm::util::AssertedCast<jlm::llvm::LoadNonVolatileNode>(
             jlm::rvsdg::node_output::node(loadResults[0])));
   };
 
@@ -2825,8 +2855,11 @@ EscapedMemoryTest3::SetupRvsdg()
         externalFunctionType,
         { iOStateArgument, memoryStateArgument });
 
-    auto loadResults =
-        LoadNode::Create(call.Result(0), { call.GetMemoryStateOutput() }, jlm::rvsdg::bit32, 4);
+    auto loadResults = LoadNonVolatileNode::Create(
+        call.Result(0),
+        { call.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
 
     auto lambdaOutput =
         lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
@@ -2836,7 +2869,7 @@ EscapedMemoryTest3::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        jlm::util::AssertedCast<jlm::llvm::LoadNode>(
+        jlm::util::AssertedCast<jlm::llvm::LoadNonVolatileNode>(
             jlm::rvsdg::node_output::node(loadResults[0])));
   };
 
@@ -2937,7 +2970,7 @@ MemcpyTest::SetupRvsdg()
 
     auto storeResults = StoreNode::Create(gep, six, { memoryStateArgument }, 8);
 
-    auto loadResults = LoadNode::Create(gep, { storeResults[0] }, jlm::rvsdg::bit32, 8);
+    auto loadResults = LoadNonVolatileNode::Create(gep, { storeResults[0] }, jlm::rvsdg::bit32, 8);
 
     auto lambdaOutput = lambda->finalize({ loadResults[0], iOStateArgument, loadResults[1] });
 
@@ -2966,11 +2999,10 @@ MemcpyTest::SetupRvsdg()
     auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType());
     auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType());
 
-    auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
     auto memcpyResults =
-        Memcpy::create(bcGlobalArray, bcLocalArray, twenty, zero, { memoryStateArgument });
+        MemCpyOperation::create(bcGlobalArray, bcLocalArray, twenty, { memoryStateArgument });
 
     auto & call = CallNode::CreateNode(
         functionFArgument,
@@ -3033,19 +3065,18 @@ MemcpyTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto cFalse = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
     auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto c128 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 128);
 
     auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
     auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType, pointerType);
-    auto ldS2 = LoadNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
+    auto ldS2 = LoadNonVolatileNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
 
     auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
     auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
-    auto ldS1 = LoadNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
+    auto ldS1 = LoadNonVolatileNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
 
-    auto memcpyResults = Memcpy::create(ldS2[0], ldS1[0], c128, cFalse, { ldS1[1] });
+    auto memcpyResults = MemCpyOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
 
     auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0] });
 
@@ -3071,10 +3102,10 @@ MemcpyTest2::SetupRvsdg()
     auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
 
     auto gepS1 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
-    auto ldS1 = LoadNode::Create(gepS1, { memoryStateArgument }, pointerType, 8);
+    auto ldS1 = LoadNonVolatileNode::Create(gepS1, { memoryStateArgument }, pointerType, 8);
 
     auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
-    auto ldS2 = LoadNode::Create(gepS2, { ldS1[1] }, pointerType, 8);
+    auto ldS2 = LoadNonVolatileNode::Create(gepS2, { ldS1[1] }, pointerType, 8);
 
     auto & call = CallNode::CreateNode(
         functionFArgument,
@@ -3126,7 +3157,6 @@ MemcpyTest3::SetupRvsdg()
   auto iOStateArgument = Lambda_->fctargument(1);
   auto memoryStateArgument = Lambda_->fctargument(2);
 
-  auto cFalse = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 1, 0);
   auto eight = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 8);
   auto zero = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 0);
   auto minusFive = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, -5);
@@ -3135,16 +3165,16 @@ MemcpyTest3::SetupRvsdg()
   auto allocaResults = alloca_op::create(*structType, eight, 8);
   auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
-  auto memcpyResults = Memcpy::create(allocaResults[0], pArgument, eight, cFalse, { memoryState });
+  auto memcpyResults = MemCpyOperation::create(allocaResults[0], pArgument, eight, { memoryState });
 
   auto gep1 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, *structType, pointerType);
-  auto ld = LoadNode::Create(gep1, { memcpyResults[0] }, pointerType, 8);
+  auto ld = LoadNonVolatileNode::Create(gep1, { memcpyResults[0] }, pointerType, 8);
 
   auto gep2 =
       GetElementPtrOperation::Create(allocaResults[0], { minusFive }, *structType, pointerType);
 
-  memcpyResults = Memcpy::create(ld[0], gep2, three, cFalse, { ld[1] });
+  memcpyResults = MemCpyOperation::create(ld[0], gep2, three, { ld[1] });
 
   auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0] });
 
@@ -3212,16 +3242,16 @@ LinkedListTest::SetupRvsdg()
     auto alloca = alloca_op::create(pointerType, size, 4);
     auto mergedMemoryState = MemStateMergeOperator::Create({ alloca[1], memoryStateArgument });
 
-    auto load1 = LoadNode::Create(myListArgument, { mergedMemoryState }, pointerType, 4);
+    auto load1 = LoadNonVolatileNode::Create(myListArgument, { mergedMemoryState }, pointerType, 4);
     auto store1 = StoreNode::Create(alloca[0], load1[0], { load1[1] }, 4);
 
-    auto load2 = LoadNode::Create(alloca[0], { store1[0] }, pointerType, 4);
+    auto load2 = LoadNonVolatileNode::Create(alloca[0], { store1[0] }, pointerType, 4);
     auto gep = GetElementPtrOperation::Create(load2[0], { zero, zero }, *structType, pointerType);
 
-    auto load3 = LoadNode::Create(gep, { load2[1] }, pointerType, 4);
+    auto load3 = LoadNonVolatileNode::Create(gep, { load2[1] }, pointerType, 4);
     auto store2 = StoreNode::Create(alloca[0], load3[0], { load3[1] }, 4);
 
-    auto load4 = LoadNode::Create(alloca[0], { store2[0] }, pointerType, 4);
+    auto load4 = LoadNonVolatileNode::Create(alloca[0], { store2[0] }, pointerType, 4);
 
     auto lambdaOutput = lambda->finalize({ load4[0], iOStateArgument, load4[1] });
     rvsdg.add_export(lambdaOutput, { pointerType, "next" });
@@ -3300,11 +3330,11 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // load the value in the alloca again
   auto loadAllocaOutputs =
-      LoadNode::Create(allocaOutputs[0], { storeAllocaOutputs[0] }, pointerType, 8);
+      LoadNonVolatileNode::Create(allocaOutputs[0], { storeAllocaOutputs[0] }, pointerType, 8);
 
   // Load the value of the imported symbol "imported"
   auto loadImportedOutputs =
-      LoadNode::Create(importContextVar, { loadAllocaOutputs[1] }, jlm::rvsdg::bit32, 4);
+      LoadNonVolatileNode::Create(importContextVar, { loadAllocaOutputs[1] }, jlm::rvsdg::bit32, 4);
 
   // Store the loaded value from imported, into the address loaded from the alloca (aka. the malloc
   // result)
@@ -3525,7 +3555,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
 
     auto storeResults = StoreNode::Create(allocaResults[0], six, { memoryState }, 4);
 
-    auto loadResults = LoadNode::Create(allocaResults[0], storeResults, rvsdg::bit32, 4);
+    auto loadResults = LoadNonVolatileNode::Create(allocaResults[0], storeResults, rvsdg::bit32, 4);
 
     auto & call = CallNode::CreateNode(
         lambdaGArgument,
@@ -3698,7 +3728,7 @@ VariadicFunctionTest2::SetupRvsdg()
           callLLvmLifetimeStart.GetIoStateOutput(),
           callLLvmLifetimeStart.GetMemoryStateOutput() });
 
-    auto loadResults = LoadNode::Create(
+    auto loadResults = LoadNonVolatileNode::Create(
         allocaResults[0],
         { callVaStart.GetMemoryStateOutput() },
         rvsdg::bit32,
@@ -3721,7 +3751,7 @@ VariadicFunctionTest2::SetupRvsdg()
         *structType,
         pointerType);
     auto loadResultsGamma0 =
-        LoadNode::Create(gepResult1, { gammaMemoryState->argument(0) }, pointerType, 8);
+        LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(0) }, pointerType, 8);
     auto gepResult2 =
         GetElementPtrOperation::Create(loadResultsGamma0[0], { eight }, rvsdg::bit8, pointerType);
     auto storeResultsGamma0 =
@@ -3737,7 +3767,7 @@ VariadicFunctionTest2::SetupRvsdg()
         *structType,
         pointerType);
     auto loadResultsGamma1 =
-        LoadNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
+        LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
     auto & zextResult = zext_op::Create(*gammaLoadResult->argument(1), rvsdg::bit64);
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
@@ -3752,7 +3782,8 @@ VariadicFunctionTest2::SetupRvsdg()
     auto gammaOutputMemoryState =
         gammaNode->add_exitvar({ storeResultsGamma0[0], storeResultsGamma1[0] });
 
-    loadResults = LoadNode::Create(gammaAddress, { gammaOutputMemoryState }, rvsdg::bit32, 4);
+    loadResults =
+        LoadNonVolatileNode::Create(gammaAddress, { gammaOutputMemoryState }, rvsdg::bit32, 4);
     auto & callVaEnd = CallNode::CreateNode(
         llvmVaEndArgument,
         lambdaVaEndType,
