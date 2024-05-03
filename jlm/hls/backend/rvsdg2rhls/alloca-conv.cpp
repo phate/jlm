@@ -54,7 +54,8 @@ private:
         {
           store_nodes.push_back(simplenode);
         }
-        else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+        else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
+                     &simplenode->operation()))
         {
           load_nodes.push_back(simplenode);
         }
