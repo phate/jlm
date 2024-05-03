@@ -85,9 +85,7 @@ enable_gamma_reductions(jlm::rvsdg::graph & graph)
   auto nf = jlm::rvsdg::gamma_op::normal_form(&graph);
   nf->set_mutable(true);
   nf->set_predicate_reduction(true);
-  // set_control_constante_reduction cause a PHI node input type error
-  // github issue #303
-  nf->set_control_constant_reduction(false);
+  nf->set_control_constant_reduction(true);
 }
 
 static void
