@@ -37,7 +37,7 @@ MemCpyConversion()
       cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
 
   auto basicBlock = basic_block::create(*cfg);
-  auto memCpyTac = basicBlock->append_last(MemCpyOperation::create(
+  auto memCpyTac = basicBlock->append_last(MemCpyNonVolatileOperation::create(
       destinationArgument,
       sourceArgument,
       lengthArgument,

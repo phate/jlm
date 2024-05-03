@@ -1034,7 +1034,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeUndef(node);
   }
-  else if (is<MemCpyOperation>(&node))
+  else if (is<MemCpyNonVolatileOperation>(&node))
   {
     AnalyzeMemcpy(node);
   }
@@ -1411,7 +1411,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
-  JLM_ASSERT(is<MemCpyOperation>(&node));
+  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&node));
 
   auto & dstAddress = Context_->GetLocation(*node.input(0)->origin());
   auto & srcAddress = Context_->GetLocation(*node.input(1)->origin());

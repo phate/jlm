@@ -19,8 +19,8 @@ OperationEquality()
   jlm::rvsdg::bittype bit32Type(32);
   jlm::rvsdg::bittype bit64Type(64);
 
-  MemCpyOperation operation1(bit32Type, 1);
-  MemCpyOperation operation2(bit64Type, 4);
+  MemCpyNonVolatileOperation operation1(bit32Type, 1);
+  MemCpyNonVolatileOperation operation2(bit64Type, 4);
   jlm::tests::test_op operation3({ &valueType }, { &valueType });
 
   // Act & Assert
@@ -31,4 +31,6 @@ OperationEquality()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/MemCpyTests-OperationEquality", OperationEquality)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemCpyNonVolatileTests-OperationEquality",
+    OperationEquality)
