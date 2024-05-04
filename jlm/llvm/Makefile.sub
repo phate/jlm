@@ -33,7 +33,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
-    jlm/llvm/ir/operators/store.cpp \
+    jlm/llvm/ir/operators/StoreNonVolatile.cpp \
     jlm/llvm/ir/operators/StoreVolatile.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -115,7 +115,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
-	jlm/llvm/ir/operators/store.hpp \
+	jlm/llvm/ir/operators/StoreNonVolatile.hpp \
 	jlm/llvm/ir/operators/StoreVolatile.hpp \
 	jlm/llvm/ir/operators/alloca.hpp \
 	jlm/llvm/ir/operators/call.hpp \
@@ -162,7 +162,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/operators/TestLambda \
 	tests/jlm/llvm/ir/operators/TestPhi \
 	tests/jlm/llvm/ir/operators/test-sext \
-	tests/jlm/llvm/ir/operators/TestStore \
+	tests/jlm/llvm/ir/operators/StoreNonVolatileTests \
 	tests/jlm/llvm/ir/operators/StoreVolatileTests \
 	tests/jlm/llvm/ir/test-aggregation \
 	tests/jlm/llvm/ir/test-cfg \

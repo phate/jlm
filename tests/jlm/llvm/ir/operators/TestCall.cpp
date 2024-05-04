@@ -125,7 +125,7 @@ TestCallTypeClassifierIndirectCall()
 
     auto alloca = alloca_op::create(pt, one, 8);
 
-    auto store = StoreNode::Create(alloca[0], lambda->fctargument(0), { alloca[1] }, 8);
+    auto store = StoreNonVolatileNode::Create(alloca[0], lambda->fctargument(0), { alloca[1] }, 8);
 
     auto load = LoadNonVolatileNode::Create(alloca[0], store, pt, 8);
 
@@ -443,7 +443,7 @@ TestCallTypeClassifierRecursiveDirectCall()
         { valueArgument },
         jlm::rvsdg::bit64,
         pbit64);
-    auto store = StoreNode::Create(gepn, sumex, { gOMemoryState }, 8);
+    auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
 
     auto lambdaOutput = lambda->finalize({ gOIoState, store[0] });
 

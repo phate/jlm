@@ -90,17 +90,17 @@ ValidateStoreTest1SteensgaardAgnostic(const jlm::tests::StoreTest1 & test)
   assert(input_node((*test.alloca_d->output(1)->begin())) == lambdaExitMerge);
 
   auto storeD = input_node(*test.alloca_c->output(1)->begin());
-  assert(is<StoreOperation>(*storeD, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD, 3, 1));
   assert(storeD->input(0)->origin() == test.alloca_c->output(0));
   assert(storeD->input(1)->origin() == test.alloca_d->output(0));
 
   auto storeC = input_node(*test.alloca_b->output(1)->begin());
-  assert(is<StoreOperation>(*storeC, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeC, 3, 1));
   assert(storeC->input(0)->origin() == test.alloca_b->output(0));
   assert(storeC->input(1)->origin() == test.alloca_c->output(0));
 
   auto storeB = input_node(*test.alloca_a->output(1)->begin());
-  assert(is<StoreOperation>(*storeB, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   assert(storeB->input(0)->origin() == test.alloca_a->output(0));
   assert(storeB->input(1)->origin() == test.alloca_b->output(0));
 }
@@ -123,17 +123,17 @@ ValidateStoreTest1SteensgaardRegionAware(const jlm::tests::StoreTest1 & test)
   assert(input_node((*test.alloca_d->output(1)->begin())) == lambdaExitMerge);
 
   auto storeD = input_node(*test.alloca_c->output(1)->begin());
-  assert(is<StoreOperation>(*storeD, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD, 3, 1));
   assert(storeD->input(0)->origin() == test.alloca_c->output(0));
   assert(storeD->input(1)->origin() == test.alloca_d->output(0));
 
   auto storeC = input_node(*test.alloca_b->output(1)->begin());
-  assert(is<StoreOperation>(*storeC, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeC, 3, 1));
   assert(storeC->input(0)->origin() == test.alloca_b->output(0));
   assert(storeC->input(1)->origin() == test.alloca_c->output(0));
 
   auto storeB = input_node(*test.alloca_a->output(1)->begin());
-  assert(is<StoreOperation>(*storeB, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeB, 3, 1));
   assert(storeB->input(0)->origin() == test.alloca_a->output(0));
   assert(storeB->input(1)->origin() == test.alloca_b->output(0));
 }
@@ -173,22 +173,22 @@ ValidateStoreTest2SteensgaardAgnostic(const jlm::tests::StoreTest2 & test)
   assert(input_node((*test.alloca_b->output(1)->begin())) == lambdaExitMerge);
 
   auto storeA = input_node(*test.alloca_a->output(0)->begin());
-  assert(is<StoreOperation>(*storeA, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
   assert(storeA->input(0)->origin() == test.alloca_x->output(0));
 
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
-  assert(is<StoreOperation>(*storeB, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
   assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
   assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
-  assert(is<StoreOperation>(*storeX, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   assert(storeX->input(0)->origin() == test.alloca_p->output(0));
   assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
   auto storeY = input_node(*storeX->output(0)->begin());
-  assert(is<StoreOperation>(*storeY, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
   assert(storeY->input(0)->origin() == test.alloca_p->output(0));
   assert(storeY->input(1)->origin() == test.alloca_y->output(0));
 }
@@ -213,22 +213,22 @@ ValidateStoreTest2SteensgaardRegionAware(const jlm::tests::StoreTest2 & test)
   assert(input_node((*test.alloca_b->output(1)->begin())) == lambdaExitMerge);
 
   auto storeA = input_node(*test.alloca_a->output(0)->begin());
-  assert(is<StoreOperation>(*storeA, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
   assert(storeA->input(0)->origin() == test.alloca_x->output(0));
 
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
-  assert(is<StoreOperation>(*storeB, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
   assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
   assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
-  assert(is<StoreOperation>(*storeX, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   assert(storeX->input(0)->origin() == test.alloca_p->output(0));
   assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
   auto storeY = input_node(*storeX->output(0)->begin());
-  assert(is<StoreOperation>(*storeY, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeY, 3, 1));
   assert(storeY->input(0)->origin() == test.alloca_p->output(0));
   assert(storeY->input(1)->origin() == test.alloca_y->output(0));
 }
@@ -340,17 +340,17 @@ ValidateLoadTest2SteensgaardAgnostic(const jlm::tests::LoadTest2 & test)
   assert(input_node((*test.alloca_b->output(1)->begin())) == lambdaExitMerge);
 
   auto storeA = input_node(*test.alloca_a->output(0)->begin());
-  assert(is<StoreOperation>(*storeA, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
   assert(storeA->input(0)->origin() == test.alloca_x->output(0));
 
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
-  assert(is<StoreOperation>(*storeB, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
   assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
   assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
-  assert(is<StoreOperation>(*storeX, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   assert(storeX->input(0)->origin() == test.alloca_p->output(0));
   assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
@@ -364,7 +364,7 @@ ValidateLoadTest2SteensgaardAgnostic(const jlm::tests::LoadTest2 & test)
   assert(jlm::rvsdg::node_output::node(loadXY->input(2)->origin()) == storeB);
 
   auto storeY = input_node(*loadXY->output(0)->begin());
-  assert(is<StoreOperation>(*storeY, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeY, 4, 2));
   assert(storeY->input(0)->origin() == test.alloca_y->output(0));
   assert(jlm::rvsdg::node_output::node(storeY->input(2)->origin()) == loadXY);
   assert(jlm::rvsdg::node_output::node(storeY->input(3)->origin()) == loadXY);
@@ -387,17 +387,17 @@ ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
   assert(test.alloca_p->output(1)->nusers() == 1);
 
   auto storeA = input_node(*test.alloca_a->output(0)->begin());
-  assert(is<StoreOperation>(*storeA, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeA, 4, 2));
   assert(storeA->input(0)->origin() == test.alloca_x->output(0));
 
   auto storeB = input_node(*test.alloca_b->output(0)->begin());
-  assert(is<StoreOperation>(*storeB, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeB, 4, 2));
   assert(storeB->input(0)->origin() == test.alloca_y->output(0));
   assert(jlm::rvsdg::node_output::node(storeB->input(2)->origin()) == storeA);
   assert(jlm::rvsdg::node_output::node(storeB->input(3)->origin()) == storeA);
 
   auto storeX = input_node(*test.alloca_p->output(1)->begin());
-  assert(is<StoreOperation>(*storeX, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeX, 3, 1));
   assert(storeX->input(0)->origin() == test.alloca_p->output(0));
   assert(storeX->input(1)->origin() == test.alloca_x->output(0));
 
@@ -411,7 +411,7 @@ ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
   assert(jlm::rvsdg::node_output::node(loadXY->input(2)->origin()) == storeB);
 
   auto storeY = input_node(*loadXY->output(0)->begin());
-  assert(is<StoreOperation>(*storeY, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*storeY, 4, 2));
   assert(storeY->input(0)->origin() == test.alloca_y->output(0));
   assert(jlm::rvsdg::node_output::node(storeY->input(2)->origin()) == loadXY);
   assert(jlm::rvsdg::node_output::node(storeY->input(3)->origin()) == loadXY);
@@ -1020,7 +1020,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         storeNode = node;
       }
@@ -1034,7 +1034,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
       }
     }
     assert(storeNode && lambdaEntrySplit);
-    assert(is<StoreOperation>(*storeNode, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*storeNode, 4, 2));
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 6));
   }
 
@@ -1056,7 +1056,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         storeNode = node;
       }
@@ -1070,7 +1070,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
       }
     }
     assert(storeNode && lambdaEntrySplit);
-    assert(is<StoreOperation>(*storeNode, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 6));
   }
 
@@ -1170,7 +1170,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         storeNode = node;
       }
@@ -1184,7 +1184,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
       }
     }
     assert(storeNode && lambdaEntrySplit);
-    assert(is<StoreOperation>(*storeNode, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*storeNode, 4, 2));
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 13));
   }
 
@@ -1207,7 +1207,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     for (size_t n = 0; n < callEntryMerge->ninputs(); n++)
     {
       auto node = jlm::rvsdg::node_output::node(callEntryMerge->input(n)->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         assert(storeNode == nullptr);
         storeNode = node;
@@ -1227,7 +1227,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
       }
     }
     assert(storeNode && lambdaEntrySplit && undefNode);
-    assert(is<StoreOperation>(*storeNode, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 12));
   }
 
@@ -1374,7 +1374,7 @@ ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
 
   auto storeStateOutput = thetaOutput->result()->origin();
   auto store = jlm::rvsdg::node_output::node(storeStateOutput);
-  assert(is<StoreOperation>(*store, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*store, 4, 2));
   assert(store->input(storeStateOutput->index() + 2)->origin() == thetaOutput->argument());
 
   auto lambda_entry_mux = jlm::rvsdg::node_output::node(thetaOutput->input()->origin());
@@ -1398,7 +1398,7 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
 
   auto storeStateOutput = thetaOutput->result()->origin();
   auto store = jlm::rvsdg::node_output::node(storeStateOutput);
-  assert(is<StoreOperation>(*store, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*store, 4, 2));
   assert(store->input(storeStateOutput->index() + 2)->origin() == thetaOutput->argument());
 
   auto lambdaEntrySplit = jlm::rvsdg::node_output::node(thetaOutput->input()->origin());
@@ -1422,7 +1422,7 @@ ValidateThetaTestSteensgaardAgnosticTopDown(const jlm::tests::ThetaTest & test)
 
   auto storeStateOutput = thetaOutput->result()->origin();
   auto store = jlm::rvsdg::node_output::node(storeStateOutput);
-  assert(is<StoreOperation>(*store, 4, 2));
+  assert(is<StoreNonVolatileOperation>(*store, 4, 2));
   assert(store->input(storeStateOutput->index() + 2)->origin() == thetaOutput->argument());
 
   auto lambda_entry_mux = jlm::rvsdg::node_output::node(thetaOutput->input()->origin());
@@ -1440,7 +1440,7 @@ ValidateDeltaTest1SteensgaardAgnostic(const jlm::tests::DeltaTest1 & test)
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 4));
 
   auto storeF = input_node(*test.constantFive->output(0)->begin());
-  assert(is<StoreOperation>(*storeF, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
@@ -1461,7 +1461,7 @@ ValidateDeltaTest1SteensgaardRegionAware(const jlm::tests::DeltaTest1 & test)
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
 
   auto storeF = input_node(*test.constantFive->output(0)->begin());
-  assert(is<StoreOperation>(*storeF, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
   auto deltaStateIndex = storeF->input(2)->origin()->index();
@@ -1482,7 +1482,7 @@ ValidateDeltaTest1SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest1 & test
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 4));
 
   auto storeF = input_node(*test.constantFive->output(0)->begin());
-  assert(is<StoreOperation>(*storeF, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeF->input(2)->origin()) == lambdaEntrySplit);
 
   auto loadF = input_node(*test.lambda_g->fctargument(0)->begin());
@@ -1500,18 +1500,18 @@ ValidateDeltaTest2SteensgaardAgnostic(const jlm::tests::DeltaTest2 & test)
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
   auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
   auto storeD1InF1 = input_node(*test.lambda_f1->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF1, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
 
   auto storeD2InF2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 }
@@ -1529,7 +1529,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
     auto storeNode = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<StoreOperation>(*storeNode, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(storeNode->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
@@ -1543,11 +1543,11 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 
     auto storeD1 = input_node(*test.lambda_f2->cvargument(0)->begin());
-    assert(is<StoreOperation>(*storeD1, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
     assert(jlm::rvsdg::node_output::node(storeD1->input(2)->origin()) == lambdaEntrySplit);
 
     auto storeD2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-    assert(is<StoreOperation>(*storeD2, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
     assert(jlm::rvsdg::node_output::node(storeD2->input(2)->origin()) == lambdaEntrySplit);
 
     auto callEntryMerge = input_node(*storeD1->output(0)->begin());
@@ -1575,16 +1575,16 @@ ValidateDeltaTest2SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest2 & test
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
   auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
   auto storeD1InF1 = input_node(*test.lambda_f1->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF1, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   auto storeD2InF2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 }
@@ -1615,7 +1615,7 @@ ValidateDeltaTest3SteensgaardAgnostic(const jlm::tests::DeltaTest3 & test)
     {
       auto input = lambdaExitMerge->input(n);
       auto node = jlm::rvsdg::node_output::node(input->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         storeG2Node = node;
         break;
@@ -1657,7 +1657,7 @@ ValidateDeltaTest3SteensgaardRegionAware(const jlm::tests::DeltaTest3 & test)
     {
       auto input = lambdaExitMerge->input(n);
       auto node = jlm::rvsdg::node_output::node(input->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         storeG2Node = node;
         break;
@@ -1699,7 +1699,7 @@ ValidateDeltaTest3SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest3 & test
     {
       auto input = lambdaExitMerge->input(n);
       auto node = jlm::rvsdg::node_output::node(input->origin());
-      if (is<StoreOperation>(node))
+      if (is<StoreNonVolatileOperation>(node))
       {
         storeG2Node = node;
         break;
@@ -1726,18 +1726,18 @@ ValidateImportTestSteensgaardAgnostic(const jlm::tests::ImportTest & test)
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
   auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
   auto storeD1InF1 = input_node(*test.lambda_f1->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF1, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
 
   auto storeD2InF2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
 }
@@ -1755,7 +1755,7 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
     assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
     auto storeNode = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<StoreOperation>(*storeNode, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(storeNode->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
@@ -1769,11 +1769,11 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
 
     auto storeD1 = input_node(*test.lambda_f2->cvargument(0)->begin());
-    assert(is<StoreOperation>(*storeD1, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
     assert(jlm::rvsdg::node_output::node(storeD1->input(2)->origin()) == lambdaEntrySplit);
 
     auto storeD2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-    assert(is<StoreOperation>(*storeD2, 3, 1));
+    assert(is<StoreNonVolatileOperation>(*storeD2, 3, 1));
     assert(jlm::rvsdg::node_output::node(storeD2->input(2)->origin()) == lambdaEntrySplit);
 
     auto callEntryMerge = input_node(*storeD1->output(0)->begin());
@@ -1801,20 +1801,20 @@ ValidateImportTestSteensgaardAgnosticTopDown(const jlm::tests::ImportTest & test
   assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
 
   auto storeD1InF2 = input_node(*test.lambda_f2->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(jlm::rvsdg::node_output::node(storeD1InF2->input(2)->origin()) == lambdaEntrySplit);
 
   assert(storeD1InF2->output(0)->nusers() == 1);
   auto d1StateIndexEntry = (*storeD1InF2->output(0)->begin())->index();
 
   auto storeD1InF1 = input_node(*test.lambda_f1->cvargument(0)->begin());
-  assert(is<StoreOperation>(*storeD1InF1, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
   assert(d1StateIndexEntry == storeD1InF1->input(2)->origin()->index());
   assert(storeD1InF1->output(0)->nusers() == 1);
   auto d1StateIndexExit = (*storeD1InF1->output(0)->begin())->index();
 
   auto storeD2InF2 = input_node(*test.lambda_f2->cvargument(1)->begin());
-  assert(is<StoreOperation>(*storeD1InF2, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndexExit != storeD2InF2->input(2)->origin()->index());
 }
@@ -1830,7 +1830,7 @@ ValidatePhiTestSteensgaardAgnostic(const jlm::tests::PhiTest1 & test)
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
 
   auto store = jlm::rvsdg::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
-  assert(is<StoreOperation>(*store, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*store, 3, 1));
 
   auto gamma = jlm::rvsdg::node_output::node(store->input(2)->origin());
   assert(gamma == test.gamma);
@@ -1858,7 +1858,7 @@ ValidatePhiTestSteensgaardRegionAware(const jlm::tests::PhiTest1 & test)
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 1, 1));
 
   auto store = jlm::rvsdg::node_output::node(lambdaExitMerge->input(arrayStateIndex)->origin());
-  assert(is<StoreOperation>(*store, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*store, 3, 1));
 
   auto gamma = jlm::rvsdg::node_output::node(store->input(2)->origin());
   assert(gamma == test.gamma);
@@ -1883,12 +1883,12 @@ ValidatePhiTestSteensgaardAgnosticTopDown(const jlm::tests::PhiTest1 & test)
   auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.lambda_fib->fctresult(1)->origin());
   assert(is<aa::LambdaExitMemStateOperator>(*lambdaExitMerge, 4, 1));
 
-  const StoreNode * storeNode = nullptr;
+  const StoreNonVolatileNode * storeNode = nullptr;
   const jlm::rvsdg::gamma_node * gammaNode = nullptr;
   for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
   {
     auto node = jlm::rvsdg::node_output::node(lambdaExitMerge->input(n)->origin());
-    if (auto castedStoreNode = dynamic_cast<const StoreNode *>(node))
+    if (auto castedStoreNode = dynamic_cast<const StoreNonVolatileNode *>(node))
     {
       storeNode = castedStoreNode;
     }
@@ -1903,7 +1903,7 @@ ValidatePhiTestSteensgaardAgnosticTopDown(const jlm::tests::PhiTest1 & test)
   }
   assert(gammaNode != nullptr && storeNode != nullptr);
 
-  assert(is<StoreOperation>(*storeNode, 3, 1));
+  assert(is<StoreNonVolatileOperation>(*storeNode, 3, 1));
 
   auto gammaStateIndex = storeNode->input(2)->origin()->index();
 
@@ -1931,7 +1931,7 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
     assert(is<LoadNonVolatileOperation>(*load, 3, 3));
 
     auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-    assert(is<StoreOperation>(*store, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*store, 4, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
@@ -1984,7 +1984,7 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
     assert(is<LoadNonVolatileOperation>(*load, 3, 3));
 
     auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-    assert(is<StoreOperation>(*store, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*store, 4, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 2));
@@ -2029,7 +2029,7 @@ ValidateMemcpyTestSteensgaardAgnosticTopDown(const jlm::tests::MemcpyTest & test
     assert(is<LoadNonVolatileOperation>(*load, 3, 3));
 
     auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-    assert(is<StoreOperation>(*store, 4, 2));
+    assert(is<StoreNonVolatileOperation>(*store, 4, 2));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(store->input(2)->origin());
     assert(is<aa::LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));

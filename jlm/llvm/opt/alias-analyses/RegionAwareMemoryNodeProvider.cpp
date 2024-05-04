@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -698,7 +698,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & sim
   {
     AnnotateLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
+  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&simpleNode))
   {
     AnnotateStore(*storeNode);
   }
@@ -733,7 +733,7 @@ RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNonVolatileNode & loadNode
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
+RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNonVolatileNode & storeNode)
 {
   auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput()->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());

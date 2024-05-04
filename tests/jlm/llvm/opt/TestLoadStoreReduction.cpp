@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -32,7 +32,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   auto value = graph.add_import({ jlm::rvsdg::bit32, "value" });
   auto memoryState = graph.add_import({ memoryStateType, "memoryState" });
 
-  auto storeResults = StoreNode::Create(address, value, { memoryState }, 4);
+  auto storeResults = StoreNonVolatileNode::Create(address, value, { memoryState }, 4);
   auto loadResults = LoadNonVolatileNode::Create(address, storeResults, jlm::rvsdg::bit8, 4);
 
   auto exportedValue = graph.add_export(loadResults[0], { jlm::rvsdg::bit8, "v" });
@@ -53,7 +53,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 2);
   auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
-  assert(is<StoreOperation>(store));
+  assert(is<StoreNonVolatileOperation>(store));
 
   return 0;
 }
