@@ -24,7 +24,7 @@ StoreNonVolatileOperation::operator==(const operation & other) const noexcept
 std::string
 StoreNonVolatileOperation::debug_string() const
 {
-  return "STORE";
+  return "Store";
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
