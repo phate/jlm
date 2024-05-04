@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <jlm/rvsdg/view.hpp>

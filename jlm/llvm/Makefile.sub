@@ -28,13 +28,12 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/delta.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
-    jlm/llvm/ir/operators/LoadNonVolatile.cpp \
-    jlm/llvm/ir/operators/LoadVolatile.cpp \
+    jlm/llvm/ir/operators/Load.cpp \
     jlm/llvm/ir/operators/MemCpy.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
-    jlm/llvm/ir/operators/store.cpp \
+    jlm/llvm/ir/operators/StoreNonVolatile.cpp \
     jlm/llvm/ir/operators/StoreVolatile.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -110,14 +109,13 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/cfg-structure.hpp \
 	jlm/llvm/ir/operators/operators.hpp \
 	jlm/llvm/ir/operators/Phi.hpp \
-	jlm/llvm/ir/operators/LoadNonVolatile.hpp \
-	jlm/llvm/ir/operators/LoadVolatile.hpp \
+	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/gamma.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
-	jlm/llvm/ir/operators/store.hpp \
+	jlm/llvm/ir/operators/StoreNonVolatile.hpp \
 	jlm/llvm/ir/operators/StoreVolatile.hpp \
 	jlm/llvm/ir/operators/alloca.hpp \
 	jlm/llvm/ir/operators/call.hpp \
@@ -154,8 +152,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/frontend/llvm/test-recursive-data \
 	tests/jlm/llvm/frontend/llvm/test-restructuring \
 	tests/jlm/llvm/frontend/llvm/test-select \
-	tests/jlm/llvm/ir/operators/LoadNonVolatileTests \
-	tests/jlm/llvm/ir/operators/LoadVolatileTests \
+	tests/jlm/llvm/ir/operators/LoadTests \
 	tests/jlm/llvm/ir/operators/MemCpyTests \
 	tests/jlm/llvm/ir/operators/TestCall \
 	tests/jlm/llvm/ir/operators/test-ConstantFP \
@@ -165,7 +162,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/operators/TestLambda \
 	tests/jlm/llvm/ir/operators/TestPhi \
 	tests/jlm/llvm/ir/operators/test-sext \
-	tests/jlm/llvm/ir/operators/TestStore \
+	tests/jlm/llvm/ir/operators/StoreNonVolatileTests \
 	tests/jlm/llvm/ir/operators/StoreVolatileTests \
 	tests/jlm/llvm/ir/test-aggregation \
 	tests/jlm/llvm/ir/test-cfg \

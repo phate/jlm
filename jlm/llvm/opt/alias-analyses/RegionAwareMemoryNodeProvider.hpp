@@ -116,7 +116,7 @@ private:
   AnnotateLoad(const LoadNonVolatileNode & loadNode);
 
   void
-  AnnotateStore(const StoreNode & storeNode);
+  AnnotateStore(const StoreNonVolatileNode & storeNode);
 
   void
   AnnotateAlloca(const rvsdg::simple_node & allocaNode);

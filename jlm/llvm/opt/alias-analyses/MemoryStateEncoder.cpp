@@ -578,7 +578,7 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
   };
   auto EncodeStore = [](auto & be, auto & node)
   {
-    be.EncodeStore(*jlm::util::AssertedCast<const StoreNode>(&node));
+    be.EncodeStore(*jlm::util::AssertedCast<const StoreNonVolatileNode>(&node));
   };
   auto EncodeFree = [](auto & be, auto & node)
   {
@@ -595,7 +595,7 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
       nodes({ { typeid(alloca_op), EncodeAlloca },
               { typeid(malloc_op), EncodeMalloc },
               { typeid(LoadNonVolatileOperation), EncodeLoad },
-              { typeid(StoreOperation), EncodeStore },
+              { typeid(StoreNonVolatileOperation), EncodeStore },
               { typeid(CallOperation), EncodeCall },
               { typeid(FreeOperation), EncodeFree },
               { typeid(MemCpyNonVolatileOperation), EncodeMemcpy } });
@@ -678,7 +678,7 @@ MemoryStateEncoder::EncodeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
+MemoryStateEncoder::EncodeStore(const StoreNonVolatileNode & storeNode)
 {
   auto & storeOperation = storeNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -688,7 +688,8 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outStates = StoreNode::Create(address, value, inStates, storeOperation.GetAlignment());
+  auto outStates =
+      StoreNonVolatileNode::Create(address, value, inStates, storeOperation.GetAlignment());
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, outStates);
 }
