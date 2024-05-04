@@ -12,7 +12,7 @@
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 
 static int
 OperationEquality()
@@ -24,10 +24,10 @@ OperationEquality()
   jlm::tests::valuetype valueType;
   PointerType pointerType;
 
-  StoreOperation operation1(valueType, 2, 4);
-  StoreOperation operation2(pointerType, 2, 4);
-  StoreOperation operation3(valueType, 4, 4);
-  StoreOperation operation4(valueType, 2, 8);
+  StoreNonVolatileOperation operation1(valueType, 2, 4);
+  StoreNonVolatileOperation operation2(pointerType, 2, 4);
+  StoreNonVolatileOperation operation3(valueType, 4, 4);
+  StoreNonVolatileOperation operation4(valueType, 2, 8);
   jlm::tests::test_op operation5({ &pointerType }, { &pointerType });
 
   // Act & Assert
@@ -40,7 +40,9 @@ OperationEquality()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestStore-OperationEquality", OperationEquality)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreNonVolatileTests-OperationEquality",
+    OperationEquality)
 
 static void
 TestCopy()
@@ -60,15 +62,15 @@ TestCopy()
   auto value2 = graph.add_import({ valueType, "value2" });
   auto memoryState2 = graph.add_import({ memoryStateType, "state2" });
 
-  auto storeResults = StoreNode::Create(address1, value1, { memoryState1 }, 4);
+  auto storeResults = StoreNonVolatileNode::Create(address1, value1, { memoryState1 }, 4);
 
   // Act
   auto node = jlm::rvsdg::node_output::node(storeResults[0]);
-  auto storeNode = jlm::util::AssertedCast<const StoreNode>(node);
+  auto storeNode = jlm::util::AssertedCast<const StoreNonVolatileNode>(node);
   auto copiedNode = storeNode->copy(graph.root(), { address2, value2, memoryState2 });
 
   // Assert
-  auto copiedStoreNode = dynamic_cast<const StoreNode *>(copiedNode);
+  auto copiedStoreNode = dynamic_cast<const StoreNonVolatileNode *>(copiedNode);
   assert(copiedNode != nullptr);
   assert(storeNode->GetOperation() == copiedStoreNode->GetOperation());
 }
@@ -84,7 +86,7 @@ TestStoreMuxReduction()
   MemoryStateType mt;
 
   jlm::rvsdg::graph graph;
-  auto nf = graph.node_normal_form(typeid(StoreOperation));
+  auto nf = graph.node_normal_form(typeid(StoreNonVolatileOperation));
   auto snf = static_cast<jlm::llvm::store_normal_form *>(nf);
   snf->set_mutable(false);
   snf->set_store_mux_reducible(false);
@@ -96,7 +98,7 @@ TestStoreMuxReduction()
   auto s3 = graph.add_import({ mt, "s3" });
 
   auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
-  auto state = StoreNode::Create(a, v, { mux }, 4);
+  auto state = StoreNonVolatileNode::Create(a, v, { mux }, 4);
 
   auto ex = graph.add_export(state[0], { state[0]->type(), "s" });
 
@@ -117,9 +119,9 @@ TestStoreMuxReduction()
   auto n0 = jlm::rvsdg::node_output::node(muxnode->input(0)->origin());
   auto n1 = jlm::rvsdg::node_output::node(muxnode->input(1)->origin());
   auto n2 = jlm::rvsdg::node_output::node(muxnode->input(2)->origin());
-  assert(jlm::rvsdg::is<StoreOperation>(n0->operation()));
-  assert(jlm::rvsdg::is<StoreOperation>(n1->operation()));
-  assert(jlm::rvsdg::is<StoreOperation>(n2->operation()));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n0->operation()));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n1->operation()));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n2->operation()));
 }
 
 static void
@@ -133,7 +135,7 @@ TestMultipleOriginReduction()
   MemoryStateType mt;
 
   jlm::rvsdg::graph graph;
-  auto nf = graph.node_normal_form(typeid(StoreOperation));
+  auto nf = graph.node_normal_form(typeid(StoreNonVolatileOperation));
   auto snf = static_cast<jlm::llvm::store_normal_form *>(nf);
   snf->set_mutable(false);
   snf->set_multiple_origin_reducible(false);
@@ -142,7 +144,7 @@ TestMultipleOriginReduction()
   auto v = graph.add_import({ vt, "v" });
   auto s = graph.add_import({ mt, "s" });
 
-  auto states = StoreNode::Create(a, v, { s, s, s, s }, 4);
+  auto states = StoreNonVolatileNode::Create(a, v, { s, s, s, s }, 4);
 
   auto ex = graph.add_export(states[0], { states[0]->type(), "s" });
 
@@ -158,7 +160,7 @@ TestMultipleOriginReduction()
 
   // Assert
   auto node = jlm::rvsdg::node_output::node(ex->origin());
-  assert(jlm::rvsdg::is<StoreOperation>(node->operation()) && node->ninputs() == 3);
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(node->operation()) && node->ninputs() == 3);
 }
 
 static void
@@ -172,7 +174,7 @@ TestStoreAllocaReduction()
   jlm::rvsdg::bittype bt(32);
 
   jlm::rvsdg::graph graph;
-  auto nf = graph.node_normal_form(typeid(StoreOperation));
+  auto nf = graph.node_normal_form(typeid(StoreNonVolatileOperation));
   auto snf = static_cast<jlm::llvm::store_normal_form *>(nf);
   snf->set_mutable(false);
   snf->set_store_alloca_reducible(false);
@@ -183,8 +185,8 @@ TestStoreAllocaReduction()
 
   auto alloca1 = alloca_op::create(vt, size, 4);
   auto alloca2 = alloca_op::create(vt, size, 4);
-  auto states1 = StoreNode::Create(alloca1[0], value, { alloca1[1], alloca2[1], s }, 4);
-  auto states2 = StoreNode::Create(alloca2[0], value, states1, 4);
+  auto states1 = StoreNonVolatileNode::Create(alloca1[0], value, { alloca1[1], alloca2[1], s }, 4);
+  auto states2 = StoreNonVolatileNode::Create(alloca2[0], value, states1, 4);
 
   graph.add_export(states2[0], { states2[0]->type(), "s1" });
   graph.add_export(states2[1], { states2[1]->type(), "s2" });
@@ -226,15 +228,15 @@ TestStoreStoreReduction()
   auto v2 = graph.add_import({ vt, "value" });
   auto s = graph.add_import({ mt, "state" });
 
-  auto s1 = StoreNode::Create(a, v1, { s }, 4)[0];
-  auto s2 = StoreNode::Create(a, v2, { s1 }, 4)[0];
+  auto s1 = StoreNonVolatileNode::Create(a, v1, { s }, 4)[0];
+  auto s2 = StoreNonVolatileNode::Create(a, v2, { s1 }, 4)[0];
 
   auto ex = graph.add_export(s2, { s2->type(), "state" });
 
   jlm::rvsdg::view(graph.root(), stdout);
 
   // Act
-  auto nf = StoreOperation::GetNormalForm(&graph);
+  auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
   nf->set_store_store_reducible(true);
   graph.normalize();
   graph.prune();
@@ -259,4 +261,4 @@ TestStore()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestStore", TestStore)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/StoreNonVolatileTests", TestStore)

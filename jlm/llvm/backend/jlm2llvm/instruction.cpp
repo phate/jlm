@@ -344,7 +344,7 @@ convert_store(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto storeOperation = util::AssertedCast<const StoreOperation>(&operation);
+  auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
   CreateStoreInstruction(
       operands[0],
       operands[1],
@@ -1043,7 +1043,7 @@ convert_operation(
             { typeid(phi_op), convert_phi },
             { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
-            { typeid(StoreOperation), convert_store },
+            { typeid(StoreNonVolatileOperation), convert_store },
             { typeid(StoreVolatileOperation), convert<StoreVolatileOperation> },
             { typeid(alloca_op), convert_alloca },
             { typeid(GetElementPtrOperation), convert_getelementptr },

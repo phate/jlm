@@ -13,7 +13,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 
 static int
 OperationEquality()
@@ -171,8 +171,8 @@ TestLoadStoreStateReduction()
 
   auto alloca1 = alloca_op::create(bt, size, 4);
   auto alloca2 = alloca_op::create(bt, size, 4);
-  auto store1 = StoreNode::Create(alloca1[0], size, { alloca1[1] }, 4);
-  auto store2 = StoreNode::Create(alloca2[0], size, { alloca2[1] }, 4);
+  auto store1 = StoreNonVolatileNode::Create(alloca1[0], size, { alloca1[1] }, 4);
+  auto store2 = StoreNonVolatileNode::Create(alloca2[0], size, { alloca2[1] }, 4);
 
   auto value1 = LoadNonVolatileNode::Create(alloca1[0], { store1[0], store2[0] }, bt, 4)[0];
   auto value2 = LoadNonVolatileNode::Create(alloca1[0], { store1[0] }, bt, 8)[0];
@@ -219,7 +219,7 @@ TestLoadStoreReduction()
   auto v = graph.add_import({ vt, "value" });
   auto s = graph.add_import({ mt, "state" });
 
-  auto s1 = StoreNode::Create(a, v, { s }, 4)[0];
+  auto s1 = StoreNonVolatileNode::Create(a, v, { s }, 4)[0];
   auto load = LoadNonVolatileNode::Create(a, { s1 }, vt, 4);
 
   auto x1 = graph.add_export(load[0], { load[0]->type(), "value" });
@@ -262,7 +262,7 @@ TestLoadLoadReduction()
   auto s1 = graph.add_import({ mt, "s1" });
   auto s2 = graph.add_import({ mt, "s2" });
 
-  auto st1 = StoreNode::Create(a1, v1, { s1 }, 4);
+  auto st1 = StoreNonVolatileNode::Create(a1, v1, { s1 }, 4);
   auto ld1 = LoadNonVolatileNode::Create(a2, { s1 }, vt, 4);
   auto ld2 = LoadNonVolatileNode::Create(a3, { s2 }, vt, 4);
 

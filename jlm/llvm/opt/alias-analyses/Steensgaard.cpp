@@ -1002,7 +1002,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
   {
     AnalyzeStore(*storeNode);
   }
@@ -1114,7 +1114,7 @@ Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNode & storeNode)
+Steensgaard::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
   auto & address = *storeNode.GetAddressInput()->origin();
   auto & value = *storeNode.GetValueInput()->origin();

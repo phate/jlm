@@ -12,7 +12,7 @@
 #include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/traverser.hpp>

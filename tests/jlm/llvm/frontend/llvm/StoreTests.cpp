@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/StoreVolatile.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
@@ -75,7 +75,7 @@ StoreConversion()
         assert(is<assignment_op>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
-      else if (is<StoreOperation>(*it))
+      else if (is<StoreNonVolatileOperation>(*it))
       {
         numStoreThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);

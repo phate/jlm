@@ -6,7 +6,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 
 namespace jlm::llvm
 {
@@ -105,7 +105,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 static bool
 is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 {
-  if (is<StoreOperation>(rvsdg::node_output::node(state)))
+  if (is<StoreNonVolatileOperation>(rvsdg::node_output::node(state)))
   {
     auto storenode = rvsdg::node_output::node(state);
     auto addressnode = rvsdg::node_output::node(storenode->input(0)->origin());
@@ -182,7 +182,7 @@ is_load_store_reducible(
 
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
-  auto storeNode = dynamic_cast<const StoreNode *>(rvsdg::node_output::node(firstState));
+  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::node_output::node(firstState));
   if (!storeNode)
   {
     return false;
