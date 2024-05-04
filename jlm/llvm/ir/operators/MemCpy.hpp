@@ -74,8 +74,8 @@ public:
 
   MemCpyNonVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-            CreateOperandPorts(lengthType, numMemoryStates),
-            CreateResultPorts(numMemoryStates))
+          CreateOperandPorts(lengthType, numMemoryStates),
+          CreateResultPorts(numMemoryStates))
   {}
 
   bool
@@ -153,8 +153,8 @@ public:
 
   MemCpyVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-            CreateOperandPorts(lengthType, numMemoryStates),
-            CreateResultPorts(numMemoryStates))
+          CreateOperandPorts(lengthType, numMemoryStates),
+          CreateResultPorts(numMemoryStates))
   {}
 
   bool
