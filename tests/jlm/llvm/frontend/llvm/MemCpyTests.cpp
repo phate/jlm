@@ -75,7 +75,7 @@ MemCpyConversion()
         assert(is<assignment_op>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
-      else if (is<MemCpyOperation>(*it))
+      else if (is<MemCpyNonVolatileOperation>(*it))
       {
         numMemCpyThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);

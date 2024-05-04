@@ -782,7 +782,8 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
   }
   else
   {
-    tacs.push_back(MemCpyOperation::create(destination, source, length, { memoryState }));
+    tacs.push_back(
+        MemCpyNonVolatileOperation::create(destination, source, length, { memoryState }));
     tacs.push_back(assignment_op::create(tacs.back()->result(0), memoryState));
   }
 

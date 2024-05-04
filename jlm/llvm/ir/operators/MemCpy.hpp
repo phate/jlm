@@ -15,16 +15,16 @@ namespace jlm::llvm
 {
 
 /**
- * Represents an LLVM memcpy intrinsic.
+ * Represents a non-volatile LLVM memcpy intrinsic.
  *
  * @see MemCpyVolatileOperation
  */
-class MemCpyOperation final : public rvsdg::simple_op
+class MemCpyNonVolatileOperation final : public rvsdg::simple_op
 {
 public:
-  ~MemCpyOperation() override;
+  ~MemCpyNonVolatileOperation() override;
 
-  MemCpyOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
+  MemCpyNonVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : simple_op(
           CheckAndCreateOperandPorts(lengthType, numMemoryStates),
           CreateResultPorts(numMemoryStates))
@@ -63,7 +63,7 @@ public:
     std::vector<const variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation operation(length->type(), memoryStates.size());
+    MemCpyNonVolatileOperation operation(length->type(), memoryStates.size());
     return tac::create(operation, operands);
   }
 
@@ -77,7 +77,7 @@ public:
     std::vector<rvsdg::output *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation operation(length->type(), memoryStates.size());
+    MemCpyNonVolatileOperation operation(length->type(), memoryStates.size());
     return rvsdg::simple_node::create_normalized(destination->region(), operation, operands);
   }
 
@@ -112,9 +112,9 @@ private:
  * incorporates externally visible side-effects. This I/O state allows the volatile memcpy operation
  * to be sequentialized with respect to other volatile memory accesses and I/O operations. This
  * additional I/O state is the main reason why volatile memcpys are modeled as its own operation and
- * volatile is not just a flag at the normal \ref MemCpyOperation.
+ * volatile is not just a flag at the normal \ref MemCpyNonVolatileOperation.
  *
- * @see MemCpyOperation
+ * @see MemCpyNonVolatileOperation
  */
 class MemCpyVolatileOperation final : public rvsdg::simple_op
 {
