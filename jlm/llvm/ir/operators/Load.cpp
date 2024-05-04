@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 
@@ -37,6 +37,35 @@ LoadNonVolatileOperation::copy() const
 rvsdg::node *
 LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
+{
+  return &CreateNode(*region, GetOperation(), operands);
+}
+
+LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
+
+bool
+LoadVolatileOperation::operator==(const operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
+  return operation && operation->narguments() == narguments()
+      && operation->GetLoadedType() == GetLoadedType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+LoadVolatileOperation::debug_string() const
+{
+  return "LoadVolatile";
+}
+
+std::unique_ptr<rvsdg::operation>
+LoadVolatileOperation::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+}
+
+rvsdg::node *
+LoadVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
