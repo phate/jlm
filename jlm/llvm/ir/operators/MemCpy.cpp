@@ -30,6 +30,12 @@ MemCpyNonVolatileOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new MemCpyNonVolatileOperation(*this));
 }
 
+size_t
+MemCpyNonVolatileOperation::NumMemoryStates() const noexcept
+{
+  return nresults();
+}
+
 MemCpyVolatileOperation::~MemCpyVolatileOperation() noexcept = default;
 
 bool
@@ -49,6 +55,13 @@ std::unique_ptr<rvsdg::operation>
 MemCpyVolatileOperation::copy() const
 {
   return std::unique_ptr<rvsdg::operation>(new MemCpyVolatileOperation(*this));
+}
+
+size_t
+MemCpyVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting I/O state
+  return nresults() - 1;
 }
 
 }
