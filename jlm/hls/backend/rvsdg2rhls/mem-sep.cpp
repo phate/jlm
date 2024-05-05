@@ -7,8 +7,8 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -74,7 +74,7 @@ gather_mem_nodes(jlm::rvsdg::region * region, std::vector<jlm::rvsdg::simple_nod
     }
     else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const jlm::llvm::StoreOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
       {
         mem_nodes.push_back(simplenode);
       }
@@ -220,7 +220,7 @@ trace_edge(
     {
       auto sn = si->node();
       auto op = &si->node()->operation();
-      if (dynamic_cast<const jlm::llvm::StoreOperation *>(op))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
         JLM_ASSERT(sn->noutputs() == 1);
         if (store_nodes.end() != std::find(store_nodes.begin(), store_nodes.end(), sn))
