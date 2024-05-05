@@ -158,7 +158,7 @@ is_gamma_top_pushable(const jlm::rvsdg::node * node)
     only possible to push a load out of a gamma node, if
     it is guaranteed to load from a valid address.
   */
-  if (is<LoadOperation>(node))
+  if (is<LoadNonVolatileOperation>(node))
     return true;
 
   return !has_side_effects(node);
@@ -303,7 +303,7 @@ static bool
 is_movable_store(jlm::rvsdg::node * node)
 {
   JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node->region()->node()));
-  JLM_ASSERT(jlm::rvsdg::is<StoreOperation>(node));
+  JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(node));
 
   auto address = dynamic_cast<jlm::rvsdg::argument *>(node->input(0)->origin());
   if (!address || !is_invariant(address) || address->nusers() != 2)
@@ -333,9 +333,9 @@ static void
 pushout_store(jlm::rvsdg::node * storenode)
 {
   JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(storenode->region()->node()));
-  JLM_ASSERT(jlm::rvsdg::is<StoreOperation>(storenode) && is_movable_store(storenode));
+  JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode));
   auto theta = static_cast<jlm::rvsdg::theta_node *>(storenode->region()->node());
-  auto storeop = static_cast<const StoreOperation *>(&storenode->operation());
+  auto storeop = static_cast<const StoreNonVolatileOperation *>(&storenode->operation());
   auto oaddress = static_cast<jlm::rvsdg::argument *>(storenode->input(0)->origin());
   auto ovalue = storenode->input(1)->origin();
 
@@ -355,7 +355,7 @@ pushout_store(jlm::rvsdg::node * storenode)
   }
 
   /* create new store and redirect theta output users */
-  auto nstates = StoreNode::Create(address, nvalue, states, storeop->GetAlignment());
+  auto nstates = StoreNonVolatileNode::Create(address, nvalue, states, storeop->GetAlignment());
   for (size_t n = 0; n < states.size(); n++)
   {
     std::unordered_set<jlm::rvsdg::input *> users;
@@ -378,7 +378,7 @@ push_bottom(jlm::rvsdg::theta_node * theta)
   for (const auto & lv : *theta)
   {
     auto storenode = jlm::rvsdg::node_output::node(lv->result()->origin());
-    if (jlm::rvsdg::is<StoreOperation>(storenode) && is_movable_store(storenode))
+    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode))
     {
       pushout_store(storenode);
       break;

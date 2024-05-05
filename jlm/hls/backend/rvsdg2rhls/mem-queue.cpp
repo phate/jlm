@@ -8,8 +8,8 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -56,11 +56,11 @@ find_load_store(
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
-      if (dynamic_cast<const jlm::llvm::StoreOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
       {
         store_nodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
       {
         load_nodes.push_back(simplenode);
       }
@@ -302,7 +302,7 @@ separate_load_edge(
         *new_mem_edge = mem_edge;
         return addr_edge;
       }
-      else if (dynamic_cast<const jlm::llvm::StoreOperation *>(op))
+      else if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
         auto sg_out = jlm::hls::state_gate_op::create(*sn->input(0)->origin(), { addr_edge });
         addr_edge = sg_out[1];
@@ -337,7 +337,7 @@ separate_load_edge(
           store_dequeues.push_back(route_to_region((*load)->region(), store_split[1]));
         }
       }
-      else if (auto lo = dynamic_cast<const jlm::llvm::LoadOperation *>(op))
+      else if (auto lo = dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(op))
       {
         JLM_ASSERT(sn->noutputs() == 2);
         if (sn == *load)
@@ -351,7 +351,7 @@ separate_load_edge(
           addr_edge = addr_sg_out2[1];
           addr_edge_user->divert_to(addr_edge);
           // remove state edges from load
-          auto new_load_outputs = jlm::llvm::LoadNode::Create(
+          auto new_load_outputs = jlm::llvm::LoadNonVolatileNode::Create(
               addr_sg_out2[0],
               {},
               lo->GetLoadedType(),
@@ -440,7 +440,7 @@ process_loops(jlm::rvsdg::output * state_edge)
         JLM_ASSERT(sn->noutputs() == 1);
         return sn->output(0);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadOperation *>(op))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(op))
       {
         // load
         JLM_ASSERT(sn->noutputs() == 2);

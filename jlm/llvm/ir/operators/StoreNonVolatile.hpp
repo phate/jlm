@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_IR_OPERATORS_STORE_HPP
-#define JLM_LLVM_IR_OPERATORS_STORE_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_STORENONVOLATILE_HPP
+#define JLM_LLVM_IR_OPERATORS_STORENONVOLATILE_HPP
 
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -79,16 +79,20 @@ private:
   bool enable_multiple_origin_;
 };
 
-/** \brief Store Operation
+/**
+ * Represents an LLVM store instruction.
  *
- * This operator is the Jlm equivalent of LLVM's store instruction.
+ * @see StoreNonVolatileOperation
  */
-class StoreOperation final : public jlm::rvsdg::simple_op
+class StoreNonVolatileOperation final : public jlm::rvsdg::simple_op
 {
 public:
-  ~StoreOperation() noexcept override;
+  ~StoreNonVolatileOperation() noexcept override;
 
-  StoreOperation(const jlm::rvsdg::valuetype & storedType, size_t numStates, size_t alignment)
+  StoreNonVolatileOperation(
+      const jlm::rvsdg::valuetype & storedType,
+      size_t numStates,
+      size_t alignment)
       : simple_op(
           CreateOperandPorts(storedType, numStates),
           std::vector<jlm::rvsdg::port>(numStates, { MemoryStateType::Create() })),
@@ -132,7 +136,7 @@ public:
   GetNormalForm(jlm::rvsdg::graph * graph) noexcept
   {
     return jlm::util::AssertedCast<store_normal_form>(
-        graph->node_normal_form(typeid(StoreOperation)));
+        graph->node_normal_form(typeid(StoreNonVolatileOperation)));
   }
 
   static std::unique_ptr<llvm::tac>
@@ -140,7 +144,7 @@ public:
   {
     auto & storedType = CheckAndExtractStoredType(value->type());
 
-    StoreOperation op(storedType, 1, alignment);
+    StoreNonVolatileOperation op(storedType, 1, alignment);
     return tac::create(op, { address, value, state });
   }
 
@@ -166,16 +170,16 @@ private:
   size_t Alignment_;
 };
 
-/** \brief StoreNode class
+/** \brief StoreNonVolatileNode class
  *
  */
-class StoreNode final : public jlm::rvsdg::simple_node
+class StoreNonVolatileNode final : public jlm::rvsdg::simple_node
 {
 private:
   class MemoryStateInputIterator final
       : public jlm::rvsdg::input::iterator<jlm::rvsdg::simple_input>
   {
-    friend StoreNode;
+    friend StoreNonVolatileNode;
 
     constexpr explicit MemoryStateInputIterator(jlm::rvsdg::simple_input * input)
         : jlm::rvsdg::input::iterator<jlm::rvsdg::simple_input>(input)
@@ -194,7 +198,7 @@ private:
   class MemoryStateOutputIterator final
       : public jlm::rvsdg::output::iterator<jlm::rvsdg::simple_output>
   {
-    friend StoreNode;
+    friend StoreNonVolatileNode;
 
     constexpr explicit MemoryStateOutputIterator(jlm::rvsdg::simple_output * output)
         : jlm::rvsdg::output::iterator<jlm::rvsdg::simple_output>(output)
@@ -213,18 +217,18 @@ private:
   using MemoryStateInputRange = jlm::util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = jlm::util::iterator_range<MemoryStateOutputIterator>;
 
-  StoreNode(
+  StoreNonVolatileNode(
       jlm::rvsdg::region & region,
-      const StoreOperation & operation,
+      const StoreNonVolatileOperation & operation,
       const std::vector<jlm::rvsdg::output *> & operands)
       : simple_node(&region, operation, operands)
   {}
 
 public:
-  [[nodiscard]] const StoreOperation &
+  [[nodiscard]] const StoreNonVolatileOperation &
   GetOperation() const noexcept
   {
-    return *jlm::util::AssertedCast<const StoreOperation>(&operation());
+    return *jlm::util::AssertedCast<const StoreNonVolatileOperation>(&operation());
   }
 
   [[nodiscard]] MemoryStateInputRange
@@ -284,26 +288,26 @@ public:
     std::vector<jlm::rvsdg::output *> operands({ address, value });
     operands.insert(operands.end(), states.begin(), states.end());
 
-    StoreOperation storeOperation(storedType, states.size(), alignment);
+    StoreNonVolatileOperation storeOperation(storedType, states.size(), alignment);
     return Create(*address->region(), storeOperation, operands);
   }
 
   static std::vector<jlm::rvsdg::output *>
   Create(
       jlm::rvsdg::region & region,
-      const StoreOperation & storeOperation,
+      const StoreNonVolatileOperation & storeOperation,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
     return rvsdg::outputs(&CreateNode(region, storeOperation, operands));
   }
 
-  static StoreNode &
+  static StoreNonVolatileNode &
   CreateNode(
       jlm::rvsdg::region & region,
-      const StoreOperation & storeOperation,
+      const StoreNonVolatileOperation & storeOperation,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
-    return *(new StoreNode(region, storeOperation, operands));
+    return *(new StoreNonVolatileNode(region, storeOperation, operands));
   }
 
 private:

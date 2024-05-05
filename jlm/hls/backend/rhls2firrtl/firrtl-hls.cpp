@@ -117,7 +117,7 @@ FirrtlHLS::mem_node_to_firrtl(const jlm::rvsdg::simple_node * n)
   std::ostringstream module;
   module << module_header(n, true);
 
-  bool store = dynamic_cast<const llvm::StoreOperation *>(&(n->operation()));
+  bool store = dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(n->operation()));
   // registers
   module << indent(2) << "; registers\n";
   for (size_t i = 0; i < n->noutputs(); ++i)
@@ -800,11 +800,11 @@ FirrtlHLS::node_to_firrtl(const jlm::rvsdg::node * node, const int depth)
   }
   if (auto n = dynamic_cast<const jlm::rvsdg::simple_node *>(node))
   {
-    if (dynamic_cast<const llvm::LoadOperation *>(&(n->operation())))
+    if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&(n->operation())))
     {
       return mem_node_to_firrtl(n);
     }
-    else if (dynamic_cast<const llvm::StoreOperation *>(&(n->operation())))
+    else if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(n->operation())))
     {
       return mem_node_to_firrtl(n);
     }

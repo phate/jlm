@@ -294,7 +294,7 @@ CreateLoadInstruction(
 
 static ::llvm::Value *
 convert(
-    const LoadOperation & operation,
+    const LoadNonVolatileOperation & operation,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -344,7 +344,7 @@ convert_store(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto storeOperation = util::AssertedCast<const StoreOperation>(&operation);
+  auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
   CreateStoreInstruction(
       operands[0],
       operands[1],
@@ -903,23 +903,42 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const Memcpy & op,
+    const MemCpyNonVolatileOperation &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto destination = ctx.value(operands[0]);
-  auto source = ctx.value(operands[1]);
-  auto length = ctx.value(operands[2]);
-  auto isVolatile = ctx.value(operands[3]);
+  auto & destination = *ctx.value(operands[0]);
+  auto & source = *ctx.value(operands[1]);
+  auto & length = *ctx.value(operands[2]);
 
   return builder.CreateMemCpy(
-      destination,
+      &destination,
       ::llvm::MaybeAlign(),
-      source,
+      &source,
       ::llvm::MaybeAlign(),
-      length,
-      isVolatile);
+      &length,
+      false);
+}
+
+static ::llvm::Value *
+convert(
+    const MemCpyVolatileOperation &,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  auto & destination = *ctx.value(operands[0]);
+  auto & source = *ctx.value(operands[1]);
+  auto & length = *ctx.value(operands[2]);
+
+  return builder.CreateMemCpy(
+      &destination,
+      ::llvm::MaybeAlign(),
+      &source,
+      ::llvm::MaybeAlign(),
+      &length,
+      true);
 }
 
 static ::llvm::Value *
@@ -1022,9 +1041,9 @@ convert_operation(
             { typeid(assignment_op), convert_assignment },
             { typeid(branch_op), convert_branch },
             { typeid(phi_op), convert_phi },
-            { typeid(LoadOperation), convert<LoadOperation> },
+            { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
-            { typeid(StoreOperation), convert_store },
+            { typeid(StoreNonVolatileOperation), convert_store },
             { typeid(StoreVolatileOperation), convert<StoreVolatileOperation> },
             { typeid(alloca_op), convert_alloca },
             { typeid(GetElementPtrOperation), convert_getelementptr },
@@ -1051,7 +1070,8 @@ convert_operation(
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
             { typeid(FreeOperation), convert<FreeOperation> },
-            { typeid(Memcpy), convert<Memcpy> },
+            { typeid(MemCpyNonVolatileOperation), convert<MemCpyNonVolatileOperation> },
+            { typeid(MemCpyVolatileOperation), convert<MemCpyVolatileOperation> },
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },
             { typeid(fpext_op), convert_cast<::llvm::Instruction::FPExt> },

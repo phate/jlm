@@ -31,7 +31,7 @@ jobs:
     - name: "Checkout specific version of jlm-eval-suite"
       run: |
         cd jlm-eval-suite
-        git checkout e0612620967fc3081ce8a600e70951708e6816e2
+        git checkout 38674f5548a1158a1a628fb7a4d4a9a2572d8434
     - name: "Link the build output directory to where it is expected by jlm-eval-suite"
       run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/build
     - name: "Run hls-test-suite"

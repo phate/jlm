@@ -11,8 +11,8 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -351,11 +351,11 @@ gather_mem_nodes(
       {
         continue;
       }
-      if (dynamic_cast<const jlm::llvm::StoreOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
       {
         store_nodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
       {
         load_nodes.push_back(simplenode);
       }
@@ -393,11 +393,11 @@ trace_pointer_argument(
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
-      if (dynamic_cast<const jlm::llvm::StoreOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
       {
         store_nodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
       {
         load_nodes.push_back(simplenode);
       }
@@ -764,7 +764,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto loadOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(loadNode->output(0)));
     loadNodes.push_back(loadOutput->node());
     auto loadOp =
-        jlm::util::AssertedCast<const jlm::llvm::LoadOperation>(&loadOutput->node()->operation());
+        jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(&loadOutput->node()->operation());
     loadTypes.push_back(&loadOp->GetLoadedType());
   }
   std::vector<jlm::rvsdg::simple_node *> storeNodes;

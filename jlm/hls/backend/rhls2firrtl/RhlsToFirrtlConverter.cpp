@@ -1422,7 +1422,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
   auto body = module.getBodyBlock();
 
   // Check if it's a load or store operation
-  bool store = dynamic_cast<const llvm::StoreOperation *>(&(node->operation()));
+  bool store = dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(node->operation()));
 
   InitializeMemReq(module);
   // Input signals

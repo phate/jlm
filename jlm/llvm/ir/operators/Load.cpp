@@ -4,38 +4,68 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 
 namespace jlm::llvm
 {
 
-LoadOperation::~LoadOperation() noexcept = default;
+LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
-LoadOperation::operator==(const operation & other) const noexcept
+LoadNonVolatileOperation::operator==(const operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const LoadOperation *>(&other);
+  auto operation = dynamic_cast<const LoadNonVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
       && operation->GetLoadedType() == GetLoadedType()
       && operation->GetAlignment() == GetAlignment();
 }
 
 std::string
-LoadOperation::debug_string() const
+LoadNonVolatileOperation::debug_string() const
 {
-  return "LOAD";
+  return "Load";
 }
 
 std::unique_ptr<rvsdg::operation>
-LoadOperation::copy() const
+LoadNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadOperation(*this));
+  return std::unique_ptr<rvsdg::operation>(new LoadNonVolatileOperation(*this));
 }
 
 rvsdg::node *
-LoadNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
+    const
+{
+  return &CreateNode(*region, GetOperation(), operands);
+}
+
+LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
+
+bool
+LoadVolatileOperation::operator==(const operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
+  return operation && operation->narguments() == narguments()
+      && operation->GetLoadedType() == GetLoadedType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+LoadVolatileOperation::debug_string() const
+{
+  return "LoadVolatile";
+}
+
+std::unique_ptr<rvsdg::operation>
+LoadVolatileOperation::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+}
+
+rvsdg::node *
+LoadVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
@@ -104,7 +134,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 static bool
 is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 {
-  if (is<StoreOperation>(rvsdg::node_output::node(state)))
+  if (is<StoreNonVolatileOperation>(rvsdg::node_output::node(state)))
   {
     auto storenode = rvsdg::node_output::node(state);
     auto addressnode = rvsdg::node_output::node(storenode->input(0)->origin());
@@ -127,7 +157,7 @@ is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 */
 static bool
 is_load_store_state_reducible(
-    const LoadOperation & op,
+    const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
   auto address = operands[0];
@@ -170,7 +200,7 @@ is_multiple_origin_reducible(const std::vector<rvsdg::output *> & operands)
 // ... = any_op v1
 static bool
 is_load_store_reducible(
-    const LoadOperation & loadOperation,
+    const LoadNonVolatileOperation & loadOperation,
     const std::vector<rvsdg::output *> & operands)
 {
   // We do not need to check further if no state edge is provided to the load
@@ -181,7 +211,7 @@ is_load_store_reducible(
 
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
-  auto storeNode = dynamic_cast<const StoreNode *>(rvsdg::node_output::node(firstState));
+  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::node_output::node(firstState));
   if (!storeNode)
   {
     return false;
@@ -228,7 +258,7 @@ is_load_store_reducible(
 
 static std::vector<rvsdg::output *>
 perform_load_store_reduction(
-    const LoadOperation & op,
+    const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
   auto storenode = rvsdg::node_output::node(operands[1]);
@@ -240,11 +270,13 @@ perform_load_store_reduction(
 }
 
 static std::vector<rvsdg::output *>
-perform_load_mux_reduction(const LoadOperation & op, const std::vector<rvsdg::output *> & operands)
+perform_load_mux_reduction(
+    const LoadNonVolatileOperation & op,
+    const std::vector<rvsdg::output *> & operands)
 {
   auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
 
-  auto ld = LoadNode::Create(
+  auto ld = LoadNonVolatileNode::Create(
       operands[0],
       rvsdg::operands(memStateMergeNode),
       op.GetLoadedType(),
@@ -258,7 +290,7 @@ perform_load_mux_reduction(const LoadOperation & op, const std::vector<rvsdg::ou
 
 static std::vector<rvsdg::output *>
 perform_load_alloca_reduction(
-    const LoadOperation & op,
+    const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
   auto allocanode = rvsdg::node_output::node(operands[0]);
@@ -274,7 +306,8 @@ perform_load_alloca_reduction(
       otherstates.push_back(operands[n]);
   }
 
-  auto ld = LoadNode::Create(operands[0], loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld =
+      LoadNonVolatileNode::Create(operands[0], loadstates, op.GetLoadedType(), op.GetAlignment());
 
   std::vector<rvsdg::output *> results(1, ld[0]);
   results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -284,7 +317,7 @@ perform_load_alloca_reduction(
 
 static std::vector<rvsdg::output *>
 perform_load_store_state_reduction(
-    const LoadOperation & op,
+    const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
   auto address = operands[0];
@@ -301,7 +334,11 @@ perform_load_store_state_reduction(
       new_loadstates.push_back(state);
   }
 
-  auto ld = LoadNode::Create(operands[0], new_loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNonVolatileNode::Create(
+      operands[0],
+      new_loadstates,
+      op.GetLoadedType(),
+      op.GetAlignment());
 
   results[0] = ld[0];
   for (size_t n = 1, s = 1; n < results.size(); n++)
@@ -315,7 +352,7 @@ perform_load_store_state_reduction(
 
 static std::vector<rvsdg::output *>
 perform_multiple_origin_reduction(
-    const LoadOperation & op,
+    const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
   std::vector<rvsdg::output *> new_loadstates;
@@ -332,7 +369,11 @@ perform_multiple_origin_reduction(
     seen_state.insert(state);
   }
 
-  auto ld = LoadNode::Create(operands[0], new_loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNonVolatileNode::Create(
+      operands[0],
+      new_loadstates,
+      op.GetLoadedType(),
+      op.GetAlignment());
 
   results[0] = ld[0];
   for (size_t n = 1, s = 1; n < results.size(); n++)
@@ -360,7 +401,7 @@ is_load_load_state_reducible(const std::vector<rvsdg::output *> & operands)
 
   for (size_t n = 1; n < operands.size(); n++)
   {
-    if (is<LoadOperation>(rvsdg::node_output::node(operands[n])))
+    if (is<LoadNonVolatileOperation>(rvsdg::node_output::node(operands[n])))
       return true;
   }
 
@@ -369,7 +410,7 @@ is_load_load_state_reducible(const std::vector<rvsdg::output *> & operands)
 
 static std::vector<rvsdg::output *>
 perform_load_load_state_reduction(
-    const LoadOperation & op,
+    const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
   size_t nstates = operands.size() - 1;
@@ -377,7 +418,7 @@ perform_load_load_state_reduction(
   auto load_state_input = [](rvsdg::output * result)
   {
     auto ld = rvsdg::node_output::node(result);
-    JLM_ASSERT(is<LoadOperation>(ld));
+    JLM_ASSERT(is<LoadNonVolatileOperation>(ld));
 
     /*
       FIXME: This function returns the corresponding state input for a state output of a load
@@ -398,7 +439,7 @@ perform_load_load_state_reduction(
   {
     JLM_ASSERT(rvsdg::is<rvsdg::statetype>(operand->type()));
 
-    if (!is<LoadOperation>(rvsdg::node_output::node(operand)))
+    if (!is<LoadNonVolatileOperation>(rvsdg::node_output::node(operand)))
       return operand;
 
     mxstates[index].push_back(operand);
@@ -410,7 +451,8 @@ perform_load_load_state_reduction(
   for (size_t n = 1; n < operands.size(); n++)
     ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
 
-  auto ld = LoadNode::Create(operands[0], ldstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld =
+      LoadNonVolatileNode::Create(operands[0], ldstates, op.GetLoadedType(), op.GetAlignment());
   for (size_t n = 0; n < mxstates.size(); n++)
   {
     auto & states = mxstates[n];
@@ -443,8 +485,8 @@ load_normal_form::load_normal_form(
 bool
 load_normal_form::normalize_node(rvsdg::node * node) const
 {
-  JLM_ASSERT(is<LoadOperation>(node->operation()));
-  auto op = static_cast<const LoadOperation *>(&node->operation());
+  JLM_ASSERT(is<LoadNonVolatileOperation>(node->operation()));
+  auto op = static_cast<const LoadNonVolatileOperation *>(&node->operation());
   auto operands = rvsdg::operands(node);
 
   if (!get_mutable())
@@ -501,8 +543,8 @@ load_normal_form::normalized_create(
     const rvsdg::simple_op & op,
     const std::vector<rvsdg::output *> & operands) const
 {
-  JLM_ASSERT(is<LoadOperation>(op));
-  auto lop = static_cast<const LoadOperation *>(&op);
+  JLM_ASSERT(is<LoadNonVolatileOperation>(op));
+  auto lop = static_cast<const LoadNonVolatileOperation *>(&op);
 
   if (!get_mutable())
     return simple_normal_form::normalized_create(region, op, operands);
@@ -545,7 +587,7 @@ create_load_normal_form(
 static void __attribute__((constructor)) register_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::llvm::LoadOperation),
+      typeid(jlm::llvm::LoadNonVolatileOperation),
       create_load_normal_form);
 }
 

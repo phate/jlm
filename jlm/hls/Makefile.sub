@@ -29,6 +29,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
+    jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
     \
     jlm/hls/ir/hls.cpp \
     \
@@ -69,6 +70,7 @@ libhls_HEADERS = \
 libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
+	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
 	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
 
 libhls_TEST_LIBS += \

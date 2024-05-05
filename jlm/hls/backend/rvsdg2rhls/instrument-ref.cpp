@@ -11,8 +11,8 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -172,7 +172,7 @@ instrument_ref(
             allocaFunctionType);
       }
     }
-    else if (auto loadOp = dynamic_cast<const jlm::llvm::LoadOperation *>(&(node->operation())))
+    else if (auto loadOp = dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->operation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -228,7 +228,7 @@ instrument_ref(
         ou->divert_to(callOp[1]);
       }
     }
-    else if (auto so = dynamic_cast<const jlm::llvm::StoreOperation *>(&(node->operation())))
+    else if (auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->operation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
