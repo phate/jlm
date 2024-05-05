@@ -15,18 +15,66 @@ namespace jlm::llvm
 {
 
 /**
- * Represents an LLVM memcpy intrinsic.
+ * Abstract base class for memcpy operations.
+ *
+ * @see MemCpyNonVolatileOperation
+ * @see MemCpyVolatileOperation
+ */
+class MemCpyOperation : public rvsdg::simple_op
+{
+protected:
+  MemCpyOperation(
+      const std::vector<rvsdg::port> & operandPorts,
+      const std::vector<rvsdg::port> & resultPorts)
+      : simple_op(operandPorts, resultPorts)
+  {
+    JLM_ASSERT(operandPorts.size() >= 4);
+
+    auto & dstAddressType = operandPorts[0].type();
+    JLM_ASSERT(is<PointerType>(dstAddressType));
+
+    auto & srcAddressType = operandPorts[1].type();
+    JLM_ASSERT(is<PointerType>(srcAddressType));
+
+    auto & lengthType = operandPorts[2].type();
+    if (lengthType != rvsdg::bit32 && lengthType != rvsdg::bit64)
+    {
+      throw util::error("Expected 32 bit or 64 bit integer type.");
+    }
+
+    auto & memoryStateType = operandPorts.back().type();
+    if (!is<MemoryStateType>(memoryStateType))
+    {
+      throw util::error("Number of memory states cannot be zero.");
+    }
+  }
+
+public:
+  [[nodiscard]] const rvsdg::bittype &
+  LengthType() const noexcept
+  {
+    auto type = dynamic_cast<const rvsdg::bittype *>(&argument(2).type());
+    JLM_ASSERT(type != nullptr);
+    return *type;
+  }
+
+  [[nodiscard]] virtual size_t
+  NumMemoryStates() const noexcept = 0;
+};
+
+/**
+ * Represents a non-volatile LLVM memcpy intrinsic.
  *
  * @see MemCpyVolatileOperation
  */
-class MemCpyOperation final : public rvsdg::simple_op
+class MemCpyNonVolatileOperation final : public MemCpyOperation
 {
 public:
-  ~MemCpyOperation() override;
+  ~MemCpyNonVolatileOperation() override;
 
-  MemCpyOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
-      : simple_op(
-          CheckAndCreateOperandPorts(lengthType, numMemoryStates),
+  MemCpyNonVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
+      : MemCpyOperation(
+          CreateOperandPorts(lengthType, numMemoryStates),
           CreateResultPorts(numMemoryStates))
   {}
 
@@ -39,19 +87,8 @@ public:
   [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  [[nodiscard]] const rvsdg::bittype &
-  LengthType() const noexcept
-  {
-    auto type = dynamic_cast<const rvsdg::bittype *>(&argument(2).type());
-    JLM_ASSERT(type != nullptr);
-    return *type;
-  }
-
   [[nodiscard]] size_t
-  NumMemoryStates() const noexcept
-  {
-    return nresults();
-  }
+  NumMemoryStates() const noexcept override;
 
   static std::unique_ptr<llvm::tac>
   create(
@@ -63,7 +100,7 @@ public:
     std::vector<const variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation operation(length->type(), memoryStates.size());
+    MemCpyNonVolatileOperation operation(length->type(), memoryStates.size());
     return tac::create(operation, operands);
   }
 
@@ -77,31 +114,24 @@ public:
     std::vector<rvsdg::output *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyOperation operation(length->type(), memoryStates.size());
+    MemCpyNonVolatileOperation operation(length->type(), memoryStates.size());
     return rvsdg::simple_node::create_normalized(destination->region(), operation, operands);
   }
 
 private:
   static std::vector<rvsdg::port>
-  CheckAndCreateOperandPorts(const rvsdg::type & length, size_t numMemoryStates)
+  CreateOperandPorts(const rvsdg::type & length, size_t numMemoryStates)
   {
-    if (length != rvsdg::bit32 && length != rvsdg::bit64)
-      throw util::error("Expected 32 bit or 64 bit integer type.");
-
-    if (numMemoryStates == 0)
-      throw util::error("Number of memory states cannot be zero.");
-
     PointerType pointerType;
     std::vector<rvsdg::port> ports = { pointerType, pointerType, length };
     ports.insert(ports.end(), numMemoryStates, { MemoryStateType::Create() });
-
     return ports;
   }
 
   static std::vector<rvsdg::port>
-  CreateResultPorts(size_t nMemoryStates)
+  CreateResultPorts(size_t numMemoryStates)
   {
-    return std::vector<rvsdg::port>(nMemoryStates, { MemoryStateType::Create() });
+    return std::vector<rvsdg::port>(numMemoryStates, { MemoryStateType::Create() });
   }
 };
 
@@ -112,18 +142,18 @@ private:
  * incorporates externally visible side-effects. This I/O state allows the volatile memcpy operation
  * to be sequentialized with respect to other volatile memory accesses and I/O operations. This
  * additional I/O state is the main reason why volatile memcpys are modeled as its own operation and
- * volatile is not just a flag at the normal \ref MemCpyOperation.
+ * volatile is not just a flag at the normal \ref MemCpyNonVolatileOperation.
  *
- * @see MemCpyOperation
+ * @see MemCpyNonVolatileOperation
  */
-class MemCpyVolatileOperation final : public rvsdg::simple_op
+class MemCpyVolatileOperation final : public MemCpyOperation
 {
 public:
   ~MemCpyVolatileOperation() noexcept override;
 
   MemCpyVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
-      : rvsdg::simple_op(
-          CheckAndCreateOperandPorts(lengthType, numMemoryStates),
+      : MemCpyOperation(
+          CreateOperandPorts(lengthType, numMemoryStates),
           CreateResultPorts(numMemoryStates))
   {}
 
@@ -135,6 +165,9 @@ public:
 
   [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
+
+  [[nodiscard]] size_t
+  NumMemoryStates() const noexcept override;
 
   static std::unique_ptr<llvm::tac>
   CreateThreeAddressCode(
@@ -168,14 +201,8 @@ public:
 
 private:
   static std::vector<rvsdg::port>
-  CheckAndCreateOperandPorts(const rvsdg::type & lengthType, size_t numMemoryStates)
+  CreateOperandPorts(const rvsdg::type & lengthType, size_t numMemoryStates)
   {
-    if (lengthType != rvsdg::bit32 && lengthType != rvsdg::bit64)
-      throw util::error("Expected 32 bit or 64 bit integer type.");
-
-    if (numMemoryStates == 0)
-      throw util::error("Number of memory states cannot be zero.");
-
     PointerType pointerType;
     std::vector<rvsdg::port> ports = { pointerType, pointerType, lengthType, iostatetype() };
     ports.insert(ports.end(), numMemoryStates, { MemoryStateType() });

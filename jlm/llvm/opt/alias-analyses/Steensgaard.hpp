@@ -100,7 +100,7 @@ private:
   AnalyzeLoad(const LoadNonVolatileNode & loadNode);
 
   void
-  AnalyzeStore(const StoreNode & storeNode);
+  AnalyzeStore(const StoreNonVolatileNode & storeNode);
 
   void
   AnalyzeCall(const CallNode & callNode);

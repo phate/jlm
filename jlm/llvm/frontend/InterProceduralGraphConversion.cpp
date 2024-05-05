@@ -538,7 +538,8 @@ ConvertThreeAddressCode(
             { typeid(CallOperation), Convert<CallNode, CallOperation> },
             { typeid(LoadNonVolatileOperation),
               Convert<LoadNonVolatileNode, LoadNonVolatileOperation> },
-            { typeid(StoreOperation), Convert<StoreNode, StoreOperation> } });
+            { typeid(StoreNonVolatileOperation),
+              Convert<StoreNonVolatileNode, StoreNonVolatileOperation> } });
 
   auto & op = threeAddressCode.operation();
   if (map.find(typeid(op)) != map.end())

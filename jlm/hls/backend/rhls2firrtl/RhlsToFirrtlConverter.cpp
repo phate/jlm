@@ -495,7 +495,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
   auto body = module.getBodyBlock();
 
   // Check if it's a load or store operation
-  bool store = dynamic_cast<const llvm::StoreOperation *>(&(node->operation()));
+  bool store = dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(node->operation()));
 
   InitializeMemReq(module);
   // Input signals
@@ -1205,7 +1205,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
   {
     return MlirGenMem(node);
   }
-  else if (dynamic_cast<const llvm::StoreOperation *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(node->operation())))
   {
     return MlirGenMem(node);
   }
@@ -1369,7 +1369,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
     {
       memInstances.insert(instance);
     }
-    else if (dynamic_cast<const llvm::StoreOperation *>(&(rvsdgNode->operation())))
+    else if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(rvsdgNode->operation())))
     {
       memInstances.insert(instance);
     }

@@ -58,7 +58,7 @@ enable_mux_reductions(jlm::rvsdg::graph & graph)
 static void
 enable_store_reductions(jlm::rvsdg::graph & graph)
 {
-  auto nf = StoreOperation::GetNormalForm(&graph);
+  auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
   nf->set_store_mux_reducible(true);
   nf->set_store_store_reducible(true);

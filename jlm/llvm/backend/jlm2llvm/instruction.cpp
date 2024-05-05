@@ -344,7 +344,7 @@ convert_store(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto storeOperation = util::AssertedCast<const StoreOperation>(&operation);
+  auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
   CreateStoreInstruction(
       operands[0],
       operands[1],
@@ -903,7 +903,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const MemCpyOperation &,
+    const MemCpyNonVolatileOperation &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1043,7 +1043,7 @@ convert_operation(
             { typeid(phi_op), convert_phi },
             { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
-            { typeid(StoreOperation), convert_store },
+            { typeid(StoreNonVolatileOperation), convert_store },
             { typeid(StoreVolatileOperation), convert<StoreVolatileOperation> },
             { typeid(alloca_op), convert_alloca },
             { typeid(GetElementPtrOperation), convert_getelementptr },
@@ -1070,7 +1070,7 @@ convert_operation(
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
             { typeid(FreeOperation), convert<FreeOperation> },
-            { typeid(MemCpyOperation), convert<MemCpyOperation> },
+            { typeid(MemCpyNonVolatileOperation), convert<MemCpyNonVolatileOperation> },
             { typeid(MemCpyVolatileOperation), convert<MemCpyVolatileOperation> },
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },

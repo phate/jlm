@@ -20,7 +20,7 @@ namespace jlm::llvm
  * incorporates externally visible side-effects. This I/O state allows the volatile store operation
  * to be sequentialized with respect to other volatile memory accesses and I/O operations. This
  * additional I/O state is the main reason why volatile stores are modeled as its own operation and
- * volatile is not just a flag at the normal \ref StoreOperation.
+ * volatile is not just a flag at the normal \ref StoreNonVolatileOperation.
  *
  * @see LoadVolatileOperation
  */

@@ -1002,7 +1002,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
   {
     AnalyzeStore(*storeNode);
   }
@@ -1034,7 +1034,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeUndef(node);
   }
-  else if (is<MemCpyOperation>(&node))
+  else if (is<MemCpyNonVolatileOperation>(&node))
   {
     AnalyzeMemcpy(node);
   }
@@ -1114,7 +1114,7 @@ Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNode & storeNode)
+Steensgaard::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
   auto & address = *storeNode.GetAddressInput()->origin();
   auto & value = *storeNode.GetValueInput()->origin();
@@ -1411,7 +1411,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
-  JLM_ASSERT(is<MemCpyOperation>(&node));
+  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&node));
 
   auto & dstAddress = Context_->GetLocation(*node.input(0)->origin());
   auto & srcAddress = Context_->GetLocation(*node.input(1)->origin());

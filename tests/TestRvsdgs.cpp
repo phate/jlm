@@ -40,9 +40,9 @@ StoreTest1::SetupRvsdg()
   auto merge_a =
       MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ a[1], merge_b }));
 
-  auto a_amp_b = StoreNode::Create(a[0], b[0], { merge_a }, 4);
-  auto b_amp_c = StoreNode::Create(b[0], c[0], { a_amp_b[0] }, 4);
-  auto c_amp_d = StoreNode::Create(c[0], d[0], { b_amp_c[0] }, 4);
+  auto a_amp_b = StoreNonVolatileNode::Create(a[0], b[0], { merge_a }, 4);
+  auto b_amp_c = StoreNonVolatileNode::Create(b[0], c[0], { a_amp_b[0] }, 4);
+  auto c_amp_d = StoreNonVolatileNode::Create(c[0], d[0], { b_amp_c[0] }, 4);
 
   fct->finalize({ c_amp_d[0] });
 
@@ -97,10 +97,10 @@ StoreTest2::SetupRvsdg()
   auto merge_p =
       MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ p[1], merge_y }));
 
-  auto x_amp_a = StoreNode::Create(x[0], a[0], { merge_p }, 4);
-  auto y_amp_b = StoreNode::Create(y[0], b[0], { x_amp_a[0] }, 4);
-  auto p_amp_x = StoreNode::Create(p[0], x[0], { y_amp_b[0] }, 4);
-  auto p_amp_y = StoreNode::Create(p[0], y[0], { p_amp_x[0] }, 4);
+  auto x_amp_a = StoreNonVolatileNode::Create(x[0], a[0], { merge_p }, 4);
+  auto y_amp_b = StoreNonVolatileNode::Create(y[0], b[0], { x_amp_a[0] }, 4);
+  auto p_amp_x = StoreNonVolatileNode::Create(p[0], x[0], { y_amp_b[0] }, 4);
+  auto p_amp_y = StoreNonVolatileNode::Create(p[0], y[0], { p_amp_x[0] }, 4);
 
   fct->finalize({ p_amp_y[0] });
 
@@ -191,13 +191,13 @@ LoadTest2::SetupRvsdg()
   auto merge_p =
       MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ p[1], merge_y }));
 
-  auto x_amp_a = StoreNode::Create(x[0], a[0], { merge_p }, 4);
-  auto y_amp_b = StoreNode::Create(y[0], b[0], x_amp_a, 4);
-  auto p_amp_x = StoreNode::Create(p[0], x[0], y_amp_b, 4);
+  auto x_amp_a = StoreNonVolatileNode::Create(x[0], a[0], { merge_p }, 4);
+  auto y_amp_b = StoreNonVolatileNode::Create(y[0], b[0], x_amp_a, 4);
+  auto p_amp_x = StoreNonVolatileNode::Create(p[0], x[0], y_amp_b, 4);
 
   auto ld1 = LoadNonVolatileNode::Create(p[0], p_amp_x, pointerType, 4);
   auto ld2 = LoadNonVolatileNode::Create(ld1[0], { ld1[1] }, pointerType, 4);
-  auto y_star_p = StoreNode::Create(y[0], ld2[0], { ld2[1] }, 4);
+  auto y_star_p = StoreNonVolatileNode::Create(y[0], ld2[0], { ld2[1] }, 4);
 
   fct->finalize({ y_star_p[0] });
 
@@ -426,8 +426,11 @@ ConstantPointerNullTest::SetupRvsdg()
 
   auto constantPointerNullResult =
       ConstantPointerNullOperation::Create(fct->subregion(), pointerType);
-  auto st =
-      StoreNode::Create(fct->fctargument(0), constantPointerNullResult, { fct->fctargument(1) }, 4);
+  auto st = StoreNonVolatileNode::Create(
+      fct->fctargument(0),
+      constantPointerNullResult,
+      { fct->fctargument(1) },
+      4);
 
   fct->finalize({ st[0] });
 
@@ -541,9 +544,9 @@ CallTest1::SetupRvsdg()
     auto six = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
     auto seven = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 7);
 
-    auto stx = StoreNode::Create(x[0], five, { mz }, 4);
-    auto sty = StoreNode::Create(y[0], six, { stx[0] }, 4);
-    auto stz = StoreNode::Create(z[0], seven, { sty[0] }, 4);
+    auto stx = StoreNonVolatileNode::Create(x[0], five, { mz }, 4);
+    auto sty = StoreNonVolatileNode::Create(y[0], six, { stx[0] }, 4);
+    auto stz = StoreNonVolatileNode::Create(z[0], seven, { sty[0] }, 4);
 
     auto & callF = CallNode::CreateNode(cvf, f->type(), { x[0], y[0], iOStateArgument, stz[0] });
     auto & callG = CallNode::CreateNode(
@@ -928,7 +931,8 @@ IndirectCallTest2::SetupRvsdg()
     auto argumentFunctionCv = lambda->add_ctxvar(&argumentFunction);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, n);
-    auto storeNode = StoreNode::Create(pointerArgument, five, { memoryStateArgument }, 4);
+    auto storeNode =
+        StoreNonVolatileNode::Create(pointerArgument, five, { memoryStateArgument }, 4);
 
     auto & call = CallNode::CreateNode(
         functionICv,
@@ -1123,8 +1127,8 @@ ExternalCallTest1::SetupRvsdg()
     auto mergeMode = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ allocaMode[1], mergePath }));
 
-    auto storePath = StoreNode::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
-    auto storeMode = StoreNode::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
+    auto storePath = StoreNonVolatileNode::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
+    auto storeMode = StoreNonVolatileNode::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
 
     auto loadPath = LoadNonVolatileNode::Create(allocaPath[0], storeMode, pointerType, 4);
     auto loadMode = LoadNonVolatileNode::Create(allocaMode[0], { loadPath[1] }, pointerType, 4);
@@ -1231,10 +1235,12 @@ ExternalCallTest2::SetupRvsdg()
   auto loadResults4 =
       LoadNonVolatileNode::Create(loadResults1[0], { loadResults3[1] }, pointerType, 8);
 
-  auto storeResults1 = StoreNode::Create(loadResults1[0], loadResults4[0], { loadResults4[1] }, 8);
+  auto storeResults1 =
+      StoreNonVolatileNode::Create(loadResults1[0], loadResults4[0], { loadResults4[1] }, 8);
 
   auto loadResults5 = LoadNonVolatileNode::Create(gepResult2, { storeResults1[0] }, pointerType, 8);
-  auto storeResults2 = StoreNode::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
+  auto storeResults2 =
+      StoreNonVolatileNode::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
 
   auto & callLLvmLifetimeEnd = CallNode::CreateNode(
       llvmLifetimeEndArgument,
@@ -1330,7 +1336,7 @@ GammaTest2::SetupRvsdg()
 
       auto one = rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 1);
       auto storeZRegion0Results =
-          StoreNode::Create(gammaInputZ->argument(0), one, { loadXResults[1] }, 4);
+          StoreNonVolatileNode::Create(gammaInputZ->argument(0), one, { loadXResults[1] }, 4);
 
       // gamma subregion 1
       auto loadYResults = LoadNonVolatileNode::Create(
@@ -1341,7 +1347,7 @@ GammaTest2::SetupRvsdg()
 
       auto two = rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 2);
       auto storeZRegion1Results =
-          StoreNode::Create(gammaInputZ->argument(1), two, { loadYResults[1] }, 4);
+          StoreNonVolatileNode::Create(gammaInputZ->argument(1), two, { loadYResults[1] }, 4);
 
       // finalize gamma
       auto gammaOutputA = gammaNode->add_exitvar({ loadXResults[0], loadYResults[0] });
@@ -1372,7 +1378,8 @@ GammaTest2::SetupRvsdg()
     auto memoryState = MemStateMergeOperator::Create({ allocaZResults[1], memoryStateArgument });
 
     auto nullPointer = ConstantPointerNullOperation::Create(lambda->subregion(), pointerType);
-    auto storeZResults = StoreNode::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
+    auto storeZResults =
+        StoreNonVolatileNode::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
     auto zero = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
@@ -1429,9 +1436,11 @@ GammaTest2::SetupRvsdg()
     auto x = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, xValue);
     auto y = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, yValue);
 
-    auto storeXResults = StoreNode::Create(allocaXResults[0], x, { allocaXResults[1] }, 4);
+    auto storeXResults =
+        StoreNonVolatileNode::Create(allocaXResults[0], x, { allocaXResults[1] }, 4);
 
-    auto storeYResults = StoreNode::Create(allocaYResults[0], y, { storeXResults[0] }, 4);
+    auto storeYResults =
+        StoreNonVolatileNode::Create(allocaYResults[0], y, { storeXResults[0] }, 4);
 
     auto & call = CallNode::CreateNode(
         lambdaFArgument,
@@ -1503,7 +1512,7 @@ ThetaTest::SetupRvsdg()
       { n->argument() },
       jlm::rvsdg::bit32,
       pointerType);
-  auto store = StoreNode::Create(gepnode, c->argument(), { s->argument() }, 4);
+  auto store = StoreNonVolatileNode::Create(gepnode, c->argument(), { s->argument() }, 4);
 
   auto one = jlm::rvsdg::create_bitconstant(thetanode->subregion(), 32, 1);
   auto sum = jlm::rvsdg::bitadd_op::create(32, n->argument(), one);
@@ -1589,7 +1598,7 @@ DeltaTest1::SetupRvsdg()
     auto cvg = lambda->add_ctxvar(g);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
-    auto st = StoreNode::Create(cvf, five, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvf, five, { memoryStateArgument }, 4);
     auto & callG = CallNode::CreateNode(cvg, g->node()->type(), { cvf, iOStateArgument, st[0] });
 
     auto lambdaOutput = lambda->finalize(callG.Results());
@@ -1672,7 +1681,7 @@ DeltaTest2::SetupRvsdg()
 
     auto cvd1 = lambda->add_ctxvar(d1);
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
-    auto st = StoreNode::Create(cvd1, b2, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
 
     return lambda->finalize({ iOStateArgument, st[0] });
   };
@@ -1696,9 +1705,9 @@ DeltaTest2::SetupRvsdg()
 
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto b42 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 42);
-    auto st = StoreNode::Create(cvd1, b5, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b5, { memoryStateArgument }, 4);
     auto & call = CallNode::CreateNode(cvf1, f1->node()->type(), { iOStateArgument, st[0] });
-    st = StoreNode::Create(cvd2, b42, { call.GetMemoryStateOutput() }, 4);
+    st = StoreNonVolatileNode::Create(cvd2, b42, { call.GetMemoryStateOutput() }, 4);
 
     auto lambdaOutput = lambda->finalize(call.Results());
     graph->add_export(lambdaOutput, { PointerType(), "f2" });
@@ -1777,7 +1786,8 @@ DeltaTest3::SetupRvsdg()
 
     auto loadResults =
         LoadNonVolatileNode::Create(g2CtxVar, { memoryStateArgument }, PointerType(), 8);
-    auto storeResults = StoreNode::Create(g2CtxVar, loadResults[0], { loadResults[1] }, 8);
+    auto storeResults =
+        StoreNonVolatileNode::Create(g2CtxVar, loadResults[0], { loadResults[1] }, 8);
 
     loadResults = LoadNonVolatileNode::Create(g1CtxVar, storeResults, jlm::rvsdg::bit32, 8);
     auto truncResult = trunc_op::create(16, loadResults[0]);
@@ -1857,7 +1867,7 @@ ImportTest::SetupRvsdg()
     auto cvd1 = lambda->add_ctxvar(d1);
 
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
-    auto st = StoreNode::Create(cvd1, b5, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b5, { memoryStateArgument }, 4);
 
     return lambda->finalize({ iOStateArgument, st[0] });
   };
@@ -1880,9 +1890,9 @@ ImportTest::SetupRvsdg()
     auto cvf1 = lambda->add_ctxvar(f1);
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
     auto b21 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 21);
-    auto st = StoreNode::Create(cvd1, b2, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
     auto & call = CallNode::CreateNode(cvf1, f1->node()->type(), { iOStateArgument, st[0] });
-    st = StoreNode::Create(cvd2, b21, { call.GetMemoryStateOutput() }, 4);
+    st = StoreNonVolatileNode::Create(cvd2, b21, { call.GetMemoryStateOutput() }, 4);
 
     auto lambdaOutput = lambda->finalize(call.Results());
     graph->add_export(lambda->output(), { PointerType(), "f2" });
@@ -1998,7 +2008,7 @@ PhiTest1::SetupRvsdg()
         { valueArgument },
         jlm::rvsdg::bit64,
         pbit64);
-    auto store = StoreNode::Create(gepn, sumex, { gOMemoryState }, 8);
+    auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
 
     auto lambdaOutput = lambda->finalize({ gOIoState, store[0] });
 
@@ -2137,7 +2147,7 @@ PhiTest2::SetupRvsdg()
     auto functionDCv = lambda->add_ctxvar(&functionD);
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
-    auto storeNode = StoreNode::Create(pointerArgument, one, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(pointerArgument, one, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto paAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
@@ -2182,7 +2192,7 @@ PhiTest2::SetupRvsdg()
     auto functionEightCv = lambda->add_ctxvar(&functionEight);
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
-    auto storeNode = StoreNode::Create(pointerArgument, two, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(pointerArgument, two, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pbAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
@@ -2222,7 +2232,7 @@ PhiTest2::SetupRvsdg()
     auto functionACv = lambda->add_ctxvar(&functionA);
 
     auto three = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 3);
-    auto storeNode = StoreNode::Create(xArgument, three, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(xArgument, three, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pcAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
@@ -2261,7 +2271,7 @@ PhiTest2::SetupRvsdg()
     auto functionACv = lambda->add_ctxvar(&functionA);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto storeNode = StoreNode::Create(xArgument, four, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(xArgument, four, { memoryStateArgument }, 4);
 
     auto pdAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
     auto pdMerge = MemStateMergeOperator::Create(
@@ -2488,8 +2498,8 @@ ExternalMemoryTest::SetupRvsdg()
   auto one = jlm::rvsdg::create_bitconstant(LambdaF->subregion(), 32, 1);
   auto two = jlm::rvsdg::create_bitconstant(LambdaF->subregion(), 32, 2);
 
-  auto storeOne = StoreNode::Create(x, one, { state }, 4);
-  auto storeTwo = StoreNode::Create(y, two, { storeOne[0] }, 4);
+  auto storeOne = StoreNonVolatileNode::Create(x, one, { state }, 4);
+  auto storeTwo = StoreNonVolatileNode::Create(y, two, { storeOne[0] }, 4);
 
   LambdaF->finalize(storeTwo);
   graph->add_export(LambdaF->output(), { pointerType, "f" });
@@ -2588,7 +2598,8 @@ EscapedMemoryTest1::SetupRvsdg()
         LoadNonVolatileNode::Create(loadResults1[0], { loadResults1[1] }, jlm::rvsdg::bit32, 4);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
-    auto storeResults = StoreNode::Create(contextVariableB, five, { loadResults2[1] }, 4);
+    auto storeResults =
+        StoreNonVolatileNode::Create(contextVariableB, five, { loadResults2[1] }, 4);
 
     auto lambdaOutput = lambda->finalize({ loadResults2[0], iOStateArgument, storeResults[0] });
 
@@ -2968,7 +2979,7 @@ MemcpyTest::SetupRvsdg()
         arrayType,
         PointerType());
 
-    auto storeResults = StoreNode::Create(gep, six, { memoryStateArgument }, 8);
+    auto storeResults = StoreNonVolatileNode::Create(gep, six, { memoryStateArgument }, 8);
 
     auto loadResults = LoadNonVolatileNode::Create(gep, { storeResults[0] }, jlm::rvsdg::bit32, 8);
 
@@ -3001,8 +3012,11 @@ MemcpyTest::SetupRvsdg()
 
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
-    auto memcpyResults =
-        MemCpyOperation::create(bcGlobalArray, bcLocalArray, twenty, { memoryStateArgument });
+    auto memcpyResults = MemCpyNonVolatileOperation::create(
+        bcGlobalArray,
+        bcLocalArray,
+        twenty,
+        { memoryStateArgument });
 
     auto & call = CallNode::CreateNode(
         functionFArgument,
@@ -3076,7 +3090,7 @@ MemcpyTest2::SetupRvsdg()
     auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
     auto ldS1 = LoadNonVolatileNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
 
-    auto memcpyResults = MemCpyOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
+    auto memcpyResults = MemCpyNonVolatileOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
 
     auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0] });
 
@@ -3165,7 +3179,8 @@ MemcpyTest3::SetupRvsdg()
   auto allocaResults = alloca_op::create(*structType, eight, 8);
   auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
-  auto memcpyResults = MemCpyOperation::create(allocaResults[0], pArgument, eight, { memoryState });
+  auto memcpyResults =
+      MemCpyNonVolatileOperation::create(allocaResults[0], pArgument, eight, { memoryState });
 
   auto gep1 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, *structType, pointerType);
@@ -3174,7 +3189,7 @@ MemcpyTest3::SetupRvsdg()
   auto gep2 =
       GetElementPtrOperation::Create(allocaResults[0], { minusFive }, *structType, pointerType);
 
-  memcpyResults = MemCpyOperation::create(ld[0], gep2, three, { ld[1] });
+  memcpyResults = MemCpyNonVolatileOperation::create(ld[0], gep2, three, { ld[1] });
 
   auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0] });
 
@@ -3243,13 +3258,13 @@ LinkedListTest::SetupRvsdg()
     auto mergedMemoryState = MemStateMergeOperator::Create({ alloca[1], memoryStateArgument });
 
     auto load1 = LoadNonVolatileNode::Create(myListArgument, { mergedMemoryState }, pointerType, 4);
-    auto store1 = StoreNode::Create(alloca[0], load1[0], { load1[1] }, 4);
+    auto store1 = StoreNonVolatileNode::Create(alloca[0], load1[0], { load1[1] }, 4);
 
     auto load2 = LoadNonVolatileNode::Create(alloca[0], { store1[0] }, pointerType, 4);
     auto gep = GetElementPtrOperation::Create(load2[0], { zero, zero }, *structType, pointerType);
 
     auto load3 = LoadNonVolatileNode::Create(gep, { load2[1] }, pointerType, 4);
-    auto store2 = StoreNode::Create(alloca[0], load3[0], { load3[1] }, 4);
+    auto store2 = StoreNonVolatileNode::Create(alloca[0], load3[0], { load3[1] }, 4);
 
     auto load4 = LoadNonVolatileNode::Create(alloca[0], { store2[0] }, pointerType, 4);
 
@@ -3325,8 +3340,11 @@ AllMemoryNodesTest::SetupRvsdg()
       std::vector<jlm::rvsdg::output *>{ afterAllocaMemoryState, mallocOutputs[1] });
 
   // Store the result of malloc into the alloca'd memory
-  auto storeAllocaOutputs =
-      StoreNode::Create(allocaOutputs[0], mallocOutputs[0], { afterMallocMemoryState }, 8);
+  auto storeAllocaOutputs = StoreNonVolatileNode::Create(
+      allocaOutputs[0],
+      mallocOutputs[0],
+      { afterMallocMemoryState },
+      8);
 
   // load the value in the alloca again
   auto loadAllocaOutputs =
@@ -3338,15 +3356,18 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Store the loaded value from imported, into the address loaded from the alloca (aka. the malloc
   // result)
-  auto storeImportedOutputs = StoreNode::Create(
+  auto storeImportedOutputs = StoreNonVolatileNode::Create(
       loadAllocaOutputs[0],
       loadImportedOutputs[0],
       { loadImportedOutputs[1] },
       4);
 
   // store the loaded alloca value in the global variable
-  auto storeOutputs =
-      StoreNode::Create(deltaContextVar, loadAllocaOutputs[0], { storeImportedOutputs[0] }, 8);
+  auto storeOutputs = StoreNonVolatileNode::Create(
+      deltaContextVar,
+      loadAllocaOutputs[0],
+      { storeImportedOutputs[0] },
+      8);
 
   Lambda_->finalize({ storeOutputs[0] });
 
@@ -3439,7 +3460,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   // Store the function parameter into the alloca node
   auto storeOutputs =
-      StoreNode::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
+      StoreNonVolatileNode::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
 
   // Bring in deltaOuput as a context variable
   const auto deltaOutputCtxVar = LocalFunc_->add_ctxvar(deltaOutput);
@@ -3553,7 +3574,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto memoryState = MemStateMergeOperator::Create(
         std::vector<rvsdg::output *>{ memoryStateArgument, allocaResults[1] });
 
-    auto storeResults = StoreNode::Create(allocaResults[0], six, { memoryState }, 4);
+    auto storeResults = StoreNonVolatileNode::Create(allocaResults[0], six, { memoryState }, 4);
 
     auto loadResults = LoadNonVolatileNode::Create(allocaResults[0], storeResults, rvsdg::bit32, 4);
 
@@ -3619,8 +3640,11 @@ VariadicFunctionTest1::SetupRvsdg()
         lambdaHType,
         { one, varArgList, iOStateArgument, memoryStateArgument });
 
-    auto storeResults =
-        StoreNode::Create(CallH_->Result(0), three, { CallH_->GetMemoryStateOutput() }, 4);
+    auto storeResults = StoreNonVolatileNode::Create(
+        CallH_->Result(0),
+        three,
+        { CallH_->GetMemoryStateOutput() },
+        4);
 
     LambdaF_->finalize({ CallH_->GetIoStateOutput(), storeResults[0] });
   }
@@ -3639,7 +3663,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto merge = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
     AllocaNode_ = rvsdg::node_output::node(allocaResults[0]);
 
-    auto storeResults = StoreNode::Create(allocaResults[0], five, { merge }, 4);
+    auto storeResults = StoreNonVolatileNode::Create(allocaResults[0], five, { merge }, 4);
 
     auto & callF = CallNode::CreateNode(
         lambdaFArgument,
@@ -3755,7 +3779,7 @@ VariadicFunctionTest2::SetupRvsdg()
     auto gepResult2 =
         GetElementPtrOperation::Create(loadResultsGamma0[0], { eight }, rvsdg::bit8, pointerType);
     auto storeResultsGamma0 =
-        StoreNode::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
+        StoreNonVolatileNode::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
 
     // gamma subregion 1
     zero = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 64, 0);
@@ -3775,8 +3799,11 @@ VariadicFunctionTest2::SetupRvsdg()
         rvsdg::bit8,
         pointerType);
     auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult->argument(1), eightBit32);
-    auto storeResultsGamma1 =
-        StoreNode::Create(gammaVaAddress->argument(1), addResult, { loadResultsGamma1[1] }, 16);
+    auto storeResultsGamma1 = StoreNonVolatileNode::Create(
+        gammaVaAddress->argument(1),
+        addResult,
+        { loadResultsGamma1[1] },
+        16);
 
     auto gammaAddress = gammaNode->add_exitvar({ loadResultsGamma0[0], gepResult2 });
     auto gammaOutputMemoryState =

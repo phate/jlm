@@ -4,9 +4,9 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/LoadNonVolatile.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
 
 namespace jlm::llvm
 {
@@ -37,6 +37,35 @@ LoadNonVolatileOperation::copy() const
 rvsdg::node *
 LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
+{
+  return &CreateNode(*region, GetOperation(), operands);
+}
+
+LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
+
+bool
+LoadVolatileOperation::operator==(const operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
+  return operation && operation->narguments() == narguments()
+      && operation->GetLoadedType() == GetLoadedType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+LoadVolatileOperation::debug_string() const
+{
+  return "LoadVolatile";
+}
+
+std::unique_ptr<rvsdg::operation>
+LoadVolatileOperation::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+}
+
+rvsdg::node *
+LoadVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
@@ -105,7 +134,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 static bool
 is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 {
-  if (is<StoreOperation>(rvsdg::node_output::node(state)))
+  if (is<StoreNonVolatileOperation>(rvsdg::node_output::node(state)))
   {
     auto storenode = rvsdg::node_output::node(state);
     auto addressnode = rvsdg::node_output::node(storenode->input(0)->origin());
@@ -182,7 +211,7 @@ is_load_store_reducible(
 
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
-  auto storeNode = dynamic_cast<const StoreNode *>(rvsdg::node_output::node(firstState));
+  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::node_output::node(firstState));
   if (!storeNode)
   {
     return false;

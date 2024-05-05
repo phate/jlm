@@ -661,7 +661,8 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   }
   else
   {
-    auto storeTac = StoreOperation::Create(address, value, ctx.memory_state(), alignment);
+    auto storeTac =
+        StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
     tacs.push_back(std::move(storeTac));
     memoryState = tacs.back()->result(0);
   }
@@ -782,7 +783,8 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
   }
   else
   {
-    tacs.push_back(MemCpyOperation::create(destination, source, length, { memoryState }));
+    tacs.push_back(
+        MemCpyNonVolatileOperation::create(destination, source, length, { memoryState }));
     tacs.push_back(assignment_op::create(tacs.back()->result(0), memoryState));
   }
 

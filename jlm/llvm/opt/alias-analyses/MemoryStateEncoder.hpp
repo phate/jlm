@@ -35,7 +35,7 @@ class node;
 }
 
 class LoadNonVolatileNode;
-class StoreNode;
+class StoreNonVolatileNode;
 
 namespace aa
 {
@@ -101,7 +101,7 @@ private:
   EncodeLoad(const LoadNonVolatileNode & loadNode);
 
   void
-  EncodeStore(const StoreNode & storeNode);
+  EncodeStore(const StoreNonVolatileNode & storeNode);
 
   void
   EncodeFree(const jlm::rvsdg::simple_node & freeNode);

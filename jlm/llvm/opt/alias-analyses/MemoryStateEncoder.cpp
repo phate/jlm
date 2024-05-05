@@ -578,7 +578,7 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
   };
   auto EncodeStore = [](auto & be, auto & node)
   {
-    be.EncodeStore(*jlm::util::AssertedCast<const StoreNode>(&node));
+    be.EncodeStore(*jlm::util::AssertedCast<const StoreNonVolatileNode>(&node));
   };
   auto EncodeFree = [](auto & be, auto & node)
   {
@@ -595,10 +595,10 @@ MemoryStateEncoder::EncodeSimpleNode(const jlm::rvsdg::simple_node & be)
       nodes({ { typeid(alloca_op), EncodeAlloca },
               { typeid(malloc_op), EncodeMalloc },
               { typeid(LoadNonVolatileOperation), EncodeLoad },
-              { typeid(StoreOperation), EncodeStore },
+              { typeid(StoreNonVolatileOperation), EncodeStore },
               { typeid(CallOperation), EncodeCall },
               { typeid(FreeOperation), EncodeFree },
-              { typeid(MemCpyOperation), EncodeMemcpy } });
+              { typeid(MemCpyNonVolatileOperation), EncodeMemcpy } });
 
   auto & operation = be.operation();
   if (nodes.find(typeid(operation)) == nodes.end())
@@ -678,7 +678,7 @@ MemoryStateEncoder::EncodeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
+MemoryStateEncoder::EncodeStore(const StoreNonVolatileNode & storeNode)
 {
   auto & storeOperation = storeNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -688,7 +688,8 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outStates = StoreNode::Create(address, value, inStates, storeOperation.GetAlignment());
+  auto outStates =
+      StoreNonVolatileNode::Create(address, value, inStates, storeOperation.GetAlignment());
 
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, outStates);
 }
@@ -761,7 +762,7 @@ MemoryStateEncoder::EncodeCall(const CallNode & callNode)
 void
 MemoryStateEncoder::EncodeMemcpy(const jlm::rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
+  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&memcpyNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto destination = memcpyNode.input(0)->origin();
@@ -775,7 +776,7 @@ MemoryStateEncoder::EncodeMemcpy(const jlm::rvsdg::simple_node & memcpyNode)
   auto srcStates = StateMap::MemoryNodeStatePair::States(srcMemoryNodeStatePairs);
   inStates.insert(inStates.end(), srcStates.begin(), srcStates.end());
 
-  auto outStates = MemCpyOperation::create(destination, source, length, inStates);
+  auto outStates = MemCpyNonVolatileOperation::create(destination, source, length, inStates);
 
   auto end = std::next(outStates.begin(), (ssize_t)destMemoryNodeStatePairs.size());
   StateMap::MemoryNodeStatePair::ReplaceStates(

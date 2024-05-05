@@ -34,8 +34,11 @@ StoreConversion()
 
   auto basicBlock = basic_block::create(*cfg);
   size_t alignment = 4;
-  auto storeTac = basicBlock->append_last(
-      StoreOperation::Create(addressArgument, valueArgument, memoryStateArgument, alignment));
+  auto storeTac = basicBlock->append_last(StoreNonVolatileOperation::Create(
+      addressArgument,
+      valueArgument,
+      memoryStateArgument,
+      alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
