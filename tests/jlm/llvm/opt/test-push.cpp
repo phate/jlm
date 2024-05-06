@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
