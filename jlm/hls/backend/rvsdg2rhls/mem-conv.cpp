@@ -763,8 +763,8 @@ jlm::hls::ConnectRequestResponseMemPorts(
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
     auto loadOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(loadNode->output(0)));
     loadNodes.push_back(loadOutput->node());
-    auto loadOp =
-        jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(&loadOutput->node()->operation());
+    auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
+        &loadOutput->node()->operation());
     loadTypes.push_back(&loadOp->GetLoadedType());
   }
   std::vector<jlm::rvsdg::simple_node *> storeNodes;

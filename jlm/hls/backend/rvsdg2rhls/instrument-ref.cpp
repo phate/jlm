@@ -68,10 +68,8 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   auto newLambda = change_function_name(lambda, "instrumented_ref");
 
-//  auto lambdaRegion = newLambda->subregion();
   auto functionType = newLambda->type();
   auto numArguments = functionType.NumArguments();
-//  auto numArguments = lambdaRegion->narguments();
   if (numArguments == 0)
   {
     // The lambda has no arguments so it shouldn't have any memory operations
@@ -172,7 +170,9 @@ instrument_ref(
             allocaFunctionType);
       }
     }
-    else if (auto loadOp = dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->operation())))
+    else if (
+        auto loadOp =
+            dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->operation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -228,7 +228,8 @@ instrument_ref(
         ou->divert_to(callOp[1]);
       }
     }
-    else if (auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->operation())))
+    else if (
+        auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->operation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
