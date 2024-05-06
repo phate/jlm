@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_IR_OPERATORS_STORENONVOLATILE_HPP
-#define JLM_LLVM_IR_OPERATORS_STORENONVOLATILE_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_STORE_HPP
+#define JLM_LLVM_IR_OPERATORS_STORE_HPP
 
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
