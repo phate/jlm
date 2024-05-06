@@ -16,7 +16,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/dae-conv.cpp \
+    jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
@@ -26,7 +26,6 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/merge-gamma.cpp \
     jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
     jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
-    jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
@@ -50,7 +49,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
 	jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
-	jlm/hls/backend/rvsdg2rhls/dae-conv.hpp \
+	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
 	jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-conv.hpp \
@@ -59,7 +58,6 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
-	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
 	\
@@ -71,7 +69,6 @@ libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
-	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
 
 libhls_TEST_LIBS += \
 	libjlmtest \
