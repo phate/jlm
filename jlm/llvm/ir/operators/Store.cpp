@@ -40,6 +40,35 @@ StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::outp
   return &CreateNode(*region, GetOperation(), operands);
 }
 
+StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
+
+bool
+StoreVolatileOperation::operator==(const operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
+  return operation && operation->NumMemoryStates() == NumMemoryStates()
+      && operation->GetStoredType() == GetStoredType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+StoreVolatileOperation::debug_string() const
+{
+  return "StoreVolatile";
+}
+
+std::unique_ptr<rvsdg::operation>
+StoreVolatileOperation::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new StoreVolatileOperation(*this));
+}
+
+rvsdg::node *
+StoreVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+{
+  return &CreateNode(*region, GetOperation(), operands);
+}
+
 /* store normal form */
 
 static bool
