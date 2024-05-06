@@ -118,40 +118,40 @@ private:
 };
 
 /**
- * Represents a volatile LLVM load instruction.
+ * Abstract base class for load operations.
  *
- * In contrast to LLVM, a volatile load requires in an RVSDG setting an I/O state as it incorporates
- * externally visible side-effects. This I/O state allows the volatile load operation to be
- * sequentialized with respect to other volatile memory accesses and I/O operations. This additional
- * I/O state is the main reason why volatile loads are modeled as its own operation and volatile is
- * not just a flag at the normal \ref LoadNonVolatileOperation.
- *
- * @see StoreVolatileOperation
+ * @see LoadVolatileOperation
+ * @see LoadNonVolatileOperation
  */
-class LoadVolatileOperation final : public rvsdg::simple_op
+class LoadOperation : public rvsdg::simple_op
 {
-public:
-  ~LoadVolatileOperation() noexcept override;
-
-  LoadVolatileOperation(
-      const rvsdg::valuetype & loadedType,
-      size_t numMemoryStates,
+protected:
+  LoadOperation(
+      const std::vector<rvsdg::port> & operandPorts,
+      const std::vector<rvsdg::port> & resultPorts,
       size_t alignment)
-      : simple_op(
-          CreateOperandPorts(numMemoryStates),
-          CreateResultPorts(loadedType, numMemoryStates)),
+      : simple_op(operandPorts, resultPorts),
         Alignment_(alignment)
-  {}
+  {
+    JLM_ASSERT(!operandPorts.empty() && !resultPorts.empty());
 
-  bool
-  operator==(const operation & other) const noexcept override;
+    auto & addressType = operandPorts[0].type();
+    JLM_ASSERT(is<PointerType>(addressType));
 
-  [[nodiscard]] std::string
-  debug_string() const override;
+    auto & loadedType = resultPorts[0].type();
+    JLM_ASSERT(is<rvsdg::valuetype>(loadedType));
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
-  copy() const override;
+    JLM_ASSERT(operandPorts.size() == resultPorts.size());
+    for (size_t n = 1; n < operandPorts.size(); n++)
+    {
+      auto & operandType = operandPorts[n].type();
+      auto & resultType = resultPorts[n].type();
+      JLM_ASSERT(operandType == resultType);
+      JLM_ASSERT(is<rvsdg::statetype>(operandType));
+    }
+  }
 
+public:
   [[nodiscard]] size_t
   GetAlignment() const noexcept
   {
@@ -164,11 +164,50 @@ public:
     return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
   }
 
+  [[nodiscard]] virtual size_t
+  NumMemoryStates() const noexcept = 0;
+
+private:
+  size_t Alignment_;
+};
+
+/**
+ * Represents a volatile LLVM load instruction.
+ *
+ * In contrast to LLVM, a volatile load requires in an RVSDG setting an I/O state as it incorporates
+ * externally visible side-effects. This I/O state allows the volatile load operation to be
+ * sequentialized with respect to other volatile memory accesses and I/O operations. This additional
+ * I/O state is the main reason why volatile loads are modeled as its own operation and volatile is
+ * not just a flag at the normal \ref LoadNonVolatileOperation.
+ *
+ * @see StoreVolatileOperation
+ */
+class LoadVolatileOperation final : public LoadOperation
+{
+public:
+  ~LoadVolatileOperation() noexcept override;
+
+  LoadVolatileOperation(
+      const rvsdg::valuetype & loadedType,
+      size_t numMemoryStates,
+      size_t alignment)
+      : LoadOperation(
+            CreateOperandPorts(numMemoryStates),
+            CreateResultPorts(loadedType, numMemoryStates),
+            alignment)
+  {}
+
+  bool
+  operator==(const operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  copy() const override;
+
   [[nodiscard]] size_t
-  NumMemoryStates() const noexcept
-  {
-    return narguments() - 2;
-  }
+  NumMemoryStates() const noexcept override;
 
   static std::unique_ptr<llvm::tac>
   Create(
@@ -200,8 +239,6 @@ private:
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
-
-  size_t Alignment_;
 };
 
 /**
@@ -281,14 +318,19 @@ public:
  *
  * @see LoadVolatileOperation
  */
-class LoadNonVolatileOperation final : public rvsdg::simple_op
+class LoadNonVolatileOperation final : public LoadOperation
 {
 public:
   ~LoadNonVolatileOperation() noexcept override;
 
-  LoadNonVolatileOperation(const rvsdg::valuetype & loadedType, size_t numStates, size_t alignment)
-      : simple_op(CreateOperandPorts(numStates), CreateResultPorts(loadedType, numStates)),
-        alignment_(alignment)
+  LoadNonVolatileOperation(
+      const rvsdg::valuetype & loadedType,
+      size_t numMemoryStates,
+      size_t alignment)
+      : LoadOperation(
+            CreateOperandPorts(numMemoryStates),
+            CreateResultPorts(loadedType, numMemoryStates),
+            alignment)
   {}
 
   bool
@@ -300,29 +342,8 @@ public:
   [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  [[nodiscard]] const PointerType &
-  GetPointerType() const noexcept
-  {
-    return *jlm::util::AssertedCast<const PointerType>(&argument(0).type());
-  }
-
-  [[nodiscard]] const rvsdg::valuetype &
-  GetLoadedType() const noexcept
-  {
-    return *jlm::util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
-  }
-
   [[nodiscard]] size_t
-  NumStates() const noexcept
-  {
-    return narguments() - 1;
-  }
-
-  [[nodiscard]] size_t
-  GetAlignment() const noexcept
-  {
-    return alignment_;
-  }
+  NumMemoryStates() const noexcept override;
 
   static load_normal_form *
   GetNormalForm(rvsdg::graph * graph) noexcept
@@ -338,39 +359,28 @@ public:
       const rvsdg::valuetype & loadedType,
       size_t alignment)
   {
-    CheckAddressType(address->type());
-
     LoadNonVolatileOperation operation(loadedType, 1, alignment);
     return tac::create(operation, { address, state });
   }
 
 private:
-  static void
-  CheckAddressType(const rvsdg::type & addressType)
-  {
-    if (!is<PointerType>(addressType))
-      throw jlm::util::error("Expected pointer type.");
-  }
-
   static std::vector<rvsdg::port>
-  CreateOperandPorts(size_t numStates)
+  CreateOperandPorts(size_t numMemoryStates)
   {
     std::vector<rvsdg::port> ports(1, { PointerType() });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType::Create() });
+    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
 
   static std::vector<rvsdg::port>
-  CreateResultPorts(const rvsdg::valuetype & loadedType, size_t numStates)
+  CreateResultPorts(const rvsdg::valuetype & loadedType, size_t numMemoryStates)
   {
     std::vector<rvsdg::port> ports(1, { loadedType });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType::Create() });
+    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
-
-  size_t alignment_;
 };
 
 class LoadNonVolatileNode final : public rvsdg::simple_node
@@ -446,7 +456,7 @@ public:
   [[nodiscard]] size_t
   NumStates() const noexcept
   {
-    return GetOperation().NumStates();
+    return GetOperation().NumMemoryStates();
   }
 
   [[nodiscard]] size_t

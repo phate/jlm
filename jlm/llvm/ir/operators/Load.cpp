@@ -34,6 +34,13 @@ LoadNonVolatileOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new LoadNonVolatileOperation(*this));
 }
 
+size_t
+LoadNonVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting address
+  return narguments() - 1;
+}
+
 rvsdg::node *
 LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -62,6 +69,13 @@ std::unique_ptr<rvsdg::operation>
 LoadVolatileOperation::copy() const
 {
   return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+}
+
+size_t
+LoadVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting address and I/O state
+  return narguments() - 2;
 }
 
 rvsdg::node *
@@ -177,7 +191,7 @@ is_load_store_state_reducible(
       redstates++;
   }
 
-  return redstates == op.NumStates() || redstates == 0 ? false : true;
+  return redstates == op.NumMemoryStates() || redstates == 0 ? false : true;
 }
 
 /*
@@ -218,7 +232,7 @@ is_load_store_reducible(
   }
 
   // Check that all state edges to the load originate from the same store
-  if (storeNode->NumStates() != loadOperation.NumStates())
+  if (storeNode->NumStates() != loadOperation.NumMemoryStates())
   {
     return false;
   }
