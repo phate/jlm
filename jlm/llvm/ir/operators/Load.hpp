@@ -192,9 +192,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
-            CreateOperandPorts(numMemoryStates),
-            CreateResultPorts(loadedType, numMemoryStates),
-            alignment)
+          CreateOperandPorts(numMemoryStates),
+          CreateResultPorts(loadedType, numMemoryStates),
+          alignment)
   {}
 
   bool
@@ -407,9 +407,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
-            CreateOperandPorts(numMemoryStates),
-            CreateResultPorts(loadedType, numMemoryStates),
-            alignment)
+          CreateOperandPorts(numMemoryStates),
+          CreateResultPorts(loadedType, numMemoryStates),
+          alignment)
   {}
 
   bool
