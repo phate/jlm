@@ -148,9 +148,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-            CreateOperandPorts(storedType, numMemoryStates),
-            std::vector<jlm::rvsdg::port>(numMemoryStates, { MemoryStateType() }),
-            alignment)
+          CreateOperandPorts(storedType, numMemoryStates),
+          std::vector<jlm::rvsdg::port>(numMemoryStates, { MemoryStateType() }),
+          alignment)
   {}
 
   bool
@@ -389,9 +389,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-            CreateOperandPorts(storedType, numMemoryStates),
-            CreateResultPorts(numMemoryStates),
-            alignment)
+          CreateOperandPorts(storedType, numMemoryStates),
+          CreateResultPorts(numMemoryStates),
+          alignment)
   {}
 
   bool
