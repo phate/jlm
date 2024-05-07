@@ -41,6 +41,34 @@ LoadNonVolatileOperation::NumMemoryStates() const noexcept
   return narguments() - 1;
 }
 
+const LoadNonVolatileOperation &
+LoadNonVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&operation());
+}
+
+[[nodiscard]] LoadNode::MemoryStateInputRange
+LoadNonVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(1)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] LoadNode::MemoryStateOutputRange
+LoadNonVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
+}
+
 rvsdg::node *
 LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -76,6 +104,34 @@ LoadVolatileOperation::NumMemoryStates() const noexcept
 {
   // Subtracting address and I/O state
   return narguments() - 2;
+}
+
+[[nodiscard]] const LoadVolatileOperation &
+LoadVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadVolatileOperation>(&operation());
+}
+
+[[nodiscard]] LoadNode::MemoryStateInputRange
+LoadVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] LoadNode::MemoryStateOutputRange
+LoadVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(2)), MemoryStateOutputIterator(nullptr) };
 }
 
 rvsdg::node *

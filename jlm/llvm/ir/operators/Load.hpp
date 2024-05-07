@@ -223,45 +223,91 @@ public:
 
 private:
   static std::vector<rvsdg::port>
-  CreateOperandPorts(size_t numStates)
+  CreateOperandPorts(size_t numMemoryStates)
   {
     std::vector<rvsdg::port> ports({ PointerType(), iostatetype() });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType() });
+    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
 
   static std::vector<rvsdg::port>
-  CreateResultPorts(const rvsdg::valuetype & loadedType, size_t numStates)
+  CreateResultPorts(const rvsdg::valuetype & loadedType, size_t numMemoryStates)
   {
     std::vector<rvsdg::port> ports({ loadedType, iostatetype() });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType() });
+    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
 };
 
 /**
- * Represents a LoadVolatileOperation in an RVSDG.
+ * Abstract base class for load nodes.
+ *
+ * @see LoadVolatileNode
+ * @see LoadNonVolatileNode
  */
-class LoadVolatileNode final : public rvsdg::simple_node
+class LoadNode : public rvsdg::simple_node
 {
-private:
-  LoadVolatileNode(
+protected:
+  LoadNode(
       rvsdg::region & region,
-      const LoadVolatileOperation & operation,
+      const LoadOperation & operation,
       const std::vector<rvsdg::output *> & operands)
       : simple_node(&region, operation, operands)
   {}
 
-public:
-  rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
-
-  [[nodiscard]] const LoadVolatileOperation &
-  GetOperation() const noexcept
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
   {
-    return *util::AssertedCast<const LoadVolatileOperation>(&operation());
+  public:
+    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
+        : rvsdg::input::iterator<rvsdg::simple_input>(input)
+    {}
+
+    [[nodiscard]] rvsdg::simple_input *
+    next() const override
+    {
+      auto index = value()->index();
+      auto node = value()->node();
+
+      return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
+    }
+  };
+
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
+  {
+  public:
+    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
+        : rvsdg::output::iterator<rvsdg::simple_output>(output)
+    {}
+
+    [[nodiscard]] rvsdg::simple_output *
+    next() const override
+    {
+      auto index = value()->index();
+      auto node = value()->node();
+
+      return node->noutputs() > index + 1 ? node->output(index + 1) : nullptr;
+    }
+  };
+
+  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+
+public:
+  [[nodiscard]] virtual const LoadOperation &
+  GetOperation() const noexcept = 0;
+
+  [[nodiscard]] size_t
+  NumMemoryStates() const noexcept
+  {
+    return GetOperation().NumMemoryStates();
+  }
+
+  [[nodiscard]] size_t
+  GetAlignment() const noexcept
+  {
+    return GetOperation().GetAlignment();
   }
 
   [[nodiscard]] rvsdg::input &
@@ -272,6 +318,41 @@ public:
     return *addressInput;
   }
 
+  [[nodiscard]] rvsdg::output &
+  GetLoadedValueOutput() const noexcept
+  {
+    auto valueOutput = output(0);
+    JLM_ASSERT(is<rvsdg::valuetype>(valueOutput->type()));
+    return *valueOutput;
+  }
+
+  [[nodiscard]] virtual MemoryStateInputRange
+  MemoryStateInputs() const noexcept = 0;
+
+  [[nodiscard]] virtual MemoryStateOutputRange
+  MemoryStateOutputs() const noexcept = 0;
+};
+
+/**
+ * Represents a LoadVolatileOperation in an RVSDG.
+ */
+class LoadVolatileNode final : public LoadNode
+{
+private:
+  LoadVolatileNode(
+      rvsdg::region & region,
+      const LoadVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands)
+      : LoadNode(region, operation, operands)
+  {}
+
+public:
+  rvsdg::node *
+  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+
+  [[nodiscard]] const LoadVolatileOperation &
+  GetOperation() const noexcept override;
+
   [[nodiscard]] rvsdg::input &
   GetIoStateInput() const noexcept
   {
@@ -280,13 +361,11 @@ public:
     return *ioInput;
   }
 
-  [[nodiscard]] rvsdg::output &
-  GetLoadedValueOutput() const noexcept
-  {
-    auto valueOutput = output(0);
-    JLM_ASSERT(is<rvsdg::valuetype>(valueOutput->type()));
-    return *valueOutput;
-  }
+  [[nodiscard]] MemoryStateInputRange
+  MemoryStateInputs() const noexcept override;
+
+  [[nodiscard]] MemoryStateOutputRange
+  MemoryStateOutputs() const noexcept override;
 
   static LoadVolatileNode &
   CreateNode(
@@ -383,103 +462,28 @@ private:
   }
 };
 
-class LoadNonVolatileNode final : public rvsdg::simple_node
+/**
+ * Represents a LoadNonVolatileOperation in an RVSDG.
+ */
+class LoadNonVolatileNode final : public LoadNode
 {
 private:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
-  {
-    friend LoadNonVolatileNode;
-
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<rvsdg::simple_input>(input)
-    {}
-
-    [[nodiscard]] rvsdg::simple_input *
-    next() const override
-    {
-      auto index = value()->index();
-      auto node = value()->node();
-
-      return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
-    }
-  };
-
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
-  {
-    friend LoadNonVolatileNode;
-
-    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
-        : rvsdg::output::iterator<rvsdg::simple_output>(output)
-    {}
-
-    [[nodiscard]] rvsdg::simple_output *
-    next() const override
-    {
-      auto index = value()->index();
-      auto node = value()->node();
-
-      return node->noutputs() > index + 1 ? node->output(index + 1) : nullptr;
-    }
-  };
-
-  using MemoryStateInputRange = jlm::util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = jlm::util::iterator_range<MemoryStateOutputIterator>;
-
   LoadNonVolatileNode(
       rvsdg::region & region,
       const LoadNonVolatileOperation & operation,
       const std::vector<rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : LoadNode(region, operation, operands)
   {}
 
 public:
   [[nodiscard]] const LoadNonVolatileOperation &
-  GetOperation() const noexcept
-  {
-    return *jlm::util::AssertedCast<const LoadNonVolatileOperation>(&operation());
-  }
+  GetOperation() const noexcept override;
 
   [[nodiscard]] MemoryStateInputRange
-  MemoryStateInputs() const noexcept
-  {
-    JLM_ASSERT(ninputs() > 1);
-    return { MemoryStateInputIterator(input(1)), MemoryStateInputIterator(nullptr) };
-  }
+  MemoryStateInputs() const noexcept override;
 
   [[nodiscard]] MemoryStateOutputRange
-  MemoryStateOutputs() const noexcept
-  {
-    JLM_ASSERT(noutputs() > 1);
-    return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
-  }
-
-  [[nodiscard]] size_t
-  NumStates() const noexcept
-  {
-    return GetOperation().NumMemoryStates();
-  }
-
-  [[nodiscard]] size_t
-  GetAlignment() const noexcept
-  {
-    return GetOperation().GetAlignment();
-  }
-
-  [[nodiscard]] rvsdg::input *
-  GetAddressInput() const noexcept
-  {
-    auto addressInput = input(0);
-    JLM_ASSERT(is<PointerType>(addressInput->type()));
-    return addressInput;
-  }
-
-  [[nodiscard]] rvsdg::output *
-  GetValueOutput() const noexcept
-  {
-    auto valueOutput = output(0);
-    JLM_ASSERT(is<rvsdg::valuetype>(valueOutput->type()));
-    return valueOutput;
-  }
+  MemoryStateOutputs() const noexcept override;
 
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
@@ -491,8 +495,6 @@ public:
       const rvsdg::valuetype & loadedType,
       size_t alignment)
   {
-    CheckAddressType(address->type());
-
     std::vector<rvsdg::output *> operands({ address });
     operands.insert(operands.end(), states.begin(), states.end());
 
@@ -516,14 +518,6 @@ public:
       const std::vector<rvsdg::output *> & operands)
   {
     return *(new LoadNonVolatileNode(region, loadOperation, operands));
-  }
-
-private:
-  static void
-  CheckAddressType(const rvsdg::type & addressType)
-  {
-    if (!is<PointerType>(addressType))
-      throw jlm::util::error("Expected pointer type.");
   }
 };
 
