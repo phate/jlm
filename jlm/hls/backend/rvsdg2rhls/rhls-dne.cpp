@@ -74,8 +74,9 @@ remove_loop_passthrough(loop_node * ln)
         out->divert_users(in->origin());
         sr->RemoveResult(result->index());
         ln->RemoveOutput(out->index());
+        auto inputIndex = arg->input()->index();
         sr->RemoveArgument(arg->index());
-        ln->RemoveInput(arg->input()->index());
+        ln->RemoveInput(inputIndex);
         any_changed = true;
       }
     }
