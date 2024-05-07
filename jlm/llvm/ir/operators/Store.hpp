@@ -80,23 +80,77 @@ private:
 };
 
 /**
- * Represents an LLVM store instruction.
+ * Abstract base class for store operations.
  *
+ * @see StoreVolatileOperation
  * @see StoreNonVolatileOperation
  */
-class StoreNonVolatileOperation final : public jlm::rvsdg::simple_op
+class StoreOperation : public rvsdg::simple_op
+{
+protected:
+  StoreOperation(
+      const std::vector<rvsdg::port> & operandPorts,
+      const std::vector<rvsdg::port> & resultPorts,
+      size_t alignment)
+      : simple_op(operandPorts, resultPorts),
+        Alignment_(alignment)
+  {
+    JLM_ASSERT(operandPorts.size() >= 2);
+
+    auto & addressType = operandPorts[0].type();
+    JLM_ASSERT(is<PointerType>(addressType));
+
+    auto & storedType = operandPorts[1].type();
+    JLM_ASSERT(is<rvsdg::valuetype>(storedType));
+
+    JLM_ASSERT(operandPorts.size() == resultPorts.size() + 2);
+    for (size_t n = 0; n < resultPorts.size(); n++)
+    {
+      auto & operandType = operandPorts[n + 2].type();
+      auto & resultType = resultPorts[n].type();
+      JLM_ASSERT(operandType == resultType);
+      JLM_ASSERT(is<rvsdg::statetype>(operandType));
+    }
+  }
+
+public:
+  [[nodiscard]] size_t
+  GetAlignment() const noexcept
+  {
+    return Alignment_;
+  }
+
+  [[nodiscard]] const rvsdg::valuetype &
+  GetStoredType() const noexcept
+  {
+    return *util::AssertedCast<const rvsdg::valuetype>(&argument(1).type());
+  }
+
+  [[nodiscard]] virtual size_t
+  NumMemoryStates() const noexcept = 0;
+
+private:
+  size_t Alignment_;
+};
+
+/**
+ * Represents an LLVM store instruction.
+ *
+ * @see StoreVolatileOperation
+ */
+class StoreNonVolatileOperation final : public StoreOperation
 {
 public:
   ~StoreNonVolatileOperation() noexcept override;
 
   StoreNonVolatileOperation(
-      const jlm::rvsdg::valuetype & storedType,
-      size_t numStates,
+      const rvsdg::valuetype & storedType,
+      size_t numMemoryStates,
       size_t alignment)
-      : simple_op(
-          CreateOperandPorts(storedType, numStates),
-          std::vector<jlm::rvsdg::port>(numStates, { MemoryStateType::Create() })),
-        Alignment_(alignment)
+      : StoreOperation(
+            CreateOperandPorts(storedType, numMemoryStates),
+            std::vector<jlm::rvsdg::port>(numMemoryStates, { MemoryStateType() }),
+            alignment)
   {}
 
   bool
@@ -105,37 +159,16 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  [[nodiscard]] const PointerType &
-  GetPointerType() const noexcept
-  {
-    return *jlm::util::AssertedCast<const PointerType>(&argument(0).type());
-  }
-
-  [[nodiscard]] const jlm::rvsdg::valuetype &
-  GetStoredType() const noexcept
-  {
-    return *jlm::util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
-  }
-
   [[nodiscard]] size_t
-  NumStates() const noexcept
-  {
-    return nresults();
-  }
-
-  [[nodiscard]] size_t
-  GetAlignment() const noexcept
-  {
-    return Alignment_;
-  }
+  NumMemoryStates() const noexcept override;
 
   static store_normal_form *
-  GetNormalForm(jlm::rvsdg::graph * graph) noexcept
+  GetNormalForm(rvsdg::graph * graph) noexcept
   {
-    return jlm::util::AssertedCast<store_normal_form>(
+    return util::AssertedCast<store_normal_form>(
         graph->node_normal_form(typeid(StoreNonVolatileOperation)));
   }
 
@@ -150,24 +183,24 @@ public:
 
 private:
   static const jlm::rvsdg::valuetype &
-  CheckAndExtractStoredType(const jlm::rvsdg::type & type)
+  CheckAndExtractStoredType(const rvsdg::type & type)
   {
-    if (auto storedType = dynamic_cast<const jlm::rvsdg::valuetype *>(&type))
+    if (auto storedType = dynamic_cast<const rvsdg::valuetype *>(&type))
+    {
       return *storedType;
+    }
 
-    throw jlm::util::error("Expected ValueType");
+    throw util::error("Expected value type");
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOperandPorts(const jlm::rvsdg::valuetype & storedType, size_t numStates)
+  static std::vector<rvsdg::port>
+  CreateOperandPorts(const rvsdg::valuetype & storedType, size_t numMemoryStates)
   {
-    std::vector<jlm::rvsdg::port> ports({ PointerType(), storedType });
-    std::vector<jlm::rvsdg::port> states(numStates, { MemoryStateType() });
+    std::vector<rvsdg::port> ports({ PointerType(), storedType });
+    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
-
-  size_t Alignment_;
 };
 
 /** \brief StoreNonVolatileNode class
@@ -248,7 +281,7 @@ public:
   [[nodiscard]] size_t
   NumStates() const noexcept
   {
-    return GetOperation().NumStates();
+    return GetOperation().NumMemoryStates();
   }
 
   [[nodiscard]] size_t
@@ -330,9 +363,9 @@ private:
  * additional I/O state is the main reason why volatile stores are modeled as its own operation and
  * volatile is not just a flag at the normal \ref StoreNonVolatileOperation.
  *
- * @see LoadVolatileOperation
+ * @see StoreNonVolatileOperation
  */
-class StoreVolatileOperation final : public rvsdg::simple_op
+class StoreVolatileOperation final : public StoreOperation
 {
 public:
   ~StoreVolatileOperation() noexcept override;
@@ -341,10 +374,10 @@ public:
       const rvsdg::valuetype & storedType,
       size_t numMemoryStates,
       size_t alignment)
-      : simple_op(
-          CreateOperandPorts(storedType, numMemoryStates),
-          CreateResultPorts(numMemoryStates)),
-        Alignment_(alignment)
+      : StoreOperation(
+            CreateOperandPorts(storedType, numMemoryStates),
+            CreateResultPorts(numMemoryStates),
+            alignment)
   {}
 
   bool
@@ -356,23 +389,8 @@ public:
   [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  [[nodiscard]] const jlm::rvsdg::valuetype &
-  GetStoredType() const noexcept
-  {
-    return *util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
-  }
-
   [[nodiscard]] size_t
-  NumMemoryStates() const noexcept
-  {
-    return nresults() - 1;
-  }
-
-  [[nodiscard]] size_t
-  GetAlignment() const noexcept
-  {
-    return Alignment_;
-  }
+  NumMemoryStates() const noexcept override;
 
   static std::unique_ptr<llvm::tac>
   Create(
@@ -399,10 +417,10 @@ private:
   }
 
   static std::vector<rvsdg::port>
-  CreateOperandPorts(const rvsdg::valuetype & storedType, size_t numStates)
+  CreateOperandPorts(const rvsdg::valuetype & storedType, size_t numMemoryStates)
   {
     std::vector<rvsdg::port> ports({ PointerType(), storedType, iostatetype() });
-    std::vector<rvsdg::port> states(numStates, { MemoryStateType() });
+    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
   }
@@ -415,8 +433,6 @@ private:
     ports.insert(ports.end(), memoryStates.begin(), memoryStates.end());
     return ports;
   }
-
-  size_t Alignment_;
 };
 
 /**

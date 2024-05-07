@@ -33,6 +33,12 @@ StoreNonVolatileOperation::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new StoreNonVolatileOperation(*this));
 }
 
+[[nodiscard]] size_t
+StoreNonVolatileOperation::NumMemoryStates() const noexcept
+{
+  return nresults();
+}
+
 rvsdg::node *
 StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -61,6 +67,13 @@ std::unique_ptr<rvsdg::operation>
 StoreVolatileOperation::copy() const
 {
   return std::unique_ptr<rvsdg::operation>(new StoreVolatileOperation(*this));
+}
+
+[[nodiscard]] size_t
+StoreVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting I/O state
+  return nresults() - 1;
 }
 
 rvsdg::node *
@@ -101,7 +114,7 @@ is_store_store_reducible(
   if (!is<StoreNonVolatileOperation>(storenode))
     return false;
 
-  if (op.NumStates() != storenode->noutputs())
+  if (op.NumMemoryStates() != storenode->noutputs())
     return false;
 
   /* check for same address */
