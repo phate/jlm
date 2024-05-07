@@ -6,7 +6,7 @@
 #ifndef JLM_HLS_IR_HLS_HPP
 #define JLM_HLS_IR_HLS_HPP
 
-#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/operation.hpp>

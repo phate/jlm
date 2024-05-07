@@ -8,8 +8,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/llvm/ir/operators/StoreNonVolatile.hpp>
-#include <jlm/llvm/ir/operators/StoreVolatile.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/BasicBlock.h>
