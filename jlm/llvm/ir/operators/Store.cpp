@@ -39,6 +39,34 @@ StoreNonVolatileOperation::NumMemoryStates() const noexcept
   return nresults();
 }
 
+[[nodiscard]] const StoreNonVolatileOperation &
+StoreNonVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const StoreNonVolatileOperation>(&operation());
+}
+
+[[nodiscard]] StoreNode::MemoryStateInputRange
+StoreNonVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] StoreNode::MemoryStateOutputRange
+StoreNonVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates())
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(0)), MemoryStateOutputIterator(nullptr) };
+}
+
 rvsdg::node *
 StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -74,6 +102,34 @@ StoreVolatileOperation::NumMemoryStates() const noexcept
 {
   // Subtracting I/O state
   return nresults() - 1;
+}
+
+[[nodiscard]] const StoreVolatileOperation &
+StoreVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const StoreVolatileOperation>(&operation());
+}
+
+[[nodiscard]] StoreNode::MemoryStateInputRange
+StoreVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(3)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] StoreNode::MemoryStateOutputRange
+StoreVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates())
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
 }
 
 rvsdg::node *
