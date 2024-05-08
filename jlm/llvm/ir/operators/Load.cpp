@@ -288,7 +288,7 @@ is_load_store_reducible(
   }
 
   // Check that all state edges to the load originate from the same store
-  if (storeNode->NumStates() != loadOperation.NumMemoryStates())
+  if (storeNode->NumMemoryStates() != loadOperation.NumMemoryStates())
   {
     return false;
   }
@@ -304,7 +304,7 @@ is_load_store_reducible(
 
   // Check that the address to the load and store originate from the same value
   auto loadAddress = operands[0];
-  auto storeAddress = storeNode->GetAddressInput()->origin();
+  auto storeAddress = storeNode->GetAddressInput().origin();
   if (loadAddress != storeAddress)
   {
     return false;
@@ -316,7 +316,7 @@ is_load_store_reducible(
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
   auto & loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = storeNode->GetValueInput()->type();
+  auto & storedValueType = storeNode->GetStoredValueInput().type();
   if (loadedValueType != storedValueType)
   {
     return false;

@@ -735,7 +735,7 @@ RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNonVolatileNode & loadNode
 void
 RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNonVolatileNode & storeNode)
 {
-  auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput()->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput().origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }

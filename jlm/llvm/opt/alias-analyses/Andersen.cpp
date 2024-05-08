@@ -304,8 +304,8 @@ Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 void
 Andersen::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput()->origin();
-  const auto & valueRegister = *storeNode.GetValueInput()->origin();
+  const auto & addressRegister = *storeNode.GetAddressInput().origin();
+  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
   // If the written value is not a pointer, be conservative and mark the address
   if (!IsOrContainsPointerType(valueRegister.type()))
