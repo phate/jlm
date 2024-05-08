@@ -1277,7 +1277,7 @@ RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
     {
       // Check if the argument is connected to an input,
       // i.e., if the argument exits the region
-      assert(arg->input() != nullptr);
+      JLM_ASSERT(arg->input() != nullptr);
       // Check if we are in a nested region and directly
       // connected to the outer regions argument
       auto origin = arg->input()->origin();
@@ -1561,7 +1561,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
     throw std::logic_error(
         "Expected a hls::loop_node but found: " + node->operation().debug_string());
   }
-  assert(output->results.size() == 1);
+  JLM_ASSERT(output->results.size() == 1);
   auto origin = output->results.begin().ptr()->origin();
   if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
   {
@@ -1655,7 +1655,7 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
 
   auto mem_reqs = get_mem_reqs(lambdaNode);
   auto mem_resps = get_mem_resps(lambdaNode);
-  assert(mem_resps.size() == mem_reqs.size());
+  JLM_ASSERT(mem_resps.size() == mem_reqs.size());
   for (size_t i = 0; i < mem_reqs.size(); ++i)
   {
     ::llvm::SmallVector<BundleElement> memElements;
@@ -2394,7 +2394,7 @@ RhlsToFirrtlConverter::GetClockSignal(circt::firrtl::FModuleOp module)
   auto ctype = clock.getType().cast<circt::firrtl::FIRRTLType>();
   if (!ctype.isa<circt::firrtl::ClockType>())
   {
-    assert("Not a ClockType");
+    JLM_ASSERT("Not a ClockType");
   }
   return clock;
 }
@@ -2407,7 +2407,7 @@ RhlsToFirrtlConverter::GetResetSignal(circt::firrtl::FModuleOp module)
   auto rtype = reset.getType().cast<circt::firrtl::FIRRTLType>();
   if (!rtype.isa<circt::firrtl::ResetType>())
   {
-    assert("Not a ResetType");
+    JLM_ASSERT("Not a ResetType");
   }
   return reset;
 }
