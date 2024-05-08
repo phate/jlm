@@ -345,7 +345,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           //						JLM_ASSERT(im.name()==odn->name());
           auto arg = rhls->Rvsdg().add_import(im);
           auto tmp = dynamic_cast<const llvm::impport *>(&arg->port());
-          assert(tmp && tmp->name() == odn->name());
+          JLM_ASSERT(tmp && tmp->name() == odn->name());
           smap.insert(ln->input(i)->origin(), arg);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?

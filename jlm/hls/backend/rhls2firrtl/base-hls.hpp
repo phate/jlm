@@ -25,7 +25,7 @@ public:
   std::string
   run(llvm::RvsdgModule & rm)
   {
-    assert(node_map.empty());
+    JLM_ASSERT(node_map.empty());
     // ensure consistent naming across runs
     create_node_names(get_hls_lambda(rm)->subregion());
     return get_text(rm);

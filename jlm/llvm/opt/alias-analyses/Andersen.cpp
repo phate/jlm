@@ -285,8 +285,8 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput()->origin();
-  const auto & outputRegister = *loadNode.GetValueOutput();
+  const auto & addressRegister = *loadNode.GetAddressInput().origin();
+  const auto & outputRegister = loadNode.GetLoadedValueOutput();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 

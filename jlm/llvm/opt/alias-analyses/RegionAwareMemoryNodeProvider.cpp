@@ -727,7 +727,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & sim
 void
 RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNonVolatileNode & loadNode)
 {
-  auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput()->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput().origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*loadNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
