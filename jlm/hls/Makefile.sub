@@ -64,6 +64,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
+	jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp \
 	\
 	jlm/hls/ir/hls.hpp \
 	\

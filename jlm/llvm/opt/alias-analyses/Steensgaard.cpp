@@ -1092,8 +1092,8 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
-  auto & result = *loadNode.GetValueOutput();
-  auto & address = *loadNode.GetAddressInput()->origin();
+  auto & result = loadNode.GetLoadedValueOutput();
+  auto & address = *loadNode.GetAddressInput().origin();
 
   if (!HasOrContainsPointerType(result))
     return;
@@ -1116,8 +1116,8 @@ Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 void
 Steensgaard::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
-  auto & address = *storeNode.GetAddressInput()->origin();
-  auto & value = *storeNode.GetValueInput()->origin();
+  auto & address = *storeNode.GetAddressInput().origin();
+  auto & value = *storeNode.GetStoredValueInput().origin();
 
   if (!HasOrContainsPointerType(value))
     return;

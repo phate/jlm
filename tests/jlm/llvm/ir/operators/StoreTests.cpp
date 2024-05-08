@@ -161,7 +161,7 @@ StoreVolatileNodeCopy()
   auto copiedStoreNode = dynamic_cast<const StoreVolatileNode *>(copiedNode);
   assert(storeNode.GetOperation() == copiedStoreNode->GetOperation());
   assert(copiedStoreNode->GetAddressInput().origin() == &address2);
-  assert(copiedStoreNode->GetValueInput().origin() == &value2);
+  assert(copiedStoreNode->GetStoredValueInput().origin() == &value2);
   assert(copiedStoreNode->GetIoStateInput().origin() == &ioState2);
   assert(copiedStoreNode->GetIoStateOutput().type() == ioStateType);
 

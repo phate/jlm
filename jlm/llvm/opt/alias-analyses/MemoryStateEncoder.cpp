@@ -657,9 +657,9 @@ MemoryStateEncoder::EncodeLoad(const LoadNonVolatileNode & loadNode)
   auto & loadOperation = loadNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = loadNode.GetAddressInput()->origin();
+  auto address = loadNode.GetAddressInput().origin();
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
-  auto oldResult = loadNode.GetValueOutput();
+  auto & oldResult = loadNode.GetLoadedValueOutput();
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   auto outputs = LoadNonVolatileNode::Create(
@@ -667,14 +667,14 @@ MemoryStateEncoder::EncodeLoad(const LoadNonVolatileNode & loadNode)
       inStates,
       loadOperation.GetLoadedType(),
       loadOperation.GetAlignment());
-  oldResult->divert_users(outputs[0]);
+  oldResult.divert_users(outputs[0]);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
       { std::next(outputs.begin()), outputs.end() });
 
-  if (is<PointerType>(oldResult->type()))
-    stateMap.ReplaceAddress(*oldResult, *outputs[0]);
+  if (is<PointerType>(oldResult.type()))
+    stateMap.ReplaceAddress(oldResult, *outputs[0]);
 }
 
 void
@@ -683,8 +683,8 @@ MemoryStateEncoder::EncodeStore(const StoreNonVolatileNode & storeNode)
   auto & storeOperation = storeNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = storeNode.GetAddressInput()->origin();
-  auto value = storeNode.GetValueInput()->origin();
+  auto address = storeNode.GetAddressInput().origin();
+  auto value = storeNode.GetStoredValueInput().origin();
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 

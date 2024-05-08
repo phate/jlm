@@ -34,6 +34,41 @@ LoadNonVolatileOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new LoadNonVolatileOperation(*this));
 }
 
+size_t
+LoadNonVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting address
+  return narguments() - 1;
+}
+
+const LoadNonVolatileOperation &
+LoadNonVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&operation());
+}
+
+[[nodiscard]] LoadNode::MemoryStateInputRange
+LoadNonVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(1)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] LoadNode::MemoryStateOutputRange
+LoadNonVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
+}
+
 rvsdg::node *
 LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -62,6 +97,41 @@ std::unique_ptr<rvsdg::operation>
 LoadVolatileOperation::copy() const
 {
   return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+}
+
+size_t
+LoadVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting address and I/O state
+  return narguments() - 2;
+}
+
+[[nodiscard]] const LoadVolatileOperation &
+LoadVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadVolatileOperation>(&operation());
+}
+
+[[nodiscard]] LoadNode::MemoryStateInputRange
+LoadVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] LoadNode::MemoryStateOutputRange
+LoadVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(2)), MemoryStateOutputIterator(nullptr) };
 }
 
 rvsdg::node *
@@ -177,7 +247,7 @@ is_load_store_state_reducible(
       redstates++;
   }
 
-  return redstates == op.NumStates() || redstates == 0 ? false : true;
+  return redstates == op.NumMemoryStates() || redstates == 0 ? false : true;
 }
 
 /*
@@ -218,7 +288,7 @@ is_load_store_reducible(
   }
 
   // Check that all state edges to the load originate from the same store
-  if (storeNode->NumStates() != loadOperation.NumStates())
+  if (storeNode->NumMemoryStates() != loadOperation.NumMemoryStates())
   {
     return false;
   }
@@ -234,7 +304,7 @@ is_load_store_reducible(
 
   // Check that the address to the load and store originate from the same value
   auto loadAddress = operands[0];
-  auto storeAddress = storeNode->GetAddressInput()->origin();
+  auto storeAddress = storeNode->GetAddressInput().origin();
   if (loadAddress != storeAddress)
   {
     return false;
@@ -246,7 +316,7 @@ is_load_store_reducible(
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
   auto & loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = storeNode->GetValueInput()->type();
+  auto & storedValueType = storeNode->GetStoredValueInput().type();
   if (loadedValueType != storedValueType)
   {
     return false;

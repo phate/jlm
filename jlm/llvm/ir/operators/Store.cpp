@@ -33,6 +33,40 @@ StoreNonVolatileOperation::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new StoreNonVolatileOperation(*this));
 }
 
+[[nodiscard]] size_t
+StoreNonVolatileOperation::NumMemoryStates() const noexcept
+{
+  return nresults();
+}
+
+[[nodiscard]] const StoreNonVolatileOperation &
+StoreNonVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const StoreNonVolatileOperation>(&operation());
+}
+
+[[nodiscard]] StoreNode::MemoryStateInputRange
+StoreNonVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] StoreNode::MemoryStateOutputRange
+StoreNonVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(0)), MemoryStateOutputIterator(nullptr) };
+}
+
 rvsdg::node *
 StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -61,6 +95,41 @@ std::unique_ptr<rvsdg::operation>
 StoreVolatileOperation::copy() const
 {
   return std::unique_ptr<rvsdg::operation>(new StoreVolatileOperation(*this));
+}
+
+[[nodiscard]] size_t
+StoreVolatileOperation::NumMemoryStates() const noexcept
+{
+  // Subtracting I/O state
+  return nresults() - 1;
+}
+
+[[nodiscard]] const StoreVolatileOperation &
+StoreVolatileNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const StoreVolatileOperation>(&operation());
+}
+
+[[nodiscard]] StoreNode::MemoryStateInputRange
+StoreVolatileNode::MemoryStateInputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
+  }
+
+  return { MemoryStateInputIterator(input(3)), MemoryStateInputIterator(nullptr) };
+}
+
+[[nodiscard]] StoreNode::MemoryStateOutputRange
+StoreVolatileNode::MemoryStateOutputs() const noexcept
+{
+  if (NumMemoryStates() == 0)
+  {
+    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+  }
+
+  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
 }
 
 rvsdg::node *
@@ -101,7 +170,7 @@ is_store_store_reducible(
   if (!is<StoreNonVolatileOperation>(storenode))
     return false;
 
-  if (op.NumStates() != storenode->noutputs())
+  if (op.NumMemoryStates() != storenode->noutputs())
     return false;
 
   /* check for same address */

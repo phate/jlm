@@ -285,8 +285,8 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput()->origin();
-  const auto & outputRegister = *loadNode.GetValueOutput();
+  const auto & addressRegister = *loadNode.GetAddressInput().origin();
+  const auto & outputRegister = loadNode.GetLoadedValueOutput();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -304,8 +304,8 @@ Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 void
 Andersen::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput()->origin();
-  const auto & valueRegister = *storeNode.GetValueInput()->origin();
+  const auto & addressRegister = *storeNode.GetAddressInput().origin();
+  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
   // If the written value is not a pointer, be conservative and mark the address
   if (!IsOrContainsPointerType(valueRegister.type()))
