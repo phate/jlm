@@ -59,7 +59,7 @@ StoreNonVolatileNode::MemoryStateInputs() const noexcept
 [[nodiscard]] StoreNode::MemoryStateOutputRange
 StoreNonVolatileNode::MemoryStateOutputs() const noexcept
 {
-  if (NumMemoryStates())
+  if (NumMemoryStates() == 0)
   {
     return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
   }
@@ -124,7 +124,7 @@ StoreVolatileNode::MemoryStateInputs() const noexcept
 [[nodiscard]] StoreNode::MemoryStateOutputRange
 StoreVolatileNode::MemoryStateOutputs() const noexcept
 {
-  if (NumMemoryStates())
+  if (NumMemoryStates() == 0)
   {
     return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
   }
