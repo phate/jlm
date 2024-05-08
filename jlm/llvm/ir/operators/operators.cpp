@@ -1186,7 +1186,8 @@ MemStateMergeOperator::~MemStateMergeOperator()
 bool
 MemStateMergeOperator::operator==(const rvsdg::operation & other) const noexcept
 {
-  return is<MemStateMergeOperator>(other);
+  auto operation = dynamic_cast<const MemStateMergeOperator *>(&other);
+  return operation && operation->narguments() == narguments();
 }
 
 std::string
@@ -1209,7 +1210,8 @@ MemStateSplitOperator::~MemStateSplitOperator()
 bool
 MemStateSplitOperator::operator==(const rvsdg::operation & other) const noexcept
 {
-  return is<MemStateSplitOperator>(other);
+  auto operation = dynamic_cast<const MemStateSplitOperator *>(&other);
+  return operation && operation->nresults() == nresults();
 }
 
 std::string
