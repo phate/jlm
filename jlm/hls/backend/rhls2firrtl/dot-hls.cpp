@@ -270,7 +270,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
       for (size_t i = 0; i < node->ninputs(); ++i)
       {
         auto in_name = node_name + ":" + get_port_name(node->input(i));
-        assert(output_map.count(node->input(i)->origin()));
+        JLM_ASSERT(output_map.count(node->input(i)->origin()));
         auto origin = output_map[node->input(i)->origin()];
         // implement edge as back edge when it produces a cycle
         bool back = mx && !mx->discarding && mx->loop
@@ -315,14 +315,14 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     auto ba = dynamic_cast<backedge_argument *>(arg);
     if (!ba)
     {
-      assert(arg->input() != nullptr);
+      JLM_ASSERT(arg->input() != nullptr);
       // map to input of loop
       output_map[arg] = output_map[arg->input()->origin()];
     }
     else
     {
       auto result = ba->result();
-      assert(result->type() == arg->type());
+      JLM_ASSERT(result->type() == arg->type());
       // map to end of loop (origin of associated result)
       output_map[arg] = output_map[result->origin()];
     }
@@ -330,7 +330,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
   for (size_t i = 0; i < ln->noutputs(); ++i)
   {
     auto out = ln->output(i);
-    assert(out->results.size() == 1);
+    JLM_ASSERT(out->results.size() == 1);
     output_map[out] = output_map[out->results.begin()->origin()];
   }
 }
@@ -366,7 +366,7 @@ DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
       for (size_t i = 0; i < node->ninputs(); ++i)
       {
         auto in_name = node_name + ":" + get_port_name(node->input(i));
-        assert(output_map.count(node->input(i)->origin()));
+        JLM_ASSERT(output_map.count(node->input(i)->origin()));
         auto origin = output_map[node->input(i)->origin()];
         dot << edge(origin, in_name, node->input(i)->type());
       }

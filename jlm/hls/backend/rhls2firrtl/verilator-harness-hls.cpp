@@ -137,7 +137,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
 
   auto mem_reqs = get_mem_reqs(ln);
   auto mem_resps = get_mem_resps(ln);
-  assert(mem_reqs.size() == mem_resps.size());
+  JLM_ASSERT(mem_reqs.size() == mem_resps.size());
   for (size_t i = 0; i < mem_reqs.size(); ++i)
   {
     auto req_bt = dynamic_cast<const jlm::hls::bundletype *>(&mem_reqs[i]->type());
