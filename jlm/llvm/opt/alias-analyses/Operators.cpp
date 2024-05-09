@@ -18,7 +18,8 @@ LambdaEntryMemStateOperator::~LambdaEntryMemStateOperator() = default;
 bool
 LambdaEntryMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-  return is<LambdaEntryMemStateOperator>(other);
+  auto operation = dynamic_cast<const LambdaEntryMemStateOperator *>(&other);
+  return operation && operation->nresults() == nresults();
 }
 
 std::string
@@ -40,7 +41,8 @@ LambdaExitMemStateOperator::~LambdaExitMemStateOperator() = default;
 bool
 LambdaExitMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-  return is<LambdaExitMemStateOperator>(other);
+  auto operation = dynamic_cast<const LambdaExitMemStateOperator *>(&other);
+  return operation && operation->narguments() == narguments();
 }
 
 std::string
@@ -62,7 +64,8 @@ CallEntryMemStateOperator::~CallEntryMemStateOperator() = default;
 bool
 CallEntryMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-  return is<CallEntryMemStateOperator>(other);
+  auto operation = dynamic_cast<const CallEntryMemStateOperator *>(&other);
+  return operation && operation->narguments() == narguments();
 }
 
 std::string
@@ -84,7 +87,8 @@ CallExitMemStateOperator::~CallExitMemStateOperator() = default;
 bool
 CallExitMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
 {
-  return is<CallExitMemStateOperator>(other);
+  auto operation = dynamic_cast<const CallExitMemStateOperator *>(&other);
+  return operation && operation->nresults() == nresults();
 }
 
 std::string

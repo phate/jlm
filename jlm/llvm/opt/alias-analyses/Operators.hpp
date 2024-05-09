@@ -21,12 +21,11 @@ class LambdaEntryMemStateOperator final : public MemStateOperator
 public:
   ~LambdaEntryMemStateOperator() override;
 
-private:
+public:
   explicit LambdaEntryMemStateOperator(size_t nresults)
       : MemStateOperator(1, nresults)
   {}
 
-public:
   bool
   operator==(const operation & other) const noexcept override;
 
@@ -52,12 +51,11 @@ class LambdaExitMemStateOperator final : public MemStateOperator
 public:
   ~LambdaExitMemStateOperator() override;
 
-private:
+public:
   explicit LambdaExitMemStateOperator(size_t noperands)
       : MemStateOperator(noperands, 1)
   {}
 
-public:
   bool
   operator==(const operation & other) const noexcept override;
 
@@ -82,12 +80,11 @@ class CallEntryMemStateOperator final : public MemStateOperator
 public:
   ~CallEntryMemStateOperator() override;
 
-private:
+public:
   explicit CallEntryMemStateOperator(size_t noperands)
       : MemStateOperator(noperands, 1)
   {}
 
-public:
   bool
   operator==(const operation & other) const noexcept override;
 
@@ -112,12 +109,11 @@ class CallExitMemStateOperator final : public MemStateOperator
 public:
   ~CallExitMemStateOperator() override;
 
-private:
+public:
   explicit CallExitMemStateOperator(size_t nresults)
       : MemStateOperator(1, nresults)
   {}
 
-public:
   bool
   operator==(const operation & other) const noexcept override;
 
