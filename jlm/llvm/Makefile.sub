@@ -152,6 +152,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/frontend/llvm/test-select \
 	tests/jlm/llvm/ir/operators/LoadTests \
 	tests/jlm/llvm/ir/operators/MemCpyTests \
+	tests/jlm/llvm/ir/operators/MemoryStateOperationTests \
 	tests/jlm/llvm/ir/operators/TestCall \
 	tests/jlm/llvm/ir/operators/test-ConstantFP \
 	tests/jlm/llvm/ir/operators/test-delta \
@@ -172,6 +173,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/test-domtree \
 	tests/jlm/llvm/ir/test-ssa-destruction \
 	tests/jlm/llvm/ir/TestAnnotation \
+	tests/jlm/llvm/opt/alias-analyses/MemoryStateOperationTests \
 	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
 	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
