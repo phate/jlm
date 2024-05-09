@@ -683,8 +683,8 @@ MemoryStateEncoder::EncodeStore(const StoreNonVolatileNode & storeNode)
   auto & storeOperation = storeNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = storeNode.GetAddressInput()->origin();
-  auto value = storeNode.GetValueInput()->origin();
+  auto address = storeNode.GetAddressInput().origin();
+  auto value = storeNode.GetStoredValueInput().origin();
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 

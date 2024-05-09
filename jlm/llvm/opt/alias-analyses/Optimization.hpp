@@ -8,6 +8,7 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/optimization.hpp>
 
 #include <type_traits>
