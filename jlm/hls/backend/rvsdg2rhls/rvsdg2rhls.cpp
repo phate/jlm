@@ -11,6 +11,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
@@ -424,6 +425,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   remove_unused_state(rhls);
   // main conversion steps
   //	add_triggers(rhls); // TODO: is this needed?
+  distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   // rhls optimization
