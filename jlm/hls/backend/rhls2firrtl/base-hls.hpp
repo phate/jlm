@@ -31,6 +31,9 @@ public:
     return get_text(rm);
   }
 
+  static int
+  JlmSize(const jlm::rvsdg::type * type);
+
 private:
   virtual std::string
   extension() = 0;
@@ -50,9 +53,6 @@ protected:
 
   const llvm::lambda::node *
   get_hls_lambda(llvm::RvsdgModule & rm);
-
-  int
-  JlmSize(const jlm::rvsdg::type * type);
 
   void
   create_node_names(jlm::rvsdg::region * r);
