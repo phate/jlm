@@ -131,13 +131,27 @@ public:
    * When using program objects as attributes, the association is used to refer to
    * the unique id of its associated graph element, instead of the object's address.
    * Within a graph, only one graph element can be associated with any given program object.
+   * @param T the type of the program object to associate with
    * @param object the object to associate this GraphElement with
    */
+  template<typename T>
   void
-  SetProgramObject(void * object)
+  SetProgramObject(const T * object)
   {
     SetProgramObjectUintptr(reinterpret_cast<uintptr_t>(object));
   }
+
+  /**
+   * Removes the association of this GraphElement to any object in the program
+   */
+  void
+  RemoveProgramObject();
+
+  /**
+   * @return true, if this GraphElement is associated with any program object
+   */
+  [[nodiscard]] bool
+  HasProgramObject() const;
 
   /**
    * @return the program object associated with this graph element.
@@ -154,14 +168,24 @@ public:
   SetAttribute(const std::string & attribute, std::string value);
 
   /**
-   * Assigns or overrides a given attribute on the element with a program object.
-   * If this program object is associated with a GraphElement, the attribute value becomes its id.
-   * This only works if the element is a part of the same GraphWriter instance.
+   * Assigns or overrides a given attribute on the element with the address of a program object.
+   * If this program object is associated with a GraphElement in the same GraphWriter,
+   * the attribute value becomes the id of the other GraphElement, instead of the address.
    * @param attribute the name of the attribute.
-   * @param object a pointer to a program object, must be non-null.
+   * @param object the address of a program object, must be non-null.
    */
   void
-  SetAttributeObject(const std::string & attribute, void * object);
+  SetAttributeObject(const std::string & attribute, uintptr_t object);
+
+  /**
+   * Helper for calling SetAttributeObject with a pointer to any type
+   */
+  template<typename T>
+  void
+  SetAttributeObject(const std::string & attribute, const T * object)
+  {
+    SetAttributeObject(attribute, reinterpret_cast<uintptr_t>(object));
+  }
 
   /**
    * Assigns or overrides a given attribute on the element with a reference to a graph element.
@@ -426,7 +450,7 @@ class OutputPort;
 /**
  * The input port of an InOutNode
  */
-class InputPort : public Port
+class InputPort final : public Port
 {
   friend InOutNode;
 
@@ -457,7 +481,7 @@ private:
 /**
  * The output port of an InOutNode
  */
-class OutputPort : public Port
+class OutputPort final : public Port
 {
   friend InOutNode;
 
@@ -490,7 +514,7 @@ private:
  * and results flow out of a set of output ports.
  * For complex operations, the node can also contain one or more sub-graphs.
  */
-class InOutNode : public Node
+class InOutNode final : public Node
 {
   friend Graph;
 
@@ -904,6 +928,13 @@ public:
   [[nodiscard]] GraphElement *
   GetElementFromProgramObject(uintptr_t object) const;
 
+  template<typename T>
+  [[nodiscard]] GraphElement *
+  GetElementFromProgramObject(const T * object) const
+  {
+    return GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
+  }
+
   /**
    * Retrieves the GraphElement in this graph associated with the given program object.
    * Requires the program object to be mapped to a GraphElement in this graph,
@@ -913,7 +944,7 @@ public:
    */
   template<typename T>
   T &
-  GetFromProgramObject(void * object) const
+  GetFromProgramObject(const void * object) const
   {
     static_assert(std::is_base_of_v<GraphElement, T>);
     GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
