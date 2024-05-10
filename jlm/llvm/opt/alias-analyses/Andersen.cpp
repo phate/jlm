@@ -857,17 +857,11 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 void
 Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
 {
-  util::GraphWriter writer;
-  Constraints_->DrawSubsetGraph(writer);
-
   if (config.IsOfflineVariableSubstitutionEnabled())
   {
     statistics.StartOfflineVariableSubstitution();
     auto numUnifications = Constraints_->PerformOfflineVariableSubstitution();
     statistics.StopOfflineVariableSubstitution(numUnifications);
-
-    auto & graph = Constraints_->DrawSubsetGraph(writer);
-    graph.AppendToLabel("After Offline Variable Substitution");
   }
 
   if (config.IsOfflineConstraintNormalizationEnabled())
@@ -875,9 +869,6 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
     statistics.StartOfflineConstraintNormalization();
     auto numConstraintsRemoved = Constraints_->NormalizeConstraints();
     statistics.StopOfflineConstraintNormalization(numConstraintsRemoved);
-
-    auto & graph = Constraints_->DrawSubsetGraph(writer);
-    graph.AppendToLabel("After Offline Constraint Normalization");
   }
 
   if (config.GetSolver() == Configuration::Solver::Naive)
@@ -894,12 +885,6 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   }
   else
     JLM_UNREACHABLE("Unknown solver");
-
-  auto & graph = Constraints_->DrawSubsetGraph(writer);
-  graph.AppendToLabel("After Solving");
-
-  if (std::getenv(DUMP_SUBSET_GRAPH))
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
 }
 
 std::unique_ptr<PointsToGraph>
@@ -908,17 +893,32 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   auto statistics = Statistics::Create(module.SourceFileName());
   statistics->StartAndersenStatistics(module.Rvsdg());
 
-  AnalyzeModule(module, *statistics);
-
-  // If double-checking against the naive solver is enabled, make a copy of the set and constraints
+  // Check environment variables for debugging flags
   const bool checkAgainstNaive = std::getenv(CHECK_AGAINST_NAIVE_SOLVER)
                               && Config_ != Configuration::NaiveSolverConfiguration();
+  const bool dumpGraphs = std::getenv(DUMP_SUBSET_GRAPH);
+  util::GraphWriter writer;
 
+  AnalyzeModule(module, *statistics);
+
+  // If double-checking against the naive solver, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
   if (checkAgainstNaive)
     copy = Constraints_->Clone();
 
+  // Draw subset graph both before and after solving
+  if (dumpGraphs)
+    Constraints_->DrawSubsetGraph(writer);
+
   SolveConstraints(Config_, *statistics);
+
+  if (dumpGraphs)
+  {
+    auto & graph = Constraints_->DrawSubsetGraph(writer);
+    graph.AppendToLabel("After Solving");
+
+    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+  }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
 
