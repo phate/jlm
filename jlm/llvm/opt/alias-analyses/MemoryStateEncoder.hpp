@@ -34,8 +34,8 @@ namespace phi
 class node;
 }
 
-class LoadNode;
-class StoreNode;
+class LoadNonVolatileNode;
+class StoreNonVolatileNode;
 
 namespace aa
 {
@@ -79,53 +79,79 @@ public:
   Encode(
       RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & provisioning,
-      jlm::util::StatisticsCollector & statisticsCollector);
+      util::StatisticsCollector & statisticsCollector);
 
 private:
   void
-  EncodeRegion(jlm::rvsdg::region & region);
+  EncodeRegion(rvsdg::region & region);
 
   void
-  EncodeStructuralNode(jlm::rvsdg::structural_node & structuralNode);
+  EncodeStructuralNode(rvsdg::structural_node & structuralNode);
 
   void
-  EncodeSimpleNode(const jlm::rvsdg::simple_node & simpleNode);
+  EncodeSimpleNode(const rvsdg::simple_node & simpleNode);
 
   void
-  EncodeAlloca(const jlm::rvsdg::simple_node & allocaNode);
+  EncodeAlloca(const rvsdg::simple_node & allocaNode);
 
   void
-  EncodeMalloc(const jlm::rvsdg::simple_node & mallocNode);
+  EncodeMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  EncodeLoad(const LoadNode & loadNode);
+  EncodeLoad(const LoadNonVolatileNode & loadNode);
 
   void
-  EncodeStore(const StoreNode & storeNode);
+  EncodeStore(const StoreNonVolatileNode & storeNode);
 
   void
-  EncodeFree(const jlm::rvsdg::simple_node & freeNode);
+  EncodeFree(const rvsdg::simple_node & freeNode);
 
   void
   EncodeCall(const CallNode & callNode);
 
   void
-  EncodeMemcpy(const jlm::rvsdg::simple_node & memcpyNode);
+  EncodeCallEntry(const CallNode & callNode);
+
+  void
+  EncodeCallExit(const CallNode & callNode);
+
+  void
+  EncodeMemcpy(const rvsdg::simple_node & memcpyNode);
 
   void
   EncodeLambda(const lambda::node & lambda);
 
   void
-  EncodePhi(const phi::node & phi);
+  EncodeLambdaEntry(const lambda::node & lambdaNode);
 
   void
-  EncodeDelta(const delta::node & delta);
+  EncodeLambdaExit(const lambda::node & lambdaNode);
 
   void
-  EncodeGamma(jlm::rvsdg::gamma_node & gamma);
+  EncodePhi(const phi::node & phiNode);
 
   void
-  EncodeTheta(jlm::rvsdg::theta_node & theta);
+  EncodeDelta(const delta::node & deltaNode);
+
+  void
+  EncodeGamma(rvsdg::gamma_node & gammaNode);
+
+  void
+  EncodeGammaEntry(rvsdg::gamma_node & gammaNode);
+
+  void
+  EncodeGammaExit(rvsdg::gamma_node & gammaNode);
+
+  void
+  EncodeTheta(rvsdg::theta_node & thetaNode);
+
+  std::vector<rvsdg::theta_output *>
+  EncodeThetaEntry(rvsdg::theta_node & thetaNode);
+
+  void
+  EncodeThetaExit(
+      rvsdg::theta_node & thetaNode,
+      const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
 
   std::unique_ptr<Context> Context_;
 };

@@ -278,30 +278,91 @@ convert_phi(
 }
 
 static ::llvm::Value *
-convert(
-    const LoadOperation & operation,
-    const std::vector<const variable *> & args,
+CreateLoadInstruction(
+    const rvsdg::valuetype & loadedType,
+    const variable * address,
+    bool isVolatile,
+    size_t alignment,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto type = convert_type(operation.GetLoadedType(), ctx);
-  auto loadInstruction = builder.CreateLoad(type, ctx.value(args[0]));
-  loadInstruction->setAlignment(::llvm::Align(operation.GetAlignment()));
+  auto type = convert_type(loadedType, ctx);
+  auto loadInstruction = builder.CreateLoad(type, ctx.value(address), isVolatile);
+  loadInstruction->setAlignment(::llvm::Align(alignment));
   return loadInstruction;
+}
+
+static ::llvm::Value *
+convert(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  return CreateLoadInstruction(
+      operation.GetLoadedType(),
+      operands[0],
+      false,
+      operation.GetAlignment(),
+      builder,
+      ctx);
+}
+
+static ::llvm::Value *
+convert(
+    const LoadVolatileOperation & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  return CreateLoadInstruction(
+      operation.GetLoadedType(),
+      operands[0],
+      true,
+      operation.GetAlignment(),
+      builder,
+      ctx);
+}
+
+static void
+CreateStoreInstruction(
+    const variable * address,
+    const variable * value,
+    bool isVolatile,
+    size_t alignment,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  auto storeInstruction = builder.CreateStore(ctx.value(value), ctx.value(address), isVolatile);
+  storeInstruction->setAlignment(::llvm::Align(alignment));
 }
 
 static inline ::llvm::Value *
 convert_store(
-    const rvsdg::simple_op & op,
-    const std::vector<const variable *> & args,
+    const rvsdg::simple_op & operation,
+    const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<StoreOperation>(op) && args.size() >= 2);
-  auto store = static_cast<const StoreOperation *>(&op);
+  auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
+  CreateStoreInstruction(
+      operands[0],
+      operands[1],
+      false,
+      storeOperation->GetAlignment(),
+      builder,
+      ctx);
+  return nullptr;
+}
 
-  auto i = builder.CreateStore(ctx.value(args[1]), ctx.value(args[0]));
-  i->setAlignment(::llvm::Align(store->GetAlignment()));
+static ::llvm::Value *
+convert(
+    const StoreVolatileOperation & operation,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  CreateStoreInstruction(operands[0], operands[1], true, operation.GetAlignment(), builder, ctx);
   return nullptr;
 }
 
@@ -842,23 +903,42 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const Memcpy & op,
+    const MemCpyNonVolatileOperation &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto destination = ctx.value(operands[0]);
-  auto source = ctx.value(operands[1]);
-  auto length = ctx.value(operands[2]);
-  auto isVolatile = ctx.value(operands[3]);
+  auto & destination = *ctx.value(operands[0]);
+  auto & source = *ctx.value(operands[1]);
+  auto & length = *ctx.value(operands[2]);
 
   return builder.CreateMemCpy(
-      destination,
+      &destination,
       ::llvm::MaybeAlign(),
-      source,
+      &source,
       ::llvm::MaybeAlign(),
-      length,
-      isVolatile);
+      &length,
+      false);
+}
+
+static ::llvm::Value *
+convert(
+    const MemCpyVolatileOperation &,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> & builder,
+    context & ctx)
+{
+  auto & destination = *ctx.value(operands[0]);
+  auto & source = *ctx.value(operands[1]);
+  auto & length = *ctx.value(operands[2]);
+
+  return builder.CreateMemCpy(
+      &destination,
+      ::llvm::MaybeAlign(),
+      &source,
+      ::llvm::MaybeAlign(),
+      &length,
+      true);
 }
 
 static ::llvm::Value *
@@ -961,8 +1041,10 @@ convert_operation(
             { typeid(assignment_op), convert_assignment },
             { typeid(branch_op), convert_branch },
             { typeid(phi_op), convert_phi },
-            { typeid(LoadOperation), convert<LoadOperation> },
-            { typeid(StoreOperation), convert_store },
+            { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
+            { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
+            { typeid(StoreNonVolatileOperation), convert_store },
+            { typeid(StoreVolatileOperation), convert<StoreVolatileOperation> },
             { typeid(alloca_op), convert_alloca },
             { typeid(GetElementPtrOperation), convert_getelementptr },
             { typeid(ConstantDataArray), convert<ConstantDataArray> },
@@ -988,7 +1070,8 @@ convert_operation(
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
             { typeid(FreeOperation), convert<FreeOperation> },
-            { typeid(Memcpy), convert<Memcpy> },
+            { typeid(MemCpyNonVolatileOperation), convert<MemCpyNonVolatileOperation> },
+            { typeid(MemCpyVolatileOperation), convert<MemCpyVolatileOperation> },
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },
             { typeid(fpext_op), convert_cast<::llvm::Instruction::FPExt> },

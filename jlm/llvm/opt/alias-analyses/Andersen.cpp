@@ -217,9 +217,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  else if (const auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
     AnalyzeLoad(*loadNode);
-  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  else if (const auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
     AnalyzeStore(*storeNode);
   else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
     AnalyzeCall(*callNode);
@@ -235,7 +235,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantPointerNull(node);
   else if (is<UndefValueOperation>(op))
     AnalyzeUndef(node);
-  else if (is<Memcpy>(op))
+  else if (is<MemCpyNonVolatileOperation>(op))
     AnalyzeMemcpy(node);
   else if (is<ConstantArray>(op))
     AnalyzeConstantArray(node);
@@ -284,10 +284,10 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNode & loadNode)
+Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput()->origin();
-  const auto & outputRegister = *loadNode.GetValueOutput();
+  const auto & addressRegister = *loadNode.GetAddressInput().origin();
+  const auto & outputRegister = loadNode.GetLoadedValueOutput();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -303,10 +303,10 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNode & storeNode)
+Andersen::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput()->origin();
-  const auto & valueRegister = *storeNode.GetValueInput()->origin();
+  const auto & addressRegister = *storeNode.GetAddressInput().origin();
+  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
   // If the written value is not a pointer, be conservative and mark the address
   if (!IsOrContainsPointerType(valueRegister.type()))

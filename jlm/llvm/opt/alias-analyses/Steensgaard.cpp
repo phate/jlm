@@ -998,11 +998,11 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeMalloc(node);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  else if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
   {
     AnalyzeLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
   {
     AnalyzeStore(*storeNode);
   }
@@ -1034,7 +1034,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeUndef(node);
   }
-  else if (is<Memcpy>(&node))
+  else if (is<MemCpyNonVolatileOperation>(&node))
   {
     AnalyzeMemcpy(node);
   }
@@ -1090,10 +1090,10 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
+Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 {
-  auto & result = *loadNode.GetValueOutput();
-  auto & address = *loadNode.GetAddressInput()->origin();
+  auto & result = loadNode.GetLoadedValueOutput();
+  auto & address = *loadNode.GetAddressInput().origin();
 
   if (!HasOrContainsPointerType(result))
     return;
@@ -1114,10 +1114,10 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNode & storeNode)
+Steensgaard::AnalyzeStore(const StoreNonVolatileNode & storeNode)
 {
-  auto & address = *storeNode.GetAddressInput()->origin();
-  auto & value = *storeNode.GetValueInput()->origin();
+  auto & address = *storeNode.GetAddressInput().origin();
+  auto & value = *storeNode.GetStoredValueInput().origin();
 
   if (!HasOrContainsPointerType(value))
     return;
@@ -1411,7 +1411,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
-  JLM_ASSERT(is<Memcpy>(&node));
+  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&node));
 
   auto & dstAddress = Context_->GetLocation(*node.input(0)->origin());
   auto & srcAddress = Context_->GetLocation(*node.input(1)->origin());

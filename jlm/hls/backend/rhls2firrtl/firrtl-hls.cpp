@@ -117,7 +117,7 @@ FirrtlHLS::mem_node_to_firrtl(const jlm::rvsdg::simple_node * n)
   std::ostringstream module;
   module << module_header(n, true);
 
-  bool store = dynamic_cast<const llvm::StoreOperation *>(&(n->operation()));
+  bool store = dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(n->operation()));
   // registers
   module << indent(2) << "; registers\n";
   for (size_t i = 0; i < n->noutputs(); ++i)
@@ -800,11 +800,11 @@ FirrtlHLS::node_to_firrtl(const jlm::rvsdg::node * node, const int depth)
   }
   if (auto n = dynamic_cast<const jlm::rvsdg::simple_node *>(node))
   {
-    if (dynamic_cast<const llvm::LoadOperation *>(&(n->operation())))
+    if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&(n->operation())))
     {
       return mem_node_to_firrtl(n);
     }
-    else if (dynamic_cast<const llvm::StoreOperation *>(&(n->operation())))
+    else if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(n->operation())))
     {
       return mem_node_to_firrtl(n);
     }
@@ -896,14 +896,14 @@ FirrtlHLS::create_loop_instances(loop_node * ln)
     auto ba = dynamic_cast<backedge_argument *>(arg);
     if (!ba)
     {
-      assert(arg->input() != nullptr);
+      JLM_ASSERT(arg->input() != nullptr);
       // map to input of loop
       output_map[arg] = output_map[arg->input()->origin()];
     }
     else
     {
       auto result = ba->result();
-      assert(result->type() == arg->type());
+      JLM_ASSERT(result->type() == arg->type());
       // map to end of loop (origin of associated result)
       output_map[arg] = output_map[result->origin()];
     }
@@ -911,7 +911,7 @@ FirrtlHLS::create_loop_instances(loop_node * ln)
   for (size_t i = 0; i < ln->noutputs(); ++i)
   {
     auto out = ln->output(i);
-    assert(out->results.size() == 1);
+    JLM_ASSERT(out->results.size() == 1);
     output_map[out] = output_map[out->results.begin()->origin()];
   }
   return firrtl.str();
@@ -931,7 +931,7 @@ FirrtlHLS::connect(jlm::rvsdg::region * sr)
       for (size_t i = 0; i < node->ninputs(); ++i)
       {
         auto in_name = inst_name + "." + get_port_name(node->input(i));
-        assert(output_map.count(node->input(i)->origin()));
+        JLM_ASSERT(output_map.count(node->input(i)->origin()));
         auto origin = output_map[node->input(i)->origin()];
         firrtl << indent(2) << origin << ".ready <= " << in_name << ".ready\n";
         firrtl << indent(2) << in_name << ".data <= " << origin << ".data\n";
