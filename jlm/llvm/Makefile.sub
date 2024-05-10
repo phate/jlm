@@ -5,6 +5,7 @@ libllvm_SOURCES = \
     jlm/llvm/backend/jlm2llvm/instruction.cpp \
     jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/jlm2llvm/type.cpp \
+    jlm/llvm/backend/rvsdg2dot/rvsdg2dot.cpp \
     jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
@@ -118,6 +119,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/sext.hpp \
 	jlm/llvm/ir/operators/lambda.hpp \
 	jlm/llvm/ir/aggregation.hpp \
+	jlm/llvm/backend/rvsdg2dot/rvsdg2dot.hpp \
 	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
 	jlm/llvm/backend/rvsdg2jlm/context.hpp \
 	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \

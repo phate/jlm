@@ -720,7 +720,7 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
 }
 
 bool
-PointerObjectConstraintSet::IsFrozen()
+PointerObjectConstraintSet::IsFrozen() const
 {
   return ConstraintSetFrozen_;
 }
@@ -837,7 +837,6 @@ CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
   for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
   {
     auto & node = graph.CreateNode();
-
     node.SetLabel(CreateSubsetGraphNodeLabel(set, i));
 
     if (set.IsPointerObjectRegister(i))
@@ -847,6 +846,30 @@ CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
 
     if (set.HasEscaped(i))
       node.SetFillColor("#FFFF99");
+  }
+
+  // Associate PointerObjects nodes with their associated RVSDG nodes / outputs
+  for (auto [allocaNode, index] : set.GetAllocaMap())
+    graph.GetNode(index).SetAttributeObject("rvsdgAlloca", allocaNode);
+
+  for (auto [mallocNode, index] : set.GetMallocMap())
+    graph.GetNode(index).SetAttributeObject("rvsdgMalloc", mallocNode);
+
+  for (auto [deltaNode, index] : set.GetGlobalMap())
+    graph.GetNode(index).SetAttributeObject("rvsdgDelta", deltaNode);
+
+  for (auto [lambdaNode, index] : set.GetFunctionMap())
+    graph.GetNode(index).SetAttributeObject("rvsdgLambda", lambdaNode);
+
+  for (auto [importArgument, index] : set.GetImportMap())
+    graph.GetNode(index).SetAttributeObject("rvsdgImport", importArgument);
+
+  // Multiple registers can be associated with the same register PointerObject, so add a suffix
+  std::unordered_map<PointerObjectIndex, size_t> associationSuffix;
+  for (auto [rvsdgOutput, index] : set.GetRegisterMap())
+  {
+    auto suffix = associationSuffix[index]++;
+    graph.GetNode(index).SetAttributeObject(util::strfmt("rvsdgOutput", suffix), rvsdgOutput);
   }
 }
 

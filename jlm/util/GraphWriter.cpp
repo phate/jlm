@@ -10,6 +10,8 @@
 
 namespace jlm::util
 {
+// All GraphElements with an associated ProgramObject get this attribute added
+static const char * const TOOLTIP_ATTRIBUTE = "tooltip";
 
 /**
  * Checks if the provided \p string looks like a regular C identifier.
@@ -94,8 +96,6 @@ PrintStringAsHtmlText(std::ostream & out, std::string_view string)
       out << "&lt;";
     else if (c == '>')
       out << "&gt;";
-    else if (c == '\n')
-      out << "<br>";
     else
       out << c;
   }
@@ -216,7 +216,20 @@ GraphElement::SetProgramObjectUintptr(uintptr_t object)
   if (ProgramObject_ != 0)
     GetGraph().RemoveProgramObjectMapping(ProgramObject_);
   ProgramObject_ = object;
-  GetGraph().MapProgramObjectToElement(*this);
+  if (ProgramObject_ != 0)
+    GetGraph().MapProgramObjectToElement(*this);
+}
+
+void
+GraphElement::RemoveProgramObject()
+{
+  SetProgramObjectUintptr(0);
+}
+
+bool
+GraphElement::HasProgramObject() const
+{
+  return ProgramObject_ != 0;
 }
 
 uintptr_t
@@ -232,10 +245,10 @@ GraphElement::SetAttribute(const std::string & attribute, std::string value)
 }
 
 void
-GraphElement::SetAttributeObject(const std::string & attribute, void * object)
+GraphElement::SetAttributeObject(const std::string & attribute, uintptr_t object)
 {
   JLM_ASSERT(object);
-  AttributeMap_[attribute] = reinterpret_cast<uintptr_t>(object);
+  AttributeMap_[attribute] = object;
 }
 
 void
@@ -300,7 +313,7 @@ GraphElement::IsFinalized() const
 void
 GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format) const
 {
-  for (const auto & [name, value] : AttributeMap_)
+  auto OutputAttribute = [&](std::string_view name, const AttributeValue & value)
   {
     if (format == AttributeOutputFormat::SpaceSeparatedList)
       PrintIdentifierSafe(out, name);
@@ -337,13 +350,22 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
       }
       else
       {
-        out << "ptr" << ptr;
+        out << "ptr" << strfmt(std::hex, ptr);
       }
     }
     if (format == AttributeOutputFormat::HTMLAttributes)
       out << '"'; // Closing quote
-    out << " ";
+    out << " ";   // Attributes are space separated in both formats
+  };
+
+  for (const auto & [name, value] : AttributeMap_)
+  {
+    OutputAttribute(name, value);
   }
+
+  // If no other tooltip is set, print the address of the associated program object
+  if (HasProgramObject() && !HasAttribute(TOOLTIP_ATTRIBUTE))
+    OutputAttribute(TOOLTIP_ATTRIBUTE, strfmt(std::hex, GetProgramObject()));
 }
 
 Port::Port()
@@ -467,7 +489,7 @@ Node::SetShape(std::string shape)
 void
 Node::SetFillColor(std::string color)
 {
-  SetAttribute("style", "filled");
+  // The dot output gives all nodes style=filled by default, so we only need to set the color
   SetAttribute("fillcolor", std::move(color));
 }
 
@@ -518,8 +540,6 @@ Node::OutputDot(std::ostream & out, size_t indent) const
   if (HasLabel())
   {
     PrintIdentifierSafe(out, GetLabel());
-    out << " tooltip=";
-    PrintIdentifierSafe(out, GetFullId());
   }
   else
   {
@@ -538,7 +558,9 @@ Node::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t inden
 
 InputPort::InputPort(jlm::util::InOutNode & node)
     : Node_(node)
-{}
+{
+  SetFillColor(Colors::White);
+}
 
 const char *
 InputPort::GetIdPrefix() const
@@ -573,7 +595,9 @@ InputPort::OutputDotPortId(std::ostream & out) const
 
 OutputPort::OutputPort(jlm::util::InOutNode & node)
     : Node_(node)
-{}
+{
+  SetFillColor(Colors::White);
+}
 
 const char *
 OutputPort::GetIdPrefix() const
@@ -614,6 +638,8 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 
   for (size_t i = 0; i < outputPorts; i++)
     CreateOutputPort();
+
+  SetFillColor(Colors::White);
 }
 
 void
@@ -782,14 +808,22 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
       if (i != 0)
         out << "\t\t\t<TD WIDTH=\"10\"></TD>" << std::endl;
 
-      auto & inputPort = *ports[i];
+      auto & port = *ports[i];
       out << "\t\t\t<TD BORDER=\"1\" CELLPADDING=\"1\" ";
-      out << "PORT=\"" << inputPort.GetFullId() << "\" ";
-      inputPort.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-      out << ">";
-      out << "<FONT POINT-SIZE=\"10\">";
-      PrintStringAsHtmlText(out, inputPort.GetLabelOr(inputPort.GetFullId().c_str()));
-      out << "</FONT></TD>" << std::endl;
+      out << "PORT=\"" << port.GetFullId() << "\" ";
+      port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      if(port.HasLabel())
+      {
+        out << "><FONT POINT-SIZE=\"10\">";
+        PrintStringAsHtmlText(out, port.GetLabel());
+        out << "</FONT>";
+      }
+      else
+      {
+        // ports without labels have a fixed size
+        out << " WIDTH=\"8\" HEIGHT=\"5\" FIXEDSIZE=\"true\">";
+      }
+      out << "</TD>" << std::endl;
     }
     out << "\t\t\t<TD WIDTH=\"20\"></TD>" << std::endl;
     out << "\t\t</TR></TABLE>" << std::endl;
@@ -812,7 +846,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
   }
   out << ">" << std::endl;
   out << "\t\t\t<TR><TD CELLPADDING=\"1\">";
-  PrintStringAsHtmlText(out, GetLabelOr(GetFullId().c_str()));
+  PrintStringAsHtmlText(out, GetLabelOr(GetFullId()));
   out << "</TD></TR>" << std::endl;
 
   // Subgraphs
@@ -822,9 +856,9 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
     out << "\t\t\t\t<TABLE BORDER=\"0\" CELLSPACING=\"4\" CELLPADDING=\"2\"><TR>" << std::endl;
     for (auto & graph : SubGraphs_)
     {
-      out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" ";
+      out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" BGCOLOR=\"white\" ";
       out << "SUBGRAPH=\"" << graph->GetFullId() << "\">";
-      PrintStringAsHtmlText(out, graph->GetLabelOr(graph->GetFullId().c_str()));
+      PrintStringAsHtmlText(out, graph->GetFullId());
       out << "</TD>" << std::endl;
     }
     out << "\t\t\t\t</TR></TABLE>" << std::endl;
@@ -839,6 +873,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
 
   out << "</TABLE>" << std::endl;
   out << Indent(indent) << "> ";
+  out << "style=solid ";
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << "];" << std::endl;
 }
@@ -1020,6 +1055,15 @@ Edge::OutputDot(std::ostream & out, size_t indent) const
     PrintIdentifierSafe(out, GetLabel());
     out << " ";
   }
+
+  // Edges are not normally named, so use the id attribute to include the edge's id
+  if (!HasAttribute("id"))
+  {
+    out << "id=";
+    PrintIdentifierSafe(out, GetFullId());
+    out << " ";
+  }
+
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << "];" << std::endl;
 }
@@ -1271,7 +1315,7 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   out << Indent(indent) << "digraph " << GetFullId() << " {" << std::endl;
   indent++;
 
-  out << Indent(indent) << "node[shape=box];" << std::endl;
+  out << Indent(indent) << "node[shape=box style=filled fillcolor=white];" << std::endl;
   out << Indent(indent) << "penwidth=6;" << std::endl;
   if (HasLabel())
   {
