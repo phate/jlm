@@ -21,6 +21,7 @@ JsonHLS::get_text(llvm::RvsdgModule & rm)
   auto reg_args = get_reg_args(ln);
   auto reg_results = get_reg_results(ln);
 
+  json << "\"addr_width\": " << PointerSizeInBits << ",\n";
   json << "\"arguments\": [";
   for (size_t i = 0; i < reg_args.size(); ++i)
   {

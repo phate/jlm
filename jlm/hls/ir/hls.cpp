@@ -8,6 +8,8 @@
 namespace jlm::hls
 {
 
+size_t PointerSizeInBits = 64;
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
