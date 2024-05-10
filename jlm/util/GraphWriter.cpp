@@ -813,7 +813,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
       out << "\t\t\t<TD BORDER=\"1\" CELLPADDING=\"1\" ";
       out << "PORT=\"" << port.GetFullId() << "\" ";
       port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-      if(port.HasLabel())
+      if (port.HasLabel())
       {
         out << "><FONT POINT-SIZE=\"10\">";
         PrintStringAsHtmlText(out, port.GetLabel());
