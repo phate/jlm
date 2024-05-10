@@ -80,6 +80,11 @@ public:
       : jlm::rvsdg::simple_op({ type }, std::vector<jlm::rvsdg::port>(nalternatives, type))
   {}
 
+  fork_op(size_t nalternatives, const rvsdg::type & type, bool constant)
+      : rvsdg::simple_op({ type }, std::vector<rvsdg::port>(nalternatives, type)),
+        Constant_(constant)
+  {}
+
   bool
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
@@ -91,7 +96,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_FORK";
+    return Constant_ ? "HLS_CFORK" : "HLS_FORK";
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -101,13 +106,15 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(size_t nalternatives, jlm::rvsdg::output & value)
+  create(size_t nalternatives, jlm::rvsdg::output & value, bool constant = false)
   {
 
     auto region = value.region();
-    fork_op op(nalternatives, value.type());
+    fork_op op(nalternatives, value.type(), constant);
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
   }
+
+  bool Constant_;
 };
 
 class merge_op final : public jlm::rvsdg::simple_op

@@ -5,6 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -36,14 +37,15 @@ add_forks(jlm::rvsdg::region * region)
         add_forks(structnode->subregion(n));
       }
     }
+    bool constant = dynamic_cast<const rvsdg::bitconstant_op *>(&node->operation())
+                 || dynamic_cast<const rvsdg::ctlconstant_op *>(&node->operation());
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
       auto out = node->output(i);
       if (out->nusers() > 1)
       {
-        std::vector<jlm::rvsdg::input *> users;
-        users.insert(users.begin(), out->begin(), out->end());
-        auto fork = hls::fork_op::create(out->nusers(), *out);
+        std::vector<rvsdg::input *> users(out->begin(), out->end());
+        auto fork = hls::fork_op::create(out->nusers(), *out, constant);
         for (size_t j = 0; j < users.size(); j++)
         {
           users[j]->divert_to(fork[j]);
