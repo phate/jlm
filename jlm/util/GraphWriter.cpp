@@ -5,13 +5,14 @@
 
 #include <jlm/util/GraphWriter.hpp>
 
-#include <jlm/util/common.hpp>
 #include <jlm/util/strfmt.hpp>
 
 namespace jlm::util
 {
 // All GraphElements with an associated ProgramObject get this attribute added
 static const char * const TOOLTIP_ATTRIBUTE = "tooltip";
+// Edges are not named in dot, so use an attribute to assign id instead
+static const char * const EDGE_ID_ATTRIBUTE = "id";
 
 /**
  * Checks if the provided \p string looks like a regular C identifier.
@@ -787,7 +788,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent) const
 void
 InOutNode::OutputDot(std::ostream & out, size_t indent) const
 {
-  out << Indent(indent) << GetFullId() << " [shape=plain ";
+  out << Indent(indent) << GetFullId() << " [shape=plain style=solid ";
   out << "label=<" << std::endl;
 
   // InOutNodes are printed as html tables
@@ -812,7 +813,21 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
       out << "\t\t\t<TD BORDER=\"1\" CELLPADDING=\"1\" ";
       out << "PORT=\"" << port.GetFullId() << "\" ";
       port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-      if(port.HasLabel())
+      if (port.HasLabel())
+      {
+        out << "><FONT POINT-SIZE=\"10\">";
+        PrintStringAsHtmlText(out, port.GetLabel());
+        out << "</FONT>";
+      }
+      else
+      {
+        // ports without labels have a fixed size
+        out << " WIDTH=\"8\" HEIGHT=\"5\" FIXEDSIZE=\"true\">";
+      }
+      out << "</TD>" << std::endl;
+      out << "PORT=\"" << port.GetFullId() << "\" ";
+      port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
+      if (port.HasLabel())
       {
         out << "><FONT POINT-SIZE=\"10\">";
         PrintStringAsHtmlText(out, port.GetLabel());
@@ -1057,9 +1072,9 @@ Edge::OutputDot(std::ostream & out, size_t indent) const
   }
 
   // Edges are not normally named, so use the id attribute to include the edge's id
-  if (!HasAttribute("id"))
+  if (!HasAttribute(EDGE_ID_ATTRIBUTE))
   {
-    out << "id=";
+    out << EDGE_ID_ATTRIBUTE << "=";
     PrintIdentifierSafe(out, GetFullId());
     out << " ";
   }
@@ -1315,6 +1330,7 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   out << Indent(indent) << "digraph " << GetFullId() << " {" << std::endl;
   indent++;
 
+  // Default node attributes. Filling nodes by default makes them easier to click
   out << Indent(indent) << "node[shape=box style=filled fillcolor=white];" << std::endl;
   out << Indent(indent) << "penwidth=6;" << std::endl;
   if (HasLabel())

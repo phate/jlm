@@ -76,7 +76,13 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
 
     if (auto originPort =
             reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(rvsdgInput.origin())))
+    {
       graph.CreateDirectedEdge(*originPort, inputPort);
+      if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
+        graph.SetAttribute("color", util::Colors::Red);
+      if (rvsdg::is<iostatetype>(rvsdgInput.type()))
+        graph.SetAttribute("color", util::Colors::Green);
+    }
   };
 
   // Connects an output port in the GraphWriter graph to an output in the RVSDG
@@ -98,6 +104,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
     node.SetLabel(rvsdgNode->operation().debug_string());
+    node.SetProgramObject(rvsdgNode);
 
     for (size_t i = 0; i < rvsdgNode->ninputs(); i++)
       AttachInput(node.GetInputPort(i), *rvsdgNode->input(i));

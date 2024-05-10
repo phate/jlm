@@ -921,8 +921,6 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving");
 
-    // Also output the RVSDG as a dot graph
-    jlm::llvm::rvsdg2dot::WriteGraphs(writer, *module.Rvsdg().root(), true);
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
