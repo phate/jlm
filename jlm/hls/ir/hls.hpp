@@ -80,23 +80,24 @@ public:
       : jlm::rvsdg::simple_op({ type }, std::vector<jlm::rvsdg::port>(nalternatives, type))
   {}
 
-  fork_op(size_t nalternatives, const rvsdg::type & type, bool constant)
+  fork_op(size_t nalternatives, const rvsdg::type & type, bool isConstant)
       : rvsdg::simple_op({ type }, std::vector<rvsdg::port>(nalternatives, type)),
-        Constant_(constant)
+        IsConstant_(isConstant)
   {}
 
   bool
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const fork_op *>(&other);
+    auto forkOp = dynamic_cast<const fork_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(0).type() == argument(0).type() && ot->nresults() == nresults();
+    return forkOp && forkOp->argument(0).type() == argument(0).type()
+        && forkOp->nresults() == nresults() && forkOp->IsConstant() == IsConstant_;
   }
 
   std::string
   debug_string() const override
   {
-    return Constant_ ? "HLS_CFORK" : "HLS_FORK";
+    return IsConstant_ ? "HLS_CFORK" : "HLS_FORK";
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -106,15 +107,22 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(size_t nalternatives, jlm::rvsdg::output & value, bool constant = false)
+  create(size_t nalternatives, jlm::rvsdg::output & value, bool isConstant = false)
   {
 
     auto region = value.region();
-    fork_op op(nalternatives, value.type(), constant);
+    fork_op op(nalternatives, value.type(), isConstant);
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
   }
 
-  bool Constant_;
+  bool
+  IsConstant() const
+  {
+    return IsConstant_;
+  }
+
+private:
+  bool IsConstant_;
 };
 
 class merge_op final : public jlm::rvsdg::simple_op

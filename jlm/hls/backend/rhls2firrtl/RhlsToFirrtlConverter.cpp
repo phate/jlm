@@ -467,7 +467,7 @@ circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
 {
   auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->operation());
-  bool constant = op->Constant_;
+  bool constant = op->IsConstant();
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
