@@ -131,7 +131,7 @@ public:
    * When using program objects as attributes, the association is used to refer to
    * the unique id of its associated graph element, instead of the object's address.
    * Within a graph, only one graph element can be associated with any given program object.
-   * @param T the type of the program object to associate with
+   * @tparam T the type of the program object to associate with
    * @param object the object to associate this GraphElement with
    */
   template<typename T>
