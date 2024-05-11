@@ -642,7 +642,8 @@ IsOrContains(const jlm::rvsdg::type & type)
   {
     auto & structDeclaration = structType->GetDeclaration();
     for (size_t n = 0; n < structDeclaration.NumElements(); n++)
-      return IsOrContains<ELEMENTYPE>(structDeclaration.GetElement(n));
+      if (IsOrContains<ELEMENTYPE>(structDeclaration.GetElement(n)))
+        return true;
 
     return false;
   }
