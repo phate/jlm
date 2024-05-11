@@ -825,20 +825,6 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
         out << " WIDTH=\"8\" HEIGHT=\"5\" FIXEDSIZE=\"true\">";
       }
       out << "</TD>" << std::endl;
-      out << "PORT=\"" << port.GetFullId() << "\" ";
-      port.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
-      if (port.HasLabel())
-      {
-        out << "><FONT POINT-SIZE=\"10\">";
-        PrintStringAsHtmlText(out, port.GetLabel());
-        out << "</FONT>";
-      }
-      else
-      {
-        // ports without labels have a fixed size
-        out << " WIDTH=\"8\" HEIGHT=\"5\" FIXEDSIZE=\"true\">";
-      }
-      out << "</TD>" << std::endl;
     }
     out << "\t\t\t<TD WIDTH=\"20\"></TD>" << std::endl;
     out << "\t\t</TR></TABLE>" << std::endl;
@@ -888,7 +874,6 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
 
   out << "</TABLE>" << std::endl;
   out << Indent(indent) << "> ";
-  out << "style=solid ";
   OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   out << "];" << std::endl;
 }

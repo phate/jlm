@@ -77,11 +77,11 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
     if (auto originPort =
             reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(rvsdgInput.origin())))
     {
-      graph.CreateDirectedEdge(*originPort, inputPort);
+      auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
       if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
-        graph.SetAttribute("color", util::Colors::Red);
+        edge.SetAttribute("color", util::Colors::Red);
       if (rvsdg::is<iostatetype>(rvsdgInput.type()))
-        graph.SetAttribute("color", util::Colors::Green);
+        edge.SetAttribute("color", util::Colors::Green);
     }
   };
 
