@@ -37,15 +37,15 @@ add_forks(jlm::rvsdg::region * region)
         add_forks(structnode->subregion(n));
       }
     }
-    bool constant = dynamic_cast<const rvsdg::bitconstant_op *>(&node->operation())
-                 || dynamic_cast<const rvsdg::ctlconstant_op *>(&node->operation());
+    bool isConstant = rvsdg::is<rvsdg::bitconstant_op>(node->operation())
+                   || rvsdg::is<rvsdg::ctlconstant_op>(node->operation());
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
       auto out = node->output(i);
       if (out->nusers() > 1)
       {
         std::vector<rvsdg::input *> users(out->begin(), out->end());
-        auto fork = hls::fork_op::create(out->nusers(), *out, constant);
+        auto fork = hls::fork_op::create(out->nusers(), *out, isConstant);
         for (size_t j = 0; j < users.size(); j++)
         {
           users[j]->divert_to(fork[j]);
