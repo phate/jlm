@@ -40,14 +40,14 @@ TestGraphElement()
 
   // Test assigning a program object to a graph element
   int myInt = 0;
-  graph.SetProgramObject(&myInt);
+  graph.SetProgramObject(myInt);
   assert(graph.GetProgramObject() == reinterpret_cast<uintptr_t>(&myInt));
 
   // Set attributes
-  graph.SetAttribute("color", "\"brown\"");
+  graph.SetAttribute("color", "\"dark\nbrown\"");
   graph.SetAttribute("taste", "sweet");
   graph.SetAttributeGraphElement("graph", graph);
-  graph.SetAttributeObject("another graph", &myInt);
+  graph.SetAttributeObject("another graph", myInt);
 
   assert(graph.HasAttribute("taste"));
   assert(graph.RemoveAttribute("taste"));
@@ -66,7 +66,7 @@ TestGraphElement()
   std::ostringstream out;
   graph.OutputAttributes(out, AttributeOutputFormat::SpaceSeparatedList);
   auto attributes = out.str();
-  assert(StringContains(attributes, "color=\"\\\"brown\\\"\""));
+  assert(StringContains(attributes, "color=\"\\\"dark\\nbrown\\\"\""));
   assert(StringContains(attributes, "graph=graph0"));
   assert(StringContains(attributes, "\"another graph\"=graph0"));
 
@@ -74,7 +74,7 @@ TestGraphElement()
   out = std::ostringstream();
   graph.OutputAttributes(out, AttributeOutputFormat::HTMLAttributes);
   attributes = out.str();
-  assert(StringContains(attributes, "color=\"&quot;brown&quot;\""));
+  assert(StringContains(attributes, "color=\"&quot;dark\nbrown&quot;\""));
   assert(StringContains(attributes, "another-graph=\"graph0\""));
 }
 
@@ -151,7 +151,7 @@ TestInOutNode()
   assert(node.NumInputPorts() == 2);
   assert(node.NumOutputPorts() == 3);
 
-  node.SetLabel("InOutNode");
+  node.SetLabel("My\nInOutNode");
 
   graph.CreateDirectedEdge(node.GetOutputPort(2), node.GetInputPort(0));
 
@@ -175,11 +175,17 @@ TestInOutNode()
   std::ostringstream out;
   node.Output(out, GraphOutputFormat::ASCII, 0);
   auto string = out.str();
-  assert(StringContains(string, "o0, o1, o2 := InOutNode o2, []"));
+  assert(StringContains(string, "o0, o1, o2 := \"My\\nInOutNode\" o2, []"));
 
   // Check that the subgraph is also printed
   assert(StringContains(string, "ARG a0:CTX <= o2"));
   assert(StringContains(string, "RES a0:RETURN => o0"));
+
+  // Check that HTML labels with newlines turn into <BR/>
+  std::ostringstream out2;
+  node.Output(out2, GraphOutputFormat::Dot, 0);
+  auto string0 = out2.str();
+  assert(StringContains(string0, "My<BR/>InOutNode"));
 }
 
 static void
@@ -294,12 +300,12 @@ TestGraphAttributes()
   auto & node = graph.CreateNode();
 
   // Test associating a GraphElement with a pointer, and retrieving it
-  int myInt;
-  node.SetProgramObject(&myInt);
-  assert(&graph.GetFromProgramObject<Node>(&myInt) == &node);
+  int myInt = 6;
+  node.SetProgramObject(myInt);
+  assert(&graph.GetFromProgramObject<Node>(myInt) == &node);
 
   // Set some attributes, to test that they appear in the final output
-  graph.SetAttributeObject("friend", &myInt);
+  graph.SetAttributeObject("friend", myInt);
   graph.SetAttributeGraphElement("foe", graph);
 
   graph.Finalize();
@@ -331,12 +337,12 @@ TestGraphWriterClass()
   auto & node1 = graph1.CreateNode();
 
   // Test retrieving a GraphElement from its associated program object pointer
-  int myInt;
-  node1.SetProgramObject(&myInt);
+  int myInt = 12;
+  node1.SetProgramObject(myInt);
   assert(writer.GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&myInt)) == &node1);
 
   // Refer to program objects mapped to elements in other graphs
-  node0.SetAttributeObject("friend", &myInt);
+  node0.SetAttributeObject("friend", myInt);
 
   // Render all the graphs to dot, which first finalizes the graphs to assign unique IDs
   std::ostringstream out;
