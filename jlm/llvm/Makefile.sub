@@ -172,6 +172,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/test-cfg-validity \
 	tests/jlm/llvm/ir/test-domtree \
 	tests/jlm/llvm/ir/test-ssa-destruction \
+	tests/jlm/llvm/ir/TestTypes \
 	tests/jlm/llvm/ir/TestAnnotation \
 	tests/jlm/llvm/opt/alias-analyses/MemoryStateOperationTests \
 	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
