@@ -232,13 +232,13 @@ GraphElement::RemoveProgramObject()
 }
 
 bool
-GraphElement::HasProgramObject() const
+GraphElement::HasProgramObject() const noexcept
 {
   return ProgramObject_ != 0;
 }
 
 uintptr_t
-GraphElement::GetProgramObject() const
+GraphElement::GetProgramObject() const noexcept
 {
   return ProgramObject_;
 }

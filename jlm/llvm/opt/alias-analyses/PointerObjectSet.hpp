@@ -724,7 +724,7 @@ public:
    * @return true if the constraint set has been frozen, false otherwise
    */
   [[nodiscard]] bool
-  IsFrozen() const;
+  IsFrozen() const noexcept;
 
   /**
    * The simplest constraint, on the form: pointee in P(pointer)

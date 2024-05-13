@@ -40,14 +40,14 @@ TestGraphElement()
 
   // Test assigning a program object to a graph element
   int myInt = 0;
-  graph.SetProgramObject(&myInt);
+  graph.SetProgramObject(myInt);
   assert(graph.GetProgramObject() == reinterpret_cast<uintptr_t>(&myInt));
 
   // Set attributes
   graph.SetAttribute("color", "\"dark\nbrown\"");
   graph.SetAttribute("taste", "sweet");
   graph.SetAttributeGraphElement("graph", graph);
-  graph.SetAttributeObject("another graph", &myInt);
+  graph.SetAttributeObject("another graph", myInt);
 
   assert(graph.HasAttribute("taste"));
   assert(graph.RemoveAttribute("taste"));
@@ -300,12 +300,12 @@ TestGraphAttributes()
   auto & node = graph.CreateNode();
 
   // Test associating a GraphElement with a pointer, and retrieving it
-  int myInt;
-  node.SetProgramObject(&myInt);
-  assert(&graph.GetFromProgramObject<Node>(&myInt) == &node);
+  int myInt = 6;
+  node.SetProgramObject(myInt);
+  assert(&graph.GetFromProgramObject<Node>(myInt) == &node);
 
   // Set some attributes, to test that they appear in the final output
-  graph.SetAttributeObject("friend", &myInt);
+  graph.SetAttributeObject("friend", myInt);
   graph.SetAttributeGraphElement("foe", graph);
 
   graph.Finalize();
@@ -337,12 +337,12 @@ TestGraphWriterClass()
   auto & node1 = graph1.CreateNode();
 
   // Test retrieving a GraphElement from its associated program object pointer
-  int myInt;
-  node1.SetProgramObject(&myInt);
+  int myInt = 12;
+  node1.SetProgramObject(myInt);
   assert(writer.GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&myInt)) == &node1);
 
   // Refer to program objects mapped to elements in other graphs
-  node0.SetAttributeObject("friend", &myInt);
+  node0.SetAttributeObject("friend", myInt);
 
   // Render all the graphs to dot, which first finalizes the graphs to assign unique IDs
   std::ostringstream out;
