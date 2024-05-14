@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 #include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
@@ -33,6 +34,8 @@ public:
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     // Load the Arith dialect
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
+
+    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
   }
 
   MlirToJlmConverter(const MlirToJlmConverter &) = delete;
@@ -95,7 +98,24 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   std::vector<jlm::rvsdg::output *>
-  ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion);
+  ConvertBlock(
+      ::mlir::Block & block,
+      rvsdg::region & rvsdgRegion);
+
+  /**
+   * Retreive the previously converted RVSDG ouputs from the map of operations
+   * and return them in the inputs vector.
+   * \param mlirOp The MLIR operation that the inputs are retrieved for.
+   * \param operationsMap The map of operations that have been converted.
+   * \param rvsdgRegion The RVSDG region that the inputs are retrieved from (if it's a region argument).
+   * \param inputs The vector that the inputs are stored in.
+   */
+  void
+  getConvertedInputs(
+      ::mlir::Operation & mlirOp,
+      std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap,
+      rvsdg::region & rvsdgRegion,
+      std::vector<jlm::rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.

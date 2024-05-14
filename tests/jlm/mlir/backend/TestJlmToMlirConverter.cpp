@@ -385,6 +385,78 @@ TestComZeroExt()
   return 0;
 }
 
+// //TODO doc
+// static int
+// TestMatch()
+// {
+//   using namespace jlm::llvm;
+//   using namespace mlir::rvsdg;
+
+//   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+//   auto graph = &rvsdgModule->Rvsdg();
+
+//   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+//   nf->set_mutable(false);
+
+//   {
+//     // Setup the function
+//     std::cout << "Function Setup" << std::endl;
+//     iostatetype iOStateType;
+//     MemoryStateType memoryStateType;
+//     loopstatetype loopStateType;
+//     FunctionType functionType(
+//         { &iOStateType, &memoryStateType, &loopStateType },
+//         { &jlm::rvsdg::ctl2, &iOStateType, &memoryStateType, &loopStateType });
+
+//     auto lambda =
+//         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
+//     auto iOStateArgument = lambda->fctargument(0);
+//     auto memoryStateArgument = lambda->fctargument(1);
+//     auto loopStateArgument = lambda->fctargument(2);
+
+//     // Create a match operation
+//     std::cout << "Match Operation" << std::endl;
+//     auto constant1 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 8, 4);
+//     std::unordered_map<uint64_t, uint64_t> mapping;
+//     mapping[4] = 0;
+//     mapping[5] = 1;
+//     mapping[6] = 1;
+
+//     auto match = jlm::rvsdg::match_op::Create(*constant1, mapping, 2, 2);
+    
+
+//     lambda->finalize({ match, iOStateArgument, memoryStateArgument, loopStateArgument });
+
+//     // Convert the RVSDG to MLIR
+//     std::cout << "Convert to MLIR" << std::endl;
+//     jlm::mlir::JlmToMlirConverter mlirgen;
+//     auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+//     omega.dump();
+
+//     // Checking blocks and operations count
+//     std::cout << "Checking blocks and operations count" << std::endl;
+//     auto & omegaRegion = omega.getRegion();
+//     assert(omegaRegion.getBlocks().size() == 1);
+//     auto & omegaBlock = omegaRegion.front();
+//     // Lamda + terminating operation
+//     assert(omegaBlock.getOperations().size() == 2);
+
+//     // Checking lambda block operations
+//     std::cout << "Checking lambda block operations" << std::endl;
+//     auto & mlirLambda = omegaBlock.front();
+//     auto & lambdaRegion = mlirLambda.getRegion(0);
+//     auto & lambdaBlock = lambdaRegion.front();
+//     // 1 Bits contants + Match + terminating operation
+//     assert(lambdaBlock.getOperations().size() == 3);
+    
+//     omega->destroy();
+//   }
+//   return 1;
+// }
+
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirLambdaGen", TestLambda)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirAddOperationGen", TestAddOperation)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirComZeroExtGen", TestComZeroExt)
+//TODO uncomment this
+// JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirMatchGen", TestMatch)

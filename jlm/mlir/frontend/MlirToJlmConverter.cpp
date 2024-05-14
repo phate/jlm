@@ -50,56 +50,58 @@ MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdg
   return ConvertBlock(region.front(), rvsdgRegion);
 }
 
-std::vector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion)
+void
+MlirToJlmConverter::getConvertedInputs(
+    ::mlir::Operation & mlirOp,
+    std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap,
+    rvsdg::region & rvsdgRegion,
+    std::vector<jlm::rvsdg::output *> & inputs)
 {
-  ::mlir::sortTopologically(&block);
-
-  // Create an RVSDG node for each MLIR operation and store each pair in a
-  // hash map for easy lookup of corresponding RVSDG nodes
-  std::unordered_map<::mlir::Operation *, rvsdg::node *> operations;
-  for (auto & mlirOp : block.getOperations())
+  for (::mlir::Value operand : mlirOp.getOperands())
   {
-    std::vector<jlm::rvsdg::output *> inputs;
-    for (auto operand : mlirOp.getOperands())
-    {
-      if (auto * producer = operand.getDefiningOp())
-      {
-        size_t index = GetOperandIndex(producer, operand);
-        inputs.push_back(operations[producer]->output(index));
-      }
-      else
-      {
-        // If there is no defining op, the Value is necessarily a Block argument.
-        JLM_ASSERT(::mlir::dyn_cast<::mlir::BlockArgument>(operand));
-        inputs.push_back(
-            rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
-      }
-    }
-
-    if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
-    {
-      operations[&mlirOp] = node;
-    }
-  }
-
-  // The results of the region/block are encoded in the terminator operation
-  auto terminator = block.getTerminator();
-  std::vector<jlm::rvsdg::output *> results;
-  for (auto operand : terminator->getOperands())
-  {
-    if (auto * producer = operand.getDefiningOp())
-    {
-      size_t index = GetOperandIndex(producer, operand);
-      results.push_back(operations[producer]->output(index));
+    if (::mlir::Operation *producer = operand.getDefiningOp()) {
+      JLM_ASSERT(operationsMap.find(producer) != operationsMap.end());
+      JLM_ASSERT(::mlir::dyn_cast<::mlir::OpResult>(operand));
+      inputs.push_back(operationsMap[producer]->output(operand.cast<::mlir::OpResult>().getResultNumber()));
     }
     else
     {
       // If there is no defining op, the Value is necessarily a Block argument.
       JLM_ASSERT(::mlir::dyn_cast<::mlir::BlockArgument>(operand));
-      results.push_back(rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
+      inputs.push_back(
+          rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
     }
   }
+}
+
+std::vector<jlm::rvsdg::output *>
+MlirToJlmConverter::ConvertBlock(
+  ::mlir::Block & block,
+  rvsdg::region & rvsdgRegion)
+{
+  ::mlir::sortTopologically(&block);
+
+  // Create an RVSDG node for each MLIR operation and store each pair in a
+  // hash map for easy lookup of corresponding RVSDG nodes
+  std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap;
+  for (::mlir::Operation & mlirOp : block.getOperations())
+  {
+
+    std::vector<jlm::rvsdg::output *> inputs;
+
+    getConvertedInputs(mlirOp, operationsMap, rvsdgRegion, inputs);
+
+    if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
+    {
+      operationsMap[&mlirOp] = node;
+    }
+  }
+
+  // The results of the region/block are encoded in the terminator operation
+  ::mlir::Operation* terminator = block.getTerminator();
+  std::vector<jlm::rvsdg::output *> results;
+
+  getConvertedInputs(*terminator, operationsMap, rvsdgRegion, results);
 
   return results;
 }
@@ -161,6 +163,7 @@ MlirToJlmConverter::ConvertBitBinaryNode(
     ::mlir::Operation & mlirOperation,
     std::vector<rvsdg::output *> & inputs)
 {
+  JLM_ASSERT(inputs.size() == 2);
   if (auto castedOp = ::mlir::dyn_cast<::mlir::LLVM::AddOp>(&mlirOperation))
   {
     return rvsdg::node_output::node(rvsdg::bitadd_op::create(
@@ -309,6 +312,17 @@ MlirToJlmConverter::ConvertOperation(
     return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
   }
 
+  // // Stuctural nodes
+  // else if (auto GammaNode =::mlir::dyn_cast<::mlir::rvsdg::GammaNode>(&mlirOperation))
+  // {
+  //   jlm::rvsdg::gamma_node* gammaNode = rvsdg::gamma_node::create(
+  //       inputs[0],             // predicate
+  //       GammaNode.getNumRegions() // nalternatives
+  //       );
+  //   // gammaNode->subregion(0)
+
+  // }
+
   /* #region Arithmetic Integer Operation*/
   //! Here the LLVM dialect where only implemented for AddOp. Other operation should maybe be
   //! imported Need to choose which one of mlir::arith or mlir::LLVM to use for the MLIR
@@ -319,7 +333,34 @@ MlirToJlmConverter::ConvertOperation(
     return convertedNode;
   /* #endregion */
 
-  if (::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
+  if (auto match = ::mlir::dyn_cast<::mlir::rvsdg::Match>(&mlirOperation))
+  {
+    // TODO
+    // Implement the match node
+    // match.getMapping();
+    std::unordered_map<uint64_t, uint64_t> mapping;
+    uint64_t defaultAlternative = 0;
+    for (auto & attr : match.getMapping())
+    {
+      auto matchRuleAttr = attr.dyn_cast<::mlir::rvsdg::MatchRuleAttr>();
+      if (matchRuleAttr.isDefault())
+      {
+        defaultAlternative = matchRuleAttr.getIndex();
+        continue;
+      }
+      mapping[matchRuleAttr.getValues().front()] = matchRuleAttr.getIndex();
+    }
+
+    return rvsdg::node_output::node(rvsdg::match_op::Create(
+        *(inputs[0]),             // predicate
+        mapping,                  // mapping
+        defaultAlternative,       // defaultAlternative
+        match.getMapping().size() // numAlternatives
+        ));
+  }
+
+  else if (
+      ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation))
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node
@@ -328,7 +369,7 @@ MlirToJlmConverter::ConvertOperation(
   else
   {
     auto message = util::strfmt(
-        "Operation not implemented:",
+        "Operation not implemented: ",
         mlirOperation.getName().getStringRef().str(),
         "\n");
     JLM_UNREACHABLE(message.c_str());
@@ -412,7 +453,7 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
 }
 
 // TODO
-// Consider tracking outputs instead of operations to avoid the need for this function
+// Consider tracking outputs instead of operationsMap to avoid the need for this function
 size_t
 MlirToJlmConverter::GetOperandIndex(::mlir::Operation * producer, ::mlir::Value & operand)
 {

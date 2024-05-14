@@ -19,8 +19,6 @@
 // TODO remove this for pull request
 #include <jlm/rvsdg/view.hpp>
 
-
-
 namespace jlm::mlir
 {
 
@@ -48,7 +46,7 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath
 ::mlir::rvsdg::OmegaNode
 JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 {
-  //TODO remove this for pull request
+  // TODO remove this for pull request
   FILE * file = fopen("jlm_rvsdg.txt", "w");
   jlm::rvsdg::view(*rvsdgModule.Rvsdg().root()->graph(), file);
   ::mlir::rvsdg::OmegaNode omegaNode = ConvertOmega(rvsdgModule.Rvsdg());
@@ -124,7 +122,8 @@ JlmToMlirConverter::ConvertNode(
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
   {
-    if (jlm::rvsdg::node_output * nodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(node.input(i)->origin()))
+    if (jlm::rvsdg::node_output * nodeOuput =
+            dynamic_cast<jlm::rvsdg::node_output *>(node.input(i)->origin()))
     {
       inputs.push_back(nodes[nodeOuput->node()]->getOpResult(nodeOuput->index()));
     }
@@ -134,7 +133,15 @@ JlmToMlirConverter::ConvertNode(
     }
     else
     {
-      auto message = util::strfmt("Unimplemented input type: ", node.input(i)->origin()->debug_string(), ": ", node.input(i)->origin()->type().debug_string(), " for node: ", node.operation().debug_string(), " at index: ", i);
+      auto message = util::strfmt(
+          "Unimplemented input type: ",
+          node.input(i)->origin()->debug_string(),
+          ": ",
+          node.input(i)->origin()->type().debug_string(),
+          " for node: ",
+          node.operation().debug_string(),
+          " at index: ",
+          i);
       JLM_UNREACHABLE(message.c_str());
     }
   }
@@ -143,7 +150,6 @@ JlmToMlirConverter::ConvertNode(
   {
     // return ConvertSimpleNode(*simpleNode, block, inputs);
     return ConvertSimpleNode(*simpleNode, block, inputs);
-
   }
   else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
   {
@@ -316,43 +322,35 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
   {
-    // TODO check if I64Type correspond to uint64_t
-    // TODO Don't forget to pass the default alternative into MLIR
-    // std::vector<::mlir::Attribute> mappingVector;
-    
-    std::vector<::mlir::Attribute> mappingVector;
+    /* #region Create the MLIR mapping vector */
+    //! MLIR match operation can match multiple values to one index
+    //! But jlm implements this with multiple mappings
+    //! For easy conversion, we only created one mapping per value
+    ::llvm::SmallVector<::mlir::Attribute> mappingVector;
     int index = 0;
     for (auto mapping : *matchOp)
     {
-      // std::vector<int64_t> pair;
-      // pair.push_back(mapping.first);
-      // pair.push_back(mapping.second);
-      // ::mlir::Attribute attr = Builder_->getI64VectorAttr(::llvm::ArrayRef(pair));
-      // mappingVector.push_back(attr);
-
-      //! mappingValues is in64_t but mapping is a pair of uint64_t
-      // ::llvm::SmallVector<int64_t> mappingValues;
-      // mappingValues.push_back(mapping.first);
-      // mappingValues.push_back(mapping.second);
-
-      ::mlir::rvsdg::MatchRuleAttr matchRule = ::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef((int64_t)mapping.first), mapping.second);
+      ::mlir::rvsdg::MatchRuleAttr matchRule = ::mlir::rvsdg::MatchRuleAttr::get(
+          Builder_->getContext(),
+          ::llvm::ArrayRef(static_cast<int64_t>(mapping.first)),
+          mapping.second);
 
       mappingVector.push_back(matchRule);
 
-      index ++;
+      index++;
     }
     //! The default alternative has an empty mapping
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef<int64_t>(), matchOp->default_alternative()));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef<int64_t>(),
+        matchOp->default_alternative()));
+    /* #endregion */
 
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
         Builder_->getUnknownLoc(),
-        // Builder_->getIntegerType(matchOp->nbits()),
-        // inputs[0].getType(),
-        ConvertType(node.output(0)->type()),
-        inputs[0],
-        ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector))
-    );
-
+        ConvertType(node.output(0)->type()), // Control, ouput type
+        inputs[0],                           // input
+        ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
   else
   {
@@ -361,7 +359,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
 
   block.push_back(MlirOp);
-  //TODO Check if the result of the operation is always the first result
+  // TODO Check if the result of the operation is always the first result
   return MlirOp;
 }
 
@@ -441,9 +439,9 @@ JlmToMlirConverter::ConvertGamma(
       Builder_->getUnknownLoc(),
       ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
       predicate,
-      ::mlir::ValueRange(inputs),  // Inputs
-      static_cast<unsigned>(gammaOp.nalternatives())  // regionsCount
-      );
+      ::mlir::ValueRange(inputs),                    // Inputs
+      static_cast<unsigned>(gammaOp.nalternatives()) // regionsCount
+  );
   block.push_back(gamma);
 
   for (size_t i = 0; i < gammaOp.nalternatives(); ++i)

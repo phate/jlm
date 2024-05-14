@@ -142,10 +142,12 @@ private:
   ::mlir::Operation *
   ConvertLambda(const llvm::lambda::node & node, ::mlir::Block & block);
 
-  //TODO documentation
+  // TODO documentation
   ::mlir::Operation *
-  ConvertGamma(const rvsdg::gamma_node & gammaNode, ::mlir::Block & block, ::llvm::SmallVector<::mlir::Value> inputs);
-
+  ConvertGamma(
+      const rvsdg::gamma_node & gammaNode,
+      ::mlir::Block & block,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
