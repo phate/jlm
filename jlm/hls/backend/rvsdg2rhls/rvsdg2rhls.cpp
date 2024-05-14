@@ -421,7 +421,7 @@ replace_intrinsic(rvsdg::output * out, const std::string & name)
   {
     if (auto ni = dynamic_cast<rvsdg::node_input *>(user))
     {
-      if (auto call_op = dynamic_cast<const llvm::CallOperation *>(&ni->node()->operation()))
+      if (dynamic_cast<const llvm::CallOperation *>(&ni->node()->operation()))
       {
         auto node = ni->node();
         if (name == "llvm.smin.i32")
