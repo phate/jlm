@@ -701,6 +701,26 @@ public:
   using ConstraintVariant =
       std::variant<SupersetConstraint, StoreConstraint, LoadConstraint, FunctionCallConstraint>;
 
+  /**
+   * Struct holding statistics from solving the constraint set using the worklist solver.
+   */
+  struct WorklistStatistics {
+    /**
+     * The number of items that were popped from the worklist before the solution converged.
+     */
+    size_t NumWorkItemsPopped{};
+
+    /**
+     * The number of cycles detected by online cycle detection, if enabled.
+     */
+    std::optional<size_t> NumOnlineCyclesDetected;
+
+    /**
+     * The number of unifications made by online cycle detection, if enabled.
+     */
+    std::optional<size_t> NumOnlineCycleUnifications;
+  };
+
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set),
         Constraints_(),
@@ -811,9 +831,12 @@ public:
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
-   * @return the total number of work items handled by the WorkList algorithm
+   * @tparam EnableOnlineCycleDetection if true, online cycle detection will be performed, from
+   *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
+   * @return an instance of WorklistStatistics describing solver statistics
    */
-  size_t
+  template <bool EnableOnlineCycleDetection>
+  WorklistStatistics
   SolveUsingWorklist();
 
   /**
