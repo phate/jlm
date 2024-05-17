@@ -939,7 +939,11 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    auto worklistStatistics = Constraints_->SolveUsingWorklist<true>(); // TODO: Use OCD from conf
+    PointerObjectConstraintSet::WorklistStatistics worklistStatistics;
+    if (config.IsOnlineCycleDetectionEnabled())
+      worklistStatistics = Constraints_->SolveUsingWorklist<true>();
+    else
+      worklistStatistics = Constraints_->SolveUsingWorklist<false>();
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
