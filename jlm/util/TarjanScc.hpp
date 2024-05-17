@@ -59,7 +59,8 @@ FindStronglyConnectedComponents(
   // The lowest order seen through any path of edges that do not enter finished SCCs
   std::vector<int64_t> lowLink(numNodes);
 
-  // The DFS stack is a regular DFS traversal stack
+  // The DFS stack is a regular DFS traversal stack.
+  // Note that the same element can be pushed many times, but will only be visited twice
   std::stack<size_t> dfsStack;
   // The SCC stack is only popped once an SCC is found
   std::stack<size_t> sccStack;
@@ -89,8 +90,9 @@ FindStronglyConnectedComponents(
             dfsStack.push(next);
         }
       }
-      else // This is the second time node is visited, all children have been processed
+      else if (order[node] != SCC_FINISHED)
       {
+        // This is the second time node is visited, all children have been processed
         dfsStack.pop();
         for (auto next : successors(node))
         {
