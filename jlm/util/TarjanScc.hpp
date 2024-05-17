@@ -90,10 +90,14 @@ FindStronglyConnectedComponents(
             dfsStack.push(next);
         }
       }
-      else if (order[node] != SCC_FINISHED)
+      else
       {
-        // This is the second time node is visited, all children have been processed
+        // This node has been visited before, so all children have been processed
         dfsStack.pop();
+
+        if (order[node] == SCC_FINISHED)
+          continue;
+
         for (auto next : successors(node))
         {
           // Ignore edges to nodes that are already part of a finished SCC
