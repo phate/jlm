@@ -1322,14 +1322,14 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   const auto UnifyPointerObjects = [&](PointerObjectIndex a,
                                        PointerObjectIndex b) -> PointerObjectIndex
   {
-    auto aRoot = Set_.GetUnificationRoot(a);
-    auto bRoot = Set_.GetUnificationRoot(b);
+    const auto aRoot = Set_.GetUnificationRoot(a);
+    const auto bRoot = Set_.GetUnificationRoot(b);
 
     if (aRoot == bRoot)
       return aRoot;
 
-    auto root = Set_.UnifyPointerObjects(a, b);
-    auto nonRoot = aRoot + bRoot - root;
+    const auto root = Set_.UnifyPointerObjects(aRoot, bRoot);
+    const auto nonRoot = aRoot + bRoot - root;
 
     // Move constraints owned by the non-root to the root
     supersetEdges[root].UnionWith(supersetEdges[nonRoot]);
@@ -1440,8 +1440,6 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     }
   };
 
-  OCD_ValidateTopologicalOrder();
-
   // Data structures used by Online Cycle Detection to store state during DFS passes
   // Stack used for dfs. The boolean is true iff the node is being visited on the way back.
   // Note: a node can be added to this stack many times, but only once with second=true!
@@ -1457,7 +1455,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   // Call this function after adding a superset edge subset -> superset.
   // Both must be unification roots.
   // If subset has a higher topological index than superset, the topological order is re-arranged.
-  // If a cycle is detected, then it will be unified away, and its root returned.
+  // If a cycle is detected, then it will be unified away, and the unification root is returned.
   // Otherwise, nullopt is returned.
   const auto OCD_MaintainTopologicalOrder =
       [&](PointerObjectIndex subset,
@@ -1641,8 +1639,6 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     if (superset == subset)
       return;
 
-    OCD_ValidateTopologicalOrder();
-
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
       return;
@@ -1808,6 +1804,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
 
     // Add all new superset edges, which also propagates points-to sets immediately
     // and possibly performs unifications to eliminate cycles.
+    // Any unified nodes, or nodes with updated points-to sets, are added to the worklist.
     FlushNewSupersetEdges();
   };
 
