@@ -1711,11 +1711,7 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     // Skip visiting unification roots.
     // All unification operations are responsible for adding the new root to the worklist if needed
     if (!Set_.IsUnificationRoot(node))
-    {
-      std::cerr << "What" << std::endl;
-      worklist.PushWorkItem(Set_.GetUnificationRoot(node));
       return;
-    }
 
     // Stores on the form *n = value.
     for (const auto value : storeConstraints[node].Items())
@@ -1772,8 +1768,9 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     for (const auto superset : supersetEdges[node].Items())
     {
       // FIXME: replace supersets by their unification root, to remove duplicate edges
-      if (Set_.MakePointsToSetSuperset(superset, node))
-        worklist.PushWorkItem(superset);
+      const auto supersetParent = Set_.GetUnificationRoot(superset);
+      if (Set_.MakePointsToSetSuperset(supersetParent, node))
+        worklist.PushWorkItem(supersetParent);
     }
 
     // If n is marked as PointeesEscaping, add the escaped flag to all pointees
