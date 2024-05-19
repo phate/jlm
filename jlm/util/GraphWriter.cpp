@@ -83,9 +83,11 @@ PrintIdentifierSafe(std::ostream & out, std::string_view string)
 
 /**
  * Prints the given \p string to \p out with HTML special chars escaped.
+ * If \p replaceNewlines is true, newlines are replaced by <BR/>, otherwise they are kept as is.
+ * Newlines are allowed inside HTML attributes, but are ignored in HTML text.
  */
 static void
-PrintStringAsHtmlText(std::ostream & out, std::string_view string)
+PrintStringAsHtmlText(std::ostream & out, std::string_view string, bool replaceNewlines)
 {
   for (char c : string)
   {
@@ -97,6 +99,8 @@ PrintStringAsHtmlText(std::ostream & out, std::string_view string)
       out << "&lt;";
     else if (c == '>')
       out << "&gt;";
+    else if (c == '\n' && replaceNewlines)
+      out << "<BR/>";
     else
       out << c;
   }
@@ -228,13 +232,13 @@ GraphElement::RemoveProgramObject()
 }
 
 bool
-GraphElement::HasProgramObject() const
+GraphElement::HasProgramObject() const noexcept
 {
   return ProgramObject_ != 0;
 }
 
 uintptr_t
-GraphElement::GetProgramObject() const
+GraphElement::GetProgramObject() const noexcept
 {
   return ProgramObject_;
 }
@@ -332,7 +336,7 @@ GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format)
       if (format == AttributeOutputFormat::SpaceSeparatedList)
         PrintIdentifierSafe(out, *string);
       else
-        PrintStringAsHtmlText(out, *string);
+        PrintStringAsHtmlText(out, *string, false);
     }
     else if (auto graphElement = std::get_if<const GraphElement *>(&value))
     {
@@ -816,7 +820,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
       if (port.HasLabel())
       {
         out << "><FONT POINT-SIZE=\"10\">";
-        PrintStringAsHtmlText(out, port.GetLabel());
+        PrintStringAsHtmlText(out, port.GetLabel(), true);
         out << "</FONT>";
       }
       else
@@ -842,12 +846,12 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
   {
     PrintStringAsHtmlAttributeName(out, name);
     out << "=\"";
-    PrintStringAsHtmlText(out, value);
+    PrintStringAsHtmlText(out, value, false);
     out << "\" ";
   }
   out << ">" << std::endl;
   out << "\t\t\t<TR><TD CELLPADDING=\"1\">";
-  PrintStringAsHtmlText(out, GetLabelOr(GetFullId()));
+  PrintStringAsHtmlText(out, GetLabelOr(GetFullId()), true);
   out << "</TD></TR>" << std::endl;
 
   // Subgraphs
@@ -859,7 +863,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
     {
       out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" BGCOLOR=\"white\" ";
       out << "SUBGRAPH=\"" << graph->GetFullId() << "\">";
-      PrintStringAsHtmlText(out, graph->GetFullId());
+      PrintStringAsHtmlText(out, graph->GetFullId(), true);
       out << "</TD>" << std::endl;
     }
     out << "\t\t\t\t</TR></TABLE>" << std::endl;

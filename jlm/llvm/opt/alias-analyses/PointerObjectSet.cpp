@@ -720,7 +720,7 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
 }
 
 bool
-PointerObjectConstraintSet::IsFrozen() const
+PointerObjectConstraintSet::IsFrozen() const noexcept
 {
   return ConstraintSetFrozen_;
 }
@@ -850,26 +850,26 @@ CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
 
   // Associate PointerObjects nodes with their associated RVSDG nodes / outputs
   for (auto [allocaNode, index] : set.GetAllocaMap())
-    graph.GetNode(index).SetAttributeObject("rvsdgAlloca", allocaNode);
+    graph.GetNode(index).SetAttributeObject("rvsdgAlloca", *allocaNode);
 
   for (auto [mallocNode, index] : set.GetMallocMap())
-    graph.GetNode(index).SetAttributeObject("rvsdgMalloc", mallocNode);
+    graph.GetNode(index).SetAttributeObject("rvsdgMalloc", *mallocNode);
 
   for (auto [deltaNode, index] : set.GetGlobalMap())
-    graph.GetNode(index).SetAttributeObject("rvsdgDelta", deltaNode);
+    graph.GetNode(index).SetAttributeObject("rvsdgDelta", *deltaNode);
 
   for (auto [lambdaNode, index] : set.GetFunctionMap())
-    graph.GetNode(index).SetAttributeObject("rvsdgLambda", lambdaNode);
+    graph.GetNode(index).SetAttributeObject("rvsdgLambda", *lambdaNode);
 
   for (auto [importArgument, index] : set.GetImportMap())
-    graph.GetNode(index).SetAttributeObject("rvsdgImport", importArgument);
+    graph.GetNode(index).SetAttributeObject("rvsdgImport", *importArgument);
 
   // Multiple registers can be associated with the same register PointerObject, so add a suffix
   std::unordered_map<PointerObjectIndex, size_t> associationSuffix;
   for (auto [rvsdgOutput, index] : set.GetRegisterMap())
   {
     auto suffix = associationSuffix[index]++;
-    graph.GetNode(index).SetAttributeObject(util::strfmt("rvsdgOutput", suffix), rvsdgOutput);
+    graph.GetNode(index).SetAttributeObject(util::strfmt("rvsdgOutput", suffix), *rvsdgOutput);
   }
 }
 
@@ -1259,10 +1259,13 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-size_t
+template<bool EnableOnlineCycleDetection>
+PointerObjectConstraintSet::WorklistStatistics
 PointerObjectConstraintSet::SolveUsingWorklist()
 {
-  // Create auxiliary superset graph.
+  WorklistStatistics statistics;
+
+  // Create auxiliary subset graph.
   // All edges must have their tail be a unification root.
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
   std::vector<util::HashSet<PointerObjectIndex>> supersetEdges(Set_.NumPointerObjects());
@@ -1273,17 +1276,19 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   // are allowed on the worklist.
   std::vector<util::HashSet<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
   std::vector<util::HashSet<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
-  std::vector<std::vector<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
+  std::vector<util::HashSet<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
 
   for (const auto & constraint : Constraints_)
   {
     if (const auto * ssConstraint = std::get_if<SupersetConstraint>(&constraint))
     {
-      // Superset constraints become edges in the superset graph
+      // Superset constraints become edges in the subset graph
+      // When initializing the set of superset edges, normalize them as well
       auto superset = Set_.GetUnificationRoot(ssConstraint->GetSuperset());
       auto subset = Set_.GetUnificationRoot(ssConstraint->GetSubset());
 
-      supersetEdges[subset].Insert(superset);
+      if (superset != subset) // Ignore self-edges
+        supersetEdges[subset].Insert(superset);
     }
     else if (const auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
     {
@@ -1304,9 +1309,316 @@ PointerObjectConstraintSet::SolveUsingWorklist()
       auto pointer = Set_.GetUnificationRoot(callConstraint->GetPointer());
       const auto & callNode = callConstraint->GetCallNode();
 
-      callConstraints[pointer].push_back(&callNode);
+      callConstraints[pointer].Insert(&callNode);
     }
   }
+
+  // Performs unification safely while the worklist algorithm is running.
+  // Ensures all constraints end up being owned by the root.
+  // It does NOT redirect constraints owned by other nodes, referencing a or b.
+  // If a and b already belong to the same unification root, this is a no-op.
+  // This operation does not add the unification result to the worklist.
+  // Returns the root of the new unification, or the existing root if a and b were already unified.
+  const auto UnifyPointerObjects = [&](PointerObjectIndex a,
+                                       PointerObjectIndex b) -> PointerObjectIndex
+  {
+    const auto aRoot = Set_.GetUnificationRoot(a);
+    const auto bRoot = Set_.GetUnificationRoot(b);
+
+    if (aRoot == bRoot)
+      return aRoot;
+
+    const auto root = Set_.UnifyPointerObjects(aRoot, bRoot);
+    const auto nonRoot = aRoot + bRoot - root;
+
+    // Move constraints owned by the non-root to the root
+    supersetEdges[root].UnionWith(supersetEdges[nonRoot]);
+    supersetEdges[nonRoot].Clear();
+    // Try to avoid self-edges, but indirect self-edges can still exist
+    supersetEdges[root].Remove(root);
+
+    storeConstraints[root].UnionWith(storeConstraints[nonRoot]);
+    storeConstraints[nonRoot].Clear();
+
+    loadConstraints[root].UnionWith(loadConstraints[nonRoot]);
+    loadConstraints[nonRoot].Clear();
+
+    callConstraints[root].UnionWith(callConstraints[nonRoot]);
+    callConstraints[nonRoot].Clear();
+
+    return root;
+  };
+
+  // Online Cycle Detection maintains a topological ordering of all unification roots.
+  // Online Cycle Detection can not be combined with other cycle detection schemes,
+  // but that is OK, since OCD finds every cycle.
+
+  // Invariant:
+  // OCD_ObjectToTopoOrder[PO] is smaller than all successors of PO.
+  // OCD_ObjectToTopoOrder[PO] = -1 iff PO is not a unification root.
+  std::vector<int64_t> OCD_ObjectToTopoOrder;
+  // OCD_TopoOrderToObject is the inverse to OCD_ObjectToTopoOrder
+  // OCD_TopoOrderToObject[topo] = -1 iff no PointerObject has the position
+  std::vector<int64_t> OCD_TopoOrderToObject;
+  if constexpr (EnableOnlineCycleDetection)
+  {
+    // Initialize Online Cycle Detection using a full topological sort of the nodes
+    OCD_ObjectToTopoOrder.resize(Set_.NumPointerObjects(), -1);
+
+    // At this point, all subsetEdges are between unification roots only
+    // Use TarjanSCC to find our starting topological ordering
+    std::vector<size_t> sccIndex;
+    std::vector<size_t> topologicalOrder;
+    const auto GetSuccessor = [&](size_t it)
+    {
+      return supersetEdges[it].Items();
+    };
+    util::FindStronglyConnectedComponents(
+        Set_.NumPointerObjects(),
+        GetSuccessor,
+        sccIndex,
+        topologicalOrder);
+
+    // Go through the topological ordering and add all unification roots to OCD_ObjectToTopoOrder
+    // Also, if we find any new SCCs while doing this, perform unification right now
+    for (size_t i = 0; i < topologicalOrder.size(); i++)
+    {
+      PointerObjectIndex node = topologicalOrder[i];
+      if (!Set_.IsUnificationRoot(node))
+        continue; // We only care about unification roots
+
+      // If this root belongs to the same scc as the next root, they should be unified
+      if (i + 1 < topologicalOrder.size() && sccIndex[node] == sccIndex[topologicalOrder[i + 1]])
+      {
+        // We know that the SCC consists of only roots, since supersetEdges only contains roots
+        JLM_ASSERT(Set_.IsUnificationRoot(topologicalOrder[i + 1]));
+        // Make the next object the root, to keep the unification going
+        topologicalOrder[i + 1] = UnifyPointerObjects(node, topologicalOrder[i + 1]);
+      }
+      else
+      {
+        // Add this root to the next index in the topological order
+        OCD_ObjectToTopoOrder[node] = OCD_TopoOrderToObject.size();
+        OCD_TopoOrderToObject.push_back(node);
+      }
+    }
+  }
+
+  const auto OCD_ValidateTopologicalOrder = [&]()
+  {
+    for (PointerObjectIndex node = 0; node < Set_.NumPointerObjects(); node++)
+    {
+      // Non-unification roots should not have a place in the topological order
+      if (!Set_.IsUnificationRoot(node))
+      {
+        JLM_ASSERT(OCD_ObjectToTopoOrder[node] == -1);
+        continue;
+      }
+
+      // Ensure we have a position in the topological order
+      const auto topo = OCD_ObjectToTopoOrder[node];
+      JLM_ASSERT(topo != -1 && OCD_TopoOrderToObject[topo] == node);
+
+      // Ensure all outgoing edges go to unifications with higher topological index
+      for (auto successor : supersetEdges[node].Items())
+      {
+        const auto successorRoot = Set_.GetUnificationRoot(successor);
+        if (successorRoot == node) // Ignore self-edges
+          continue;
+        JLM_ASSERT(OCD_ObjectToTopoOrder[successorRoot] != -1);
+        JLM_ASSERT(OCD_ObjectToTopoOrder[successorRoot] > topo);
+      }
+    }
+
+    // Ensure all back-references are correct
+    for (size_t i = 0; i < OCD_TopoOrderToObject.size(); i++)
+    {
+      if (OCD_TopoOrderToObject[i] == -1)
+        continue;
+      size_t backReference = OCD_ObjectToTopoOrder[OCD_TopoOrderToObject[i]];
+      JLM_ASSERT(backReference == i);
+    }
+  };
+
+  // Data structures used by Online Cycle Detection to store state during DFS passes
+  // Stack used for dfs. The boolean is true iff the node is being visited on the way back.
+  // Note: a node can be added to this stack many times, but only once with second=true!
+  std::stack<std::pair<PointerObjectIndex, bool>> OCD_DFS_stack;
+  // Nodes are added to this set when they are actually visited.
+  util::HashSet<PointerObjectIndex> OCD_DFS_nodesVisited;
+  // Nodes that are part of the discovered cycle (reachable from superset, can reach subset)
+  // If a cycle is detected, subset and superset will both be in this list
+  util::HashSet<PointerObjectIndex> OCD_DFS_cycleNodes;
+  // List used to store the nodes that should come after the subset in the new topological order
+  std::vector<PointerObjectIndex> OCD_supersetAndBeyond;
+
+  // Call this function after adding a superset edge subset -> superset.
+  // Both must be unification roots.
+  // If subset has a higher topological index than superset, the topological order is re-arranged.
+  // If a cycle is detected, then it will be unified away, and the unification root is returned.
+  // Otherwise, nullopt is returned.
+  const auto OCD_MaintainTopologicalOrder =
+      [&](PointerObjectIndex subset,
+          PointerObjectIndex superset) -> std::optional<PointerObjectIndex>
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(subset) && Set_.IsUnificationRoot(superset));
+    JLM_ASSERT(OCD_ObjectToTopoOrder[subset] != -1 && OCD_ObjectToTopoOrder[superset] != -1);
+
+    // Adding the simple edge subset -> superset does not break the invariant
+    if (OCD_ObjectToTopoOrder[subset] <= OCD_ObjectToTopoOrder[superset])
+      return std::nullopt;
+
+    // Otherwise, we need to do reordering in this range to fix the invariant
+    const auto lowerTopo = OCD_ObjectToTopoOrder[superset];
+    const auto upperTopo = OCD_ObjectToTopoOrder[subset];
+
+    // Perform DFS to find all roots reachable from superset
+    // We only care about nodes where with its topo index <= upperTopo
+    // These nodes will all need to be moved after subset in the new topological order
+    JLM_ASSERT(OCD_DFS_stack.empty());
+    // All nodes that have been pushed to the dfs stack
+    OCD_DFS_nodesVisited.Clear();
+    // All nodes that could reach subset and thus are part of a subset -> superset -> subset cycle
+    OCD_DFS_cycleNodes.Clear();
+
+    // Start DFS from the superset
+    OCD_DFS_stack.emplace(superset, false);
+
+    while (!OCD_DFS_stack.empty())
+    {
+      const auto node = OCD_DFS_stack.top().first;
+      const bool firstVisit = !OCD_DFS_stack.top().second;
+      OCD_DFS_stack.pop();
+      JLM_ASSERT(Set_.IsUnificationRoot(node));
+
+      if (firstVisit)
+      {
+        // If this node has already been visited, skip it
+        if (!OCD_DFS_nodesVisited.Insert(node))
+          continue;
+
+        // Push node again to visit it a second time on the way back
+        OCD_DFS_stack.emplace(node, true);
+
+        // Push all non-pushed successors with topo within [lowerTopo, upperTopo]
+        for (auto successor : supersetEdges[node].Items())
+        {
+          auto successorParent = Set_.GetUnificationRoot(successor);
+
+          // Only push nodes that have yet to be visited
+          if (OCD_DFS_nodesVisited.Contains(successorParent))
+            continue;
+
+          // Ensure that the topological order invariants are satisfied
+          JLM_ASSERT(OCD_ObjectToTopoOrder[successorParent] != -1);
+          JLM_ASSERT(OCD_ObjectToTopoOrder[successorParent] > OCD_ObjectToTopoOrder[node]);
+
+          // Only care about nodes within the topological range currently being rearranged
+          const auto topo = OCD_ObjectToTopoOrder[successorParent];
+          if (topo < lowerTopo || topo > upperTopo)
+            continue;
+
+          OCD_DFS_stack.emplace(successorParent, false);
+        }
+      }
+      else
+      {
+        // Node is being visited for the second time, on the way back in the dfs
+        // If this node is the subset, there is a cycle
+        if (node == subset)
+        {
+          OCD_DFS_cycleNodes.Insert(node);
+          continue;
+        }
+
+        // Check if any of node's successors reach subset
+        for (auto successor : supersetEdges[node].Items())
+        {
+          auto successorParent = Set_.GetUnificationRoot(successor);
+          if (OCD_DFS_cycleNodes.Contains(successorParent))
+          {
+            OCD_DFS_cycleNodes.Insert(node);
+            break;
+          }
+        }
+      }
+    }
+
+    OCD_supersetAndBeyond.clear();
+
+    // The root of the unified cycle, if any
+    std::optional<PointerObjectIndex> optUnificationRoot = std::nullopt;
+    if (!OCD_DFS_cycleNodes.IsEmpty())
+    {
+      // If there is a cycle, both the subset and superset must be included
+      JLM_ASSERT(OCD_DFS_cycleNodes.Contains(subset));
+      JLM_ASSERT(OCD_DFS_cycleNodes.Contains(superset));
+
+      // Merge all entries on the merge list
+      for (const auto node : OCD_DFS_cycleNodes.Items())
+      {
+        // Remove node from the topological order, only the final merge result belongs there
+        OCD_ObjectToTopoOrder[node] = -1;
+        if (optUnificationRoot)
+          optUnificationRoot = UnifyPointerObjects(*optUnificationRoot, node);
+        else
+          optUnificationRoot = node;
+      }
+      // After the nodes not found during the dfs, the merged node should be next, topologically
+      OCD_supersetAndBeyond.push_back(*optUnificationRoot);
+    }
+
+    // Now go through the topological order from lowerTopo to upperTopo.
+    // All nodes not visited by the DFS are compacted to the left,
+    // All other nodes are stored in order in the supersetAndBeyond list
+    // Nodes that are part of the cycle, if any, are ignored
+    int64_t nextTopologicalIndex = lowerTopo;
+    for (int64_t i = lowerTopo; i <= upperTopo; i++)
+    {
+      // Skip all topological indices that do not contain a node
+      if (OCD_TopoOrderToObject[i] == -1)
+        continue;
+
+      PointerObjectIndex node = OCD_TopoOrderToObject[i];
+      if (OCD_DFS_cycleNodes.Contains(node))
+        continue;
+
+      JLM_ASSERT(OCD_ObjectToTopoOrder[node] == i);
+
+      if (OCD_DFS_nodesVisited.Contains(node))
+      {
+        OCD_supersetAndBeyond.push_back(node);
+        continue;
+      }
+
+      // Add node to its new position
+      OCD_ObjectToTopoOrder[node] = nextTopologicalIndex;
+      OCD_TopoOrderToObject[nextTopologicalIndex] = node;
+      nextTopologicalIndex++;
+    }
+
+    // Next, add all elements from OCD_supersetAndBeyond
+    for (auto node : OCD_supersetAndBeyond)
+    {
+      JLM_ASSERT(Set_.IsUnificationRoot(node));
+
+      OCD_ObjectToTopoOrder[node] = nextTopologicalIndex;
+      OCD_TopoOrderToObject[nextTopologicalIndex] = node;
+      nextTopologicalIndex++;
+    }
+
+    // Any leftover positions in the topological order should now become unoccupied
+    while (nextTopologicalIndex <= upperTopo)
+    {
+      OCD_TopoOrderToObject[nextTopologicalIndex] = -1;
+      nextTopologicalIndex++;
+    }
+
+    OCD_ValidateTopologicalOrder();
+
+    // return the root of the unification if a cycle was detected, otherwise nullopt
+    return optUnificationRoot;
+  };
 
   // The worklist, initialized with every unification root
   util::LrfWorklist<PointerObjectIndex> worklist;
@@ -1317,22 +1629,52 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   }
 
   // Helper function for adding superset edges, propagating everything currently in the subset.
-  // The superset's root is added to the work list if its points-to set or flags are changed.
+  // The superset's root is added to the worklist if its points-to set or flags are changed.
   const auto AddSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
   {
     superset = Set_.GetUnificationRoot(superset);
     subset = Set_.GetUnificationRoot(subset);
 
+    // If this is a self-edge, ignore
+    if (superset == subset)
+      return;
+
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
       return;
 
-    // A new edge was added, propagate points to-sets
-    if (!Set_.MakePointsToSetSuperset(superset, subset))
-      return;
+    // The edge is now added. If OCD is enabled, check if it broke the topological order, and fix it
+    if constexpr (EnableOnlineCycleDetection)
+    {
+      // If a cycle is detected, this function eliminates it by unifying, and returns the root
+      const auto optUnificationRoot = OCD_MaintainTopologicalOrder(subset, superset);
+      if (optUnificationRoot)
+      {
+        worklist.PushWorkItem(*optUnificationRoot);
+        return;
+      }
+    }
 
-    // pointees or the points-to-external flag were propagated to the superset, add to the worklist
-    worklist.PushWorkItem(superset);
+    // A new edge was added, propagate points to-sets. If the superset changes, add to the worklist
+    if (Set_.MakePointsToSetSuperset(superset, subset))
+      worklist.PushWorkItem(superset);
+  };
+
+  // A temporary place to store new subset edges, to avoid modifying sets while they are iterated
+  util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> newSupersetEdges;
+  const auto QueueNewSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
+  {
+    superset = Set_.GetUnificationRoot(superset);
+    subset = Set_.GetUnificationRoot(subset);
+    if (supersetEdges[subset].Contains(superset))
+      return;
+    newSupersetEdges.Insert({ superset, subset });
+  };
+  const auto FlushNewSupersetEdges = [&]()
+  {
+    for (auto [superset, subset] : newSupersetEdges.Items())
+      AddSupersetEdge(superset, subset);
+    newSupersetEdges.Clear();
   };
 
   // Helper function for marking a PointerObject such that all its pointees will escape
@@ -1355,57 +1697,51 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   // The worklist will only inform functions if their HasEscaped flag changes
   EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
 
-  // Count of the total number of work items fired
-  size_t numWorkItems = 0;
-
-  // The main worklist loop. A work item can be in the worklist for the following reasons:
+  // The main work item handler. A work item can be in the worklist for the following reasons:
   // - It has never been fired
   // - It has pointees added since the last time it was fired
   // - It has been marked as pointing to external since last time it was fired
   // - It has been marked as escaping all pointees since last time it was fired
-  // All work items are unification roots, or were unification roots when added
-  while (worklist.HasMoreWorkItems())
+  // - It is the unification root of a new unification
+  // Work items should be unification roots. If a work item is not a root when popped, it is skipped
+  const auto HandleWorkItem = [&](PointerObjectIndex node)
   {
-    const auto n = worklist.PopWorkItem();
-    numWorkItems++;
+    statistics.NumWorkItemsPopped++;
 
-    // Only visit unification roots
-    const auto root = Set_.GetUnificationRoot(n);
-    if (n != root)
-    {
-      worklist.PushWorkItem(root);
-      continue;
-    }
+    // Skip visiting unification roots.
+    // All unification operations are responsible for adding the new root to the worklist if needed
+    if (!Set_.IsUnificationRoot(node))
+      return;
 
     // Stores on the form *n = value.
-    for (const auto value : storeConstraints[n].Items())
+    for (const auto value : storeConstraints[node].Items())
     {
       // This loop ensures *P(n) supseteq P(value)
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
-        AddSupersetEdge(pointee, value);
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
+        QueueNewSupersetEdge(pointee, value);
 
       // If P(n) contains "external", the contents of the written value escapes
-      if (Set_.IsPointingToExternal(n))
+      if (Set_.IsPointingToExternal(node))
         MarkAsPointeesEscaping(value);
     }
 
     // Loads on the form value = *n.
-    for (const auto value : loadConstraints[n].Items())
+    for (const auto value : loadConstraints[node].Items())
     {
       // This loop ensures P(value) supseteq *P(n)
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
-        AddSupersetEdge(value, pointee);
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
+        QueueNewSupersetEdge(value, pointee);
 
       // If P(n) contains "external", the loaded value may also point to external
-      if (Set_.IsPointingToExternal(n))
+      if (Set_.IsPointingToExternal(node))
         MarkAsPointsToExternal(value);
     }
 
     // Function calls on the form (*n)()
-    for (const auto callNode : callConstraints[n])
+    for (const auto callNode : callConstraints[node].Items())
     {
       // Connect the inputs and outputs of the callNode to every possible function pointee
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
       {
         const auto kind = Set_.GetPointerObjectKind(pointee);
         if (kind == PointerObjectKind::ImportMemoryObject)
@@ -1416,11 +1752,11 @@ PointerObjectConstraintSet::SolveUsingWorklist()
               MarkAsPointeesEscaping,
               MarkAsPointsToExternal);
         else if (kind == PointerObjectKind::FunctionMemoryObject)
-          HandleCallingLambdaFunction(Set_, *callNode, pointee, AddSupersetEdge);
+          HandleCallingLambdaFunction(Set_, *callNode, pointee, QueueNewSupersetEdge);
       }
 
       // If P(n) contains "external", handle calling external functions
-      if (Set_.IsPointingToExternal(n))
+      if (Set_.IsPointingToExternal(node))
         HandleCallingExternalFunction(
             Set_,
             *callNode,
@@ -1429,18 +1765,18 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     }
 
     // Propagate P(n) along all edges n -> superset
-    for (auto superset : supersetEdges[n].Items())
+    for (const auto superset : supersetEdges[node].Items())
     {
-      // FIXME: Replace edges going to non-roots
-      superset = Set_.GetUnificationRoot(superset);
-      if (Set_.MakePointsToSetSuperset(superset, n))
-        worklist.PushWorkItem(superset);
+      // FIXME: replace supersets by their unification root, to remove duplicate edges
+      const auto supersetParent = Set_.GetUnificationRoot(superset);
+      if (Set_.MakePointsToSetSuperset(supersetParent, node))
+        worklist.PushWorkItem(supersetParent);
     }
 
     // If n is marked as PointeesEscaping, add the escaped flag to all pointees
-    if (Set_.HasPointeesEscaping(n))
+    if (Set_.HasPointeesEscaping(node))
     {
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
       {
         const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
         const bool prevPointeesEscaping = Set_.HasPointeesEscaping(pointeeRoot);
@@ -1462,10 +1798,24 @@ PointerObjectConstraintSet::SolveUsingWorklist()
         }
       }
     }
-  }
 
-  return numWorkItems;
+    // Add all new superset edges, which also propagates points-to sets immediately
+    // and possibly performs unifications to eliminate cycles.
+    // Any unified nodes, or nodes with updated points-to sets, are added to the worklist.
+    FlushNewSupersetEdges();
+  };
+
+  while (worklist.HasMoreWorkItems())
+    HandleWorkItem(worklist.PopWorkItem());
+
+  return statistics;
 }
+
+// Explicit instantiation of all versions of SolveUsingWorklist
+template PointerObjectConstraintSet::WorklistStatistics
+PointerObjectConstraintSet::SolveUsingWorklist<false>();
+template PointerObjectConstraintSet::WorklistStatistics
+PointerObjectConstraintSet::SolveUsingWorklist<true>();
 
 size_t
 PointerObjectConstraintSet::SolveNaively()

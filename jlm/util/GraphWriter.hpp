@@ -131,14 +131,14 @@ public:
    * When using program objects as attributes, the association is used to refer to
    * the unique id of its associated graph element, instead of the object's address.
    * Within a graph, only one graph element can be associated with any given program object.
-   * @param T the type of the program object to associate with
+   * @tparam T the type of the program object to associate with
    * @param object the object to associate this GraphElement with
    */
   template<typename T>
   void
-  SetProgramObject(const T * object)
+  SetProgramObject(const T & object)
   {
-    SetProgramObjectUintptr(reinterpret_cast<uintptr_t>(object));
+    SetProgramObjectUintptr(reinterpret_cast<uintptr_t>(&object));
   }
 
   /**
@@ -151,13 +151,13 @@ public:
    * @return true, if this GraphElement is associated with any program object
    */
   [[nodiscard]] bool
-  HasProgramObject() const;
+  HasProgramObject() const noexcept;
 
   /**
    * @return the program object associated with this graph element.
    */
   [[nodiscard]] uintptr_t
-  GetProgramObject() const;
+  GetProgramObject() const noexcept;
 
   /**
    * Assigns or overrides a given attribute on the element.
@@ -182,9 +182,9 @@ public:
    */
   template<typename T>
   void
-  SetAttributeObject(const std::string & attribute, const T * object)
+  SetAttributeObject(const std::string & attribute, const T & object)
   {
-    SetAttributeObject(attribute, reinterpret_cast<uintptr_t>(object));
+    SetAttributeObject(attribute, reinterpret_cast<uintptr_t>(&object));
   }
 
   /**
@@ -930,9 +930,9 @@ public:
 
   template<typename T>
   [[nodiscard]] GraphElement *
-  GetElementFromProgramObject(const T * object) const
+  GetElementFromProgramObject(const T & object) const
   {
-    return GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
+    return GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&object));
   }
 
   /**
@@ -942,13 +942,13 @@ public:
    * @param object the program object mapped to a GraphElement
    * @return a reference to the T mapped to the given object.
    */
-  template<typename T>
-  T &
-  GetFromProgramObject(const void * object) const
+  template<typename Element, typename ProgramObject>
+  Element &
+  GetFromProgramObject(const ProgramObject & object) const
   {
-    static_assert(std::is_base_of_v<GraphElement, T>);
-    GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(object));
-    auto result = dynamic_cast<T *>(element);
+    static_assert(std::is_base_of_v<GraphElement, Element>);
+    GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&object));
+    auto result = dynamic_cast<Element *>(element);
     JLM_ASSERT(result);
     return *result;
   }
