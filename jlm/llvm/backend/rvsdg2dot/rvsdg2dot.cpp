@@ -22,7 +22,7 @@ static util::Node &
 GetOrCreateTypeGraphNode(const rvsdg::type & type, util::Graph & typeGraph)
 {
   // If the type already has a corresponding node, return it
-  if (auto * graphElement = typeGraph.GetElementFromProgramObject(&type))
+  if (auto * graphElement = typeGraph.GetElementFromProgramObject(type))
   {
     auto * node = reinterpret_cast<util::Node *>(graphElement);
     JLM_ASSERT(node);
@@ -30,7 +30,7 @@ GetOrCreateTypeGraphNode(const rvsdg::type & type, util::Graph & typeGraph)
   }
 
   auto & node = typeGraph.CreateNode();
-  node.SetProgramObject(&type);
+  node.SetProgramObject(type);
   node.SetLabel(type.debug_string());
 
   // For all aggregate types, add edges from the nodes representing the children
@@ -66,16 +66,16 @@ GetOrCreateTypeGraphNode(const rvsdg::type & type, util::Graph & typeGraph)
 static void
 CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * typeGraph)
 {
-  graph.SetProgramObject(&region);
+  graph.SetProgramObject(region);
 
   // Connects an input port in the GraphWriter graph to an input in the RVSDG.
   // Also adds an edge from the input's origin to the input port in the graph.
   auto AttachInput = [&](util::Port & inputPort, const rvsdg::input & rvsdgInput)
   {
-    inputPort.SetProgramObject(&rvsdgInput);
+    inputPort.SetProgramObject(rvsdgInput);
 
     if (auto originPort =
-            reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(rvsdgInput.origin())))
+            reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(*rvsdgInput.origin())))
     {
       auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
       if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
@@ -89,7 +89,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
   // Also adds a type attribute referencing a node in the typeGraph, if one exists.
   auto AttachOutput = [&](util::Port & outputPort, const rvsdg::output & rvsdgOutput)
   {
-    outputPort.SetProgramObject(&rvsdgOutput);
+    outputPort.SetProgramObject(rvsdgOutput);
     if (typeGraph)
       outputPort.SetAttributeGraphElement(
           "type",
@@ -104,7 +104,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
     node.SetLabel(rvsdgNode->operation().debug_string());
-    node.SetProgramObject(rvsdgNode);
+    node.SetProgramObject(*rvsdgNode);
 
     for (size_t i = 0; i < rvsdgNode->ninputs(); i++)
       AttachInput(node.GetInputPort(i), *rvsdgNode->input(i));
