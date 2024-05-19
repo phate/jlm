@@ -300,3 +300,50 @@ TestDiamondChainWithBackEdge()
 JLM_UNIT_TEST_REGISTER(
     "jlm/util/TestTarjanScc-TestDiamondChainWithBackEdge",
     TestDiamondChainWithBackEdge);
+
+// During SCC creation, the function should query a node for its successors at most twice
+static int
+TestVisitEachNodeTwice()
+{
+  const size_t numNodes = 5;
+  std::vector<std::vector<size_t>> successors{
+    { 1, 2 }, // 0's successors
+    { 2, 3 }, // 1's successors
+    { 1, 3 }, // 2's successors
+    {},       // 3's successors
+    { 4 }     // 4's successors
+  };
+  // The graph looks like a 0->(12)->3 diamond with edges between 1 and 2, and a lone node 4
+
+  std::vector<size_t> successorsQueried(numNodes, 0);
+  auto GetSuccessors = [&](size_t node)
+  {
+    JLM_ASSERT(node < numNodes);
+    successorsQueried[node]++;
+    return successors[node];
+  };
+
+  std::vector<size_t> sccIndex;
+  std::vector<size_t> topologicalOrder;
+  auto numSccs = jlm::util::FindStronglyConnectedComponents(
+      numNodes,
+      GetSuccessors,
+      sccIndex,
+      topologicalOrder);
+
+  JLM_ASSERT(numSccs == 4);
+  for (size_t timesQueried : successorsQueried)
+    JLM_ASSERT(timesQueried <= 2);
+
+  // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
+  ValidateTopologicalOrderAndSccIndices(
+      numNodes,
+      GetSuccessors,
+      numSccs,
+      sccIndex,
+      topologicalOrder);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestVisitEachNodeTwice", TestVisitEachNodeTwice);
