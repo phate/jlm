@@ -490,6 +490,15 @@ public:
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::region & region,
+      const StoreVolatileOperation & storeOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::outputs(&CreateNode(region, storeOperation, operands));
+  }
+
   static StoreVolatileNode &
   CreateNode(
       rvsdg::region & region,

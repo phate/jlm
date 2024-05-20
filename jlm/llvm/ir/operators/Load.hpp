@@ -367,6 +367,15 @@ public:
   [[nodiscard]] MemoryStateOutputRange
   MemoryStateOutputs() const noexcept override;
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::region & region,
+      const LoadVolatileOperation & loadOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+  }
+
   static LoadVolatileNode &
   CreateNode(
       rvsdg::region & region,
