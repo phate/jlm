@@ -101,7 +101,7 @@ private:
   EncodeNonVolatileLoad(const LoadNonVolatileNode & loadNode);
 
   void
-  EncodeStore(const StoreNonVolatileNode & storeNode);
+  EncodeNonVolatileStore(const StoreNonVolatileNode & storeNode);
 
   void
   EncodeFree(const rvsdg::simple_node & freeNode);
