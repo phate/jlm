@@ -98,7 +98,7 @@ private:
   EncodeMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  EncodeLoad(const LoadNonVolatileNode & loadNode);
+  EncodeNonVolatileLoad(const LoadNonVolatileNode & loadNode);
 
   void
   EncodeStore(const StoreNonVolatileNode & storeNode);

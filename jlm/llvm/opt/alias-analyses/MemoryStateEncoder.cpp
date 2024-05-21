@@ -553,7 +553,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
   }
   else if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&simpleNode))
   {
-    EncodeLoad(*loadNode);
+    EncodeNonVolatileLoad(*loadNode);
   }
   else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&simpleNode))
   {
@@ -616,7 +616,7 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::simple_node & mallocNode)
 }
 
 void
-MemoryStateEncoder::EncodeLoad(const LoadNonVolatileNode & loadNode)
+MemoryStateEncoder::EncodeNonVolatileLoad(const LoadNonVolatileNode & loadNode)
 {
   auto & loadOperation = loadNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
