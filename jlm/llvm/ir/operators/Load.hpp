@@ -361,6 +361,14 @@ public:
     return *ioInput;
   }
 
+  [[nodiscard]] rvsdg::output &
+  GetIoStateOutput() const noexcept
+  {
+    auto ioOutput = output(1);
+    JLM_ASSERT(is<iostatetype>(ioOutput->type()));
+    return *ioOutput;
+  }
+
   [[nodiscard]] MemoryStateInputRange
   MemoryStateInputs() const noexcept override;
 

@@ -101,6 +101,9 @@ private:
   EncodeNonVolatileLoad(const LoadNonVolatileNode & loadNode);
 
   void
+  EncodeVolatileLoad(const LoadVolatileNode & oldLoadNode);
+
+  void
   EncodeNonVolatileStore(const StoreNonVolatileNode & storeNode);
 
   void

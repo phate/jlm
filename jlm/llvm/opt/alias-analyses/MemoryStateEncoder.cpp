@@ -196,6 +196,20 @@ public:
         memoryNodeStatePairs[n]->ReplaceState(*states[n]);
     }
 
+    static void
+    ReplaceStates(
+        const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
+        const util::iterator_range<rvsdg::output::iterator<rvsdg::simple_output>> & states)
+    {
+      auto it = states.begin();
+      for (auto memoryNodeStatePair : memoryNodeStatePairs)
+      {
+        memoryNodeStatePair->ReplaceState(*it);
+        it++;
+      }
+      JLM_ASSERT(it.value() == nullptr);
+    }
+
     static std::vector<rvsdg::output *>
     States(const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs)
     {
@@ -551,9 +565,13 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
   {
     EncodeMalloc(simpleNode);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&simpleNode))
+  else if (auto loadNonVolatileNode = dynamic_cast<const LoadNonVolatileNode *>(&simpleNode))
   {
-    EncodeNonVolatileLoad(*loadNode);
+    EncodeNonVolatileLoad(*loadNonVolatileNode);
+  }
+  else if (auto loadVolatileNode = dynamic_cast<const LoadVolatileNode *>(&simpleNode))
+  {
+    EncodeVolatileLoad(*loadVolatileNode);
   }
   else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&simpleNode))
   {
@@ -639,6 +657,34 @@ MemoryStateEncoder::EncodeNonVolatileLoad(const LoadNonVolatileNode & loadNode)
 
   if (is<PointerType>(oldResult.type()))
     stateMap.ReplaceAddress(oldResult, *outputs[0]);
+}
+
+void
+MemoryStateEncoder::EncodeVolatileLoad(const LoadVolatileNode & oldLoadNode)
+{
+  auto & stateMap = Context_->GetRegionalizedStateMap();
+
+  auto & address = *oldLoadNode.GetAddressInput().origin();
+  auto & ioState = *oldLoadNode.GetIoStateInput().origin();
+  auto & loadedType = oldLoadNode.GetOperation().GetLoadedType();
+  auto memoryNodeStatePairs = stateMap.GetStates(address);
+  auto inputStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+
+  auto & newLoadNode = LoadVolatileNode::CreateNode(
+      address,
+      ioState,
+      inputStates,
+      loadedType,
+      oldLoadNode.GetAlignment());
+  oldLoadNode.GetLoadedValueOutput().divert_users(&newLoadNode.GetLoadedValueOutput());
+  oldLoadNode.GetIoStateOutput().divert_users(&newLoadNode.GetIoStateOutput());
+
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+      memoryNodeStatePairs,
+      newLoadNode.MemoryStateOutputs());
+
+  if (is<PointerType>(loadedType))
+    stateMap.ReplaceAddress(oldLoadNode.GetLoadedValueOutput(), newLoadNode.GetLoadedValueOutput());
 }
 
 void
