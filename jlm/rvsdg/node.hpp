@@ -397,7 +397,7 @@ public:
     using value_type = T *;
     using difference_type = std::ptrdiff_t;
     using pointer = T **;
-    using rerefence = T *&;
+    using reference = T *&;
 
     static_assert(
         std::is_base_of<jlm::rvsdg::output, T>::value,

@@ -257,6 +257,7 @@ protected:
       : simple_node(&region, operation, operands)
   {}
 
+public:
   class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
   {
   public:
@@ -294,7 +295,6 @@ protected:
   using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
-public:
   [[nodiscard]] virtual const LoadOperation &
   GetOperation() const noexcept = 0;
 
@@ -331,6 +331,15 @@ public:
 
   [[nodiscard]] virtual MemoryStateOutputRange
   MemoryStateOutputs() const noexcept = 0;
+
+  /**
+   * Replaces this LoadNode by a new LoadNode with the given set of input memory states.
+   * Users of output from this node are re-directed to the new node, except for memory states.
+   * @param memoryStates the set of memory states this load node should depend on.
+   * @return the new node replacing this node
+   */
+  [[nodiscard]] virtual LoadNode &
+  ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const = 0;
 };
 
 /**
@@ -361,11 +370,22 @@ public:
     return *ioInput;
   }
 
+  [[nodiscard]] rvsdg::output &
+  GetIoStateOutput() const noexcept
+  {
+    auto ioOutput = output(1);
+    JLM_ASSERT(is<iostatetype>(ioOutput->type()));
+    return *ioOutput;
+  }
+
   [[nodiscard]] MemoryStateInputRange
   MemoryStateInputs() const noexcept override;
 
   [[nodiscard]] MemoryStateOutputRange
   MemoryStateOutputs() const noexcept override;
+
+  LoadNode &
+  ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const override;
 
   static std::vector<rvsdg::output *>
   Create(
@@ -497,6 +517,9 @@ public:
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
 
+  LoadNode &
+  ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const override;
+
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::output * address,
@@ -504,11 +527,7 @@ public:
       const rvsdg::valuetype & loadedType,
       size_t alignment)
   {
-    std::vector<rvsdg::output *> operands({ address });
-    operands.insert(operands.end(), states.begin(), states.end());
-
-    LoadNonVolatileOperation loadOperation(loadedType, states.size(), alignment);
-    return Create(*address->region(), loadOperation, operands);
+    return rvsdg::outputs(&CreateNode(address, states, loadedType, alignment));
   }
 
   static std::vector<rvsdg::output *>
@@ -527,6 +546,20 @@ public:
       const std::vector<rvsdg::output *> & operands)
   {
     return *(new LoadNonVolatileNode(region, loadOperation, operands));
+  }
+
+  static LoadNonVolatileNode &
+  CreateNode(
+      rvsdg::output * address,
+      const std::vector<rvsdg::output *> & states,
+      const rvsdg::valuetype & loadedType,
+      size_t alignment)
+  {
+    std::vector<rvsdg::output *> operands({ address });
+    operands.insert(operands.end(), states.begin(), states.end());
+
+    LoadNonVolatileOperation loadOperation(loadedType, states.size(), alignment);
+    return CreateNode(*address->region(), loadOperation, operands);
   }
 };
 

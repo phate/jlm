@@ -293,6 +293,15 @@ public:
 
   [[nodiscard]] virtual MemoryStateOutputRange
   MemoryStateOutputs() const noexcept = 0;
+
+  /**
+   * Replaces this StoreNode by a new StoreNode with the given set of input memory states.
+   * Users of output from this node are re-directed to the new node, except for memory states.
+   * @param memoryStates the set of memory states this load node should depend on.
+   * @return the new node replacing this node
+   */
+  [[nodiscard]] virtual StoreNode &
+  ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const = 0;
 };
 
 /**
@@ -321,6 +330,9 @@ public:
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
 
+  [[nodiscard]] StoreNode &
+  ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const override;
+
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::output * address,
@@ -328,13 +340,7 @@ public:
       const std::vector<rvsdg::output *> & states,
       size_t alignment)
   {
-    auto & storedType = CheckAndExtractStoredType(value->type());
-
-    std::vector<rvsdg::output *> operands({ address, value });
-    operands.insert(operands.end(), states.begin(), states.end());
-
-    StoreNonVolatileOperation storeOperation(storedType, states.size(), alignment);
-    return Create(*address->region(), storeOperation, operands);
+    return rvsdg::outputs(&CreateNode(address, value, states, alignment));
   }
 
   static std::vector<rvsdg::output *>
@@ -353,6 +359,22 @@ public:
       const std::vector<rvsdg::output *> & operands)
   {
     return *(new StoreNonVolatileNode(region, storeOperation, operands));
+  }
+
+  static StoreNonVolatileNode &
+  CreateNode(
+      rvsdg::output * address,
+      rvsdg::output * value,
+      const std::vector<rvsdg::output *> & states,
+      size_t alignment)
+  {
+    auto & storedType = CheckAndExtractStoredType(value->type());
+
+    std::vector<rvsdg::output *> operands({ address, value });
+    operands.insert(operands.end(), states.begin(), states.end());
+
+    StoreNonVolatileOperation storeOperation(storedType, states.size(), alignment);
+    return CreateNode(*address->region(), storeOperation, operands);
   }
 
 private:
@@ -489,6 +511,9 @@ public:
 
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+
+  [[nodiscard]] StoreNode &
+  ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const override;
 
   static std::vector<rvsdg::output *>
   Create(

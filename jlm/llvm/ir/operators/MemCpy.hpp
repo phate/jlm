@@ -184,6 +184,17 @@ public:
     return tac::create(operation, operands);
   }
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::output & destination,
+      rvsdg::output & source,
+      rvsdg::output & length,
+      rvsdg::output & ioState,
+      const std::vector<rvsdg::output *> & memoryStates)
+  {
+    return rvsdg::outputs(&CreateNode(destination, source, length, ioState, memoryStates));
+  }
+
   static rvsdg::simple_node &
   CreateNode(
       rvsdg::output & destination,

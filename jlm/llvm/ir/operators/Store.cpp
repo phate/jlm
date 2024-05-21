@@ -74,6 +74,16 @@ StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::outp
   return &CreateNode(*region, GetOperation(), operands);
 }
 
+StoreNode &
+StoreNonVolatileNode::ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      GetAddressInput().origin(),
+      GetStoredValueInput().origin(),
+      memoryStates,
+      GetOperation().GetAlignment());
+}
+
 StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
 
 bool
@@ -136,6 +146,19 @@ rvsdg::node *
 StoreVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
+}
+
+StoreNode &
+StoreVolatileNode::ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const
+{
+  auto & newNode = CreateNode(
+      *GetAddressInput().origin(),
+      *GetStoredValueInput().origin(),
+      *GetIoStateInput().origin(),
+      memoryStates,
+      GetOperation().GetAlignment());
+  GetIoStateOutput().divert_users(&newNode.GetIoStateOutput());
+  return newNode;
 }
 
 /* store normal form */

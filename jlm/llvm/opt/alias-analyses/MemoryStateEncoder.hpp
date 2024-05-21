@@ -34,8 +34,8 @@ namespace phi
 class node;
 }
 
-class LoadNonVolatileNode;
-class StoreNonVolatileNode;
+class LoadNode;
+class StoreNode;
 
 namespace aa
 {
@@ -98,10 +98,10 @@ private:
   EncodeMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  EncodeLoad(const LoadNonVolatileNode & loadNode);
+  EncodeLoad(const LoadNode & loadNode);
 
   void
-  EncodeStore(const StoreNonVolatileNode & storeNode);
+  EncodeStore(const StoreNode & storeNode);
 
   void
   EncodeFree(const rvsdg::simple_node & freeNode);

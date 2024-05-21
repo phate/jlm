@@ -76,6 +76,18 @@ LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::outpu
   return &CreateNode(*region, GetOperation(), operands);
 }
 
+LoadNode &
+LoadNonVolatileNode::ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const
+{
+  auto & newNode = CreateNode(
+      GetAddressInput().origin(),
+      memoryStates,
+      GetOperation().GetLoadedType(),
+      GetOperation().GetAlignment());
+  GetLoadedValueOutput().divert_users(&newNode.GetLoadedValueOutput());
+  return newNode;
+}
+
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
 
 bool
@@ -138,6 +150,20 @@ rvsdg::node *
 LoadVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
+}
+
+LoadNode &
+LoadVolatileNode::ReplaceWithNewMemoryStates(std::vector<rvsdg::output *> & memoryStates) const
+{
+  auto & newNode = CreateNode(
+      *GetAddressInput().origin(),
+      *GetIoStateInput().origin(),
+      memoryStates,
+      GetOperation().GetLoadedType(),
+      GetOperation().GetAlignment());
+  GetLoadedValueOutput().divert_users(&newNode.GetLoadedValueOutput());
+  GetIoStateOutput().divert_users(&newNode.GetIoStateOutput());
+  return newNode;
 }
 
 /* load normal form */

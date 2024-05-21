@@ -694,11 +694,11 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::region & region)
 void
 RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & simpleNode)
 {
-  if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&simpleNode))
+  if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
   {
     AnnotateLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&simpleNode))
+  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
   {
     AnnotateStore(*storeNode);
   }
@@ -718,14 +718,14 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & sim
   {
     AnnotateFree(simpleNode);
   }
-  else if (is<MemCpyNonVolatileOperation>(&simpleNode))
+  else if (is<MemCpyOperation>(&simpleNode))
   {
     AnnotateMemcpy(simpleNode);
   }
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNonVolatileNode & loadNode)
+RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNode & loadNode)
 {
   auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput().origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*loadNode.region());
@@ -733,7 +733,7 @@ RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNonVolatileNode & loadNode
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNonVolatileNode & storeNode)
+RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 {
   auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput().origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());
@@ -817,7 +817,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<MemCpyNonVolatileOperation>(memcpyNode.operation()));
+  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.operation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
