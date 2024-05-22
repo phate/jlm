@@ -689,9 +689,16 @@ TestDrawSubsetGraph()
   assert(importNode.HasAttribute("fillcolor"));
 }
 
+enum class TestSolve
+{
+  Naive,
+  Worklist,
+  WorklistWithOCD
+};
+
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
 static void
-TestPointerObjectConstraintSetSolve(bool useWorklist)
+TestPointerObjectConstraintSetSolve(TestSolve solverType)
 {
   using namespace jlm::llvm::aa;
 
@@ -757,10 +764,18 @@ TestPointerObjectConstraintSetSolve(bool useWorklist)
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  if (useWorklist)
-    constraints.SolveUsingWorklist();
-  else
+  switch (solverType)
+  {
+  case TestSolve::Naive:
     constraints.SolveNaively();
+    break;
+  case TestSolve::Worklist:
+    constraints.SolveUsingWorklist<false>();
+    break;
+  case TestSolve::WorklistWithOCD:
+    constraints.SolveUsingWorklist<true>();
+    break;
+  }
 
   // alloca1 should point to alloca2, etc
   assert(set.GetPointsToSet(alloca1).Size() == 1);
@@ -867,8 +882,9 @@ TestPointerObjectSet()
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
-  TestPointerObjectConstraintSetSolve(false);
-  TestPointerObjectConstraintSetSolve(true);
+  TestPointerObjectConstraintSetSolve(TestSolve::Naive);
+  TestPointerObjectConstraintSetSolve(TestSolve::Worklist);
+  TestPointerObjectConstraintSetSolve(TestSolve::WorklistWithOCD);
   TestClonePointerObjectConstraintSet();
   return 0;
 }

@@ -83,8 +83,7 @@ public:
     {
       return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
-          && Solver_ == other.Solver_
-          && WorklistSolverPolicy_ == other.WorklistSolverPolicy_;
+          && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_;
     }
 
     [[nodiscard]] bool

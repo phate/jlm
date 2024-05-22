@@ -704,7 +704,8 @@ public:
   /**
    * Struct holding statistics from solving the constraint set using the worklist solver.
    */
-  struct WorklistStatistics {
+  struct WorklistStatistics
+  {
     /**
      * The number of items that were popped from the worklist before the solution converged.
      */
@@ -835,7 +836,7 @@ public:
    *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    * @return an instance of WorklistStatistics describing solver statistics
    */
-  template <bool EnableOnlineCycleDetection>
+  template<bool EnableOnlineCycleDetection>
   WorklistStatistics
   SolveUsingWorklist();
 

@@ -202,14 +202,15 @@ public:
   }
 
   void
-  StopConstraintSolvingWorklistStatistics(PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
+  StopConstraintSolvingWorklistStatistics(
+      PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
     // How many work items were popped from the worklist in total
     AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
 
     if (*statistics.NumOnlineCyclesDetected)
-    AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
+      AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
 
     // TODO: Num unifications
   }
