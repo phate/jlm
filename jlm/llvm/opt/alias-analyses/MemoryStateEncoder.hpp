@@ -169,7 +169,7 @@ private:
    * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
    * outputs of \p storeNode are redirected to the respective outputs of the newly created copy.
    *
-   * @param loadNode A StoreNode.
+   * @param storeNode A StoreNode.
    * @param memoryStates The memory states the new StoreNode should consume.
    *
    * @return The newly created StoreNode.
@@ -182,7 +182,7 @@ private:
    * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
    * copy.
    *
-   * @param loadNode A rvsdg::simple_node representing a MemCpyOperation.
+   * @param memcpyNode A rvsdg::simple_node representing a MemCpyOperation.
    * @param memoryStates The memory states the new memcpy node should consume.
    *
    * @return A vector with the memory states of the newly created copy.
