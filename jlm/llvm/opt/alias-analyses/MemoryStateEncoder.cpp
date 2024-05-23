@@ -595,7 +595,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
   {
     EncodeFree(simpleNode);
   }
-  else if (is<MemCpyNonVolatileOperation>(&simpleNode))
+  else if (is<MemCpyOperation>(&simpleNode))
   {
     EncodeMemcpy(simpleNode);
   }
@@ -762,25 +762,27 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::simple_node & memcpyNode)
 
   auto destination = memcpyNode.input(0)->origin();
   auto source = memcpyNode.input(1)->origin();
-  auto length = memcpyNode.input(2)->origin();
 
   auto destMemoryNodeStatePairs = stateMap.GetStates(*destination);
   auto srcMemoryNodeStatePairs = stateMap.GetStates(*source);
 
-  auto inStates = StateMap::MemoryNodeStatePair::States(destMemoryNodeStatePairs);
+  auto memoryStateOperands = StateMap::MemoryNodeStatePair::States(destMemoryNodeStatePairs);
   auto srcStates = StateMap::MemoryNodeStatePair::States(srcMemoryNodeStatePairs);
-  inStates.insert(inStates.end(), srcStates.begin(), srcStates.end());
+  memoryStateOperands.insert(memoryStateOperands.end(), srcStates.begin(), srcStates.end());
 
-  auto outStates = MemCpyNonVolatileOperation::create(destination, source, length, inStates);
+  auto memoryStateResults = ReplaceMemcpyNode(memcpyNode, memoryStateOperands);
 
-  auto end = std::next(outStates.begin(), (ssize_t)destMemoryNodeStatePairs.size());
+  auto end = std::next(memoryStateResults.begin(), (ssize_t)destMemoryNodeStatePairs.size());
   StateMap::MemoryNodeStatePair::ReplaceStates(
       destMemoryNodeStatePairs,
-      { outStates.begin(),
-        std::next(outStates.begin(), (ssize_t)destMemoryNodeStatePairs.size()) });
+      { memoryStateResults.begin(),
+        std::next(memoryStateResults.begin(), (ssize_t)destMemoryNodeStatePairs.size()) });
 
-  JLM_ASSERT((size_t)std::distance(end, outStates.end()) == srcMemoryNodeStatePairs.size());
-  StateMap::MemoryNodeStatePair::ReplaceStates(srcMemoryNodeStatePairs, { end, outStates.end() });
+  JLM_ASSERT(
+      (size_t)std::distance(end, memoryStateResults.end()) == srcMemoryNodeStatePairs.size());
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+      srcMemoryNodeStatePairs,
+      { end, memoryStateResults.end() });
 }
 
 void
@@ -1010,6 +1012,40 @@ MemoryStateEncoder::ReplaceStoreNode(
   else
   {
     JLM_UNREACHABLE("Unhandled store node type.");
+  }
+}
+
+std::vector<rvsdg::output *>
+MemoryStateEncoder::ReplaceMemcpyNode(
+    const rvsdg::simple_node & memcpyNode,
+    const std::vector<rvsdg::output *> & memoryStates)
+{
+  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
+
+  auto destination = memcpyNode.input(0)->origin();
+  auto source = memcpyNode.input(1)->origin();
+  auto length = memcpyNode.input(2)->origin();
+
+  if (is<MemCpyVolatileOperation>(&memcpyNode))
+  {
+    auto & ioState = *memcpyNode.input(3)->origin();
+    auto & newMemcpyNode =
+        MemCpyVolatileOperation::CreateNode(*destination, *source, *length, ioState, memoryStates);
+    auto results = rvsdg::outputs(&newMemcpyNode);
+
+    // Redirect I/O state
+    memcpyNode.output(0)->divert_users(results[0]);
+
+    // Skip I/O state and only return memory states
+    return { std::next(results.begin()), results.end() };
+  }
+  else if (is<MemCpyNonVolatileOperation>(&memcpyNode))
+  {
+    return MemCpyNonVolatileOperation::create(destination, source, length, memoryStates);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled memcpy operation type.");
   }
 }
 

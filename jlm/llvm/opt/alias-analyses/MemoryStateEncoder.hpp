@@ -178,6 +178,21 @@ private:
   ReplaceStoreNode(const StoreNode & storeNode, const std::vector<rvsdg::output *> & memoryStates);
 
   /**
+   * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
+   * copy.
+   *
+   * @param loadNode A rvsdg::simple_node representing a MemCpyOperation.
+   * @param memoryStates The memory states the new memcpy node should consume.
+   *
+   * @return A vector with the memory states of the newly created copy.
+   */
+  [[nodiscard]] static std::vector<rvsdg::output *>
+  ReplaceMemcpyNode(
+      const rvsdg::simple_node & memcpyNode,
+      const std::vector<rvsdg::output *> & memoryStates);
+
+  /**
    * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.
    *
    * @param simpleNode A simple_node.
