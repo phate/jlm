@@ -101,7 +101,7 @@ private:
   EncodeLoad(const LoadNode & loadNode);
 
   void
-  EncodeNonVolatileStore(const StoreNonVolatileNode & storeNode);
+  EncodeStore(const StoreNode & storeNode);
 
   void
   EncodeFree(const rvsdg::simple_node & freeNode);
@@ -164,6 +164,18 @@ private:
    */
   [[nodiscard]] static LoadNode &
   ReplaceLoadNode(const LoadNode & loadNode, const std::vector<rvsdg::output *> & memoryStates);
+
+  /**
+   * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
+   * outputs of \p storeNode are redirected to the respective outputs of the newly created copy.
+   *
+   * @param loadNode A StoreNode.
+   * @param memoryStates The memory states the new StoreNode should consume.
+   *
+   * @return The newly created StoreNode.
+   */
+  [[nodiscard]] static StoreNode &
+  ReplaceStoreNode(const StoreNode & storeNode, const std::vector<rvsdg::output *> & memoryStates);
 
   /**
    * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.

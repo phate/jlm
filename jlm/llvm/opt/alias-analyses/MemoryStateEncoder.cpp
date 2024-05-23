@@ -210,6 +210,20 @@ public:
       JLM_ASSERT(it.value() == nullptr);
     }
 
+    static void
+    ReplaceStates(
+        const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
+        const StoreNode::MemoryStateOutputRange & states)
+    {
+      auto it = states.begin();
+      for (auto memoryNodeStatePair : memoryNodeStatePairs)
+      {
+        memoryNodeStatePair->ReplaceState(*it);
+        it++;
+      }
+      JLM_ASSERT(it.value() == nullptr);
+    }
+
     static std::vector<rvsdg::output *>
     States(const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs)
     {
@@ -569,9 +583,9 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
   {
     EncodeLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&simpleNode))
+  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
   {
-    EncodeNonVolatileStore(*storeNode);
+    EncodeStore(*storeNode);
   }
   else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
   {
@@ -658,20 +672,19 @@ MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
 }
 
 void
-MemoryStateEncoder::EncodeNonVolatileStore(const StoreNonVolatileNode & storeNode)
+MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
 {
-  auto & storeOperation = storeNode.GetOperation();
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto address = storeNode.GetAddressInput().origin();
-  auto value = storeNode.GetStoredValueInput().origin();
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
-  auto inStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto outStates =
-      StoreNonVolatileNode::Create(address, value, inStates, storeOperation.GetAlignment());
+  auto & newStoreNode = ReplaceStoreNode(storeNode, memoryStates);
 
-  StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, outStates);
+  StateMap::MemoryNodeStatePair::ReplaceStates(
+      memoryNodeStatePairs,
+      newStoreNode.MemoryStateOutputs());
 }
 
 void
@@ -975,7 +988,28 @@ MemoryStateEncoder::ReplaceLoadNode(
   }
   else
   {
-    JLM_UNREACHABLE("Unsupported load node type.");
+    JLM_UNREACHABLE("Unhandled load node type.");
+  }
+}
+
+StoreNode &
+MemoryStateEncoder::ReplaceStoreNode(
+    const jlm::llvm::StoreNode & storeNode,
+    const std::vector<rvsdg::output *> & memoryStates)
+{
+  if (auto storeVolatileNode = dynamic_cast<const StoreVolatileNode *>(&storeNode))
+  {
+    auto & newStoreNode = storeVolatileNode->CopyWithNewMemoryStates(memoryStates);
+    storeVolatileNode->GetIoStateOutput().divert_users(&newStoreNode.GetIoStateOutput());
+    return newStoreNode;
+  }
+  else if (auto storeNonVolatileNode = dynamic_cast<const StoreNonVolatileNode *>(&storeNode))
+  {
+    return storeNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled store node type.");
   }
 }
 
