@@ -98,10 +98,7 @@ private:
   EncodeMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  EncodeNonVolatileLoad(const LoadNonVolatileNode & loadNode);
-
-  void
-  EncodeVolatileLoad(const LoadVolatileNode & oldLoadNode);
+  EncodeLoad(const LoadNode & loadNode);
 
   void
   EncodeNonVolatileStore(const StoreNonVolatileNode & storeNode);
@@ -155,6 +152,27 @@ private:
   EncodeThetaExit(
       rvsdg::theta_node & thetaNode,
       const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
+
+  /**
+   * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
+   * outputs of \p loadNode are redirected to the respective outputs of the newly created copy.
+   *
+   * @param loadNode A LoadNode.
+   * @param memoryStates The memory states the new LoadNode should consume.
+   *
+   * @return The newly created LoadNode.
+   */
+  [[nodiscard]] static LoadNode &
+  ReplaceLoadNode(const LoadNode & loadNode, const std::vector<rvsdg::output *> & memoryStates);
+
+  /**
+   * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.
+   *
+   * @param simpleNode A simple_node.
+   * @return True, if \p simpleNode should be handled, otherwise false.
+   */
+  [[nodiscard]] static bool
+  ShouldHandle(const rvsdg::simple_node & simpleNode) noexcept;
 
   std::unique_ptr<Context> Context_;
 };
