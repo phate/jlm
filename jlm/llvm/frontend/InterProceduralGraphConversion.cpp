@@ -561,8 +561,7 @@ ConvertThreeAddressCode(
   {
     Convert<StoreNonVolatileNode, StoreNonVolatileOperation>(threeAddressCode, region, variableMap);
   }
-  else // FiXME: I would rather have all operations explicitly checked and a JLM_UNREACHABLE() as
-       // else case.
+  else
   {
     std::vector<rvsdg::output *> operands;
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
