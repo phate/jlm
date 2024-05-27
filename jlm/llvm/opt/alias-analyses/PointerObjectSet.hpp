@@ -361,7 +361,9 @@ public:
   UnifyPointerObjects(PointerObjectIndex object1, PointerObjectIndex object2);
 
   /**
-   * @return the PointsToSet of the PointerObject with the given \p index.
+   * Looks up the pointees of the given PointerObject \p index.
+   * If index is part of a unification, the unification root's points-to set is returned.
+   * @return the PointsToSet of the PointerObject.
    */
   [[nodiscard]] const util::HashSet<PointerObjectIndex> &
   GetPointsToSet(PointerObjectIndex index) const;

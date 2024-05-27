@@ -191,6 +191,10 @@ public:
       JLM_ASSERT(DfsCycleNodes_.Contains(subset));
       JLM_ASSERT(DfsCycleNodes_.Contains(superset));
 
+      // Track this cycle in the statistics
+      NumOnlineCyclesDetected_++;
+      NumOnlineCycleUnifications_ += DfsCycleNodes_.Size() - 1;
+
       // Merge all entries on the merge list
       for (const auto node : DfsCycleNodes_.Items())
       {
@@ -302,6 +306,22 @@ public:
     }
   };
 
+  /**
+   * @return how many cycles have been detected and eliminated by OCD
+   */
+  [[nodiscard]] size_t
+  NumOnlineCyclesDetected() const noexcept {
+    return NumOnlineCyclesDetected_;
+  }
+
+  /**
+   * @return how many pairwise unifications have been made while eliminating cycles
+   */
+  [[nodiscard]] size_t
+  NumOnlineCycleUnifications() const noexcept {
+    return NumOnlineCycleUnifications_;
+  }
+
 private:
   // The PointerObjectSet being operated on
   PointerObjectSet & Set_;
@@ -331,6 +351,10 @@ private:
   util::HashSet<PointerObjectIndex> DfsCycleNodes_;
   // List used to store the nodes that should come after the subset in the new topological order
   std::vector<PointerObjectIndex> DfsSupersetAndBeyond_;
+
+  // Statistics measurements
+  size_t NumOnlineCyclesDetected_ = 0;
+  size_t NumOnlineCycleUnifications_ = 0;
 };
 
 }

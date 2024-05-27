@@ -1550,6 +1550,12 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   while (worklist.HasMoreWorkItems())
     HandleWorkItem(worklist.PopWorkItem());
 
+  if (EnableOnlineCycleDetection)
+  {
+    statistics.NumOnlineCyclesDetected = onlineCycleDetector.NumOnlineCyclesDetected();
+    statistics.NumOnlineCycleUnifications = onlineCycleDetector.NumOnlineCycleUnifications();
+  }
+
   return statistics;
 }
 
