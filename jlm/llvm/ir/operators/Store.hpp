@@ -541,6 +541,15 @@ public:
     return CreateNode(*address.region(), storeOperation, operands);
   }
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::region & region,
+      const StoreVolatileOperation & loadOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+  }
+
 private:
   static const rvsdg::valuetype &
   CheckAndExtractStoredType(const rvsdg::type & type)

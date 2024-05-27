@@ -410,6 +410,15 @@ public:
     LoadVolatileOperation operation(loadedType, memoryStates.size(), alignment);
     return CreateNode(*address.region(), operation, operands);
   }
+
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::region & region,
+      const LoadVolatileOperation & loadOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+  }
 };
 
 /**
