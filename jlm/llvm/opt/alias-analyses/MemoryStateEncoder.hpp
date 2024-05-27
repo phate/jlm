@@ -34,8 +34,8 @@ namespace phi
 class node;
 }
 
-class LoadNonVolatileNode;
-class StoreNonVolatileNode;
+class LoadNode;
+class StoreNode;
 
 namespace aa
 {
@@ -98,10 +98,10 @@ private:
   EncodeMalloc(const rvsdg::simple_node & mallocNode);
 
   void
-  EncodeLoad(const LoadNonVolatileNode & loadNode);
+  EncodeLoad(const LoadNode & loadNode);
 
   void
-  EncodeStore(const StoreNonVolatileNode & storeNode);
+  EncodeStore(const StoreNode & storeNode);
 
   void
   EncodeFree(const rvsdg::simple_node & freeNode);
@@ -152,6 +152,54 @@ private:
   EncodeThetaExit(
       rvsdg::theta_node & thetaNode,
       const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
+
+  /**
+   * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
+   * outputs of \p loadNode are redirected to the respective outputs of the newly created copy.
+   *
+   * @param loadNode A LoadNode.
+   * @param memoryStates The memory states the new LoadNode should consume.
+   *
+   * @return The newly created LoadNode.
+   */
+  [[nodiscard]] static LoadNode &
+  ReplaceLoadNode(const LoadNode & loadNode, const std::vector<rvsdg::output *> & memoryStates);
+
+  /**
+   * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
+   * outputs of \p storeNode are redirected to the respective outputs of the newly created copy.
+   *
+   * @param storeNode A StoreNode.
+   * @param memoryStates The memory states the new StoreNode should consume.
+   *
+   * @return The newly created StoreNode.
+   */
+  [[nodiscard]] static StoreNode &
+  ReplaceStoreNode(const StoreNode & storeNode, const std::vector<rvsdg::output *> & memoryStates);
+
+  /**
+   * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of
+   * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
+   * copy.
+   *
+   * @param memcpyNode A rvsdg::simple_node representing a MemCpyOperation.
+   * @param memoryStates The memory states the new memcpy node should consume.
+   *
+   * @return A vector with the memory states of the newly created copy.
+   */
+  [[nodiscard]] static std::vector<rvsdg::output *>
+  ReplaceMemcpyNode(
+      const rvsdg::simple_node & memcpyNode,
+      const std::vector<rvsdg::output *> & memoryStates);
+
+  /**
+   * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.
+   *
+   * @param simpleNode A simple_node.
+   * @return True, if \p simpleNode should be handled, otherwise false.
+   */
+  [[nodiscard]] static bool
+  ShouldHandle(const rvsdg::simple_node & simpleNode) noexcept;
 
   std::unique_ptr<Context> Context_;
 };

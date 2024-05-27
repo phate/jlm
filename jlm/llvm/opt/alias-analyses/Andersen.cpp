@@ -491,6 +491,8 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 {
+  JLM_ASSERT(is<MemCpyOperation>(&node));
+
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
   JLM_ASSERT(is<PointerType>(dstAddressRegister.type()));
