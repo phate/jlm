@@ -731,16 +731,6 @@ public:
      * The number of items that were popped from the worklist before the solution converged.
      */
     size_t NumWorkItemsPopped{};
-
-    /**
-     * The number of cycles detected by online cycle detection, if enabled.
-     */
-    std::optional<size_t> NumOnlineCyclesDetected{};
-
-    /**
-     * The number of unifications made by online cycle detection, if enabled.
-     */
-    std::optional<size_t> NumOnlineCycleUnifications{};
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -898,7 +888,7 @@ private:
    * The worklist solver, with configuration passed at compile time as templates.
    * @param statistics the WorklistStatistics instance that will get information about this run.
    * @tparam worklist a type supporting the worklist interface with PointerObjectIndex as work items
-   * @See SolveUsingWorklist() for the public interface.
+   * @see SolveUsingWorklist() for the public interface.
    */
   template<typename Worklist>
   void
