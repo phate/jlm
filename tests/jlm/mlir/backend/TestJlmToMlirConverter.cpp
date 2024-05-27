@@ -395,16 +395,14 @@ TestMatch()
     std::cout << "Function Setup" << std::endl;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::ctl2, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::ctl2, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     // Create a match operation
     std::cout << "Match Operation" << std::endl;
@@ -416,7 +414,7 @@ TestMatch()
 
     auto match = jlm::rvsdg::match_op::Create(*predicateConst, mapping, 2, 2);
 
-    lambda->finalize({ match, iOStateArgument, memoryStateArgument, loopStateArgument });
+    lambda->finalize({ match, iOStateArgument, memoryStateArgument });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

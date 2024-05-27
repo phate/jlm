@@ -342,7 +342,6 @@ JlmToMlirConverter::ConvertSimpleNode(
     //! But jlm implements this with multiple mappings
     //! For easy conversion, we only created one mapping per value
     ::llvm::SmallVector<::mlir::Attribute> mappingVector;
-    int index = 0;
     for (auto mapping : *matchOp)
     {
       ::mlir::rvsdg::MatchRuleAttr matchRule = ::mlir::rvsdg::MatchRuleAttr::get(
@@ -351,8 +350,6 @@ JlmToMlirConverter::ConvertSimpleNode(
           mapping.second);
 
       mappingVector.push_back(matchRule);
-
-      index++;
     }
     //! The default alternative has an empty mapping
     mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
