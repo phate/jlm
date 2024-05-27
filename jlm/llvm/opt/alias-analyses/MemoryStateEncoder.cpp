@@ -757,7 +757,7 @@ MemoryStateEncoder::EncodeCallExit(const CallNode & callNode)
 void
 MemoryStateEncoder::EncodeMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&memcpyNode));
+  JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto destination = memcpyNode.input(0)->origin();
