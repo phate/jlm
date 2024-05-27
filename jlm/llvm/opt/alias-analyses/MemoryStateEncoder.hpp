@@ -34,8 +34,8 @@ namespace phi
 class node;
 }
 
-class LoadNonVolatileNode;
-class StoreNonVolatileNode;
+class LoadNode;
+class StoreNode;
 
 namespace aa
 {
