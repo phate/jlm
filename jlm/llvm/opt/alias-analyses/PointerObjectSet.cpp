@@ -1495,13 +1495,16 @@ PointerObjectConstraintSet::SolveUsingWorklist(WorklistSolverPolicy policy)
   WorklistStatistics statistics(policy);
   switch (policy)
   {
-  case WorklistSolverPolicy::LRF:
+  case WorklistSolverPolicy::Lrf:
     RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>>(statistics);
     return statistics;
-  case WorklistSolverPolicy::FIFO:
+  case WorklistSolverPolicy::TwoPhaseLrf:
+    RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>>(statistics);
+    return statistics;
+  case WorklistSolverPolicy::Fifo:
     RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>>(statistics);
     return statistics;
-  case WorklistSolverPolicy::LIFO:
+  case WorklistSolverPolicy::Lifo:
     RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>>(statistics);
     return statistics;
   default:
@@ -1514,12 +1517,14 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
 {
   switch (policy)
   {
-  case WorklistSolverPolicy::LRF:
-    return "LRF";
-  case WorklistSolverPolicy::FIFO:
-    return "FIFO";
-  case WorklistSolverPolicy::LIFO:
-    return "LIFO";
+  case WorklistSolverPolicy::Lrf:
+    return "Lrf";
+  case WorklistSolverPolicy::TwoPhaseLrf:
+    return "TwoPhaseLrf";
+  case WorklistSolverPolicy::Fifo:
+    return "Fifo";
+  case WorklistSolverPolicy::Lifo:
+    return "Lifo";
   default:
     JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
   }

@@ -55,11 +55,13 @@ Andersen::Configuration::DefaultConfiguration()
       config.SetSolver(Solver::Worklist);
 
     else if (option == CONFIG_WL_POLICY_LRF)
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::LRF);
+      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::Lrf);
+    else if (option == CONFIG_WL_POLICY_TWO_PHASE_LRF)
+      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::TwoPhaseLrf);
     else if (option == CONFIG_WL_POLICY_FIFO)
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::FIFO);
+      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::Fifo);
     else if (option == CONFIG_WL_POLICY_LIFO)
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::LIFO);
+      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::Lifo);
 
     else
     {

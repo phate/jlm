@@ -40,7 +40,7 @@ public:
   /**
    * Environment variable for overriding the default configuration.
    * The variable should something look like
-   * "+OVS +Normalize -OnlineCD Solver=Worklist WLPolicy=LRF"
+   * "+OVS +Normalize -OnlineCD Solver=Worklist WLPolicy=Lrf"
    */
   static inline const char * const ENV_CONFIG_OVERRIDE = "JLM_ANDERSEN_CONFIG_OVERRIDE";
   static inline const char * const CONFIG_OVS_ON = "+OVS";
@@ -49,9 +49,10 @@ public:
   static inline const char * const CONFIG_NORMALIZE_OFF = "-Normalize";
   static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
   static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
-  static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
-  static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
-  static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
+  static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=Lrf";
+  static inline const char * const CONFIG_WL_POLICY_TWO_PHASE_LRF = "WLPolicy=TwoPhaseLrf";
+  static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=Fifo";
+  static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=Lifo";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
@@ -172,7 +173,7 @@ public:
     bool EnableOfflineConstraintNormalization_ = true;
     Solver Solver_ = Solver::Worklist;
     PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
-        PointerObjectConstraintSet::WorklistSolverPolicy::LRF;
+        PointerObjectConstraintSet::WorklistSolverPolicy::TwoPhaseLrf;
   };
 
   ~Andersen() noexcept override = default;

@@ -705,9 +705,10 @@ public:
 
   enum class WorklistSolverPolicy
   {
-    LRF,
-    FIFO,
-    LIFO
+    Lrf,
+    TwoPhaseLrf,
+    Fifo,
+    Lifo
   };
 
   [[nodiscard]] static const char *
