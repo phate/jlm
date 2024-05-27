@@ -705,9 +705,24 @@ public:
 
   enum class WorklistSolverPolicy
   {
-    LRF,
-    FIFO,
-    LIFO
+    /**
+     * A worklist policy based on selecting the work item that was least recently selected. From:
+     *   A. Kanamori and D. Weise "Worklist management strategies for Dataflow Analysis" (1994)
+     * @see jlm::util::LrfWorklist
+     */
+    LeastRecentlyFired,
+
+    /**
+     * A worklist policy based on a queue.
+     * @see jlm::util::FifoWorklist
+     */
+    FirstInFirstOut,
+
+    /**
+     * A worklist policy based on a stack.
+     * @see jlm::util::LifoWorklist
+     */
+    LastInFirstOut
   };
 
   [[nodiscard]] static const char *

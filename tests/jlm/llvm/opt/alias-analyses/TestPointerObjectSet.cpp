@@ -876,9 +876,9 @@ TestPointerObjectSet()
   TestDrawSubsetGraph();
   TestPointerObjectConstraintSetSolve<false>();
   using Policy = jlm::llvm::aa::PointerObjectConstraintSet::WorklistSolverPolicy;
-  TestPointerObjectConstraintSetSolve<true>(Policy::LRF);
-  TestPointerObjectConstraintSetSolve<true>(Policy::FIFO);
-  TestPointerObjectConstraintSetSolve<true>(Policy::LIFO);
+  TestPointerObjectConstraintSetSolve<true>(Policy::LeastRecentlyFired);
+  TestPointerObjectConstraintSetSolve<true>(Policy::FirstInFirstOut);
+  TestPointerObjectConstraintSetSolve<true>(Policy::LastInFirstOut);
   TestClonePointerObjectConstraintSet();
   return 0;
 }

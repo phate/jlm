@@ -39,6 +39,8 @@ Andersen::Configuration::DefaultConfiguration()
     if (configStream.fail())
       break;
 
+    using Policy = PointerObjectConstraintSet::WorklistSolverPolicy;
+
     if (option == CONFIG_OVS_ON)
       config.EnableOfflineVariableSubstitution(true);
     else if (option == CONFIG_OVS_OFF)
@@ -55,11 +57,11 @@ Andersen::Configuration::DefaultConfiguration()
       config.SetSolver(Solver::Worklist);
 
     else if (option == CONFIG_WL_POLICY_LRF)
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::LRF);
+      config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
     else if (option == CONFIG_WL_POLICY_FIFO)
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::FIFO);
+      config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
     else if (option == CONFIG_WL_POLICY_LIFO)
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::LIFO);
+      config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
 
     else
     {

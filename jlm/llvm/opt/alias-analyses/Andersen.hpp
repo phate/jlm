@@ -172,7 +172,7 @@ public:
     bool EnableOfflineConstraintNormalization_ = true;
     Solver Solver_ = Solver::Worklist;
     PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
-        PointerObjectConstraintSet::WorklistSolverPolicy::LRF;
+        PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
   };
 
   ~Andersen() noexcept override = default;
