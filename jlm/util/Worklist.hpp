@@ -226,7 +226,9 @@ private:
  * Pushed work items are added to `next`, and popped from `current`.
  * When `current` is empty, `next` is sorted by last fired time, and becomes the new `current`.
  * Pushing a work item that is already in next or current is a no-op.
- *
+ * Two-phase LRF is presented by
+ *   B. Hardekopf and C. Lin "The And and the Grasshopper: Fast and Accurate Pointer Analysis
+ *   for Millions of Lines of Code" (2007)
  * @tparam T the type of the work items.
  * @see Worklist
  */

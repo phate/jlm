@@ -1495,16 +1495,16 @@ PointerObjectConstraintSet::SolveUsingWorklist(WorklistSolverPolicy policy)
   WorklistStatistics statistics(policy);
   switch (policy)
   {
-  case WorklistSolverPolicy::Lrf:
+  case WorklistSolverPolicy::LeastRecentlyFired:
     RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>>(statistics);
     return statistics;
-  case WorklistSolverPolicy::TwoPhaseLrf:
+  case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
     RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>>(statistics);
     return statistics;
-  case WorklistSolverPolicy::Fifo:
+  case WorklistSolverPolicy::FirstInFirstOut:
     RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>>(statistics);
     return statistics;
-  case WorklistSolverPolicy::Lifo:
+  case WorklistSolverPolicy::LastInFirstOut:
     RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>>(statistics);
     return statistics;
   default:
@@ -1517,14 +1517,14 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
 {
   switch (policy)
   {
-  case WorklistSolverPolicy::Lrf:
-    return "Lrf";
-  case WorklistSolverPolicy::TwoPhaseLrf:
-    return "TwoPhaseLrf";
-  case WorklistSolverPolicy::Fifo:
-    return "Fifo";
-  case WorklistSolverPolicy::Lifo:
-    return "Lifo";
+  case WorklistSolverPolicy::LeastRecentlyFired:
+    return "LeastRecentlyFired";
+  case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
+    return "TwoPhaseLeastRecentlyFired";
+  case WorklistSolverPolicy::FirstInFirstOut:
+    return "FirstInFirstOut";
+  case WorklistSolverPolicy::LastInFirstOut:
+    return "LastInFirstOut";
   default:
     JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
   }

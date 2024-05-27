@@ -705,10 +705,33 @@ public:
 
   enum class WorklistSolverPolicy
   {
-    Lrf,
-    TwoPhaseLrf,
-    Fifo,
-    Lifo
+    /**
+     * A worklist policy based on selecting the work item that was least recently selected. From:
+     *   A. Kanamori and D. Weise "Worklist management strategies for Dataflow Analysis" (1994)
+     * @see jlm::util::LrfWorklist
+     */
+    LeastRecentlyFired,
+
+    /**
+     * A worklist policy like LeastRecentlyFired, but using two lists instead of a priority queue.
+     * Described by:
+     *   B. Hardekopf and C. Lin "The And and the Grasshopper: Fast and Accurate Pointer Analysis
+     *   for Millions of Lines of Code" (2007)
+     * @see jlm::util::LrfWorklist
+     */
+    TwoPhaseLeastRecentlyFired,
+
+    /**
+     * A worklist policy based on a queue.
+     * @see jlm::util::FifoWorklist
+     */
+    FirstInFirstOut,
+
+    /**
+     * A worklist policy based on a stack.
+     * @see jlm::util::LifoWorklist
+     */
+    LastInFirstOut
   };
 
   [[nodiscard]] static const char *
