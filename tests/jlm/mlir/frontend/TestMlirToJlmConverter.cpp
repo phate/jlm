@@ -28,9 +28,9 @@ TestLambda()
     context->getOrLoadDialect<RVSDGDialect>();
     context->getOrLoadDialect<JLMDialect>();
     context->getOrLoadDialect<mlir::arith::ArithDialect>();
-    auto builder = std::make_unique<mlir::OpBuilder>(context.get());
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
 
-    auto omega = builder->create<OmegaNode>(builder->getUnknownLoc());
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
     auto & omegaRegion = omega.getRegion();
     auto * omegaBlock = new mlir::Block;
     omegaRegion.push_back(omegaBlock);
@@ -38,32 +38,32 @@ TestLambda()
     // Handle function arguments
     std::cout << "Creating function arguments" << std::endl;
     ::llvm::SmallVector<mlir::Type> arguments;
-    arguments.push_back(builder->getType<IOStateEdgeType>());
-    arguments.push_back(builder->getType<MemStateEdgeType>());
-    arguments.push_back(builder->getType<LoopStateEdgeType>());
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+    arguments.push_back(Builder_->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef argumentsArray(arguments);
 
     // Handle function results
     std::cout << "Creating function results" << std::endl;
     ::llvm::SmallVector<mlir::Type> results;
-    results.push_back(builder->getIntegerType(32));
-    results.push_back(builder->getType<IOStateEdgeType>());
-    results.push_back(builder->getType<MemStateEdgeType>());
-    results.push_back(builder->getType<LoopStateEdgeType>());
+    results.push_back(Builder_->getIntegerType(32));
+    results.push_back(Builder_->getType<IOStateEdgeType>());
+    results.push_back(Builder_->getType<MemStateEdgeType>());
+    results.push_back(Builder_->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef resultsArray(results);
 
     // LambdaNodes return a LambdaRefType
     std::cout << "Creating LambdaRefType" << std::endl;
     ::llvm::SmallVector<mlir::Type> lambdaRef;
-    auto refType = builder->getType<LambdaRefType>(argumentsArray, resultsArray);
+    auto refType = Builder_->getType<LambdaRefType>(argumentsArray, resultsArray);
     lambdaRef.push_back(refType);
 
     // Add function attributes
     std::cout << "Creating function attributes" << std::endl;
     ::llvm::SmallVector<mlir::NamedAttribute> attributes;
-    auto attributeName = builder->getStringAttr("sym_name");
-    auto attributeValue = builder->getStringAttr("test");
-    auto symbolName = builder->getNamedAttr(attributeName, attributeValue);
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
@@ -73,7 +73,7 @@ TestLambda()
     // Create the lambda node and add it to the region/block it resides in
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda =
-        builder->create<LambdaNode>(builder->getUnknownLoc(), lambdaRef, inputs, attributesRef);
+        Builder_->create<LambdaNode>(Builder_->getUnknownLoc(), lambdaRef, inputs, attributesRef);
     omegaBlock->push_back(lambda);
     auto & lambdaRegion = lambda.getRegion();
     auto * lambdaBlock = new mlir::Block;
@@ -81,11 +81,11 @@ TestLambda()
 
     // Add arguments to the region
     std::cout << "Adding arguments to the region" << std::endl;
-    lambdaBlock->addArgument(builder->getType<IOStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<MemStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<LoopStateEdgeType>(), builder->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<LoopStateEdgeType>(), Builder_->getUnknownLoc());
 
-    auto constOp = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 1, 32);
+    auto constOp = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 1, 32);
     lambdaBlock->push_back(constOp);
 
     ::llvm::SmallVector<mlir::Value> regionResults;
@@ -96,14 +96,14 @@ TestLambda()
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
-    auto lambdaResult = builder->create<LambdaResult>(builder->getUnknownLoc(), regionResults);
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
     lambdaBlock->push_back(lambdaResult);
 
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda);
-    auto omegaResult = builder->create<OmegaResult>(builder->getUnknownLoc(), omegaRegionResults);
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
@@ -148,9 +148,9 @@ TestDivOperation()
     context->getOrLoadDialect<RVSDGDialect>();
     context->getOrLoadDialect<JLMDialect>();
     context->getOrLoadDialect<mlir::arith::ArithDialect>();
-    auto builder = std::make_unique<mlir::OpBuilder>(context.get());
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
 
-    auto omega = builder->create<OmegaNode>(builder->getUnknownLoc());
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
     auto & omegaRegion = omega.getRegion();
     auto * omegaBlock = new mlir::Block;
     omegaRegion.push_back(omegaBlock);
@@ -158,33 +158,33 @@ TestDivOperation()
     // Handle function arguments
     std::cout << "Creating function arguments" << std::endl;
     ::llvm::SmallVector<mlir::Type> arguments;
-    arguments.push_back(builder->getIntegerType(32));
-    arguments.push_back(builder->getType<IOStateEdgeType>());
-    arguments.push_back(builder->getType<MemStateEdgeType>());
-    arguments.push_back(builder->getType<LoopStateEdgeType>());
+    arguments.push_back(Builder_->getIntegerType(32));
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+    arguments.push_back(Builder_->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef argumentsArray(arguments);
 
     // Handle function results
     std::cout << "Creating function results" << std::endl;
     ::llvm::SmallVector<mlir::Type> results;
-    results.push_back(builder->getIntegerType(32));
-    results.push_back(builder->getType<IOStateEdgeType>());
-    results.push_back(builder->getType<MemStateEdgeType>());
-    results.push_back(builder->getType<LoopStateEdgeType>());
+    results.push_back(Builder_->getIntegerType(32));
+    results.push_back(Builder_->getType<IOStateEdgeType>());
+    results.push_back(Builder_->getType<MemStateEdgeType>());
+    results.push_back(Builder_->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef resultsArray(results);
 
     // LambdaNodes return a LambdaRefType
     std::cout << "Creating LambdaRefType" << std::endl;
     ::llvm::SmallVector<mlir::Type> lambdaRef;
-    auto refType = builder->getType<LambdaRefType>(argumentsArray, resultsArray);
+    auto refType = Builder_->getType<LambdaRefType>(argumentsArray, resultsArray);
     lambdaRef.push_back(refType);
 
     // Add function attributes
     std::cout << "Creating function attributes" << std::endl;
     ::llvm::SmallVector<mlir::NamedAttribute> attributes;
-    auto attributeName = builder->getStringAttr("sym_name");
-    auto attributeValue = builder->getStringAttr("test");
-    auto symbolName = builder->getNamedAttr(attributeName, attributeValue);
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
@@ -194,7 +194,7 @@ TestDivOperation()
     // Create the lambda node and add it to the region/block it resides in
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda =
-        builder->create<LambdaNode>(builder->getUnknownLoc(), lambdaRef, inputs, attributesRef);
+        Builder_->create<LambdaNode>(Builder_->getUnknownLoc(), lambdaRef, inputs, attributesRef);
     omegaBlock->push_back(lambda);
     auto & lambdaRegion = lambda.getRegion();
     auto * lambdaBlock = new mlir::Block;
@@ -202,17 +202,17 @@ TestDivOperation()
 
     // Add arguments to the region
     std::cout << "Adding arguments to the region" << std::endl;
-    lambdaBlock->addArgument(builder->getIntegerType(32), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<IOStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<MemStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<LoopStateEdgeType>(), builder->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getIntegerType(32), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<LoopStateEdgeType>(), Builder_->getUnknownLoc());
 
     // ConstOp1 is not connected to anything
-    auto constOp1 = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 20, 32);
+    auto constOp1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
     lambdaBlock->push_back(constOp1);
 
     // ConstOp2 is connected as second argument of the divide operation
-    auto constOp2 = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 5, 32);
+    auto constOp2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
     lambdaBlock->push_back(constOp2);
 
     // lambdaBlock->getArguments();
@@ -238,9 +238,9 @@ TestDivOperation()
     }
 
     //! The divide op has to be connected to a lambda block argument and not only to constants
-    //! because the rvsdg builder has a constant propagation pass
-    auto divideOp = builder->create<mlir::arith::DivUIOp>(
-        builder->getUnknownLoc(),
+    //! because the rvsdg Builder_ has a constant propagation pass
+    auto divideOp = Builder_->create<mlir::arith::DivUIOp>(
+        Builder_->getUnknownLoc(),
         lambdaBlock->getArgument(0),
         constOp2);
     lambdaBlock->push_back(divideOp);
@@ -253,14 +253,14 @@ TestDivOperation()
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
-    auto lambdaResult = builder->create<LambdaResult>(builder->getUnknownLoc(), regionResults);
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
     lambdaBlock->push_back(lambdaResult);
 
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda);
-    auto omegaResult = builder->create<OmegaResult>(builder->getUnknownLoc(), omegaRegionResults);
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
@@ -340,9 +340,9 @@ TestCompZeroExt()
     context->getOrLoadDialect<RVSDGDialect>();
     context->getOrLoadDialect<JLMDialect>();
     context->getOrLoadDialect<mlir::arith::ArithDialect>();
-    auto builder = std::make_unique<mlir::OpBuilder>(context.get());
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
 
-    auto omega = builder->create<OmegaNode>(builder->getUnknownLoc());
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
     auto & omegaRegion = omega.getRegion();
     auto * omegaBlock = new mlir::Block;
     omegaRegion.push_back(omegaBlock);
@@ -350,33 +350,33 @@ TestCompZeroExt()
     // Handle function arguments
     std::cout << "Creating function arguments" << std::endl;
     ::llvm::SmallVector<mlir::Type> arguments;
-    arguments.push_back(builder->getIntegerType(32));
-    arguments.push_back(builder->getType<IOStateEdgeType>());
-    arguments.push_back(builder->getType<MemStateEdgeType>());
-    arguments.push_back(builder->getType<LoopStateEdgeType>());
+    arguments.push_back(Builder_->getIntegerType(32));
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+    arguments.push_back(Builder_->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef argumentsArray(arguments);
 
     // Handle function results
     std::cout << "Creating function results" << std::endl;
     ::llvm::SmallVector<mlir::Type> results;
-    results.push_back(builder->getIntegerType(32));
-    results.push_back(builder->getType<IOStateEdgeType>());
-    results.push_back(builder->getType<MemStateEdgeType>());
-    results.push_back(builder->getType<LoopStateEdgeType>());
+    results.push_back(Builder_->getIntegerType(32));
+    results.push_back(Builder_->getType<IOStateEdgeType>());
+    results.push_back(Builder_->getType<MemStateEdgeType>());
+    results.push_back(Builder_->getType<LoopStateEdgeType>());
     ::llvm::ArrayRef resultsArray(results);
 
     // LambdaNodes return a LambdaRefType
     std::cout << "Creating LambdaRefType" << std::endl;
     ::llvm::SmallVector<mlir::Type> lambdaRef;
-    auto refType = builder->getType<LambdaRefType>(argumentsArray, resultsArray);
+    auto refType = Builder_->getType<LambdaRefType>(argumentsArray, resultsArray);
     lambdaRef.push_back(refType);
 
     // Add function attributes
     std::cout << "Creating function attributes" << std::endl;
     ::llvm::SmallVector<mlir::NamedAttribute> attributes;
-    auto attributeName = builder->getStringAttr("sym_name");
-    auto attributeValue = builder->getStringAttr("test");
-    auto symbolName = builder->getNamedAttr(attributeName, attributeValue);
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
     attributes.push_back(symbolName);
     ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
@@ -386,7 +386,7 @@ TestCompZeroExt()
     // Create the lambda node and add it to the region/block it resides in
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda =
-        builder->create<LambdaNode>(builder->getUnknownLoc(), lambdaRef, inputs, attributesRef);
+        Builder_->create<LambdaNode>(Builder_->getUnknownLoc(), lambdaRef, inputs, attributesRef);
     omegaBlock->push_back(lambda);
     auto & lambdaRegion = lambda.getRegion();
     auto * lambdaBlock = new mlir::Block;
@@ -394,56 +394,55 @@ TestCompZeroExt()
 
     // Add arguments to the region
     std::cout << "Adding arguments to the region" << std::endl;
-    lambdaBlock->addArgument(builder->getIntegerType(32), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<IOStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<MemStateEdgeType>(), builder->getUnknownLoc());
-    lambdaBlock->addArgument(builder->getType<LoopStateEdgeType>(), builder->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getIntegerType(32), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<LoopStateEdgeType>(), Builder_->getUnknownLoc());
 
     // ConstOp1 is connected to the second argument of the add operation
-    auto constOp1 = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 20, 32);
+    auto constOp1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
     lambdaBlock->push_back(constOp1);
 
     // ConstOp2 is connected as second argument of the compare operation
-    auto constOp2 = builder->create<mlir::arith::ConstantIntOp>(builder->getUnknownLoc(), 5, 32);
+    auto constOp2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
     lambdaBlock->push_back(constOp2);
 
     //! The divide op has to be connected to a lambda block argument and not only to constants
-    //! because the rvsdg builder has a constant propagation pass
-    auto AddOp = builder->create<mlir::arith::AddIOp>(
-        builder->getUnknownLoc(),
+    //! because the rvsdg Builder_ has a constant propagation pass
+    auto AddOp = Builder_->create<mlir::arith::AddIOp>(
+        Builder_->getUnknownLoc(),
         lambdaBlock->getArgument(0),
         constOp1);
     lambdaBlock->push_back(AddOp);
 
-    auto compOp = builder->create<mlir::arith::CmpIOp>(
-        builder->getUnknownLoc(),
+    auto compOp = Builder_->create<mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
         mlir::arith::CmpIPredicate::eq,
         AddOp.getResult(),
         constOp2);
     lambdaBlock->push_back(compOp);
 
-    auto zeroExtOp = builder->create<mlir::arith::ExtUIOp>(
-        builder->getUnknownLoc(),
-        builder->getIntegerType(32),
+    auto zeroExtOp = Builder_->create<mlir::arith::ExtUIOp>(
+        Builder_->getUnknownLoc(),
+        Builder_->getIntegerType(32),
         compOp.getResult());
     lambdaBlock->push_back(zeroExtOp);
 
+    // Handle the result of the lambda
     ::llvm::SmallVector<mlir::Value> regionResults;
     regionResults.push_back(zeroExtOp->getResult(0));
     regionResults.push_back(lambdaBlock->getArgument(1));
     regionResults.push_back(lambdaBlock->getArgument(2));
     regionResults.push_back(lambdaBlock->getArgument(3));
-
-    // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
-    auto lambdaResult = builder->create<LambdaResult>(builder->getUnknownLoc(), regionResults);
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
     lambdaBlock->push_back(lambdaResult);
 
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
     omegaRegionResults.push_back(lambda);
-    auto omegaResult = builder->create<OmegaResult>(builder->getUnknownLoc(), omegaRegionResults);
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
@@ -546,6 +545,344 @@ TestCompZeroExt()
   return 0;
 }
 
+/** \brief TestMatchOp
+ *
+ * This function tests the Match operation. It creates a lambda block with a Match operation.
+ *
+ */
+static int
+TestMatchOp()
+{
+  {
+    using namespace mlir::rvsdg;
+    using namespace mlir::jlm;
+
+    // Setup MLIR Context and load dialects
+    std::cout << "Creating MLIR context" << std::endl;
+    auto context = std::make_unique<mlir::MLIRContext>();
+    context->getOrLoadDialect<RVSDGDialect>();
+    context->getOrLoadDialect<JLMDialect>();
+    context->getOrLoadDialect<mlir::arith::ArithDialect>();
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
+
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
+    auto & omegaRegion = omega.getRegion();
+    auto * omegaBlock = new mlir::Block;
+    omegaRegion.push_back(omegaBlock);
+
+    // Handle function arguments
+    std::cout << "Creating function arguments" << std::endl;
+    ::llvm::SmallVector<mlir::Type> arguments;
+    arguments.push_back(Builder_->getIntegerType(32));
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+    arguments.push_back(Builder_->getType<LoopStateEdgeType>());
+    ::llvm::ArrayRef argumentsArray(arguments);
+
+    // Handle function results
+    std::cout << "Creating function results" << std::endl;
+    ::llvm::SmallVector<mlir::Type> results;
+    results.push_back(::mlir::rvsdg::RVSDG_CTRLType::get(Builder_->getContext(), 4));
+    results.push_back(Builder_->getType<IOStateEdgeType>());
+    results.push_back(Builder_->getType<MemStateEdgeType>());
+    results.push_back(Builder_->getType<LoopStateEdgeType>());
+    ::llvm::ArrayRef resultsArray(results);
+
+    // LambdaNodes return a LambdaRefType
+    std::cout << "Creating LambdaRefType" << std::endl;
+    ::llvm::SmallVector<mlir::Type> lambdaRef;
+    auto refType = Builder_->getType<LambdaRefType>(argumentsArray, resultsArray);
+    lambdaRef.push_back(refType);
+
+    // Add function attributes
+    std::cout << "Creating function attributes" << std::endl;
+    ::llvm::SmallVector<mlir::NamedAttribute> attributes;
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
+    attributes.push_back(symbolName);
+    ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
+
+    // Add inputs to the function
+    ::llvm::SmallVector<mlir::Value> inputs;
+
+    // Create the lambda node and add it to the region/block it resides in
+    std::cout << "Creating LambdaNode" << std::endl;
+    auto lambda =
+        Builder_->create<LambdaNode>(Builder_->getUnknownLoc(), lambdaRef, inputs, attributesRef);
+    omegaBlock->push_back(lambda);
+    auto & lambdaRegion = lambda.getRegion();
+    auto * lambdaBlock = new mlir::Block;
+    lambdaRegion.push_back(lambdaBlock);
+
+    // Add arguments to the region
+    std::cout << "Adding arguments to the region" << std::endl;
+    lambdaBlock->addArgument(Builder_->getIntegerType(32), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<LoopStateEdgeType>(), Builder_->getUnknownLoc());
+
+    ::llvm::SmallVector<::mlir::Attribute> mappingVector;
+
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef(static_cast<int64_t>(0)),
+        4));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef(static_cast<int64_t>(1)),
+        5));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef(static_cast<int64_t>(1)),
+        6));
+    //! The default alternative has an empty mapping
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef<int64_t>(), 2));
+
+    auto Match = Builder_->create<::mlir::rvsdg::Match>(
+        Builder_->getUnknownLoc(),
+        ::mlir::rvsdg::RVSDG_CTRLType::get(
+            Builder_->getContext(),
+            mappingVector.size()), // Control, ouput type
+        // omegaBlock->getArgument(0),                           // input
+        lambdaBlock->getArgument(0), // input
+        ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
+    lambdaBlock->push_back(Match);
+
+    // Handle the result of the lambda
+    ::llvm::SmallVector<mlir::Value> regionResults;
+    regionResults.push_back(Match->getResult(0));
+    regionResults.push_back(lambdaBlock->getArgument(1));
+    regionResults.push_back(lambdaBlock->getArgument(2));
+    regionResults.push_back(lambdaBlock->getArgument(3));
+    std::cout << "Creating LambdaResult" << std::endl;
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
+    lambdaBlock->push_back(lambdaResult);
+
+    // Handle the result of the omega
+    std::cout << "Creating OmegaResult" << std::endl;
+    ::llvm::SmallVector<mlir::Value> omegaRegionResults;
+    omegaRegionResults.push_back(lambda);
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
+    omegaBlock->push_back(omegaResult);
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = rvsdgModule->Rvsdg().root();
+
+    {
+      using namespace jlm::rvsdg;
+
+      // Get the lambda block
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+
+      auto lambdaRegion = convertedLambda->subregion();
+
+      jlm::rvsdg::node_output * matchOutput;
+      assert(
+          matchOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
+      jlm::rvsdg::node * matchNode = matchOutput->node();
+      assert(is<match_op>(matchNode->operation()));
+
+      auto matchOp = dynamic_cast<const match_op *>(&matchNode->operation());
+      assert(matchOp->narguments() == 1);
+      assert(dynamic_cast<const bittype *>(&matchOp->argument(0).type()));
+      assert(dynamic_cast<const bittype *>(&matchOp->argument(0).type())->nbits() == 32);
+
+      // 3 alternatives + default
+      assert(matchOp->nalternatives() == 4);
+
+      assert(matchOp->default_alternative() == 2);
+
+      for (auto mapping : *matchOp)
+      {
+        assert(
+            (mapping.first == 0 && mapping.second == 4)
+            || (mapping.first == 1 && mapping.second == 5)
+            || (mapping.first == 1 && mapping.second == 6));
+      }
+    }
+  }
+  return 0;
+}
+
+/** \brief TestMatchOp
+ *
+ * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.
+ *
+ */
+static int
+TestGammaOp()
+{
+  {
+    using namespace mlir::rvsdg;
+    using namespace mlir::jlm;
+
+    // Setup MLIR Context and load dialects
+    std::cout << "Creating MLIR context" << std::endl;
+    auto context = std::make_unique<mlir::MLIRContext>();
+    context->getOrLoadDialect<RVSDGDialect>();
+    context->getOrLoadDialect<JLMDialect>();
+    context->getOrLoadDialect<mlir::arith::ArithDialect>();
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
+
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
+    auto & omegaRegion = omega.getRegion();
+    auto * omegaBlock = new mlir::Block;
+    omegaRegion.push_back(omegaBlock);
+
+    // Handle function arguments
+    std::cout << "Creating function arguments" << std::endl;
+    ::llvm::SmallVector<mlir::Type> arguments;
+    arguments.push_back(::mlir::rvsdg::RVSDG_CTRLType::get(Builder_->getContext(), 3));
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+    arguments.push_back(Builder_->getType<LoopStateEdgeType>());
+    ::llvm::ArrayRef argumentsArray(arguments);
+
+    // Handle function results
+    std::cout << "Creating function results" << std::endl;
+    ::llvm::SmallVector<mlir::Type> results;
+    results.push_back(Builder_->getIntegerType(32));
+    results.push_back(Builder_->getIntegerType(32));
+    results.push_back(Builder_->getType<IOStateEdgeType>());
+    results.push_back(Builder_->getType<MemStateEdgeType>());
+    results.push_back(Builder_->getType<LoopStateEdgeType>());
+    ::llvm::ArrayRef resultsArray(results);
+
+    // LambdaNodes return a LambdaRefType
+    std::cout << "Creating LambdaRefType" << std::endl;
+    ::llvm::SmallVector<mlir::Type> lambdaRef;
+    auto refType = Builder_->getType<LambdaRefType>(argumentsArray, resultsArray);
+    lambdaRef.push_back(refType);
+
+    // Add function attributes
+    std::cout << "Creating function attributes" << std::endl;
+    ::llvm::SmallVector<mlir::NamedAttribute> attributes;
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
+    attributes.push_back(symbolName);
+    ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
+
+    // Add inputs to the function
+    ::llvm::SmallVector<mlir::Value> inputs;
+
+    // Create the lambda node and add it to the region/block it resides in
+    std::cout << "Creating LambdaNode" << std::endl;
+    auto lambda =
+        Builder_->create<LambdaNode>(Builder_->getUnknownLoc(), lambdaRef, inputs, attributesRef);
+    omegaBlock->push_back(lambda);
+    auto & lambdaRegion = lambda.getRegion();
+    auto * lambdaBlock = new mlir::Block;
+    lambdaRegion.push_back(lambdaBlock);
+
+    // Add arguments to the region
+    std::cout << "Adding arguments to the region" << std::endl;
+    lambdaBlock->addArgument(
+        ::mlir::rvsdg::RVSDG_CTRLType::get(Builder_->getContext(), 3),
+        Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<LoopStateEdgeType>(), Builder_->getUnknownLoc());
+
+    auto entryVar1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
+    lambdaBlock->push_back(entryVar1);
+    auto entryVar2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 6, 32);
+    lambdaBlock->push_back(entryVar2);
+
+    ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
+    typeRangeOuput.push_back(::mlir::IntegerType::get(Builder_->getContext(), 32));
+    typeRangeOuput.push_back(::mlir::IntegerType::get(Builder_->getContext(), 32));
+    ::mlir::rvsdg::GammaNode gamma = Builder_->create<::mlir::rvsdg::GammaNode>(
+        Builder_->getUnknownLoc(),
+        ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
+        // ConstantCtrl, //predicate
+        lambdaBlock->getArgument(0),                                                   // predicate
+        ::mlir::ValueRange(::llvm::ArrayRef<::mlir::Value>({ entryVar1, entryVar2 })), // Inputs
+        static_cast<unsigned>(3) // regionsCount
+    );
+    lambdaBlock->push_back(gamma);
+
+    for (size_t i = 0; i < gamma.getNumRegions(); ++i)
+    {
+      auto & gammaBlock = gamma.getRegion(i).emplaceBlock();
+      auto exitvar1 =
+          Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), i + 1, 32);
+      gammaBlock.push_back(exitvar1);
+      auto exitvar2 =
+          Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 10 * (i + 1), 32);
+      gammaBlock.push_back(exitvar2);
+      auto gammaResult = Builder_->create<::mlir::rvsdg::GammaResult>(
+          Builder_->getUnknownLoc(),
+          ::llvm::SmallVector<mlir::Value>({ exitvar1, exitvar2 }));
+      gammaBlock.push_back(gammaResult);
+    }
+
+    // Handle the result of the lambda
+    ::llvm::SmallVector<mlir::Value> regionResults;
+    regionResults.push_back(gamma->getResult(0));
+    regionResults.push_back(gamma->getResult(1));
+    regionResults.push_back(lambdaBlock->getArgument(1));
+    regionResults.push_back(lambdaBlock->getArgument(2));
+    regionResults.push_back(lambdaBlock->getArgument(3));
+    std::cout << "Creating LambdaResult" << std::endl;
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
+    lambdaBlock->push_back(lambdaResult);
+
+    // Handle the result of the omega
+    std::cout << "Creating OmegaResult" << std::endl;
+    ::llvm::SmallVector<mlir::Value> omegaRegionResults;
+    omegaRegionResults.push_back(lambda);
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
+    omegaBlock->push_back(omegaResult);
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = rvsdgModule->Rvsdg().root();
+
+    {
+      using namespace jlm::rvsdg;
+
+      assert(region->nnodes() == 1);
+
+      // Get the lambda block
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+
+      auto lambdaRegion = convertedLambda->subregion();
+
+      // 2 constants + gamma
+      assert(lambdaRegion->nnodes() == 3);
+
+      jlm::rvsdg::node_output * gammaOutput;
+      assert(
+          gammaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
+      jlm::rvsdg::node * gammaNode = gammaOutput->node();
+      assert(is<gamma_op>(gammaNode->operation()));
+
+      std::cout << "Checking gamma operation" << std::endl;
+      auto gammaOp = dynamic_cast<const gamma_op *>(&gammaNode->operation());
+      assert(gammaNode->ninputs() == 3);
+      assert(gammaOp->nalternatives() == 3);
+      assert(gammaNode->noutputs() == 2);
+    }
+  }
+  return 0;
+}
+
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgLambdaGen", TestLambda)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgDivOperationGen", TestDivOperation)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgCompZeroExtGen", TestCompZeroExt)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestMatchGen", TestMatchOp)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestGammaGen", TestGammaOp)

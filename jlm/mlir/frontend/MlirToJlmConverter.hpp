@@ -87,7 +87,7 @@ private:
    * of the MLIR region.
    * \return The results of the region are returned as a std::vector
    */
-  std::vector<jlm::rvsdg::output *>
+  ::llvm::SmallVector<jlm::rvsdg::output *>
   ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdgRegion);
 
   /**
@@ -97,25 +97,23 @@ private:
    * of the MLIR region.
    * \return The results of the region are returned as a std::vector
    */
-  std::vector<jlm::rvsdg::output *>
-  ConvertBlock(
-      ::mlir::Block & block,
-      rvsdg::region & rvsdgRegion);
+  ::llvm::SmallVector<jlm::rvsdg::output *>
+  ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion);
 
   /**
    * Retreive the previously converted RVSDG ouputs from the map of operations
    * and return them in the inputs vector.
    * \param mlirOp The MLIR operation that the inputs are retrieved for.
    * \param operationsMap The map of operations that have been converted.
-   * \param rvsdgRegion The RVSDG region that the inputs are retrieved from (if it's a region argument).
-   * \param inputs The vector that the inputs are stored in.
+   * \param rvsdgRegion The RVSDG region that the inputs are retrieved from (if it's a region
+   * argument). \param inputs The vector that the inputs are stored in.
    */
   void
   getConvertedInputs(
       ::mlir::Operation & mlirOp,
       std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap,
       rvsdg::region & rvsdgRegion,
-      std::vector<jlm::rvsdg::output *> & inputs);
+      ::llvm::SmallVector<jlm::rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
@@ -127,7 +125,7 @@ private:
   rvsdg::node *
   ConvertCmpIOp(
       ::mlir::arith::CmpIOp & CompOp,
-      std::vector<rvsdg::output *> & inputs,
+      ::llvm::SmallVector<rvsdg::output *> & inputs,
       size_t nbits);
 
   /**
@@ -137,7 +135,9 @@ private:
    * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
    */
   rvsdg::node *
-  ConvertBitBinaryNode(::mlir::Operation & mlirOperation, std::vector<rvsdg::output *> & inputs);
+  ConvertBitBinaryNode(
+      ::mlir::Operation & mlirOperation,
+      ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR operation into an RVSDG node.
@@ -150,7 +150,7 @@ private:
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::region & rvsdgRegion,
-      std::vector<rvsdg::output *> & inputs);
+      ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
@@ -176,15 +176,6 @@ private:
    */
   static std::unique_ptr<rvsdg::type>
   ConvertType(::mlir::Type & type);
-
-  /**
-   * Returns the index of the operand of the producing MLIR operation
-   * \param producer The MLIR operation producing the operand.
-   * \param operand An operand that must be from the producing MLIR operation.
-   * \result The index of the operand.
-   */
-  size_t
-  GetOperandIndex(::mlir::Operation * producer, ::mlir::Value & operand);
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
 };

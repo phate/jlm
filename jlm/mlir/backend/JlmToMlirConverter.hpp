@@ -86,19 +86,31 @@ private:
   ConvertRegion(rvsdg::region & region, ::mlir::Block & block);
 
   /**
+   * Retreive the previously converted MLIR values from the map of operations
+   * \param node The RVSDG node to get the inputs for.
+   * \param operationsMap A map of RVSDG nodes to their corresponding MLIR operations.
+   * \param block The MLIR block to get argument type inputs from.
+   * \param inputs The vector of inputs to be populated.
+   */
+  void
+  getConvertedInputs(
+      const rvsdg::node & node,
+      std::unordered_map<rvsdg::node *, ::mlir::Operation *> operationsMap,
+      ::mlir::Block & block,
+      ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  /**
    * Converts an RVSDG node to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-//TODO change documentation
-   * \param nodes A map of RVSDG nodes to their corresponding MLIR RVSDG values from previously
-   * converted nodes used to retrieve the node inputs.
+   * \param inputs The inputs to the node.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   ConvertNode(
       const rvsdg::node & node,
       ::mlir::Block & block,
-      std::unordered_map<rvsdg::node *, ::mlir::Operation *> nodes);
+      ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
@@ -131,7 +143,7 @@ private:
   ConvertSimpleNode(
       const rvsdg::simple_node & node,
       ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> inputs);
+      ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode.
@@ -142,12 +154,17 @@ private:
   ::mlir::Operation *
   ConvertLambda(const llvm::lambda::node & node, ::mlir::Block & block);
 
-  // TODO documentation
+  /**
+   * Converts an RVSDG gamma node to an MLIR RVSDG GammaNode.
+   * \param gammaNode The RVSDG gamma node to be converted
+   * \param block The MLIR RVSDG block to insert the gamma node.
+   * \param inputs The inputs to the gamma node.
+   */
   ::mlir::Operation *
   ConvertGamma(
       const rvsdg::gamma_node & gammaNode,
       ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> inputs);
+      ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
