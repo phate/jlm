@@ -219,6 +219,7 @@ protected:
       : simple_node(&region, operation, operands)
   {}
 
+public:
   class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
   {
   public:
@@ -256,7 +257,6 @@ protected:
   using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
-public:
   [[nodiscard]] virtual const StoreOperation &
   GetOperation() const noexcept = 0;
 
@@ -293,6 +293,15 @@ public:
 
   [[nodiscard]] virtual MemoryStateOutputRange
   MemoryStateOutputs() const noexcept = 0;
+
+  /**
+   * Create a new copy of this StoreNode that consumes the provided \p memoryStates.
+   *
+   * @param memoryStates The memory states the newly created copy should consume.
+   * @return A newly created StoreNode.
+   */
+  [[nodiscard]] virtual StoreNode &
+  CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const = 0;
 };
 
 /**
@@ -318,6 +327,9 @@ public:
   [[nodiscard]] MemoryStateOutputRange
   MemoryStateOutputs() const noexcept override;
 
+  [[nodiscard]] StoreNonVolatileNode &
+  CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
+
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
 
@@ -325,16 +337,26 @@ public:
   Create(
       rvsdg::output * address,
       rvsdg::output * value,
-      const std::vector<rvsdg::output *> & states,
+      const std::vector<rvsdg::output *> & memoryStates,
       size_t alignment)
   {
-    auto & storedType = CheckAndExtractStoredType(value->type());
+    return rvsdg::outputs(&CreateNode(*address, *value, memoryStates, alignment));
+  }
 
-    std::vector<rvsdg::output *> operands({ address, value });
-    operands.insert(operands.end(), states.begin(), states.end());
+  static StoreNonVolatileNode &
+  CreateNode(
+      rvsdg::output & address,
+      rvsdg::output & value,
+      const std::vector<rvsdg::output *> & memoryStates,
+      size_t alignment)
+  {
+    auto & storedType = CheckAndExtractStoredType(value.type());
 
-    StoreNonVolatileOperation storeOperation(storedType, states.size(), alignment);
-    return Create(*address->region(), storeOperation, operands);
+    std::vector<rvsdg::output *> operands({ &address, &value });
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    StoreNonVolatileOperation storeOperation(storedType, memoryStates.size(), alignment);
+    return CreateNode(*address.region(), storeOperation, operands);
   }
 
   static std::vector<rvsdg::output *>
@@ -470,6 +492,9 @@ public:
 
   [[nodiscard]] MemoryStateOutputRange
   MemoryStateOutputs() const noexcept override;
+
+  [[nodiscard]] StoreVolatileNode &
+  CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
   [[nodiscard]] rvsdg::input &
   GetIoStateInput() const noexcept

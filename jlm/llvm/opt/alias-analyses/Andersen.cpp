@@ -216,9 +216,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
+  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
     AnalyzeLoad(*loadNode);
-  else if (const auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
+  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
     AnalyzeStore(*storeNode);
   else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
     AnalyzeCall(*callNode);
@@ -234,7 +234,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantPointerNull(node);
   else if (is<UndefValueOperation>(op))
     AnalyzeUndef(node);
-  else if (is<MemCpyNonVolatileOperation>(op))
+  else if (is<MemCpyOperation>(op))
     AnalyzeMemcpy(node);
   else if (is<ConstantArray>(op))
     AnalyzeConstantArray(node);
@@ -283,7 +283,7 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
+Andersen::AnalyzeLoad(const LoadNode & loadNode)
 {
   const auto & addressRegister = *loadNode.GetAddressInput().origin();
   const auto & outputRegister = loadNode.GetLoadedValueOutput();
@@ -302,7 +302,7 @@ Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNonVolatileNode & storeNode)
+Andersen::AnalyzeStore(const StoreNode & storeNode)
 {
   const auto & addressRegister = *storeNode.GetAddressInput().origin();
   const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
@@ -431,6 +431,8 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 {
+  JLM_ASSERT(is<MemCpyOperation>(&node));
+
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
   JLM_ASSERT(is<PointerType>(dstAddressRegister.type()));

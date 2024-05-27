@@ -67,6 +67,17 @@ StoreNonVolatileNode::MemoryStateOutputs() const noexcept
   return { MemoryStateOutputIterator(output(0)), MemoryStateOutputIterator(nullptr) };
 }
 
+StoreNonVolatileNode &
+StoreNonVolatileNode::CopyWithNewMemoryStates(
+    const std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      *GetAddressInput().origin(),
+      *GetStoredValueInput().origin(),
+      memoryStates,
+      GetAlignment());
+}
+
 rvsdg::node *
 StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -130,6 +141,17 @@ StoreVolatileNode::MemoryStateOutputs() const noexcept
   }
 
   return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
+}
+
+StoreVolatileNode &
+StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      *GetAddressInput().origin(),
+      *GetStoredValueInput().origin(),
+      *GetIoStateInput().origin(),
+      memoryStates,
+      GetAlignment());
 }
 
 rvsdg::node *

@@ -69,6 +69,17 @@ LoadNonVolatileNode::MemoryStateOutputs() const noexcept
   return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
 }
 
+LoadNonVolatileNode &
+LoadNonVolatileNode::CopyWithNewMemoryStates(
+    const std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      *GetAddressInput().origin(),
+      memoryStates,
+      GetOperation().GetLoadedType(),
+      GetAlignment());
+}
+
 rvsdg::node *
 LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
     const
@@ -132,6 +143,17 @@ LoadVolatileNode::MemoryStateOutputs() const noexcept
   }
 
   return { MemoryStateOutputIterator(output(2)), MemoryStateOutputIterator(nullptr) };
+}
+
+LoadVolatileNode &
+LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      *GetAddressInput().origin(),
+      *GetIoStateInput().origin(),
+      memoryStates,
+      GetOperation().GetLoadedType(),
+      GetAlignment());
 }
 
 rvsdg::node *
