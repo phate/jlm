@@ -36,11 +36,16 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumLoadConstraints_ = "#LoadConstraints";
   inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
 
+  inline static const char * NumUnificationsOvs_ = "#Unifications(OVS)";
+  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
+
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
+  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
+  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
   inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
   inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
   inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
@@ -95,6 +100,32 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
+  }
+
+  void
+  StartOfflineVariableSubstitution() noexcept
+  {
+    AddTimer(OfflineVariableSubstitutionTimer_).start();
+  }
+
+  void
+  StopOfflineVariableSubstitution(size_t numUnifications) noexcept
+  {
+    GetTimer(OfflineVariableSubstitutionTimer_).stop();
+    AddMeasurement(NumUnificationsOvs_, numUnifications);
+  }
+
+  void
+  StartOfflineConstraintNormalization() noexcept
+  {
+    AddTimer(OfflineConstraintNormalizationTimer_).start();
+  }
+
+  void
+  StopOfflineConstraintNormalization(size_t numConstraintsRemoved) noexcept
+  {
+    GetTimer(OfflineConstraintNormalizationTimer_).stop();
+    AddMeasurement(NumConstraintsRemovedOfflineNorm_, numConstraintsRemoved);
   }
 
   void
@@ -203,7 +234,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantPointerNull(node);
   else if (is<UndefValueOperation>(op))
     AnalyzeUndef(node);
-  else if (is<Memcpy>(op))
+  else if (is<MemCpyOperation>(op))
     AnalyzeMemcpy(node);
   else if (is<ConstantArray>(op))
     AnalyzeConstantArray(node);
@@ -254,8 +285,8 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeLoad(const LoadNode & loadNode)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput()->origin();
-  const auto & outputRegister = *loadNode.GetValueOutput();
+  const auto & addressRegister = *loadNode.GetAddressInput().origin();
+  const auto & outputRegister = loadNode.GetLoadedValueOutput();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -273,8 +304,8 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 void
 Andersen::AnalyzeStore(const StoreNode & storeNode)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput()->origin();
-  const auto & valueRegister = *storeNode.GetValueInput()->origin();
+  const auto & addressRegister = *storeNode.GetAddressInput().origin();
+  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
   // If the written value is not a pointer, be conservative and mark the address
   if (!IsOrContainsPointerType(valueRegister.type()))
@@ -400,6 +431,8 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 {
+  JLM_ASSERT(is<MemCpyOperation>(&node));
+
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
   JLM_ASSERT(is<PointerType>(dstAddressRegister.type()));
@@ -826,8 +859,19 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 void
 Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
 {
-  util::GraphWriter writer;
-  Constraints_->DrawSubsetGraph(writer);
+  if (config.IsOfflineVariableSubstitutionEnabled())
+  {
+    statistics.StartOfflineVariableSubstitution();
+    auto numUnifications = Constraints_->PerformOfflineVariableSubstitution();
+    statistics.StopOfflineVariableSubstitution(numUnifications);
+  }
+
+  if (config.IsOfflineConstraintNormalizationEnabled())
+  {
+    statistics.StartOfflineConstraintNormalization();
+    auto numConstraintsRemoved = Constraints_->NormalizeConstraints();
+    statistics.StopOfflineConstraintNormalization(numConstraintsRemoved);
+  }
 
   if (config.GetSolver() == Configuration::Solver::Naive)
   {
@@ -843,12 +887,6 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   }
   else
     JLM_UNREACHABLE("Unknown solver");
-
-  auto & graph = Constraints_->DrawSubsetGraph(writer);
-  graph.AppendToLabel("After Solving");
-
-  if (std::getenv(DUMP_SUBSET_GRAPH))
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
 }
 
 std::unique_ptr<PointsToGraph>
@@ -857,17 +895,32 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   auto statistics = Statistics::Create(module.SourceFileName());
   statistics->StartAndersenStatistics(module.Rvsdg());
 
-  AnalyzeModule(module, *statistics);
-
-  // If double-checking against the naive solver is enabled, make a copy of the set and constraints
+  // Check environment variables for debugging flags
   const bool checkAgainstNaive = std::getenv(CHECK_AGAINST_NAIVE_SOLVER)
                               && Config_ != Configuration::NaiveSolverConfiguration();
+  const bool dumpGraphs = std::getenv(DUMP_SUBSET_GRAPH);
+  util::GraphWriter writer;
 
+  AnalyzeModule(module, *statistics);
+
+  // If double-checking against the naive solver, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
   if (checkAgainstNaive)
     copy = Constraints_->Clone();
 
+  // Draw subset graph both before and after solving
+  if (dumpGraphs)
+    Constraints_->DrawSubsetGraph(writer);
+
   SolveConstraints(Config_, *statistics);
+
+  if (dumpGraphs)
+  {
+    auto & graph = Constraints_->DrawSubsetGraph(writer);
+    graph.AppendToLabel("After Solving");
+
+    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+  }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
 

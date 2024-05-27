@@ -86,7 +86,7 @@ TestTheta()
   {
     using namespace jlm::llvm;
 
-    loopstatetype loopStateType;
+    iostatetype iOStateType;
     jlm::tests::valuetype valueType;
     jlm::rvsdg::ctltype controlType(2);
 
@@ -94,7 +94,7 @@ TestTheta()
     auto & graph = rvsdgModule->Rvsdg();
     auto c = graph.add_import({ controlType, "c" });
     auto x = graph.add_import({ valueType, "x" });
-    auto l = graph.add_import({ loopStateType, "l" });
+    auto l = graph.add_import({ iOStateType, "iOState" });
 
     auto thetaNode1 = jlm::rvsdg::theta_node::create(graph.root());
     auto thetaOutput1 = thetaNode1->add_loopvar(c);
@@ -117,22 +117,16 @@ TestTheta()
     return std::make_tuple(std::move(rvsdgModule), thetaOutput3);
   };
 
-  /*
-   * Arrange
-   */
+  // Arrange
   auto [rvsdgModule, thetaOutput3] = SetupRvsdg();
   auto rootRegion = rvsdgModule->Rvsdg().root();
 
-  /*
-   * Act
-   */
+  // Act
   jlm::rvsdg::view(rootRegion, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
   jlm::rvsdg::view(rootRegion, stdout);
 
-  /*
-   * Assert
-   */
+  // Assert
   assert(rootRegion->result(0)->origin() == rootRegion->argument(0));
   assert(rootRegion->result(1)->origin() == rootRegion->argument(1));
   assert(rootRegion->result(2)->origin() == thetaOutput3);

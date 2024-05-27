@@ -39,18 +39,6 @@ check_rhls(jlm::rvsdg::region * sr)
         throw jlm::util::error("Output has more than one user");
       }
     }
-    if (is_constant(node))
-    {
-      if (node->noutputs() != 1)
-      {
-        throw jlm::util::error("Constant should have one output");
-      }
-      auto user_in = dynamic_cast<jlm::rvsdg::node_input *>(*node->output(0)->begin());
-      if (!user_in || !jlm::rvsdg::is<hls::trigger_op>(user_in->node()))
-      {
-        throw jlm::util::error("Constant has to be gated by a trigger");
-      }
-    }
   }
 }
 

@@ -474,10 +474,6 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   {
     return std::make_unique<rvsdg::bittype>(intType.getWidth());
   }
-  else if (::mlir::isa<::mlir::rvsdg::LoopStateEdgeType>(type))
-  {
-    return std::make_unique<llvm::loopstatetype>();
-  }
   else if (::mlir::isa<::mlir::rvsdg::MemStateEdgeType>(type))
   {
     return std::make_unique<llvm::MemoryStateType>();

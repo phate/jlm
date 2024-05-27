@@ -703,7 +703,8 @@ public:
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set),
-        Constraints_()
+        Constraints_(),
+        ConstraintSetFrozen_(false)
   {}
 
   PointerObjectConstraintSet(const PointerObjectConstraintSet & other) = delete;
@@ -715,6 +716,15 @@ public:
 
   PointerObjectConstraintSet &
   operator=(PointerObjectConstraintSet && other) = delete;
+
+  /**
+   * Some offline processing relies on knowing about all constraints that will ever be added.
+   * After doing such processing, the constraint set is frozen, which prevents any new constraints
+   * from being added. Offline processing and solving can still be performed while frozen.
+   * @return true if the constraint set has been frozen, false otherwise
+   */
+  [[nodiscard]] bool
+  IsFrozen() const noexcept;
 
   /**
    * The simplest constraint, on the form: pointee in P(pointer)
@@ -760,6 +770,43 @@ public:
   DrawSubsetGraph(util::GraphWriter & writer) const;
 
   /**
+   * Performs off-line detection of PointerObjects that can be shown to always contain
+   * the same pointees, and unifies them.
+   * It is a version of Rountev and Chandra, 2000: "Off-line variable substitution",
+   * modified to support SSA based constraint graphs.
+   *
+   * The algorithm uses an offline constraint graph, consisting of two nodes per PointerObject v:
+   *  n(v) represents the points-to set of v
+   *  n(*v) represents the union of points-to sets of all pointees of v
+   *  Edges in the graph represent points-to set inclusion.
+   *
+   * In this graph, strongly connected components (SCCs) are collapsed into single equivalence sets.
+   *
+   * If an SCC consists of only "direct" nodes, and all predecessors share equivalence
+   * set label, the SCC gets the same label.
+   * See PointerObjectConstraintSet::CreateOvsSubsetGraph() for a description of direct nodes.
+   *
+   * All PointerObjects v1, ... vN where n(v1), ... n(vN) share equivalence set label, get unified.
+   * The run time is linear in the amount of PointerObjects and constraints.
+   *
+   * @return the number PointerObject unifications made
+   * @see NormalizeConstraints() call it afterwards to remove constraints made unnecessary.
+   */
+  size_t
+  PerformOfflineVariableSubstitution();
+
+  /**
+   * Traverses the list of constraints, and does the following:
+   *  - Redirects constraints to reference the root of unifications
+   *  - Removes no-op constraints (e.g. X is a superset of X)
+   *  - Removes duplicate constraints
+   *
+   * @return the number of constraints that were removed
+   */
+  size_t
+  NormalizeConstraints();
+
+  /**
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
@@ -787,11 +834,33 @@ public:
   Clone() const;
 
 private:
+  /**
+   * Creates a special subset graph containing both regular nodes n(v) and dereference nodes n(*v).
+   * The graph is used by PointerObjectConstraintSet::PerformOfflineVariableSubstitution().
+   *
+   * Some nodes are marked as direct, when all subset predecessors are known offline.
+   * They can:
+   *  - only be n(v) nodes, where v is a register
+   *  - not be the return value of a function call
+   *  - not be an argument of a function body
+   *
+   *  @return a tuple containing:
+   *   - the total number of nodes N
+   *   - a vector of length N containing the successors of each node
+   *   - a boolean vector of length N, containing true on direct nodes, and false otherwise
+   */
+  std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
+  CreateOvsSubsetGraph();
+
   // The PointerObjectSet being built upon
   PointerObjectSet & Set_;
 
   // Lists of all constraints, of all different types
   std::vector<ConstraintVariant> Constraints_;
+
+  // When true, no new constraints can be added.
+  // Only offline processing is allowed to modify the constraint set.
+  bool ConstraintSetFrozen_;
 };
 
 } // namespace jlm::llvm::aa

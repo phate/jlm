@@ -125,6 +125,11 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
   {
     return 1;
   }
+  else if (dynamic_cast<const bundletype *>(type))
+  {
+    // TODO: fix this ugly hack needed for get_node_name
+    return 0;
+  }
   else
   {
     throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");

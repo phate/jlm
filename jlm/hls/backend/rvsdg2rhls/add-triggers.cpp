@@ -72,8 +72,8 @@ add_lambda_argument(llvm::lambda::node * ln, const jlm::rvsdg::type * type)
   auto new_out = new_lambda->finalize(new_results);
 
   // TODO handle functions at other levels?
-  assert(ln->region() == ln->region()->graph()->root());
-  assert((*ln->output()->begin())->region() == ln->region()->graph()->root());
+  JLM_ASSERT(ln->region() == ln->region()->graph()->root());
+  JLM_ASSERT((*ln->output()->begin())->region() == ln->region()->graph()->root());
 
   //            ln->output()->divert_users(new_out);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
@@ -101,15 +101,15 @@ add_triggers(jlm::rvsdg::region * region)
       }
       else if (auto t = dynamic_cast<jlm::rvsdg::theta_node *>(node))
       {
-        assert(trigger != nullptr);
-        assert(get_trigger(t->subregion()) == nullptr);
+        JLM_ASSERT(trigger != nullptr);
+        JLM_ASSERT(get_trigger(t->subregion()) == nullptr);
         t->add_loopvar(trigger);
         add_triggers(t->subregion());
       }
       else if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
       {
-        assert(trigger != nullptr);
-        assert(get_trigger(gn->subregion(0)) == nullptr);
+        JLM_ASSERT(trigger != nullptr);
+        JLM_ASSERT(get_trigger(gn->subregion(0)) == nullptr);
         gn->add_entryvar(trigger);
         for (size_t i = 0; i < gn->nsubregions(); ++i)
         {
@@ -123,7 +123,7 @@ add_triggers(jlm::rvsdg::region * region)
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      assert(trigger != nullptr);
+      JLM_ASSERT(trigger != nullptr);
       if (is_constant(node))
       {
         auto orig_out = sn->output(0);

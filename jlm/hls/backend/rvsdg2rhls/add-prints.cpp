@@ -58,9 +58,7 @@ convert_prints(llvm::RvsdgModule & rm)
   auto & graph = rm.Rvsdg();
   auto root = graph.root();
   // TODO: make this less hacky by using the correct state types
-  llvm::FunctionType fct(
-      { &jlm::rvsdg::bit64, &jlm::rvsdg::bit64 },
-      { llvm::loopstatetype::create().get() });
+  llvm::FunctionType fct({ &rvsdg::bit64, &rvsdg::bit64 }, std::vector<const rvsdg::type *>());
   llvm::impport imp(fct, "printnode", llvm::linkage::external_linkage);
   auto printf = graph.add_import(imp);
   convert_prints(root, printf, fct);

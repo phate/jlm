@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -125,7 +125,8 @@ test_push_theta_bottom()
   auto lvv = theta->add_loopvar(v);
   auto lvs = theta->add_loopvar(s);
 
-  auto s1 = StoreNode::Create(lva->argument(), lvv->argument(), { lvs->argument() }, 4)[0];
+  auto s1 =
+      StoreNonVolatileNode::Create(lva->argument(), lvv->argument(), { lvs->argument() }, 4)[0];
 
   lvs->result()->divert_to(s1);
   theta->set_predicate(lvc->argument());
@@ -137,7 +138,7 @@ test_push_theta_bottom()
   jlm::rvsdg::view(graph, stdout);
 
   auto storenode = jlm::rvsdg::node_output::node(ex->origin());
-  assert(jlm::rvsdg::is<StoreOperation>(storenode));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
   assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(
       jlm::rvsdg::node_output::node(storenode->input(1)->origin())));

@@ -9,25 +9,25 @@
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-#include <jlm/llvm/ir/operators/load.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BuiltinTypes.h"
-#include "mlir/IR/Verifier.h"
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/BuiltinTypes.h>
+#include <mlir/IR/Verifier.h>
 
-#include "circt/Dialect/FIRRTL/FIREmitter.h"
-#include "circt/Dialect/FIRRTL/FIRRTLDialect.h"
-#include "circt/Dialect/FIRRTL/FIRRTLOps.h"
-#include "circt/Dialect/FIRRTL/FIRRTLTypes.h"
-#include "circt/Dialect/FIRRTL/Namespace.h"
-#include "circt/Support/LLVM.h"
+#include <circt/Dialect/FIRRTL/FIREmitter.h>
+#include <circt/Dialect/FIRRTL/FIRRTLDialect.h>
+#include <circt/Dialect/FIRRTL/FIRRTLOps.h>
+#include <circt/Dialect/FIRRTL/FIRRTLTypes.h>
+#include <circt/Dialect/FIRRTL/Namespace.h>
+#include <circt/Support/LLVM.h>
 
 namespace jlm::hls
 {
@@ -74,9 +74,20 @@ public:
   WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
 
   std::string
-  ToString(llvm::RvsdgModule & rvsdgModule);
+  ToString(llvm::RvsdgModule & rvsdgModule)
+  {
+    // Generate a FIRRTL circuit of the rvsdgModule
+    auto lambdaNode = get_hls_lambda(rvsdgModule);
+    auto mlirGen = RhlsToFirrtlConverter();
+    auto circuit = mlirGen.MlirGen(lambdaNode);
+    // Write the FIRRTL to a file
+    return mlirGen.toString(circuit);
+  }
 
 private:
+  std::string
+  toString(const circt::firrtl::CircuitOp circuit);
+
   std::unordered_map<std::string, circt::firrtl::FModuleOp> modules;
   // FIRRTL generating functions
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
@@ -89,13 +100,31 @@ private:
   circt::firrtl::FModuleOp
   MlirGenSink(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
+  MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
   MlirGenFork(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
+  MlirGenStateGate(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
   MlirGenMem(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenHlsLoad(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenHlsDLoad(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenHlsStore(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
   MlirGenTrigger(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
   MlirGenPrint(const jlm::rvsdg::simple_node * node);
+  circt::firrtl::FModuleOp
+  MlirGenAddrQueue(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
   MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
@@ -197,6 +226,11 @@ private:
   GetConstant(mlir::Block * body, int size, int value);
   circt::firrtl::InvalidValueOp
   GetInvalid(mlir::Block * body, int size);
+  void
+  ConnectInvalid(mlir::Block * body, mlir::Value value);
+
+  circt::firrtl::BitsPrimOp
+  DropMSBs(mlir::Block * body, mlir::Value value, int amount);
 
   jlm::rvsdg::output *
   TraceArgument(jlm::rvsdg::argument * arg);
@@ -228,6 +262,8 @@ private:
 
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
   createInstances(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
+  void
+  check_module(circt::firrtl::FModuleOp & module);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;

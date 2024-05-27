@@ -28,11 +28,12 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/delta.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
-    jlm/llvm/ir/operators/load.cpp \
+    jlm/llvm/ir/operators/Load.cpp \
+    jlm/llvm/ir/operators/MemCpy.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
-    jlm/llvm/ir/operators/store.cpp \
+    jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
@@ -107,12 +108,13 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/cfg-structure.hpp \
 	jlm/llvm/ir/operators/operators.hpp \
 	jlm/llvm/ir/operators/Phi.hpp \
-	jlm/llvm/ir/operators/load.hpp \
+	jlm/llvm/ir/operators/Load.hpp \
+	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/gamma.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
-	jlm/llvm/ir/operators/store.hpp \
+	jlm/llvm/ir/operators/Store.hpp \
 	jlm/llvm/ir/operators/alloca.hpp \
 	jlm/llvm/ir/operators/call.hpp \
 	jlm/llvm/ir/operators/sext.hpp \
@@ -129,11 +131,17 @@ libllvm_TESTS += \
 	tests/jlm/llvm/backend/llvm/r2j/test-empty-gamma \
 	tests/jlm/llvm/backend/llvm/r2j/test-partial-gamma \
 	tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
+	tests/jlm/llvm/backend/llvm/jlm-llvm/StoreTests \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
+	tests/jlm/llvm/frontend/llvm/LoadTests \
+	tests/jlm/llvm/frontend/llvm/MemCpyTests \
+	tests/jlm/llvm/frontend/llvm/StoreTests \
 	tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
 	tests/jlm/llvm/frontend/llvm/test-endless-loop \
 	tests/jlm/llvm/frontend/llvm/test-export \
@@ -142,16 +150,19 @@ libllvm_TESTS += \
 	tests/jlm/llvm/frontend/llvm/test-recursive-data \
 	tests/jlm/llvm/frontend/llvm/test-restructuring \
 	tests/jlm/llvm/frontend/llvm/test-select \
+	tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
+	tests/jlm/llvm/ir/operators/LoadTests \
+	tests/jlm/llvm/ir/operators/MemCpyTests \
+	tests/jlm/llvm/ir/operators/MemoryStateOperationTests \
 	tests/jlm/llvm/ir/operators/TestCall \
 	tests/jlm/llvm/ir/operators/test-ConstantFP \
 	tests/jlm/llvm/ir/operators/test-delta \
 	tests/jlm/llvm/ir/operators/TestFree \
 	tests/jlm/llvm/ir/operators/TestGetElementPtr \
 	tests/jlm/llvm/ir/operators/TestLambda \
-	tests/jlm/llvm/ir/operators/TestLoad \
 	tests/jlm/llvm/ir/operators/TestPhi \
 	tests/jlm/llvm/ir/operators/test-sext \
-	tests/jlm/llvm/ir/operators/TestStore \
+	tests/jlm/llvm/ir/operators/StoreTests \
 	tests/jlm/llvm/ir/test-aggregation \
 	tests/jlm/llvm/ir/test-cfg \
 	tests/jlm/llvm/ir/test-cfg-node \
@@ -162,7 +173,9 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/test-cfg-validity \
 	tests/jlm/llvm/ir/test-domtree \
 	tests/jlm/llvm/ir/test-ssa-destruction \
+	tests/jlm/llvm/ir/TestTypes \
 	tests/jlm/llvm/ir/TestAnnotation \
+	tests/jlm/llvm/opt/alias-analyses/MemoryStateOperationTests \
 	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
 	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \

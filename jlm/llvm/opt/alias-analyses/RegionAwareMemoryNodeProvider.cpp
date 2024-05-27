@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/store.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -718,7 +718,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & sim
   {
     AnnotateFree(simpleNode);
   }
-  else if (is<Memcpy>(&simpleNode))
+  else if (is<MemCpyOperation>(&simpleNode))
   {
     AnnotateMemcpy(simpleNode);
   }
@@ -727,7 +727,7 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & sim
 void
 RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNode & loadNode)
 {
-  auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput()->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*loadNode.GetAddressInput().origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*loadNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
@@ -735,7 +735,7 @@ RegionAwareMemoryNodeProvider::AnnotateLoad(const LoadNode & loadNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 {
-  auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput()->origin());
+  auto memoryNodes = Provisioning_->GetOutputNodes(*storeNode.GetAddressInput().origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*storeNode.region());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
@@ -817,7 +817,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<Memcpy>(memcpyNode.operation()));
+  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.operation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 

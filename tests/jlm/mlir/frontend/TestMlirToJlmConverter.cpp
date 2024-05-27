@@ -92,7 +92,6 @@ TestLambda()
     regionResults.push_back(constOp);
     regionResults.push_back(lambdaBlock->getArgument(0));
     regionResults.push_back(lambdaBlock->getArgument(1));
-    regionResults.push_back(lambdaBlock->getArgument(2));
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;
@@ -227,10 +226,6 @@ TestDivOperation()
       {
         std::cout << "Argument " << i << " is a MemStateEdgeType" << std::endl;
       }
-      else if (arg.getType().isa<LoopStateEdgeType>())
-      {
-        std::cout << "Argument " << i << " is a LoopStateEdgeType" << std::endl;
-      }
       else if (arg.getType().isa<mlir::IntegerType>())
       {
         std::cout << "Argument " << i << " is an IntegerType" << std::endl;
@@ -249,7 +244,6 @@ TestDivOperation()
     regionResults.push_back(divideOp->getResult(0));
     regionResults.push_back(lambdaBlock->getArgument(1));
     regionResults.push_back(lambdaBlock->getArgument(2));
-    regionResults.push_back(lambdaBlock->getArgument(3));
 
     // Handle the result of the lambda
     std::cout << "Creating LambdaResult" << std::endl;

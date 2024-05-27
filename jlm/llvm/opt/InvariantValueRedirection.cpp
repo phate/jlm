@@ -105,9 +105,9 @@ InvariantValueRedirection::RedirectInvariantThetaOutputs(jlm::rvsdg::theta_node 
 {
   for (const auto & thetaOutput : thetaNode)
   {
-    /* FIXME: In order to also redirect loop state type variables, we need to know whether a loop
+    /* FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
      * terminates.*/
-    if (jlm::rvsdg::is<loopstatetype>(thetaOutput->type()))
+    if (rvsdg::is<iostatetype>(thetaOutput->type()))
       continue;
 
     if (jlm::rvsdg::is_invariant(thetaOutput))

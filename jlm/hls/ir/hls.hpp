@@ -6,13 +6,14 @@
 #ifndef JLM_HLS_IR_HLS_HPP
 #define JLM_HLS_IR_HLS_HPP
 
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
-#include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
+
 #include <memory>
 #include <utility>
 
@@ -613,7 +614,7 @@ private:
       : structural_node(loop_op(), parent, 1)
   {}
 
-  jlm::rvsdg::output * _predicate_buffer;
+  jlm::rvsdg::node_output * _predicate_buffer;
 
 public:
   static loop_node *
@@ -633,7 +634,7 @@ public:
     return result;
   }
 
-  inline jlm::rvsdg::output *
+  inline jlm::rvsdg::node_output *
   predicate_buffer() const noexcept
   {
     return _predicate_buffer;
@@ -756,8 +757,7 @@ public:
   static std::vector<jlm::rvsdg::port>
   CreateInPorts(const rvsdg::valuetype & pointeeType, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { llvm::PointerType() });
-    //                ports.emplace_back(pointerType.GetElementType());
+    std::vector<jlm::rvsdg::port> ports(1, { llvm::PointerType::Create() }); // addr
     std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
     ports.insert(ports.end(), states.begin(), states.end());
     ports.emplace_back(pointeeType); // result
@@ -770,7 +770,7 @@ public:
     std::vector<jlm::rvsdg::port> ports(1, { pointeeType });
     std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
     ports.insert(ports.end(), states.begin(), states.end());
-    ports.emplace_back(llvm::PointerType()); // addr
+    ports.emplace_back(llvm::PointerType::Create()); // addr
     return ports;
   }
 
@@ -793,13 +793,24 @@ public:
       jlm::rvsdg::output & load_result)
   {
     auto region = addr.region();
-    auto pointerType = dynamic_cast<const llvm::PointerType *>(&addr.type());
-    load_op op(*pointerType, states.size());
+    load_op op(*dynamic_cast<const rvsdg::valuetype *>(&load_result.type()), states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
     return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+  }
+
+  [[nodiscard]] const llvm::PointerType &
+  GetPointerType() const noexcept
+  {
+    return *util::AssertedCast<const llvm::PointerType>(&argument(0).type());
+  }
+
+  [[nodiscard]] const rvsdg::valuetype &
+  GetLoadedType() const noexcept
+  {
+    return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
   }
 };
 
@@ -809,8 +820,9 @@ public:
   virtual ~addr_queue_op()
   {}
 
-  addr_queue_op(const llvm::PointerType & pointerType, size_t capacity)
+  addr_queue_op(const llvm::PointerType & pointerType, size_t capacity, bool combinatorial)
       : simple_op(CreateInPorts(pointerType), CreateOutPorts(pointerType)),
+        combinatorial(combinatorial),
         capacity(capacity)
   {}
 
@@ -841,6 +853,10 @@ public:
   std::string
   debug_string() const override
   {
+    if (combinatorial)
+    {
+      return "HLS_ADDR_QUEUE_COMB_" + argument(narguments() - 1).type().debug_string();
+    }
     return "HLS_ADDR_QUEUE_" + argument(narguments() - 1).type().debug_string();
   }
 
@@ -855,14 +871,16 @@ public:
       jlm::rvsdg::output & check,
       jlm::rvsdg::output & enq,
       jlm::rvsdg::output & deq,
+      bool combinatorial,
       size_t capacity = 10)
   {
     auto region = check.region();
     auto pointerType = dynamic_cast<const llvm::PointerType *>(&check.type());
-    addr_queue_op op(*pointerType, capacity);
+    addr_queue_op op(*pointerType, capacity, combinatorial);
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &check, &enq, &deq })[0];
   }
 
+  bool combinatorial;
   size_t capacity;
 };
 
@@ -909,7 +927,6 @@ public:
   create(jlm::rvsdg::output & addr, const std::vector<jlm::rvsdg::output *> & states)
   {
     auto region = addr.region();
-    //                auto pointerType = dynamic_cast<const llvm::PointerType*>(&addr.type());
     state_gate_op op(addr.type(), states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
@@ -967,13 +984,23 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(jlm::rvsdg::output & addr, jlm::rvsdg::output & load_result)
   {
-    auto region = addr.region();
-    auto pointerType = dynamic_cast<const llvm::PointerType *>(&addr.type());
-    decoupled_load_op op(*pointerType);
+    decoupled_load_op op(*dynamic_cast<const rvsdg::valuetype *>(&load_result.type()));
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+    return jlm::rvsdg::simple_node::create_normalized(load_result.region(), op, inputs);
+  }
+
+  [[nodiscard]] const llvm::PointerType &
+  GetPointerType() const noexcept
+  {
+    return *util::AssertedCast<const llvm::PointerType>(&argument(0).type());
+  }
+
+  [[nodiscard]] const rvsdg::valuetype &
+  GetLoadedType() const noexcept
+  {
+    return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
   }
 };
 
@@ -983,7 +1010,7 @@ public:
   virtual ~mem_resp_op()
   {}
 
-  mem_resp_op(const std::vector<const jlm::rvsdg::type *> & output_types)
+  mem_resp_op(const std::vector<const rvsdg::valuetype *> & output_types)
       : simple_op(CreateInPorts(output_types), CreateOutPorts(output_types))
   {}
 
@@ -997,7 +1024,7 @@ public:
   }
 
   static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const std::vector<const jlm::rvsdg::type *> & output_types)
+  CreateInPorts(const std::vector<const rvsdg::valuetype *> & output_types)
   {
     size_t max_width = 64;
     // TODO: calculate size onece JlmSize is moved
@@ -1012,13 +1039,13 @@ public:
   }
 
   static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const std::vector<const jlm::rvsdg::type *> & output_types)
+  CreateOutPorts(const std::vector<const rvsdg::valuetype *> & output_types)
   {
     std::vector<jlm::rvsdg::port> ports;
     ports.reserve(output_types.size());
-    for (auto t : output_types)
+    for (auto outputType : output_types)
     {
-      ports.emplace_back(*t);
+      ports.emplace_back(*outputType);
     }
     return ports;
   }
@@ -1036,7 +1063,7 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & result, const std::vector<const jlm::rvsdg::type *> & output_types)
+  create(rvsdg::output & result, const std::vector<const rvsdg::valuetype *> & output_types)
   {
     auto region = result.region();
     // TODO: verify port here
@@ -1051,14 +1078,45 @@ class mem_req_op final : public jlm::rvsdg::simple_op
 {
 public:
   virtual ~mem_req_op()
-  {}
+  {
+    delete LoadTypes_;
+    delete StoreTypes_;
+  }
 
   mem_req_op(
-      std::vector<const rvsdg::valuetype *> & load_types,
+      const std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
-      : simple_op(CreateInPorts(load_types, store_types), CreateOutPorts(load_types, store_types)),
-        load_types(load_types)
-  {}
+      : simple_op(CreateInPorts(load_types, store_types), CreateOutPorts(load_types, store_types))
+  {
+    LoadTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
+    StoreTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
+    for (auto loadType : load_types)
+    {
+      JLM_ASSERT(
+          dynamic_cast<const rvsdg::bittype *>(loadType)
+          || dynamic_cast<const llvm::PointerType *>(loadType));
+      LoadTypes_->emplace_back(loadType->copy());
+    }
+    for (auto storeType : store_types)
+    {
+      StoreTypes_->emplace_back(storeType->copy());
+    }
+  }
+
+  mem_req_op(const mem_req_op & other)
+      : simple_op(other)
+  {
+    LoadTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
+    StoreTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
+    for (auto & loadType : *other.LoadTypes_)
+    {
+      LoadTypes_->push_back(loadType->copy());
+    }
+    for (auto & storeType : *other.StoreTypes_)
+    {
+      StoreTypes_->push_back(storeType->copy());
+    }
+  }
 
   bool
   operator==(const jlm::rvsdg::operation & other) const noexcept override
@@ -1081,10 +1139,10 @@ public:
     {
       ports.emplace_back(llvm::PointerType()); // addr
     }
-    for (auto st : store_types)
+    for (auto storeType : store_types)
     {
       ports.emplace_back(llvm::PointerType()); // addr
-      ports.emplace_back(*st);                 // data
+      ports.emplace_back(*storeType);          // data
     }
     return ports;
   }
@@ -1125,20 +1183,19 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(
       const std::vector<jlm::rvsdg::output *> & load_operands,
+      const std::vector<const rvsdg::valuetype *> & loadTypes,
       const std::vector<jlm::rvsdg::output *> & store_operands,
-      std::vector<const rvsdg::valuetype *> & load_types,
       jlm::rvsdg::region * region)
   {
+    // Stores have both addr and data operand
+    // But we are only interested in the data operand type
     JLM_ASSERT(store_operands.size() % 2 == 0);
-    std::vector<const rvsdg::valuetype *> store_types;
+    std::vector<const rvsdg::valuetype *> storeTypes;
     for (size_t i = 1; i < store_operands.size(); i += 2)
     {
-      auto pt = dynamic_cast<const rvsdg::valuetype *>(&store_operands[i]->type());
-      //      auto et = &store_operands[i + 1]->type();
-      //      JLM_ASSERT(pt && et && pt->GetElementType() == *et);
-      store_types.push_back(pt);
+      storeTypes.push_back(dynamic_cast<const rvsdg::valuetype *>(&store_operands[i]->type()));
     }
-    mem_req_op op(load_types, store_types);
+    mem_req_op op(loadTypes, storeTypes);
     std::vector<jlm::rvsdg::output *> operands(load_operands);
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
     return jlm::rvsdg::simple_node::create_normalized(region, op, operands);
@@ -1147,10 +1204,24 @@ public:
   size_t
   get_nloads() const
   {
-    return load_types.size();
+    return LoadTypes_->size();
   }
 
-  const std::vector<const rvsdg::valuetype *> & load_types;
+  std::vector<std::unique_ptr<rvsdg::type>> *
+  GetLoadTypes() const
+  {
+    return LoadTypes_;
+  }
+
+  std::vector<std::unique_ptr<rvsdg::type>> *
+  GetStoreTypes() const
+  {
+    return StoreTypes_;
+  }
+
+private:
+  std::vector<std::unique_ptr<rvsdg::type>> * LoadTypes_;
+  std::vector<std::unique_ptr<rvsdg::type>> * StoreTypes_;
 };
 
 class store_op final : public jlm::rvsdg::simple_op
@@ -1208,14 +1279,24 @@ public:
       jlm::rvsdg::output & value,
       const std::vector<jlm::rvsdg::output *> & states)
   {
-    auto region = addr.region();
-    auto pointerType = dynamic_cast<const llvm::PointerType *>(&addr.type());
-    store_op op(*pointerType, states.size());
+    store_op op(*dynamic_cast<const rvsdg::valuetype *>(&value.type()), states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+    return rvsdg::simple_node::create_normalized(value.region(), op, inputs);
+  }
+
+  [[nodiscard]] const llvm::PointerType &
+  GetPointerType() const noexcept
+  {
+    return *util::AssertedCast<const llvm::PointerType>(&argument(0).type());
+  }
+
+  [[nodiscard]] const rvsdg::valuetype &
+  GetStoredType() const noexcept
+  {
+    return *util::AssertedCast<const rvsdg::valuetype>(&argument(1).type());
   }
 };
 
@@ -1336,7 +1417,6 @@ public:
   CreateInPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
     std::vector<jlm::rvsdg::port> ports(1, { jlm::rvsdg::bit64 });
-    //                ports.emplace_back(pointerType.GetElementType());
     std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
     ports.insert(ports.end(), states.begin(), states.end());
     ports.emplace_back(valuetype); // result
@@ -1379,6 +1459,12 @@ public:
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
     return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+  }
+
+  [[nodiscard]] const rvsdg::valuetype &
+  GetLoadedType() const noexcept
+  {
+    return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
   }
 };
 
@@ -1445,6 +1531,12 @@ public:
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
     return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+  }
+
+  [[nodiscard]] const jlm::rvsdg::valuetype &
+  GetStoredType() const noexcept
+  {
+    return *util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
   }
 };
 

@@ -40,9 +40,9 @@ StoreTest1::SetupRvsdg()
   auto merge_a =
       MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ a[1], merge_b }));
 
-  auto a_amp_b = StoreNode::Create(a[0], b[0], { merge_a }, 4);
-  auto b_amp_c = StoreNode::Create(b[0], c[0], { a_amp_b[0] }, 4);
-  auto c_amp_d = StoreNode::Create(c[0], d[0], { b_amp_c[0] }, 4);
+  auto a_amp_b = StoreNonVolatileNode::Create(a[0], b[0], { merge_a }, 4);
+  auto b_amp_c = StoreNonVolatileNode::Create(b[0], c[0], { a_amp_b[0] }, 4);
+  auto c_amp_d = StoreNonVolatileNode::Create(c[0], d[0], { b_amp_c[0] }, 4);
 
   fct->finalize({ c_amp_d[0] });
 
@@ -97,10 +97,10 @@ StoreTest2::SetupRvsdg()
   auto merge_p =
       MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ p[1], merge_y }));
 
-  auto x_amp_a = StoreNode::Create(x[0], a[0], { merge_p }, 4);
-  auto y_amp_b = StoreNode::Create(y[0], b[0], { x_amp_a[0] }, 4);
-  auto p_amp_x = StoreNode::Create(p[0], x[0], { y_amp_b[0] }, 4);
-  auto p_amp_y = StoreNode::Create(p[0], y[0], { p_amp_x[0] }, 4);
+  auto x_amp_a = StoreNonVolatileNode::Create(x[0], a[0], { merge_p }, 4);
+  auto y_amp_b = StoreNonVolatileNode::Create(y[0], b[0], { x_amp_a[0] }, 4);
+  auto p_amp_x = StoreNonVolatileNode::Create(p[0], x[0], { y_amp_b[0] }, 4);
+  auto p_amp_y = StoreNonVolatileNode::Create(p[0], y[0], { p_amp_x[0] }, 4);
 
   fct->finalize({ p_amp_y[0] });
 
@@ -138,8 +138,9 @@ LoadTest1::SetupRvsdg()
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
-  auto ld1 = LoadNode::Create(fct->fctargument(0), { fct->fctargument(1) }, pointerType, 4);
-  auto ld2 = LoadNode::Create(ld1[0], { ld1[1] }, jlm::rvsdg::bit32, 4);
+  auto ld1 =
+      LoadNonVolatileNode::Create(fct->fctargument(0), { fct->fctargument(1) }, pointerType, 4);
+  auto ld2 = LoadNonVolatileNode::Create(ld1[0], { ld1[1] }, jlm::rvsdg::bit32, 4);
 
   fct->finalize(ld2);
 
@@ -190,13 +191,13 @@ LoadTest2::SetupRvsdg()
   auto merge_p =
       MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ p[1], merge_y }));
 
-  auto x_amp_a = StoreNode::Create(x[0], a[0], { merge_p }, 4);
-  auto y_amp_b = StoreNode::Create(y[0], b[0], x_amp_a, 4);
-  auto p_amp_x = StoreNode::Create(p[0], x[0], y_amp_b, 4);
+  auto x_amp_a = StoreNonVolatileNode::Create(x[0], a[0], { merge_p }, 4);
+  auto y_amp_b = StoreNonVolatileNode::Create(y[0], b[0], x_amp_a, 4);
+  auto p_amp_x = StoreNonVolatileNode::Create(p[0], x[0], y_amp_b, 4);
 
-  auto ld1 = LoadNode::Create(p[0], p_amp_x, pointerType, 4);
-  auto ld2 = LoadNode::Create(ld1[0], { ld1[1] }, pointerType, 4);
-  auto y_star_p = StoreNode::Create(y[0], ld2[0], { ld2[1] }, 4);
+  auto ld1 = LoadNonVolatileNode::Create(p[0], p_amp_x, pointerType, 4);
+  auto ld2 = LoadNonVolatileNode::Create(ld1[0], { ld1[1] }, pointerType, 4);
+  auto y_star_p = StoreNonVolatileNode::Create(y[0], ld2[0], { ld2[1] }, 4);
 
   fct->finalize({ y_star_p[0] });
 
@@ -216,7 +217,6 @@ LoadTest2::SetupRvsdg()
 
   this->load_x = jlm::rvsdg::node_output::node(ld1[0]);
   this->load_a = jlm::rvsdg::node_output::node(ld2[0]);
-  ;
 
   return module;
 }
@@ -240,7 +240,7 @@ LoadFromUndefTest::SetupRvsdg()
 
   auto undefValue = UndefValueOperation::Create(*Lambda_->subregion(), pointerType);
   auto loadResults =
-      LoadNode::Create(undefValue, { Lambda_->fctargument(0) }, jlm::rvsdg::bit32, 4);
+      LoadNonVolatileNode::Create(undefValue, { Lambda_->fctargument(0) }, jlm::rvsdg::bit32, 4);
 
   Lambda_->finalize(loadResults);
   rvsdg.add_export(Lambda_->output(), { pointerType, "f" });
@@ -279,11 +279,11 @@ GetElementPtrTest::SetupRvsdg()
 
   auto gepx =
       GetElementPtrOperation::Create(fct->fctargument(0), { zero, zero }, structType, pointerType);
-  auto ldx = LoadNode::Create(gepx, { fct->fctargument(1) }, jlm::rvsdg::bit32, 4);
+  auto ldx = LoadNonVolatileNode::Create(gepx, { fct->fctargument(1) }, jlm::rvsdg::bit32, 4);
 
   auto gepy =
       GetElementPtrOperation::Create(fct->fctargument(0), { zero, one }, structType, pointerType);
-  auto ldy = LoadNode::Create(gepy, { ldx[1] }, jlm::rvsdg::bit32, 4);
+  auto ldy = LoadNonVolatileNode::Create(gepy, { ldx[1] }, jlm::rvsdg::bit32, 4);
 
   auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);
 
@@ -349,21 +349,19 @@ Bits2PtrTest::SetupRvsdg()
     PointerType pt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &jlm::rvsdg::bit64, &iOStateType, &memoryStateType, &loopStateType },
-        { &pt, &iOStateType, &memoryStateType, &loopStateType });
+        { &jlm::rvsdg::bit64, &iOStateType, &memoryStateType },
+        { &pt, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "bit2ptr", linkage::external_linkage);
     auto valueArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto cast = bits2ptr_op::create(valueArgument, pt);
 
-    lambda->finalize({ cast, iOStateArgument, memoryStateArgument, loopStateArgument });
+    lambda->finalize({ cast, iOStateArgument, memoryStateArgument });
 
     return std::make_tuple(lambda, jlm::rvsdg::node_output::node(cast));
   };
@@ -372,31 +370,27 @@ Bits2PtrTest::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &jlm::rvsdg::bit64, &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &jlm::rvsdg::bit64, &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto valueArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto cvbits2ptr = lambda->add_ctxvar(b2p);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         cvbits2ptr,
         b2p->node()->type(),
-        { valueArgument, iOStateArgument, memoryStateArgument, loopStateArgument });
+        { valueArgument, iOStateArgument, memoryStateArgument });
 
-    lambda->finalize({ callResults[1], callResults[2], callResults[3] });
+    lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
     graph->add_export(lambda->output(), { PointerType(), "testfct" });
 
-    return std::make_tuple(
-        lambda,
-        util::AssertedCast<CallNode>(rvsdg::node_output::node(callResults[0])));
+    return std::make_tuple(lambda, &call);
   };
 
   auto [lambdaBits2Ptr, bitsToPtrNode] = setupBit2PtrFunction();
@@ -432,8 +426,11 @@ ConstantPointerNullTest::SetupRvsdg()
 
   auto constantPointerNullResult =
       ConstantPointerNullOperation::Create(fct->subregion(), pointerType);
-  auto st =
-      StoreNode::Create(fct->fctargument(0), constantPointerNullResult, { fct->fctargument(1) }, 4);
+  auto st = StoreNonVolatileNode::Create(
+      fct->fctargument(0),
+      constantPointerNullResult,
+      { fct->fctargument(1) },
+      4);
 
   fct->finalize({ st[0] });
 
@@ -464,24 +461,26 @@ CallTest1::SetupRvsdg()
     PointerType pt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pt, &pt, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pt, &pt, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
     auto pointerArgument1 = lambda->fctargument(0);
     auto pointerArgument2 = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto loopStateArgument = lambda->fctargument(4);
 
-    auto ld1 = LoadNode::Create(pointerArgument1, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
-    auto ld2 = LoadNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
+    auto ld1 = LoadNonVolatileNode::Create(
+        pointerArgument1,
+        { memoryStateArgument },
+        jlm::rvsdg::bit32,
+        4);
+    auto ld2 = LoadNonVolatileNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
 
-    lambda->finalize({ sum, iOStateArgument, ld2[1], loopStateArgument });
+    lambda->finalize({ sum, iOStateArgument, ld2[1] });
 
     return lambda;
   };
@@ -491,24 +490,26 @@ CallTest1::SetupRvsdg()
     PointerType pt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pt, &pt, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pt, &pt, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "g", linkage::external_linkage);
     auto pointerArgument1 = lambda->fctargument(0);
     auto pointerArgument2 = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto loopStateArgument = lambda->fctargument(4);
 
-    auto ld1 = LoadNode::Create(pointerArgument1, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
-    auto ld2 = LoadNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
+    auto ld1 = LoadNonVolatileNode::Create(
+        pointerArgument1,
+        { memoryStateArgument },
+        jlm::rvsdg::bit32,
+        4);
+    auto ld2 = LoadNonVolatileNode::Create(pointerArgument2, { ld1[1] }, jlm::rvsdg::bit32, 4);
 
     auto diff = jlm::rvsdg::bitsub_op::create(32, ld1[0], ld2[0]);
 
-    lambda->finalize({ diff, iOStateArgument, ld2[1], loopStateArgument });
+    lambda->finalize({ diff, iOStateArgument, ld2[1] });
 
     return lambda;
   };
@@ -517,15 +518,13 @@ CallTest1::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "h", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto cvf = lambda->add_ctxvar(f->output());
     auto cvg = lambda->add_ctxvar(g->output());
@@ -545,31 +544,26 @@ CallTest1::SetupRvsdg()
     auto six = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
     auto seven = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 7);
 
-    auto stx = StoreNode::Create(x[0], five, { mz }, 4);
-    auto sty = StoreNode::Create(y[0], six, { stx[0] }, 4);
-    auto stz = StoreNode::Create(z[0], seven, { sty[0] }, 4);
+    auto stx = StoreNonVolatileNode::Create(x[0], five, { mz }, 4);
+    auto sty = StoreNonVolatileNode::Create(y[0], six, { stx[0] }, 4);
+    auto stz = StoreNonVolatileNode::Create(z[0], seven, { sty[0] }, 4);
 
-    auto callFResults = CallNode::Create(
-        cvf,
-        f->type(),
-        { x[0], y[0], iOStateArgument, stz[0], loopStateArgument });
-    auto callGResults = CallNode::Create(
+    auto & callF = CallNode::CreateNode(cvf, f->type(), { x[0], y[0], iOStateArgument, stz[0] });
+    auto & callG = CallNode::CreateNode(
         cvg,
         g->type(),
-        { z[0], z[0], callFResults[1], callFResults[2], callFResults[3] });
+        { z[0], z[0], callF.GetIoStateOutput(), callF.GetMemoryStateOutput() });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callFResults[0], callGResults[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callF.Result(0), callG.Result(0));
 
-    lambda->finalize({ sum, callGResults[1], callGResults[2], callGResults[3] });
+    lambda->finalize({ sum, callG.GetIoStateOutput(), callG.GetMemoryStateOutput() });
     graph->add_export(lambda->output(), { PointerType(), "h" });
 
     auto allocaX = jlm::rvsdg::node_output::node(x[0]);
     auto allocaY = jlm::rvsdg::node_output::node(y[0]);
     auto allocaZ = jlm::rvsdg::node_output::node(z[0]);
-    auto callF = jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callFResults[0]));
-    auto callG = jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callGResults[0]));
 
-    return std::make_tuple(lambda, allocaX, allocaY, allocaZ, callF, callG);
+    return std::make_tuple(lambda, allocaX, allocaY, allocaZ, &callF, &callG);
   };
 
   auto lambdaF = SetupF();
@@ -609,17 +603,15 @@ CallTest2::SetupRvsdg()
     PointerType pt32;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType },
-        { &pt32, &iOStateType, &memoryStateType, &loopStateType });
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType },
+        { &pt32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "create", linkage::external_linkage);
     auto valueArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
@@ -629,7 +621,7 @@ CallTest2::SetupRvsdg()
     auto mx = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ alloc[1], memoryStateArgument }));
 
-    lambda->finalize({ cast, iOStateArgument, mx, loopStateArgument });
+    lambda->finalize({ cast, iOStateArgument, mx });
 
     auto mallocNode = jlm::rvsdg::node_output::node(alloc[0]);
     return std::make_tuple(lambda, mallocNode);
@@ -640,22 +632,20 @@ CallTest2::SetupRvsdg()
     PointerType pointerType;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "destroy", linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto cast = bitcast_op::create(pointerArgument, pointerType);
     auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
-    lambda->finalize({ freeResults[1], freeResults[0], loopStateArgument });
+    lambda->finalize({ freeResults[1], freeResults[0] });
 
     auto freeNode = jlm::rvsdg::node_output::node(freeResults[0]);
     return std::make_tuple(lambda, freeNode);
@@ -665,16 +655,14 @@ CallTest2::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto create_cv = lambda->add_ctxvar(lambdaCreate->output());
     auto destroy_cv = lambda->add_ctxvar(lambdaDestroy->output());
@@ -682,42 +670,28 @@ CallTest2::SetupRvsdg()
     auto six = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
     auto seven = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 7);
 
-    auto create1 = CallNode::Create(
+    auto & create1 = CallNode::CreateNode(
         create_cv,
         lambdaCreate->type(),
-        { six, iOStateArgument, memoryStateArgument, loopStateArgument });
-    auto create2 = CallNode::Create(
+        { six, iOStateArgument, memoryStateArgument });
+    auto & create2 = CallNode::CreateNode(
         create_cv,
         lambdaCreate->type(),
-        { seven, create1[1], create1[2], create1[3] });
+        { seven, create1.GetIoStateOutput(), create1.GetMemoryStateOutput() });
 
-    auto destroy1 = CallNode::Create(
+    auto & destroy1 = CallNode::CreateNode(
         destroy_cv,
         lambdaDestroy->type(),
-        { create1[0], create2[1], create2[2], create2[3] });
-    auto destroy2 = CallNode::Create(
+        { create1.Result(0), create2.GetIoStateOutput(), create2.GetMemoryStateOutput() });
+    auto & destroy2 = CallNode::CreateNode(
         destroy_cv,
         lambdaDestroy->type(),
-        { create2[0], destroy1[0], destroy1[1], destroy1[2] });
+        { create2.Result(0), destroy1.GetIoStateOutput(), destroy1.GetMemoryStateOutput() });
 
-    lambda->finalize(destroy2);
+    lambda->finalize({ destroy2.GetIoStateOutput(), destroy2.GetMemoryStateOutput() });
     graph->add_export(lambda->output(), { PointerType(), "test" });
 
-    auto callCreate1Node =
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(create1[0]));
-    auto callCreate2Node =
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(create2[0]));
-    auto callDestroy1Node =
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(destroy1[0]));
-    auto callDestroy2Node =
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(destroy2[0]));
-
-    return std::make_tuple(
-        lambda,
-        callCreate1Node,
-        callCreate2Node,
-        callDestroy1Node,
-        callDestroy2Node);
+    return std::make_tuple(lambda, &create1, &create2, &destroy1, &destroy2);
   };
 
   auto [lambdaCreate, mallocNode] = SetupCreate();
@@ -751,10 +725,9 @@ IndirectCallTest1::SetupRvsdg()
 
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType constantFunctionType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
   PointerType pointerType;
 
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -769,76 +742,68 @@ IndirectCallTest1::SetupRvsdg()
         lambda::node::create(graph->root(), constantFunctionType, name, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto constant = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, n);
 
-    return lambda->finalize({ constant, iOStateArgument, memoryStateArgument, loopStateArgument });
+    return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
 
   auto SetupIndirectCallFunction = [&]()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "indcall", linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
-    auto call = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         pointerArgument,
         constantFunctionType,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize(call);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(call[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto SetupTestFunction =
       [&](lambda::output * fctindcall, lambda::output * fctthree, lambda::output * fctfour)
   {
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto fctindcall_cv = lambda->add_ctxvar(fctindcall);
     auto fctfour_cv = lambda->add_ctxvar(fctfour);
     auto fctthree_cv = lambda->add_ctxvar(fctthree);
 
-    auto call_four = CallNode::Create(
+    auto & call_four = CallNode::CreateNode(
         fctindcall_cv,
         fctindcall->node()->type(),
-        { fctfour_cv, iOStateArgument, memoryStateArgument, loopStateArgument });
-    auto call_three = CallNode::Create(
+        { fctfour_cv, iOStateArgument, memoryStateArgument });
+    auto & call_three = CallNode::CreateNode(
         fctindcall_cv,
         fctindcall->node()->type(),
-        { fctthree_cv, call_four[1], call_four[2], call_four[3] });
+        { fctthree_cv, call_four.GetIoStateOutput(), call_four.GetMemoryStateOutput() });
 
-    auto add = jlm::rvsdg::bitadd_op::create(32, call_four[0], call_three[0]);
+    auto add = jlm::rvsdg::bitadd_op::create(32, call_four.Result(0), call_three.Result(0));
 
-    auto lambdaOutput = lambda->finalize({ add, call_three[1], call_three[2], call_three[3] });
+    auto lambdaOutput =
+        lambda->finalize({ add, call_three.GetIoStateOutput(), call_three.GetMemoryStateOutput() });
     graph->add_export(lambda->output(), { pointerType, "test" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(call_three[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(call_four[0])));
+    return std::make_tuple(lambdaOutput, &call_three, &call_four);
   };
 
   auto fctfour = SetupConstantFunction(4, "four");
@@ -869,10 +834,9 @@ IndirectCallTest2::SetupRvsdg()
 
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType constantFunctionType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
   PointerType pointerType;
 
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -917,38 +881,33 @@ IndirectCallTest2::SetupRvsdg()
         lambda::node::create(graph->root(), constantFunctionType, name, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto constant = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, n);
 
-    return lambda->finalize({ constant, iOStateArgument, memoryStateArgument, loopStateArgument });
+    return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
 
   auto SetupI = [&]()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "i", linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
-    auto call = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         pointerArgument,
         constantFunctionType,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize(call);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(call[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto SetupIndirectCallFunction = [&](ssize_t n,
@@ -959,32 +918,30 @@ IndirectCallTest2::SetupRvsdg()
     PointerType pointerType;
 
     FunctionType functionType(
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, name, linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto functionICv = lambda->add_ctxvar(&functionI);
     auto argumentFunctionCv = lambda->add_ctxvar(&argumentFunction);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, n);
-    auto storeNode = StoreNode::Create(pointerArgument, five, { memoryStateArgument }, 4);
+    auto storeNode =
+        StoreNonVolatileNode::Create(pointerArgument, five, { memoryStateArgument }, 4);
 
-    auto call = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         functionICv,
         functionI.node()->type(),
-        { argumentFunctionCv, iOStateArgument, storeNode[0], loopStateArgument });
+        { argumentFunctionCv, iOStateArgument, storeNode[0] });
 
-    auto lambdaOutput = lambda->finalize(call);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(call[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto SetupTestFunction = [&](lambda::output & functionX,
@@ -993,14 +950,13 @@ IndirectCallTest2::SetupRvsdg()
                                delta::output & globalG2)
   {
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto functionXCv = lambda->add_ctxvar(&functionX);
     auto functionYCv = lambda->add_ctxvar(&functionY);
@@ -1016,30 +972,35 @@ IndirectCallTest2::SetupRvsdg()
     auto pyMerge =
         MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>({ pyAlloca[1], pxMerge }));
 
-    auto callX = CallNode::Create(
+    auto & callX = CallNode::CreateNode(
         functionXCv,
         functionX.node()->type(),
-        { pxAlloca[0], iOStateArgument, pyMerge, loopStateArgument });
+        { pxAlloca[0], iOStateArgument, pyMerge });
 
-    auto callY = CallNode::Create(
+    auto & callY = CallNode::CreateNode(
         functionYCv,
         functionY.node()->type(),
-        { pyAlloca[0], iOStateArgument, callX[2], loopStateArgument });
+        { pyAlloca[0], callX.GetIoStateOutput(), callX.GetMemoryStateOutput() });
 
-    auto loadG1 = LoadNode::Create(globalG1Cv, { callY[2] }, jlm::rvsdg::bit32, 4);
-    auto loadG2 = LoadNode::Create(globalG2Cv, { loadG1[1] }, jlm::rvsdg::bit32, 4);
+    auto loadG1 = LoadNonVolatileNode::Create(
+        globalG1Cv,
+        { callY.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
+    auto loadG2 = LoadNonVolatileNode::Create(globalG2Cv, { loadG1[1] }, jlm::rvsdg::bit32, 4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callX[0], callY[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callX.Result(0), callY.Result(0));
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG2[0]);
 
-    auto lambdaOutput = lambda->finalize({ sum, callY[1], callY[2], callY[3] });
+    auto lambdaOutput =
+        lambda->finalize({ sum, callY.GetIoStateOutput(), callY.GetMemoryStateOutput() });
     graph->add_export(lambdaOutput, { PointerType(), "test" });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callX[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callY[0])),
+        &callX,
+        &callY,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(pxAlloca[0])),
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
@@ -1049,14 +1010,13 @@ IndirectCallTest2::SetupRvsdg()
   auto SetupTest2Function = [&](lambda::output & functionX)
   {
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test2", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto constantSize = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -1065,17 +1025,17 @@ IndirectCallTest2::SetupRvsdg()
 
     auto functionXCv = lambda->add_ctxvar(&functionX);
 
-    auto callX = CallNode::Create(
+    auto & callX = CallNode::CreateNode(
         functionXCv,
         functionX.node()->type(),
-        { pzAlloca[0], iOStateArgument, pzMerge, loopStateArgument });
+        { pzAlloca[0], iOStateArgument, pzMerge });
 
-    auto lambdaOutput = lambda->finalize(callX);
+    auto lambdaOutput = lambda->finalize(callX.Results());
     graph->add_export(lambdaOutput, { PointerType(), "test2" });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callX[0])),
+        &callX,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(pzAlloca[0])));
   };
@@ -1132,10 +1092,9 @@ ExternalCallTest1::SetupRvsdg()
   PointerType pointerType;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType functionGType(
-      { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &pointerType, &iOStateType, &memoryStateType },
+      { &pointerType, &iOStateType, &memoryStateType });
 
   auto SetupFunctionGDeclaration = [&]()
   {
@@ -1147,17 +1106,15 @@ ExternalCallTest1::SetupRvsdg()
     PointerType pointerType;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType },
+        { &pointerType, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
     auto pathArgument = lambda->fctargument(0);
     auto modeArgument = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto loopStateArgument = lambda->fctargument(4);
 
     auto functionGCv = lambda->add_ctxvar(functionG);
 
@@ -1170,23 +1127,21 @@ ExternalCallTest1::SetupRvsdg()
     auto mergeMode = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ allocaMode[1], mergePath }));
 
-    auto storePath = StoreNode::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
-    auto storeMode = StoreNode::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
+    auto storePath = StoreNonVolatileNode::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
+    auto storeMode = StoreNonVolatileNode::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
 
-    auto loadPath = LoadNode::Create(allocaPath[0], storeMode, pointerType, 4);
-    auto loadMode = LoadNode::Create(allocaMode[0], { loadPath[1] }, pointerType, 4);
+    auto loadPath = LoadNonVolatileNode::Create(allocaPath[0], storeMode, pointerType, 4);
+    auto loadMode = LoadNonVolatileNode::Create(allocaMode[0], { loadPath[1] }, pointerType, 4);
 
-    auto callGResults = CallNode::Create(
+    auto & callG = CallNode::CreateNode(
         functionGCv,
         functionGType,
-        { loadPath[0], loadMode[0], iOStateArgument, loadMode[1], loopStateArgument });
+        { loadPath[0], loadMode[0], iOStateArgument, loadMode[1] });
 
-    lambda->finalize(callGResults);
+    lambda->finalize(callG.Results());
     rvsdg->add_export(lambda->output(), { pointerType, "f" });
 
-    return std::make_tuple(
-        lambda,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callGResults[0])));
+    return std::make_tuple(lambda, &callG);
   };
 
   this->ExternalGArgument_ = SetupFunctionGDeclaration();
@@ -1215,20 +1170,22 @@ ExternalCallTest2::SetupRvsdg()
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   varargtype varArgType;
   FunctionType lambdaLlvmLifetimeStartType(
-      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaLlvmLifetimeEndType(
-      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaFType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaGType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      {
+          &iOStateType,
+          &memoryStateType,
+      });
 
   auto llvmLifetimeStart =
       rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
@@ -1240,7 +1197,6 @@ ExternalCallTest2::SetupRvsdg()
   LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
   auto iOStateArgument = LambdaG_->fctargument(0);
   auto memoryStateArgument = LambdaG_->fctargument(1);
-  auto loopStateArgument = LambdaG_->fctargument(2);
   auto llvmLifetimeStartArgument = LambdaG_->add_ctxvar(llvmLifetimeStart);
   auto llvmLifetimeEndArgument = LambdaG_->add_ctxvar(llvmLifetimeEnd);
   auto lambdaFArgument = LambdaG_->add_ctxvar(ExternalFArgument_);
@@ -1250,19 +1206,17 @@ ExternalCallTest2::SetupRvsdg()
   auto allocaResults = alloca_op::create(*structType, twentyFour, 16);
   auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
-  auto callLLvmLifetimeStartResults = CallNode::Create(
+  auto & callLLvmLifetimeStart = CallNode::CreateNode(
       llvmLifetimeStartArgument,
       lambdaLlvmLifetimeStartType,
-      { twentyFour, allocaResults[0], iOStateArgument, memoryState, loopStateArgument });
+      { twentyFour, allocaResults[0], iOStateArgument, memoryState });
 
-  auto callFResults = CallNode::Create(
+  CallF_ = &CallNode::CreateNode(
       lambdaFArgument,
       lambdaFType,
       { allocaResults[0],
-        callLLvmLifetimeStartResults[0],
-        callLLvmLifetimeStartResults[1],
-        callLLvmLifetimeStartResults[2] });
-  CallF_ = util::AssertedCast<CallNode>(rvsdg::node_output::node(callFResults[0]));
+        callLLvmLifetimeStart.GetIoStateOutput(),
+        callLLvmLifetimeStart.GetMemoryStateOutput() });
 
   auto zero = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 0);
   auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
@@ -1270,27 +1224,30 @@ ExternalCallTest2::SetupRvsdg()
 
   auto gepResult1 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, one }, *structType, pointerType);
-  auto loadResults1 = LoadNode::Create(gepResult1, { callFResults[1] }, pointerType, 8);
-  auto loadResults2 = LoadNode::Create(loadResults1[0], { loadResults1[1] }, pointerType, 8);
+  auto loadResults1 =
+      LoadNonVolatileNode::Create(gepResult1, { CallF_->GetMemoryStateOutput() }, pointerType, 8);
+  auto loadResults2 =
+      LoadNonVolatileNode::Create(loadResults1[0], { loadResults1[1] }, pointerType, 8);
 
   auto gepResult2 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, two }, *structType, pointerType);
-  auto loadResults3 = LoadNode::Create(gepResult2, { loadResults2[1] }, pointerType, 8);
-  auto loadResults4 = LoadNode::Create(loadResults1[0], { loadResults3[1] }, pointerType, 8);
+  auto loadResults3 = LoadNonVolatileNode::Create(gepResult2, { loadResults2[1] }, pointerType, 8);
+  auto loadResults4 =
+      LoadNonVolatileNode::Create(loadResults1[0], { loadResults3[1] }, pointerType, 8);
 
-  auto storeResults1 = StoreNode::Create(loadResults1[0], loadResults4[0], { loadResults4[1] }, 8);
+  auto storeResults1 =
+      StoreNonVolatileNode::Create(loadResults1[0], loadResults4[0], { loadResults4[1] }, 8);
 
-  auto loadResults5 = LoadNode::Create(gepResult2, { storeResults1[0] }, pointerType, 8);
-  auto storeResults2 = StoreNode::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
+  auto loadResults5 = LoadNonVolatileNode::Create(gepResult2, { storeResults1[0] }, pointerType, 8);
+  auto storeResults2 =
+      StoreNonVolatileNode::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
 
-  auto callLLvmLifetimeEndResults = CallNode::Create(
+  auto & callLLvmLifetimeEnd = CallNode::CreateNode(
       llvmLifetimeEndArgument,
       lambdaLlvmLifetimeEndType,
-      { twentyFour, allocaResults[0], callFResults[0], storeResults2[0], callFResults[2] });
+      { twentyFour, allocaResults[0], CallF_->GetIoStateOutput(), storeResults2[0] });
 
-  LambdaG_->finalize({ callLLvmLifetimeEndResults[0],
-                       callLLvmLifetimeEndResults[1],
-                       callLLvmLifetimeEndResults[2] });
+  LambdaG_->finalize(callLLvmLifetimeEnd.Results());
 
   return rvsdgModule;
 }
@@ -1327,8 +1284,8 @@ GammaTest::SetupRvsdg()
   auto tmp1 = gammanode->add_exitvar({ p1ev->argument(0), p3ev->argument(1) });
   auto tmp2 = gammanode->add_exitvar({ p2ev->argument(0), p4ev->argument(1) });
 
-  auto ld1 = LoadNode::Create(tmp1, { fct->fctargument(5) }, jlm::rvsdg::bit32, 4);
-  auto ld2 = LoadNode::Create(tmp2, { ld1[1] }, jlm::rvsdg::bit32, 4);
+  auto ld1 = LoadNonVolatileNode::Create(tmp1, { fct->fctargument(5) }, jlm::rvsdg::bit32, 4);
+  auto ld2 = LoadNonVolatileNode::Create(tmp2, { ld1[1] }, jlm::rvsdg::bit32, 4);
   auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
 
   fct->finalize({ sum, ld2[1] });
@@ -1371,7 +1328,7 @@ GammaTest2::SetupRvsdg()
       auto gammaInputMemoryState = gammaNode->add_entryvar(memoryState);
 
       // gamma subregion 0
-      auto loadXResults = LoadNode::Create(
+      auto loadXResults = LoadNonVolatileNode::Create(
           gammaInputX->argument(0),
           { gammaInputMemoryState->argument(0) },
           jlm::rvsdg::bit32,
@@ -1379,10 +1336,10 @@ GammaTest2::SetupRvsdg()
 
       auto one = rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 1);
       auto storeZRegion0Results =
-          StoreNode::Create(gammaInputZ->argument(0), one, { loadXResults[1] }, 4);
+          StoreNonVolatileNode::Create(gammaInputZ->argument(0), one, { loadXResults[1] }, 4);
 
       // gamma subregion 1
-      auto loadYResults = LoadNode::Create(
+      auto loadYResults = LoadNonVolatileNode::Create(
           gammaInputY->argument(1),
           { gammaInputMemoryState->argument(1) },
           jlm::rvsdg::bit32,
@@ -1390,7 +1347,7 @@ GammaTest2::SetupRvsdg()
 
       auto two = rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 2);
       auto storeZRegion1Results =
-          StoreNode::Create(gammaInputZ->argument(1), two, { loadYResults[1] }, 4);
+          StoreNonVolatileNode::Create(gammaInputZ->argument(1), two, { loadYResults[1] }, 4);
 
       // finalize gamma
       auto gammaOutputA = gammaNode->add_exitvar({ loadXResults[0], loadYResults[0] });
@@ -1402,16 +1359,10 @@ GammaTest2::SetupRvsdg()
 
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     PointerType pointerType;
     FunctionType functionType(
-        { &rvsdg::bit32,
-          &pointerType,
-          &pointerType,
-          &iOStateType,
-          &memoryStateType,
-          &loopStateType },
-        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &rvsdg::bit32, &pointerType, &pointerType, &iOStateType, &memoryStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
     auto cArgument = lambda->fctargument(0);
@@ -1419,7 +1370,6 @@ GammaTest2::SetupRvsdg()
     auto yArgument = lambda->fctargument(2);
     auto iOStateArgument = lambda->fctargument(3);
     auto memoryStateArgument = lambda->fctargument(4);
-    auto loopStateArgument = lambda->fctargument(5);
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -1428,7 +1378,8 @@ GammaTest2::SetupRvsdg()
     auto memoryState = MemStateMergeOperator::Create({ allocaZResults[1], memoryStateArgument });
 
     auto nullPointer = ConstantPointerNullOperation::Create(lambda->subregion(), pointerType);
-    auto storeZResults = StoreNode::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
+    auto storeZResults =
+        StoreNonVolatileNode::Create(allocaZResults[0], nullPointer, { memoryState }, 4);
 
     auto zero = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto bitEq = rvsdg::biteq_op::create(32, cArgument, zero);
@@ -1437,12 +1388,15 @@ GammaTest2::SetupRvsdg()
     auto [gammaOutputA, gammaOutputMemoryState] =
         SetupGamma(predicate, xArgument, yArgument, allocaZResults[0], memoryState);
 
-    auto loadZResults =
-        LoadNode::Create(allocaZResults[0], { gammaOutputMemoryState }, jlm::rvsdg::bit32, 4);
+    auto loadZResults = LoadNonVolatileNode::Create(
+        allocaZResults[0],
+        { gammaOutputMemoryState },
+        jlm::rvsdg::bit32,
+        4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, gammaOutputA, loadZResults[0]);
 
-    lambda->finalize({ sum, iOStateArgument, loadZResults[1], loopStateArgument });
+    lambda->finalize({ sum, iOStateArgument, loadZResults[1] });
 
     return std::make_tuple(
         lambda->output(),
@@ -1458,17 +1412,15 @@ GammaTest2::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     PointerType pointerType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(rvsdg->root(), functionType, functionName, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
     auto lambdaFArgument = lambda->add_ctxvar(&lambdaF);
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
@@ -1484,26 +1436,23 @@ GammaTest2::SetupRvsdg()
     auto x = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, xValue);
     auto y = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, yValue);
 
-    auto storeXResults = StoreNode::Create(allocaXResults[0], x, { allocaXResults[1] }, 4);
+    auto storeXResults =
+        StoreNonVolatileNode::Create(allocaXResults[0], x, { allocaXResults[1] }, 4);
 
-    auto storeYResults = StoreNode::Create(allocaYResults[0], y, { storeXResults[0] }, 4);
+    auto storeYResults =
+        StoreNonVolatileNode::Create(allocaYResults[0], y, { storeXResults[0] }, 4);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         lambdaFArgument,
         lambdaF.node()->type(),
-        { predicate,
-          allocaXResults[0],
-          allocaYResults[0],
-          iOStateArgument,
-          storeYResults[0],
-          loopStateArgument });
+        { predicate, allocaXResults[0], allocaYResults[0], iOStateArgument, storeYResults[0] });
 
-    lambda->finalize(callResults);
+    lambda->finalize(call.Results());
     rvsdg->add_export(lambda->output(), { PointerType(), functionName });
 
     return std::make_tuple(
         lambda->output(),
-        util::AssertedCast<CallNode>(rvsdg::node_output::node(callResults[0])),
+        &call,
         rvsdg::node_output::node(allocaXResults[0]),
         rvsdg::node_output::node(allocaYResults[1]));
   };
@@ -1563,7 +1512,7 @@ ThetaTest::SetupRvsdg()
       { n->argument() },
       jlm::rvsdg::bit32,
       pointerType);
-  auto store = StoreNode::Create(gepnode, c->argument(), { s->argument() }, 4);
+  auto store = StoreNonVolatileNode::Create(gepnode, c->argument(), { s->argument() }, 4);
 
   auto one = jlm::rvsdg::create_bitconstant(thetanode->subregion(), 32, 1);
   auto sum = jlm::rvsdg::bitadd_op::create(32, n->argument(), one);
@@ -1618,53 +1567,44 @@ DeltaTest1::SetupRvsdg()
     PointerType pt;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pt, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pt, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "g", linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
-    auto ld = LoadNode::Create(pointerArgument, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
+    auto ld =
+        LoadNonVolatileNode::Create(pointerArgument, { memoryStateArgument }, jlm::rvsdg::bit32, 4);
 
-    return lambda->finalize({ ld[0], iOStateArgument, ld[1], loopStateArgument });
+    return lambda->finalize({ ld[0], iOStateArgument, ld[1] });
   };
 
   auto SetupFunctionH = [&](delta::output * f, lambda::output * g)
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "h", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto cvf = lambda->add_ctxvar(f);
     auto cvg = lambda->add_ctxvar(g);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
-    auto st = StoreNode::Create(cvf, five, { memoryStateArgument }, 4);
-    auto callg = CallNode::Create(
-        cvg,
-        g->node()->type(),
-        { cvf, iOStateArgument, st[0], loopStateArgument });
+    auto st = StoreNonVolatileNode::Create(cvf, five, { memoryStateArgument }, 4);
+    auto & callG = CallNode::CreateNode(cvg, g->node()->type(), { cvf, iOStateArgument, st[0] });
 
-    auto lambdaOutput = lambda->finalize(callg);
+    auto lambdaOutput = lambda->finalize(callG.Results());
     graph->add_export(lambda->output(), { PointerType(), "h" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callg[0])),
-        jlm::rvsdg::node_output::node(five));
+    return std::make_tuple(lambdaOutput, &callG, jlm::rvsdg::node_output::node(five));
   };
 
   auto f = SetupGlobalF();
@@ -1730,38 +1670,34 @@ DeltaTest2::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "f1", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto cvd1 = lambda->add_ctxvar(d1);
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
-    auto st = StoreNode::Create(cvd1, b2, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
 
-    return lambda->finalize({ iOStateArgument, st[0], loopStateArgument });
+    return lambda->finalize({ iOStateArgument, st[0] });
   };
 
   auto SetupF2 = [&](lambda::output * f1, delta::output * d1, delta::output * d2)
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "f2", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto cvd1 = lambda->add_ctxvar(d1);
     auto cvd2 = lambda->add_ctxvar(d2);
@@ -1769,17 +1705,14 @@ DeltaTest2::SetupRvsdg()
 
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto b42 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 42);
-    auto st = StoreNode::Create(cvd1, b5, { memoryStateArgument }, 4);
-    auto callResults =
-        CallNode::Create(cvf1, f1->node()->type(), { iOStateArgument, st[0], loopStateArgument });
-    st = StoreNode::Create(cvd2, b42, { callResults[1] }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b5, { memoryStateArgument }, 4);
+    auto & call = CallNode::CreateNode(cvf1, f1->node()->type(), { iOStateArgument, st[0] });
+    st = StoreNonVolatileNode::Create(cvd2, b42, { call.GetMemoryStateOutput() }, 4);
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
     graph->add_export(lambdaOutput, { PointerType(), "f2" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto d1 = SetupD1();
@@ -1787,9 +1720,7 @@ DeltaTest2::SetupRvsdg()
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
 
-  /*
-   * Assign nodes
-   */
+  // Assign nodes
   this->lambda_f1 = f1->node();
   this->lambda_f2 = f2->node();
 
@@ -1843,55 +1774,51 @@ DeltaTest3::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit16, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit16, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
     auto g1CtxVar = lambda->add_ctxvar(&g1);
     auto g2CtxVar = lambda->add_ctxvar(&g2);
 
-    auto loadResults = LoadNode::Create(g2CtxVar, { memoryStateArgument }, PointerType(), 8);
-    auto storeResults = StoreNode::Create(g2CtxVar, loadResults[0], { loadResults[1] }, 8);
+    auto loadResults =
+        LoadNonVolatileNode::Create(g2CtxVar, { memoryStateArgument }, PointerType(), 8);
+    auto storeResults =
+        StoreNonVolatileNode::Create(g2CtxVar, loadResults[0], { loadResults[1] }, 8);
 
-    loadResults = LoadNode::Create(g1CtxVar, storeResults, jlm::rvsdg::bit32, 8);
+    loadResults = LoadNonVolatileNode::Create(g1CtxVar, storeResults, jlm::rvsdg::bit32, 8);
     auto truncResult = trunc_op::create(16, loadResults[0]);
 
-    return lambda->finalize({ truncResult, iOStateArgument, loadResults[1], loopStateArgument });
+    return lambda->finalize({ truncResult, iOStateArgument, loadResults[1] });
   };
 
   auto SetupTest = [&](lambda::output & lambdaF)
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto lambdaFArgument = lambda->add_ctxvar(&lambdaF);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         lambdaFArgument,
         lambdaF.node()->type(),
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize({ callResults[1], callResults[2], callResults[3] });
+    auto lambdaOutput = lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
     graph->add_export(lambdaOutput, { PointerType(), "test" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto g1 = SetupG1();
@@ -1928,56 +1855,49 @@ ImportTest::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "f1", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto cvd1 = lambda->add_ctxvar(d1);
 
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
-    auto st = StoreNode::Create(cvd1, b5, { memoryStateArgument }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b5, { memoryStateArgument }, 4);
 
-    return lambda->finalize({ iOStateArgument, st[0], loopStateArgument });
+    return lambda->finalize({ iOStateArgument, st[0] });
   };
 
   auto SetupF2 = [&](lambda::output * f1, jlm::rvsdg::output * d1, jlm::rvsdg::output * d2)
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "f2", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto cvd1 = lambda->add_ctxvar(d1);
     auto cvd2 = lambda->add_ctxvar(d2);
     auto cvf1 = lambda->add_ctxvar(f1);
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
     auto b21 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 21);
-    auto st = StoreNode::Create(cvd1, b2, { memoryStateArgument }, 4);
-    auto callResults =
-        CallNode::Create(cvf1, f1->node()->type(), { iOStateArgument, st[0], loopStateArgument });
-    st = StoreNode::Create(cvd2, b21, { callResults[1] }, 4);
+    auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
+    auto & call = CallNode::CreateNode(cvf1, f1->node()->type(), { iOStateArgument, st[0] });
+    st = StoreNonVolatileNode::Create(cvd2, b21, { call.GetMemoryStateOutput() }, 4);
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
     graph->add_export(lambda->output(), { PointerType(), "f2" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto d1 = graph->add_import(impport(jlm::rvsdg::bit32, "d1", linkage::external_linkage));
@@ -1986,9 +1906,7 @@ ImportTest::SetupRvsdg()
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
 
-  /*
-   * Assign nodes
-   */
+  // Assign nodes
   this->lambda_f1 = f1->node();
   this->lambda_f2 = f2->node();
 
@@ -2014,10 +1932,9 @@ PhiTest1::SetupRvsdg()
   PointerType pbit64;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType fibFunctionType(
-      { &jlm::rvsdg::bit64, &pbit64, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &jlm::rvsdg::bit64, &pbit64, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
 
   auto SetupFib = [&]()
   {
@@ -2033,7 +1950,6 @@ PhiTest1::SetupRvsdg()
     auto pointerArgument = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto loopStateArgument = lambda->fctargument(4);
     auto ctxVarFib = lambda->add_ctxvar(fibrv->argument());
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
@@ -2046,38 +1962,36 @@ PhiTest1::SetupRvsdg()
     auto fibev = gammaNode->add_entryvar(ctxVarFib);
     auto gIIoState = gammaNode->add_entryvar(iOStateArgument);
     auto gIMemoryState = gammaNode->add_entryvar(memoryStateArgument);
-    auto gILoopState = gammaNode->add_entryvar(loopStateArgument);
 
     /* gamma subregion 0 */
     auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
     auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), one);
-    auto callfibm1Results = CallNode::Create(
+    auto & callFibm1 = CallNode::CreateNode(
         fibev->argument(0),
         fibFunctionType,
-        { nm1,
-          resultev->argument(0),
-          gIIoState->argument(0),
-          gIMemoryState->argument(0),
-          gILoopState->argument(0) });
+        { nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0) });
 
     two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
     auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), two);
-    auto callfibm2Results = CallNode::Create(
+    auto & callFibm2 = CallNode::CreateNode(
         fibev->argument(0),
         fibFunctionType,
         { nm2,
           resultev->argument(0),
-          callfibm1Results[0],
-          callfibm1Results[1],
-          callfibm1Results[2] });
+          callFibm1.GetIoStateOutput(),
+          callFibm1.GetMemoryStateOutput() });
 
     auto gepnm1 =
         GetElementPtrOperation::Create(resultev->argument(0), { nm1 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm1 = LoadNode::Create(gepnm1, { callfibm2Results[1] }, jlm::rvsdg::bit64, 8);
+    auto ldnm1 = LoadNonVolatileNode::Create(
+        gepnm1,
+        { callFibm2.GetMemoryStateOutput() },
+        jlm::rvsdg::bit64,
+        8);
 
     auto gepnm2 =
         GetElementPtrOperation::Create(resultev->argument(0), { nm2 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm2 = LoadNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
+    auto ldnm2 = LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
@@ -2085,28 +1999,23 @@ PhiTest1::SetupRvsdg()
     /* Nothing needs to be done */
 
     auto sumex = gammaNode->add_exitvar({ sum, nev->argument(1) });
-    auto gOIoState = gammaNode->add_exitvar({ callfibm2Results[0], gIIoState->argument(1) });
+    auto gOIoState =
+        gammaNode->add_exitvar({ callFibm2.GetIoStateOutput(), gIIoState->argument(1) });
     auto gOMemoryState = gammaNode->add_exitvar({ ldnm2[1], gIMemoryState->argument(1) });
-    auto gOLoopState = gammaNode->add_exitvar({ callfibm2Results[2], gILoopState->argument(1) });
 
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
         jlm::rvsdg::bit64,
         pbit64);
-    auto store = StoreNode::Create(gepn, sumex, { gOMemoryState }, 8);
+    auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
 
-    auto lambdaOutput = lambda->finalize({ gOIoState, store[0], gOLoopState });
+    auto lambdaOutput = lambda->finalize({ gOIoState, store[0] });
 
     fibrv->result()->divert_to(lambdaOutput);
     auto phiNode = pb.end();
 
-    return std::make_tuple(
-        phiNode,
-        lambdaOutput,
-        gammaNode,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm1Results[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm2Results[0])));
+    return std::make_tuple(phiNode, lambdaOutput, gammaNode, &callFibm1, &callFibm2);
   };
 
   auto SetupTestFunction = [&](phi::node * phiNode)
@@ -2115,16 +2024,14 @@ PhiTest1::SetupRvsdg()
     PointerType pbit64;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
     auto fibcv = lambda->add_ctxvar(phiNode->output(0));
 
     auto ten = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 10);
@@ -2134,26 +2041,19 @@ PhiTest1::SetupRvsdg()
     auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 0);
     auto gep = GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, at, pbit64);
 
-    auto callResults = CallNode::Create(
-        fibcv,
-        fibFunctionType,
-        { ten, gep, iOStateArgument, state, loopStateArgument });
+    auto & call =
+        CallNode::CreateNode(fibcv, fibFunctionType, { ten, gep, iOStateArgument, state });
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
     graph->add_export(lambdaOutput, { PointerType(), "test" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
-        jlm::rvsdg::node_output::node(allocaResults[0]));
+    return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(allocaResults[0]));
   };
 
   auto [phiNode, fibfct, gammaNode, callFib1, callFib2] = SetupFib();
   auto [testfct, callFib, alloca] = SetupTestFunction(phiNode);
 
-  /*
-   * Assign nodes
-   */
+  // Assign nodes
   this->lambda_fib = fibfct->node();
   this->lambda_test = testfct->node();
 
@@ -2177,25 +2077,24 @@ PhiTest2::SetupRvsdg()
 
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
 
   PointerType pointerType;
 
   FunctionType constantFunctionType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
   FunctionType recursiveFunctionType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
   FunctionType functionIType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
   FunctionType recFunctionType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -2212,11 +2111,10 @@ PhiTest2::SetupRvsdg()
         linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto constant = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    return lambda->finalize({ constant, iOStateArgument, memoryStateArgument, loopStateArgument });
+    return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
 
   auto SetupI = [&]()
@@ -2226,18 +2124,15 @@ PhiTest2::SetupRvsdg()
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
-    auto call = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         pointerArgument,
         constantFunctionType,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize(call);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(call[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto SetupA =
@@ -2247,37 +2142,37 @@ PhiTest2::SetupRvsdg()
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto functionBCv = lambda->add_ctxvar(&functionB);
     auto functionDCv = lambda->add_ctxvar(&functionD);
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
-    auto storeNode = StoreNode::Create(pointerArgument, one, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(pointerArgument, one, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto paAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
     auto paMerge = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ paAlloca[1], storeNode[0] }));
 
-    auto callB = CallNode::Create(
+    auto & callB = CallNode::CreateNode(
         functionBCv,
         recFunctionType,
-        { paAlloca[0], iOStateArgument, paMerge, loopStateArgument });
+        { paAlloca[0], iOStateArgument, paMerge });
 
-    auto callD = CallNode::Create(
+    auto & callD = CallNode::CreateNode(
         functionDCv,
         recFunctionType,
-        { paAlloca[0], callB[1], callB[2], callB[3] });
+        { paAlloca[0], callB.GetIoStateOutput(), callB.GetMemoryStateOutput() });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callB[0], callD[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callB.Result(0), callD.Result(0));
 
-    auto lambdaOutput = lambda->finalize({ sum, callD[1], callD[2], callD[3] });
+    auto lambdaOutput =
+        lambda->finalize({ sum, callD.GetIoStateOutput(), callD.GetMemoryStateOutput() });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callB[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callD[0])),
+        &callB,
+        &callD,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(paAlloca[0])));
   };
@@ -2291,38 +2186,38 @@ PhiTest2::SetupRvsdg()
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto functionICv = lambda->add_ctxvar(&functionI);
     auto functionCCv = lambda->add_ctxvar(&functionC);
     auto functionEightCv = lambda->add_ctxvar(&functionEight);
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
-    auto storeNode = StoreNode::Create(pointerArgument, two, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(pointerArgument, two, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pbAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
     auto pbMerge = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ pbAlloca[1], storeNode[0] }));
 
-    auto callI = CallNode::Create(
+    auto & callI = CallNode::CreateNode(
         functionICv,
         functionIType,
-        { functionEightCv, iOStateArgument, pbMerge, loopStateArgument });
+        { functionEightCv, iOStateArgument, pbMerge });
 
-    auto callC = CallNode::Create(
+    auto & callC = CallNode::CreateNode(
         functionCCv,
         recFunctionType,
-        { pbAlloca[0], callI[1], callI[2], callI[3] });
+        { pbAlloca[0], callI.GetIoStateOutput(), callI.GetMemoryStateOutput() });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callI[0], callC[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callI.Result(0), callC.Result(0));
 
-    auto lambdaOutput = lambda->finalize({ sum, callC[1], callC[2], callC[3] });
+    auto lambdaOutput =
+        lambda->finalize({ sum, callC.GetIoStateOutput(), callC.GetMemoryStateOutput() });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callI[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callC[0])),
+        &callI,
+        &callC,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(pbAlloca[0])));
   };
@@ -2333,32 +2228,35 @@ PhiTest2::SetupRvsdg()
     auto xArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto functionACv = lambda->add_ctxvar(&functionA);
 
     auto three = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 3);
-    auto storeNode = StoreNode::Create(xArgument, three, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(xArgument, three, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pcAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
     auto pcMerge = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ pcAlloca[1], storeNode[0] }));
 
-    auto callA = CallNode::Create(
+    auto & callA = CallNode::CreateNode(
         functionACv,
         recFunctionType,
-        { pcAlloca[0], iOStateArgument, pcMerge, loopStateArgument });
+        { pcAlloca[0], iOStateArgument, pcMerge });
 
-    auto loadX = LoadNode::Create(xArgument, { callA[2] }, jlm::rvsdg::bit32, 4);
+    auto loadX = LoadNonVolatileNode::Create(
+        xArgument,
+        { callA.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callA[0], loadX[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callA.Result(0), loadX[0]);
 
-    auto lambdaOutput = lambda->finalize({ sum, callA[1], callA[2], callA[3] });
+    auto lambdaOutput = lambda->finalize({ sum, callA.GetIoStateOutput(), loadX[1] });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callA[0])),
+        &callA,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(pcAlloca[0])));
   };
@@ -2369,27 +2267,26 @@ PhiTest2::SetupRvsdg()
     auto xArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto functionACv = lambda->add_ctxvar(&functionA);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto storeNode = StoreNode::Create(xArgument, four, { memoryStateArgument }, 4);
+    auto storeNode = StoreNonVolatileNode::Create(xArgument, four, { memoryStateArgument }, 4);
 
     auto pdAlloca = alloca_op::create(jlm::rvsdg::bit32, four, 4);
     auto pdMerge = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ pdAlloca[1], storeNode[0] }));
 
-    auto callA = CallNode::Create(
+    auto & callA = CallNode::CreateNode(
         functionACv,
         recFunctionType,
-        { pdAlloca[0], iOStateArgument, pdMerge, loopStateArgument });
+        { pdAlloca[0], iOStateArgument, pdMerge });
 
-    auto lambdaOutput = lambda->finalize(callA);
+    auto lambdaOutput = lambda->finalize(callA.Results());
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callA[0])),
+        &callA,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(pdAlloca[0])));
   };
@@ -2446,14 +2343,13 @@ PhiTest2::SetupRvsdg()
     PointerType pointerType;
 
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto functionACv = lambda->add_ctxvar(&functionA);
 
@@ -2462,17 +2358,17 @@ PhiTest2::SetupRvsdg()
     auto pTestMerge = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ pTestAlloca[1], memoryStateArgument }));
 
-    auto callA = CallNode::Create(
+    auto & callA = CallNode::CreateNode(
         functionACv,
         recFunctionType,
-        { pTestAlloca[0], iOStateArgument, pTestMerge, loopStateArgument });
+        { pTestAlloca[0], iOStateArgument, pTestMerge });
 
-    auto lambdaOutput = lambda->finalize(callA);
+    auto lambdaOutput = lambda->finalize(callA.Results());
     graph->add_export(lambdaOutput, { PointerType(), "test" });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callA[0])),
+        &callA,
         jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
             jlm::rvsdg::node_output::node(pTestAlloca[0])));
   };
@@ -2602,8 +2498,8 @@ ExternalMemoryTest::SetupRvsdg()
   auto one = jlm::rvsdg::create_bitconstant(LambdaF->subregion(), 32, 1);
   auto two = jlm::rvsdg::create_bitconstant(LambdaF->subregion(), 32, 2);
 
-  auto storeOne = StoreNode::Create(x, one, { state }, 4);
-  auto storeTwo = StoreNode::Create(y, two, { storeOne[0] }, 4);
+  auto storeOne = StoreNonVolatileNode::Create(x, one, { state }, 4);
+  auto storeTwo = StoreNonVolatileNode::Create(y, two, { storeOne[0] }, 4);
 
   LambdaF->finalize(storeTwo);
   graph->add_export(LambdaF->output(), { pointerType, "f" });
@@ -2684,35 +2580,35 @@ EscapedMemoryTest1::SetupRvsdg()
     PointerType pointerType;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(rvsdg->root(), functionType, "test", linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
-    auto loopStateArgument = lambda->fctargument(3);
 
     auto contextVariableB = lambda->add_ctxvar(&deltaB);
 
-    auto loadResults1 = LoadNode::Create(pointerArgument, { memoryStateArgument }, pointerType, 4);
+    auto loadResults1 =
+        LoadNonVolatileNode::Create(pointerArgument, { memoryStateArgument }, pointerType, 4);
     auto loadResults2 =
-        LoadNode::Create(loadResults1[0], { loadResults1[1] }, jlm::rvsdg::bit32, 4);
+        LoadNonVolatileNode::Create(loadResults1[0], { loadResults1[1] }, jlm::rvsdg::bit32, 4);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
-    auto storeResults = StoreNode::Create(contextVariableB, five, { loadResults2[1] }, 4);
+    auto storeResults =
+        StoreNonVolatileNode::Create(contextVariableB, five, { loadResults2[1] }, 4);
 
-    auto lambdaOutput =
-        lambda->finalize({ loadResults2[0], iOStateArgument, storeResults[0], loopStateArgument });
+    auto lambdaOutput = lambda->finalize({ loadResults2[0], iOStateArgument, storeResults[0] });
 
     rvsdg->add_export(lambdaOutput, { pointerType, "test" });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<LoadNode>(jlm::rvsdg::node_output::node(loadResults1[0])));
+        jlm::util::AssertedCast<LoadNonVolatileNode>(
+            jlm::rvsdg::node_output::node(loadResults1[0])));
   };
 
   auto deltaA = SetupDeltaA();
@@ -2750,15 +2646,14 @@ EscapedMemoryTest2::SetupRvsdg()
   PointerType pointerType;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
 
   FunctionType externalFunction1Type(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
 
   FunctionType externalFunction2Type(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &pointerType, &iOStateType, &memoryStateType });
 
   auto SetupExternalFunction1Declaration = [&]()
   {
@@ -2777,10 +2672,9 @@ EscapedMemoryTest2::SetupRvsdg()
     PointerType p8;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &p8, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &p8, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(
         rvsdg->root(),
@@ -2789,7 +2683,6 @@ EscapedMemoryTest2::SetupRvsdg()
         linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
@@ -2797,8 +2690,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto mergeResults = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ memoryStateArgument, mallocResults[1] }));
 
-    auto lambdaOutput =
-        lambda->finalize({ mallocResults[0], iOStateArgument, mergeResults, loopStateArgument });
+    auto lambdaOutput = lambda->finalize({ mallocResults[0], iOStateArgument, mergeResults });
 
     rvsdg->add_export(lambdaOutput, { pointerType, "ReturnAddress" });
 
@@ -2809,10 +2701,9 @@ EscapedMemoryTest2::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(
         rvsdg->root(),
@@ -2821,7 +2712,6 @@ EscapedMemoryTest2::SetupRvsdg()
         linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto externalFunction1 = lambda->add_ctxvar(externalFunction1Argument);
 
@@ -2831,29 +2721,25 @@ EscapedMemoryTest2::SetupRvsdg()
     auto mergeResult = MemStateMergeOperator::Create(
         std::vector<jlm::rvsdg::output *>({ memoryStateArgument, mallocResults[1] }));
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         externalFunction1,
         externalFunction1Type,
-        { mallocResults[0], iOStateArgument, mergeResult, loopStateArgument });
+        { mallocResults[0], iOStateArgument, mergeResult });
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
     rvsdg->add_export(lambdaOutput, { pointerType, "CallExternalFunction1" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
-        jlm::rvsdg::node_output::node(mallocResults[0]));
+    return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(mallocResults[0]));
   };
 
   auto SetupCallExternalFunction2 = [&](jlm::rvsdg::argument * externalFunction2Argument)
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(
         rvsdg->root(),
@@ -2862,26 +2748,29 @@ EscapedMemoryTest2::SetupRvsdg()
         linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto externalFunction2 = lambda->add_ctxvar(externalFunction2Argument);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         externalFunction2,
         externalFunction2Type,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
-    auto loadResults = LoadNode::Create(callResults[0], { callResults[2] }, jlm::rvsdg::bit32, 4);
+    auto loadResults = LoadNonVolatileNode::Create(
+        call.Result(0),
+        { call.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
 
     auto lambdaOutput =
-        lambda->finalize({ loadResults[0], callResults[1], loadResults[1], callResults[3] });
+        lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
 
     rvsdg->add_export(lambdaOutput, { pointerType, "CallExternalFunction2" });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
-        jlm::util::AssertedCast<jlm::llvm::LoadNode>(
+        &call,
+        jlm::util::AssertedCast<jlm::llvm::LoadNonVolatileNode>(
             jlm::rvsdg::node_output::node(loadResults[0])));
   };
 
@@ -2928,10 +2817,9 @@ EscapedMemoryTest3::SetupRvsdg()
   PointerType pointerType;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType externalFunctionType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &pointerType, &iOStateType, &memoryStateType });
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
@@ -2962,35 +2850,37 @@ EscapedMemoryTest3::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(rvsdg->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto externalFunction = lambda->add_ctxvar(externalFunctionArgument);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         externalFunction,
         externalFunctionType,
-        { iOStateArgument, memoryStateArgument, loopStateArgument });
+        { iOStateArgument, memoryStateArgument });
 
-    auto loadResults = LoadNode::Create(callResults[0], { callResults[2] }, jlm::rvsdg::bit32, 4);
+    auto loadResults = LoadNonVolatileNode::Create(
+        call.Result(0),
+        { call.GetMemoryStateOutput() },
+        jlm::rvsdg::bit32,
+        4);
 
     auto lambdaOutput =
-        lambda->finalize({ loadResults[0], callResults[1], loadResults[1], callResults[3] });
+        lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
 
     rvsdg->add_export(lambdaOutput, { pointerType, "test" });
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
-        jlm::util::AssertedCast<jlm::llvm::LoadNode>(
+        &call,
+        jlm::util::AssertedCast<jlm::llvm::LoadNonVolatileNode>(
             jlm::rvsdg::node_output::node(loadResults[0])));
   };
 
@@ -2998,9 +2888,7 @@ EscapedMemoryTest3::SetupRvsdg()
   auto deltaGlobal = SetupGlobal();
   auto [lambdaTest, callExternalFunction, loadNode] = SetupTestFunction(importExternalFunction);
 
-  /*
-   * Assign nodes
-   */
+  // Assign nodes
   this->LambdaTest = lambdaTest->node();
   this->DeltaGlobal = deltaGlobal->node();
   this->ImportExternalFunction = importExternalFunction;
@@ -3071,15 +2959,13 @@ MemcpyTest::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto globalArrayArgument = lambda->add_ctxvar(&globalArray);
 
@@ -3093,12 +2979,11 @@ MemcpyTest::SetupRvsdg()
         arrayType,
         PointerType());
 
-    auto storeResults = StoreNode::Create(gep, six, { memoryStateArgument }, 8);
+    auto storeResults = StoreNonVolatileNode::Create(gep, six, { memoryStateArgument }, 8);
 
-    auto loadResults = LoadNode::Create(gep, { storeResults[0] }, jlm::rvsdg::bit32, 8);
+    auto loadResults = LoadNonVolatileNode::Create(gep, { storeResults[0] }, jlm::rvsdg::bit32, 8);
 
-    auto lambdaOutput =
-        lambda->finalize({ loadResults[0], iOStateArgument, loadResults[1], loopStateArgument });
+    auto lambdaOutput = lambda->finalize({ loadResults[0], iOStateArgument, loadResults[1] });
 
     rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
 
@@ -3110,15 +2995,13 @@ MemcpyTest::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &jlm::rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg->root(), functionType, "g", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto localArrayArgument = lambda->add_ctxvar(&localArray);
     auto globalArrayArgument = lambda->add_ctxvar(&globalArray);
@@ -3127,25 +3010,24 @@ MemcpyTest::SetupRvsdg()
     auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType());
     auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType());
 
-    auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
-    auto memcpyResults =
-        Memcpy::create(bcGlobalArray, bcLocalArray, twenty, zero, { memoryStateArgument });
+    auto memcpyResults = MemCpyNonVolatileOperation::create(
+        bcGlobalArray,
+        bcLocalArray,
+        twenty,
+        { memoryStateArgument });
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         functionFArgument,
         lambdaF.node()->type(),
-        { iOStateArgument, memcpyResults[0], loopStateArgument });
+        { iOStateArgument, memcpyResults[0] });
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
     rvsdg->add_export(lambdaOutput, { PointerType(), "g" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
-        jlm::rvsdg::node_output::node(memcpyResults[0]));
+    return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(memcpyResults[0]));
   };
 
   auto localArray = SetupLocalArray();
@@ -3187,33 +3069,30 @@ MemcpyTest2::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg->root(), functionType, "g", linkage::internal_linkage);
     auto s1Argument = lambda->fctargument(0);
     auto s2Argument = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto loopStateArgument = lambda->fctargument(4);
 
-    auto cFalse = jlm::rvsdg::create_bitconstant(lambda->subregion(), 1, 0);
     auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto c128 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 128);
 
     auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
     auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType, pointerType);
-    auto ldS2 = LoadNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
+    auto ldS2 = LoadNonVolatileNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
 
     auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
     auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
-    auto ldS1 = LoadNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
+    auto ldS1 = LoadNonVolatileNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
 
-    auto memcpyResults = Memcpy::create(ldS2[0], ldS1[0], c128, cFalse, { ldS1[1] });
+    auto memcpyResults = MemCpyNonVolatileOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
 
-    auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0], loopStateArgument });
+    auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0] });
 
     return std::make_tuple(lambdaOutput, jlm::rvsdg::node_output::node(memcpyResults[0]));
   };
@@ -3222,40 +3101,36 @@ MemcpyTest2::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &pointerType, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-        { &iOStateType, &memoryStateType, &loopStateType });
+        { &pointerType, &pointerType, &iOStateType, &memoryStateType },
+        { &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
     auto s1Argument = lambda->fctargument(0);
     auto s2Argument = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto loopStateArgument = lambda->fctargument(4);
 
     auto functionFArgument = lambda->add_ctxvar(&functionF);
 
     auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
 
     auto gepS1 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
-    auto ldS1 = LoadNode::Create(gepS1, { memoryStateArgument }, pointerType, 8);
+    auto ldS1 = LoadNonVolatileNode::Create(gepS1, { memoryStateArgument }, pointerType, 8);
 
     auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
-    auto ldS2 = LoadNode::Create(gepS2, { ldS1[1] }, pointerType, 8);
+    auto ldS2 = LoadNonVolatileNode::Create(gepS2, { ldS1[1] }, pointerType, 8);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         functionFArgument,
         functionF.node()->type(),
-        { ldS1[0], ldS2[0], iOStateArgument, ldS2[1], loopStateArgument });
+        { ldS1[0], ldS2[0], iOStateArgument, ldS2[1] });
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
     rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   auto [lambdaG, memcpyNode] = SetupFunctionG();
@@ -3287,18 +3162,15 @@ MemcpyTest3::SetupRvsdg()
 
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   FunctionType functionType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
 
   Lambda_ = lambda::node::create(rvsdg->root(), functionType, "f", linkage::internal_linkage);
   auto pArgument = Lambda_->fctargument(0);
   auto iOStateArgument = Lambda_->fctargument(1);
   auto memoryStateArgument = Lambda_->fctargument(2);
-  auto loopStateArgument = Lambda_->fctargument(3);
 
-  auto cFalse = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 1, 0);
   auto eight = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, 8);
   auto zero = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 0);
   auto minusFive = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 64, -5);
@@ -3307,18 +3179,19 @@ MemcpyTest3::SetupRvsdg()
   auto allocaResults = alloca_op::create(*structType, eight, 8);
   auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
 
-  auto memcpyResults = Memcpy::create(allocaResults[0], pArgument, eight, cFalse, { memoryState });
+  auto memcpyResults =
+      MemCpyNonVolatileOperation::create(allocaResults[0], pArgument, eight, { memoryState });
 
   auto gep1 =
       GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, *structType, pointerType);
-  auto ld = LoadNode::Create(gep1, { memcpyResults[0] }, pointerType, 8);
+  auto ld = LoadNonVolatileNode::Create(gep1, { memcpyResults[0] }, pointerType, 8);
 
   auto gep2 =
       GetElementPtrOperation::Create(allocaResults[0], { minusFive }, *structType, pointerType);
 
-  memcpyResults = Memcpy::create(ld[0], gep2, three, cFalse, { ld[1] });
+  memcpyResults = MemCpyNonVolatileOperation::create(ld[0], gep2, three, { ld[1] });
 
-  auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0], loopStateArgument });
+  auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0] });
 
   rvsdg->add_export(lambdaOutput, { PointerType(), "f" });
 
@@ -3367,16 +3240,14 @@ LinkedListTest::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &pointerType, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(rvsdg.root(), functionType, "next", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto myListArgument = lambda->add_ctxvar(&myList);
 
@@ -3386,19 +3257,18 @@ LinkedListTest::SetupRvsdg()
     auto alloca = alloca_op::create(pointerType, size, 4);
     auto mergedMemoryState = MemStateMergeOperator::Create({ alloca[1], memoryStateArgument });
 
-    auto load1 = LoadNode::Create(myListArgument, { mergedMemoryState }, pointerType, 4);
-    auto store1 = StoreNode::Create(alloca[0], load1[0], { load1[1] }, 4);
+    auto load1 = LoadNonVolatileNode::Create(myListArgument, { mergedMemoryState }, pointerType, 4);
+    auto store1 = StoreNonVolatileNode::Create(alloca[0], load1[0], { load1[1] }, 4);
 
-    auto load2 = LoadNode::Create(alloca[0], { store1[0] }, pointerType, 4);
+    auto load2 = LoadNonVolatileNode::Create(alloca[0], { store1[0] }, pointerType, 4);
     auto gep = GetElementPtrOperation::Create(load2[0], { zero, zero }, *structType, pointerType);
 
-    auto load3 = LoadNode::Create(gep, { load2[1] }, pointerType, 4);
-    auto store2 = StoreNode::Create(alloca[0], load3[0], { load3[1] }, 4);
+    auto load3 = LoadNonVolatileNode::Create(gep, { load2[1] }, pointerType, 4);
+    auto store2 = StoreNonVolatileNode::Create(alloca[0], load3[0], { load3[1] }, 4);
 
-    auto load4 = LoadNode::Create(alloca[0], { store2[0] }, pointerType, 4);
+    auto load4 = LoadNonVolatileNode::Create(alloca[0], { store2[0] }, pointerType, 4);
 
-    auto lambdaOutput =
-        lambda->finalize({ load4[0], iOStateArgument, load4[1], loopStateArgument });
+    auto lambdaOutput = lambda->finalize({ load4[0], iOStateArgument, load4[1] });
     rvsdg.add_export(lambdaOutput, { pointerType, "next" });
 
     return std::make_tuple(jlm::rvsdg::node_output::node(alloca[0]), lambdaOutput);
@@ -3470,28 +3340,34 @@ AllMemoryNodesTest::SetupRvsdg()
       std::vector<jlm::rvsdg::output *>{ afterAllocaMemoryState, mallocOutputs[1] });
 
   // Store the result of malloc into the alloca'd memory
-  auto storeAllocaOutputs =
-      StoreNode::Create(allocaOutputs[0], mallocOutputs[0], { afterMallocMemoryState }, 8);
+  auto storeAllocaOutputs = StoreNonVolatileNode::Create(
+      allocaOutputs[0],
+      mallocOutputs[0],
+      { afterMallocMemoryState },
+      8);
 
   // load the value in the alloca again
   auto loadAllocaOutputs =
-      LoadNode::Create(allocaOutputs[0], { storeAllocaOutputs[0] }, pointerType, 8);
+      LoadNonVolatileNode::Create(allocaOutputs[0], { storeAllocaOutputs[0] }, pointerType, 8);
 
   // Load the value of the imported symbol "imported"
   auto loadImportedOutputs =
-      LoadNode::Create(importContextVar, { loadAllocaOutputs[1] }, jlm::rvsdg::bit32, 4);
+      LoadNonVolatileNode::Create(importContextVar, { loadAllocaOutputs[1] }, jlm::rvsdg::bit32, 4);
 
   // Store the loaded value from imported, into the address loaded from the alloca (aka. the malloc
   // result)
-  auto storeImportedOutputs = StoreNode::Create(
+  auto storeImportedOutputs = StoreNonVolatileNode::Create(
       loadAllocaOutputs[0],
       loadImportedOutputs[0],
       { loadImportedOutputs[1] },
       4);
 
   // store the loaded alloca value in the global variable
-  auto storeOutputs =
-      StoreNode::Create(deltaContextVar, loadAllocaOutputs[0], { storeImportedOutputs[0] }, 8);
+  auto storeOutputs = StoreNonVolatileNode::Create(
+      deltaContextVar,
+      loadAllocaOutputs[0],
+      { storeImportedOutputs[0] },
+      8);
 
   Lambda_->finalize({ storeOutputs[0] });
 
@@ -3584,7 +3460,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   // Store the function parameter into the alloca node
   auto storeOutputs =
-      StoreNode::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
+      StoreNonVolatileNode::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
 
   // Bring in deltaOuput as a context variable
   const auto deltaOutputCtxVar = LocalFunc_->add_ctxvar(deltaOutput);
@@ -3656,19 +3532,17 @@ LambdaCallArgumentMismatch::SetupRvsdg()
   {
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda = lambda::node::create(rvsdg.root(), functionType, "g", linkage::internal_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
 
     auto five = rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
 
-    return lambda->finalize({ five, iOStateArgument, memoryStateArgument, loopStateArgument });
+    return lambda->finalize({ five, iOStateArgument, memoryStateArgument });
   };
 
   auto setupLambdaMain = [&](lambda::output & lambdaG)
@@ -3676,20 +3550,18 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     PointerType pointerType;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    loopstatetype loopStateType;
     varargtype variableArgumentType;
     FunctionType functionTypeMain(
-        { &iOStateType, &memoryStateType, &loopStateType },
-        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &iOStateType, &memoryStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType });
     FunctionType functionTypeCall(
-        { &rvsdg::bit32, &variableArgumentType, &iOStateType, &memoryStateType, &loopStateType },
-        { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+        { &rvsdg::bit32, &variableArgumentType, &iOStateType, &memoryStateType },
+        { &rvsdg::bit32, &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(rvsdg.root(), functionTypeMain, "main", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto loopStateArgument = lambda->fctargument(2);
     auto lambdaGArgument = lambda->add_ctxvar(&lambdaG);
 
     auto one = rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
@@ -3702,22 +3574,20 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto memoryState = MemStateMergeOperator::Create(
         std::vector<rvsdg::output *>{ memoryStateArgument, allocaResults[1] });
 
-    auto storeResults = StoreNode::Create(allocaResults[0], six, { memoryState }, 4);
+    auto storeResults = StoreNonVolatileNode::Create(allocaResults[0], six, { memoryState }, 4);
 
-    auto loadResults = LoadNode::Create(allocaResults[0], storeResults, rvsdg::bit32, 4);
+    auto loadResults = LoadNonVolatileNode::Create(allocaResults[0], storeResults, rvsdg::bit32, 4);
 
-    auto callResults = CallNode::Create(
+    auto & call = CallNode::CreateNode(
         lambdaGArgument,
         functionTypeCall,
-        { loadResults[0], vaList, iOStateArgument, loadResults[1], loopStateArgument });
+        { loadResults[0], vaList, iOStateArgument, loadResults[1] });
 
-    auto lambdaOutput = lambda->finalize(callResults);
+    auto lambdaOutput = lambda->finalize(call.Results());
 
     rvsdg.add_export(lambdaOutput, { PointerType(), "main" });
 
-    return std::make_tuple(
-        lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+    return std::make_tuple(lambdaOutput, &call);
   };
 
   LambdaG_ = setupLambdaG()->node();
@@ -3740,17 +3610,14 @@ VariadicFunctionTest1::SetupRvsdg()
   PointerType pointerType;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   varargtype varArgType;
   FunctionType lambdaHType(
-      { &jlm::rvsdg::bit32, &varArgType, &iOStateType, &memoryStateType, &loopStateType },
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType });
+      { &jlm::rvsdg::bit32, &varArgType, &iOStateType, &memoryStateType },
+      { &pointerType, &iOStateType, &memoryStateType });
   FunctionType lambdaFType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
-  FunctionType lambdaGType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
+  FunctionType lambdaGType({ &iOStateType, &memoryStateType }, { &iOStateType, &memoryStateType });
 
   // Setup h()
   ImportH_ = rvsdg.add_import(impport(lambdaHType, "h", linkage::external_linkage));
@@ -3761,7 +3628,6 @@ VariadicFunctionTest1::SetupRvsdg()
     auto iArgument = LambdaF_->fctargument(0);
     auto iOStateArgument = LambdaF_->fctargument(1);
     auto memoryStateArgument = LambdaF_->fctargument(2);
-    auto loopStateArgument = LambdaF_->fctargument(3);
     auto lambdaHArgument = LambdaF_->add_ctxvar(ImportH_);
 
     auto one = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 1);
@@ -3769,15 +3635,18 @@ VariadicFunctionTest1::SetupRvsdg()
 
     auto varArgList = valist_op::Create(*LambdaF_->subregion(), { iArgument });
 
-    auto callHResults = CallNode::Create(
+    CallH_ = &CallNode::CreateNode(
         lambdaHArgument,
         lambdaHType,
-        { one, varArgList, iOStateArgument, memoryStateArgument, loopStateArgument });
-    CallH_ = util::AssertedCast<llvm::CallNode>(rvsdg::node_output::node(callHResults[0]));
+        { one, varArgList, iOStateArgument, memoryStateArgument });
 
-    auto storeResults = StoreNode::Create(callHResults[0], three, { callHResults[2] }, 4);
+    auto storeResults = StoreNonVolatileNode::Create(
+        CallH_->Result(0),
+        three,
+        { CallH_->GetMemoryStateOutput() },
+        4);
 
-    LambdaF_->finalize({ callHResults[1], storeResults[0], callHResults[3] });
+    LambdaF_->finalize({ CallH_->GetIoStateOutput(), storeResults[0] });
   }
 
   // Setup g()
@@ -3785,7 +3654,6 @@ VariadicFunctionTest1::SetupRvsdg()
     LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
     auto iOStateArgument = LambdaG_->fctargument(0);
     auto memoryStateArgument = LambdaG_->fctargument(1);
-    auto loopStateArgument = LambdaG_->fctargument(2);
     auto lambdaFArgument = LambdaG_->add_ctxvar(LambdaF_->output());
 
     auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
@@ -3795,14 +3663,14 @@ VariadicFunctionTest1::SetupRvsdg()
     auto merge = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
     AllocaNode_ = rvsdg::node_output::node(allocaResults[0]);
 
-    auto storeResults = StoreNode::Create(allocaResults[0], five, { merge }, 4);
+    auto storeResults = StoreNonVolatileNode::Create(allocaResults[0], five, { merge }, 4);
 
-    auto callFResults = CallNode::Create(
+    auto & callF = CallNode::CreateNode(
         lambdaFArgument,
         lambdaFType,
-        { allocaResults[0], iOStateArgument, storeResults[0], loopStateArgument });
+        { allocaResults[0], iOStateArgument, storeResults[0] });
 
-    LambdaG_->finalize(callFResults);
+    LambdaG_->finalize(callF.Results());
   }
 
   return rvsdgModule;
@@ -3826,26 +3694,25 @@ VariadicFunctionTest2::SetupRvsdg()
   arraytype arrayType(*structType, 1);
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  loopstatetype loopStateType;
   varargtype varArgType;
   FunctionType lambdaLlvmLifetimeStartType(
-      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaLlvmLifetimeEndType(
-      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &rvsdg::bit64, &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaVaStartType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaVaEndType(
-      { &pointerType, &iOStateType, &memoryStateType, &loopStateType },
-      { &iOStateType, &memoryStateType, &loopStateType });
+      { &pointerType, &iOStateType, &memoryStateType },
+      { &iOStateType, &memoryStateType });
   FunctionType lambdaFstType(
-      { &rvsdg::bit32, &varArgType, &iOStateType, &memoryStateType, &loopStateType },
-      { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &rvsdg::bit32, &varArgType, &iOStateType, &memoryStateType },
+      { &rvsdg::bit32, &iOStateType, &memoryStateType });
   FunctionType lambdaGType(
-      { &iOStateType, &memoryStateType, &loopStateType },
-      { &rvsdg::bit32, &iOStateType, &memoryStateType, &loopStateType });
+      { &iOStateType, &memoryStateType },
+      { &rvsdg::bit32, &iOStateType, &memoryStateType });
 
   auto llvmLifetimeStart =
       rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
@@ -3861,7 +3728,6 @@ VariadicFunctionTest2::SetupRvsdg()
         lambda::node::create(rvsdg.root(), lambdaFstType, "fst", linkage::internal_linkage);
     auto iOStateArgument = LambdaFst_->fctargument(2);
     auto memoryStateArgument = LambdaFst_->fctargument(3);
-    auto loopStateArgument = LambdaFst_->fctargument(4);
     auto llvmLifetimeStartArgument = LambdaFst_->add_ctxvar(llvmLifetimeStart);
     auto llvmLifetimeEndArgument = LambdaFst_->add_ctxvar(llvmLifetimeEnd);
     auto llvmVaStartArgument = LambdaFst_->add_ctxvar(llvmVaStart);
@@ -3875,20 +3741,22 @@ VariadicFunctionTest2::SetupRvsdg()
     auto memoryState = MemStateMergeOperator::Create({ allocaResults[1], memoryStateArgument });
     AllocaNode_ = rvsdg::node_output::node(allocaResults[0]);
 
-    auto callLLvmLifetimeStartResults = CallNode::Create(
+    auto & callLLvmLifetimeStart = CallNode::CreateNode(
         llvmLifetimeStartArgument,
         lambdaLlvmLifetimeStartType,
-        { twentyFour, allocaResults[0], iOStateArgument, memoryState, loopStateArgument });
-    auto callVaStartResults = CallNode::Create(
+        { twentyFour, allocaResults[0], iOStateArgument, memoryState });
+    auto & callVaStart = CallNode::CreateNode(
         llvmVaStartArgument,
         lambdaVaStartType,
         { allocaResults[0],
-          callLLvmLifetimeStartResults[0],
-          callLLvmLifetimeStartResults[1],
-          callLLvmLifetimeStartResults[2] });
+          callLLvmLifetimeStart.GetIoStateOutput(),
+          callLLvmLifetimeStart.GetMemoryStateOutput() });
 
-    auto loadResults =
-        LoadNode::Create(allocaResults[0], { callVaStartResults[1] }, rvsdg::bit32, 16);
+    auto loadResults = LoadNonVolatileNode::Create(
+        allocaResults[0],
+        { callVaStart.GetMemoryStateOutput() },
+        rvsdg::bit32,
+        16);
     auto icmpResult = rvsdg::bitult_op::create(32, loadResults[0], fortyOne);
     auto matchResult = rvsdg::match_op::Create(*icmpResult, { { 1, 1 } }, 0, 2);
 
@@ -3907,11 +3775,11 @@ VariadicFunctionTest2::SetupRvsdg()
         *structType,
         pointerType);
     auto loadResultsGamma0 =
-        LoadNode::Create(gepResult1, { gammaMemoryState->argument(0) }, pointerType, 8);
+        LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(0) }, pointerType, 8);
     auto gepResult2 =
         GetElementPtrOperation::Create(loadResultsGamma0[0], { eight }, rvsdg::bit8, pointerType);
     auto storeResultsGamma0 =
-        StoreNode::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
+        StoreNonVolatileNode::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
 
     // gamma subregion 1
     zero = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 64, 0);
@@ -3923,7 +3791,7 @@ VariadicFunctionTest2::SetupRvsdg()
         *structType,
         pointerType);
     auto loadResultsGamma1 =
-        LoadNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
+        LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
     auto & zextResult = zext_op::Create(*gammaLoadResult->argument(1), rvsdg::bit64);
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
@@ -3931,31 +3799,33 @@ VariadicFunctionTest2::SetupRvsdg()
         rvsdg::bit8,
         pointerType);
     auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult->argument(1), eightBit32);
-    auto storeResultsGamma1 =
-        StoreNode::Create(gammaVaAddress->argument(1), addResult, { loadResultsGamma1[1] }, 16);
+    auto storeResultsGamma1 = StoreNonVolatileNode::Create(
+        gammaVaAddress->argument(1),
+        addResult,
+        { loadResultsGamma1[1] },
+        16);
 
     auto gammaAddress = gammaNode->add_exitvar({ loadResultsGamma0[0], gepResult2 });
     auto gammaOutputMemoryState =
         gammaNode->add_exitvar({ storeResultsGamma0[0], storeResultsGamma1[0] });
 
-    loadResults = LoadNode::Create(gammaAddress, { gammaOutputMemoryState }, rvsdg::bit32, 4);
-    auto callVaEndResults = CallNode::Create(
+    loadResults =
+        LoadNonVolatileNode::Create(gammaAddress, { gammaOutputMemoryState }, rvsdg::bit32, 4);
+    auto & callVaEnd = CallNode::CreateNode(
         llvmVaEndArgument,
         lambdaVaEndType,
-        { allocaResults[0], callVaStartResults[0], loadResults[1], callVaStartResults[2] });
-    auto callLLvmLifetimeEndResults = CallNode::Create(
+        { allocaResults[0], callVaStart.GetIoStateOutput(), loadResults[1] });
+    auto & callLLvmLifetimeEnd = CallNode::CreateNode(
         llvmLifetimeEndArgument,
         lambdaLlvmLifetimeEndType,
         { twentyFour,
           allocaResults[0],
-          callVaEndResults[0],
-          callVaEndResults[1],
-          callVaEndResults[2] });
+          callVaEnd.GetIoStateOutput(),
+          callVaEnd.GetMemoryStateOutput() });
 
     LambdaFst_->finalize({ loadResults[0],
-                           callLLvmLifetimeEndResults[0],
-                           callLLvmLifetimeEndResults[1],
-                           callLLvmLifetimeEndResults[2] });
+                           callLLvmLifetimeEnd.GetIoStateOutput(),
+                           callLLvmLifetimeEnd.GetMemoryStateOutput() });
   }
 
   // Setup function g()
@@ -3963,7 +3833,6 @@ VariadicFunctionTest2::SetupRvsdg()
     LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
     auto iOStateArgument = LambdaG_->fctargument(0);
     auto memoryStateArgument = LambdaG_->fctargument(1);
-    auto loopStateArgument = LambdaG_->fctargument(2);
     auto lambdaFstArgument = LambdaG_->add_ctxvar(LambdaFst_->output());
 
     auto zero = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 0);
@@ -3973,12 +3842,12 @@ VariadicFunctionTest2::SetupRvsdg()
 
     auto vaListResult = valist_op::Create(*LambdaG_->subregion(), { zero, one, two });
 
-    auto callFstResults = CallNode::Create(
+    auto & callFst = CallNode::CreateNode(
         lambdaFstArgument,
         lambdaFstType,
-        { three, vaListResult, iOStateArgument, memoryStateArgument, loopStateArgument });
+        { three, vaListResult, iOStateArgument, memoryStateArgument });
 
-    LambdaG_->finalize(callFstResults);
+    LambdaG_->finalize(callFst.Results());
   }
 
   return rvsdgModule;
