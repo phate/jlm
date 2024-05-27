@@ -361,7 +361,9 @@ public:
   UnifyPointerObjects(PointerObjectIndex object1, PointerObjectIndex object2);
 
   /**
-   * @return the PointsToSet of the PointerObject with the given \p index.
+   * Looks up the pointees of the given PointerObject \p index.
+   * If index is part of a unification, the unification root's points-to set is returned.
+   * @return the PointsToSet of the PointerObject.
    */
   [[nodiscard]] const util::HashSet<PointerObjectIndex> &
   GetPointsToSet(PointerObjectIndex index) const;
@@ -701,6 +703,46 @@ public:
   using ConstraintVariant =
       std::variant<SupersetConstraint, StoreConstraint, LoadConstraint, FunctionCallConstraint>;
 
+  enum class WorklistSolverPolicy
+  {
+    LRF,
+    FIFO,
+    LIFO
+  };
+
+  [[nodiscard]] static const char *
+  WorklistSolverPolicyToString(WorklistSolverPolicy policy);
+
+  /**
+   * Struct holding statistics from solving the constraint set using the worklist solver.
+   */
+  struct WorklistStatistics
+  {
+    explicit WorklistStatistics(WorklistSolverPolicy policy)
+        : Policy(policy)
+    {}
+
+    /**
+     * The policy used for the worklist.
+     */
+    WorklistSolverPolicy Policy;
+
+    /**
+     * The number of items that were popped from the worklist before the solution converged.
+     */
+    size_t NumWorkItemsPopped{};
+
+    /**
+     * The number of cycles detected by online cycle detection, if enabled.
+     */
+    std::optional<size_t> NumOnlineCyclesDetected{};
+
+    /**
+     * The number of unifications made by online cycle detection, if enabled.
+     */
+    std::optional<size_t> NumOnlineCycleUnifications{};
+  };
+
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set),
         Constraints_(),
@@ -811,10 +853,10 @@ public:
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
-   * @return the total number of work items handled by the WorkList algorithm
+   * @return an instance of WorklistStatistics describing solver statistics
    */
-  size_t
-  SolveUsingWorklist();
+  WorklistStatistics
+  SolveUsingWorklist(WorklistSolverPolicy policy);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -851,6 +893,16 @@ private:
    */
   std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
   CreateOvsSubsetGraph();
+
+  /**
+   * The worklist solver, with configuration passed at compile time as templates.
+   * @param statistics the WorklistStatistics instance that will get information about this run.
+   * @tparam worklist a type supporting the worklist interface with PointerObjectIndex as work items
+   * @See SolveUsingWorklist() for the public interface.
+   */
+  template<typename Worklist>
+  void
+  RunWorklistSolver(WorklistStatistics & statistics);
 
   // The PointerObjectSet being built upon
   PointerObjectSet & Set_;
