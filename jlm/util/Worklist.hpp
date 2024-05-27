@@ -249,7 +249,8 @@ public:
   T
   PopWorkItem() override
   {
-    if (Current_.empty()) {
+    if (Current_.empty())
+    {
       JLM_ASSERT(!Next_.empty());
       std::swap(Current_, Next_);
       std::sort(Current_.rbegin(), Current_.rend()); // The least recently first work item gets last
