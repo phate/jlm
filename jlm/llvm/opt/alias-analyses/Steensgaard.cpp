@@ -998,11 +998,11 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeMalloc(node);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
+  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
   {
     AnalyzeLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
+  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
   {
     AnalyzeStore(*storeNode);
   }
@@ -1034,7 +1034,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeUndef(node);
   }
-  else if (is<MemCpyNonVolatileOperation>(&node))
+  else if (is<MemCpyOperation>(&node))
   {
     AnalyzeMemcpy(node);
   }
@@ -1090,7 +1090,7 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
+Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 {
   auto & result = loadNode.GetLoadedValueOutput();
   auto & address = *loadNode.GetAddressInput().origin();
@@ -1114,7 +1114,7 @@ Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNonVolatileNode & storeNode)
+Steensgaard::AnalyzeStore(const StoreNode & storeNode)
 {
   auto & address = *storeNode.GetAddressInput().origin();
   auto & value = *storeNode.GetStoredValueInput().origin();
@@ -1411,7 +1411,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
-  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&node));
+  JLM_ASSERT(is<MemCpyOperation>(&node));
 
   auto & dstAddress = Context_->GetLocation(*node.input(0)->origin());
   auto & srcAddress = Context_->GetLocation(*node.input(1)->origin());
