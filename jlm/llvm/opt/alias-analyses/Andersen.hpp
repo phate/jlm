@@ -99,6 +99,10 @@ public:
       return Solver_;
     }
 
+    /**
+     * Sets which the policy to be used by the worklist.
+     * Only applies to the worklist solver.
+     */
     void
     SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy)
     {
