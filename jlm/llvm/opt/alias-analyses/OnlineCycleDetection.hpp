@@ -310,7 +310,8 @@ public:
    * @return how many cycles have been detected and eliminated by OCD
    */
   [[nodiscard]] size_t
-  NumOnlineCyclesDetected() const noexcept {
+  NumOnlineCyclesDetected() const noexcept
+  {
     return NumOnlineCyclesDetected_;
   }
 
@@ -318,7 +319,8 @@ public:
    * @return how many pairwise unifications have been made while eliminating cycles
    */
   [[nodiscard]] size_t
-  NumOnlineCycleUnifications() const noexcept {
+  NumOnlineCycleUnifications() const noexcept
+  {
     return NumOnlineCycleUnifications_;
   }
 

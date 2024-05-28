@@ -225,7 +225,7 @@ public:
     if (statistics.NumOnlineCyclesDetected)
       AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
 
-    if(statistics.NumOnlineCycleUnifications)
+    if (statistics.NumOnlineCycleUnifications)
       AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
   }
 
@@ -956,7 +956,9 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    auto worklistStatistics = Constraints_->SolveUsingWorklist(config.GetWorklistSoliverPolicy(), config.IsOnlineCycleDetectionEnabled());
+    auto worklistStatistics = Constraints_->SolveUsingWorklist(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
