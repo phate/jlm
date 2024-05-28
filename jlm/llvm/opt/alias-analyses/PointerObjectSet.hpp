@@ -717,7 +717,7 @@ public:
      * Described by:
      *   B. Hardekopf and C. Lin "The And and the Grasshopper: Fast and Accurate Pointer Analysis
      *   for Millions of Lines of Code" (2007)
-     * @see jlm::util::LrfWorklist
+     * @see jlm::util::TwoPhaseLrfWorklist
      */
     TwoPhaseLeastRecentlyFired,
 

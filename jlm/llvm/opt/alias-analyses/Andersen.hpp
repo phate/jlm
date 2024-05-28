@@ -100,7 +100,7 @@ public:
     }
 
     /**
-     * Sets which the policy to be used by the worklist.
+     * Sets which policy to be used by the worklist.
      * Only applies to the worklist solver.
      */
     void
