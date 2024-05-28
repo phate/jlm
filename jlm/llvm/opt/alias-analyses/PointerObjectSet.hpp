@@ -703,11 +703,54 @@ public:
   using ConstraintVariant =
       std::variant<SupersetConstraint, StoreConstraint, LoadConstraint, FunctionCallConstraint>;
 
+  enum class WorklistSolverPolicy
+  {
+    /**
+     * A worklist policy based on selecting the work item that was least recently selected. From:
+     *   A. Kanamori and D. Weise "Worklist management strategies for Dataflow Analysis" (1994)
+     * @see jlm::util::LrfWorklist
+     */
+    LeastRecentlyFired,
+
+    /**
+     * A worklist policy like LeastRecentlyFired, but using two lists instead of a priority queue.
+     * Described by:
+     *   B. Hardekopf and C. Lin "The And and the Grasshopper: Fast and Accurate Pointer Analysis
+     *   for Millions of Lines of Code" (2007)
+     * @see jlm::util::TwoPhaseLrfWorklist
+     */
+    TwoPhaseLeastRecentlyFired,
+
+    /**
+     * A worklist policy based on a queue.
+     * @see jlm::util::FifoWorklist
+     */
+    FirstInFirstOut,
+
+    /**
+     * A worklist policy based on a stack.
+     * @see jlm::util::LifoWorklist
+     */
+    LastInFirstOut
+  };
+
+  [[nodiscard]] static const char *
+  WorklistSolverPolicyToString(WorklistSolverPolicy policy);
+
   /**
    * Struct holding statistics from solving the constraint set using the worklist solver.
    */
   struct WorklistStatistics
   {
+    explicit WorklistStatistics(WorklistSolverPolicy policy)
+        : Policy(policy)
+    {}
+
+    /**
+     * The policy used for the worklist.
+     */
+    WorklistSolverPolicy Policy;
+
     /**
      * The number of items that were popped from the worklist before the solution converged.
      */
@@ -834,13 +877,13 @@ public:
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
-   * @tparam EnableOnlineCycleDetection if true, online cycle detection will be performed, from
+   * @param policy the worklist iteration order policy to use
+   * @param enableOnlineCycleDetection if true, online cycle detection will be performed, from
    *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    * @return an instance of WorklistStatistics describing solver statistics
    */
-  template<bool EnableOnlineCycleDetection>
   WorklistStatistics
-  SolveUsingWorklist();
+  SolveUsingWorklist(WorklistSolverPolicy policy, bool enableOnlineCycleDetection);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -877,6 +920,17 @@ private:
    */
   std::tuple<size_t, std::vector<util::HashSet<PointerObjectIndex>>, std::vector<bool>>
   CreateOvsSubsetGraph();
+
+  /**
+   * The worklist solver, with configuration passed at compile time as templates.
+   * @param statistics the WorklistStatistics instance that will get information about this run.
+   * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
+   * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
+   * @see SolveUsingWorklist() for the public interface.
+   */
+  template<typename Worklist, bool EnableOnlineCycleDetection>
+  void
+  RunWorklistSolver(WorklistStatistics & statistics);
 
   // The PointerObjectSet being built upon
   PointerObjectSet & Set_;

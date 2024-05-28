@@ -8,6 +8,7 @@
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
+#include <jlm/util/Worklist.hpp>
 
 #include <cassert>
 
@@ -689,16 +690,10 @@ TestDrawSubsetGraph()
   assert(importNode.HasAttribute("fillcolor"));
 }
 
-enum class TestSolve
-{
-  Naive,
-  Worklist,
-  WorklistWithOCD
-};
-
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
+template<bool useWorklist, typename... Args>
 static void
-TestPointerObjectConstraintSetSolve(TestSolve solverType)
+TestPointerObjectConstraintSetSolve(Args... args)
 {
   using namespace jlm::llvm::aa;
 
@@ -764,17 +759,14 @@ TestPointerObjectConstraintSetSolve(TestSolve solverType)
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  switch (solverType)
+  if constexpr (useWorklist)
   {
-  case TestSolve::Naive:
+    constraints.SolveUsingWorklist(args...);
+  }
+  else
+  {
+    static_assert(sizeof...(args) == 0, "The naive solver takes no arguments");
     constraints.SolveNaively();
-    break;
-  case TestSolve::Worklist:
-    constraints.SolveUsingWorklist<false>();
-    break;
-  case TestSolve::WorklistWithOCD:
-    constraints.SolveUsingWorklist<true>();
-    break;
   }
 
   // alloca1 should point to alloca2, etc
@@ -882,9 +874,15 @@ TestPointerObjectSet()
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
-  TestPointerObjectConstraintSetSolve(TestSolve::Naive);
-  TestPointerObjectConstraintSetSolve(TestSolve::Worklist);
-  TestPointerObjectConstraintSetSolve(TestSolve::WorklistWithOCD);
+  TestPointerObjectConstraintSetSolve<false>();
+  using Policy = jlm::llvm::aa::PointerObjectConstraintSet::WorklistSolverPolicy;
+  for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
+  {
+    TestPointerObjectConstraintSetSolve<true>(Policy::LeastRecentlyFired, onlineCD);
+    TestPointerObjectConstraintSetSolve<true>(Policy::TwoPhaseLeastRecentlyFired, onlineCD);
+    TestPointerObjectConstraintSetSolve<true>(Policy::FirstInFirstOut, onlineCD);
+    TestPointerObjectConstraintSetSolve<true>(Policy::LastInFirstOut, onlineCD);
+  }
   TestClonePointerObjectConstraintSet();
   return 0;
 }

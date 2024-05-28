@@ -7,6 +7,7 @@
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
+#include <jlm/util/TarjanScc.hpp>
 #include <jlm/util/Worklist.hpp>
 
 #include <limits>
@@ -1259,12 +1260,10 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-template<bool EnableOnlineCycleDetection>
-PointerObjectConstraintSet::WorklistStatistics
-PointerObjectConstraintSet::SolveUsingWorklist()
+template<typename Worklist, bool EnableOnlineCycleDetection>
+void
+PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
-  WorklistStatistics statistics;
-
   // Create auxiliary subset graph.
   // All edges must have their tail be a unification root (non-root nodes have no successors).
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
@@ -1362,8 +1361,8 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   if constexpr (EnableOnlineCycleDetection)
     onlineCycleDetector.InitializeTopologicalOrdering();
 
-  // The worklist, initialized with every single unification root
-  util::LrfWorklist<PointerObjectIndex> worklist;
+  // The worklist, initialized with every unification root
+  Worklist worklist;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
     if (Set_.IsUnificationRoot(i))
@@ -1408,10 +1407,11 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   {
     superset = Set_.GetUnificationRoot(superset);
     subset = Set_.GetUnificationRoot(subset);
-    if (supersetEdges[subset].Contains(superset))
+    if (superset == subset || supersetEdges[subset].Contains(superset))
       return;
     newSupersetEdges.Insert({ superset, subset });
   };
+
   const auto FlushNewSupersetEdges = [&]()
   {
     for (auto [superset, subset] : newSupersetEdges.Items())
@@ -1550,20 +1550,73 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   while (worklist.HasMoreWorkItems())
     HandleWorkItem(worklist.PopWorkItem());
 
-  if (EnableOnlineCycleDetection)
+  if constexpr (EnableOnlineCycleDetection)
   {
     statistics.NumOnlineCyclesDetected = onlineCycleDetector.NumOnlineCyclesDetected();
     statistics.NumOnlineCycleUnifications = onlineCycleDetector.NumOnlineCycleUnifications();
   }
-
-  return statistics;
 }
 
-// Explicit instantiation of all versions of SolveUsingWorklist
-template PointerObjectConstraintSet::WorklistStatistics
-PointerObjectConstraintSet::SolveUsingWorklist<false>();
-template PointerObjectConstraintSet::WorklistStatistics
-PointerObjectConstraintSet::SolveUsingWorklist<true>();
+PointerObjectConstraintSet::WorklistStatistics
+PointerObjectConstraintSet::SolveUsingWorklist(
+    WorklistSolverPolicy policy,
+    bool enableOnlineCycleDetection)
+{
+
+  auto DispatchOCD = [&](auto onlineCycleDetection)
+  {
+    constexpr bool EnableOnlineCycleDetection = decltype(onlineCycleDetection)::value;
+
+    WorklistStatistics statistics(policy);
+    if (policy == WorklistSolverPolicy::LeastRecentlyFired)
+    {
+      RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+          statistics);
+    }
+    else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
+    {
+      RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+          statistics);
+    }
+    else if (policy == WorklistSolverPolicy::FirstInFirstOut)
+    {
+      RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+          statistics);
+    }
+    else if (policy == WorklistSolverPolicy::LastInFirstOut)
+    {
+      RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+          statistics);
+    }
+    else
+      JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
+
+    return statistics;
+  };
+
+  if (enableOnlineCycleDetection)
+    return DispatchOCD(std::true_type{});
+  else
+    return DispatchOCD(std::false_type{});
+}
+
+const char *
+PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy policy)
+{
+  switch (policy)
+  {
+  case WorklistSolverPolicy::LeastRecentlyFired:
+    return "LeastRecentlyFired";
+  case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
+    return "TwoPhaseLeastRecentlyFired";
+  case WorklistSolverPolicy::FirstInFirstOut:
+    return "FirstInFirstOut";
+  case WorklistSolverPolicy::LastInFirstOut:
+    return "LastInFirstOut";
+  default:
+    JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
+  }
+}
 
 size_t
 PointerObjectConstraintSet::SolveNaively()

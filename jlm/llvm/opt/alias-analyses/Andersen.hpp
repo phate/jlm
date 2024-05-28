@@ -50,6 +50,7 @@ public:
   static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
   static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
   static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
+  static inline const char * const CONFIG_WL_POLICY_TWO_PHASE_LRF = "WLPolicy=2LRF";
   static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
   static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
@@ -68,14 +69,6 @@ public:
     {
       Naive,
       Worklist
-    };
-
-    enum class WorklistSolverPolicy
-    {
-      LRF,
-      FIFO,
-      LIFO,
-      None // Using the worklist solver without a policy is an error
     };
 
     [[nodiscard]] bool
@@ -108,13 +101,17 @@ public:
       return Solver_;
     }
 
+    /**
+     * Sets which policy to be used by the worklist.
+     * Only applies to the worklist solver.
+     */
     void
-    SetWorklistSolverPolicy(WorklistSolverPolicy policy)
+    SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy)
     {
       WorklistSolverPolicy_ = policy;
     }
 
-    [[nodiscard]] WorklistSolverPolicy
+    [[nodiscard]] PointerObjectConstraintSet::WorklistSolverPolicy
     GetWorklistSoliverPolicy() const noexcept
     {
       return WorklistSolverPolicy_;
@@ -191,7 +188,6 @@ public:
       config.EnableOfflineVariableSubstitution(false);
       config.EnableOfflineConstraintNormalization(false);
       config.SetSolver(Solver::Naive);
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::None);
       config.EnableOnlineCycleDetection(false);
       return config;
     }
@@ -200,7 +196,8 @@ public:
     bool EnableOfflineVariableSubstitution_ = true;
     bool EnableOfflineConstraintNormalization_ = true;
     Solver Solver_ = Solver::Worklist;
-    WorklistSolverPolicy WorklistSolverPolicy_ = WorklistSolverPolicy::LRF;
+    PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
+        PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = true;
   };
 

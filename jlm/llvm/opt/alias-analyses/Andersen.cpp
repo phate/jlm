@@ -39,6 +39,8 @@ Andersen::Configuration::DefaultConfiguration()
     if (configStream.fail())
       break;
 
+    using Policy = PointerObjectConstraintSet::WorklistSolverPolicy;
+
     if (option == CONFIG_OVS_ON)
       config.EnableOfflineVariableSubstitution(true);
     else if (option == CONFIG_OVS_OFF)
@@ -55,11 +57,13 @@ Andersen::Configuration::DefaultConfiguration()
       config.SetSolver(Solver::Worklist);
 
     else if (option == CONFIG_WL_POLICY_LRF)
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::LRF);
+      config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
+    else if (option == CONFIG_WL_POLICY_TWO_PHASE_LRF)
+      config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
     else if (option == CONFIG_WL_POLICY_FIFO)
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::FIFO);
+      config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
     else if (option == CONFIG_WL_POLICY_LIFO)
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::LIFO);
+      config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
 
     else if (option == CONFIG_ONLINE_CYCLE_DETECTION_ON)
       config.EnableOnlineCycleDetection(true);
@@ -93,8 +97,11 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
 
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
+
+  inline static const char * WorklistPolicy_ = "WorklistPolicy";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
   inline static const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  inline static const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
@@ -206,13 +213,20 @@ public:
       PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
+
+    // What worklist policy was used
+    AddMeasurement(
+        WorklistPolicy_,
+        PointerObjectConstraintSet::WorklistSolverPolicyToString(statistics.Policy));
+
     // How many work items were popped from the worklist in total
     AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
 
-    if (*statistics.NumOnlineCyclesDetected)
+    if (statistics.NumOnlineCyclesDetected)
       AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
 
-    // TODO: Num unifications
+    if(statistics.NumOnlineCycleUnifications)
+      AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
   }
 
   void
@@ -942,11 +956,7 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    PointerObjectConstraintSet::WorklistStatistics worklistStatistics;
-    if (config.IsOnlineCycleDetectionEnabled())
-      worklistStatistics = Constraints_->SolveUsingWorklist<true>();
-    else
-      worklistStatistics = Constraints_->SolveUsingWorklist<false>();
+    auto worklistStatistics = Constraints_->SolveUsingWorklist(config.GetWorklistSoliverPolicy(), config.IsOnlineCycleDetectionEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
