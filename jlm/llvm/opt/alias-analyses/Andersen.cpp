@@ -58,6 +58,8 @@ Andersen::Configuration::DefaultConfiguration()
 
     else if (option == CONFIG_WL_POLICY_LRF)
       config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
+    else if (option == CONFIG_WL_POLICY_TWO_PHASE_LRF)
+      config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
     else if (option == CONFIG_WL_POLICY_FIFO)
       config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
     else if (option == CONFIG_WL_POLICY_LIFO)

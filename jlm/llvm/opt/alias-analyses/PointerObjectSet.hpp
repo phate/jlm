@@ -713,6 +713,15 @@ public:
     LeastRecentlyFired,
 
     /**
+     * A worklist policy like LeastRecentlyFired, but using two lists instead of a priority queue.
+     * Described by:
+     *   B. Hardekopf and C. Lin "The And and the Grasshopper: Fast and Accurate Pointer Analysis
+     *   for Millions of Lines of Code" (2007)
+     * @see jlm::util::TwoPhaseLrfWorklist
+     */
+    TwoPhaseLeastRecentlyFired,
+
+    /**
      * A worklist policy based on a queue.
      * @see jlm::util::FifoWorklist
      */
