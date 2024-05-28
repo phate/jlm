@@ -30,18 +30,37 @@ public:
    * by running analysis again with the naive solver and no extra processing.
    * Any differences in the produced PointsToGraph result in an error.
    */
-  static inline const char * const CHECK_AGAINST_NAIVE_SOLVER = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
+  static inline const char * const ENV_COMPARE_SOLVE_NAIVE = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
 
   /**
    * Environment variable that will trigger dumping the subset graph before and after solving.
    */
-  static inline const char * const DUMP_SUBSET_GRAPH = "JLM_ANDERSEN_DUMP_SUBSET_GRAPH";
+  static inline const char * const ENV_DUMP_SUBSET_GRAPH = "JLM_ANDERSEN_DUMP_SUBSET_GRAPH";
+
+  /**
+   * Environment variable for overriding the default configuration.
+   * The variable should something look like
+   * "+OVS +Normalize -OnlineCD Solver=Worklist WLPolicy=LRF"
+   */
+  static inline const char * const ENV_CONFIG_OVERRIDE = "JLM_ANDERSEN_CONFIG_OVERRIDE";
+  static inline const char * const CONFIG_OVS_ON = "+OVS";
+  static inline const char * const CONFIG_OVS_OFF = "-OVS";
+  static inline const char * const CONFIG_NORMALIZE_ON = "+Normalize";
+  static inline const char * const CONFIG_NORMALIZE_OFF = "-Normalize";
+  static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
+  static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
+  static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
+  static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
+  static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
    */
   class Configuration
   {
+  private:
+    Configuration() = default;
+
   public:
     enum class Solver
     {
@@ -49,16 +68,12 @@ public:
       Worklist
     };
 
-    explicit Configuration(Solver solver)
-        : Solver_(solver)
-    {}
-
     [[nodiscard]] bool
     operator==(const Configuration & other) const
     {
       return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
-          && Solver_ == other.Solver_;
+          && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_;
     }
 
     [[nodiscard]] bool
@@ -81,6 +96,18 @@ public:
     GetSolver() const noexcept
     {
       return Solver_;
+    }
+
+    void
+    SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy)
+    {
+      WorklistSolverPolicy_ = policy;
+    }
+
+    [[nodiscard]] PointerObjectConstraintSet::WorklistSolverPolicy
+    GetWorklistSoliverPolicy() const noexcept
+    {
+      return WorklistSolverPolicy_;
     }
 
     /**
@@ -119,15 +146,11 @@ public:
     }
 
     /**
-     * Creates a solver configuration using the worklist solver,
-     * with the default set of offline and online techniques enabled.
+     * Creates the default Andersen constraint set solver configuration
      * @return the solver configuration
      */
     [[nodiscard]] static Configuration
-    WorklistSolverConfiguration()
-    {
-      return Configuration(Solver::Worklist);
-    }
+    DefaultConfiguration();
 
     /**
      * Creates a solver configuration using the naive solver,
@@ -137,16 +160,19 @@ public:
     [[nodiscard]] static Configuration
     NaiveSolverConfiguration()
     {
-      auto config = Configuration(Solver::Naive);
+      auto config = Configuration();
       config.EnableOfflineVariableSubstitution(false);
       config.EnableOfflineConstraintNormalization(false);
+      config.SetSolver(Solver::Naive);
       return config;
     }
 
   private:
     bool EnableOfflineVariableSubstitution_ = true;
     bool EnableOfflineConstraintNormalization_ = true;
-    Solver Solver_;
+    Solver Solver_ = Solver::Worklist;
+    PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
+        PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
   };
 
   ~Andersen() noexcept override = default;
@@ -311,7 +337,7 @@ private:
   void
   SolveConstraints(const Configuration & config, Statistics & statistics);
 
-  Configuration Config_ = Configuration::WorklistSolverConfiguration();
+  Configuration Config_ = Configuration::DefaultConfiguration();
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;

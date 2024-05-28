@@ -1259,31 +1259,34 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-size_t
-PointerObjectConstraintSet::SolveUsingWorklist()
+template<typename Worklist>
+void
+PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
-  // Create auxiliary superset graph.
-  // All edges must have their tail be a unification root.
+  // Create auxiliary subset graph.
+  // All edges must have their tail be a unification root (non-root nodes have no successors).
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
   std::vector<util::HashSet<PointerObjectIndex>> supersetEdges(Set_.NumPointerObjects());
 
   // Create quick lookup tables for Load, Store and function call constraints.
-  // Lookup is indexed by the constraint's pointer
+  // Lookup is indexed by the constraint's pointer.
   // The constraints need to be added to the unification root, as only unification roots
-  // are allowed on the worklist.
+  // are allowed on the worklist. The sets are empty for all non-root nodes.
   std::vector<util::HashSet<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
   std::vector<util::HashSet<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
-  std::vector<std::vector<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
+  std::vector<util::HashSet<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
 
   for (const auto & constraint : Constraints_)
   {
     if (const auto * ssConstraint = std::get_if<SupersetConstraint>(&constraint))
     {
-      // Superset constraints become edges in the superset graph
+      // Superset constraints become edges in the subset graph
+      // When initializing the set of superset edges, normalize them as well
       auto superset = Set_.GetUnificationRoot(ssConstraint->GetSuperset());
       auto subset = Set_.GetUnificationRoot(ssConstraint->GetSubset());
 
-      supersetEdges[subset].Insert(superset);
+      if (superset != subset) // Ignore self-edges
+        supersetEdges[subset].Insert(superset);
     }
     else if (const auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
     {
@@ -1304,12 +1307,12 @@ PointerObjectConstraintSet::SolveUsingWorklist()
       auto pointer = Set_.GetUnificationRoot(callConstraint->GetPointer());
       const auto & callNode = callConstraint->GetCallNode();
 
-      callConstraints[pointer].push_back(&callNode);
+      callConstraints[pointer].Insert(&callNode);
     }
   }
 
   // The worklist, initialized with every unification root
-  util::LrfWorklist<PointerObjectIndex> worklist;
+  Worklist worklist;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
     if (Set_.IsUnificationRoot(i))
@@ -1317,22 +1320,41 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   }
 
   // Helper function for adding superset edges, propagating everything currently in the subset.
-  // The superset's root is added to the work list if its points-to set or flags are changed.
+  // The superset's root is added to the worklist if its points-to set or flags are changed.
   const auto AddSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
   {
     superset = Set_.GetUnificationRoot(superset);
     subset = Set_.GetUnificationRoot(subset);
 
+    // If this is a self-edge, ignore
+    if (superset == subset)
+      return;
+
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
       return;
 
-    // A new edge was added, propagate points to-sets
-    if (!Set_.MakePointsToSetSuperset(superset, subset))
-      return;
+    // A new edge was added, propagate points to-sets. If the superset changes, add to the worklist
+    if (Set_.MakePointsToSetSuperset(superset, subset))
+      worklist.PushWorkItem(superset);
+  };
 
-    // pointees or the points-to-external flag were propagated to the superset, add to the worklist
-    worklist.PushWorkItem(superset);
+  // A temporary place to store new subset edges, to avoid modifying sets while they are iterated
+  util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> newSupersetEdges;
+  const auto QueueNewSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
+  {
+    superset = Set_.GetUnificationRoot(superset);
+    subset = Set_.GetUnificationRoot(subset);
+    if (superset == subset || supersetEdges[subset].Contains(superset))
+      return;
+    newSupersetEdges.Insert({ superset, subset });
+  };
+
+  const auto FlushNewSupersetEdges = [&]()
+  {
+    for (auto [superset, subset] : newSupersetEdges.Items())
+      AddSupersetEdge(superset, subset);
+    newSupersetEdges.Clear();
   };
 
   // Helper function for marking a PointerObject such that all its pointees will escape
@@ -1355,57 +1377,51 @@ PointerObjectConstraintSet::SolveUsingWorklist()
   // The worklist will only inform functions if their HasEscaped flag changes
   EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
 
-  // Count of the total number of work items fired
-  size_t numWorkItems = 0;
-
-  // The main worklist loop. A work item can be in the worklist for the following reasons:
+  // The main work item handler. A work item can be in the worklist for the following reasons:
   // - It has never been fired
   // - It has pointees added since the last time it was fired
   // - It has been marked as pointing to external since last time it was fired
   // - It has been marked as escaping all pointees since last time it was fired
-  // All work items are unification roots, or were unification roots when added
-  while (worklist.HasMoreWorkItems())
+  // - It is the unification root of a new unification
+  // Work items should be unification roots. If a work item is not a root when popped, it is skipped
+  const auto HandleWorkItem = [&](PointerObjectIndex node)
   {
-    const auto n = worklist.PopWorkItem();
-    numWorkItems++;
+    statistics.NumWorkItemsPopped++;
 
-    // Only visit unification roots
-    const auto root = Set_.GetUnificationRoot(n);
-    if (n != root)
-    {
-      worklist.PushWorkItem(root);
-      continue;
-    }
+    // Skip visiting unification roots.
+    // All unification operations are responsible for adding the new root to the worklist if needed
+    if (!Set_.IsUnificationRoot(node))
+      return;
 
     // Stores on the form *n = value.
-    for (const auto value : storeConstraints[n].Items())
+    for (const auto value : storeConstraints[node].Items())
     {
       // This loop ensures *P(n) supseteq P(value)
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
-        AddSupersetEdge(pointee, value);
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
+        QueueNewSupersetEdge(pointee, value);
 
       // If P(n) contains "external", the contents of the written value escapes
-      if (Set_.IsPointingToExternal(n))
+      if (Set_.IsPointingToExternal(node))
         MarkAsPointeesEscaping(value);
     }
 
     // Loads on the form value = *n.
-    for (const auto value : loadConstraints[n].Items())
+    for (const auto value : loadConstraints[node].Items())
     {
       // This loop ensures P(value) supseteq *P(n)
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
-        AddSupersetEdge(value, pointee);
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
+        QueueNewSupersetEdge(value, pointee);
 
       // If P(n) contains "external", the loaded value may also point to external
-      if (Set_.IsPointingToExternal(n))
+      if (Set_.IsPointingToExternal(node))
         MarkAsPointsToExternal(value);
     }
 
     // Function calls on the form (*n)()
-    for (const auto callNode : callConstraints[n])
+    for (const auto callNode : callConstraints[node].Items())
     {
       // Connect the inputs and outputs of the callNode to every possible function pointee
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
       {
         const auto kind = Set_.GetPointerObjectKind(pointee);
         if (kind == PointerObjectKind::ImportMemoryObject)
@@ -1416,11 +1432,11 @@ PointerObjectConstraintSet::SolveUsingWorklist()
               MarkAsPointeesEscaping,
               MarkAsPointsToExternal);
         else if (kind == PointerObjectKind::FunctionMemoryObject)
-          HandleCallingLambdaFunction(Set_, *callNode, pointee, AddSupersetEdge);
+          HandleCallingLambdaFunction(Set_, *callNode, pointee, QueueNewSupersetEdge);
       }
 
       // If P(n) contains "external", handle calling external functions
-      if (Set_.IsPointingToExternal(n))
+      if (Set_.IsPointingToExternal(node))
         HandleCallingExternalFunction(
             Set_,
             *callNode,
@@ -1429,18 +1445,18 @@ PointerObjectConstraintSet::SolveUsingWorklist()
     }
 
     // Propagate P(n) along all edges n -> superset
-    for (auto superset : supersetEdges[n].Items())
+    for (const auto superset : supersetEdges[node].Items())
     {
-      // FIXME: Replace edges going to non-roots
-      superset = Set_.GetUnificationRoot(superset);
-      if (Set_.MakePointsToSetSuperset(superset, n))
-        worklist.PushWorkItem(superset);
+      // FIXME: replace supersets by their unification root, to remove duplicate edges
+      const auto supersetParent = Set_.GetUnificationRoot(superset);
+      if (Set_.MakePointsToSetSuperset(supersetParent, node))
+        worklist.PushWorkItem(supersetParent);
     }
 
     // If n is marked as PointeesEscaping, add the escaped flag to all pointees
-    if (Set_.HasPointeesEscaping(n))
+    if (Set_.HasPointeesEscaping(node))
     {
-      for (const auto pointee : Set_.GetPointsToSet(n).Items())
+      for (const auto pointee : Set_.GetPointsToSet(node).Items())
       {
         const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
         const bool prevPointeesEscaping = Set_.HasPointeesEscaping(pointeeRoot);
@@ -1462,9 +1478,51 @@ PointerObjectConstraintSet::SolveUsingWorklist()
         }
       }
     }
-  }
 
-  return numWorkItems;
+    // Add all new superset edges, which also propagates points-to sets immediately
+    // and possibly performs unifications to eliminate cycles.
+    // Any unified nodes, or nodes with updated points-to sets, are added to the worklist.
+    FlushNewSupersetEdges();
+  };
+
+  while (worklist.HasMoreWorkItems())
+    HandleWorkItem(worklist.PopWorkItem());
+}
+
+PointerObjectConstraintSet::WorklistStatistics
+PointerObjectConstraintSet::SolveUsingWorklist(WorklistSolverPolicy policy)
+{
+  WorklistStatistics statistics(policy);
+  switch (policy)
+  {
+  case WorklistSolverPolicy::LeastRecentlyFired:
+    RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>>(statistics);
+    return statistics;
+  case WorklistSolverPolicy::FirstInFirstOut:
+    RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>>(statistics);
+    return statistics;
+  case WorklistSolverPolicy::LastInFirstOut:
+    RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>>(statistics);
+    return statistics;
+  default:
+    JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
+  }
+}
+
+const char *
+PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy policy)
+{
+  switch (policy)
+  {
+  case WorklistSolverPolicy::LeastRecentlyFired:
+    return "LeastRecentlyFired";
+  case WorklistSolverPolicy::FirstInFirstOut:
+    return "FirstInFirstOut";
+  case WorklistSolverPolicy::LastInFirstOut:
+    return "LastInFirstOut";
+  default:
+    JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
+  }
 }
 
 size_t
