@@ -877,6 +877,7 @@ TestPointerObjectSet()
   TestPointerObjectConstraintSetSolve<false>();
   using Policy = jlm::llvm::aa::PointerObjectConstraintSet::WorklistSolverPolicy;
   TestPointerObjectConstraintSetSolve<true>(Policy::LeastRecentlyFired);
+  TestPointerObjectConstraintSetSolve<true>(Policy::TwoPhaseLeastRecentlyFired);
   TestPointerObjectConstraintSetSolve<true>(Policy::FirstInFirstOut);
   TestPointerObjectConstraintSetSolve<true>(Policy::LastInFirstOut);
   TestClonePointerObjectConstraintSet();

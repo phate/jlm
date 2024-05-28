@@ -50,6 +50,7 @@ public:
   static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
   static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
   static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
+  static inline const char * const CONFIG_WL_POLICY_TWO_PHASE_LRF = "WLPolicy=2LRF";
   static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
   static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
 
@@ -98,6 +99,10 @@ public:
       return Solver_;
     }
 
+    /**
+     * Sets which policy to be used by the worklist.
+     * Only applies to the worklist solver.
+     */
     void
     SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy)
     {

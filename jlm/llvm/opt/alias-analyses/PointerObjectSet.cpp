@@ -1498,6 +1498,9 @@ PointerObjectConstraintSet::SolveUsingWorklist(WorklistSolverPolicy policy)
   case WorklistSolverPolicy::LeastRecentlyFired:
     RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>>(statistics);
     return statistics;
+  case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
+    RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>>(statistics);
+    return statistics;
   case WorklistSolverPolicy::FirstInFirstOut:
     RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>>(statistics);
     return statistics;
@@ -1516,6 +1519,8 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
   {
   case WorklistSolverPolicy::LeastRecentlyFired:
     return "LeastRecentlyFired";
+  case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
+    return "TwoPhaseLeastRecentlyFired";
   case WorklistSolverPolicy::FirstInFirstOut:
     return "FirstInFirstOut";
   case WorklistSolverPolicy::LastInFirstOut:
