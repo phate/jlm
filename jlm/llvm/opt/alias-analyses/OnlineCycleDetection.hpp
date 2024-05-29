@@ -82,6 +82,10 @@ public:
         TopoOrderToObject_.push_back(node);
       }
     }
+
+#ifdef JLM_ENABLE_ASSERTS
+    ValidateTopologicalOrder();
+#endif
   }
 
   /** Call this function after adding a superset edge subset -> superset.

@@ -1521,7 +1521,11 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       for (const auto pointee : Set_.GetPointsToSet(node).Items())
       {
         const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
-        const bool prevPointeesEscaping = Set_.HasPointeesEscaping(pointeeRoot);
+
+        // Marking a node as escaped will imply two flags on the unification root:
+        // - PointeesEscaping
+        // - PointsToExternal
+        const bool rootAlreadyHasFlags = Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
 
         // Mark the pointee itself as escaped, not the pointee's unifiction root!
         if (!Set_.MarkAsEscaped(pointee))
@@ -1531,11 +1535,12 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
           HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
 
-        // If the pointee's unification root previously didn't have the PointeesEscaping flag,
-        // add the unification root to the worklist
-        if (!prevPointeesEscaping)
+        // If the pointee's unification root previously didn't have both the flags implied by
+        // having one of the unification members escaping, add the root to the worklist
+        if (!rootAlreadyHasFlags)
         {
           JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
+          JLM_ASSERT(Set_.IsPointingToExternal(pointeeRoot));
           worklist.PushWorkItem(pointeeRoot);
         }
       }
