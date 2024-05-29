@@ -7,10 +7,11 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -434,7 +435,7 @@ process_loops(jlm::rvsdg::output * state_edge)
         JLM_ASSERT(sn->noutputs() == 1);
         return sn->output(0);
       }
-      else if (dynamic_cast<const jlm::llvm::aa::LambdaExitMemStateOperator *>(op))
+      else if (dynamic_cast<const jlm::llvm::LambdaExitMemStateOperator *>(op))
       {
         // end of lambda
         JLM_ASSERT(sn->noutputs() == 1);
@@ -532,7 +533,7 @@ jlm::hls::mem_queue(jlm::rvsdg::region * region)
   JLM_ASSERT(entry_input);
   auto entry_node = entry_input->node();
   JLM_ASSERT(
-      dynamic_cast<const jlm::llvm::aa::LambdaEntryMemStateOperator *>(&entry_node->operation()));
+      dynamic_cast<const jlm::llvm::LambdaEntryMemStateOperator *>(&entry_node->operation()));
   // for each state edge:
   //    for each outer loop (theta/loop in lambda region):
   //        split state edge before the loop

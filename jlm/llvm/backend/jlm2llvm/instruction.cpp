@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
 #include <jlm/llvm/backend/jlm2llvm/instruction.hpp>
@@ -963,7 +963,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::LambdaEntryMemStateOperator &,
+    const LambdaEntryMemStateOperator &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -973,7 +973,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::LambdaExitMemStateOperator &,
+    const LambdaExitMemStateOperator &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -983,7 +983,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::CallEntryMemStateOperator &,
+    const CallEntryMemStateOperator &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -993,7 +993,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::CallExitMemStateOperator &,
+    const CallExitMemStateOperator &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1087,10 +1087,10 @@ convert_operation(
             { typeid(zext_op), convert_cast<::llvm::Instruction::ZExt> },
             { typeid(MemStateMergeOperator), convert<MemStateMergeOperator> },
             { typeid(MemStateSplitOperator), convert<MemStateSplitOperator> },
-            { typeid(aa::LambdaEntryMemStateOperator), convert<aa::LambdaEntryMemStateOperator> },
-            { typeid(aa::LambdaExitMemStateOperator), convert<aa::LambdaExitMemStateOperator> },
-            { typeid(aa::CallEntryMemStateOperator), convert<aa::CallEntryMemStateOperator> },
-            { typeid(aa::CallExitMemStateOperator), convert<aa::CallExitMemStateOperator> } });
+            { typeid(LambdaEntryMemStateOperator), convert<LambdaEntryMemStateOperator> },
+            { typeid(LambdaExitMemStateOperator), convert<LambdaExitMemStateOperator> },
+            { typeid(CallEntryMemStateOperator), convert<CallEntryMemStateOperator> },
+            { typeid(CallExitMemStateOperator), convert<CallExitMemStateOperator> } });
   /* FIXME: AddrSpaceCast instruction is not supported */
 
   JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
