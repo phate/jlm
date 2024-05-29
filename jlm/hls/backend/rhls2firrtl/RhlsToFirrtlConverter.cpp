@@ -5,7 +5,7 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <llvm/ADT/SmallPtrSet.h>
@@ -227,7 +227,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     int outSize = JlmSize(&node->output(0)->type());
     Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
   }
-  else if (dynamic_cast<const llvm::aa::LambdaExitMemStateOperator *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::LambdaExitMemStateOperator *>(&(node->operation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);

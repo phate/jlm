@@ -30,6 +30,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
     jlm/llvm/ir/operators/MemCpy.cpp \
+    jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
@@ -44,7 +45,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
-    jlm/llvm/opt/alias-analyses/Operators.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
@@ -75,7 +75,6 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
 	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
 	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
-	jlm/llvm/opt/alias-analyses/Operators.hpp \
 	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
 	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
@@ -111,6 +110,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/Phi.hpp \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
+	jlm/llvm/ir/operators/MemoryStateOperations.hpp \
 	jlm/llvm/ir/operators/gamma.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
@@ -176,7 +176,6 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/test-ssa-destruction \
 	tests/jlm/llvm/ir/TestTypes \
 	tests/jlm/llvm/ir/TestAnnotation \
-	tests/jlm/llvm/opt/alias-analyses/MemoryStateOperationTests \
 	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
 	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
