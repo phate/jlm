@@ -1525,7 +1525,8 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         // Marking a node as escaped will imply two flags on the unification root:
         // - PointeesEscaping
         // - PointsToExternal
-        const bool rootAlreadyHasFlags = Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
+        const bool rootAlreadyHasFlags =
+            Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
 
         // Mark the pointee itself as escaped, not the pointee's unifiction root!
         if (!Set_.MarkAsEscaped(pointee))
