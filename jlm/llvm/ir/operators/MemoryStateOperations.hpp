@@ -6,10 +6,102 @@
 #ifndef JLM_LLVM_IR_OPERATORS_MEMORYSTATEOPERATIONS_HPP
 #define JLM_LLVM_IR_OPERATORS_MEMORYSTATEOPERATIONS_HPP
 
-#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/tac.hpp>
+#include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm::llvm
 {
+
+/* MemState operator */
+
+class MemStateOperator : public jlm::rvsdg::simple_op
+{
+public:
+  MemStateOperator(size_t noperands, size_t nresults)
+      : simple_op(create_portvector(noperands), create_portvector(nresults))
+  {}
+
+private:
+  static std::vector<jlm::rvsdg::port>
+  create_portvector(size_t size)
+  {
+    return { size, jlm::rvsdg::port(MemoryStateType::Create()) };
+  }
+};
+
+/** \brief MemStateMerge operator
+ */
+class MemStateMergeOperator final : public MemStateOperator
+{
+public:
+  ~MemStateMergeOperator() override;
+
+  MemStateMergeOperator(size_t noperands)
+      : MemStateOperator(noperands, 1)
+  {}
+
+  virtual bool
+  operator==(const operation & other) const noexcept override;
+
+  virtual std::string
+  debug_string() const override;
+
+  virtual std::unique_ptr<jlm::rvsdg::operation>
+  copy() const override;
+
+  static jlm::rvsdg::output *
+  Create(const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    if (operands.empty())
+      throw jlm::util::error("Insufficient number of operands.");
+
+    MemStateMergeOperator op(operands.size());
+    auto region = operands.front()->region();
+    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
+  }
+
+  static std::unique_ptr<tac>
+  Create(const std::vector<const variable *> & operands)
+  {
+    if (operands.empty())
+      throw jlm::util::error("Insufficient number of operands.");
+
+    MemStateMergeOperator op(operands.size());
+    return tac::create(op, operands);
+  }
+};
+
+/** \brief MemStateSplit operator
+ */
+class MemStateSplitOperator final : public MemStateOperator
+{
+public:
+  ~MemStateSplitOperator() override;
+
+  MemStateSplitOperator(size_t nresults)
+      : MemStateOperator(1, nresults)
+  {}
+
+  virtual bool
+  operator==(const operation & other) const noexcept override;
+
+  virtual std::string
+  debug_string() const override;
+
+  virtual std::unique_ptr<jlm::rvsdg::operation>
+  copy() const override;
+
+  static std::vector<jlm::rvsdg::output *>
+  Create(jlm::rvsdg::output * operand, size_t nresults)
+  {
+    if (nresults == 0)
+      throw jlm::util::error("Insufficient number of results.");
+
+    MemStateSplitOperator op(nresults);
+    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand });
+  }
+};
 
 /** \brief LambdaEntryMemStateOperator class
  */

@@ -8,6 +8,54 @@
 namespace jlm::llvm
 {
 
+/* MemStateMerge operator */
+
+MemStateMergeOperator::~MemStateMergeOperator()
+{}
+
+bool
+MemStateMergeOperator::operator==(const rvsdg::operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const MemStateMergeOperator *>(&other);
+  return operation && operation->narguments() == narguments();
+}
+
+std::string
+MemStateMergeOperator::debug_string() const
+{
+  return "MemStateMerge";
+}
+
+std::unique_ptr<rvsdg::operation>
+MemStateMergeOperator::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new MemStateMergeOperator(*this));
+}
+
+/* MemStateSplit operator */
+
+MemStateSplitOperator::~MemStateSplitOperator()
+{}
+
+bool
+MemStateSplitOperator::operator==(const rvsdg::operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const MemStateSplitOperator *>(&other);
+  return operation && operation->nresults() == nresults();
+}
+
+std::string
+MemStateSplitOperator::debug_string() const
+{
+  return "MemStateSplit";
+}
+
+std::unique_ptr<rvsdg::operation>
+MemStateSplitOperator::copy() const
+{
+  return std::unique_ptr<rvsdg::operation>(new MemStateSplitOperator(*this));
+}
+
 /* LambdaEntryMemStateOperator class */
 
 LambdaEntryMemStateOperator::~LambdaEntryMemStateOperator() = default;
