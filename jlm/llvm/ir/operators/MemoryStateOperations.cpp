@@ -3,12 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 namespace jlm::llvm
-{
-
-namespace aa
 {
 
 /* LambdaEntryMemStateOperator class */
@@ -103,5 +100,4 @@ CallExitMemStateOperator::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new CallExitMemStateOperator(*this));
 }
 
-}
 }

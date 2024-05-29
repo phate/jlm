@@ -3,15 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_OPERATORS_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_OPERATORS_HPP
+#ifndef JLM_LLVM_IR_OPERATORS_MEMORYSTATEOPERATIONS_HPP
+#define JLM_LLVM_IR_OPERATORS_MEMORYSTATEOPERATIONS_HPP
 
 #include <jlm/llvm/ir/operators.hpp>
 
 namespace jlm::llvm
-{
-
-namespace aa
 {
 
 /** \brief LambdaEntryMemStateOperator class
@@ -132,7 +129,6 @@ public:
   }
 };
 
-}
 }
 
 #endif

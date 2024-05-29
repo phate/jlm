@@ -4,9 +4,9 @@
  */
 
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
