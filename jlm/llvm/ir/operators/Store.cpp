@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 
 namespace jlm::llvm

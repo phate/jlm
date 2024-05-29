@@ -7,7 +7,7 @@
 #include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/rvsdg/view.hpp>
 
