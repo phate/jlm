@@ -72,7 +72,7 @@ public:
     };
 
     [[nodiscard]] bool
-    operator==(const Configuration & other) const
+    operator==(const Configuration & other) const noexcept
     {
       return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
@@ -80,7 +80,7 @@ public:
     }
 
     [[nodiscard]] bool
-    operator!=(const Configuration & other) const
+    operator!=(const Configuration & other) const noexcept
     {
       return !operator==(other);
     }
@@ -90,7 +90,7 @@ public:
      * Not all solvers are compatible with all online techniques.
      */
     void
-    SetSolver(Solver solver)
+    SetSolver(Solver solver) noexcept
     {
       Solver_ = solver;
     }
@@ -106,7 +106,7 @@ public:
      * Only applies to the worklist solver.
      */
     void
-    SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy)
+    SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy) noexcept
     {
       WorklistSolverPolicy_ = policy;
     }
@@ -124,7 +124,7 @@ public:
      * which may create opportunities for constraint normalization.
      */
     void
-    EnableOfflineVariableSubstitution(bool enable)
+    EnableOfflineVariableSubstitution(bool enable) noexcept
     {
       EnableOfflineVariableSubstitution_ = enable;
     }
@@ -141,7 +141,7 @@ public:
      * @see PointerObjectConstraintSet::NormalizeConstraints()
      */
     void
-    EnableOfflineConstraintNormalization(bool enable)
+    EnableOfflineConstraintNormalization(bool enable) noexcept
     {
       EnableOfflineConstraintNormalization_ = enable;
     }
@@ -153,12 +153,13 @@ public:
     }
 
     /**
-     * Enables or disables online cycle detection in the Worklist solver, as described by.
-     * Ignored by all other solvers, and by the topological worklist policy.
-     * Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Enables or disables online cycle detection in the Worklist solver, as described by
+     *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Only used by the worklist solver.
+     * It detects all cycles, so it can not be combined with other cycle detection techniques.
      */
     void
-    EnableOnlineCycleDetection(bool enable)
+    EnableOnlineCycleDetection(bool enable) noexcept
     {
       EnableOnlineCycleDetection_ = enable;
     }
@@ -182,7 +183,7 @@ public:
      * @return the solver configuration
      */
     [[nodiscard]] static Configuration
-    NaiveSolverConfiguration()
+    NaiveSolverConfiguration() noexcept
     {
       auto config = Configuration();
       config.EnableOfflineVariableSubstitution(false);

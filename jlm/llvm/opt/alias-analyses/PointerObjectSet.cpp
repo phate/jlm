@@ -1146,7 +1146,7 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
   auto & successors = std::get<1>(subsetGraph);
   auto & isDirectNode = std::get<2>(subsetGraph);
 
-  auto GetSuccessors = [&](size_t node)
+  auto GetSuccessors = [&](PointerObjectIndex node)
   {
     return successors[node].Items();
   };
@@ -1328,7 +1328,8 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       return aRoot;
 
     const auto root = Set_.UnifyPointerObjects(aRoot, bRoot);
-    const auto nonRoot = aRoot + bRoot - root;
+    // The root among the two original roots that did NOT end up as the new root
+    const auto nonRoot = root == aRoot ? bRoot : aRoot;
 
     // Move constraints owned by the non-root to the root
     supersetEdges[root].UnionWith(supersetEdges[nonRoot]);
@@ -1350,14 +1351,14 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
   // Lambda for getting all superset edge successors of a given pointer object in the subset graph.
   // If \p node is not a unification root, its set of successors will always be empty.
-  const auto GetSuccessors = [&](PointerObjectIndex node)
+  const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
   {
     return supersetEdges[node].Items();
   };
 
   // If online cycle detection is enabled, perform the initial topological sorting now,
   // which may detect and eliminate cycles
-  OnlineCycleDetector onlineCycleDetector(Set_, GetSuccessors, UnifyPointerObjects);
+  OnlineCycleDetector onlineCycleDetector(Set_, GetSupersetEdgeSuccessors, UnifyPointerObjects);
   if constexpr (EnableOnlineCycleDetection)
     onlineCycleDetector.InitializeTopologicalOrdering();
 
@@ -1569,29 +1570,29 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     bool enableOnlineCycleDetection)
 {
 
-  auto DispatchOCD = [&](auto onlineCycleDetection)
+  auto DispatchOnlineCycleDetection = [&](auto enabled)
   {
-    constexpr bool EnableOnlineCycleDetection = decltype(onlineCycleDetection)::value;
+    constexpr bool enableOnlineCycleDetection = decltype(enabled)::value;
 
     WorklistStatistics statistics(policy);
     if (policy == WorklistSolverPolicy::LeastRecentlyFired)
     {
-      RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+      RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
           statistics);
     }
     else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
     {
-      RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+      RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
           statistics);
     }
     else if (policy == WorklistSolverPolicy::FirstInFirstOut)
     {
-      RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+      RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
           statistics);
     }
     else if (policy == WorklistSolverPolicy::LastInFirstOut)
     {
-      RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>, EnableOnlineCycleDetection>(
+      RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
           statistics);
     }
     else
@@ -1601,9 +1602,9 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   };
 
   if (enableOnlineCycleDetection)
-    return DispatchOCD(std::true_type{});
+    return DispatchOnlineCycleDetection(std::true_type{});
   else
-    return DispatchOCD(std::false_type{});
+    return DispatchOnlineCycleDetection(std::false_type{});
 }
 
 const char *
