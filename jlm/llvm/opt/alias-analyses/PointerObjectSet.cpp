@@ -6,6 +6,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
 #include <jlm/util/TarjanScc.hpp>
 #include <jlm/util/Worklist.hpp>
 
@@ -1145,7 +1146,7 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
   auto & successors = std::get<1>(subsetGraph);
   auto & isDirectNode = std::get<2>(subsetGraph);
 
-  auto GetSuccessors = [&](size_t node)
+  auto GetSuccessors = [&](PointerObjectIndex node)
   {
     return successors[node].Items();
   };
@@ -1259,7 +1260,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-template<typename Worklist>
+template<typename Worklist, bool EnableOnlineCycleDetection>
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
@@ -1311,6 +1312,56 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
   }
 
+  // Performs unification safely while the worklist algorithm is running.
+  // Ensures all constraints end up being owned by the new root.
+  // It does NOT redirect constraints owned by other nodes, referencing a or b.
+  // If a and b already belong to the same unification root, this is a no-op.
+  // This operation does not add the unification result to the worklist.
+  // Returns the root of the new unification, or the existing root if a and b were already unified.
+  const auto UnifyPointerObjects = [&](PointerObjectIndex a,
+                                       PointerObjectIndex b) -> PointerObjectIndex
+  {
+    const auto aRoot = Set_.GetUnificationRoot(a);
+    const auto bRoot = Set_.GetUnificationRoot(b);
+
+    if (aRoot == bRoot)
+      return aRoot;
+
+    const auto root = Set_.UnifyPointerObjects(aRoot, bRoot);
+    // The root among the two original roots that did NOT end up as the new root
+    const auto nonRoot = root == aRoot ? bRoot : aRoot;
+
+    // Move constraints owned by the non-root to the root
+    supersetEdges[root].UnionWith(supersetEdges[nonRoot]);
+    supersetEdges[nonRoot].Clear();
+    // Try to avoid self-edges, but indirect self-edges can still exist
+    supersetEdges[root].Remove(root);
+
+    storeConstraints[root].UnionWith(storeConstraints[nonRoot]);
+    storeConstraints[nonRoot].Clear();
+
+    loadConstraints[root].UnionWith(loadConstraints[nonRoot]);
+    loadConstraints[nonRoot].Clear();
+
+    callConstraints[root].UnionWith(callConstraints[nonRoot]);
+    callConstraints[nonRoot].Clear();
+
+    return root;
+  };
+
+  // Lambda for getting all superset edge successors of a given pointer object in the subset graph.
+  // If \p node is not a unification root, its set of successors will always be empty.
+  const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
+  {
+    return supersetEdges[node].Items();
+  };
+
+  // If online cycle detection is enabled, perform the initial topological sorting now,
+  // which may detect and eliminate cycles
+  OnlineCycleDetector onlineCycleDetector(Set_, GetSupersetEdgeSuccessors, UnifyPointerObjects);
+  if constexpr (EnableOnlineCycleDetection)
+    onlineCycleDetector.InitializeTopologicalOrdering();
+
   // The worklist, initialized with every unification root
   Worklist worklist;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
@@ -1333,6 +1384,18 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
       return;
+
+    // The edge is now added. If OCD is enabled, check if it broke the topological order, and fix it
+    if constexpr (EnableOnlineCycleDetection)
+    {
+      // If a cycle is detected, this function eliminates it by unifying, and returns the root
+      auto optUnificationRoot = onlineCycleDetector.MaintainTopologicalOrder(subset, superset);
+      if (optUnificationRoot)
+      {
+        worklist.PushWorkItem(*optUnificationRoot);
+        return;
+      }
+    }
 
     // A new edge was added, propagate points to-sets. If the superset changes, add to the worklist
     if (Set_.MakePointsToSetSuperset(superset, subset))
@@ -1459,7 +1522,12 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       for (const auto pointee : Set_.GetPointsToSet(node).Items())
       {
         const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
-        const bool prevPointeesEscaping = Set_.HasPointeesEscaping(pointeeRoot);
+
+        // Marking a node as escaped will imply two flags on the unification root:
+        // - PointeesEscaping
+        // - PointsToExternal
+        const bool rootAlreadyHasFlags =
+            Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
 
         // Mark the pointee itself as escaped, not the pointee's unifiction root!
         if (!Set_.MarkAsEscaped(pointee))
@@ -1469,11 +1537,12 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
           HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
 
-        // If the pointee's unification root previously didn't have the PointeesEscaping flag,
-        // add the unification root to the worklist
-        if (!prevPointeesEscaping)
+        // If the pointee's unification root previously didn't have both the flags implied by
+        // having one of the unification members escaping, add the root to the worklist
+        if (!rootAlreadyHasFlags)
         {
           JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
+          JLM_ASSERT(Set_.IsPointingToExternal(pointeeRoot));
           worklist.PushWorkItem(pointeeRoot);
         }
       }
@@ -1487,29 +1556,55 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
   while (worklist.HasMoreWorkItems())
     HandleWorkItem(worklist.PopWorkItem());
+
+  if constexpr (EnableOnlineCycleDetection)
+  {
+    statistics.NumOnlineCyclesDetected = onlineCycleDetector.NumOnlineCyclesDetected();
+    statistics.NumOnlineCycleUnifications = onlineCycleDetector.NumOnlineCycleUnifications();
+  }
 }
 
 PointerObjectConstraintSet::WorklistStatistics
-PointerObjectConstraintSet::SolveUsingWorklist(WorklistSolverPolicy policy)
+PointerObjectConstraintSet::SolveUsingWorklist(
+    WorklistSolverPolicy policy,
+    bool enableOnlineCycleDetection)
 {
-  WorklistStatistics statistics(policy);
-  switch (policy)
+
+  auto DispatchOnlineCycleDetection = [&](auto enabled)
   {
-  case WorklistSolverPolicy::LeastRecentlyFired:
-    RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>>(statistics);
+    constexpr bool enableOnlineCycleDetection = decltype(enabled)::value;
+
+    WorklistStatistics statistics(policy);
+    if (policy == WorklistSolverPolicy::LeastRecentlyFired)
+    {
+      RunWorklistSolver<util::LrfWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
+          statistics);
+    }
+    else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
+    {
+      RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
+          statistics);
+    }
+    else if (policy == WorklistSolverPolicy::FirstInFirstOut)
+    {
+      RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
+          statistics);
+    }
+    else if (policy == WorklistSolverPolicy::LastInFirstOut)
+    {
+      RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>, enableOnlineCycleDetection>(
+          statistics);
+    }
+    else
+      JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
+
     return statistics;
-  case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
-    RunWorklistSolver<util::TwoPhaseLrfWorklist<PointerObjectIndex>>(statistics);
-    return statistics;
-  case WorklistSolverPolicy::FirstInFirstOut:
-    RunWorklistSolver<util::FifoWorklist<PointerObjectIndex>>(statistics);
-    return statistics;
-  case WorklistSolverPolicy::LastInFirstOut:
-    RunWorklistSolver<util::LifoWorklist<PointerObjectIndex>>(statistics);
-    return statistics;
-  default:
-    JLM_UNREACHABLE("Unknown WorklistSolverPolicy");
-  }
+  };
+
+  if (enableOnlineCycleDetection)
+    return DispatchOnlineCycleDetection(std::true_type{});
+  else
+    return DispatchOnlineCycleDetection(std::false_type{});
 }
 
 const char *
