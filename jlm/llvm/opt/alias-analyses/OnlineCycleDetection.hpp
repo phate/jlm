@@ -45,8 +45,11 @@ public:
   void
   InitializeTopologicalOrdering()
   {
+    // Ensure no pointer object has the sentinel value as its index
+    JLM_ASSERT(Set_.NumPointerObjects() <= EmptyTopologicalSlot);
+
     // Initialize Online Cycle Detection using a full topological sort of the nodes
-    ObjectToTopoOrder_.resize(Set_.NumPointerObjects(), -1);
+    ObjectToTopoOrder_.resize(Set_.NumPointerObjects(), EmptyTopologicalSlot);
 
     // At this point, all subsetEdges are between unification roots only
     // Use TarjanSCC to find our starting topological ordering
@@ -102,7 +105,7 @@ public:
   {
     JLM_ASSERT(Set_.IsUnificationRoot(subset) && Set_.IsUnificationRoot(superset));
     // All unification roots should have positions in the topological order
-    JLM_ASSERT(ObjectToTopoOrder_[subset] != -1 && ObjectToTopoOrder_[superset] != -1);
+    JLM_ASSERT(ObjectIsInTopologicalOrder(subset) && ObjectIsInTopologicalOrder(superset));
 
     // If adding the simple edge subset -> superset does not break the invariant, return
     if (ObjectToTopoOrder_[subset] <= ObjectToTopoOrder_[superset])
@@ -115,25 +118,21 @@ public:
     // Perform DFS to find all roots reachable from superset
     // We only care about nodes where with its topo index <= upperTopo
     // These nodes will all need to be moved after subset in the new topological order
-    JLM_ASSERT(DfsStack_.empty());
-    // All nodes that have been pushed to the dfs stack
-    DfsNodesVisited_.Clear();
-    // All nodes that could reach subset and thus are part of a subset -> superset -> subset cycle
-    DfsCycleNodes_.Clear();
+    ClearDfsState();
 
-    // Start DFS from the superset
+    // Start DFS from the superset. false means first visit
     DfsStack_.emplace(superset, false);
 
     while (!DfsStack_.empty())
     {
       const auto node = DfsStack_.top().first;
-      const bool firstVisit = !DfsStack_.top().second;
+      const bool isFirstVisit = !DfsStack_.top().second;
       DfsStack_.pop();
       JLM_ASSERT(Set_.IsUnificationRoot(node));
 
-      if (firstVisit)
+      if (isFirstVisit)
       {
-        // If a "firstVisit" of this node has already occurred, skip it.
+        // If a "first visit" of this node has already occurred, skip it.
         // This can happen if the same node is pushed multiple times before being popped.
         if (!DfsNodesVisited_.Insert(node))
           continue;
@@ -167,7 +166,7 @@ public:
       else
       {
         // Node is being visited for the second time, on the way back in the dfs
-        // If this node is the subset, there is a cycle
+        // If this node is the subset, then there is a cycle
         if (node == subset)
         {
           DfsCycleNodes_.Insert(node);
@@ -187,9 +186,6 @@ public:
       }
     }
 
-    // This list is used to store all roots that should come after the subset in the new ordering
-    DfsSupersetAndBeyond_.clear();
-
     // The root of the unified cycle, if any
     std::optional<PointerObjectIndex> optUnificationRoot = std::nullopt;
     if (!DfsCycleNodes_.IsEmpty())
@@ -206,7 +202,7 @@ public:
       for (const auto node : DfsCycleNodes_.Items())
       {
         // Remove node from the topological order, only the final merge result belongs there
-        ObjectToTopoOrder_[node] = -1;
+        ObjectToTopoOrder_[node] = EmptyTopologicalSlot;
         optUnificationRoot =
             optUnificationRoot ? UnifyPointerObjects_(*optUnificationRoot, node) : node;
       }
@@ -222,7 +218,7 @@ public:
     for (auto i = lowerTopo; i <= upperTopo; i++)
     {
       // Skip all topological indices that do not contain a node
-      if (TopoOrderToObject_[i] == -1)
+      if (!IsTopologicalOrderIndexFilled(i))
         continue;
 
       PointerObjectIndex node = TopoOrderToObject_[i];
@@ -256,7 +252,7 @@ public:
     // Any leftover positions in the topological order should now become unoccupied
     while (nextTopologicalIndex <= upperTopo)
     {
-      TopoOrderToObject_[nextTopologicalIndex] = -1;
+      TopoOrderToObject_[nextTopologicalIndex] = EmptyTopologicalSlot;
       nextTopologicalIndex++;
     }
 
@@ -300,14 +296,16 @@ private:
       // Non-unification roots should not have a place in the topological order
       if (!Set_.IsUnificationRoot(node))
       {
-        if (ObjectToTopoOrder_[node] != -1)
+        if (ObjectIsInTopologicalOrder(node))
           return false;
         continue;
       }
 
       // Ensure we have a position in the topological order
+      if (!ObjectIsInTopologicalOrder(node))
+        return false;
       const auto topo = ObjectToTopoOrder_[node];
-      if (topo == -1 || TopoOrderToObject_[topo] != node)
+      if (TopoOrderToObject_[topo] != node)
         return false;
 
       // Ensure all outgoing edges go to unifications with higher topological index
@@ -322,10 +320,10 @@ private:
       }
     }
 
-    // Ensure TopoOrderToObject is a perfect inverse of ObjectToTopoOrder are correct
+    // Ensure TopoOrderToObject is a perfect inverse of ObjectToTopoOrder
     for (size_t i = 0; i < TopoOrderToObject_.size(); i++)
     {
-      if (TopoOrderToObject_[i] == -1)
+      if (!IsTopologicalOrderIndexFilled(i))
         continue;
       size_t backReference = ObjectToTopoOrder_[TopoOrderToObject_[i]];
       if (backReference != i)
@@ -336,15 +334,48 @@ private:
   };
 
   /**
+   * The topological order contains all unification roots, and only unification roots.
+   * @return true if \p object has a position in the topological order, false otherwise.
+   */
+  [[nodiscard]] bool
+  ObjectIsInTopologicalOrder(PointerObjectIndex object) const
+  {
+    return ObjectToTopoOrder_[object] != EmptyTopologicalSlot;
+  }
+
+  /**
+   * The topological order contains all unification roots, and only unification roots.
+   * @return true if the given \p index in the topological order is occupied, false otherwise.
+   */
+  [[nodiscard]] bool
+  IsTopologicalOrderIndexFilled(PointerObjectIndex topologicalIndex) const
+  {
+    return TopoOrderToObject_[topologicalIndex] != EmptyTopologicalSlot;
+  }
+
+  /**
    * @return true if the nodes \p after and \p before both have positions in the topological index,
    * and \p after comes strictly after \p before. Otherwise false.
    */
   [[nodiscard]] bool
   ComesAfter(PointerObjectIndex after, PointerObjectIndex before) const
   {
-    if (ObjectToTopoOrder_[after] == -1 || ObjectToTopoOrder_[before] == -1)
+    if (!ObjectIsInTopologicalOrder(after) || !ObjectIsInTopologicalOrder(before))
       return false;
     return ObjectToTopoOrder_[after] > ObjectToTopoOrder_[before];
+  }
+
+  /**
+   * Prepares all internal state for a new DFS
+   */
+  void
+  ClearDfsState()
+  {
+    // As we are not currently in the middle of a DFS, the DFS stack should already be empty
+    JLM_ASSERT(DfsStack_.empty());
+    DfsNodesVisited_.Clear();
+    DfsCycleNodes_.Clear();
+    DfsSupersetAndBeyond_.clear();
   }
 
   // The PointerObjectSet being operated on
@@ -354,14 +385,20 @@ private:
   const GetSuccessorsFunctor & GetSuccessors_;
   const UnifyPointerObjectsFunctor & UnifyPointerObjects_;
 
-  // Invariant:
-  // ObjectToTopoOrder_[PO] = -1 iff PO is not a unification root.
-  // ObjectToTopoOrder_[PO] is smaller than all successors of PO's roots.
-  std::vector<int64_t> ObjectToTopoOrder_;
+  // This sentinel value is used to indicate that
+  //  - An object doesn't have a position in the topological order
+  //  - A slot in the topological order is not occupied by an object
+  static constexpr PointerObjectIndex EmptyTopologicalSlot =
+      std::numeric_limits<PointerObjectIndex>::max();
 
-  // TopoOrderToObject_[topo] = -1 iff no PointerObject has the position
+  // Invariant:
+  // ObjectToTopoOrder_[PO] == EmptyTopologicalSlot iff PO is not a unification root.
+  // ObjectToTopoOrder_[PO] is smaller than all successors of PO's roots.
+  std::vector<PointerObjectIndex> ObjectToTopoOrder_;
+
+  // TopoOrderToObject_[topo] == EmptyTopologicalSlot iff no PointerObject has the position.
   // TopoOrderToObject_ is the inverse to ObjectToTopoOrder_
-  std::vector<int64_t> TopoOrderToObject_;
+  std::vector<PointerObjectIndex> TopoOrderToObject_;
 
   // Data structures used to store state during DFS passes are kept here,
   // to avoid re-allocating their backing storage every time a new DFS is performed.
