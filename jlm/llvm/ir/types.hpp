@@ -32,25 +32,25 @@ class FunctionType final : public jlm::rvsdg::valuetype
     using reference = jlm::rvsdg::type *&;
 
     explicit TypeConstIterator(
-        const std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator & it)
+        const std::vector<std::shared_ptr<const jlm::rvsdg::type>>::const_iterator & it)
         : It_(it)
     {}
 
   public:
-    jlm::rvsdg::type *
+    const jlm::rvsdg::type *
     type() const noexcept
     {
       return It_->get();
     }
 
-    jlm::rvsdg::type &
+    const jlm::rvsdg::type &
     operator*() const
     {
       JLM_ASSERT(type() != nullptr);
       return *type();
     }
 
-    jlm::rvsdg::type *
+    const jlm::rvsdg::type *
     operator->() const
     {
       return type();
@@ -84,7 +84,7 @@ class FunctionType final : public jlm::rvsdg::valuetype
     }
 
   private:
-    std::vector<std::unique_ptr<jlm::rvsdg::type>>::const_iterator It_;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>>::const_iterator It_;
   };
 
   using ArgumentConstRange = jlm::util::iterator_range<TypeConstIterator>;
@@ -98,8 +98,8 @@ public:
       const std::vector<const jlm::rvsdg::type *> & resultTypes);
 
   FunctionType(
-      std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
-      std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes);
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes);
 
   FunctionType(const FunctionType & other);
 
@@ -149,12 +149,12 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::unique_ptr<jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
 private:
-  std::vector<std::unique_ptr<jlm::rvsdg::type>> ResultTypes_;
-  std::vector<std::unique_ptr<jlm::rvsdg::type>> ArgumentTypes_;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> ResultTypes_;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> ArgumentTypes_;
 };
 
 /** \brief PointerType class
@@ -174,7 +174,7 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::type>
+  [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   static std::unique_ptr<PointerType>
@@ -221,7 +221,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   inline size_t
@@ -238,7 +238,7 @@ public:
 
 private:
   size_t nelements_;
-  std::unique_ptr<jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::type> type_;
 };
 
 static inline std::unique_ptr<jlm::rvsdg::type>
@@ -277,7 +277,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   inline const fpsize &
@@ -304,7 +304,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   virtual std::string
@@ -384,7 +384,7 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::type>
+  [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   [[nodiscard]] std::string
@@ -458,7 +458,7 @@ public:
   }
 
 private:
-  std::vector<std::unique_ptr<rvsdg::type>> Types_;
+  std::vector<std::shared_ptr<const rvsdg::type>> Types_;
 };
 
 /* vector type */
@@ -522,7 +522,7 @@ public:
 
 private:
   size_t size_;
-  std::unique_ptr<jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::type> type_;
 };
 
 class fixedvectortype final : public vectortype
@@ -537,7 +537,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   virtual std::string
@@ -556,7 +556,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   virtual std::string
@@ -578,7 +578,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   virtual std::string
@@ -618,7 +618,7 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::unique_ptr<jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
   static std::unique_ptr<MemoryStateType>

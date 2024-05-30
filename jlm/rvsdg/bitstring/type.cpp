@@ -28,10 +28,10 @@ bittype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type != nullptr && this->nbits() == type->nbits();
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 bittype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new bittype(*this));
+  return std::make_shared<bittype>(nbits_);
 }
 
 const bittype bit1(1);

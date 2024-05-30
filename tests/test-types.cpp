@@ -25,10 +25,10 @@ valuetype::operator==(const rvsdg::type & other) const noexcept
   return dynamic_cast<const valuetype *>(&other) != nullptr;
 }
 
-std::unique_ptr<rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 valuetype::copy() const
 {
-  return std::unique_ptr<rvsdg::type>(new valuetype(*this));
+  return std::make_shared<valuetype>(*this);
 }
 
 /* statetype */
@@ -48,10 +48,10 @@ statetype::operator==(const rvsdg::type & other) const noexcept
   return dynamic_cast<const statetype *>(&other) != nullptr;
 }
 
-std::unique_ptr<rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 statetype::copy() const
 {
-  return std::unique_ptr<rvsdg::type>(new statetype(*this));
+  return std::make_shared<statetype>(*this);
 }
 
 }

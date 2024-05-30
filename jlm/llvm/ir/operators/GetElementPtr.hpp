@@ -161,7 +161,7 @@ private:
     return ports;
   }
 
-  std::unique_ptr<rvsdg::type> PointeeType_;
+  std::shared_ptr<const rvsdg::type> PointeeType_;
 };
 
 }

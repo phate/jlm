@@ -26,7 +26,7 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 };
 
@@ -45,7 +45,7 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 };
 

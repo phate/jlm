@@ -39,7 +39,7 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
 private:
