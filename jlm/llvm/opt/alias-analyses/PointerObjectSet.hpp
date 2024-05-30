@@ -755,6 +755,16 @@ public:
      * The number of items that were popped from the worklist before the solution converged.
      */
     size_t NumWorkItemsPopped{};
+
+    /**
+     * The number of cycles detected by online cycle detection, if enabled.
+     */
+    std::optional<size_t> NumOnlineCyclesDetected;
+
+    /**
+     * The number of unifications made by online cycle detection, if enabled.
+     */
+    std::optional<size_t> NumOnlineCycleUnifications;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -867,10 +877,13 @@ public:
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
+   * @param policy the worklist iteration order policy to use
+   * @param enableOnlineCycleDetection if true, online cycle detection will be performed, from
+   *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
-  SolveUsingWorklist(WorklistSolverPolicy policy);
+  SolveUsingWorklist(WorklistSolverPolicy policy, bool enableOnlineCycleDetection);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -911,10 +924,11 @@ private:
   /**
    * The worklist solver, with configuration passed at compile time as templates.
    * @param statistics the WorklistStatistics instance that will get information about this run.
-   * @tparam worklist a type supporting the worklist interface with PointerObjectIndex as work items
+   * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
+   * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist>
+  template<typename Worklist, bool EnableOnlineCycleDetection>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 

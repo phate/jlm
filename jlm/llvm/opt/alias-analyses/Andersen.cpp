@@ -65,6 +65,10 @@ Andersen::Configuration::DefaultConfiguration()
     else if (option == CONFIG_WL_POLICY_LIFO)
       config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
 
+    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_ON)
+      config.EnableOnlineCycleDetection(true);
+    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
+      config.EnableOnlineCycleDetection(false);
     else
     {
       std::cerr << "Unknown config option string: '" << option << "'" << std::endl;
@@ -96,6 +100,8 @@ class Andersen::Statistics final : public util::Statistics
 
   inline static const char * WorklistPolicy_ = "WorklistPolicy";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
+  inline static const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  inline static const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
@@ -215,6 +221,12 @@ public:
 
     // How many work items were popped from the worklist in total
     AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
+
+    if (statistics.NumOnlineCyclesDetected)
+      AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
+
+    if (statistics.NumOnlineCycleUnifications)
+      AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
   }
 
   void
@@ -944,7 +956,9 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    auto worklistStatistics = Constraints_->SolveUsingWorklist(config.GetWorklistSoliverPolicy());
+    auto worklistStatistics = Constraints_->SolveUsingWorklist(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
