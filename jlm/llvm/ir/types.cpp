@@ -347,4 +347,12 @@ MemoryStateType::copy() const
   return std::make_shared<MemoryStateType>(*this);
 }
 
+std::shared_ptr<const MemoryStateType>
+MemoryStateType::Create()
+{
+  static const std::shared_ptr<const MemoryStateType> instance =
+      std::make_shared<MemoryStateType>();
+  return instance;
+}
+
 }

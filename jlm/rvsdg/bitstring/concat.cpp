@@ -245,7 +245,7 @@ static void __attribute__((constructor)) register_node_normal_form(void)
       get_default_normal_form);
 }
 
-bittype
+std::shared_ptr<const jlm::rvsdg::type>
 bitconcat_op::aggregate_arguments(const std::vector<bittype> & types) noexcept
 {
   size_t total = 0;
@@ -253,17 +253,17 @@ bitconcat_op::aggregate_arguments(const std::vector<bittype> & types) noexcept
   {
     total += t.nbits();
   }
-  return bittype(total);
+  return std::make_shared<bittype>(total);
 }
 
-std::vector<jlm::rvsdg::port>
-bitconcat_op::to_ports(const std::vector<bittype> & types)
+std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+bitconcat_op::to_typeptrs(const std::vector<bittype> & types)
 {
-  std::vector<jlm::rvsdg::port> ports;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> result;
   for (const auto & type : types)
-    ports.push_back({ type });
+    result.push_back({ type.copy() });
 
-  return ports;
+  return result;
 }
 
 bitconcat_op::~bitconcat_op() noexcept

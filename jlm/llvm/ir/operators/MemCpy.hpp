@@ -24,25 +24,25 @@ class MemCpyOperation : public rvsdg::simple_op
 {
 protected:
   MemCpyOperation(
-      const std::vector<rvsdg::port> & operandPorts,
-      const std::vector<rvsdg::port> & resultPorts)
-      : simple_op(operandPorts, resultPorts)
+      const std::vector<std::shared_ptr<const rvsdg::type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::type>> & resultTypes)
+      : simple_op(operandTypes, resultTypes)
   {
-    JLM_ASSERT(operandPorts.size() >= 4);
+    JLM_ASSERT(operandTypes.size() >= 4);
 
-    auto & dstAddressType = operandPorts[0].type();
+    const auto & dstAddressType = *operandTypes[0];
     JLM_ASSERT(is<PointerType>(dstAddressType));
 
-    auto & srcAddressType = operandPorts[1].type();
+    const auto & srcAddressType = *operandTypes[1];
     JLM_ASSERT(is<PointerType>(srcAddressType));
 
-    auto & lengthType = operandPorts[2].type();
+    const auto & lengthType = *operandTypes[2];
     if (lengthType != rvsdg::bit32 && lengthType != rvsdg::bit64)
     {
       throw util::error("Expected 32 bit or 64 bit integer type.");
     }
 
-    auto & memoryStateType = operandPorts.back().type();
+    const auto & memoryStateType = *operandTypes.back();
     if (!is<MemoryStateType>(memoryStateType))
     {
       throw util::error("Number of memory states cannot be zero.");
@@ -74,8 +74,8 @@ public:
 
   MemCpyNonVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-          CreateOperandPorts(lengthType, numMemoryStates),
-          CreateResultPorts(numMemoryStates))
+          CreateOperandTypes(lengthType, numMemoryStates),
+          CreateResultTypes(numMemoryStates))
   {}
 
   bool
@@ -119,19 +119,23 @@ public:
   }
 
 private:
-  static std::vector<rvsdg::port>
-  CreateOperandPorts(const rvsdg::type & length, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateOperandTypes(const rvsdg::type & length, size_t numMemoryStates)
   {
     PointerType pointerType;
-    std::vector<rvsdg::port> ports = { pointerType, pointerType, length };
-    ports.insert(ports.end(), numMemoryStates, { MemoryStateType::Create() });
-    return ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType.copy(),
+                                                              pointerType.copy(),
+                                                              length.copy() };
+    types.insert(types.end(), numMemoryStates, { MemoryStateType::Create() });
+    return types;
   }
 
-  static std::vector<rvsdg::port>
-  CreateResultPorts(size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateResultTypes(size_t numMemoryStates)
   {
-    return std::vector<rvsdg::port>(numMemoryStates, { MemoryStateType::Create() });
+    return std::vector<std::shared_ptr<const rvsdg::type>>(
+        numMemoryStates,
+        { MemoryStateType::Create() });
   }
 };
 
@@ -153,8 +157,8 @@ public:
 
   MemCpyVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-          CreateOperandPorts(lengthType, numMemoryStates),
-          CreateResultPorts(numMemoryStates))
+          CreateOperandTypes(lengthType, numMemoryStates),
+          CreateResultTypes(numMemoryStates))
   {}
 
   bool
@@ -200,21 +204,24 @@ public:
   }
 
 private:
-  static std::vector<rvsdg::port>
-  CreateOperandPorts(const rvsdg::type & lengthType, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateOperandTypes(const rvsdg::type & lengthType, size_t numMemoryStates)
   {
     PointerType pointerType;
-    std::vector<rvsdg::port> ports = { pointerType, pointerType, lengthType, iostatetype() };
-    ports.insert(ports.end(), numMemoryStates, { MemoryStateType() });
-    return ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType.copy(),
+                                                              pointerType.copy(),
+                                                              lengthType.copy(),
+                                                              iostatetype().copy() };
+    types.insert(types.end(), numMemoryStates, { MemoryStateType::Create() });
+    return types;
   }
 
-  static std::vector<rvsdg::port>
-  CreateResultPorts(size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<rvsdg::port> ports(1, iostatetype());
-    ports.insert(ports.end(), numMemoryStates, { MemoryStateType() });
-    return ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> types(1, iostatetype().copy());
+    types.insert(types.end(), numMemoryStates, { MemoryStateType::Create() });
+    return types;
   }
 };
 

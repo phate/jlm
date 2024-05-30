@@ -26,7 +26,7 @@ public:
   virtual ~nullary_op() noexcept;
 
   inline nullary_op(const jlm::rvsdg::port & result)
-      : simple_op({}, { result })
+      : simple_op(std::vector<std::shared_ptr<const rvsdg::type>>{}, { result.type().copy() })
   {}
 };
 

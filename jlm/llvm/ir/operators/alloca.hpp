@@ -27,7 +27,7 @@ public:
       const rvsdg::valuetype & allocatedType,
       const rvsdg::bittype & btype,
       size_t alignment)
-      : simple_op({ btype }, { PointerType(), { MemoryStateType::Create() } }),
+      : simple_op({ btype.copy() }, { PointerType().copy(), { MemoryStateType::Create() } }),
         alignment_(alignment),
         AllocatedType_(allocatedType.copy())
   {}

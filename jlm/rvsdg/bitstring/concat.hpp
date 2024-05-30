@@ -22,7 +22,7 @@ public:
   virtual ~bitconcat_op() noexcept;
 
   explicit inline bitconcat_op(const std::vector<bittype> & types)
-      : binary_op(to_ports(types), { aggregate_arguments(types) })
+      : binary_op(to_typeptrs(types), { aggregate_arguments(types) })
   {}
 
   virtual bool
@@ -48,11 +48,11 @@ public:
   copy() const override;
 
 private:
-  static bittype
+  static std::shared_ptr<const jlm::rvsdg::type>
   aggregate_arguments(const std::vector<bittype> & types) noexcept;
 
-  static std::vector<jlm::rvsdg::port>
-  to_ports(const std::vector<bittype> & types);
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  to_typeptrs(const std::vector<bittype> & types);
 };
 
 jlm::rvsdg::output *

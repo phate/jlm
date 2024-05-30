@@ -60,7 +60,7 @@ public:
   virtual ~unary_op() noexcept;
 
   inline unary_op(const jlm::rvsdg::port & operand, const jlm::rvsdg::port & result)
-      : simple_op({ operand }, { result })
+      : simple_op({ operand.type().copy() }, { result.type().copy() })
   {}
 
   virtual unop_reduction_path_t

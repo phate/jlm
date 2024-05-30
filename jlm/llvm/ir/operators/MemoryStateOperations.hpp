@@ -19,14 +19,14 @@ class MemStateOperator : public jlm::rvsdg::simple_op
 {
 public:
   MemStateOperator(size_t noperands, size_t nresults)
-      : simple_op(create_portvector(noperands), create_portvector(nresults))
+      : simple_op(create_typevector(noperands), create_typevector(nresults))
   {}
 
 private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t size)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  create_typevector(size_t size)
   {
-    return { size, jlm::rvsdg::port(MemoryStateType::Create()) };
+    return { size, MemoryStateType::Create() };
   }
 };
 

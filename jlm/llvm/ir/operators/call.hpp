@@ -24,7 +24,7 @@ public:
   ~CallOperation() override;
 
   explicit CallOperation(const FunctionType & functionType)
-      : simple_op(create_srcports(functionType), create_dstports(functionType)),
+      : simple_op(create_srctypes(functionType), create_dsttypes(functionType)),
         FunctionType_(functionType)
   {}
 
@@ -58,24 +58,24 @@ public:
   }
 
 private:
-  static inline std::vector<jlm::rvsdg::port>
-  create_srcports(const FunctionType & functionType)
+  static inline std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  create_srctypes(const FunctionType & functionType)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { PointerType() });
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, { PointerType().copy() });
     for (auto & argumentType : functionType.Arguments())
-      ports.emplace_back(argumentType);
+      types.emplace_back(argumentType.copy());
 
-    return ports;
+    return types;
   }
 
-  static inline std::vector<jlm::rvsdg::port>
-  create_dstports(const FunctionType & functionType)
+  static inline std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  create_dsttypes(const FunctionType & functionType)
   {
-    std::vector<jlm::rvsdg::port> ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types;
     for (auto & resultType : functionType.Results())
-      ports.emplace_back(resultType);
+      types.emplace_back(resultType.copy());
 
-    return ports;
+    return types;
   }
 
   static void

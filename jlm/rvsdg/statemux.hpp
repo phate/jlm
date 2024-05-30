@@ -67,8 +67,8 @@ public:
 
   inline mux_op(const statetype & type, size_t narguments, size_t nresults)
       : simple_op(
-          std::vector<jlm::rvsdg::port>(narguments, { type }),
-          std::vector<jlm::rvsdg::port>(nresults, { type }))
+          std::vector<std::shared_ptr<const jlm::rvsdg::type>>(narguments, { type.copy() }),
+          std::vector<std::shared_ptr<const jlm::rvsdg::type>>(nresults, { type.copy() }))
   {}
 
   virtual bool

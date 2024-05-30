@@ -112,10 +112,10 @@ public:
   virtual ~simple_op();
 
   inline simple_op(
-      const std::vector<jlm::rvsdg::port> & operands,
-      const std::vector<jlm::rvsdg::port> & results)
-      : results_(results),
-        operands_(operands)
+      const std::vector<std::shared_ptr<const jlm::rvsdg::type>> & operands,
+      const std::vector<std::shared_ptr<const jlm::rvsdg::type>> & results)
+      : results_(results.begin(), results.end()),
+        operands_(operands.begin(), results.end())
   {}
 
   size_t

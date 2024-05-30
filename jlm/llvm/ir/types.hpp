@@ -621,11 +621,8 @@ public:
   std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
-  static std::unique_ptr<MemoryStateType>
-  Create()
-  {
-    return std::make_unique<MemoryStateType>();
-  }
+  static std::shared_ptr<const MemoryStateType>
+  Create();
 };
 
 template<class ELEMENTYPE>

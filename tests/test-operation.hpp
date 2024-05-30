@@ -90,7 +90,7 @@ public:
       const rvsdg::port & srcport,
       const rvsdg::port & dstport,
       const enum rvsdg::binary_op::flags & flags) noexcept
-      : rvsdg::binary_op({ srcport, srcport }, { dstport }),
+      : rvsdg::binary_op({ srcport.type().copy(), srcport.type().copy() }, { dstport.type().copy() }),
         flags_(flags)
   {}
 
@@ -183,7 +183,7 @@ public:
   inline test_op(
       const std::vector<const rvsdg::type *> & arguments,
       const std::vector<const rvsdg::type *> & results)
-      : simple_op(create_ports(arguments), create_ports(results))
+      : simple_op(create_types(arguments), create_types(results))
   {}
 
   test_op(const test_op &) = default;
@@ -223,14 +223,14 @@ public:
   }
 
 private:
-  static inline std::vector<rvsdg::port>
-  create_ports(const std::vector<const rvsdg::type *> & types)
+  static inline std::vector<std::shared_ptr<const rvsdg::type>>
+  create_types(const std::vector<const rvsdg::type *> & types)
   {
-    std::vector<rvsdg::port> ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> result;
     for (const auto & type : types)
-      ports.push_back({ *type });
+      result.push_back({ type->copy() });
 
-    return ports;
+    return result;
   }
 };
 
