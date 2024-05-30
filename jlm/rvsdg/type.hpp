@@ -32,7 +32,7 @@ public:
     return !(*this == other);
   }
 
-  virtual std::unique_ptr<type>
+  virtual std::shared_ptr<const type>
   copy() const = 0;
 
   virtual std::string

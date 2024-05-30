@@ -67,7 +67,7 @@ public:
 
 private:
   std::string name_;
-  std::unique_ptr<jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::type> type_;
 };
 
 template<class T>

@@ -41,10 +41,10 @@ ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->nalternatives_ == nalternatives_;
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 ctltype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new ctltype(*this));
+  return std::make_shared<ctltype>(*this);
 }
 
 const ctltype ctl2(2);

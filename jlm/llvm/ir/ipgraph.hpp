@@ -383,7 +383,7 @@ public:
   [[nodiscard]] const jlm::rvsdg::valuetype &
   GetValueType() const noexcept
   {
-    return *jlm::util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
+    return *jlm::util::AssertedCast<const jlm::rvsdg::valuetype>(ValueType_.get());
   }
 
   const std::string &
@@ -446,7 +446,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::unique_ptr<jlm::rvsdg::type> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::type> ValueType_;
   std::unique_ptr<data_node_init> init_;
 };
 

@@ -33,37 +33,17 @@ public:
 
   port(const jlm::rvsdg::type & type);
 
-  port(std::unique_ptr<jlm::rvsdg::type> type);
+  port(std::shared_ptr<const jlm::rvsdg::type> type);
 
-  inline port(const port & other)
-      : type_(other.type_->copy())
-  {}
+  port(const port & other) = default;
 
-  inline port(port && other)
-      : type_(std::move(other.type_))
-  {}
+  port(port && other) = default;
 
-  inline port &
-  operator=(const port & other)
-  {
-    if (&other == this)
-      return *this;
+  port &
+  operator=(const port & other) = default;
 
-    type_ = other.type_->copy();
-
-    return *this;
-  }
-
-  inline port &
-  operator=(port && other)
-  {
-    if (&other == this)
-      return *this;
-
-    type_ = std::move(other.type_);
-
-    return *this;
-  }
+  port &
+  operator=(port && other) = default;
 
   virtual bool
   operator==(const port &) const noexcept;
@@ -84,7 +64,7 @@ public:
   copy() const;
 
 private:
-  std::unique_ptr<jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::type> type_;
 };
 
 /* operation */

@@ -1366,7 +1366,7 @@ class valist_op final : public jlm::rvsdg::simple_op
 public:
   virtual ~valist_op();
 
-  inline valist_op(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)
+  explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::type>> types)
       : simple_op(create_srcports(std::move(types)), { varargtype() })
   {}
 
@@ -1390,7 +1390,7 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const std::vector<const variable *> & arguments)
   {
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> operands;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands;
     for (const auto & argument : arguments)
       operands.push_back(argument->type().copy());
 
@@ -1401,7 +1401,7 @@ public:
   static rvsdg::output *
   Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
   {
-    std::vector<std::unique_ptr<rvsdg::type>> operandTypes;
+    std::vector<std::shared_ptr<const rvsdg::type>> operandTypes;
     operandTypes.reserve(operands.size());
     for (auto & operand : operands)
       operandTypes.emplace_back(operand->type().copy());
@@ -1412,11 +1412,11 @@ public:
 
 private:
   static inline std::vector<jlm::rvsdg::port>
-  create_srcports(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)
+  create_srcports(std::vector<std::shared_ptr<const jlm::rvsdg::type>> types)
   {
     std::vector<jlm::rvsdg::port> ports;
     for (const auto & type : types)
-      ports.push_back(jlm::rvsdg::port(*type));
+      ports.push_back(jlm::rvsdg::port(type));
 
     return ports;
   }
