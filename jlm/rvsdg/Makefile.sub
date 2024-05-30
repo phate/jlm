@@ -36,6 +36,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/notifiers.hpp \
 	jlm/rvsdg/bitstring/constant.hpp \
 	jlm/rvsdg/bitstring/slice.hpp \
+	jlm/rvsdg/bitstring/arithmetic-impl.hpp \
 	jlm/rvsdg/bitstring/arithmetic.hpp \
 	jlm/rvsdg/bitstring/type.hpp \
 	jlm/rvsdg/bitstring/value-representation.hpp \
