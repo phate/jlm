@@ -120,7 +120,7 @@ public:
  *
  * The operation has no equivalent LLVM instruction.
  *
- * @see LambdaExitMemStateOperator
+ * @see LambdaExitMemoryStateMergeOperation
  */
 class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 {
@@ -149,32 +149,39 @@ public:
   }
 };
 
-/** \brief LambdaExitMemStateOperator class
+/**
+ * A lambda exit memory state merge operation takes multiple states as input and merges them
+ * together to a single output state. In contrast to the MemoryStateMergeOperation, this operation
+ * is allowed to have zero input states. The operation's output is required to be connected to the
+ * memory state result of a lambda.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see LambdaEntryMemoryStateMergeOperation
  */
-class LambdaExitMemStateOperator final : public MemoryStateOperation
+class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~LambdaExitMemStateOperator() override;
+  ~LambdaExitMemoryStateMergeOperation() override;
 
-public:
-  explicit LambdaExitMemStateOperator(size_t noperands)
-      : MemoryStateOperation(noperands, 1)
+  explicit LambdaExitMemoryStateMergeOperation(size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
+  static rvsdg::output &
+  Create(rvsdg::region & region, const std::vector<jlm::rvsdg::output *> & operands)
   {
-    LambdaExitMemStateOperator op(operands.size());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
+    LambdaExitMemoryStateMergeOperation operation(operands.size());
+    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
   }
 };
 

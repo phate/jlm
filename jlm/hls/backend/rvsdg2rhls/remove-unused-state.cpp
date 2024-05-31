@@ -46,7 +46,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
   {
     if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const llvm::LambdaExitMemStateOperator *>(&node->operation()))
+      if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->operation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->ninputs(); ++i)
@@ -75,8 +75,8 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
         }
         else if (nv.size() != simplenode->ninputs())
         {
-          auto new_state = llvm::LambdaExitMemStateOperator::Create(region, nv);
-          simplenode->output(0)->divert_users(new_state);
+          auto & new_state = llvm::LambdaExitMemoryStateMergeOperation::Create(*region, nv);
+          simplenode->output(0)->divert_users(&new_state);
           remove(simplenode);
         }
       }

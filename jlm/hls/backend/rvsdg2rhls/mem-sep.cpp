@@ -149,9 +149,10 @@ mem_sep_independent(jlm::rvsdg::region * region)
   state_user->divert_to(entry_states.back());
   entry_states.pop_back();
   entry_states.push_back(state_result->origin());
-  auto merged_state = jlm::llvm::LambdaExitMemStateOperator::Create(lambda_region, entry_states);
+  auto & merged_state =
+      jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(*lambda_region, entry_states);
   entry_states.pop_back();
-  state_result->divert_to(merged_state);
+  state_result->divert_to(&merged_state);
   for (auto node : mem_nodes)
   {
     auto in_state = route_through(node->region(), entry_states.back());
@@ -293,9 +294,10 @@ mem_sep_argument(jlm::rvsdg::region * region)
   entry_states.pop_back();
   state_user->divert_to(common_edge);
   entry_states.push_back(state_result->origin());
-  auto merged_state = jlm::llvm::LambdaExitMemStateOperator::Create(lambda_region, entry_states);
+  auto & merged_state =
+      jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(*lambda_region, entry_states);
   entry_states.pop_back();
-  state_result->divert_to(merged_state);
+  state_result->divert_to(&merged_state);
   for (auto tp : port_nodes)
   {
     auto new_edge = entry_states.back();

@@ -844,8 +844,8 @@ MemoryStateEncoder::EncodeLambdaExit(const lambda::node & lambdaNode)
 
   auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
-  auto mergedState = LambdaExitMemStateOperator::Create(subregion, states);
-  memoryStateResult->divert_to(mergedState);
+  auto & mergedState = LambdaExitMemoryStateMergeOperation::Create(*subregion, states);
+  memoryStateResult->divert_to(&mergedState);
 
   stateMap.PopRegion(*lambdaNode.subregion());
 }

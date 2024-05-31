@@ -436,7 +436,7 @@ process_loops(jlm::rvsdg::output * state_edge)
         JLM_ASSERT(sn->noutputs() == 1);
         return sn->output(0);
       }
-      else if (dynamic_cast<const jlm::llvm::LambdaExitMemStateOperator *>(op))
+      else if (dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(op))
       {
         // end of lambda
         JLM_ASSERT(sn->noutputs() == 1);

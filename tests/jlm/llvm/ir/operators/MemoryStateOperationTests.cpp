@@ -84,8 +84,8 @@ LambdaExitMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  LambdaExitMemStateOperator operation1(2);
-  LambdaExitMemStateOperator operation2(4);
+  LambdaExitMemoryStateMergeOperation operation1(2);
+  LambdaExitMemoryStateMergeOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType, &memoryStateType }, { &memoryStateType });
 
   // Act & Assert

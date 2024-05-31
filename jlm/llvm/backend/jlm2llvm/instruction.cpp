@@ -973,7 +973,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const LambdaExitMemStateOperator &,
+    const LambdaExitMemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1089,7 +1089,8 @@ convert_operation(
             { typeid(MemoryStateSplitOperation), convert<MemoryStateSplitOperation> },
             { typeid(LambdaEntryMemoryStateSplitOperation),
               convert<LambdaEntryMemoryStateSplitOperation> },
-            { typeid(LambdaExitMemStateOperator), convert<LambdaExitMemStateOperator> },
+            { typeid(LambdaExitMemoryStateMergeOperation),
+              convert<LambdaExitMemoryStateMergeOperation> },
             { typeid(CallEntryMemStateOperator), convert<CallEntryMemStateOperator> },
             { typeid(CallExitMemStateOperator), convert<CallExitMemStateOperator> } });
   /* FIXME: AddrSpaceCast instruction is not supported */
