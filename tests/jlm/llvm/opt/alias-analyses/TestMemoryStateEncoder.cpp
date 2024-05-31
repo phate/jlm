@@ -525,13 +525,13 @@ ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
     auto callExitSplit = input_node(*test.CallF().output(2)->begin());
 
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 7));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
 
     callEntryMerge = jlm::rvsdg::node_output::node(test.CallG().input(4)->origin());
     callExitSplit = input_node(*test.CallG().output(2)->begin());
 
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 7));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
   }
 }
 
@@ -580,13 +580,13 @@ ValidateCallTest1SteensgaardRegionAware(const jlm::tests::CallTest1 & test)
     auto callExitSplit = input_node(*test.CallF().output(2)->begin());
 
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 2));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 2));
 
     callEntryMerge = jlm::rvsdg::node_output::node(test.CallG().input(4)->origin());
     callExitSplit = input_node(*test.CallG().output(2)->begin());
 
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
   }
 }
 
@@ -635,13 +635,13 @@ ValidateCallTest1SteensgaardAgnosticTopDown(const jlm::tests::CallTest1 & test)
     auto callExitSplit = input_node(*test.CallF().output(2)->begin());
 
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 7));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
 
     callEntryMerge = jlm::rvsdg::node_output::node(test.CallG().input(4)->origin());
     callExitSplit = input_node(*test.CallG().output(2)->begin());
 
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 7, 1));
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 7));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 7));
   }
 }
 
@@ -757,7 +757,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*call_exit_mux, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 3, 3));
@@ -778,7 +778,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*call_exit_mux, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 3));
@@ -787,7 +787,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
     assert(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     call_exit_mux = jlm::rvsdg::node_output::node(call_entry_mux->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*call_exit_mux, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 3));
@@ -814,7 +814,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 3, 3));
@@ -835,7 +835,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 1, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 3));
@@ -844,7 +844,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
     callExitSplit = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 3));
@@ -871,7 +871,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*call_exit_mux, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 3, 3));
@@ -892,7 +892,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 5, 1));
 
     auto call_exit_mux = jlm::rvsdg::node_output::node(lambda_exit_mux->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*call_exit_mux, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 3));
@@ -901,7 +901,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<CallEntryMemoryStateMergeOperation>(*call_entry_mux, 5, 1));
 
     call_exit_mux = jlm::rvsdg::node_output::node(call_entry_mux->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*call_exit_mux, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*call_exit_mux, 1, 5));
 
     call = jlm::rvsdg::node_output::node(call_exit_mux->input(0)->origin());
     assert(is<CallOperation>(*call, 4, 3));
@@ -951,7 +951,7 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 13));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetIndirectCall().input(2)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 13, 1));
@@ -992,7 +992,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 6, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 6));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 6));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetIndirectCall().input(2)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 6, 1));
@@ -1009,7 +1009,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 6, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 6));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 6));
 
     auto callEntryMerge =
         jlm::rvsdg::node_output::node(test.GetCallIWithThree().input(3)->origin());
@@ -1046,7 +1046,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 6, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 6));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 6));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetCallIWithFour().input(3)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 6, 1));
@@ -1142,7 +1142,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 13));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetIndirectCall().input(2)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 13, 1));
@@ -1159,7 +1159,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 13));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
 
     auto callEntryMerge =
         jlm::rvsdg::node_output::node(test.GetCallIWithThree().input(3)->origin());
@@ -1196,7 +1196,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 12, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 13));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 13));
 
     auto callEntryMerge = jlm::rvsdg::node_output::node(test.GetCallIWithFour().input(3)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 13, 1));
@@ -1246,7 +1246,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<CallEntryMemoryStateMergeOperation>(*callXEntryMerge, 13, 1));
 
     auto callXExitSplit = input_node(*test.GetTestCallX().output(2)->begin());
-    assert(is<CallExitMemStateOperator>(*callXExitSplit, 1, 13));
+    assert(is<CallExitMemoryStateSplitOperation>(*callXExitSplit, 1, 13));
 
     jlm::rvsdg::node * undefNode = nullptr;
     for (auto & node : test.GetLambdaTest().subregion()->nodes)
@@ -1280,7 +1280,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<CallEntryMemoryStateMergeOperation>(*callXEntryMerge, 13, 1));
 
     auto callXExitSplit = input_node(*test.GetTest2CallX().output(2)->begin());
-    assert(is<CallExitMemStateOperator>(*callXExitSplit, 1, 13));
+    assert(is<CallExitMemoryStateSplitOperation>(*callXExitSplit, 1, 13));
 
     jlm::rvsdg::node * undefNode = nullptr;
     for (auto & node : test.GetLambdaTest2().subregion()->nodes)
@@ -1557,7 +1557,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
     assert(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit = input_node(*callF1->output(1)->begin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto lambdaExitMerge = input_node(*callExitSplit->output(0)->begin());
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
@@ -1783,7 +1783,7 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
     assert(is<CallOperation>(*callF1, 3, 2));
 
     auto callExitSplit = input_node(*callF1->output(1)->begin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 1));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
     auto lambdaExitMerge = input_node(*callExitSplit->output(0)->begin());
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
@@ -1945,7 +1945,7 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 3, 3));
@@ -2001,7 +2001,7 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
 
     auto callExitSplit = input_node(*callNode->output(2)->begin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 2));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 2));
 
     auto memcpyNode = jlm::rvsdg::node_output::node(callEntryMerge->input(0)->origin());
     assert(is<MemCpyNonVolatileOperation>(*memcpyNode, 7, 4));
@@ -2041,7 +2041,7 @@ ValidateMemcpyTestSteensgaardAgnosticTopDown(const jlm::tests::MemcpyTest & test
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto callExitSplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
-    assert(is<CallExitMemStateOperator>(*callExitSplit, 1, 5));
+    assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 5));
 
     auto call = jlm::rvsdg::node_output::node(callExitSplit->input(0)->origin());
     assert(is<CallOperation>(*call, 3, 3));

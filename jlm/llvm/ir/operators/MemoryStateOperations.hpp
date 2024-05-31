@@ -125,7 +125,7 @@ public:
 class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 {
 public:
-  ~LambdaEntryMemoryStateSplitOperation() override;
+  ~LambdaEntryMemoryStateSplitOperation() noexcept override;
 
   explicit LambdaEntryMemoryStateSplitOperation(size_t numResults)
       : MemoryStateOperation(1, numResults)
@@ -162,7 +162,7 @@ public:
 class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~LambdaExitMemoryStateMergeOperation() override;
+  ~LambdaExitMemoryStateMergeOperation() noexcept override;
 
   explicit LambdaExitMemoryStateMergeOperation(size_t numOperands)
       : MemoryStateOperation(numOperands, 1)
@@ -193,12 +193,12 @@ public:
  *
  * The operation has no equivalent LLVM instruction.
  *
- * @see CallExitMemStateOperator
+ * @see CallExitMemoryStateSplitOperation
  */
 class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~CallEntryMemoryStateMergeOperation() override;
+  ~CallEntryMemoryStateMergeOperation() noexcept override;
 
   explicit CallEntryMemoryStateMergeOperation(size_t numOperands)
       : MemoryStateOperation(numOperands, 1)
@@ -221,33 +221,40 @@ public:
   }
 };
 
-/** \brief CallExitMemStateOperator class
+/**
+ * A call exit memory state split operation takes a single input state and splits it into
+ * multiple output states. In contrast to the MemoryStateSplitOperation, this operation is allowed
+ * to have zero output states. The operation's input is required to be connected to the memory state
+ * result of a call.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see CallEntryMemoryStateMergeOperation
  */
-class CallExitMemStateOperator final : public MemoryStateOperation
+class CallExitMemoryStateSplitOperation final : public MemoryStateOperation
 {
 public:
-  ~CallExitMemStateOperator() override;
+  ~CallExitMemoryStateSplitOperation() noexcept override;
 
-public:
-  explicit CallExitMemStateOperator(size_t nresults)
-      : MemoryStateOperation(1, nresults)
+  explicit CallExitMemoryStateSplitOperation(size_t numResults)
+      : MemoryStateOperation(1, numResults)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::output *>
-  Create(jlm::rvsdg::output * output, size_t nresults)
+  static std::vector<rvsdg::output *>
+  Create(rvsdg::output & output, size_t numResults)
   {
-    auto region = output->region();
-    CallExitMemStateOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { output });
+    auto region = output.region();
+    CallExitMemoryStateSplitOperation operation(numResults);
+    return rvsdg::simple_node::create_normalized(region, operation, { &output });
   }
 };
 

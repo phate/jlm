@@ -993,7 +993,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const CallExitMemStateOperator &,
+    const CallExitMemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1093,7 +1093,8 @@ convert_operation(
               convert<LambdaExitMemoryStateMergeOperation> },
             { typeid(CallEntryMemoryStateMergeOperation),
               convert<CallEntryMemoryStateMergeOperation> },
-            { typeid(CallExitMemStateOperator), convert<CallExitMemStateOperator> } });
+            { typeid(CallExitMemoryStateSplitOperation),
+              convert<CallExitMemoryStateSplitOperation> } });
   /* FIXME: AddrSpaceCast instruction is not supported */
 
   JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

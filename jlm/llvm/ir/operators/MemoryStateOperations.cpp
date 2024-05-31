@@ -50,7 +50,7 @@ MemoryStateSplitOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new MemoryStateSplitOperation(*this));
 }
 
-LambdaEntryMemoryStateSplitOperation::~LambdaEntryMemoryStateSplitOperation() = default;
+LambdaEntryMemoryStateSplitOperation::~LambdaEntryMemoryStateSplitOperation() noexcept = default;
 
 bool
 LambdaEntryMemoryStateSplitOperation::operator==(const rvsdg::operation & other) const noexcept
@@ -71,7 +71,7 @@ LambdaEntryMemoryStateSplitOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new LambdaEntryMemoryStateSplitOperation(*this));
 }
 
-LambdaExitMemoryStateMergeOperation::~LambdaExitMemoryStateMergeOperation() = default;
+LambdaExitMemoryStateMergeOperation::~LambdaExitMemoryStateMergeOperation() noexcept = default;
 
 bool
 LambdaExitMemoryStateMergeOperation::operator==(const rvsdg::operation & other) const noexcept
@@ -92,7 +92,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new LambdaExitMemoryStateMergeOperation(*this));
 }
 
-CallEntryMemoryStateMergeOperation::~CallEntryMemoryStateMergeOperation() = default;
+CallEntryMemoryStateMergeOperation::~CallEntryMemoryStateMergeOperation() noexcept = default;
 
 bool
 CallEntryMemoryStateMergeOperation::operator==(const rvsdg::operation & other) const noexcept
@@ -113,27 +113,25 @@ CallEntryMemoryStateMergeOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new CallEntryMemoryStateMergeOperation(*this));
 }
 
-/* CallExitMemStateOperator class */
-
-CallExitMemStateOperator::~CallExitMemStateOperator() = default;
+CallExitMemoryStateSplitOperation::~CallExitMemoryStateSplitOperation() noexcept = default;
 
 bool
-CallExitMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
+CallExitMemoryStateSplitOperation::operator==(const rvsdg::operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const CallExitMemStateOperator *>(&other);
+  auto operation = dynamic_cast<const CallExitMemoryStateSplitOperation *>(&other);
   return operation && operation->nresults() == nresults();
 }
 
 std::string
-CallExitMemStateOperator::debug_string() const
+CallExitMemoryStateSplitOperation::debug_string() const
 {
-  return "CallExitMemState";
+  return "CallExitMemoryStateSplit";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
-CallExitMemStateOperator::copy() const
+std::unique_ptr<rvsdg::operation>
+CallExitMemoryStateSplitOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new CallExitMemStateOperator(*this));
+  return std::unique_ptr<rvsdg::operation>(new CallExitMemoryStateSplitOperation(*this));
 }
 
 }
