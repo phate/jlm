@@ -61,8 +61,8 @@ LambdaEntryMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  LambdaEntryMemStateOperator operation1(2);
-  LambdaEntryMemStateOperator operation2(4);
+  LambdaEntryMemoryStateSplitOperation operation1(2);
+  LambdaEntryMemoryStateSplitOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType }, { &memoryStateType, &memoryStateType });
 
   // Act & Assert

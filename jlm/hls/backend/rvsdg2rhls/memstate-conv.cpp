@@ -36,7 +36,7 @@ memstate_conv(jlm::rvsdg::region * region)
     }
     else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const llvm::LambdaEntryMemStateOperator *>(&simplenode->operation())
+      if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&simplenode->operation())
           || dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(&simplenode->operation()))
       {
         auto new_outs =

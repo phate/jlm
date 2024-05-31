@@ -143,7 +143,7 @@ mem_sep_independent(jlm::rvsdg::region * region)
   std::vector<jlm::rvsdg::simple_node *> mem_nodes;
   gather_mem_nodes(lambda_region, mem_nodes);
   auto entry_states =
-      jlm::llvm::LambdaEntryMemStateOperator::Create(state_arg, 1 + mem_nodes.size());
+      jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + mem_nodes.size());
   auto state_result = GetMemoryStateResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   state_user->divert_to(entry_states.back());
@@ -286,7 +286,7 @@ mem_sep_argument(jlm::rvsdg::region * region)
   port_load_store_decouple port_nodes;
   trace_pointer_arguments(lambda, port_nodes);
   auto entry_states =
-      jlm::llvm::LambdaEntryMemStateOperator::Create(state_arg, 1 + port_nodes.size());
+      jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
   auto state_result = GetMemoryStateResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();

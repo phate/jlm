@@ -112,33 +112,40 @@ public:
   }
 };
 
-/** \brief LambdaEntryMemStateOperator class
+/**
+ * A lambda entry memory state split operation takes a single input state and splits it into
+ * multiple output states. In contrast to the MemoryStateSplitOperation, this operation is allowed
+ * to have zero output states. The operation's input is required to be connected to the memory state
+ * argument of a lambda.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see LambdaExitMemStateOperator
  */
-class LambdaEntryMemStateOperator final : public MemoryStateOperation
+class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 {
 public:
-  ~LambdaEntryMemStateOperator() override;
+  ~LambdaEntryMemoryStateSplitOperation() override;
 
-public:
-  explicit LambdaEntryMemStateOperator(size_t nresults)
-      : MemoryStateOperation(1, nresults)
+  explicit LambdaEntryMemoryStateSplitOperation(size_t numResults)
+      : MemoryStateOperation(1, numResults)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   static std::vector<jlm::rvsdg::output *>
-  Create(jlm::rvsdg::output * output, size_t nresults)
+  Create(rvsdg::output & output, size_t numResults)
   {
-    auto region = output->region();
-    LambdaEntryMemStateOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { output });
+    auto region = output.region();
+    LambdaEntryMemoryStateSplitOperation operation(numResults);
+    return rvsdg::simple_node::create_normalized(region, operation, { &output });
   }
 };
 

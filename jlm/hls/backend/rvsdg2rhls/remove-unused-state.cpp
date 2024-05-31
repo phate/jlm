@@ -53,7 +53,8 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
         {
           if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(simplenode->input(i)->origin()))
           {
-            if (dynamic_cast<const llvm::LambdaEntryMemStateOperator *>(&so->node()->operation()))
+            if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
+                    &so->node()->operation()))
             {
               // skip things coming from entry
               continue;
@@ -66,8 +67,8 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
           // special case were no entry/exit operator is needed
           auto entry_node =
               dynamic_cast<jlm::rvsdg::node_output *>(simplenode->input(0)->origin())->node();
-          JLM_ASSERT(
-              dynamic_cast<const llvm::LambdaEntryMemStateOperator *>(&entry_node->operation()));
+          JLM_ASSERT(dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
+              &entry_node->operation()));
           simplenode->output(0)->divert_users(entry_node->input(0)->origin());
           remove(simplenode);
           remove(entry_node);
@@ -79,7 +80,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
           remove(simplenode);
         }
       }
-      else if (dynamic_cast<const llvm::LambdaEntryMemStateOperator *>(&node->operation()))
+      else if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&node->operation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
@@ -91,8 +92,9 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
         }
         if (nv.size() != simplenode->noutputs())
         {
-          auto new_states =
-              llvm::LambdaEntryMemStateOperator::Create(simplenode->input(0)->origin(), nv.size());
+          auto new_states = llvm::LambdaEntryMemoryStateSplitOperation::Create(
+              *simplenode->input(0)->origin(),
+              nv.size());
           for (size_t i = 0; i < nv.size(); ++i)
           {
             nv[i]->divert_users(new_states[i]);

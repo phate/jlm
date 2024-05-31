@@ -533,8 +533,8 @@ jlm::hls::mem_queue(jlm::rvsdg::region * region)
   auto entry_input = dynamic_cast<jlm::rvsdg::simple_input *>(state_user);
   JLM_ASSERT(entry_input);
   auto entry_node = entry_input->node();
-  JLM_ASSERT(
-      dynamic_cast<const jlm::llvm::LambdaEntryMemStateOperator *>(&entry_node->operation()));
+  JLM_ASSERT(dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
+      &entry_node->operation()));
   // for each state edge:
   //    for each outer loop (theta/loop in lambda region):
   //        split state edge before the loop

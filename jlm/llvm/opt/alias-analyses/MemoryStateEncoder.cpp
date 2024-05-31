@@ -806,7 +806,8 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 
   stateMap.PushRegion(*lambdaNode.subregion());
 
-  auto states = LambdaEntryMemStateOperator::Create(memoryStateArgument, memoryNodes.Size());
+  auto states =
+      LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, memoryNodes.Size());
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())
@@ -816,17 +817,18 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
   {
     // This additional MemoryStateMergeOperation node makes all other nodes in the function that
     // consume the memory state dependent on this node and therefore transitively on the
-    // LambdaEntryMemStateOperator. This ensures that the LambdaEntryMemStateOperator is always
-    // visited before all other memory state consuming nodes:
+    // LambdaEntryMemoryStateSplitOperation. This ensures that the
+    // LambdaEntryMemoryStateSplitOperation is always visited before all other memory state
+    // consuming nodes:
     //
     // ... := LAMBDA[f]
     //   [..., a1, ...]
-    //     o1, ..., ox := LambdaEntryMemStateOperator a1
-    //     oy = MemoryStateMergeOperation o1, ..., ox
+    //     o1, ..., ox := LambdaEntryMemoryStateSplit a1
+    //     oy = MemoryStateMerge o1, ..., ox
     //     ....
     //
-    // No other memory state consuming node aside from the LambdaEntryMemStateOperator should now
-    // consume a1.
+    // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
+    // should now consume a1.
     auto state = MemoryStateMergeOperation::Create(states);
     memoryStateArgumentUser->divert_to(state);
   }

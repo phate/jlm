@@ -963,7 +963,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const LambdaEntryMemStateOperator &,
+    const LambdaEntryMemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1087,7 +1087,8 @@ convert_operation(
             { typeid(zext_op), convert_cast<::llvm::Instruction::ZExt> },
             { typeid(MemoryStateMergeOperation), convert<MemoryStateMergeOperation> },
             { typeid(MemoryStateSplitOperation), convert<MemoryStateSplitOperation> },
-            { typeid(LambdaEntryMemStateOperator), convert<LambdaEntryMemStateOperator> },
+            { typeid(LambdaEntryMemoryStateSplitOperation),
+              convert<LambdaEntryMemoryStateSplitOperation> },
             { typeid(LambdaExitMemStateOperator), convert<LambdaExitMemStateOperator> },
             { typeid(CallEntryMemStateOperator), convert<CallEntryMemStateOperator> },
             { typeid(CallExitMemStateOperator), convert<CallExitMemStateOperator> } });

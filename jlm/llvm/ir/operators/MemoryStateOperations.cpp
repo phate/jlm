@@ -50,27 +50,25 @@ MemoryStateSplitOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new MemoryStateSplitOperation(*this));
 }
 
-/* LambdaEntryMemStateOperator class */
-
-LambdaEntryMemStateOperator::~LambdaEntryMemStateOperator() = default;
+LambdaEntryMemoryStateSplitOperation::~LambdaEntryMemoryStateSplitOperation() = default;
 
 bool
-LambdaEntryMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
+LambdaEntryMemoryStateSplitOperation::operator==(const rvsdg::operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const LambdaEntryMemStateOperator *>(&other);
+  auto operation = dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&other);
   return operation && operation->nresults() == nresults();
 }
 
 std::string
-LambdaEntryMemStateOperator::debug_string() const
+LambdaEntryMemoryStateSplitOperation::debug_string() const
 {
-  return "LambdaEntryMemState";
+  return "LambdaEntryMemoryStateSplit";
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
-LambdaEntryMemStateOperator::copy() const
+LambdaEntryMemoryStateSplitOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new LambdaEntryMemStateOperator(*this));
+  return std::unique_ptr<rvsdg::operation>(new LambdaEntryMemoryStateSplitOperation(*this));
 }
 
 /* LambdaExitMemStateOperator class */
