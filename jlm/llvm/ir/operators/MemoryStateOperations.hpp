@@ -18,7 +18,7 @@ namespace jlm::llvm
  */
 class MemoryStateOperation : public rvsdg::simple_op
 {
-public:
+protected:
   MemoryStateOperation(size_t numOperands, size_t numResults)
       : simple_op(CreatePorts(numOperands), CreatePorts(numResults))
   {}
@@ -31,45 +31,49 @@ private:
   }
 };
 
-/** \brief MemStateMerge operator
+/**
+ * A memory state merge operation takes multiple states as input and merges them together into a
+ * single output state.
+ *
+ * The operation has no equivalent LLVM instruction.
  */
-class MemStateMergeOperator final : public MemoryStateOperation
+class MemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~MemStateMergeOperator() override;
+  ~MemoryStateMergeOperation() noexcept override;
 
-  MemStateMergeOperator(size_t noperands)
-      : MemoryStateOperation(noperands, 1)
+  explicit MemoryStateMergeOperation(size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
   {}
 
-  virtual bool
+  bool
   operator==(const operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static jlm::rvsdg::output *
-  Create(const std::vector<jlm::rvsdg::output *> & operands)
+  static rvsdg::output *
+  Create(const std::vector<rvsdg::output *> & operands)
   {
     if (operands.empty())
-      throw jlm::util::error("Insufficient number of operands.");
+      throw util::error("Insufficient number of operands.");
 
-    MemStateMergeOperator op(operands.size());
+    MemoryStateMergeOperation operation(operands.size());
     auto region = operands.front()->region();
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
+    return rvsdg::simple_node::create_normalized(region, operation, operands)[0];
   }
 
   static std::unique_ptr<tac>
   Create(const std::vector<const variable *> & operands)
   {
     if (operands.empty())
-      throw jlm::util::error("Insufficient number of operands.");
+      throw util::error("Insufficient number of operands.");
 
-    MemStateMergeOperator op(operands.size());
-    return tac::create(op, operands);
+    MemoryStateMergeOperation operation(operands.size());
+    return tac::create(operation, operands);
   }
 };
 

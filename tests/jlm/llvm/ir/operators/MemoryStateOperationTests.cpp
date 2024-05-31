@@ -38,8 +38,8 @@ MemoryStateMergeEquality()
 
   // Arrange
   MemoryStateType memoryStateType;
-  MemStateMergeOperator operation1(2);
-  MemStateMergeOperator operation2(4);
+  MemoryStateMergeOperation operation1(2);
+  MemoryStateMergeOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType, &memoryStateType }, { &memoryStateType });
 
   // Act & Assert

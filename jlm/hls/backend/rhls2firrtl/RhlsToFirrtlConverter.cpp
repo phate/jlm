@@ -232,7 +232,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);
   }
-  else if (dynamic_cast<const llvm::MemStateMergeOperator *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&(node->operation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);

@@ -223,7 +223,7 @@ convert_alloca(jlm::rvsdg::region * region)
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
       auto mux_node = llvm::input_node(mux_in);
-      if (dynamic_cast<const llvm::MemStateMergeOperator *>(&mux_node->operation()))
+      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->operation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(mux_node->ninputs() == 2);

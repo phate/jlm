@@ -648,7 +648,8 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::simple_node & mallocNode)
   // is not just simply replaced and therefore "lost".
   auto memoryNodeStatePair = stateMap.GetState(*mallocNode.region(), mallocMemoryNode);
   auto mallocState = mallocNode.output(1);
-  auto mergedState = MemStateMergeOperator::Create({ mallocState, &memoryNodeStatePair->State() });
+  auto mergedState =
+      MemoryStateMergeOperation::Create({ mallocState, &memoryNodeStatePair->State() });
   memoryNodeStatePair->ReplaceState(*mergedState);
 }
 
@@ -813,7 +814,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 
   if (!states.empty())
   {
-    // This additional MemStateMergeOperator node makes all other nodes in the function that
+    // This additional MemoryStateMergeOperation node makes all other nodes in the function that
     // consume the memory state dependent on this node and therefore transitively on the
     // LambdaEntryMemStateOperator. This ensures that the LambdaEntryMemStateOperator is always
     // visited before all other memory state consuming nodes:
@@ -821,12 +822,12 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
     // ... := LAMBDA[f]
     //   [..., a1, ...]
     //     o1, ..., ox := LambdaEntryMemStateOperator a1
-    //     oy = MemStateMergeOperator o1, ..., ox
+    //     oy = MemoryStateMergeOperation o1, ..., ox
     //     ....
     //
     // No other memory state consuming node aside from the LambdaEntryMemStateOperator should now
     // consume a1.
-    auto state = MemStateMergeOperator::Create(states);
+    auto state = MemoryStateMergeOperation::Create(states);
     memoryStateArgumentUser->divert_to(state);
   }
 }

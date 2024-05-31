@@ -8,28 +8,25 @@
 namespace jlm::llvm
 {
 
-/* MemStateMerge operator */
-
-MemStateMergeOperator::~MemStateMergeOperator()
-{}
+MemoryStateMergeOperation::~MemoryStateMergeOperation() noexcept = default;
 
 bool
-MemStateMergeOperator::operator==(const rvsdg::operation & other) const noexcept
+MemoryStateMergeOperation::operator==(const rvsdg::operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const MemStateMergeOperator *>(&other);
+  auto operation = dynamic_cast<const MemoryStateMergeOperation *>(&other);
   return operation && operation->narguments() == narguments();
 }
 
 std::string
-MemStateMergeOperator::debug_string() const
+MemoryStateMergeOperation::debug_string() const
 {
-  return "MemStateMerge";
+  return "MemoryStateMerge";
 }
 
 std::unique_ptr<rvsdg::operation>
-MemStateMergeOperator::copy() const
+MemoryStateMergeOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new MemStateMergeOperator(*this));
+  return std::unique_ptr<rvsdg::operation>(new MemoryStateMergeOperation(*this));
 }
 
 /* MemStateSplit operator */

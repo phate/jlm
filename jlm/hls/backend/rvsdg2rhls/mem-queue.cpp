@@ -381,7 +381,7 @@ separate_load_edge(
       {
         JLM_ASSERT("Decoupled nodes not implemented yet");
       }
-      else if (dynamic_cast<const jlm::llvm::MemStateMergeOperator *>(op))
+      else if (dynamic_cast<const jlm::llvm::MemoryStateMergeOperation *>(op))
       {
         auto si_load_user = dynamic_cast<jlm::rvsdg::simple_input *>(addr_edge_user);
         if (si_load_user && si->node() == sn)
@@ -474,7 +474,7 @@ process_loops(jlm::rvsdg::output * state_edge)
       auto mem_edge = split_states[0];
       sti->divert_to(mem_edge);
       split_states[0] = mem_edge_after_loop;
-      state_edge = jlm::llvm::MemStateMergeOperator::Create(split_states);
+      state_edge = jlm::llvm::MemoryStateMergeOperation::Create(split_states);
       common_user->divert_to(state_edge);
       for (size_t i = 0; i < load_nodes.size(); ++i)
       {

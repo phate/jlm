@@ -655,7 +655,7 @@ ValidateCallTest2SteensgaardAgnostic(const jlm::tests::CallTest2 & test)
     assert(test.lambda_create->subregion()->nnodes() == 7);
 
     auto stateMerge = input_node(*test.malloc->output(1)->begin());
-    assert(is<MemStateMergeOperator>(*stateMerge, 2, 1));
+    assert(is<MemoryStateMergeOperation>(*stateMerge, 2, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(stateMerge->input(1)->origin());
     assert(is<LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
@@ -689,7 +689,7 @@ ValidateCallTest2SteensgaardRegionAware(const jlm::tests::CallTest2 & test)
     assert(test.lambda_create->subregion()->nnodes() == 7);
 
     auto stateMerge = input_node(*test.malloc->output(1)->begin());
-    assert(is<MemStateMergeOperator>(*stateMerge, 2, 1));
+    assert(is<MemoryStateMergeOperation>(*stateMerge, 2, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(stateMerge->input(1)->origin());
     assert(is<LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 1));
@@ -723,7 +723,7 @@ ValidateCallTest2SteensgaardAgnosticTopDown(const jlm::tests::CallTest2 & test)
     assert(test.lambda_create->subregion()->nnodes() == 7);
 
     auto stateMerge = input_node(*test.malloc->output(1)->begin());
-    assert(is<MemStateMergeOperator>(*stateMerge, 2, 1));
+    assert(is<MemoryStateMergeOperation>(*stateMerge, 2, 1));
 
     auto lambdaEntrySplit = jlm::rvsdg::node_output::node(stateMerge->input(1)->origin());
     assert(is<LambdaEntryMemStateOperator>(*lambdaEntrySplit, 1, 5));
