@@ -13,32 +13,33 @@
 namespace jlm::llvm
 {
 
-/* MemState operator */
-
-class MemStateOperator : public jlm::rvsdg::simple_op
+/**
+ * Abstract base class for all memory state operations.
+ */
+class MemoryStateOperation : public rvsdg::simple_op
 {
 public:
-  MemStateOperator(size_t noperands, size_t nresults)
-      : simple_op(create_portvector(noperands), create_portvector(nresults))
+  MemoryStateOperation(size_t numOperands, size_t numResults)
+      : simple_op(CreatePorts(numOperands), CreatePorts(numResults))
   {}
 
 private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t size)
+  static std::vector<rvsdg::port>
+  CreatePorts(size_t size)
   {
-    return { size, jlm::rvsdg::port(MemoryStateType::Create()) };
+    return { size, rvsdg::port(MemoryStateType()) };
   }
 };
 
 /** \brief MemStateMerge operator
  */
-class MemStateMergeOperator final : public MemStateOperator
+class MemStateMergeOperator final : public MemoryStateOperation
 {
 public:
   ~MemStateMergeOperator() override;
 
   MemStateMergeOperator(size_t noperands)
-      : MemStateOperator(noperands, 1)
+      : MemoryStateOperation(noperands, 1)
   {}
 
   virtual bool
@@ -74,13 +75,13 @@ public:
 
 /** \brief MemStateSplit operator
  */
-class MemStateSplitOperator final : public MemStateOperator
+class MemStateSplitOperator final : public MemoryStateOperation
 {
 public:
   ~MemStateSplitOperator() override;
 
   MemStateSplitOperator(size_t nresults)
-      : MemStateOperator(1, nresults)
+      : MemoryStateOperation(1, nresults)
   {}
 
   virtual bool
@@ -105,14 +106,14 @@ public:
 
 /** \brief LambdaEntryMemStateOperator class
  */
-class LambdaEntryMemStateOperator final : public MemStateOperator
+class LambdaEntryMemStateOperator final : public MemoryStateOperation
 {
 public:
   ~LambdaEntryMemStateOperator() override;
 
 public:
   explicit LambdaEntryMemStateOperator(size_t nresults)
-      : MemStateOperator(1, nresults)
+      : MemoryStateOperation(1, nresults)
   {}
 
   bool
@@ -135,14 +136,14 @@ public:
 
 /** \brief LambdaExitMemStateOperator class
  */
-class LambdaExitMemStateOperator final : public MemStateOperator
+class LambdaExitMemStateOperator final : public MemoryStateOperation
 {
 public:
   ~LambdaExitMemStateOperator() override;
 
 public:
   explicit LambdaExitMemStateOperator(size_t noperands)
-      : MemStateOperator(noperands, 1)
+      : MemoryStateOperation(noperands, 1)
   {}
 
   bool
@@ -164,14 +165,14 @@ public:
 
 /** \brief CallEntryMemStateOperator class
  */
-class CallEntryMemStateOperator final : public MemStateOperator
+class CallEntryMemStateOperator final : public MemoryStateOperation
 {
 public:
   ~CallEntryMemStateOperator() override;
 
 public:
   explicit CallEntryMemStateOperator(size_t noperands)
-      : MemStateOperator(noperands, 1)
+      : MemoryStateOperation(noperands, 1)
   {}
 
   bool
@@ -193,14 +194,14 @@ public:
 
 /** \brief CallExitMemStateOperator class
  */
-class CallExitMemStateOperator final : public MemStateOperator
+class CallExitMemStateOperator final : public MemoryStateOperation
 {
 public:
   ~CallExitMemStateOperator() override;
 
 public:
   explicit CallExitMemStateOperator(size_t nresults)
-      : MemStateOperator(1, nresults)
+      : MemoryStateOperation(1, nresults)
   {}
 
   bool

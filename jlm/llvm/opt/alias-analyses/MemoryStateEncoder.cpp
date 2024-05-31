@@ -599,7 +599,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
   {
     EncodeMemcpy(simpleNode);
   }
-  else if (is<MemStateOperator>(&simpleNode))
+  else if (is<MemoryStateOperation>(&simpleNode))
   {
     // Nothing needs to be done
   }
