@@ -29,28 +29,25 @@ MemoryStateMergeOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new MemoryStateMergeOperation(*this));
 }
 
-/* MemStateSplit operator */
-
-MemStateSplitOperator::~MemStateSplitOperator()
-{}
+MemoryStateSplitOperation::~MemoryStateSplitOperation() noexcept = default;
 
 bool
-MemStateSplitOperator::operator==(const rvsdg::operation & other) const noexcept
+MemoryStateSplitOperation::operator==(const rvsdg::operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const MemStateSplitOperator *>(&other);
+  auto operation = dynamic_cast<const MemoryStateSplitOperation *>(&other);
   return operation && operation->nresults() == nresults();
 }
 
 std::string
-MemStateSplitOperator::debug_string() const
+MemoryStateSplitOperation::debug_string() const
 {
-  return "MemStateSplit";
+  return "MemoryStateSplit";
 }
 
 std::unique_ptr<rvsdg::operation>
-MemStateSplitOperator::copy() const
+MemoryStateSplitOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new MemStateSplitOperator(*this));
+  return std::unique_ptr<rvsdg::operation>(new MemoryStateSplitOperation(*this));
 }
 
 /* LambdaEntryMemStateOperator class */

@@ -314,14 +314,15 @@ separate_load_edge(
         JLM_ASSERT(mem_edge->nusers() == 1);
         user = *mem_edge->begin();
         auto ui = dynamic_cast<jlm::rvsdg::simple_input *>(user);
-        if (ui && dynamic_cast<const jlm::llvm::MemStateSplitOperator *>(&ui->node()->operation()))
+        if (ui
+            && dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(&ui->node()->operation()))
         {
           auto msso =
-              dynamic_cast<const jlm::llvm::MemStateSplitOperator *>(&ui->node()->operation());
+              dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(&ui->node()->operation());
           // handle case where output of store is already connected to a MemStateSplit by adding an
           // output
           auto store_split =
-              jlm::llvm::MemStateSplitOperator::Create(mem_edge, msso->nresults() + 1);
+              jlm::llvm::MemoryStateSplitOperation::Create(*mem_edge, msso->nresults() + 1);
           for (size_t i = 0; i < msso->nresults(); ++i)
           {
             ui->node()->output(i)->divert_users(store_split[i]);
@@ -332,7 +333,7 @@ separate_load_edge(
         }
         else
         {
-          auto store_split = jlm::llvm::MemStateSplitOperator::Create(mem_edge, 2);
+          auto store_split = jlm::llvm::MemoryStateSplitOperation::Create(*mem_edge, 2);
           mem_edge = store_split[0];
           user->divert_to(mem_edge);
           store_dequeues.push_back(route_to_region((*load)->region(), store_split[1]));
@@ -469,7 +470,7 @@ process_loops(jlm::rvsdg::output * state_edge)
       visited.insert(mem_edge_after_loop);
       find_load_store(&*sti->arguments.begin(), load_nodes, store_nodes, visited);
       auto split_states =
-          jlm::llvm::MemStateSplitOperator::Create(sti->origin(), load_nodes.size() + 1);
+          jlm::llvm::MemoryStateSplitOperation::Create(*sti->origin(), load_nodes.size() + 1);
       // handle common edge
       auto mem_edge = split_states[0];
       sti->divert_to(mem_edge);

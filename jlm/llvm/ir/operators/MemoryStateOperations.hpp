@@ -32,7 +32,7 @@ private:
 };
 
 /**
- * A memory state merge operation takes multiple states as input and merges them together into a
+ * A memory state merge operation takes multiple states as input and merges them together to a
  * single output state.
  *
  * The operation has no equivalent LLVM instruction.
@@ -77,34 +77,38 @@ public:
   }
 };
 
-/** \brief MemStateSplit operator
+/**
+ * A memory state split operation takes a single input state and splits it into multiple output
+ * states.
+ *
+ * The operation has no equivalent LLVM instruction.
  */
-class MemStateSplitOperator final : public MemoryStateOperation
+class MemoryStateSplitOperation final : public MemoryStateOperation
 {
 public:
-  ~MemStateSplitOperator() override;
+  ~MemoryStateSplitOperation() noexcept override;
 
-  MemStateSplitOperator(size_t nresults)
-      : MemoryStateOperation(1, nresults)
+  explicit MemoryStateSplitOperation(size_t numResults)
+      : MemoryStateOperation(1, numResults)
   {}
 
-  virtual bool
+  bool
   operator==(const operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::output *>
-  Create(jlm::rvsdg::output * operand, size_t nresults)
+  static std::vector<rvsdg::output *>
+  Create(rvsdg::output & operand, size_t numResults)
   {
-    if (nresults == 0)
-      throw jlm::util::error("Insufficient number of results.");
+    if (numResults == 0)
+      throw util::error("Insufficient number of results.");
 
-    MemStateSplitOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand });
+    MemoryStateSplitOperation operation(numResults);
+    return rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand });
   }
 };
 

@@ -15,8 +15,8 @@ MemoryStateSplitEquality()
 
   // Arrange
   MemoryStateType memoryStateType;
-  MemStateSplitOperator operation1(2);
-  MemStateSplitOperator operation2(4);
+  MemoryStateSplitOperation operation1(2);
+  MemoryStateSplitOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType }, { &memoryStateType, &memoryStateType });
 
   // Act & Assert

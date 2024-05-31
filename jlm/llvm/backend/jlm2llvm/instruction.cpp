@@ -953,7 +953,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const MemStateSplitOperator &,
+    const MemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1086,7 +1086,7 @@ convert_operation(
             { typeid(uitofp_op), convert_cast<::llvm::Instruction::UIToFP> },
             { typeid(zext_op), convert_cast<::llvm::Instruction::ZExt> },
             { typeid(MemoryStateMergeOperation), convert<MemoryStateMergeOperation> },
-            { typeid(MemStateSplitOperator), convert<MemStateSplitOperator> },
+            { typeid(MemoryStateSplitOperation), convert<MemoryStateSplitOperation> },
             { typeid(LambdaEntryMemStateOperator), convert<LambdaEntryMemStateOperator> },
             { typeid(LambdaExitMemStateOperator), convert<LambdaExitMemStateOperator> },
             { typeid(CallEntryMemStateOperator), convert<CallEntryMemStateOperator> },
