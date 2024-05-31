@@ -107,8 +107,8 @@ CallEntryMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  CallEntryMemStateOperator operation1(2);
-  CallEntryMemStateOperator operation2(4);
+  CallEntryMemoryStateMergeOperation operation1(2);
+  CallEntryMemoryStateMergeOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType, &memoryStateType }, { &memoryStateType });
 
   // Act & Assert

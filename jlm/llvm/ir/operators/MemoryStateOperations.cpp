@@ -92,27 +92,25 @@ LambdaExitMemoryStateMergeOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new LambdaExitMemoryStateMergeOperation(*this));
 }
 
-/* CallEntryMemStateOperator class */
-
-CallEntryMemStateOperator::~CallEntryMemStateOperator() = default;
+CallEntryMemoryStateMergeOperation::~CallEntryMemoryStateMergeOperation() = default;
 
 bool
-CallEntryMemStateOperator::operator==(const jlm::rvsdg::operation & other) const noexcept
+CallEntryMemoryStateMergeOperation::operator==(const rvsdg::operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const CallEntryMemStateOperator *>(&other);
+  auto operation = dynamic_cast<const CallEntryMemoryStateMergeOperation *>(&other);
   return operation && operation->narguments() == narguments();
 }
 
 std::string
-CallEntryMemStateOperator::debug_string() const
+CallEntryMemoryStateMergeOperation::debug_string() const
 {
-  return "CallEntryMemState";
+  return "CallEntryMemoryStateMerge";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
-CallEntryMemStateOperator::copy() const
+std::unique_ptr<rvsdg::operation>
+CallEntryMemoryStateMergeOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new CallEntryMemStateOperator(*this));
+  return std::unique_ptr<rvsdg::operation>(new CallEntryMemoryStateMergeOperation(*this));
 }
 
 /* CallExitMemStateOperator class */

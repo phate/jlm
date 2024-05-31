@@ -185,32 +185,39 @@ public:
   }
 };
 
-/** \brief CallEntryMemStateOperator class
+/**
+ * A call entry memory state merge operation takes multiple states as input and merges them together
+ * to a single output state. In contrast to the MemoryStateMergeOperation, this operation is allowed
+ * to have zero input states. The operation's output is required to be connected to the memory state
+ * argument of a call.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see CallExitMemStateOperator
  */
-class CallEntryMemStateOperator final : public MemoryStateOperation
+class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~CallEntryMemStateOperator() override;
+  ~CallEntryMemoryStateMergeOperation() override;
 
-public:
-  explicit CallEntryMemStateOperator(size_t noperands)
-      : MemoryStateOperation(noperands, 1)
+  explicit CallEntryMemoryStateMergeOperation(size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
+  static rvsdg::output &
+  Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
   {
-    CallEntryMemStateOperator op(operands.size());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
+    CallEntryMemoryStateMergeOperation operation(operands.size());
+    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
   }
 };
 
