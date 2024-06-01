@@ -13,211 +13,248 @@
 namespace jlm::llvm
 {
 
-/* MemState operator */
-
-class MemStateOperator : public jlm::rvsdg::simple_op
+/**
+ * Abstract base class for all memory state operations.
+ */
+class MemoryStateOperation : public rvsdg::simple_op
 {
-public:
-  MemStateOperator(size_t noperands, size_t nresults)
-      : simple_op(create_portvector(noperands), create_portvector(nresults))
+protected:
+  MemoryStateOperation(size_t numOperands, size_t numResults)
+      : simple_op(CreatePorts(numOperands), CreatePorts(numResults))
   {}
 
 private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t size)
+  static std::vector<rvsdg::port>
+  CreatePorts(size_t size)
   {
-    return { size, jlm::rvsdg::port(MemoryStateType::Create()) };
+    return { size, rvsdg::port(MemoryStateType()) };
   }
 };
 
-/** \brief MemStateMerge operator
+/**
+ * A memory state merge operation takes multiple states as input and merges them together to a
+ * single output state.
+ *
+ * The operation has no equivalent LLVM instruction.
  */
-class MemStateMergeOperator final : public MemStateOperator
+class MemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~MemStateMergeOperator() override;
+  ~MemoryStateMergeOperation() noexcept override;
 
-  MemStateMergeOperator(size_t noperands)
-      : MemStateOperator(noperands, 1)
+  explicit MemoryStateMergeOperation(size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
   {}
 
-  virtual bool
+  bool
   operator==(const operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static jlm::rvsdg::output *
-  Create(const std::vector<jlm::rvsdg::output *> & operands)
+  static rvsdg::output *
+  Create(const std::vector<rvsdg::output *> & operands)
   {
     if (operands.empty())
-      throw jlm::util::error("Insufficient number of operands.");
+      throw util::error("Insufficient number of operands.");
 
-    MemStateMergeOperator op(operands.size());
+    MemoryStateMergeOperation operation(operands.size());
     auto region = operands.front()->region();
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
+    return rvsdg::simple_node::create_normalized(region, operation, operands)[0];
   }
 
   static std::unique_ptr<tac>
   Create(const std::vector<const variable *> & operands)
   {
     if (operands.empty())
-      throw jlm::util::error("Insufficient number of operands.");
+      throw util::error("Insufficient number of operands.");
 
-    MemStateMergeOperator op(operands.size());
-    return tac::create(op, operands);
+    MemoryStateMergeOperation operation(operands.size());
+    return tac::create(operation, operands);
   }
 };
 
-/** \brief MemStateSplit operator
+/**
+ * A memory state split operation takes a single input state and splits it into multiple output
+ * states.
+ *
+ * The operation has no equivalent LLVM instruction.
  */
-class MemStateSplitOperator final : public MemStateOperator
+class MemoryStateSplitOperation final : public MemoryStateOperation
 {
 public:
-  ~MemStateSplitOperator() override;
+  ~MemoryStateSplitOperation() noexcept override;
 
-  MemStateSplitOperator(size_t nresults)
-      : MemStateOperator(1, nresults)
+  explicit MemoryStateSplitOperation(size_t numResults)
+      : MemoryStateOperation(1, numResults)
   {}
 
-  virtual bool
+  bool
   operator==(const operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  copy() const override;
+
+  static std::vector<rvsdg::output *>
+  Create(rvsdg::output & operand, size_t numResults)
+  {
+    if (numResults == 0)
+      throw util::error("Insufficient number of results.");
+
+    MemoryStateSplitOperation operation(numResults);
+    return rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand });
+  }
+};
+
+/**
+ * A lambda entry memory state split operation takes a single input state and splits it into
+ * multiple output states. In contrast to the MemoryStateSplitOperation, this operation is allowed
+ * to have zero output states. The operation's input is required to be connected to the memory state
+ * argument of a lambda.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see LambdaExitMemoryStateMergeOperation
+ */
+class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
+{
+public:
+  ~LambdaEntryMemoryStateSplitOperation() noexcept override;
+
+  explicit LambdaEntryMemoryStateSplitOperation(size_t numResults)
+      : MemoryStateOperation(1, numResults)
+  {}
+
+  bool
+  operator==(const operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
   static std::vector<jlm::rvsdg::output *>
-  Create(jlm::rvsdg::output * operand, size_t nresults)
+  Create(rvsdg::output & output, size_t numResults)
   {
-    if (nresults == 0)
-      throw jlm::util::error("Insufficient number of results.");
-
-    MemStateSplitOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand });
+    auto region = output.region();
+    LambdaEntryMemoryStateSplitOperation operation(numResults);
+    return rvsdg::simple_node::create_normalized(region, operation, { &output });
   }
 };
 
-/** \brief LambdaEntryMemStateOperator class
+/**
+ * A lambda exit memory state merge operation takes multiple states as input and merges them
+ * together to a single output state. In contrast to the MemoryStateMergeOperation, this operation
+ * is allowed to have zero input states. The operation's output is required to be connected to the
+ * memory state result of a lambda.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see LambdaEntryMemoryStateMergeOperation
  */
-class LambdaEntryMemStateOperator final : public MemStateOperator
+class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~LambdaEntryMemStateOperator() override;
+  ~LambdaExitMemoryStateMergeOperation() noexcept override;
 
-public:
-  explicit LambdaEntryMemStateOperator(size_t nresults)
-      : MemStateOperator(1, nresults)
+  explicit LambdaExitMemoryStateMergeOperation(size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::output *>
-  Create(jlm::rvsdg::output * output, size_t nresults)
+  static rvsdg::output &
+  Create(rvsdg::region & region, const std::vector<jlm::rvsdg::output *> & operands)
   {
-    auto region = output->region();
-    LambdaEntryMemStateOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { output });
+    LambdaExitMemoryStateMergeOperation operation(operands.size());
+    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
   }
 };
 
-/** \brief LambdaExitMemStateOperator class
+/**
+ * A call entry memory state merge operation takes multiple states as input and merges them together
+ * to a single output state. In contrast to the MemoryStateMergeOperation, this operation is allowed
+ * to have zero input states. The operation's output is required to be connected to the memory state
+ * argument of a call.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see CallExitMemoryStateSplitOperation
  */
-class LambdaExitMemStateOperator final : public MemStateOperator
+class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 {
 public:
-  ~LambdaExitMemStateOperator() override;
+  ~CallEntryMemoryStateMergeOperation() noexcept override;
 
-public:
-  explicit LambdaExitMemStateOperator(size_t noperands)
-      : MemStateOperator(noperands, 1)
+  explicit CallEntryMemoryStateMergeOperation(size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
+  static rvsdg::output &
+  Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
   {
-    LambdaExitMemStateOperator op(operands.size());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
+    CallEntryMemoryStateMergeOperation operation(operands.size());
+    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
   }
 };
 
-/** \brief CallEntryMemStateOperator class
+/**
+ * A call exit memory state split operation takes a single input state and splits it into
+ * multiple output states. In contrast to the MemoryStateSplitOperation, this operation is allowed
+ * to have zero output states. The operation's input is required to be connected to the memory state
+ * result of a call.
+ *
+ * The operation has no equivalent LLVM instruction.
+ *
+ * @see CallEntryMemoryStateMergeOperation
  */
-class CallEntryMemStateOperator final : public MemStateOperator
+class CallExitMemoryStateSplitOperation final : public MemoryStateOperation
 {
 public:
-  ~CallEntryMemStateOperator() override;
+  ~CallExitMemoryStateSplitOperation() noexcept override;
 
-public:
-  explicit CallEntryMemStateOperator(size_t noperands)
-      : MemStateOperator(noperands, 1)
+  explicit CallExitMemoryStateSplitOperation(size_t numResults)
+      : MemoryStateOperation(1, numResults)
   {}
 
   bool
   operator==(const operation & other) const noexcept override;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
+  static std::vector<rvsdg::output *>
+  Create(rvsdg::output & output, size_t numResults)
   {
-    CallEntryMemStateOperator op(operands.size());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands)[0];
-  }
-};
-
-/** \brief CallExitMemStateOperator class
- */
-class CallExitMemStateOperator final : public MemStateOperator
-{
-public:
-  ~CallExitMemStateOperator() override;
-
-public:
-  explicit CallExitMemStateOperator(size_t nresults)
-      : MemStateOperator(1, nresults)
-  {}
-
-  bool
-  operator==(const operation & other) const noexcept override;
-
-  std::string
-  debug_string() const override;
-
-  std::unique_ptr<jlm::rvsdg::operation>
-  copy() const override;
-
-  static std::vector<jlm::rvsdg::output *>
-  Create(jlm::rvsdg::output * output, size_t nresults)
-  {
-    auto region = output->region();
-    CallExitMemStateOperator op(nresults);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { output });
+    auto region = output.region();
+    CallExitMemoryStateSplitOperation operation(numResults);
+    return rvsdg::simple_node::create_normalized(region, operation, { &output });
   }
 };
 

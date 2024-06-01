@@ -227,12 +227,12 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     int outSize = JlmSize(&node->output(0)->type());
     Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
   }
-  else if (dynamic_cast<const llvm::LambdaExitMemStateOperator *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&(node->operation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);
   }
-  else if (dynamic_cast<const llvm::MemStateMergeOperator *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&(node->operation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);

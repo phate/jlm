@@ -15,8 +15,8 @@ MemoryStateSplitEquality()
 
   // Arrange
   MemoryStateType memoryStateType;
-  MemStateSplitOperator operation1(2);
-  MemStateSplitOperator operation2(4);
+  MemoryStateSplitOperation operation1(2);
+  MemoryStateSplitOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType }, { &memoryStateType, &memoryStateType });
 
   // Act & Assert
@@ -38,8 +38,8 @@ MemoryStateMergeEquality()
 
   // Arrange
   MemoryStateType memoryStateType;
-  MemStateMergeOperator operation1(2);
-  MemStateMergeOperator operation2(4);
+  MemoryStateMergeOperation operation1(2);
+  MemoryStateMergeOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType, &memoryStateType }, { &memoryStateType });
 
   // Act & Assert
@@ -61,8 +61,8 @@ LambdaEntryMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  LambdaEntryMemStateOperator operation1(2);
-  LambdaEntryMemStateOperator operation2(4);
+  LambdaEntryMemoryStateSplitOperation operation1(2);
+  LambdaEntryMemoryStateSplitOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType }, { &memoryStateType, &memoryStateType });
 
   // Act & Assert
@@ -84,8 +84,8 @@ LambdaExitMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  LambdaExitMemStateOperator operation1(2);
-  LambdaExitMemStateOperator operation2(4);
+  LambdaExitMemoryStateMergeOperation operation1(2);
+  LambdaExitMemoryStateMergeOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType, &memoryStateType }, { &memoryStateType });
 
   // Act & Assert
@@ -107,8 +107,8 @@ CallEntryMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  CallEntryMemStateOperator operation1(2);
-  CallEntryMemStateOperator operation2(4);
+  CallEntryMemoryStateMergeOperation operation1(2);
+  CallEntryMemoryStateMergeOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType, &memoryStateType }, { &memoryStateType });
 
   // Act & Assert
@@ -130,8 +130,8 @@ CallExitMemStateOperatorEquality()
 
   // Arrange
   jlm::llvm::MemoryStateType memoryStateType;
-  CallExitMemStateOperator operation1(2);
-  CallExitMemStateOperator operation2(4);
+  CallExitMemoryStateSplitOperation operation1(2);
+  CallExitMemoryStateSplitOperation operation2(4);
   jlm::tests::test_op operation3({ &memoryStateType }, { &memoryStateType, &memoryStateType });
 
   // Act & Assert

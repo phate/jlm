@@ -943,7 +943,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const MemStateMergeOperator &,
+    const MemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -953,7 +953,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const MemStateSplitOperator &,
+    const MemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -963,7 +963,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const LambdaEntryMemStateOperator &,
+    const LambdaEntryMemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -973,7 +973,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const LambdaExitMemStateOperator &,
+    const LambdaExitMemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -983,7 +983,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const CallEntryMemStateOperator &,
+    const CallEntryMemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -993,7 +993,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const CallExitMemStateOperator &,
+    const CallExitMemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1085,12 +1085,16 @@ convert_operation(
             { typeid(trunc_op), convert_cast<::llvm::Instruction::Trunc> },
             { typeid(uitofp_op), convert_cast<::llvm::Instruction::UIToFP> },
             { typeid(zext_op), convert_cast<::llvm::Instruction::ZExt> },
-            { typeid(MemStateMergeOperator), convert<MemStateMergeOperator> },
-            { typeid(MemStateSplitOperator), convert<MemStateSplitOperator> },
-            { typeid(LambdaEntryMemStateOperator), convert<LambdaEntryMemStateOperator> },
-            { typeid(LambdaExitMemStateOperator), convert<LambdaExitMemStateOperator> },
-            { typeid(CallEntryMemStateOperator), convert<CallEntryMemStateOperator> },
-            { typeid(CallExitMemStateOperator), convert<CallExitMemStateOperator> } });
+            { typeid(MemoryStateMergeOperation), convert<MemoryStateMergeOperation> },
+            { typeid(MemoryStateSplitOperation), convert<MemoryStateSplitOperation> },
+            { typeid(LambdaEntryMemoryStateSplitOperation),
+              convert<LambdaEntryMemoryStateSplitOperation> },
+            { typeid(LambdaExitMemoryStateMergeOperation),
+              convert<LambdaExitMemoryStateMergeOperation> },
+            { typeid(CallEntryMemoryStateMergeOperation),
+              convert<CallEntryMemoryStateMergeOperation> },
+            { typeid(CallExitMemoryStateSplitOperation),
+              convert<CallExitMemoryStateSplitOperation> } });
   /* FIXME: AddrSpaceCast instruction is not supported */
 
   JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
