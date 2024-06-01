@@ -186,7 +186,7 @@ is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
     return false;
 
   auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
-  if (!is<MemStateMergeOperator>(memStateMergeNode))
+  if (!is<MemoryStateMergeOperation>(memStateMergeNode))
     return false;
 
   return true;
@@ -375,7 +375,7 @@ perform_load_mux_reduction(
       op.GetAlignment());
 
   std::vector<rvsdg::output *> states = { std::next(ld.begin()), ld.end() };
-  auto mx = MemStateMergeOperator::Create(states);
+  auto mx = MemoryStateMergeOperation::Create(states);
 
   return { ld[0], mx };
 }
@@ -551,7 +551,7 @@ perform_load_load_state_reduction(
     if (!states.empty())
     {
       states.push_back(ld[n + 1]);
-      ld[n + 1] = MemStateMergeOperator::Create(states);
+      ld[n + 1] = MemoryStateMergeOperation::Create(states);
     }
   }
 

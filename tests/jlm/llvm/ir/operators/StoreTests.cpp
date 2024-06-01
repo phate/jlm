@@ -225,7 +225,7 @@ TestStoreMuxReduction()
   auto s2 = graph.add_import({ mt, "s2" });
   auto s3 = graph.add_import({ mt, "s3" });
 
-  auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
+  auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto state = StoreNonVolatileNode::Create(a, v, { mux }, 4);
 
   auto ex = graph.add_export(state[0], { state[0]->type(), "s" });
@@ -242,7 +242,7 @@ TestStoreMuxReduction()
 
   // Assert
   auto muxnode = jlm::rvsdg::node_output::node(ex->origin());
-  assert(is<MemStateMergeOperator>(muxnode));
+  assert(is<MemoryStateMergeOperation>(muxnode));
   assert(muxnode->ninputs() == 3);
   auto n0 = jlm::rvsdg::node_output::node(muxnode->input(0)->origin());
   auto n1 = jlm::rvsdg::node_output::node(muxnode->input(1)->origin());
