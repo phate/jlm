@@ -3,13 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/gamma.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm
 {
@@ -49,44 +51,88 @@ InvariantValueRedirection::run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto & rvsdg = rvsdgModule.Rvsdg();
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
 
   statistics->Start();
-  RedirectInvariantValues(*rvsdg.root());
+  RedirectInRootRegion(rvsdgModule.Rvsdg());
   statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void
-InvariantValueRedirection::RedirectInvariantValues(jlm::rvsdg::region & region)
+InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
 {
-  for (auto node : jlm::rvsdg::topdown_traverser(&region))
+  for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
   {
-    if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node))
-      continue;
-
-    auto & structuralNode = *util::AssertedCast<jlm::rvsdg::structural_node>(node);
-    for (size_t n = 0; n < structuralNode.nsubregions(); n++)
-      RedirectInvariantValues(*structuralNode.subregion(n));
-
-    if (auto gammaNode = dynamic_cast<jlm::rvsdg::gamma_node *>(&structuralNode))
+    if (auto lambdaNode = dynamic_cast<lambda::node *>(node))
     {
-      RedirectInvariantGammaOutputs(*gammaNode);
-      continue;
+      RedirectInRegion(*lambdaNode->subregion());
     }
-
-    if (auto thetaNode = dynamic_cast<jlm::rvsdg::theta_node *>(&structuralNode))
+    else if (auto phiNode = dynamic_cast<phi::node *>(node))
     {
-      RedirectInvariantThetaOutputs(*thetaNode);
-      continue;
+      auto phiLambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
+      for (auto phiLambdaNode : phiLambdaNodes)
+      {
+        RedirectInRegion(*phiLambdaNode->subregion());
+      }
+    }
+    else if (is<delta::operation>(node))
+    {
+      // Nothing needs to be done.
+      // Delta nodes are irrelevant for invariant value redirection.
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled node type.");
     }
   }
 }
 
 void
-InvariantValueRedirection::RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node & gammaNode)
+InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
+{
+  auto isGammaNode = is<rvsdg::gamma_op>(region.node());
+  auto isThetaNode = is<rvsdg::theta_op>(region.node());
+  auto isLambdaNode = is<lambda::operation>(region.node());
+  JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
+
+  // We do not need a traverser here and can just iterate through all the nodes of a region as
+  // it is irrelevant in which order we handle the nodes.
+  for (auto & node : region.nodes)
+  {
+    if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&node))
+    {
+      // Ensure we redirect invariant values of all nodes in the gamma subregions first, otherwise
+      // we might not be able to redirect some of the gamma outputs.
+      RedirectInSubregions(*gammaNode);
+      RedirectGammaOutputs(*gammaNode);
+    }
+    else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&node))
+    {
+      // Ensure we redirect invariant values of all nodes in the theta subregion first, otherwise we
+      // might not be able to redirect some of the theta outputs.
+      RedirectInSubregions(*thetaNode);
+      RedirectThetaOutputs(*thetaNode);
+    }
+  }
+}
+
+void
+InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structuralNode)
+{
+  auto isGammaNode = is<rvsdg::gamma_op>(&structuralNode);
+  auto isThetaNode = is<rvsdg::theta_op>(&structuralNode);
+  JLM_ASSERT(isGammaNode || isThetaNode);
+
+  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+  {
+    RedirectInRegion(*structuralNode.subregion(n));
+  }
+}
+
+void
+InvariantValueRedirection::RedirectGammaOutputs(rvsdg::gamma_node & gammaNode)
 {
   for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
   {
@@ -101,16 +147,16 @@ InvariantValueRedirection::RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node 
 }
 
 void
-InvariantValueRedirection::RedirectInvariantThetaOutputs(jlm::rvsdg::theta_node & thetaNode)
+InvariantValueRedirection::RedirectThetaOutputs(rvsdg::theta_node & thetaNode)
 {
   for (const auto & thetaOutput : thetaNode)
   {
-    /* FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
-     * terminates.*/
+    // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
+    // terminates.
     if (rvsdg::is<iostatetype>(thetaOutput->type()))
       continue;
 
-    if (jlm::rvsdg::is_invariant(thetaOutput))
+    if (rvsdg::is_invariant(thetaOutput))
       thetaOutput->divert_users(thetaOutput->input()->origin());
   }
 }

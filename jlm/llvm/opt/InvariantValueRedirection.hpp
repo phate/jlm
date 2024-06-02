@@ -43,17 +43,23 @@ public:
   ~InvariantValueRedirection() override;
 
   void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
+  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   static void
-  RedirectInvariantValues(jlm::rvsdg::region & region);
+  RedirectInRootRegion(rvsdg::graph & rvsdg);
 
   static void
-  RedirectInvariantGammaOutputs(jlm::rvsdg::gamma_node & gammaNode);
+  RedirectInRegion(rvsdg::region & region);
 
   static void
-  RedirectInvariantThetaOutputs(jlm::rvsdg::theta_node & thetaNode);
+  RedirectInSubregions(rvsdg::structural_node & structuralNode);
+
+  static void
+  RedirectGammaOutputs(rvsdg::gamma_node & gammaNode);
+
+  static void
+  RedirectThetaOutputs(rvsdg::theta_node & thetaNode);
 };
 
 }
