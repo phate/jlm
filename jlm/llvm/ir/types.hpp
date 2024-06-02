@@ -177,11 +177,8 @@ public:
   [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
-  static std::unique_ptr<PointerType>
-  Create()
-  {
-    return std::make_unique<PointerType>();
-  }
+  static std::shared_ptr<const PointerType>
+  Create();
 };
 
 /* array type */
@@ -584,18 +581,8 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static std::unique_ptr<jlm::rvsdg::type>
-  create()
-  {
-    return std::make_unique<iostatetype>();
-  }
-
-  static const iostatetype &
-  instance() noexcept
-  {
-    static iostatetype iotype;
-    return iotype;
-  }
+  static std::shared_ptr<const iostatetype>
+  Create();
 };
 
 /** \brief Memory state type class
@@ -621,11 +608,8 @@ public:
   std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
-  static std::unique_ptr<MemoryStateType>
-  Create()
-  {
-    return std::make_unique<MemoryStateType>();
-  }
+  static std::shared_ptr<const MemoryStateType>
+  Create();
 };
 
 template<class ELEMENTYPE>

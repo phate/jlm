@@ -42,7 +42,7 @@ static std::unique_ptr<rvsdg::valuetype>
 convert_pointer_type(const ::llvm::Type * t, context &)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::PointerTyID);
-  return PointerType::Create();
+  return std::make_unique<PointerType>();
 }
 
 static std::unique_ptr<rvsdg::valuetype>
@@ -57,14 +57,14 @@ convert_function_type(const ::llvm::Type * t, context & ctx)
     argumentTypes.push_back(ConvertType(type->getParamType(n), ctx));
   if (type->isVarArg())
     argumentTypes.push_back(create_varargtype());
-  argumentTypes.push_back(iostatetype::create());
+  argumentTypes.push_back(iostatetype::Create());
   argumentTypes.push_back(MemoryStateType::Create());
 
   /* results */
   std::vector<std::shared_ptr<const rvsdg::type>> resultTypes;
   if (type->getReturnType()->getTypeID() != ::llvm::Type::VoidTyID)
     resultTypes.push_back(ConvertType(type->getReturnType(), ctx));
-  resultTypes.push_back(iostatetype::create());
+  resultTypes.push_back(iostatetype::Create());
   resultTypes.push_back(MemoryStateType::Create());
 
   return std::unique_ptr<rvsdg::valuetype>(

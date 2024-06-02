@@ -147,6 +147,13 @@ PointerType::copy() const
   return std::make_shared<PointerType>(*this);
 }
 
+std::shared_ptr<const PointerType>
+PointerType::Create()
+{
+  static const PointerType instance;
+  return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
+}
+
 /* array type */
 
 arraytype::~arraytype()
@@ -324,6 +331,13 @@ iostatetype::copy() const
   return std::make_shared<iostatetype>(*this);
 }
 
+std::shared_ptr<const iostatetype>
+iostatetype::Create()
+{
+  static const iostatetype instance;
+  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), &instance);
+}
+
 /**
  * MemoryStateType class
  */
@@ -345,6 +359,13 @@ std::shared_ptr<const jlm::rvsdg::type>
 MemoryStateType::copy() const
 {
   return std::make_shared<MemoryStateType>(*this);
+}
+
+std::shared_ptr<const MemoryStateType>
+MemoryStateType::Create()
+{
+  static const MemoryStateType instance;
+  return std::shared_ptr<const MemoryStateType>(std::shared_ptr<void>(), &instance);
 }
 
 }

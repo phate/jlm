@@ -2489,7 +2489,7 @@ private:
 
     std::vector<jlm::rvsdg::port> ports({ PointerType() });
     ports.insert(ports.end(), memoryStates.begin(), memoryStates.end());
-    ports.emplace_back(iostatetype::instance());
+    ports.emplace_back(rvsdg::port(iostatetype::Create()));
 
     return ports;
   }
@@ -2498,7 +2498,7 @@ private:
   CreateResultPorts(size_t numMemoryStates)
   {
     std::vector<jlm::rvsdg::port> ports(numMemoryStates, { MemoryStateType::Create() });
-    ports.emplace_back(iostatetype::instance());
+    ports.emplace_back(rvsdg::port(iostatetype::Create()));
 
     return ports;
   }
