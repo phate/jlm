@@ -23,10 +23,7 @@ ctltype::~ctltype() noexcept
 ctltype::ctltype(size_t nalternatives)
     : jlm::rvsdg::statetype(),
       nalternatives_(nalternatives)
-{
-  if (nalternatives == 0)
-    throw jlm::util::error("Alternatives of a control type must be non-zero.");
-}
+{}
 
 std::string
 ctltype::debug_string() const
@@ -47,7 +44,32 @@ ctltype::copy() const
   return std::make_shared<ctltype>(*this);
 }
 
-const ctltype ctl2(2);
+std::shared_ptr<const ctltype>
+ctltype::Create(std::size_t nalternatives)
+{
+  static const ctltype static_instances[4] = { // ctltype(0) is not valid, but put it in here so
+                                               // the static array indexing works correctly
+                                               ctltype(0),
+                                               ctltype(1),
+                                               ctltype(2),
+                                               ctltype(3)
+  };
+
+  if (nalternatives < 4)
+  {
+    if (nalternatives == 0)
+    {
+      throw jlm::util::error("Alternatives of a control type must be non-zero.");
+    }
+    return std::shared_ptr<const jlm::rvsdg::ctltype>(
+        std::shared_ptr<void>(),
+        &static_instances[nalternatives]);
+  }
+  else
+  {
+    return std::make_shared<ctltype>(nalternatives);
+  }
+}
 
 /* control value representation */
 

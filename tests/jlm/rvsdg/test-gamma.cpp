@@ -23,7 +23,7 @@ test_gamma(void)
   auto v0 = graph.add_import({ bit32, "" });
   auto v1 = graph.add_import({ bit32, "" });
   auto v2 = graph.add_import({ bit32, "" });
-  auto v3 = graph.add_import({ ctl2, "" });
+  auto v3 = graph.add_import({ *ctltype::Create(2), "" });
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
 
@@ -92,7 +92,7 @@ test_invariant_reduction(void)
   jlm::rvsdg::graph graph;
   gamma_op::normal_form(&graph)->set_invariant_reduction(true);
 
-  auto pred = graph.add_import({ ctl2, "" });
+  auto pred = graph.add_import({ *ctltype::Create(2), "" });
   auto v = graph.add_import({ vtype, "" });
 
   auto gamma = jlm::rvsdg::gamma_node::create(pred, 2);
@@ -188,7 +188,7 @@ TestRemoveGammaOutputsWhere()
   jlm::tests::valuetype vt;
   ctltype ct(2);
 
-  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto predicate = rvsdg.add_import({ *ctltype::Create(2), "" });
   auto v0 = rvsdg.add_import({ vt, "" });
   auto v1 = rvsdg.add_import({ vt, "" });
   auto v2 = rvsdg.add_import({ vt, "" });
@@ -250,7 +250,7 @@ TestPruneOutputs()
   jlm::tests::valuetype vt;
   ctltype ct(2);
 
-  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto predicate = rvsdg.add_import({ *ctltype::Create(2), "" });
   auto v0 = rvsdg.add_import({ vt, "" });
   auto v1 = rvsdg.add_import({ vt, "" });
   auto v2 = rvsdg.add_import({ vt, "" });
@@ -299,7 +299,7 @@ TestIsInvariant()
   jlm::tests::valuetype vt;
   ctltype ct(2);
 
-  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto predicate = rvsdg.add_import({ *ctltype::Create(2), "" });
   auto v0 = rvsdg.add_import({ vt, "" });
   auto v1 = rvsdg.add_import({ vt, "" });
 

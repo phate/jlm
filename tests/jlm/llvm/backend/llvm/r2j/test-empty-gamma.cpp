@@ -68,9 +68,7 @@ test_without_match()
   using namespace jlm::llvm;
 
   jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ctl2(2);
-  jlm::rvsdg::bittype bt1(1);
-  FunctionType ft({ &ctl2, &vt, &vt }, { &vt });
+  FunctionType ft({ &*jlm::rvsdg::ctltype::Create(2), &vt, &vt }, { &vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
