@@ -95,7 +95,7 @@ public:
   virtual ~bitcompare_op() noexcept;
 
   inline bitcompare_op(const bittype & type) noexcept
-      : binary_op({ type, type }, bit1)
+      : binary_op({ type, type }, *bittype::Create(1))
   {}
 
   virtual binop_reduction_path_t

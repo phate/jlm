@@ -16,13 +16,11 @@ test_gamma(void)
 {
   using namespace jlm::rvsdg;
 
-  bittype bit2(2);
-
   jlm::rvsdg::graph graph;
-  auto cmp = graph.add_import({ bit2, "" });
-  auto v0 = graph.add_import({ bit32, "" });
-  auto v1 = graph.add_import({ bit32, "" });
-  auto v2 = graph.add_import({ bit32, "" });
+  auto cmp = graph.add_import({ *bittype::Create(2), "" });
+  auto v0 = graph.add_import({ *bittype::Create(32), "" });
+  auto v1 = graph.add_import({ *bittype::Create(32), "" });
+  auto v2 = graph.add_import({ *bittype::Create(32), "" });
   auto v3 = graph.add_import({ *ctltype::Create(2), "" });
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
@@ -60,9 +58,9 @@ test_predicate_reduction(void)
 
   bittype bits2(2);
 
-  auto v0 = graph.add_import({ bit32, "" });
-  auto v1 = graph.add_import({ bit32, "" });
-  auto v2 = graph.add_import({ bit32, "" });
+  auto v0 = graph.add_import({ *bittype::Create(32), "" });
+  auto v1 = graph.add_import({ *bittype::Create(32), "" });
+  auto v2 = graph.add_import({ *bittype::Create(32), "" });
 
   auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
 
@@ -117,7 +115,7 @@ test_control_constant_reduction()
   jlm::rvsdg::graph graph;
   gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
 
-  auto x = graph.add_import({ bit1, "x" });
+  auto x = graph.add_import({ *bittype::Create(1), "x" });
 
   auto c = match(1, { { 0, 0 } }, 1, 2, x);
 

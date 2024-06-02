@@ -18,8 +18,7 @@ TestWithMatch()
   using namespace jlm::llvm;
 
   jlm::tests::valuetype vt;
-  jlm::rvsdg::bittype bt1(1);
-  FunctionType ft({ &bt1, &vt, &vt }, { &vt });
+  FunctionType ft({ &*jlm::rvsdg::bittype::Create(1), &vt, &vt }, { &vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));

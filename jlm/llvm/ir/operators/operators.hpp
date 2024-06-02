@@ -129,7 +129,7 @@ public:
   virtual ~select_op() noexcept;
 
   select_op(const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ jlm::rvsdg::bit1, type, type }, { type })
+      : jlm::rvsdg::simple_op({ *jlm::rvsdg::bittype::Create(1), type, type }, { type })
   {}
 
   virtual bool
@@ -207,7 +207,7 @@ private:
   createVectorSelectTac(const variable * p, const variable * t, const variable * f)
   {
     auto fvt = static_cast<const T *>(&t->type());
-    T pt(jlm::rvsdg::bit1, fvt->size());
+    T pt(*jlm::rvsdg::bittype::Create(1), fvt->size());
     T vt(fvt->type(), fvt->size());
     vectorselect_op op(pt, vt);
     return tac::create(op, { p, t, f });
@@ -684,7 +684,7 @@ public:
   virtual ~ptrcmp_op();
 
   inline ptrcmp_op(const PointerType & ptype, const llvm::cmp & cmp)
-      : binary_op({ ptype, ptype }, { jlm::rvsdg::bit1 }),
+      : binary_op({ ptype, ptype }, { *jlm::rvsdg::bittype::Create(1) }),
         cmp_(cmp)
   {}
 
@@ -898,7 +898,7 @@ public:
   virtual ~fpcmp_op();
 
   inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
-      : binary_op({ fptype(size), fptype(size) }, { jlm::rvsdg::bit1 }),
+      : binary_op({ fptype(size), fptype(size) }, { *jlm::rvsdg::bittype::Create(1) }),
         cmp_(cmp)
   {}
 

@@ -16,7 +16,7 @@ TestUnknownBoundaries()
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = jlm::rvsdg::bit32;
+  auto b32 = *jlm::rvsdg::bittype::Create(32);
   FunctionType ft({ &b32, &b32, &b32 }, { &b32, &b32, &b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");

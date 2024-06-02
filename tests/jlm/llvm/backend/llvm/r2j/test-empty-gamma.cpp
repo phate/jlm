@@ -111,7 +111,7 @@ test_gamma3()
   using namespace jlm::llvm;
 
   jlm::tests::valuetype vt;
-  FunctionType ft({ &jlm::rvsdg::bit32, &vt, &vt }, { &vt });
+  FunctionType ft({ &*jlm::rvsdg::bittype::Create(32), &vt, &vt }, { &vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
