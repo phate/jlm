@@ -587,9 +587,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   port_load_store_decouple portNodes;
   trace_pointer_arguments(lambda, portNodes);
 
-  auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bit64);
-  auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bit64, false);
-  auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bit64, true);
+  auto responseTypePtr = get_mem_res_type(*jlm::rvsdg::bittype::Create(64));
+  auto requestTypePtr = get_mem_req_type(*jlm::rvsdg::bittype::Create(64), false);
+  auto requestTypePtrWrite = get_mem_req_type(*jlm::rvsdg::bittype::Create(64), true);
 
   std::unordered_set<jlm::rvsdg::simple_node *> accountedNodes;
   for (auto & portNode : portNodes)
@@ -781,7 +781,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto decoupledOutput =
         dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(decoupledNode->output(0)));
     decoupledNodes.push_back(decoupledOutput->node());
-    loadTypes.push_back(&jlm::rvsdg::bit32);
+    loadTypes.push_back(&*jlm::rvsdg::bittype::Create(32));
   }
 
   auto lambdaRegion = lambda->subregion();

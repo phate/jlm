@@ -38,7 +38,7 @@ test1()
   auto a = jlm::tests::create_testop(
       theta->subregion(),
       { lvx->argument(), lvy->argument() },
-      { &jlm::rvsdg::bit1 })[0];
+      { &*jlm::rvsdg::bittype::Create(1) })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
   auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
@@ -89,8 +89,10 @@ test2()
 
   auto lv1 = theta->add_loopvar(x);
 
-  auto n1 =
-      jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &jlm::rvsdg::bit1 })[0];
+  auto n1 = jlm::tests::create_testop(
+      theta->subregion(),
+      { lv1->argument() },
+      { &*jlm::rvsdg::bittype::Create(1) })[0];
   auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &vt })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 

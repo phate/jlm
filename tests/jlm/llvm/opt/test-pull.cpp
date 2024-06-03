@@ -93,7 +93,7 @@ test_pull()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto p = graph.add_import({ jlm::rvsdg::ctl2, "" });
+  auto p = graph.add_import({ *jlm::rvsdg::ctltype::Create(2), "" });
 
   auto croot = jlm::tests::create_testop(graph.root(), {}, { &vt })[0];
 

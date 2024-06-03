@@ -129,7 +129,7 @@ public:
   virtual ~select_op() noexcept;
 
   select_op(const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ jlm::rvsdg::bit1, type, type }, { type })
+      : jlm::rvsdg::simple_op({ *jlm::rvsdg::bittype::Create(1), type, type }, { type })
   {}
 
   virtual bool
@@ -207,7 +207,7 @@ private:
   createVectorSelectTac(const variable * p, const variable * t, const variable * f)
   {
     auto fvt = static_cast<const T *>(&t->type());
-    T pt(jlm::rvsdg::bit1, fvt->size());
+    T pt(*jlm::rvsdg::bittype::Create(1), fvt->size());
     T vt(fvt->type(), fvt->size());
     vectorselect_op op(pt, vt);
     return tac::create(op, { p, t, f });
@@ -684,7 +684,7 @@ public:
   virtual ~ptrcmp_op();
 
   inline ptrcmp_op(const PointerType & ptype, const llvm::cmp & cmp)
-      : binary_op({ ptype, ptype }, { jlm::rvsdg::bit1 }),
+      : binary_op({ ptype, ptype }, { *jlm::rvsdg::bittype::Create(1) }),
         cmp_(cmp)
   {}
 
@@ -898,7 +898,7 @@ public:
   virtual ~fpcmp_op();
 
   inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
-      : binary_op({ fptype(size), fptype(size) }, { jlm::rvsdg::bit1 }),
+      : binary_op({ fptype(size), fptype(size) }, { *jlm::rvsdg::bittype::Create(1) }),
         cmp_(cmp)
   {}
 
@@ -1366,7 +1366,7 @@ class valist_op final : public jlm::rvsdg::simple_op
 public:
   virtual ~valist_op();
 
-  inline valist_op(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)
+  explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::type>> types)
       : simple_op(create_srcports(std::move(types)), { varargtype() })
   {}
 
@@ -1390,7 +1390,7 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const std::vector<const variable *> & arguments)
   {
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> operands;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands;
     for (const auto & argument : arguments)
       operands.push_back(argument->type().copy());
 
@@ -1401,7 +1401,7 @@ public:
   static rvsdg::output *
   Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
   {
-    std::vector<std::unique_ptr<rvsdg::type>> operandTypes;
+    std::vector<std::shared_ptr<const rvsdg::type>> operandTypes;
     operandTypes.reserve(operands.size());
     for (auto & operand : operands)
       operandTypes.emplace_back(operand->type().copy());
@@ -1412,11 +1412,11 @@ public:
 
 private:
   static inline std::vector<jlm::rvsdg::port>
-  create_srcports(std::vector<std::unique_ptr<jlm::rvsdg::type>> types)
+  create_srcports(std::vector<std::shared_ptr<const jlm::rvsdg::type>> types)
   {
     std::vector<jlm::rvsdg::port> ports;
     for (const auto & type : types)
-      ports.push_back(jlm::rvsdg::port(*type));
+      ports.push_back(jlm::rvsdg::port(type));
 
     return ports;
   }
@@ -2489,7 +2489,7 @@ private:
 
     std::vector<jlm::rvsdg::port> ports({ PointerType() });
     ports.insert(ports.end(), memoryStates.begin(), memoryStates.end());
-    ports.emplace_back(iostatetype::instance());
+    ports.emplace_back(rvsdg::port(iostatetype::Create()));
 
     return ports;
   }
@@ -2498,7 +2498,7 @@ private:
   CreateResultPorts(size_t numMemoryStates)
   {
     std::vector<jlm::rvsdg::port> ports(numMemoryStates, { MemoryStateType::Create() });
-    ports.emplace_back(iostatetype::instance());
+    ports.emplace_back(rvsdg::port(iostatetype::Create()));
 
     return ports;
   }

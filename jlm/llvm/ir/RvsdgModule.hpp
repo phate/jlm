@@ -54,7 +54,7 @@ public:
   [[nodiscard]] const jlm::rvsdg::valuetype &
   GetValueType() const noexcept
   {
-    return *jlm::util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
+    return *jlm::util::AssertedCast<const jlm::rvsdg::valuetype>(ValueType_.get());
   }
 
   virtual bool
@@ -65,7 +65,7 @@ public:
 
 private:
   jlm::llvm::linkage linkage_;
-  std::unique_ptr<jlm::rvsdg::type> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::type> ValueType_;
 };
 
 static inline bool

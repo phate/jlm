@@ -29,8 +29,8 @@ FunctionType::FunctionType(
 }
 
 FunctionType::FunctionType(
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes)
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
     : jlm::rvsdg::valuetype(),
       ResultTypes_(std::move(resultTypes)),
       ArgumentTypes_(std::move(argumentTypes))
@@ -98,10 +98,10 @@ FunctionType::operator==(const jlm::rvsdg::type & _other) const noexcept
   return true;
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 FunctionType::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new FunctionType(*this));
+  return std::make_shared<FunctionType>(*this);
 }
 
 FunctionType &
@@ -141,10 +141,17 @@ PointerType::operator==(const jlm::rvsdg::type & other) const noexcept
   return jlm::rvsdg::is<PointerType>(other);
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 PointerType::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new PointerType(*this));
+  return std::make_shared<PointerType>(*this);
+}
+
+std::shared_ptr<const PointerType>
+PointerType::Create()
+{
+  static const PointerType instance;
+  return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
 }
 
 /* array type */
@@ -165,10 +172,10 @@ arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 arraytype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*this));
+  return std::make_shared<arraytype>(*this);
 }
 
 /* floating point type */
@@ -195,10 +202,10 @@ fptype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->size() == size();
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 fptype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new fptype(*this));
+  return std::make_shared<fptype>(*this);
 }
 
 /* vararg type */
@@ -218,10 +225,10 @@ varargtype::debug_string() const
   return "vararg";
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 varargtype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new varargtype(*this));
+  return std::make_shared<varargtype>(*this);
 }
 
 StructType::~StructType() = default;
@@ -240,10 +247,10 @@ StructType::debug_string() const
   return "struct";
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 StructType::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new StructType(*this));
+  return std::make_shared<StructType>(*this);
 }
 
 /* vectortype */
@@ -272,10 +279,10 @@ fixedvectortype::debug_string() const
   return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 fixedvectortype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new fixedvectortype(*this));
+  return std::make_shared<fixedvectortype>(*this);
 }
 
 /* scalablevectortype */
@@ -295,10 +302,10 @@ scalablevectortype::debug_string() const
   return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 scalablevectortype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new scalablevectortype(*this));
+  return std::make_shared<scalablevectortype>(*this);
 }
 
 /* I/O state type */
@@ -318,10 +325,17 @@ iostatetype::debug_string() const
   return "iostate";
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 iostatetype::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new iostatetype(*this));
+  return std::make_shared<iostatetype>(*this);
+}
+
+std::shared_ptr<const iostatetype>
+iostatetype::Create()
+{
+  static const iostatetype instance;
+  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), &instance);
 }
 
 /**
@@ -341,10 +355,17 @@ MemoryStateType::operator==(const jlm::rvsdg::type & other) const noexcept
   return jlm::rvsdg::is<MemoryStateType>(other);
 }
 
-std::unique_ptr<jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::type>
 MemoryStateType::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new MemoryStateType(*this));
+  return std::make_shared<MemoryStateType>(*this);
+}
+
+std::shared_ptr<const MemoryStateType>
+MemoryStateType::Create()
+{
+  static const MemoryStateType instance;
+  return std::shared_ptr<const MemoryStateType>(std::shared_ptr<void>(), &instance);
 }
 
 }

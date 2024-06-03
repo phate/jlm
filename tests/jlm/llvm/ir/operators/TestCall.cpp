@@ -379,7 +379,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
-        { &jlm::rvsdg::bit64, &pbit64, &iOStateType, &memoryStateType },
+        { &*jlm::rvsdg::bittype::Create(64), &pbit64, &iOStateType, &memoryStateType },
         { &iOStateType, &memoryStateType });
     PointerType pt;
 
@@ -421,13 +421,24 @@ TestCallTypeClassifierRecursiveDirectCall()
         functionType,
         { nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1] });
 
-    auto gepnm1 =
-        GetElementPtrOperation::Create(resultev->argument(0), { nm1 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm1 = LoadNonVolatileNode::Create(gepnm1, { callfibm2Results[1] }, jlm::rvsdg::bit64, 8);
+    auto gepnm1 = GetElementPtrOperation::Create(
+        resultev->argument(0),
+        { nm1 },
+        *jlm::rvsdg::bittype::Create(64),
+        pbit64);
+    auto ldnm1 = LoadNonVolatileNode::Create(
+        gepnm1,
+        { callfibm2Results[1] },
+        *jlm::rvsdg::bittype::Create(64),
+        8);
 
-    auto gepnm2 =
-        GetElementPtrOperation::Create(resultev->argument(0), { nm2 }, jlm::rvsdg::bit64, pbit64);
-    auto ldnm2 = LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bit64, 8);
+    auto gepnm2 = GetElementPtrOperation::Create(
+        resultev->argument(0),
+        { nm2 },
+        *jlm::rvsdg::bittype::Create(64),
+        pbit64);
+    auto ldnm2 =
+        LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, *jlm::rvsdg::bittype::Create(64), 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
@@ -441,7 +452,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
-        jlm::rvsdg::bit64,
+        *jlm::rvsdg::bittype::Create(64),
         pbit64);
     auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
 
