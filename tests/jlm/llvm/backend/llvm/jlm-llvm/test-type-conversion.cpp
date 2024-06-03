@@ -16,7 +16,7 @@ test_structtype(jlm::llvm::jlm2llvm::context & ctx)
   using namespace jlm::llvm;
 
   auto decl1 = StructType::Declaration::Create(
-      { &*jlm::rvsdg::bittype::Create(8), &*jlm::rvsdg::bittype::Create(32) });
+      { jlm::rvsdg::bittype::Create(8), jlm::rvsdg::bittype::Create(32) });
   StructType st1("mystruct", false, *decl1);
   auto ct = jlm2llvm::convert_type(st1, ctx);
 
@@ -26,9 +26,9 @@ test_structtype(jlm::llvm::jlm2llvm::context & ctx)
   assert(ct->getElementType(0)->isIntegerTy(8));
   assert(ct->getElementType(1)->isIntegerTy(32));
 
-  auto decl2 = StructType::Declaration::Create({ &*jlm::rvsdg::bittype::Create(32),
-                                                 &*jlm::rvsdg::bittype::Create(8),
-                                                 &*jlm::rvsdg::bittype::Create(32) });
+  auto decl2 = StructType::Declaration::Create({ jlm::rvsdg::bittype::Create(32),
+                                                 jlm::rvsdg::bittype::Create(8),
+                                                 jlm::rvsdg::bittype::Create(32) });
   StructType st2(true, *decl2);
   ct = jlm2llvm::convert_type(st2, ctx);
 

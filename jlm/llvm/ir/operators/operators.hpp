@@ -207,8 +207,8 @@ private:
   createVectorSelectTac(const variable * p, const variable * t, const variable * f)
   {
     auto fvt = static_cast<const T *>(&t->type());
-    T pt(*jlm::rvsdg::bittype::Create(1), fvt->size());
-    T vt(fvt->type(), fvt->size());
+    T pt(jlm::rvsdg::bittype::Create(1), fvt->size());
+    T vt(fvt->Type(), fvt->size());
     vectorselect_op op(pt, vt);
     return tac::create(op, { p, t, f });
   }
@@ -226,8 +226,8 @@ public:
   {}
 
   inline fp2ui_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -283,8 +283,8 @@ public:
   {}
 
   inline fp2si_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : jlm::rvsdg::unary_op({ *srctype }, { *dsttype })
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -468,8 +468,8 @@ public:
   {}
 
   inline bits2ptr_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto at = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
@@ -546,8 +546,8 @@ public:
   {}
 
   inline ptr2bits_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto pt = dynamic_cast<const PointerType *>(srctype.get());
@@ -605,7 +605,9 @@ public:
   virtual ~ConstantDataArray();
 
   ConstantDataArray(const jlm::rvsdg::valuetype & type, size_t size)
-      : simple_op(std::vector<jlm::rvsdg::port>(size, type), { arraytype(type, size) })
+      : simple_op(
+          std::vector<jlm::rvsdg::port>(size, type),
+          { arraytype(std::static_pointer_cast<const rvsdg::valuetype>(type.copy()), size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.");
@@ -743,8 +745,8 @@ public:
   }
 
   inline zext_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
@@ -1169,8 +1171,8 @@ public:
   }
 
   inline fpext_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -1298,8 +1300,8 @@ public:
   }
 
   inline fptrunc_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -1434,8 +1436,8 @@ public:
   {}
 
   inline bitcast_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     check_types(*srctype, *dsttype);
@@ -1586,8 +1588,8 @@ public:
   }
 
   inline trunc_op(
-      std::unique_ptr<jlm::rvsdg::type> optype,
-      std::unique_ptr<jlm::rvsdg::type> restype)
+      std::shared_ptr<const jlm::rvsdg::type> optype,
+      std::shared_ptr<const jlm::rvsdg::type> restype)
       : unary_op(*optype, *restype)
   {
     auto ot = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
@@ -1669,8 +1671,8 @@ public:
   {}
 
   inline uitofp_op(
-      std::unique_ptr<jlm::rvsdg::type> optype,
-      std::unique_ptr<jlm::rvsdg::type> restype)
+      std::shared_ptr<const jlm::rvsdg::type> optype,
+      std::shared_ptr<const jlm::rvsdg::type> restype)
       : unary_op(*optype, *restype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
@@ -1726,8 +1728,8 @@ public:
   {}
 
   inline sitofp_op(
-      std::unique_ptr<jlm::rvsdg::type> srctype,
-      std::unique_ptr<jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::type> srctype,
+      std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(*srctype, *dsttype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
@@ -1779,7 +1781,9 @@ public:
   virtual ~ConstantArray();
 
   ConstantArray(const jlm::rvsdg::valuetype & type, size_t size)
-      : jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>(size, type), { arraytype(type, size) })
+      : jlm::rvsdg::simple_op(
+          std::vector<jlm::rvsdg::port>(size, type),
+          { arraytype(std::static_pointer_cast<const rvsdg::valuetype>(type.copy()), size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.\n");
@@ -2281,11 +2285,11 @@ public:
     if (elements.empty())
       throw jlm::util::error("Expected at least one element.");
 
-    auto vt = dynamic_cast<const jlm::rvsdg::valuetype *>(&elements[0]->type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->type().copy());
     if (!vt)
       throw jlm::util::error("Expected value type.");
 
-    constant_data_vector_op op(fixedvectortype(*vt, elements.size()));
+    constant_data_vector_op op(fixedvectortype(vt, elements.size()));
     return tac::create(op, elements);
   }
 };
