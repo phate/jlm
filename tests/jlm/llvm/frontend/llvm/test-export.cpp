@@ -18,12 +18,12 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType ft({ &vt }, { &vt });
+  auto vt = std::make_shared<jlm::tests::valuetype>();
+  FunctionType ft({ vt }, { vt });
 
   ipgraph_module im(jlm::util::filepath(""), "", "");
 
-  auto d = data_node::Create(im.ipgraph(), "d", vt, linkage::external_linkage, "", false);
+  auto d = data_node::Create(im.ipgraph(), "d", *vt, linkage::external_linkage, "", false);
   auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
 
   im.create_global_value(d);

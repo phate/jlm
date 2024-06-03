@@ -569,15 +569,15 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // This modifies the function signature so we create a new lambda node to replace the old one
   //
   auto oldFunctionType = lambda->type();
-  std::vector<const jlm::rvsdg::type *> newArgumentTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
-    newArgumentTypes.push_back(&oldFunctionType.ArgumentType(i));
+    newArgumentTypes.push_back(oldFunctionType.ArgumentType(i).copy());
   }
-  std::vector<const jlm::rvsdg::type *> newResultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
-    newResultTypes.push_back(&oldFunctionType.ResultType(i));
+    newResultTypes.push_back(oldFunctionType.ResultType(i).copy());
   }
 
   //
@@ -594,14 +594,14 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   std::unordered_set<jlm::rvsdg::simple_node *> accountedNodes;
   for (auto & portNode : portNodes)
   {
-    newArgumentTypes.push_back(responseTypePtr.get());
+    newArgumentTypes.push_back(responseTypePtr);
     if (std::get<1>(portNode).empty())
     {
-      newResultTypes.push_back(requestTypePtr.get());
+      newResultTypes.push_back(requestTypePtr);
     }
     else
     {
-      newResultTypes.push_back(requestTypePtrWrite.get());
+      newResultTypes.push_back(requestTypePtrWrite);
     }
     accountedNodes.insert(std::get<0>(portNode).begin(), std::get<0>(portNode).end());
     accountedNodes.insert(std::get<1>(portNode).begin(), std::get<1>(portNode).end());
@@ -619,14 +619,14 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   if (!unknownLoadNodes.empty() || !unknownStoreNodes.empty() || !unknownDecoupledNodes.empty())
   {
     // Extra port for loads/stores not associated to a port yet (i.e., unknown base pointer)
-    newArgumentTypes.push_back(responseTypePtr.get());
+    newArgumentTypes.push_back(responseTypePtr);
     if (unknownStoreNodes.empty())
     {
-      newResultTypes.push_back(requestTypePtr.get());
+      newResultTypes.push_back(requestTypePtr);
     }
     else
     {
-      newResultTypes.push_back(requestTypePtrWrite.get());
+      newResultTypes.push_back(requestTypePtrWrite);
     }
   }
 

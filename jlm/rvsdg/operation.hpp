@@ -60,6 +60,12 @@ public:
     return *type_;
   }
 
+  inline const std::shared_ptr<const rvsdg::type> &
+  Type() const noexcept
+  {
+    return type_;
+  }
+
   virtual std::unique_ptr<port>
   copy() const;
 

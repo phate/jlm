@@ -36,7 +36,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 {
   auto & oldFunctionType = lambdaNode.type();
 
-  std::vector<const jlm::rvsdg::type *> newArgumentTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
     auto argument = lambdaNode.subregion()->argument(i);
@@ -45,11 +45,11 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 
     if (!IsPassthroughArgument(*argument))
     {
-      newArgumentTypes.push_back(&argumentType);
+      newArgumentTypes.push_back(argumentType.copy());
     }
   }
 
-  std::vector<const jlm::rvsdg::type *> newResultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
     auto result = lambdaNode.subregion()->result(i);
@@ -58,7 +58,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 
     if (!IsPassthroughResult(*result))
     {
-      newResultTypes.push_back(&resultType);
+      newResultTypes.push_back(resultType.copy());
     }
   }
 

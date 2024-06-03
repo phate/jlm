@@ -729,10 +729,10 @@ public:
   const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> * elements_;
 };
 
-std::unique_ptr<bundletype>
+std::shared_ptr<const bundletype>
 get_mem_req_type(const rvsdg::valuetype & elementType, bool write);
 
-std::unique_ptr<bundletype>
+std::shared_ptr<const bundletype>
 get_mem_res_type(const jlm::rvsdg::valuetype & dataType);
 
 class load_op final : public jlm::rvsdg::simple_op

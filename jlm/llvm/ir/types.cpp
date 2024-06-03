@@ -17,18 +17,6 @@ namespace jlm::llvm
 FunctionType::~FunctionType() noexcept = default;
 
 FunctionType::FunctionType(
-    const std::vector<const jlm::rvsdg::type *> & argumentTypes,
-    const std::vector<const jlm::rvsdg::type *> & resultTypes)
-    : jlm::rvsdg::valuetype()
-{
-  for (auto & type : argumentTypes)
-    ArgumentTypes_.emplace_back(type->copy());
-
-  for (auto & type : resultTypes)
-    ResultTypes_.emplace_back(type->copy());
-}
-
-FunctionType::FunctionType(
     std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
     std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
     : jlm::rvsdg::valuetype(),
@@ -52,16 +40,16 @@ FunctionType::FunctionType(FunctionType && other) noexcept
       ArgumentTypes_(std::move(other.ArgumentTypes_))
 {}
 
-FunctionType::ArgumentConstRange
-FunctionType::Arguments() const
+const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+FunctionType::Arguments() const noexcept
 {
-  return { TypeConstIterator(ArgumentTypes_.begin()), TypeConstIterator(ArgumentTypes_.end()) };
+  return ArgumentTypes_;
 }
 
-FunctionType::ResultConstRange
-FunctionType::Results() const
+const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+FunctionType::Results() const noexcept
 {
-  return { TypeConstIterator(ResultTypes_.begin()), TypeConstIterator(ResultTypes_.end()) };
+  return ResultTypes_;
 }
 
 std::string

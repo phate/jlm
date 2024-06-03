@@ -17,8 +17,8 @@ TestWithMatch()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType ft({ &*jlm::rvsdg::bittype::Create(1), &vt, &vt }, { &vt });
+  auto vt = std::make_shared<jlm::tests::valuetype>();
+  FunctionType ft({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -54,8 +54,8 @@ TestWithoutMatch()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType ft({ &*jlm::rvsdg::ctltype::Create(2), &vt, &vt }, { &vt });
+  auto vt = std::make_shared<jlm::tests::valuetype>();
+  FunctionType ft({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));

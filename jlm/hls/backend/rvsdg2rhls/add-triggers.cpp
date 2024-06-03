@@ -31,16 +31,16 @@ jlm::llvm::lambda::node *
 add_lambda_argument(llvm::lambda::node * ln, const jlm::rvsdg::type * type)
 {
   auto old_fcttype = ln->type();
-  std::vector<const jlm::rvsdg::type *> new_argument_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
-    new_argument_types.push_back(&old_fcttype.ArgumentType(i));
+    new_argument_types.push_back(old_fcttype.ArgumentType(i).copy());
   }
-  new_argument_types.push_back(type);
-  std::vector<const jlm::rvsdg::type *> new_result_types;
+  new_argument_types.push_back(type->copy());
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_result_types;
   for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
   {
-    new_result_types.push_back(&old_fcttype.ResultType(i));
+    new_result_types.push_back(old_fcttype.ResultType(i).copy());
   }
   llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
