@@ -276,7 +276,7 @@ private:
 
   type_attribute(attribute::kind kind, const jlm::rvsdg::valuetype & type)
       : enum_attribute(kind),
-        type_(static_cast<jlm::rvsdg::valuetype *>(type.copy().release()))
+        type_(std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(type.copy()))
   {}
 
 public:
@@ -306,7 +306,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::rvsdg::valuetype> type_;
+  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
 };
 
 /** \brief Attribute set

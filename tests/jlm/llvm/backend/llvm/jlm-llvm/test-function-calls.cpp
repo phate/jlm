@@ -30,14 +30,15 @@ test_malloc()
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
 
-    auto size = cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::bit64));
+    auto size =
+        cfg->entry()->append_argument(argument::create("size", *jlm::rvsdg::bittype::Create(64)));
 
     bb->append_last(malloc_op::create(size));
 
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));
 
-    FunctionType ft({ &jlm::rvsdg::bit64 }, { &pt, &mt });
+    FunctionType ft({ &*jlm::rvsdg::bittype::Create(64) }, { &pt, &mt });
     auto f = function_node::create(im->ipgraph(), "f", ft, linkage::external_linkage);
     f->add_cfg(std::move(cfg));
 

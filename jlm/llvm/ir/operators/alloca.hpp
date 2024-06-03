@@ -95,7 +95,7 @@ public:
 
 private:
   size_t alignment_;
-  std::unique_ptr<rvsdg::type> AllocatedType_;
+  std::shared_ptr<const rvsdg::type> AllocatedType_;
 };
 
 }

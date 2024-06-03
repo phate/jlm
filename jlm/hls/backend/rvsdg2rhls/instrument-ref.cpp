@@ -90,10 +90,10 @@ instrument_ref(llvm::RvsdgModule & rm)
   //  addr, width, memstate
   jlm::llvm::FunctionType loadFunctionType(
       { jlm::llvm::PointerType::Create().get(),
-        &jlm::rvsdg::bit64,
-        llvm::iostatetype::create().get(),
+        &*jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create().get(),
         llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::create().get(), llvm::MemoryStateType::Create().get() });
+      { llvm::iostatetype::Create().get(), llvm::MemoryStateType::Create().get() });
   jlm::llvm::impport load_imp(
       loadFunctionType,
       "reference_load",
@@ -102,11 +102,11 @@ instrument_ref(llvm::RvsdgModule & rm)
   // addr, data, width, memstate
   jlm::llvm::FunctionType storeFunctionType(
       { jlm::llvm::PointerType::Create().get(),
-        &jlm::rvsdg::bit64,
-        &jlm::rvsdg::bit64,
-        llvm::iostatetype::create().get(),
+        &*jlm::rvsdg::bittype::Create(64),
+        &*jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create().get(),
         jlm::llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::create().get(), jlm::llvm::MemoryStateType::Create().get() });
+      { llvm::iostatetype::Create().get(), jlm::llvm::MemoryStateType::Create().get() });
   jlm::llvm::impport store_imp(
       storeFunctionType,
       "reference_store",
@@ -115,10 +115,10 @@ instrument_ref(llvm::RvsdgModule & rm)
   // addr, size, memstate
   jlm::llvm::FunctionType allocaFunctionType(
       { jlm::llvm::PointerType::Create().get(),
-        &jlm::rvsdg::bit64,
-        llvm::iostatetype::create().get(),
+        &*jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create().get(),
         jlm::llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::create().get(), jlm::llvm::MemoryStateType::Create().get() });
+      { llvm::iostatetype::Create().get(), jlm::llvm::MemoryStateType::Create().get() });
   jlm::llvm::impport alloca_imp(
       allocaFunctionType,
       "reference_alloca",
@@ -246,7 +246,7 @@ instrument_ref(
       }
       auto data = node->input(1)->origin();
       auto dbt = dynamic_cast<const jlm::rvsdg::bittype *>(&data->type());
-      if (*dbt != jlm::rvsdg::bit64)
+      if (*dbt != *jlm::rvsdg::bittype::Create(64))
       {
         jlm::llvm::zext_op op(dbt->nbits(), 64);
         data = jlm::rvsdg::simple_node::create_normalized(data->region(), op, { data })[0];
