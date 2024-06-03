@@ -3,10 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/gamma.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -63,6 +62,9 @@ InvariantValueRedirection::run(
 void
 InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
 {
+  // We require a topdown traversal in the root region to ensure that a lambda node is visited
+  // before its call nodes. This ensures that all invariant values are redirected in the lambda
+  // subregion before we try to detect invariant call outputs.
   for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
   {
     if (auto lambdaNode = dynamic_cast<lambda::node *>(node))
@@ -115,6 +117,10 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
       RedirectInSubregions(*thetaNode);
       RedirectThetaOutputs(*thetaNode);
     }
+    else if (auto callNode = dynamic_cast<CallNode *>(&node))
+    {
+      RedirectCallOutputs(*callNode);
+    }
   }
 }
 
@@ -158,6 +164,37 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::theta_node & thetaNode)
 
     if (rvsdg::is_invariant(thetaOutput))
       thetaOutput->divert_users(thetaOutput->input()->origin());
+  }
+}
+
+void
+InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
+{
+  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  auto callType = callTypeClassifier->GetCallType();
+
+  // FIXME: We currently only support non-recursive direct calls. We would also like to get this
+  // working for recursive direct calls (and therefore for phi nodes), but that requires a little
+  // bit more work as we need to be able to break the cycles between the recursive calls.
+  if (callType != CallTypeClassifier::CallType::NonRecursiveDirectCall)
+    return;
+
+  auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+
+  JLM_ASSERT(callNode.noutputs() == lambdaNode.nfctresults());
+  for (size_t n = 0; n < callNode.noutputs(); n++)
+  {
+    auto & lambdaResult = *lambdaNode.fctresult(n);
+    if (auto lambdaFunctionArgument = dynamic_cast<lambda::fctargument *>(lambdaResult.origin()))
+    {
+      auto callNodeOperand = callNode.Argument(lambdaFunctionArgument->index())->origin();
+      callNode.output(n)->divert_users(callNodeOperand);
+    }
+    else if (dynamic_cast<lambda::cvargument *>(lambdaResult.origin()))
+    {
+      // FIXME: We would like to get this case working as well, but we need to route the origin of
+      // the respective lambda input to the subregion of the call node.
+    }
   }
 }
 

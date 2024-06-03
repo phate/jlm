@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -74,7 +74,7 @@ TestGamma()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestInvariantValueRedirection-Gamma", TestGamma)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Gamma", TestGamma)
 
 static int
 TestTheta()
@@ -130,4 +130,94 @@ TestTheta()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestInvariantValueRedirection-Theta", TestTheta)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Theta", TestTheta)
+
+static int
+TestCall()
+{
+  // Arrange
+  using namespace jlm::llvm;
+
+  iostatetype ioStateType;
+  MemoryStateType memoryStateType;
+  jlm::tests::valuetype valueType;
+  jlm::rvsdg::ctltype controlType(2);
+  FunctionType functionTypeTest1(
+      { &controlType, &valueType, &valueType, &ioStateType, &memoryStateType },
+      { &valueType, &valueType, &ioStateType, &memoryStateType });
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  lambda::output * lambdaOutputTest1 = nullptr;
+  {
+    auto lambdaNode =
+        lambda::node::create(rvsdg.root(), functionTypeTest1, "test1", linkage::external_linkage);
+
+    auto controlArgument = lambdaNode->fctargument(0);
+    auto xArgument = lambdaNode->fctargument(1);
+    auto yArgument = lambdaNode->fctargument(2);
+    auto ioStateArgument = lambdaNode->fctargument(3);
+    auto memoryStateArgument = lambdaNode->fctargument(4);
+
+    auto gammaNode = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gammaInputX = gammaNode->add_entryvar(xArgument);
+    auto gammaInputY = gammaNode->add_entryvar(yArgument);
+    auto gammaInputIOState = gammaNode->add_entryvar(ioStateArgument);
+    auto gammaInputMemoryState = gammaNode->add_entryvar(memoryStateArgument);
+    auto gammaOutputX =
+        gammaNode->add_exitvar({ gammaInputY->argument(0), gammaInputY->argument(1) });
+    auto gammaOutputY =
+        gammaNode->add_exitvar({ gammaInputX->argument(0), gammaInputX->argument(1) });
+    auto gammaOutputIOState =
+        gammaNode->add_exitvar({ gammaInputIOState->argument(0), gammaInputIOState->argument(1) });
+    auto gammaOutputMemoryState = gammaNode->add_exitvar(
+        { gammaInputMemoryState->argument(0), gammaInputMemoryState->argument(1) });
+
+    lambdaOutputTest1 = lambdaNode->finalize(
+        { gammaOutputX, gammaOutputY, gammaOutputIOState, gammaOutputMemoryState });
+  }
+
+  CallNode * callNode = nullptr;
+  lambda::output * lambdaOutputTest2 = nullptr;
+  {
+    FunctionType functionType(
+        { &valueType, &valueType, &ioStateType, &memoryStateType },
+        { &valueType, &valueType, &ioStateType, &memoryStateType });
+
+    auto lambdaNode =
+        lambda::node::create(rvsdg.root(), functionType, "test2", linkage::external_linkage);
+    auto xArgument = lambdaNode->fctargument(0);
+    auto yArgument = lambdaNode->fctargument(1);
+    auto ioStateArgument = lambdaNode->fctargument(2);
+    auto memoryStateArgument = lambdaNode->fctargument(3);
+    auto lambdaArgumentTest1 = lambdaNode->add_ctxvar(lambdaOutputTest1);
+
+    auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
+
+    callNode = &CallNode::CreateNode(
+        lambdaArgumentTest1,
+        functionTypeTest1,
+        { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
+
+    lambdaOutputTest2 = lambdaNode->finalize(outputs(callNode));
+    rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->type(), "test2" });
+  }
+
+  // Act
+  jlm::rvsdg::view(rvsdg, stdout);
+  RunInvariantValueRedirection(*rvsdgModule);
+  jlm::rvsdg::view(rvsdg, stdout);
+
+  // Assert
+  auto lambdaNode = lambdaOutputTest2->node();
+  assert(lambdaNode->nfctresults() == 4);
+  assert(lambdaNode->fctresult(0)->origin() == lambdaNode->fctargument(1));
+  assert(lambdaNode->fctresult(1)->origin() == lambdaNode->fctargument(0));
+  assert(lambdaNode->fctresult(2)->origin() == lambdaNode->fctargument(2));
+  assert(lambdaNode->fctresult(3)->origin() == lambdaNode->fctargument(3));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Call", TestCall)
