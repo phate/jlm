@@ -233,6 +233,9 @@ public:
 
   virtual std::string
   debug_string() const override;
+
+  static std::shared_ptr<const varargtype>
+  Create();
 };
 
 static inline bool

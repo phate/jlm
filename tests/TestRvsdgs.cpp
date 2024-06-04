@@ -3646,7 +3646,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     PointerType pointerType;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
-    auto variableArgumentType = std::make_shared<varargtype>();
+    auto variableArgumentType = varargtype::Create();
     FunctionType functionTypeMain(
         { iostatetype::Create(), MemoryStateType::Create() },
         { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
@@ -3710,7 +3710,7 @@ VariadicFunctionTest1::SetupRvsdg()
   PointerType pointerType;
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  auto varArgType = std::make_shared<varargtype>();
+  auto varArgType = varargtype::Create();
   FunctionType lambdaHType(
       { jlm::rvsdg::bittype::Create(32),
         varArgType,
@@ -3802,7 +3802,7 @@ VariadicFunctionTest2::SetupRvsdg()
   arraytype arrayType(*structType, 1);
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
-  auto varArgType = std::make_shared<varargtype>();
+  auto varArgType = varargtype::Create();
   FunctionType lambdaLlvmLifetimeStartType(
       { rvsdg::bittype::Create(64),
         PointerType::Create(),

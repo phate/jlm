@@ -77,7 +77,7 @@ TestTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionType(
       { jlm::rvsdg::ctltype::Create(2), valueType, valueType, valueType },
       { valueType });
@@ -126,7 +126,7 @@ TestLambda()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionType(
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });

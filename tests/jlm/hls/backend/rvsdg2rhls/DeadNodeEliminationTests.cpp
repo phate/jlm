@@ -15,7 +15,7 @@ TestDeadLoopNode()
   using namespace jlm::hls;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   jlm::llvm::FunctionType functionType(
       { jlm::rvsdg::ctltype::Create(2), valueType },
       { valueType });
@@ -46,7 +46,7 @@ TestDeadLoopNodeOutput()
   using namespace jlm::hls;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   jlm::llvm::FunctionType functionType(
       { jlm::rvsdg::ctltype::Create(2), valueType },
       { jlm::rvsdg::ctltype::Create(2) });

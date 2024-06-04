@@ -244,7 +244,7 @@ TestLambda()
 {
   using namespace jlm::llvm;
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -276,7 +276,7 @@ TestPhi()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionType({ valueType }, { valueType });
 
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");

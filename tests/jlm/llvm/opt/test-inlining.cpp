@@ -30,7 +30,7 @@ test1()
 
   auto SetupF1 = [&]()
   {
-    auto vt = std::make_shared<jlm::tests::valuetype>();
+    auto vt = jlm::tests::valuetype::Create();
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
@@ -47,7 +47,7 @@ test1()
 
   auto SetupF2 = [&](lambda::output * f1)
   {
-    auto vt = std::make_shared<jlm::tests::valuetype>();
+    auto vt = jlm::tests::valuetype::Create();
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     jlm::rvsdg::ctltype ct(2);
@@ -106,7 +106,7 @@ test2()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
 

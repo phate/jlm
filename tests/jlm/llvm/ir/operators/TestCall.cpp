@@ -18,7 +18,7 @@ TestCopy()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   FunctionType functionType(
@@ -55,7 +55,7 @@ TestCallNodeAccessors()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   FunctionType functionType(
@@ -98,7 +98,7 @@ TestCallTypeClassifierIndirectCall()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   FunctionType fcttype1(
@@ -162,7 +162,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
 
@@ -206,7 +206,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
       return otf;
     };
 
-    auto vt = std::make_shared<jlm::tests::valuetype>();
+    auto vt = jlm::tests::valuetype::Create();
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
 
@@ -258,7 +258,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
 
@@ -319,7 +319,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
           jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
     };
 
-    auto vt = std::make_shared<jlm::tests::valuetype>();
+    auto vt = jlm::tests::valuetype::Create();
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
 

@@ -219,6 +219,13 @@ varargtype::copy() const
   return std::make_shared<varargtype>(*this);
 }
 
+std::shared_ptr<const varargtype>
+varargtype::Create()
+{
+  static const varargtype instance;
+  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), &instance);
+}
+
 StructType::~StructType() = default;
 
 bool

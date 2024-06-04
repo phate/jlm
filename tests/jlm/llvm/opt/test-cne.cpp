@@ -388,7 +388,7 @@ test_lambda()
 {
   using namespace jlm::llvm;
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   FunctionType ft({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
@@ -423,7 +423,7 @@ test_phi()
 {
   using namespace jlm::llvm;
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   FunctionType ft({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");

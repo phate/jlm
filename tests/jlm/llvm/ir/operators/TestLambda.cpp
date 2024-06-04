@@ -16,7 +16,7 @@ TestArgumentIterators()
 {
   using namespace jlm::llvm;
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   {
@@ -83,7 +83,7 @@ TestInvalidOperandRegion()
 {
   using namespace jlm::llvm;
 
-  auto vt = std::make_shared<jlm::tests::valuetype>();
+  auto vt = jlm::tests::valuetype::Create();
   FunctionType functionType({}, { vt });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -115,7 +115,7 @@ TestRemoveLambdaInputsWhere()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionType({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -184,7 +184,7 @@ TestPruneLambdaInputs()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionType({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -226,7 +226,7 @@ TestCallSummaryComputationDead()
   using namespace jlm;
 
   // Arrange
-  auto vt = std::make_shared<tests::valuetype>();
+  auto vt = tests::valuetype::Create();
   jlm::llvm::FunctionType functionType({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
@@ -260,7 +260,7 @@ TestCallSummaryComputationExport()
   using namespace jlm;
 
   // Arrange
-  auto vt = std::make_shared<tests::valuetype>();
+  auto vt = tests::valuetype::Create();
   jlm::llvm::FunctionType functionType({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
@@ -295,7 +295,7 @@ TestCallSummaryComputationDirectCalls()
   using namespace jlm;
 
   // Arrange
-  auto vt = std::make_shared<tests::valuetype>();
+  auto vt = tests::valuetype::Create();
   jlm::llvm::FunctionType functionType(
       { jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() },
       { vt, jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
@@ -454,7 +454,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionType({ valueType }, { valueType });
 
   auto lambdaNode =
@@ -488,7 +488,7 @@ TestCallSummaryComputationLambdaResult()
   nf->set_mutable(false);
 
   PointerType pointerType;
-  auto valueType = std::make_shared<jlm::tests::valuetype>();
+  auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionTypeG({ valueType }, { valueType });
   FunctionType functionTypeF({ valueType }, { PointerType::Create() });
 

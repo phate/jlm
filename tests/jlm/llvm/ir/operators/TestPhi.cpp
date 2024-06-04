@@ -19,7 +19,7 @@ TestPhiCreation()
 
   jlm::rvsdg::graph graph;
 
-  auto vtype = std::make_shared<jlm::tests::valuetype>();
+  auto vtype = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   FunctionType f0type(
