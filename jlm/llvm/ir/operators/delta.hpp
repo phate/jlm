@@ -96,7 +96,7 @@ public:
   [[nodiscard]] const rvsdg::valuetype &
   type() const noexcept
   {
-    return *jlm::util::AssertedCast<rvsdg::valuetype>(type_.get());
+    return *jlm::util::AssertedCast<const rvsdg::valuetype>(type_.get());
   }
 
 private:
@@ -104,7 +104,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::unique_ptr<rvsdg::type> type_;
+  std::shared_ptr<const rvsdg::type> type_;
 };
 
 class cvargument;

@@ -58,7 +58,9 @@ convert_prints(llvm::RvsdgModule & rm)
   auto & graph = rm.Rvsdg();
   auto root = graph.root();
   // TODO: make this less hacky by using the correct state types
-  llvm::FunctionType fct({ &rvsdg::bit64, &rvsdg::bit64 }, std::vector<const rvsdg::type *>());
+  llvm::FunctionType fct(
+      { &*rvsdg::bittype::Create(64), &*rvsdg::bittype::Create(64) },
+      std::vector<const rvsdg::type *>());
   llvm::impport imp(fct, "printnode", llvm::linkage::external_linkage);
   auto printf = graph.add_import(imp);
   convert_prints(root, printf, fct);
@@ -115,7 +117,7 @@ convert_prints(
       auto printf_local = route_to_region(printf, region); // TODO: prevent repetition?
       auto bc = jlm::rvsdg::create_bitconstant(region, 64, po->id());
       jlm::rvsdg::output * val = node->input(0)->origin();
-      if (val->type() != jlm::rvsdg::bit64)
+      if (val->type() != *jlm::rvsdg::bittype::Create(64))
       {
         auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
         JLM_ASSERT(bt);

@@ -25,7 +25,7 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
+  auto p = rvsdg.add_import({ *jlm::rvsdg::ctltype::Create(2), "p" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
   auto z = rvsdg.add_import({ valueType, "z" });
@@ -79,12 +79,12 @@ TestTheta()
   // Arrange
   jlm::tests::valuetype valueType;
   FunctionType functionType(
-      { &jlm::rvsdg::ctl2, &valueType, &valueType, &valueType },
+      { &*jlm::rvsdg::ctltype::Create(2), &valueType, &valueType, &valueType },
       { &valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
+  auto p = rvsdg.add_import({ *jlm::rvsdg::ctltype::Create(2), "p" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
   auto z = rvsdg.add_import({ valueType, "z" });
