@@ -886,7 +886,13 @@ TestPointerObjectSet()
     {
       for (int differenceProp = 0; differenceProp <= 1; differenceProp++)
       {
-        TestPointerObjectConstraintSetSolve<true>(policy, onlineCD, differenceProp);
+        // Enabling this changes the explicit points-to sets, which are being tested against
+        const bool preferImplicitPointees = false;
+        TestPointerObjectConstraintSetSolve<true>(
+            policy,
+            onlineCD,
+            differenceProp,
+            preferImplicitPointees);
       }
     }
   }

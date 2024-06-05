@@ -12,6 +12,7 @@
 
 #include <limits>
 #include <queue>
+#include <variant>
 
 namespace jlm::llvm::aa
 {
@@ -275,6 +276,13 @@ PointerObjectSet::MarkAsPointingToExternal(PointerObjectIndex index)
   return true;
 }
 
+bool
+PointerObjectSet::CanTrackPointeesImplicitly(PointerObjectIndex index) const noexcept
+{
+  auto root = GetUnificationRoot(index);
+  return PointerObjects_[root].PointsToExternal && PointerObjects_[root].PointeesEscaping;
+}
+
 PointerObjectIndex
 PointerObjectSet::GetUnificationRoot(PointerObjectIndex index) const noexcept
 {
@@ -411,6 +419,13 @@ PointerObjectSet::MakePointsToSetSuperset(
     newPointees.Insert(pointee);
   };
   return PropagateNewPointees(superset, subset, NewPointee);
+}
+
+void
+PointerObjectSet::RemoveAllPointees(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  PointsToSets_[root].Clear();
 }
 
 std::unique_ptr<PointerObjectSet>
@@ -1327,7 +1342,11 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableDifferencePropagation>
+template<
+    typename Worklist,
+    bool EnableOnlineCycleDetection,
+    bool EnableDifferencePropagation,
+    bool EnablePreferImplicitPointees>
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
@@ -1443,6 +1462,16 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     return root;
   };
 
+  // Removes all explicit pointees from the given PointerObject
+  const auto RemoveAllPointees = [&](PointerObjectIndex index) {
+    JLM_ASSERT(Set_.IsUnificationRoot(index));
+    Set_.RemoveAllPointees(index);
+
+    // Prevent the difference propagation from keeping any pointees after the removal
+    if constexpr (EnableDifferencePropagation)
+      differencePropagation.ClearNewPointees(index);
+  };
+
   // Lambda for getting all superset edge successors of a given pointer object in the subset graph.
   // If \p node is not a unification root, its set of successors will always be empty.
   const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
@@ -1464,6 +1493,22 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       worklist.PushWorkItem(i);
   }
 
+  // Helper function for marking a PointerObject such that all its pointees will escape
+  const auto MarkAsPointeesEscaping = [&](PointerObjectIndex index)
+  {
+    index = Set_.GetUnificationRoot(index);
+    if (Set_.MarkAsPointeesEscaping(index))
+      worklist.PushWorkItem(index);
+  };
+
+  // Helper function for flagging a pointer as pointing to external. Adds to the worklist if changed
+  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
+  {
+    index = Set_.GetUnificationRoot(index);
+    if (Set_.MarkAsPointingToExternal(index))
+      worklist.PushWorkItem(index);
+  };
+
   // Helper function for adding superset edges, propagating everything currently in the subset.
   // The superset's root is added to the worklist if its points-to set or flags are changed.
   const auto AddSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
@@ -1474,6 +1519,16 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     // If this is a self-edge, ignore
     if (superset == subset)
       return;
+
+    if constexpr (EnablePreferImplicitPointees)
+    {
+      // Ignore adding simple edges to nodes that should only have implicit pointees
+      if (Set_.CanTrackPointeesImplicitly(superset))
+      {
+        MarkAsPointeesEscaping(subset);
+        return;
+      }
+    }
 
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
@@ -1514,22 +1569,6 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     newSupersetEdges.Clear();
   };
 
-  // Helper function for marking a PointerObject such that all its pointees will escape
-  const auto MarkAsPointeesEscaping = [&](PointerObjectIndex index)
-  {
-    index = Set_.GetUnificationRoot(index);
-    if (Set_.MarkAsPointeesEscaping(index))
-      worklist.PushWorkItem(index);
-  };
-
-  // Helper function for flagging a pointer as pointing to external. Adds to the worklist if changed
-  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
-  {
-    index = Set_.GetUnificationRoot(index);
-    if (Set_.MarkAsPointingToExternal(index))
-      worklist.PushWorkItem(index);
-  };
-
   // Ensure that all functions that have already escaped have informed their arguments and results
   // The worklist will only inform functions if their HasEscaped flag changes
   EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
@@ -1555,12 +1594,88 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     const auto & newPointees = EnableDifferencePropagation
                                  ? differencePropagation.GetNewPointees(node)
                                  : Set_.GetPointsToSet(node);
+
+    // If difference propagation is enabled, this bool is true if this is the first time node
+    // is being visited by the worklist with the PointsToExternal flag set
     const auto newPointsToExternal = EnableDifferencePropagation
                                        ? differencePropagation.PointsToExternalIsNew(node)
                                        : Set_.IsPointingToExternal(node);
+
+    // Propagate P(n) along all edges n -> superset
+    for (const auto superset : supersetEdges[node].Items())
+    {
+      // FIXME: normalize edges while iterating over them
+      const auto supersetParent = Set_.GetUnificationRoot(superset);
+
+      if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(supersetParent))
+      {
+        // Instead of propagating to a node that can track all pointees implicitly,
+        // mark this node as all pointees escaping.
+        // The flag is added directly, to avoid adding node to the worklist,
+        // when node is about to be visited by the worklist right now.
+        Set_.MarkAsPointeesEscaping(node);
+        continue;
+      }
+
+      bool modified = false;
+      for (const auto pointee : newPointees.Items())
+          modified |= AddToPointsToSet(supersetParent, pointee);
+
+      if (newPointsToExternal)
+        modified |= Set_.MarkAsPointingToExternal(supersetParent);
+
+      if (modified)
+        worklist.PushWorkItem(supersetParent);
+    }
+
+    // If difference propagation is enabled, this bool is true if this is the first time node
+    // is being visited by the worklist with the PointeesEscaping flag set
     const auto newPointeesEscaping = EnableDifferencePropagation
                                        ? differencePropagation.PointeesEscapeIsNew(node)
                                        : Set_.HasPointeesEscaping(node);
+
+    // First mark all pointees as escaping, if node has the PointeesEscaping flag
+    if (Set_.HasPointeesEscaping(node))
+    {
+      // If this is the first time node is being visited with the PointeesEscaping flag set,
+      // add the escaped flag to all pointees. Otherwise, only add it to new pointees.
+      const auto & newEscapingPointees =
+          newPointeesEscaping ? Set_.GetPointsToSet(node) : newPointees;
+      for (const auto pointee : newEscapingPointees.Items())
+      {
+        const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
+
+        // Marking a node as escaped will imply two flags on the unification root:
+        // - PointeesEscaping
+        // - PointsToExternal
+        const bool rootAlreadyHasFlags =
+            Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
+
+        // Mark the pointee itself as escaped, not the pointee's unifiction root!
+        if (!Set_.MarkAsEscaped(pointee))
+          continue;
+
+        // If the PointerObject we just marked as escaped is a function, inform it about escaping
+        if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
+          HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
+
+        // If the pointee's unification root previously didn't have both the flags implied by
+        // having one of the unification members escaping, add the root to the worklist
+        if (!rootAlreadyHasFlags)
+        {
+          JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
+          JLM_ASSERT(Set_.IsPointingToExternal(pointeeRoot));
+          worklist.PushWorkItem(pointeeRoot);
+        }
+      }
+    }
+
+    // If this node can track all pointees implicitly, remove its explicit nodes
+    if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(node))
+    {
+      // This also causes newPointees to become empty
+      RemoveAllPointees(node);
+    }
 
     // Stores on the form *n = value.
     for (const auto value : storeConstraints[node].Items())
@@ -1613,57 +1728,6 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
             MarkAsPointsToExternal);
     }
 
-    // Propagate P(n) along all edges n -> superset
-    for (const auto superset : supersetEdges[node].Items())
-    {
-      // FIXME: normalize edges while iterating over them
-      const auto supersetParent = Set_.GetUnificationRoot(superset);
-
-      bool modified = false;
-      for (const auto pointee : newPointees.Items())
-        modified |= AddToPointsToSet(supersetParent, pointee);
-
-      if (newPointsToExternal)
-        modified |= Set_.MarkAsPointingToExternal(supersetParent);
-
-      if (modified)
-        worklist.PushWorkItem(supersetParent);
-    }
-
-    if (Set_.HasPointeesEscaping(node))
-    {
-      // If this is the first time node has PointeesEscaping, add the escaped flag to all pointees.
-      const auto & newEscapingPointees =
-          newPointeesEscaping ? Set_.GetPointsToSet(node) : newPointees;
-      for (const auto pointee : newEscapingPointees.Items())
-      {
-        const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
-
-        // Marking a node as escaped will imply two flags on the unification root:
-        // - PointeesEscaping
-        // - PointsToExternal
-        const bool rootAlreadyHasFlags =
-            Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
-
-        // Mark the pointee itself as escaped, not the pointee's unifiction root!
-        if (!Set_.MarkAsEscaped(pointee))
-          continue;
-
-        // If the PointerObject we just marked as escaped is a function, inform it about escaping
-        if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
-          HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
-
-        // If the pointee's unification root previously didn't have both the flags implied by
-        // having one of the unification members escaping, add the root to the worklist
-        if (!rootAlreadyHasFlags)
-        {
-          JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
-          JLM_ASSERT(Set_.IsPointingToExternal(pointeeRoot));
-          worklist.PushWorkItem(pointeeRoot);
-        }
-      }
-    }
-
     // No pointees have been added to P(node) while visiting node thus far.
     // This means the current set of pointees have all been handled, and are safe to be reset.
     if (EnableDifferencePropagation)
@@ -1689,69 +1753,69 @@ PointerObjectConstraintSet::WorklistStatistics
 PointerObjectConstraintSet::SolveUsingWorklist(
     WorklistSolverPolicy policy,
     bool enableOnlineCycleDetection,
-    bool enableDifferencePropagation)
+    bool enableDifferencePropagation,
+    bool enablePreferImplicitPropagation)
 {
-  // Dispatch is a recursive lambda with auto-parameters, to turn runtime values into
-  // compile-time values. The first call to Dispatch uses nullptr for all parameters.
-  // The function will use captured runtime values to call itself with types holding
-  // compile-time known values, until all values are compile-time known.
-  auto Dispatch = [&](
-      auto & Dispatch, // Used to call itself recursively
-      auto tWorklist,
-      auto tOnlineCycleDetection,
-      auto tDifferencePropagation) __attribute__((always_inline))
+
+  // Takes all parameters as compile time types.
+  // tWorklist is a pointer to one of the Worklist implementations.
+  // the rest are instances of std::bool_constant, either std::true_type or std::false_type
+  const auto Dispatch = [&](auto tWorklist,
+                            auto tOnlineCycleDetection,
+                            auto tDifferencePropagation,
+                            auto tPreferImplicitPropagation)
   {
-    if constexpr (std::is_null_pointer_v<decltype(tWorklist)>)
-    {
-      if (policy == WorklistSolverPolicy::LeastRecentlyFired)
-      {
-        util::LrfWorklist<PointerObjectIndex> * worklist = nullptr;
-        return Dispatch(Dispatch, worklist, tOnlineCycleDetection, tDifferencePropagation);
-      }
-      else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
-      {
-        util::TwoPhaseLrfWorklist<PointerObjectIndex> * worklist = nullptr;
-        return Dispatch(Dispatch, worklist, tOnlineCycleDetection, tDifferencePropagation);
-      }
-      else if (policy == WorklistSolverPolicy::FirstInFirstOut)
-      {
-        util::FifoWorklist<PointerObjectIndex> * worklist = nullptr;
-        return Dispatch(Dispatch, worklist, tOnlineCycleDetection, tDifferencePropagation);
-      }
-      else if (policy == WorklistSolverPolicy::LastInFirstOut)
-      {
-        util::LifoWorklist<PointerObjectIndex> * worklist = nullptr;
-        return Dispatch(Dispatch, worklist, tOnlineCycleDetection, tDifferencePropagation);
-      }
-      else
-        JLM_UNREACHABLE("Unknown worklist policy");
-    }
-    else if constexpr (std::is_null_pointer_v<decltype(tOnlineCycleDetection)>)
-    {
-      if (enableOnlineCycleDetection)
-        return Dispatch(Dispatch, tWorklist, std::true_type{}, tDifferencePropagation);
-      else
-        return Dispatch(Dispatch, tWorklist, std::false_type{}, tDifferencePropagation);
-    }
-    else if constexpr (std::is_null_pointer_v<decltype(tDifferencePropagation)>)
-    {
-      if (enableDifferencePropagation)
-        return Dispatch(Dispatch, tWorklist, tOnlineCycleDetection, std::true_type{});
-      else
-        return Dispatch(Dispatch, tWorklist, tOnlineCycleDetection, std::false_type{});
-    }
-    else
-    {
-      WorklistStatistics statistics(policy);
-      RunWorklistSolver<
-          std::remove_pointer_t<decltype(tWorklist)>,
-          decltype(tOnlineCycleDetection)::value,
-          decltype(tDifferencePropagation)::value>(statistics);
-      return statistics;
-    }
+    WorklistStatistics statistics(policy);
+    RunWorklistSolver<
+        std::remove_pointer_t<decltype(tWorklist)>,
+        decltype(tOnlineCycleDetection)::value,
+        decltype(tDifferencePropagation)::value,
+        decltype(tPreferImplicitPropagation)::value>(statistics);
+    return statistics;
   };
 
-  return Dispatch(Dispatch, nullptr, nullptr, nullptr);
+  std::variant<
+      typename util::LrfWorklist<PointerObjectIndex> *,
+      typename util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
+      typename util::LifoWorklist<PointerObjectIndex> *,
+      typename util::FifoWorklist<PointerObjectIndex> *>
+      policyVariant;
+
+  if (policy == WorklistSolverPolicy::LeastRecentlyFired)
+    policyVariant = (util::LrfWorklist<PointerObjectIndex> *)nullptr;
+  else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
+    policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
+  else if (policy == WorklistSolverPolicy::LastInFirstOut)
+    policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
+  else if (policy == WorklistSolverPolicy::FirstInFirstOut)
+    policyVariant = (util::FifoWorklist<PointerObjectIndex> *)nullptr;
+  else
+    JLM_UNREACHABLE("Unknown worklist policy");
+
+  std::variant<std::true_type, std::false_type> onlineCycleDetectionVariant;
+  if (enableOnlineCycleDetection)
+    onlineCycleDetectionVariant = std::true_type{};
+  else
+    onlineCycleDetectionVariant = std::false_type{};
+
+  std::variant<std::true_type, std::false_type> differencePropagationVariant;
+  if (enableDifferencePropagation)
+    differencePropagationVariant = std::true_type{};
+  else
+    differencePropagationVariant = std::false_type{};
+
+  std::variant<std::true_type, std::false_type> preferImplicitPropagationVariant;
+  if (enablePreferImplicitPropagation)
+    preferImplicitPropagationVariant = std::true_type{};
+  else
+    preferImplicitPropagationVariant = std::false_type{};
+
+  return std::visit(
+      Dispatch,
+      policyVariant,
+      onlineCycleDetectionVariant,
+      differencePropagationVariant,
+      preferImplicitPropagationVariant);
 }
 
 const char *

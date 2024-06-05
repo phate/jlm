@@ -57,6 +57,8 @@ public:
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_OFF = "-OnlineCD";
   static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_ON = "+DiffProp";
   static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_OFF = "-DiffProp";
+  static inline const char * const CONFIG_PREFER_IMPLICIT_PROPAGATION_ON = "+PIP";
+  static inline const char * const CONFIG_PREFER_IMPLICIT_PROPAGATION_OFF = "-PIP";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
@@ -80,7 +82,8 @@ public:
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
           && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_
           && EnableOnlineCycleDetection_ == other.EnableOnlineCycleDetection_
-          && EnableDifferencePropagation_ == other.EnableDifferencePropagation_;
+          && EnableDifferencePropagation_ == other.EnableDifferencePropagation_
+          && EnablePreferImplicitPropagation_ == other.EnablePreferImplicitPropagation_;
     }
 
     [[nodiscard]] bool
@@ -192,6 +195,21 @@ public:
     }
 
     /**
+     * Enables or disables prefering implicit propagation in the Worklist solver
+     */
+    void
+    EnablePreferImplicitPropagation(bool enable) noexcept
+    {
+      EnablePreferImplicitPropagation_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsPreferImplicitPropagationEnabled() const noexcept
+    {
+      return EnablePreferImplicitPropagation_;
+    }
+
+    /**
      * Creates the default Andersen constraint set solver configuration
      * @return the solver configuration
      */
@@ -212,6 +230,7 @@ public:
       config.SetSolver(Solver::Naive);
       config.EnableOnlineCycleDetection(false);
       config.EnableDifferencePropagation(false);
+      config.EnablePreferImplicitPropagation(false);
       return config;
     }
 
@@ -223,6 +242,7 @@ public:
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = true;
     bool EnableDifferencePropagation_ = true;
+    bool EnablePreferImplicitPropagation_ = true;
   };
 
   ~Andersen() noexcept override = default;

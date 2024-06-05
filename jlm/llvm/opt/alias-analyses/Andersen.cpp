@@ -69,6 +69,17 @@ Andersen::Configuration::DefaultConfiguration()
       config.EnableOnlineCycleDetection(true);
     else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
       config.EnableOnlineCycleDetection(false);
+
+    else if (option == CONFIG_DIFFERENCE_PROPAGATION_ON)
+      config.EnableDifferencePropagation(true);
+    else if (option == CONFIG_DIFFERENCE_PROPAGATION_OFF)
+      config.EnableDifferencePropagation(false);
+
+    else if (option == CONFIG_PREFER_IMPLICIT_PROPAGATION_ON)
+      config.EnablePreferImplicitPropagation(true);
+    else if (option == CONFIG_PREFER_IMPLICIT_PROPAGATION_OFF)
+      config.EnablePreferImplicitPropagation(false);
+
     else
     {
       std::cerr << "Unknown config option string: '" << option << "'" << std::endl;
@@ -1020,7 +1031,8 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
     auto worklistStatistics = Constraints_->SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
-        config.IsDifferencePropagationEnabled());
+        config.IsDifferencePropagationEnabled(),
+        config.IsPreferImplicitPropagationEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else

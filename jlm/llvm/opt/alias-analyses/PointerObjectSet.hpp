@@ -353,6 +353,14 @@ public:
   MarkAsPointingToExternal(PointerObjectIndex index);
 
   /**
+   * @return true if the PointerObject with the given \p index is flagged as both
+   * PointsToExternal and PointeesEscaping.
+   * In that case, any explicit pointee will also be implicit, so it is better to avoid explicit.
+   */
+  [[nodiscard]] bool
+  CanTrackPointeesImplicitly(PointerObjectIndex index) const noexcept;
+
+  /**
    * @return the root in the unification the PointerObject with the given \p index belongs to.
    * PointerObjects that have not been unified will always be their own root.
    */
@@ -418,6 +426,12 @@ public:
       PointerObjectIndex superset,
       PointerObjectIndex subset,
       util::HashSet<PointerObjectIndex> & newPointees);
+
+  /**
+   * Removes all pointees from the PointerObject with the given \p index.
+   * Can be used, e.g., when the PointerObject already points to all its pointees implicitly.
+   */
+  void RemoveAllPointees(PointerObjectIndex index);
 
   /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
@@ -916,13 +930,15 @@ public:
    * @param enableDifferencePropagation if true, difference propagation will be enabled.
    * Online Cycle Detection and Difference Propagation are both described in:
    *   Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
+   * @param enablePreferImplicitPropation if true, uses PIP, which has been defined in this codebase
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
   SolveUsingWorklist(
       WorklistSolverPolicy policy,
       bool enableOnlineCycleDetection,
-      bool enableDifferencePropagation);
+      bool enableDifferencePropagation,
+      bool enablePreferImplicitPropation);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -968,7 +984,11 @@ private:
    * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableDifferencePropagation>
+  template<
+      typename Worklist,
+      bool EnableOnlineCycleDetection,
+      bool EnableDifferencePropagation,
+      bool EnablePreferImplicitPointees>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 
