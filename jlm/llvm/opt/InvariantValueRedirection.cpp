@@ -180,20 +180,56 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     return;
 
   auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+  auto memoryStateOutput = callNode.GetMemoryStateOutput();
+  auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
+  auto hasCallExitSplit = callExitSplit != nullptr;
 
   JLM_ASSERT(callNode.noutputs() == lambdaNode.nfctresults());
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    auto & lambdaResult = *lambdaNode.fctresult(n);
-    if (auto lambdaFunctionArgument = dynamic_cast<lambda::fctargument *>(lambdaResult.origin()))
+    auto callOutput = callNode.output(n);
+    auto shouldHandleMemoryStateOperations = (callOutput == memoryStateOutput) && hasCallExitSplit;
+
+    if (shouldHandleMemoryStateOperations)
     {
-      auto callNodeOperand = callNode.Argument(lambdaFunctionArgument->index())->origin();
-      callNode.output(n)->divert_users(callNodeOperand);
+      auto lambdaEntrySplit = lambda::node::GetMemoryStateEntrySplit(lambdaNode);
+      auto lambdaExitMerge = lambda::node::GetMemoryStateExitMerge(lambdaNode);
+      auto callEntryMerge = CallNode::GetMemoryStateEntryMerge(callNode);
+
+      // The callExitSplit is present. We therefore expect the other nodes to be present as well.
+      JLM_ASSERT(lambdaEntrySplit && lambdaExitMerge && callEntryMerge);
+
+      // All the inputs and outputs of the memory state nodes need to be aligned.
+      JLM_ASSERT(callExitSplit->noutputs() == lambdaExitMerge->ninputs());
+      JLM_ASSERT(lambdaExitMerge->ninputs() == lambdaEntrySplit->noutputs());
+      JLM_ASSERT(lambdaEntrySplit->noutputs() == callEntryMerge->ninputs());
+
+      for (size_t i = 0; n < lambdaExitMerge->ninputs(); i++)
+      {
+        auto lambdaExitMergeInput = lambdaExitMerge->input(i);
+        auto node = rvsdg::node_output::node(lambdaExitMergeInput->origin());
+        if (node == lambdaEntrySplit)
+        {
+          auto callExitOutput = callExitSplit->output(lambdaExitMergeInput->index());
+          auto callMergeOperand =
+              callEntryMerge->input(lambdaExitMergeInput->origin()->index())->origin();
+          callExitOutput->divert_users(callMergeOperand);
+        }
+      }
     }
-    else if (dynamic_cast<lambda::cvargument *>(lambdaResult.origin()))
+    else
     {
-      // FIXME: We would like to get this case working as well, but we need to route the origin of
-      // the respective lambda input to the subregion of the call node.
+      auto & lambdaResult = *lambdaNode.fctresult(n);
+      if (auto lambdaFunctionArgument = dynamic_cast<lambda::fctargument *>(lambdaResult.origin()))
+      {
+        auto callOperand = callNode.Argument(lambdaFunctionArgument->index())->origin();
+        callOutput->divert_users(callOperand);
+      }
+      else if (dynamic_cast<lambda::cvargument *>(lambdaResult.origin()))
+      {
+        // FIXME: We would like to get this case working as well, but we need to route the origin of
+        // the respective lambda input to the subregion of the call node.
+      }
     }
   }
 }
