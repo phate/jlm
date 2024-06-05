@@ -409,10 +409,10 @@ public:
     return type;
   };
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::type>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::type>(new triggertype(*this));
+    return std::make_shared<triggertype>(*this);
   }
 
 private:
@@ -663,7 +663,7 @@ public:
   {}
 
   bundletype(
-      const std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>> * elements)
+      const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> * elements)
       : jlm::rvsdg::valuetype(),
         elements_(std::move(elements))
   {}
@@ -698,7 +698,7 @@ public:
     return true;
   };
 
-  jlm::rvsdg::type *
+  const jlm::rvsdg::type *
   get_element_type(std::string element) const
   {
     for (size_t i = 0; i < elements_->size(); ++i)
@@ -712,10 +712,10 @@ public:
     return nullptr;
   }
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::type>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::type>(new bundletype(*this));
+    return std::make_shared<bundletype>(*this);
   }
 
   virtual std::string
@@ -726,7 +726,7 @@ public:
 
   //        private:
   // TODO: fix memory leak
-  const std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>> * elements_;
+  const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> * elements_;
 };
 
 std::unique_ptr<bundletype>
@@ -1088,8 +1088,8 @@ public:
       const std::vector<const rvsdg::valuetype *> & store_types)
       : simple_op(CreateInPorts(load_types, store_types), CreateOutPorts(load_types, store_types))
   {
-    LoadTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
-    StoreTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
+    LoadTypes_ = new std::vector<std::shared_ptr<const rvsdg::type>>();
+    StoreTypes_ = new std::vector<std::shared_ptr<const rvsdg::type>>();
     for (auto loadType : load_types)
     {
       JLM_ASSERT(
@@ -1106,8 +1106,8 @@ public:
   mem_req_op(const mem_req_op & other)
       : simple_op(other)
   {
-    LoadTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
-    StoreTypes_ = new std::vector<std::unique_ptr<rvsdg::type>>();
+    LoadTypes_ = new std::vector<std::shared_ptr<const rvsdg::type>>();
+    StoreTypes_ = new std::vector<std::shared_ptr<const rvsdg::type>>();
     for (auto & loadType : *other.LoadTypes_)
     {
       LoadTypes_->push_back(loadType->copy());
@@ -1207,21 +1207,21 @@ public:
     return LoadTypes_->size();
   }
 
-  std::vector<std::unique_ptr<rvsdg::type>> *
+  std::vector<std::shared_ptr<const rvsdg::type>> *
   GetLoadTypes() const
   {
     return LoadTypes_;
   }
 
-  std::vector<std::unique_ptr<rvsdg::type>> *
+  std::vector<std::shared_ptr<const rvsdg::type>> *
   GetStoreTypes() const
   {
     return StoreTypes_;
   }
 
 private:
-  std::vector<std::unique_ptr<rvsdg::type>> * LoadTypes_;
-  std::vector<std::unique_ptr<rvsdg::type>> * StoreTypes_;
+  std::vector<std::shared_ptr<const rvsdg::type>> * LoadTypes_;
+  std::vector<std::shared_ptr<const rvsdg::type>> * StoreTypes_;
 };
 
 class store_op final : public jlm::rvsdg::simple_op
@@ -1416,7 +1416,7 @@ public:
   static std::vector<jlm::rvsdg::port>
   CreateInPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { jlm::rvsdg::bit64 });
+    std::vector<jlm::rvsdg::port> ports(1, { *jlm::rvsdg::bittype::Create(64) });
     std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
     ports.insert(ports.end(), states.begin(), states.end());
     ports.emplace_back(valuetype); // result
@@ -1429,7 +1429,7 @@ public:
     std::vector<jlm::rvsdg::port> ports(1, { valuetype });
     std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
     ports.insert(ports.end(), states.begin(), states.end());
-    ports.emplace_back(jlm::rvsdg::bit64); // addr
+    ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
     return ports;
   }
 
@@ -1490,7 +1490,7 @@ public:
   static std::vector<jlm::rvsdg::port>
   CreateInPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports({ jlm::rvsdg::bit64, valuetype });
+    std::vector<jlm::rvsdg::port> ports({ *jlm::rvsdg::bittype::Create(64), valuetype });
     std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
     ports.insert(ports.end(), states.begin(), states.end());
     return ports;
@@ -1500,8 +1500,8 @@ public:
   CreateOutPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
     std::vector<jlm::rvsdg::port> ports(numStates, { llvm::MemoryStateType::Create() });
-    ports.emplace_back(jlm::rvsdg::bit64); // addr
-    ports.emplace_back(valuetype);         // data
+    ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
+    ports.emplace_back(valuetype);                        // data
     return ports;
   }
 
@@ -1567,12 +1567,12 @@ public:
     std::vector<jlm::rvsdg::port> ports(1, at);
     for (size_t i = 0; i < load_cnt; ++i)
     {
-      ports.emplace_back(jlm::rvsdg::bit64); // addr
+      ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
     }
     for (size_t i = 0; i < store_cnt; ++i)
     {
-      ports.emplace_back(jlm::rvsdg::bit64); // addr
-      ports.emplace_back(at.element_type()); // data
+      ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
+      ports.emplace_back(at.element_type());                // data
     }
     return ports;
   }

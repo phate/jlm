@@ -5,9 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-#include <jlm/rvsdg/view.hpp>
 
 namespace jlm::hls
 {

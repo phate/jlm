@@ -37,7 +37,7 @@ protected:
     JLM_ASSERT(is<PointerType>(srcAddressType));
 
     auto & lengthType = operandPorts[2].type();
-    if (lengthType != rvsdg::bit32 && lengthType != rvsdg::bit64)
+    if (lengthType != *rvsdg::bittype::Create(32) && lengthType != *rvsdg::bittype::Create(64))
     {
       throw util::error("Expected 32 bit or 64 bit integer type.");
     }

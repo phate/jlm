@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -199,7 +200,7 @@ alloca_conv(jlm::rvsdg::region * region)
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto merge_in = *node->output(1)->begin();
       auto merge_node = llvm::input_node(merge_in);
-      if (dynamic_cast<const jlm::llvm::MemStateMergeOperator *>(&merge_node->operation()))
+      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&merge_node->operation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(merge_node->ninputs() == 2);

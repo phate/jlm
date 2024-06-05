@@ -6,10 +6,12 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/gamma.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -141,16 +143,16 @@ mem_sep_independent(jlm::rvsdg::region * region)
   std::vector<jlm::rvsdg::simple_node *> mem_nodes;
   gather_mem_nodes(lambda_region, mem_nodes);
   auto entry_states =
-      jlm::llvm::aa::LambdaEntryMemStateOperator::Create(state_arg, 1 + mem_nodes.size());
+      jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + mem_nodes.size());
   auto state_result = GetMemoryStateResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   state_user->divert_to(entry_states.back());
   entry_states.pop_back();
   entry_states.push_back(state_result->origin());
-  auto merged_state =
-      jlm::llvm::aa::LambdaExitMemStateOperator::Create(lambda_region, entry_states);
+  auto & merged_state =
+      jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(*lambda_region, entry_states);
   entry_states.pop_back();
-  state_result->divert_to(merged_state);
+  state_result->divert_to(&merged_state);
   for (auto node : mem_nodes)
   {
     auto in_state = route_through(node->region(), entry_states.back());
@@ -285,17 +287,17 @@ mem_sep_argument(jlm::rvsdg::region * region)
   port_load_store_decouple port_nodes;
   trace_pointer_arguments(lambda, port_nodes);
   auto entry_states =
-      jlm::llvm::aa::LambdaEntryMemStateOperator::Create(state_arg, 1 + port_nodes.size());
+      jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
   auto state_result = GetMemoryStateResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();
   entry_states.pop_back();
   state_user->divert_to(common_edge);
   entry_states.push_back(state_result->origin());
-  auto merged_state =
-      jlm::llvm::aa::LambdaExitMemStateOperator::Create(lambda_region, entry_states);
+  auto & merged_state =
+      jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(*lambda_region, entry_states);
   entry_states.pop_back();
-  state_result->divert_to(merged_state);
+  state_result->divert_to(&merged_state);
   for (auto tp : port_nodes)
   {
     auto new_edge = entry_states.back();

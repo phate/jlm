@@ -22,6 +22,63 @@ IsOrContainsPointerType(const rvsdg::type & type)
   return IsOrContains<PointerType>(type);
 }
 
+Andersen::Configuration
+Andersen::Configuration::DefaultConfiguration()
+{
+  Configuration config;
+
+  const auto configString = std::getenv(ENV_CONFIG_OVERRIDE);
+  if (configString == nullptr)
+    return config;
+
+  std::istringstream configStream(configString);
+  std::string option;
+  while (true)
+  {
+    configStream >> option;
+    if (configStream.fail())
+      break;
+
+    using Policy = PointerObjectConstraintSet::WorklistSolverPolicy;
+
+    if (option == CONFIG_OVS_ON)
+      config.EnableOfflineVariableSubstitution(true);
+    else if (option == CONFIG_OVS_OFF)
+      config.EnableOfflineVariableSubstitution(false);
+
+    else if (option == CONFIG_NORMALIZE_ON)
+      config.EnableOfflineConstraintNormalization(true);
+    else if (option == CONFIG_NORMALIZE_OFF)
+      config.EnableOfflineConstraintNormalization(false);
+
+    else if (option == CONFIG_SOLVER_NAIVE)
+      config.SetSolver(Solver::Naive);
+    else if (option == CONFIG_SOLVER_WL)
+      config.SetSolver(Solver::Worklist);
+
+    else if (option == CONFIG_WL_POLICY_LRF)
+      config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
+    else if (option == CONFIG_WL_POLICY_TWO_PHASE_LRF)
+      config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
+    else if (option == CONFIG_WL_POLICY_FIFO)
+      config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
+    else if (option == CONFIG_WL_POLICY_LIFO)
+      config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
+
+    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_ON)
+      config.EnableOnlineCycleDetection(true);
+    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
+      config.EnableOnlineCycleDetection(false);
+    else
+    {
+      std::cerr << "Unknown config option string: '" << option << "'" << std::endl;
+      JLM_UNREACHABLE("Andersen default config override string broken");
+    }
+  }
+
+  return config;
+}
+
 /**
  * Class collecting statistics from a pass of Andersen's alias analysis
  */
@@ -40,7 +97,11 @@ class Andersen::Statistics final : public util::Statistics
   inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
 
   inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
+
+  inline static const char * WorklistPolicy_ = "WorklistPolicy";
   inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
+  inline static const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  inline static const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
 
   inline static const char * AnalysisTimer_ = "AnalysisTimer";
   inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
@@ -148,11 +209,24 @@ public:
   }
 
   void
-  StopConstraintSolvingWorklistStatistics(size_t numWorkItems) noexcept
+  StopConstraintSolvingWorklistStatistics(
+      PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
+
+    // What worklist policy was used
+    AddMeasurement(
+        WorklistPolicy_,
+        PointerObjectConstraintSet::WorklistSolverPolicyToString(statistics.Policy));
+
     // How many work items were popped from the worklist in total
-    AddMeasurement(NumWorklistSolverWorkItems_, numWorkItems);
+    AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
+
+    if (statistics.NumOnlineCyclesDetected)
+      AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
+
+    if (statistics.NumOnlineCycleUnifications)
+      AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
   }
 
   void
@@ -882,8 +956,10 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    size_t numWorkItems = Constraints_->SolveUsingWorklist();
-    statistics.StopConstraintSolvingWorklistStatistics(numWorkItems);
+    auto worklistStatistics = Constraints_->SolveUsingWorklist(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled());
+    statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
     JLM_UNREACHABLE("Unknown solver");
@@ -896,9 +972,9 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   statistics->StartAndersenStatistics(module.Rvsdg());
 
   // Check environment variables for debugging flags
-  const bool checkAgainstNaive = std::getenv(CHECK_AGAINST_NAIVE_SOLVER)
-                              && Config_ != Configuration::NaiveSolverConfiguration();
-  const bool dumpGraphs = std::getenv(DUMP_SUBSET_GRAPH);
+  const bool checkAgainstNaive =
+      std::getenv(ENV_COMPARE_SOLVE_NAIVE) && Config_ != Configuration::NaiveSolverConfiguration();
+  const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
   util::GraphWriter writer;
 
   AnalyzeModule(module, *statistics);

@@ -30,7 +30,7 @@ test()
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
-  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::bit1));
+  auto p = cfg->entry()->append_argument(argument::create("p", *jlm::rvsdg::bittype::Create(1)));
   auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
   auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
@@ -40,7 +40,7 @@ test()
   cfg->exit()->append_result(s3);
   cfg->exit()->append_result(s3);
 
-  FunctionType ft({ &jlm::rvsdg::bit1, &mt, &mt }, { &mt, &mt });
+  FunctionType ft({ &*jlm::rvsdg::bittype::Create(1), &mt, &mt }, { &mt, &mt });
   auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 

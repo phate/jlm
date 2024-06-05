@@ -8,6 +8,7 @@
 #include "common.hpp"
 #include "HashSet.hpp"
 
+#include <algorithm>
 #include <limits>
 #include <queue>
 #include <stack>
@@ -211,6 +212,79 @@ private:
 
   // The priority queue used to order the items
   MinPriorityQueue<std::pair<size_t, T>> WorkItems_;
+
+  // Counter used to order fire events (work items being popped)
+  size_t FireCounter_ = 0;
+
+  // For each work item, when the item was last fired.
+  // If the work item is currently in the queue, InQueueSentinelValue is used instead
+  std::unordered_map<T, size_t> LastFire_;
+};
+
+/**
+ * Worklist implementation similar to "Least Recently Fired", but using two lists.
+ * Pushed work items are added to `next`, and popped from `current`.
+ * When `current` is empty, `next` is sorted by last fired time, and becomes the new `current`.
+ * Pushing a work item that is already in next or current is a no-op.
+ * Two-phase LRF is presented by
+ *   B. Hardekopf and C. Lin "The And and the Grasshopper: Fast and Accurate Pointer Analysis
+ *   for Millions of Lines of Code" (2007)
+ * @tparam T the type of the work items.
+ * @see Worklist
+ */
+template<typename T>
+class TwoPhaseLrfWorklist final : public Worklist<T>
+{
+public:
+  ~TwoPhaseLrfWorklist() override = default;
+
+  TwoPhaseLrfWorklist() = default;
+
+  bool
+  HasMoreWorkItems() override
+  {
+    return !Current_.empty() || !Next_.empty();
+  }
+
+  T
+  PopWorkItem() override
+  {
+    if (Current_.empty())
+    {
+      JLM_ASSERT(!Next_.empty());
+      std::swap(Current_, Next_);
+      std::sort(Current_.rbegin(), Current_.rend()); // The least recently first work item gets last
+    }
+
+    auto [_, item] = Current_.back();
+    Current_.pop_back();
+    // Note down the moment this item fired
+    LastFire_[item] = ++FireCounter_;
+    return item;
+  }
+
+  void
+  PushWorkItem(T item) override
+  {
+    size_t & lastFire = LastFire_[item];
+    if (lastFire == InQueueSentinelValue)
+      return;
+
+    // Add the work item to the next list, with its last fire time used for sorting
+    Next_.push_back({ lastFire, item });
+    lastFire = InQueueSentinelValue;
+  }
+
+private:
+  // If a work item is currently in the queue, its "last fire" is set to this value
+  static inline const size_t InQueueSentinelValue = std::numeric_limits<size_t>::max();
+
+  // The current list being popped. The pair's first is when the work item was last fired
+  std::vector<std::pair<size_t, T>> Current_;
+
+  // The next list. The pair's first is when the work item was last fired
+  // When current is empty, this list is sorted by least recently fired, and becomes the new current
+  std::vector<std::pair<size_t, T>> Next_;
 
   // Counter used to order fire events (work items being popped)
   size_t FireCounter_ = 0;

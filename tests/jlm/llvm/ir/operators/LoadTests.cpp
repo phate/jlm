@@ -12,7 +12,7 @@
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 
 static int
@@ -289,12 +289,12 @@ TestLoadLoadReduction()
   assert(is<LoadNonVolatileOperation>(ld));
 
   auto mx1 = jlm::rvsdg::node_output::node(x2->origin());
-  assert(is<MemStateMergeOperator>(mx1) && mx1->ninputs() == 2);
+  assert(is<MemoryStateMergeOperation>(mx1) && mx1->ninputs() == 2);
   assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
   assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
 
   auto mx2 = jlm::rvsdg::node_output::node(x3->origin());
-  assert(is<MemStateMergeOperator>(mx2) && mx2->ninputs() == 2);
+  assert(is<MemoryStateMergeOperation>(mx2) && mx2->ninputs() == 2);
   assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
   assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
 }

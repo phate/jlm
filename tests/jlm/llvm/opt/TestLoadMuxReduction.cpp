@@ -7,7 +7,7 @@
 #include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/rvsdg/view.hpp>
 
@@ -31,7 +31,7 @@ TestSuccess()
   auto s2 = graph.add_import({ mt, "s2" });
   auto s3 = graph.add_import({ mt, "s3" });
 
-  auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
+  auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto ld = LoadNonVolatileNode::Create(a, { mux }, vt, 4);
 
   auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
@@ -56,7 +56,7 @@ TestSuccess()
   assert(load->input(3)->origin() == s3);
 
   auto merge = jlm::rvsdg::node_output::node(ex2->origin());
-  assert(is<MemStateMergeOperator>(merge));
+  assert(is<MemoryStateMergeOperation>(merge));
   assert(merge->ninputs() == 3);
   for (size_t n = 0; n < merge->ninputs(); n++)
   {
@@ -84,7 +84,7 @@ TestWrongNumberOfOperands()
   auto s1 = graph.add_import({ mt, "s1" });
   auto s2 = graph.add_import({ mt, "s2" });
 
-  auto merge = MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
+  auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
   auto ld = LoadNonVolatileNode::Create(a, { merge, merge }, vt, 4);
 
   auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });

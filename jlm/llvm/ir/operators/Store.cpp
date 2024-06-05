@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 
 namespace jlm::llvm
@@ -168,7 +168,7 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
   JLM_ASSERT(operands.size() > 2);
 
   auto memStateMergeNode = jlm::rvsdg::node_output::node(operands[2]);
-  if (!is<MemStateMergeOperator>(memStateMergeNode))
+  if (!is<MemoryStateMergeOperation>(memStateMergeNode))
     return false;
 
   for (size_t n = 2; n < operands.size(); n++)
@@ -254,7 +254,7 @@ perform_store_mux_reduction(
       operands[1],
       memStateMergeOperands,
       op.GetAlignment());
-  return { MemStateMergeOperator::Create(states) };
+  return { MemoryStateMergeOperation::Create(states) };
 }
 
 static std::vector<jlm::rvsdg::output *>

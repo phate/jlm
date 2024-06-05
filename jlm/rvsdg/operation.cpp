@@ -20,14 +20,16 @@ port::port(const jlm::rvsdg::type & type)
     : port(type.copy())
 {}
 
-port::port(std::unique_ptr<jlm::rvsdg::type> type)
+port::port(std::shared_ptr<const jlm::rvsdg::type> type)
     : type_(std::move(type))
 {}
 
 bool
 port::operator==(const port & other) const noexcept
 {
-  return *type_ == *other.type_;
+  // If both types are identical (same pointer), no need
+  // to semantically check for equality.
+  return type_ == other.type_ || *type_ == *other.type_;
 }
 
 std::unique_ptr<port>

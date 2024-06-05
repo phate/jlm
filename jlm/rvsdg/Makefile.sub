@@ -36,11 +36,13 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/notifiers.hpp \
 	jlm/rvsdg/bitstring/constant.hpp \
 	jlm/rvsdg/bitstring/slice.hpp \
+	jlm/rvsdg/bitstring/arithmetic-impl.hpp \
 	jlm/rvsdg/bitstring/arithmetic.hpp \
 	jlm/rvsdg/bitstring/type.hpp \
 	jlm/rvsdg/bitstring/value-representation.hpp \
 	jlm/rvsdg/bitstring/concat.hpp \
 	jlm/rvsdg/bitstring/bitoperation-classes.hpp \
+	jlm/rvsdg/bitstring/comparison-impl.hpp \
 	jlm/rvsdg/bitstring/comparison.hpp \
 	jlm/rvsdg/view.hpp \
 	jlm/rvsdg/traverser.hpp \

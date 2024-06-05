@@ -716,7 +716,7 @@ convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & c
   auto result = tacs.back()->result(0);
   auto mstate = tacs.back()->result(1);
 
-  tacs.push_back(MemStateMergeOperator::Create({ mstate, memstate }));
+  tacs.push_back(MemoryStateMergeOperation::Create({ mstate, memstate }));
   tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
 
   return result;
@@ -1033,7 +1033,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto result = tacs.back()->result(0);
   auto astate = tacs.back()->result(1);
 
-  tacs.push_back(MemStateMergeOperator::Create({ astate, memstate }));
+  tacs.push_back(MemoryStateMergeOperation::Create({ astate, memstate }));
   tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
 
   return result;

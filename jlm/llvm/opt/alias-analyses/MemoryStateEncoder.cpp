@@ -4,9 +4,9 @@
  */
 
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -599,7 +599,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
   {
     EncodeMemcpy(simpleNode);
   }
-  else if (is<MemStateOperator>(&simpleNode))
+  else if (is<MemoryStateOperation>(&simpleNode))
   {
     // Nothing needs to be done
   }
@@ -648,7 +648,8 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::simple_node & mallocNode)
   // is not just simply replaced and therefore "lost".
   auto memoryNodeStatePair = stateMap.GetState(*mallocNode.region(), mallocMemoryNode);
   auto mallocState = mallocNode.output(1);
-  auto mergedState = MemStateMergeOperator::Create({ mallocState, &memoryNodeStatePair->State() });
+  auto mergedState =
+      MemoryStateMergeOperation::Create({ mallocState, &memoryNodeStatePair->State() });
   memoryNodeStatePair->ReplaceState(*mergedState);
 }
 
@@ -738,8 +739,8 @@ MemoryStateEncoder::EncodeCallEntry(const CallNode & callNode)
   }
 
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
-  auto state = CallEntryMemStateOperator::Create(region, states);
-  callNode.GetMemoryStateInput()->divert_to(state);
+  auto & state = CallEntryMemoryStateMergeOperation::Create(*region, states);
+  callNode.GetMemoryStateInput()->divert_to(&state);
 }
 
 void
@@ -748,8 +749,9 @@ MemoryStateEncoder::EncodeCallExit(const CallNode & callNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetCallExitNodes(callNode);
 
-  auto states =
-      CallExitMemStateOperator::Create(callNode.GetMemoryStateOutput(), memoryNodes.Size());
+  auto states = CallExitMemoryStateSplitOperation::Create(
+      *callNode.GetMemoryStateOutput(),
+      memoryNodes.Size());
   auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);
 }
@@ -805,7 +807,8 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 
   stateMap.PushRegion(*lambdaNode.subregion());
 
-  auto states = LambdaEntryMemStateOperator::Create(memoryStateArgument, memoryNodes.Size());
+  auto states =
+      LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, memoryNodes.Size());
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())
@@ -813,20 +816,21 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 
   if (!states.empty())
   {
-    // This additional MemStateMergeOperator node makes all other nodes in the function that
+    // This additional MemoryStateMergeOperation node makes all other nodes in the function that
     // consume the memory state dependent on this node and therefore transitively on the
-    // LambdaEntryMemStateOperator. This ensures that the LambdaEntryMemStateOperator is always
-    // visited before all other memory state consuming nodes:
+    // LambdaEntryMemoryStateSplitOperation. This ensures that the
+    // LambdaEntryMemoryStateSplitOperation is always visited before all other memory state
+    // consuming nodes:
     //
     // ... := LAMBDA[f]
     //   [..., a1, ...]
-    //     o1, ..., ox := LambdaEntryMemStateOperator a1
-    //     oy = MemStateMergeOperator o1, ..., ox
+    //     o1, ..., ox := LambdaEntryMemoryStateSplit a1
+    //     oy = MemoryStateMerge o1, ..., ox
     //     ....
     //
-    // No other memory state consuming node aside from the LambdaEntryMemStateOperator should now
-    // consume a1.
-    auto state = MemStateMergeOperator::Create(states);
+    // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
+    // should now consume a1.
+    auto state = MemoryStateMergeOperation::Create(states);
     memoryStateArgumentUser->divert_to(state);
   }
 }
@@ -841,8 +845,8 @@ MemoryStateEncoder::EncodeLambdaExit(const lambda::node & lambdaNode)
 
   auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
-  auto mergedState = LambdaExitMemStateOperator::Create(subregion, states);
-  memoryStateResult->divert_to(mergedState);
+  auto & mergedState = LambdaExitMemoryStateMergeOperation::Create(*subregion, states);
+  memoryStateResult->divert_to(&mergedState);
 
   stateMap.PopRegion(*lambdaNode.subregion());
 }
