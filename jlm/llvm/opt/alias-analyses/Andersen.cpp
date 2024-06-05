@@ -1019,7 +1019,8 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
     statistics.StartConstraintSolvingWorklistStatistics();
     auto worklistStatistics = Constraints_->SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
-        config.IsOnlineCycleDetectionEnabled());
+        config.IsOnlineCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else

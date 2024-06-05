@@ -55,6 +55,8 @@ public:
   static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_OFF = "-OnlineCD";
+  static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_ON = "+DiffProp";
+  static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_OFF = "-DiffProp";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
@@ -76,7 +78,9 @@ public:
     {
       return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
-          && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_;
+          && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_
+          && EnableOnlineCycleDetection_ == other.EnableOnlineCycleDetection_
+          && EnableDifferencePropagation_ == other.EnableDifferencePropagation_;
     }
 
     [[nodiscard]] bool
@@ -171,6 +175,23 @@ public:
     }
 
     /**
+     * Enables or disables difference propagation in the Worklist solver, as described by
+     *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Only used by the worklist solver.
+     */
+    void
+    EnableDifferencePropagation(bool enable) noexcept
+    {
+      EnableDifferencePropagation_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsDifferencePropagationEnabled() const noexcept
+    {
+      return EnableDifferencePropagation_;
+    }
+
+    /**
      * Creates the default Andersen constraint set solver configuration
      * @return the solver configuration
      */
@@ -190,6 +211,7 @@ public:
       config.EnableOfflineConstraintNormalization(false);
       config.SetSolver(Solver::Naive);
       config.EnableOnlineCycleDetection(false);
+      config.EnableDifferencePropagation(false);
       return config;
     }
 
@@ -200,6 +222,7 @@ public:
     PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = true;
+    bool EnableDifferencePropagation_ = true;
   };
 
   ~Andersen() noexcept override = default;

@@ -8,7 +8,6 @@
 #include <test-registry.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
-#include <jlm/util/Worklist.hpp>
 
 #include <cassert>
 
@@ -875,13 +874,21 @@ TestPointerObjectSet()
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
   TestPointerObjectConstraintSetSolve<false>();
+
   using Policy = jlm::llvm::aa::PointerObjectConstraintSet::WorklistSolverPolicy;
-  for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
+  static std::vector<Policy> policies{ Policy::LeastRecentlyFired,
+                                       Policy::TwoPhaseLeastRecentlyFired,
+                                       Policy::FirstInFirstOut,
+                                       Policy::LastInFirstOut };
+  for (auto policy : policies)
   {
-    TestPointerObjectConstraintSetSolve<true>(Policy::LeastRecentlyFired, onlineCD);
-    TestPointerObjectConstraintSetSolve<true>(Policy::TwoPhaseLeastRecentlyFired, onlineCD);
-    TestPointerObjectConstraintSetSolve<true>(Policy::FirstInFirstOut, onlineCD);
-    TestPointerObjectConstraintSetSolve<true>(Policy::LastInFirstOut, onlineCD);
+    for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
+    {
+      for (int differenceProp = 0; differenceProp <= 1; differenceProp++)
+      {
+        TestPointerObjectConstraintSetSolve<true>(policy, onlineCD, differenceProp);
+      }
+    }
   }
   TestClonePointerObjectConstraintSet();
   return 0;

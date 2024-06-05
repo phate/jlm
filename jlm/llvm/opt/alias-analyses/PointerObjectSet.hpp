@@ -162,6 +162,17 @@ class PointerObjectSet final
   [[nodiscard]] PointerObjectIndex
   AddPointerObject(PointerObjectKind kind);
 
+  /**
+   * Internal helper function for making P(superset) a superset of P(subset).
+   * @See MakePointsToSetSuperset
+   */
+  template<typename NewPointeeFunctor>
+  bool
+  PropagateNewPointees(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      NewPointeeFunctor & onNewPointee);
+
 public:
   [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
@@ -387,7 +398,8 @@ public:
   AddToPointsToSet(PointerObjectIndex pointer, PointerObjectIndex pointee);
 
   /**
-   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference
+   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference.
+   * Also propagates the PointsToExternal flag.
    * @param superset the index of the PointerObject that shall point to everything subset points to
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
    * as well
@@ -396,6 +408,16 @@ public:
    */
   bool
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
+
+  /**
+   * A version of MakePointsToSetSuperset that adds any new pointees of \p superset,
+   * to the set \p newPointees.
+   */
+  bool
+  MakePointsToSetSuperset(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      util::HashSet<PointerObjectIndex> & newPointees);
 
   /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
@@ -890,12 +912,17 @@ public:
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
    * @param policy the worklist iteration order policy to use
-   * @param enableOnlineCycleDetection if true, online cycle detection will be performed, from
-   *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
+   * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
+   * @param enableDifferencePropagation if true, difference propagation will be enabled.
+   * Online Cycle Detection and Difference Propagation are both described in:
+   *   Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
-  SolveUsingWorklist(WorklistSolverPolicy policy, bool enableOnlineCycleDetection);
+  SolveUsingWorklist(
+      WorklistSolverPolicy policy,
+      bool enableOnlineCycleDetection,
+      bool enableDifferencePropagation);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -938,9 +965,10 @@ private:
    * @param statistics the WorklistStatistics instance that will get information about this run.
    * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
+   * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist, bool EnableOnlineCycleDetection>
+  template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableDifferencePropagation>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 
