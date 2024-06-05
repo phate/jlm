@@ -395,9 +395,10 @@ TestMatch()
     std::cout << "Function Setup" << std::endl;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
+    jlm::rvsdg::ctltype iOStateTypeCtl(2);
     FunctionType functionType(
         { &iOStateType, &memoryStateType },
-        { &jlm::rvsdg::ctl2, &iOStateType, &memoryStateType });
+        { &*jlm::rvsdg::ctltype::Create(2), &iOStateType, &memoryStateType });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);

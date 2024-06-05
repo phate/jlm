@@ -262,18 +262,6 @@ MlirToJlmConverter::ConvertBitBinaryNode(
         inputs[0],
         inputs[1]));
   }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
-  {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
-    if (!st)
-      JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
-    auto op = llvm::zext_op(st->nbits(), castedOp.getType().cast<::mlir::IntegerType>().getWidth());
-
-    return rvsdg::node_output::node(rvsdg::simple_node::create_normalized(
-        inputs[0]->region(),
-        op,
-        std::vector<rvsdg::output *>(inputs.begin(), inputs.end()))[0]);
-  }
 
   return nullptr;
 }
@@ -295,7 +283,20 @@ MlirToJlmConverter::ConvertOperation(
     return convertedNode;
   /* #endregion */
 
-  if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
+  if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
+  {
+    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
+    if (!st)
+      JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
+    auto op = llvm::zext_op(st->nbits(), castedOp.getType().cast<::mlir::IntegerType>().getWidth());
+
+    return rvsdg::node_output::node(rvsdg::simple_node::create_normalized(
+        inputs[0]->region(),
+        op,
+        std::vector<rvsdg::output *>(inputs.begin(), inputs.end()))[0]);
+  }
+
+  else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
   {
     ConvertOmega(mlirOperation, rvsdgRegion);
     // Omega doesn't have a corresponding RVSDG node so we return nullptr
