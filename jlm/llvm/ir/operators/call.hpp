@@ -7,6 +7,7 @@
 #define JLM_LLVM_IR_OPERATORS_CALL_HPP
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -382,6 +383,46 @@ public:
     auto memoryState = output(noutputs() - 1);
     JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
     return memoryState;
+  }
+
+  /**
+   *
+   * @param callNode The call node for which to retrieve the CallEntryMemoryStateMergeOperation
+   * node.
+   * @return The CallEntryMemoryStateMergeOperation node connected to the memory state input if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateInput()
+   * @see GetMemoryStateExitSplit()
+   */
+  [[nodiscard]] static rvsdg::simple_node *
+  GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
+  {
+    auto node = rvsdg::node_output::node(callNode.GetMemoryStateInput()->origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+                                                        : nullptr;
+  }
+
+  /**
+   *
+   * @param callNode The call node for which to retrieve the CallExitMemoryStateSplitOperation node.
+   * @return The CallExitMemoryStateSplitOperation node connected to the memory state output if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateOutput()
+   * @see GetMemoryStateEntryMerge()
+   */
+  [[nodiscard]] static rvsdg::simple_node *
+  GetMemoryStateExitSplit(const CallNode & callNode) noexcept
+  {
+    // If a memory state exit split node is present, then we would expect the node to be the only
+    // user of the memory state output.
+    if (callNode.GetMemoryStateOutput()->nusers() != 1)
+      return nullptr;
+
+    auto node = rvsdg::node_input::GetNode(**callNode.GetMemoryStateOutput()->begin());
+    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+                                                       : nullptr;
   }
 
   rvsdg::node *
