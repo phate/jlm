@@ -46,6 +46,17 @@ PointerObjectSet::NumPointerObjects() const noexcept
 }
 
 size_t
+PointerObjectSet::NumPointerObjectsWithImplicitPointees() const noexcept
+{
+  size_t count = 0;
+  for (auto & pointerObject : PointerObjects_)
+  {
+    count += pointerObject.CanTrackPointeesImplicitly();
+  }
+  return count;
+}
+
+size_t
 PointerObjectSet::NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept
 {
   size_t count = 0;
@@ -763,6 +774,26 @@ const std::vector<PointerObjectConstraintSet::ConstraintVariant> &
 PointerObjectConstraintSet::GetConstraints() const noexcept
 {
   return Constraints_;
+}
+
+size_t
+PointerObjectConstraintSet::GetTotalConstraintCount() const noexcept
+{
+  size_t numBaseAndFlagConstraints = 0;
+  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++) {
+    if (Set_.HasEscaped(i))
+      numBaseAndFlagConstraints++;
+
+    if (!Set_.IsUnificationRoot(i))
+      continue;
+
+    if (Set_.IsPointingToExternal(i))
+      numBaseAndFlagConstraints++;
+    if (Set_.HasPointeesEscaping(i))
+      numBaseAndFlagConstraints++;
+    numBaseAndFlagConstraints += Set_.GetPointsToSet(i).Size();
+  }
+  return Constraints_.size() + numBaseAndFlagConstraints;
 }
 
 /**

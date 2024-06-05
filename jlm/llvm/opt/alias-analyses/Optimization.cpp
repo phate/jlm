@@ -26,11 +26,12 @@ AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::run(
 {
   AliasAnalysisPass aaPass;
   auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);
-  auto provisioning =
+  /*auto provisioning =
       MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
+  */
 }
 
 // Explicitly initialize all combinations

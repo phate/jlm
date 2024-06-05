@@ -84,33 +84,49 @@ Andersen::Configuration::DefaultConfiguration()
  */
 class Andersen::Statistics final : public util::Statistics
 {
-  inline static const char * NumPointerObjects_ = "#PointerObjects";
-  inline static const char * NumRegisterPointerObjects_ = "#RegisterPointerObjects";
-  inline static const char * NumRegistersMappedToPointerObject_ = "#RegistersMappedToPointerObject";
+  static constexpr const char * NumPointerObjects_ = "#PointerObjects";
+  static constexpr const char * NumPointerObjectsWithImplicitPointees_ =
+      "#PointerObjectsWithImplicitPointees";
+  static constexpr const char * NumRegisterPointerObjects_ = "#RegisterPointerObjects";
+  static constexpr const char * NumRegistersMappedToPointerObject_ =
+      "#RegistersMappedToPointerObject";
 
-  inline static const char * NumSupersetConstraints_ = "#SupersetConstraints";
-  inline static const char * NumStoreConstraints_ = "#StoreConstraints";
-  inline static const char * NumLoadConstraints_ = "#LoadConstraints";
-  inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
+  static constexpr const char * NumSupersetConstraints_ = "#SupersetConstraints";
+  static constexpr const char * NumStoreConstraints_ = "#StoreConstraints";
+  static constexpr const char * NumLoadConstraints_ = "#LoadConstraints";
+  static constexpr const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
+  // Includes base constraints and flags
+  static constexpr const char * NumConstraintsTotal_ = "#ConstraintsTotal";
 
-  inline static const char * NumUnificationsOvs_ = "#Unifications(OVS)";
-  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
+  static constexpr const char * NumUnificationsOvs_ = "#Unifications(OVS)";
+  static constexpr const char * NumConstraintsRemovedOfflineNorm_ =
+      "#ConstraintsRemoved(OfflineNorm)";
 
-  inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
+  static constexpr const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
 
-  inline static const char * WorklistPolicy_ = "WorklistPolicy";
-  inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
-  inline static const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
-  inline static const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
+  static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
+  static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
+      "#WorklistSolverWorkItemsPopped";
+  static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
 
-  inline static const char * AnalysisTimer_ = "AnalysisTimer";
-  inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
-  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
-  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
-  inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
-  inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
-  inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
-  inline static const char * PointsToGraphConstructionExternalToEscapedTimer_ =
+  static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
+  static constexpr const char * NumUnificationRoots_ = "#UnificationRoots";
+  // These next measurements only count flags and pointees of unification roots
+  static constexpr const char * NumPointsToExternalFlags_ = "#PointsToExternalFlags";
+  static constexpr const char * NumPointeesEscapingFlags_ = "#PointeesEscapingFlags";
+  static constexpr const char * NumExplicitPointees_ = "#ExplicitPointees";
+  // If a pointee is both implicit (through PointsToExternal flag) and explicit
+  static constexpr const char * NumDoubledUpPointees_ = "#DoubledUpPointees";
+
+  static constexpr const char * AnalysisTimer_ = "AnalysisTimer";
+  static constexpr const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
+  static constexpr const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
+  static constexpr const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
+  static constexpr const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
+  static constexpr const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
+  static constexpr const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
+  static constexpr const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
 
 public:
@@ -142,6 +158,9 @@ public:
 
     AddMeasurement(NumPointerObjects_, set.NumPointerObjects());
     AddMeasurement(
+        NumPointerObjectsWithImplicitPointees_,
+        set.NumPointerObjectsWithImplicitPointees());
+    AddMeasurement(
         NumRegisterPointerObjects_,
         set.NumPointerObjectsOfKind(PointerObjectKind::Register));
     AddMeasurement(NumRegistersMappedToPointerObject_, set.GetRegisterMap().size());
@@ -161,6 +180,7 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
+    AddMeasurement(NumConstraintsTotal_, constraints.GetTotalConstraintCount());
   }
 
   void
@@ -220,13 +240,54 @@ public:
         PointerObjectConstraintSet::WorklistSolverPolicyToString(statistics.Policy));
 
     // How many work items were popped from the worklist in total
-    AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
+    AddMeasurement(NumWorklistSolverWorkItemsPopped_, statistics.NumWorkItemsPopped);
 
     if (statistics.NumOnlineCyclesDetected)
       AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
 
     if (statistics.NumOnlineCycleUnifications)
       AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
+  }
+
+  void
+  AddStatisticsFromSolution(const PointerObjectSet & set)
+  {
+    size_t numEscapedMemoryObjects = 0;
+    size_t numUnificationRoots = 0;
+    size_t numPointsToExternalFlags = 0;
+    size_t numPointeesEscapingFlags = 0;
+    size_t numExplicitPointees = 0;
+    size_t numDoubleUpPointees = 0;
+
+    for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
+    {
+      if (set.HasEscaped(i))
+        numEscapedMemoryObjects++;
+
+      if (!set.IsUnificationRoot(i))
+        continue;
+
+      numUnificationRoots++;
+      if (set.IsPointingToExternal(i))
+        numPointsToExternalFlags++;
+      if (set.HasPointeesEscaping(i))
+        numPointeesEscapingFlags++;
+
+      const auto & pointees = set.GetPointsToSet(i);
+      numExplicitPointees += pointees.Size();
+
+      // If the PointsToExternal flag is set, any explicit pointee that has escaped is doubled up
+      if (set.IsPointingToExternal(i))
+        for (auto pointee : pointees.Items())
+          if (set.HasEscaped(pointee))
+            numDoubleUpPointees++;
+    }
+    AddMeasurement(NumEscapedMemoryObjects_, numEscapedMemoryObjects);
+    AddMeasurement(NumUnificationRoots_, numUnificationRoots);
+    AddMeasurement(NumPointsToExternalFlags_, numPointsToExternalFlags);
+    AddMeasurement(NumPointeesEscapingFlags_, numPointeesEscapingFlags);
+    AddMeasurement(NumExplicitPointees_, numExplicitPointees);
+    AddMeasurement(NumDoubledUpPointees_, numDoubleUpPointees);
   }
 
   void
@@ -963,6 +1024,8 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
   }
   else
     JLM_UNREACHABLE("Unknown solver");
+
+  statistics.AddStatisticsFromSolution(*Set_);
 }
 
 std::unique_ptr<PointsToGraph>

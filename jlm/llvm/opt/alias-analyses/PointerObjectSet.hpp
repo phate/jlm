@@ -167,6 +167,12 @@ public:
   NumPointerObjects() const noexcept;
 
   /**
+   * @return the number of PointerObjects where CanTrackPointeesImplicitly() is true
+   */
+  [[nodiscard]] size_t
+  NumPointerObjectsWithImplicitPointees() const noexcept;
+
+  /**
    * @return the number of PointerObjects in the set matching the specified \p kind.
    */
   [[nodiscard]] size_t
@@ -823,10 +829,16 @@ public:
   AddConstraint(ConstraintVariant c);
 
   /**
-   * Retrieves all added constraints that were not simple one-off flag changes
+   * @return all added constraints that were not simple one-off pointee inclusions or flag changes
    */
   [[nodiscard]] const std::vector<ConstraintVariant> &
   GetConstraints() const noexcept;
+
+  /**
+   * @return the total number of constraints, including base constraints and flags
+   */
+  [[nodiscard]] size_t
+  GetTotalConstraintCount() const noexcept;
 
   /**
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
