@@ -780,7 +780,6 @@ TestGammaOp()
     ::mlir::rvsdg::GammaNode gamma = Builder_->create<::mlir::rvsdg::GammaNode>(
         Builder_->getUnknownLoc(),
         ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
-        // ConstantCtrl, //predicate
         lambdaBlock->getArgument(0),                                                   // predicate
         ::mlir::ValueRange(::llvm::ArrayRef<::mlir::Value>({ entryVar1, entryVar2 })), // Inputs
         static_cast<unsigned>(3) // regionsCount

@@ -162,7 +162,6 @@ MlirToJlmConverter::ConvertBitBinaryNode(
     ::mlir::Operation & mlirOperation,
     ::llvm::SmallVector<rvsdg::output *> & inputs)
 {
-  JLM_ASSERT(inputs.size() == 2);
   if (auto castedOp = ::mlir::dyn_cast<::mlir::LLVM::AddOp>(&mlirOperation))
   {
     return rvsdg::node_output::node(rvsdg::bitadd_op::create(
