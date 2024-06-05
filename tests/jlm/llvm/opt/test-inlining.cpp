@@ -30,30 +30,30 @@ test1()
 
   auto SetupF1 = [&]()
   {
-    jlm::tests::valuetype vt;
+    auto vt = jlm::tests::valuetype::Create();
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
-        { &vt, &iOStateType, &memoryStateType },
-        { &vt, &iOStateType, &memoryStateType });
+        { vt, iostatetype::Create(), MemoryStateType::Create() },
+        { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
     lambda->add_ctxvar(i);
 
-    auto t = jlm::tests::test_op::create(lambda->subregion(), { lambda->fctargument(0) }, { &vt });
+    auto t = jlm::tests::test_op::create(lambda->subregion(), { lambda->fctargument(0) }, { &*vt });
 
     return lambda->finalize({ t->output(0), lambda->fctargument(1), lambda->fctargument(2) });
   };
 
   auto SetupF2 = [&](lambda::output * f1)
   {
-    jlm::tests::valuetype vt;
+    auto vt = jlm::tests::valuetype::Create();
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     jlm::rvsdg::ctltype ct(2);
     FunctionType functionType(
-        { &ct, &vt, &iOStateType, &memoryStateType },
-        { &vt, &iOStateType, &memoryStateType });
+        { jlm::rvsdg::ctltype::Create(2), vt, iostatetype::Create(), MemoryStateType::Create() },
+        { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
     auto d = lambda->add_ctxvar(f1);
@@ -106,18 +106,18 @@ test2()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
 
   FunctionType functionType1(
-      { &vt, &iOStateType, &memoryStateType },
-      { &iOStateType, &memoryStateType });
+      { vt, iostatetype::Create(), MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
   PointerType pt;
 
   FunctionType functionType2(
-      { &pt, &iOStateType, &memoryStateType },
-      { &iOStateType, &memoryStateType });
+      { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -134,8 +134,8 @@ test2()
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType },
-        { &iOStateType, &memoryStateType });
+        { iostatetype::Create(), MemoryStateType::Create() },
+        { iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f2", linkage::external_linkage);
     auto cvi = lambda->add_ctxvar(i);

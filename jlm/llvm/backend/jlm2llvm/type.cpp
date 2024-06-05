@@ -43,7 +43,7 @@ convert(const FunctionType & functionType, context & ctx)
     if (rvsdg::is<MemoryStateType>(argumentType))
       continue;
 
-    argumentTypes.push_back(convert_type(argumentType, ctx));
+    argumentTypes.push_back(convert_type(*argumentType, ctx));
   }
 
   /*

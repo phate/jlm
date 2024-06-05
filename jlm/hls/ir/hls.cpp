@@ -134,7 +134,7 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
     remove(node);
 }
 
-std::unique_ptr<bundletype>
+std::shared_ptr<const bundletype>
 get_mem_req_type(const rvsdg::valuetype & elementType, bool write)
 {
   auto elements =
@@ -147,16 +147,16 @@ get_mem_req_type(const rvsdg::valuetype & elementType, bool write)
     elements->emplace_back("data", elementType.copy());
     elements->emplace_back("write", std::make_unique<jlm::rvsdg::bittype>(1));
   }
-  return std::make_unique<bundletype>(elements);
+  return std::make_shared<bundletype>(elements);
 }
 
-std::unique_ptr<bundletype>
+std::shared_ptr<const bundletype>
 get_mem_res_type(const jlm::rvsdg::valuetype & dataType)
 {
   auto elements =
       new std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>>();
   elements->emplace_back("data", dataType.copy());
   elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
-  return std::make_unique<bundletype>(elements);
+  return std::make_shared<bundletype>(elements);
 }
 }

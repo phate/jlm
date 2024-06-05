@@ -38,7 +38,9 @@ test_malloc()
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));
 
-    FunctionType ft({ &*jlm::rvsdg::bittype::Create(64) }, { &pt, &mt });
+    FunctionType ft(
+        { jlm::rvsdg::bittype::Create(64) },
+        { PointerType::Create(), MemoryStateType::Create() });
     auto f = function_node::create(im->ipgraph(), "f", ft, linkage::external_linkage);
     f->add_cfg(std::move(cfg));
 
@@ -80,7 +82,9 @@ test_free()
 
     auto ipgmod = ipgraph_module::create(jlm::util::filepath(""), "", "");
 
-    FunctionType ft({ &pt, &mt, &iot }, { &mt, &iot });
+    FunctionType ft(
+        { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() },
+        { MemoryStateType::Create(), iostatetype::Create() });
     auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
     auto cfg = cfg::create(*ipgmod);

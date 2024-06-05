@@ -28,6 +28,9 @@ public:
 
   std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
+
+  static std::shared_ptr<const valuetype>
+  Create();
 };
 
 class statetype final : public rvsdg::statetype

@@ -19,15 +19,15 @@ TestPhiCreation()
 
   jlm::rvsdg::graph graph;
 
-  jlm::tests::valuetype vtype;
+  auto vtype = jlm::tests::valuetype::Create();
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   FunctionType f0type(
-      { &vtype, &iOStateType, &memoryStateType },
-      { &iOStateType, &memoryStateType });
+      { vtype, iostatetype::Create(), MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
   FunctionType f1type(
-      { &vtype, &iOStateType, &memoryStateType },
-      { &vtype, &iOStateType, &memoryStateType });
+      { vtype, iostatetype::Create(), MemoryStateType::Create() },
+      { vtype, iostatetype::Create(), MemoryStateType::Create() });
 
   auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
   {

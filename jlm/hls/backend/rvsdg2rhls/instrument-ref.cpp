@@ -89,11 +89,11 @@ instrument_ref(llvm::RvsdgModule & rm)
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
   jlm::llvm::FunctionType loadFunctionType(
-      { jlm::llvm::PointerType::Create().get(),
-        &*jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create().get(),
-        llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::Create().get(), llvm::MemoryStateType::Create().get() });
+      { jlm::llvm::PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create(),
+        llvm::MemoryStateType::Create() },
+      { llvm::iostatetype::Create(), llvm::MemoryStateType::Create() });
   jlm::llvm::impport load_imp(
       loadFunctionType,
       "reference_load",
@@ -101,12 +101,12 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto reference_load = graph.add_import(load_imp);
   // addr, data, width, memstate
   jlm::llvm::FunctionType storeFunctionType(
-      { jlm::llvm::PointerType::Create().get(),
-        &*jlm::rvsdg::bittype::Create(64),
-        &*jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create().get(),
-        jlm::llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::Create().get(), jlm::llvm::MemoryStateType::Create().get() });
+      { jlm::llvm::PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create(),
+        jlm::llvm::MemoryStateType::Create() },
+      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
   jlm::llvm::impport store_imp(
       storeFunctionType,
       "reference_store",
@@ -114,11 +114,11 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto reference_store = graph.add_import(store_imp);
   // addr, size, memstate
   jlm::llvm::FunctionType allocaFunctionType(
-      { jlm::llvm::PointerType::Create().get(),
-        &*jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create().get(),
-        jlm::llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::Create().get(), jlm::llvm::MemoryStateType::Create().get() });
+      { jlm::llvm::PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create(),
+        jlm::llvm::MemoryStateType::Create() },
+      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
   jlm::llvm::impport alloca_imp(
       allocaFunctionType,
       "reference_alloca",
