@@ -37,8 +37,8 @@ TestIsOrContains()
 
   // Function types are not aggregate types
   FunctionType functionType(
-      { &pointerType, &memoryStateType, &ioStateType },
-      { &pointerType, &memoryStateType, &ioStateType });
+      { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() },
+      { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() });
   assert(!IsAggregateType(functionType));
   assert(IsOrContains<FunctionType>(functionType));
   assert(!IsOrContains<PointerType>(functionType));

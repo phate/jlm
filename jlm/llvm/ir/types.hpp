@@ -21,81 +21,8 @@ namespace jlm::llvm
  */
 class FunctionType final : public jlm::rvsdg::valuetype
 {
-
-  class TypeConstIterator final
-  {
-  public:
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = jlm::rvsdg::type *;
-    using difference_type = std::ptrdiff_t;
-    using pointer = jlm::rvsdg::type **;
-    using reference = jlm::rvsdg::type *&;
-
-    explicit TypeConstIterator(
-        const std::vector<std::shared_ptr<const jlm::rvsdg::type>>::const_iterator & it)
-        : It_(it)
-    {}
-
-  public:
-    const jlm::rvsdg::type *
-    type() const noexcept
-    {
-      return It_->get();
-    }
-
-    const jlm::rvsdg::type &
-    operator*() const
-    {
-      JLM_ASSERT(type() != nullptr);
-      return *type();
-    }
-
-    const jlm::rvsdg::type *
-    operator->() const
-    {
-      return type();
-    }
-
-    TypeConstIterator &
-    operator++()
-    {
-      ++It_;
-      return *this;
-    }
-
-    TypeConstIterator
-    operator++(int)
-    {
-      TypeConstIterator tmp = *this;
-      ++*this;
-      return tmp;
-    }
-
-    bool
-    operator==(const TypeConstIterator & other) const
-    {
-      return It_ == other.It_;
-    }
-
-    bool
-    operator!=(const TypeConstIterator & other) const
-    {
-      return !operator==(other);
-    }
-
-  private:
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>>::const_iterator It_;
-  };
-
-  using ArgumentConstRange = jlm::util::iterator_range<TypeConstIterator>;
-  using ResultConstRange = jlm::util::iterator_range<TypeConstIterator>;
-
 public:
   ~FunctionType() noexcept override;
-
-  FunctionType(
-      const std::vector<const jlm::rvsdg::type *> & argumentTypes,
-      const std::vector<const jlm::rvsdg::type *> & resultTypes);
 
   FunctionType(
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
@@ -111,11 +38,11 @@ public:
   FunctionType &
   operator=(FunctionType && other) noexcept;
 
-  ArgumentConstRange
-  Arguments() const;
+  const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+  Arguments() const noexcept;
 
-  ResultConstRange
-  Results() const;
+  const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+  Results() const noexcept;
 
   size_t
   NumResults() const noexcept
@@ -306,6 +233,9 @@ public:
 
   virtual std::string
   debug_string() const override;
+
+  static std::shared_ptr<const varargtype>
+  Create();
 };
 
 static inline bool

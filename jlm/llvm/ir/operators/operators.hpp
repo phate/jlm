@@ -2402,7 +2402,7 @@ public:
   fcttype() const
   {
     JLM_ASSERT(narguments() == 1 && nresults() == 2);
-    return FunctionType({ &argument(0).type() }, { &result(0).type(), &result(1).type() });
+    return FunctionType({ argument(0).Type() }, { result(0).Type(), result(1).Type() });
   }
 
   static std::unique_ptr<llvm::tac>

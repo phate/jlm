@@ -73,6 +73,12 @@ public:
     return port_->type();
   }
 
+  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  Type() const noexcept
+  {
+    return port_->Type();
+  }
+
   inline jlm::rvsdg::region *
   region() const noexcept
   {
@@ -363,6 +369,12 @@ public:
   type() const noexcept
   {
     return port_->type();
+  }
+
+  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  Type() const noexcept
+  {
+    return port_->Type();
   }
 
   inline jlm::rvsdg::region *
