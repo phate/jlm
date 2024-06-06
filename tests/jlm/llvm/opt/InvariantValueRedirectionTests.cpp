@@ -20,9 +20,13 @@
 static void
 RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
 {
+  jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
+
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::InvariantValueRedirection invariantValueRedirection;
   invariantValueRedirection.run(rvsdgModule, statisticsCollector);
+
+  jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 }
 
 static int
@@ -64,9 +68,7 @@ TestGamma()
   rvsdg.add_export(lambdaOutput, { lambdaOutput->type(), "test" });
 
   // Act
-  jlm::rvsdg::view(rvsdg, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
-  jlm::rvsdg::view(rvsdg, stdout);
 
   // Assert
   assert(lambdaNode->fctresult(0)->origin() == x);
@@ -119,9 +121,7 @@ TestTheta()
   rvsdg.add_export(lambdaOutput, { lambdaOutput->type(), "test" });
 
   // Act
-  jlm::rvsdg::view(rvsdg, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
-  jlm::rvsdg::view(rvsdg, stdout);
 
   // Assert
   assert(lambdaNode->fctresult(0)->origin() == c);
@@ -205,9 +205,7 @@ TestCall()
   }
 
   // Act
-  jlm::rvsdg::view(rvsdg, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
-  jlm::rvsdg::view(rvsdg, stdout);
 
   // Assert
   auto lambdaNode = lambdaOutputTest2->node();
@@ -312,9 +310,7 @@ TestCallWithMemoryStateNodes()
   }
 
   // Act
-  jlm::rvsdg::view(rvsdg, stdout);
   RunInvariantValueRedirection(*rvsdgModule);
-  jlm::rvsdg::view(rvsdg, stdout);
 
   // Assert
   auto lambdaNode = lambdaOutputTest2->node();
@@ -342,13 +338,9 @@ TestLambdaCallArgumentMismatch()
 {
   // Arrange
   jlm::tests::LambdaCallArgumentMismatch test;
-  auto & rvsdgModule = test.module();
-  auto & rvsdg = rvsdgModule.Rvsdg();
 
   // Act
-  jlm::rvsdg::view(rvsdg, stdout);
-  RunInvariantValueRedirection(rvsdgModule);
-  jlm::rvsdg::view(rvsdg, stdout);
+  RunInvariantValueRedirection(test.module());
 
   // Assert
   auto & callNode = test.GetCall();
