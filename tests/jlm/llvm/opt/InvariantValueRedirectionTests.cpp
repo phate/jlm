@@ -3,8 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
-#include "test-types.hpp"
+#include <test-registry.hpp>
+#include <test-types.hpp>
+#include <TestRvsdgs.hpp>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -335,3 +336,25 @@ TestCallWithMemoryStateNodes()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMemoryStateNodes",
     TestCallWithMemoryStateNodes)
+
+static int
+TestLambdaCallArgumentMismatch()
+{
+  // Arrange
+  jlm::tests::LambdaCallArgumentMismatch test;
+  auto & rvsdgModule = test.module();
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  // Act
+  jlm::rvsdg::view(rvsdg, stdout);
+  RunInvariantValueRedirection(rvsdgModule);
+  jlm::rvsdg::view(rvsdg, stdout);
+
+  // Assert
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/InvariantValueRedirectionTests-LambdaCallArgumentMismatch",
+    TestLambdaCallArgumentMismatch)

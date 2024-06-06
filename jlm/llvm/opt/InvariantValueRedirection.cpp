@@ -180,6 +180,15 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     return;
 
   auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+
+  // LLVM permits code where it can happen that the number and type of arguments handed in to the
+  // call node do not agree with the number and type of lambda parameters, even though it is a
+  // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. In this case, we cannot
+  // redirect the call outputs to the call operand as the types would not align, resulting in type
+  // errors.
+  if (callNode.NumArguments() != lambdaNode.nfctarguments())
+    return;
+
   auto memoryStateOutput = callNode.GetMemoryStateOutput();
   auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
