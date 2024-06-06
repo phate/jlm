@@ -174,8 +174,8 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   auto callType = callTypeClassifier->GetCallType();
 
   // FIXME: We currently only support non-recursive direct calls. We would also like to get this
-  // working for recursive direct calls (and therefore for phi nodes), but that requires a little
-  // bit more work as we need to be able to break the cycles between the recursive calls.
+  // working for recursive direct calls, but that requires a little bit more work as we need to be
+  // able to break the cycles between the recursive calls.
   if (callType != CallTypeClassifier::CallType::NonRecursiveDirectCall)
     return;
 
