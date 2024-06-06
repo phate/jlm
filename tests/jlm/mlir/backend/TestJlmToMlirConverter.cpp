@@ -601,8 +601,8 @@ TestGamma()
       }
     }
     assert(gammaFound);
+    omega->destroy();
   }
-
   return 0;
 }
 
