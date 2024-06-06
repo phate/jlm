@@ -221,3 +221,119 @@ TestCall()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Call", TestCall)
+
+static int
+TestCallWithMemoryStateNodes()
+{
+  // Arrange
+  using namespace jlm::llvm;
+
+  iostatetype ioStateType;
+  MemoryStateType memoryStateType;
+  jlm::tests::valuetype valueType;
+  jlm::rvsdg::ctltype controlType(2);
+  FunctionType functionTypeTest1(
+      { &controlType, &valueType, &ioStateType, &memoryStateType },
+      { &valueType, &ioStateType, &memoryStateType });
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  lambda::output * lambdaOutputTest1 = nullptr;
+  {
+    auto lambdaNode =
+        lambda::node::create(rvsdg.root(), functionTypeTest1, "test1", linkage::external_linkage);
+
+    auto controlArgument = lambdaNode->fctargument(0);
+    auto xArgument = lambdaNode->fctargument(1);
+    auto ioStateArgument = lambdaNode->fctargument(2);
+    auto memoryStateArgument = lambdaNode->fctargument(3);
+
+    auto lambdaEntrySplitResults =
+        LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
+
+    auto gammaNode = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+
+    auto gammaInputX = gammaNode->add_entryvar(xArgument);
+    auto gammaInputMemoryState1 = gammaNode->add_entryvar(lambdaEntrySplitResults[0]);
+    auto gammaInputMemoryState2 = gammaNode->add_entryvar(lambdaEntrySplitResults[1]);
+
+    auto gammaOutputX =
+        gammaNode->add_exitvar({ gammaInputX->argument(0), gammaInputX->argument(1) });
+    auto gammaOutputMemoryState1 = gammaNode->add_exitvar(
+        { gammaInputMemoryState2->argument(0), gammaInputMemoryState2->argument(1) });
+    auto gammaOutputMemoryState2 = gammaNode->add_exitvar(
+        { gammaInputMemoryState1->argument(0), gammaInputMemoryState1->argument(1) });
+
+    auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
+        *lambdaNode->subregion(),
+        { gammaOutputMemoryState1, gammaOutputMemoryState2 });
+
+    lambdaOutputTest1 =
+        lambdaNode->finalize({ gammaOutputX, ioStateArgument, &lambdaExitMergeResult });
+  }
+
+  CallNode * callNode = nullptr;
+  lambda::output * lambdaOutputTest2 = nullptr;
+  {
+    FunctionType functionType(
+        { &valueType, &ioStateType, &memoryStateType },
+        { &valueType, &ioStateType, &memoryStateType });
+
+    auto lambdaNode =
+        lambda::node::create(rvsdg.root(), functionType, "test2", linkage::external_linkage);
+    auto xArgument = lambdaNode->fctargument(0);
+    auto ioStateArgument = lambdaNode->fctargument(1);
+    auto memoryStateArgument = lambdaNode->fctargument(2);
+    auto lambdaArgumentTest1 = lambdaNode->add_ctxvar(lambdaOutputTest1);
+
+    auto lambdaEntrySplitResults =
+        LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
+
+    auto & callEntryMergeResult = CallEntryMemoryStateMergeOperation::Create(
+        *lambdaNode->subregion(),
+        lambdaEntrySplitResults);
+
+    auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
+
+    callNode = &CallNode::CreateNode(
+        lambdaArgumentTest1,
+        functionTypeTest1,
+        { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
+
+    auto callExitSplitResults =
+        CallExitMemoryStateSplitOperation::Create(*callNode->GetMemoryStateOutput(), 2);
+
+    auto & lambdaExitMergeResult =
+        LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
+
+    lambdaOutputTest2 = lambdaNode->finalize(
+        { callNode->output(0), callNode->GetIoStateOutput(), &lambdaExitMergeResult });
+    rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->type(), "test2" });
+  }
+
+  // Act
+  jlm::rvsdg::view(rvsdg, stdout);
+  RunInvariantValueRedirection(*rvsdgModule);
+  jlm::rvsdg::view(rvsdg, stdout);
+
+  // Assert
+  auto lambdaNode = lambdaOutputTest2->node();
+  assert(lambdaNode->nfctresults() == 3);
+  assert(lambdaNode->fctresult(0)->origin() == lambdaNode->fctargument(0));
+  assert(lambdaNode->fctresult(1)->origin() == lambdaNode->fctargument(1));
+
+  auto lambdaEntrySplit = lambda::node::GetMemoryStateEntrySplit(*lambdaNode);
+  auto lambdaExitMerge = lambda::node::GetMemoryStateExitMerge(*lambdaNode);
+
+  assert(lambdaEntrySplit->noutputs() == 2);
+  assert(lambdaExitMerge->ninputs() == 2);
+  assert(lambdaExitMerge->input(0)->origin() == lambdaEntrySplit->output(1));
+  assert(lambdaExitMerge->input(1)->origin() == lambdaEntrySplit->output(0));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMemoryStateNodes",
+    TestCallWithMemoryStateNodes)

@@ -204,16 +204,16 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
       JLM_ASSERT(lambdaExitMerge->ninputs() == lambdaEntrySplit->noutputs());
       JLM_ASSERT(lambdaEntrySplit->noutputs() == callEntryMerge->ninputs());
 
-      for (size_t i = 0; n < lambdaExitMerge->ninputs(); i++)
+      for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
       {
         auto lambdaExitMergeInput = lambdaExitMerge->input(i);
         auto node = rvsdg::node_output::node(lambdaExitMergeInput->origin());
         if (node == lambdaEntrySplit)
         {
-          auto callExitOutput = callExitSplit->output(lambdaExitMergeInput->index());
-          auto callMergeOperand =
+          auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());
+          auto callEntryMergeOperand =
               callEntryMerge->input(lambdaExitMergeInput->origin()->index())->origin();
-          callExitOutput->divert_users(callMergeOperand);
+          callExitSplitOutput->divert_users(callEntryMergeOperand);
         }
       }
     }
