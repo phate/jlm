@@ -21,9 +21,6 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   auto mem_resps = get_mem_resps(ln);
   JLM_ASSERT(mem_reqs.size() == mem_resps.size());
   cpp << "#define TRACE_CHUNK_SIZE 100000\n"
-#ifndef HLS_USE_VCD
-         "#define FST 1\n"
-#endif
          //		"#define HLS_MEM_DEBUG 1\n"
          "\n"
          "#include <verilated.h>\n"
