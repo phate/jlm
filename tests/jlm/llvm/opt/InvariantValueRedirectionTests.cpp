@@ -351,6 +351,14 @@ TestLambdaCallArgumentMismatch()
   jlm::rvsdg::view(rvsdg, stdout);
 
   // Assert
+  auto & callNode = test.GetCall();
+  auto & lambdaNode = test.GetLambdaMain();
+
+  assert(lambdaNode.nfctresults() == 3);
+  assert(lambdaNode.nfctresults() == callNode.NumResults());
+  assert(lambdaNode.fctresult(0)->origin() == callNode.Result(0));
+  assert(lambdaNode.fctresult(1)->origin() == callNode.Result(1));
+  assert(lambdaNode.fctresult(2)->origin() == callNode.Result(2));
 
   return 0;
 }
