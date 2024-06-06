@@ -294,6 +294,62 @@ private:
   std::unordered_map<T, size_t> LastFire_;
 };
 
+/**
+ * A fake worklist that only has a single bit of information:
+ *  "Has any item been pushed since the last reset?"
+ * Used to implement the Topological worklist policy, which is not actually a worklist policy
+ * @tparam T the type of the work items.
+ * @see Worklist
+ */
+template<typename T>
+class DummyWorklist final : public Worklist<T>
+{
+public:
+  ~DummyWorklist() override = default;
+
+  DummyWorklist() = default;
+
+  bool
+  HasMoreWorkItems() override
+  {
+    return false;
+  }
+
+  T
+  PopWorkItem() override
+  {
+    JLM_UNREACHABLE("You may not pop the dummy worklist!");
+  }
+
+  void
+  PushWorkItem(T item) override
+  {
+    PushMade_ = true;
+  }
+
+  /**
+   * @return true if the PushWorkItem method has been called since the last time
+   * ResetPush() was called.
+   */
+  [[nodiscard]]
+  bool
+  HasPushBeenMade()
+  {
+    return PushMade_;
+  }
+
+  /**
+   * Makes the dummy worklist forget about being pushed to.
+   */
+  void ResetPush()
+  {
+    PushMade_ = false;
+  }
+
+private:
+  bool PushMade_ = false;
+};
+
 }
 
 #endif // JLM_UTIL_WORKLIST_HPP

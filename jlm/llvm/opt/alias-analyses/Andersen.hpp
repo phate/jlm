@@ -49,6 +49,7 @@ public:
   static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
   static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
   static inline const char * const CONFIG_WL_POLICY_TWO_PHASE_LRF = "WLPolicy=2LRF";
+  static inline const char * const CONFIG_WL_POLICY_TOPO = "WLPolicy=TOPO";
   static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
   static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
@@ -254,10 +255,10 @@ public:
       config.EnableOfflineVariableSubstitution(true);
       config.EnableOfflineConstraintNormalization(true);
       config.SetSolver(Solver::Worklist);
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
+      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::TopologicalSort);
       config.EnableOnlineCycleDetection(false);
-      config.EnableHybridCycleDetection(true);
-      config.EnableLazyCycleDetection(true);
+      config.EnableHybridCycleDetection(false);
+      config.EnableLazyCycleDetection(false);
       config.EnableDifferencePropagation(true);
       config.EnablePreferImplicitPropagation(true);
       return config;

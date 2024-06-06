@@ -1089,9 +1089,9 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
   std::vector<util::HashSet<PointerObjectIndex>> successors(totalNodeCount);
   std::vector<bool> isDirectNode(totalNodeCount, false);
 
-  // Initialize all registers as direct nodes
+  // Initialize all registers with empty points-to sets as direct nodes
   for (auto [_, index] : Set_.GetRegisterMap())
-    isDirectNode[index] = true;
+    isDirectNode[index] = Set_.GetPointsToSet(index).IsEmpty();
 
   // Mark all function argument register nodes as not direct
   for (auto [lambda, _] : Set_.GetFunctionMap())
@@ -1375,6 +1375,13 @@ template<
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
+  // Check that the provided worklist implementation inherits from Worklist
+  static_assert(std::is_base_of_v<util::Worklist<PointerObjectIndex>, Worklist>);
+
+  // If the provided worklist implementation is the dummy worklist, the topological is used.
+  constexpr bool UseToplogicalWorklist =
+      std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>;
+
   // Create auxiliary subset graph.
   // All edges must have their tail be a unification root (non-root nodes have no successors).
   // If supersetEdges[x] contains y, (x -> y), that means P(y) supseteq P(x)
@@ -1852,8 +1859,55 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     FlushNewSupersetEdges();
   };
 
-  while (worklist.HasMoreWorkItems())
-    HandleWorkItem(worklist.PopWorkItem());
+  if constexpr (UseToplogicalWorklist)
+  {
+    // Use topological sorting instead of a worklist
+    std::vector<PointerObjectIndex> sccIndex;
+    std::vector<PointerObjectIndex> topologicalOrder;
+
+    statistics.NumTopologicalWorklistSweeps = 0;
+
+    while (worklist.HasPushBeenMade())
+    {
+      (*statistics.NumTopologicalWorklistSweeps)++;
+      worklist.ResetPush();
+
+      // First perform a topological sort of the entire subset graph, with respect to simple edges
+      util::FindStronglyConnectedComponents<PointerObjectIndex>(
+          Set_.NumPointerObjects(),
+          GetSupersetEdgeSuccessors,
+          sccIndex,
+          topologicalOrder);
+
+      // Visit all nodes in topological order
+      // cycles will result in neighbouring nodes in the topologicalOrder sharing sccIndex
+      for (size_t i = 0; i < topologicalOrder.size(); i++)
+      {
+        const auto node = topologicalOrder[i];
+        const auto nextNodeIndex = i + 1;
+        if (nextNodeIndex < topologicalOrder.size())
+        {
+          auto & nextNode = topologicalOrder[nextNodeIndex];
+          if (sccIndex[node] == sccIndex[nextNode])
+          {
+            // This node is in a cycle with the next node, unify them
+            nextNode = UnifyPointerObjects(node, nextNode);
+            continue;
+          }
+        }
+
+        // Otherwise handle the work item (only unification roots)
+        if (Set_.IsUnificationRoot(node))
+          HandleWorkItem(node);
+      }
+    }
+  }
+  else
+  {
+    // The worklist is a normal worklist
+    while (worklist.HasMoreWorkItems())
+      HandleWorkItem(worklist.PopWorkItem());
+  }
 
   if constexpr (EnableOnlineCycleDetection)
   {
@@ -1889,12 +1943,19 @@ PointerObjectConstraintSet::SolveUsingWorklist(
                             auto tDifferencePropagation,
                             auto tPreferImplicitPropagation) -> WorklistStatistics
   {
+    using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
     constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
     constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
     constexpr bool vDifferencePropagation = decltype(tDifferencePropagation)::value;
     constexpr bool vPreferImplicitPropagation = decltype(tPreferImplicitPropagation)::value;
 
+    if constexpr (
+        std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>
+        && (vOnlineCycleDetection || vLazyCycleDetection || vHybridCycleDetection))
+    {
+      JLM_UNREACHABLE("Can not enable lazy, online or hybrid cycle detection with the topo policy");
+    }
     if constexpr (vOnlineCycleDetection && (vLazyCycleDetection || vHybridCycleDetection))
     {
       JLM_UNREACHABLE("Can not enable lazy or hybrid cycle detection with online cycle detection");
@@ -1903,7 +1964,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     {
       WorklistStatistics statistics(policy);
       RunWorklistSolver<
-          std::remove_pointer_t<decltype(tWorklist)>,
+          Worklist,
           vOnlineCycleDetection,
           vHybridCycleDetection,
           vLazyCycleDetection,
@@ -1916,6 +1977,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   std::variant<
       typename util::LrfWorklist<PointerObjectIndex> *,
       typename util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
+      typename util::DummyWorklist<PointerObjectIndex> *,
       typename util::LifoWorklist<PointerObjectIndex> *,
       typename util::FifoWorklist<PointerObjectIndex> *>
       policyVariant;
@@ -1924,6 +1986,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     policyVariant = (util::LrfWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
     policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
+  else if (policy == WorklistSolverPolicy::TopologicalSort)
+    policyVariant = (util::DummyWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
     policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)
@@ -1980,6 +2044,8 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
     return "LeastRecentlyFired";
   case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
     return "TwoPhaseLeastRecentlyFired";
+  case WorklistSolverPolicy::TopologicalSort:
+    return "TopologicalSort";
   case WorklistSolverPolicy::FirstInFirstOut:
     return "FirstInFirstOut";
   case WorklistSolverPolicy::LastInFirstOut:

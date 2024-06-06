@@ -57,6 +57,8 @@ Andersen::Configuration::CreateConfiguration()
       config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
     else if (option == CONFIG_WL_POLICY_TWO_PHASE_LRF)
       config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
+    else if (option == CONFIG_WL_POLICY_TOPO)
+      config.SetWorklistSolverPolicy(Policy::TopologicalSort);
     else if (option == CONFIG_WL_POLICY_FIFO)
       config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
     else if (option == CONFIG_WL_POLICY_LIFO)
@@ -117,6 +119,7 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
   static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
       "#WorklistSolverWorkItemsPopped";
+  static constexpr const char * NumTopologicalWorklistSweeps_ = "#TopologicalWorklistSweeps";
 
   // Online technique statistics
   static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
@@ -260,6 +263,9 @@ public:
 
     // How many work items were popped from the worklist in total
     AddMeasurement(NumWorklistSolverWorkItemsPopped_, statistics.NumWorkItemsPopped);
+
+    if (statistics.NumTopologicalWorklistSweeps)
+      AddMeasurement(NumTopologicalWorklistSweeps_, *statistics.NumTopologicalWorklistSweeps);
 
     if (statistics.NumOnlineCyclesDetected)
       AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);

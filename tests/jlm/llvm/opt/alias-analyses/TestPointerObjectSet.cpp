@@ -878,17 +878,23 @@ TestPointerObjectSet()
   using Policy = jlm::llvm::aa::PointerObjectConstraintSet::WorklistSolverPolicy;
   static std::vector<Policy> policies{ Policy::LeastRecentlyFired,
                                        Policy::TwoPhaseLeastRecentlyFired,
+                                       Policy::TopologicalSort,
                                        Policy::FirstInFirstOut,
                                        Policy::LastInFirstOut };
   for (auto policy : policies)
   {
     for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
     {
+      // Topological worklist can not be combined with OCD
+      if (policy == Policy::TopologicalSort && onlineCD)
+        continue;
+
       // Hybrid Cycle Detection relies on OVS being performed first to get cycle data
       const bool hybridCD = false;
       for (int lazyCD = 0; lazyCD <= 1; lazyCD++)
       {
-        if (onlineCD && lazyCD)
+        // Topological worklist or online CD can not be combined with OCD
+        if ((policy == Policy::TopologicalSort || onlineCD) && lazyCD)
           continue;
 
         for (int differenceProp = 0; differenceProp <= 1; differenceProp++)
