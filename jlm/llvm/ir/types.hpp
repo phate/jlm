@@ -79,6 +79,11 @@ public:
   std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
 
+  static std::shared_ptr<const FunctionType>
+  Create(
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes);
+
 private:
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> ResultTypes_;
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> ArgumentTypes_;
@@ -115,23 +120,15 @@ class arraytype final : public jlm::rvsdg::valuetype
 public:
   virtual ~arraytype();
 
-  inline arraytype(const jlm::rvsdg::valuetype & type, size_t nelements)
+  inline arraytype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t nelements)
       : jlm::rvsdg::valuetype(),
         nelements_(nelements),
-        type_(type.copy())
+        type_(std::move(type))
   {}
 
-  inline arraytype(const arraytype & other)
-      : jlm::rvsdg::valuetype(other),
-        nelements_(other.nelements_),
-        type_(other.type_->copy())
-  {}
+  inline arraytype(const arraytype & other) = default;
 
-  inline arraytype(arraytype && other)
-      : jlm::rvsdg::valuetype(other),
-        nelements_(other.nelements_),
-        type_(std::move(other.type_))
-  {}
+  inline arraytype(arraytype && other) = default;
 
   inline arraytype &
   operator=(const arraytype &) = delete;
@@ -160,20 +157,16 @@ public:
     return *static_cast<const jlm::rvsdg::valuetype *>(type_.get());
   }
 
+  static std::shared_ptr<const arraytype>
+  Create(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t nelements)
+  {
+    return std::make_shared<arraytype>(std::move(type), nelements);
+  }
+
 private:
   size_t nelements_;
   std::shared_ptr<const jlm::rvsdg::type> type_;
 };
-
-static inline std::unique_ptr<jlm::rvsdg::type>
-create_arraytype(const jlm::rvsdg::type & type, size_t nelements)
-{
-  auto vt = dynamic_cast<const jlm::rvsdg::valuetype *>(&type);
-  if (!vt)
-    throw jlm::util::error("expected value type.");
-
-  return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*vt, nelements));
-}
 
 /* floating point type */
 
@@ -209,6 +202,9 @@ public:
   {
     return size_;
   }
+
+  static std::shared_ptr<const fptype>
+  Create(fpsize size);
 
 private:
   fpsize size_;
@@ -317,16 +313,16 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  static std::unique_ptr<StructType>
+  static std::shared_ptr<const StructType>
   Create(const std::string & name, bool isPacked, const Declaration & declaration)
   {
-    return std::make_unique<StructType>(name, isPacked, declaration);
+    return std::make_shared<StructType>(name, isPacked, declaration);
   }
 
-  static std::unique_ptr<StructType>
+  static std::shared_ptr<const StructType>
   Create(bool isPacked, const Declaration & declaration)
   {
-    return std::make_unique<StructType>(isPacked, declaration);
+    return std::make_shared<StructType>(isPacked, declaration);
   }
 
 private:
@@ -340,14 +336,16 @@ class StructType::Declaration final
 public:
   ~Declaration() = default;
 
-private:
+  Declaration(std::vector<std::shared_ptr<const rvsdg::type>> types)
+      : Types_(std::move(types))
+  {}
+
   Declaration() = default;
 
-public:
-  Declaration(const Declaration &) = delete;
+  Declaration(const Declaration &) = default;
 
   Declaration &
-  operator=(const Declaration &) = delete;
+  operator=(const Declaration &) = default;
 
   [[nodiscard]] size_t
   NumElements() const noexcept
@@ -375,13 +373,9 @@ public:
   }
 
   static std::unique_ptr<Declaration>
-  Create(const std::vector<const valuetype *> & types)
+  Create(std::vector<std::shared_ptr<const rvsdg::type>> types)
   {
-    auto declaration = Create();
-    for (auto type : types)
-      declaration->Append(*type);
-
-    return declaration;
+    return std::make_unique<Declaration>(std::move(types));
   }
 
 private:
@@ -393,44 +387,20 @@ private:
 class vectortype : public jlm::rvsdg::valuetype
 {
 public:
-  vectortype(const jlm::rvsdg::valuetype & type, size_t size)
+  vectortype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
       : size_(size),
-        type_(type.copy())
+        type_(std::move(type))
   {}
 
-  vectortype(const vectortype & other)
-      : valuetype(other),
-        size_(other.size_),
-        type_(other.type_->copy())
-  {}
+  vectortype(const vectortype & other) = default;
 
-  vectortype(vectortype && other)
-      : valuetype(other),
-        size_(other.size_),
-        type_(std::move(other.type_))
-  {}
+  vectortype(vectortype && other) = default;
 
   vectortype &
-  operator=(const vectortype & other)
-  {
-    if (this == &other)
-      return *this;
-
-    size_ = other.size_;
-    type_ = other.type_->copy();
-    return *this;
-  }
+  operator=(const vectortype & other) = default;
 
   vectortype &
-  operator=(vectortype && other)
-  {
-    if (this == &other)
-      return *this;
-
-    size_ = other.size_;
-    type_ = std::move(other.type_);
-    return *this;
-  }
+  operator=(vectortype && other) = default;
 
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
@@ -444,12 +414,18 @@ public:
   const jlm::rvsdg::valuetype &
   type() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::valuetype *>(type_.get());
+    return *type_;
+  }
+
+  const std::shared_ptr<const rvsdg::valuetype> &
+  Type() const noexcept
+  {
+    return type_;
   }
 
 private:
   size_t size_;
-  std::shared_ptr<const jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
 };
 
 class fixedvectortype final : public vectortype
@@ -457,8 +433,8 @@ class fixedvectortype final : public vectortype
 public:
   ~fixedvectortype() override;
 
-  fixedvectortype(const jlm::rvsdg::valuetype & type, size_t size)
-      : vectortype(type, size)
+  fixedvectortype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+      : vectortype(std::move(type), size)
   {}
 
   virtual bool
@@ -469,6 +445,12 @@ public:
 
   virtual std::string
   debug_string() const override;
+
+  static std::shared_ptr<const fixedvectortype>
+  Create(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  {
+    return std::make_shared<fixedvectortype>(std::move(type), size);
+  }
 };
 
 class scalablevectortype final : public vectortype
@@ -476,8 +458,8 @@ class scalablevectortype final : public vectortype
 public:
   ~scalablevectortype() override;
 
-  scalablevectortype(const jlm::rvsdg::valuetype & type, size_t size)
-      : vectortype(type, size)
+  scalablevectortype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+      : vectortype(std::move(type), size)
   {}
 
   virtual bool
@@ -488,6 +470,12 @@ public:
 
   virtual std::string
   debug_string() const override;
+
+  static std::shared_ptr<const scalablevectortype>
+  Create(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  {
+    return std::make_shared<scalablevectortype>(std::move(type), size);
+  }
 };
 
 /** \brief Input/Output state type

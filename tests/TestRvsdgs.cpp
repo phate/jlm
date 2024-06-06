@@ -270,7 +270,7 @@ GetElementPtrTest::SetupRvsdg()
   nf->set_mutable(false);
 
   auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { &*jlm::rvsdg::bittype::Create(32), &*jlm::rvsdg::bittype::Create(32) }));
+      { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) }));
   StructType structType(false, declaration);
 
   MemoryStateType mt;
@@ -1200,7 +1200,7 @@ ExternalCallTest2::SetupRvsdg()
 
   PointerType pointerType;
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { &*rvsdg::bittype::Create(32), &*PointerType::Create(), &*PointerType::Create() }));
+      { rvsdg::bittype::Create(32), PointerType::Create(), PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
@@ -2096,7 +2096,7 @@ PhiTest1::SetupRvsdg()
 
   auto SetupTestFunction = [&](phi::node * phiNode)
   {
-    arraytype at(*jlm::rvsdg::bittype::Create(64), 10);
+    arraytype at(jlm::rvsdg::bittype::Create(64), 10);
     PointerType pbit64;
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
@@ -2516,9 +2516,9 @@ PhiWithDeltaTest::SetupRvsdg()
 
   PointerType pointerType;
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ &*PointerType::Create() }));
+      StructType::Declaration::Create({ PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
-  auto arrayType = arraytype(*structType, 2);
+  auto arrayType = arraytype(structType, 2);
 
   jlm::llvm::phi::builder pb;
   pb.begin(rvsdg.root());
@@ -2990,7 +2990,7 @@ MemcpyTest::SetupRvsdg()
   auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  arraytype arrayType(*jlm::rvsdg::bittype::Create(32), 5);
+  arraytype arrayType(jlm::rvsdg::bittype::Create(32), 5);
 
   auto SetupLocalArray = [&]()
   {
@@ -3142,9 +3142,9 @@ MemcpyTest2::SetupRvsdg()
   nf->set_mutable(false);
 
   PointerType pointerType;
-  arraytype arrayType(pointerType, 32);
+  auto arrayType = arraytype::Create(PointerType::Create(), 32);
   auto & structBDeclaration =
-      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ &arrayType }));
+      rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ arrayType }));
   auto structTypeB = StructType::Create("structTypeB", false, structBDeclaration);
 
   auto SetupFunctionG = [&]()
@@ -3168,11 +3168,11 @@ MemcpyTest2::SetupRvsdg()
     auto c128 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 128);
 
     auto gepS21 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, *structTypeB, pointerType);
-    auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, arrayType, pointerType);
+    auto gepS22 = GetElementPtrOperation::Create(gepS21, { c0, c0 }, *arrayType, pointerType);
     auto ldS2 = LoadNonVolatileNode::Create(gepS22, { memoryStateArgument }, pointerType, 8);
 
     auto gepS11 = GetElementPtrOperation::Create(s1Argument, { c0, c0 }, *structTypeB, pointerType);
-    auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, arrayType, pointerType);
+    auto gepS12 = GetElementPtrOperation::Create(gepS11, { c0, c0 }, *arrayType, pointerType);
     auto ldS1 = LoadNonVolatileNode::Create(gepS12, { ldS2[1] }, pointerType, 8);
 
     auto memcpyResults = MemCpyNonVolatileOperation::create(ldS2[0], ldS1[0], c128, { ldS1[1] });
@@ -3245,7 +3245,7 @@ MemcpyTest3::SetupRvsdg()
 
   PointerType pointerType;
   auto & declaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ &*PointerType::Create() }));
+      StructType::Declaration::Create({ PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, declaration);
 
   iostatetype iOStateType;
@@ -3302,7 +3302,7 @@ LinkedListTest::SetupRvsdg()
 
   PointerType pointerType;
   auto & declaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ &*PointerType::Create() }));
+      StructType::Declaration::Create({ PointerType::Create() }));
   auto structType = StructType::Create("list", false, declaration);
 
   auto SetupDeltaMyList = [&]()
@@ -3794,12 +3794,12 @@ VariadicFunctionTest2::SetupRvsdg()
 
   PointerType pointerType;
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ &*rvsdg::bittype::Create(32),
-                                        &*rvsdg::bittype::Create(32),
-                                        &*PointerType::Create(),
-                                        &*PointerType::Create() }));
+      StructType::Declaration::Create({ rvsdg::bittype::Create(32),
+                                        rvsdg::bittype::Create(32),
+                                        PointerType::Create(),
+                                        PointerType::Create() }));
   auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
-  arraytype arrayType(*structType, 1);
+  arraytype arrayType(structType, 1);
   iostatetype iOStateType;
   MemoryStateType memoryStateType;
   auto varArgType = varargtype::Create();

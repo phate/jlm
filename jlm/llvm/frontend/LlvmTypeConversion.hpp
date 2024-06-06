@@ -27,23 +27,23 @@ class context;
 fpsize
 ExtractFloatingPointSize(const ::llvm::Type * type);
 
-std::unique_ptr<rvsdg::valuetype>
+std::shared_ptr<const rvsdg::valuetype>
 ConvertType(const ::llvm::Type * type, context & ctx);
 
-static inline std::unique_ptr<FunctionType>
+static inline std::shared_ptr<const FunctionType>
 ConvertFunctionType(const ::llvm::FunctionType * type, context & ctx)
 {
   auto t = ConvertType(::llvm::cast<::llvm::Type>(type), ctx);
   JLM_ASSERT(dynamic_cast<const FunctionType *>(t.get()));
-  return std::unique_ptr<FunctionType>(static_cast<FunctionType *>(t.release()));
+  return std::dynamic_pointer_cast<const FunctionType>(t);
 }
 
-static inline std::unique_ptr<PointerType>
+static inline std::shared_ptr<const PointerType>
 ConvertPointerType(const ::llvm::PointerType * type, context & ctx)
 {
   auto t = ConvertType(::llvm::cast<::llvm::Type>(type), ctx);
   JLM_ASSERT(dynamic_cast<const PointerType *>(t.get()));
-  return std::unique_ptr<PointerType>(static_cast<PointerType *>(t.release()));
+  return std::dynamic_pointer_cast<const PointerType>(t);
 }
 
 }
