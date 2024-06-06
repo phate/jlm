@@ -12,12 +12,12 @@ TestOperationEquality()
 {
   using namespace jlm::llvm;
 
-  arraytype arrayType(*jlm::rvsdg::bittype::Create(8), 11);
+  auto arrayType = arraytype::Create(jlm::rvsdg::bittype::Create(8), 11);
 
   auto declaration1 = StructType::Declaration::Create(
-      { &*jlm::rvsdg::bittype::Create(64), &*jlm::rvsdg::bittype::Create(64) });
+      { jlm::rvsdg::bittype::Create(64), jlm::rvsdg::bittype::Create(64) });
   auto declaration2 =
-      StructType::Declaration::Create({ &arrayType, &*jlm::rvsdg::bittype::Create(32) });
+      StructType::Declaration::Create({ arrayType, jlm::rvsdg::bittype::Create(32) });
 
   StructType structType1(false, *declaration1);
   StructType structType2("myStructType", false, *declaration2);

@@ -840,7 +840,7 @@ convert_cast(
     context & ctx)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
-  auto & dsttype = *static_cast<const rvsdg::valuetype *>(&op.result(0).type());
+  auto dsttype = std::dynamic_pointer_cast<const rvsdg::valuetype>(op.result(0).Type());
   auto operand = operands[0];
 
   if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))
@@ -855,7 +855,7 @@ convert_cast(
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
-  auto type = convert_type(dsttype, ctx);
+  auto type = convert_type(*dsttype, ctx);
   return builder.CreateCast(OPCODE, ctx.value(operand), type);
 }
 
