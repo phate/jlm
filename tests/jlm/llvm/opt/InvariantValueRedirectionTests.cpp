@@ -30,9 +30,9 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  jlm::rvsdg::ctltype controlType(2);
-  FunctionType functionType({ &controlType, &valueType, &valueType }, { &valueType, &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ctltype::Create(2);
+  FunctionType functionType({ controlType, valueType, valueType }, { valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -82,12 +82,12 @@ TestTheta()
   // Arrange
   using namespace jlm::llvm;
 
-  iostatetype ioStateType;
-  jlm::tests::valuetype valueType;
-  jlm::rvsdg::ctltype controlType(2);
+  auto ioStateType = iostatetype::Create();
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ctltype::Create(2);
   FunctionType functionType(
-      { &controlType, &valueType, &ioStateType },
-      { &controlType, &valueType, &ioStateType });
+      { controlType, valueType, ioStateType },
+      { controlType, valueType, ioStateType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -138,18 +138,18 @@ TestCall()
   // Arrange
   using namespace jlm::llvm;
 
-  iostatetype ioStateType;
-  MemoryStateType memoryStateType;
-  jlm::tests::valuetype valueType;
-  jlm::rvsdg::ctltype controlType(2);
+  auto ioStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ctltype::Create(2);
   FunctionType functionTypeTest1(
-      { &controlType, &valueType, &valueType, &ioStateType, &memoryStateType },
-      { &valueType, &valueType, &ioStateType, &memoryStateType });
+      { controlType, valueType, valueType, ioStateType, memoryStateType },
+      { valueType, valueType, ioStateType, memoryStateType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  lambda::output * lambdaOutputTest1 = nullptr;
+  lambda::output * lambdaOutputTest1;
   {
     auto lambdaNode =
         lambda::node::create(rvsdg.root(), functionTypeTest1, "test1", linkage::external_linkage);
@@ -178,12 +178,11 @@ TestCall()
         { gammaOutputX, gammaOutputY, gammaOutputIOState, gammaOutputMemoryState });
   }
 
-  CallNode * callNode = nullptr;
-  lambda::output * lambdaOutputTest2 = nullptr;
+  lambda::output * lambdaOutputTest2;
   {
     FunctionType functionType(
-        { &valueType, &valueType, &ioStateType, &memoryStateType },
-        { &valueType, &valueType, &ioStateType, &memoryStateType });
+        { valueType, valueType, ioStateType, memoryStateType },
+        { valueType, valueType, ioStateType, memoryStateType });
 
     auto lambdaNode =
         lambda::node::create(rvsdg.root(), functionType, "test2", linkage::external_linkage);
@@ -195,12 +194,12 @@ TestCall()
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
-    callNode = &CallNode::CreateNode(
+    auto & callNode = CallNode::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
 
-    lambdaOutputTest2 = lambdaNode->finalize(outputs(callNode));
+    lambdaOutputTest2 = lambdaNode->finalize(outputs(&callNode));
     rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->type(), "test2" });
   }
 
@@ -228,18 +227,18 @@ TestCallWithMemoryStateNodes()
   // Arrange
   using namespace jlm::llvm;
 
-  iostatetype ioStateType;
-  MemoryStateType memoryStateType;
-  jlm::tests::valuetype valueType;
-  jlm::rvsdg::ctltype controlType(2);
+  auto ioStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ctltype::Create(2);
   FunctionType functionTypeTest1(
-      { &controlType, &valueType, &ioStateType, &memoryStateType },
-      { &valueType, &ioStateType, &memoryStateType });
+      { controlType, valueType, ioStateType, memoryStateType },
+      { valueType, ioStateType, memoryStateType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  lambda::output * lambdaOutputTest1 = nullptr;
+  lambda::output * lambdaOutputTest1;
   {
     auto lambdaNode =
         lambda::node::create(rvsdg.root(), functionTypeTest1, "test1", linkage::external_linkage);
@@ -273,12 +272,11 @@ TestCallWithMemoryStateNodes()
         lambdaNode->finalize({ gammaOutputX, ioStateArgument, &lambdaExitMergeResult });
   }
 
-  CallNode * callNode = nullptr;
-  lambda::output * lambdaOutputTest2 = nullptr;
+  lambda::output * lambdaOutputTest2;
   {
     FunctionType functionType(
-        { &valueType, &ioStateType, &memoryStateType },
-        { &valueType, &ioStateType, &memoryStateType });
+        { valueType, ioStateType, memoryStateType },
+        { valueType, ioStateType, memoryStateType });
 
     auto lambdaNode =
         lambda::node::create(rvsdg.root(), functionType, "test2", linkage::external_linkage);
@@ -296,19 +294,19 @@ TestCallWithMemoryStateNodes()
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
-    callNode = &CallNode::CreateNode(
+    auto & callNode = CallNode::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
         { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
 
     auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(*callNode->GetMemoryStateOutput(), 2);
+        CallExitMemoryStateSplitOperation::Create(*callNode.GetMemoryStateOutput(), 2);
 
     auto & lambdaExitMergeResult =
         LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
 
     lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode->output(0), callNode->GetIoStateOutput(), &lambdaExitMergeResult });
+        { callNode.output(0), callNode.GetIoStateOutput(), &lambdaExitMergeResult });
     rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->type(), "test2" });
   }
 
