@@ -477,6 +477,11 @@ JlmOptCommand::PrintRvsdgModule(
     const JlmOptCommandLineOptions::OutputFormat & outputFormat,
     util::StatisticsCollector & statisticsCollector)
 {
+  if (std::getenv("JLM_SKIP_OUTPUT"))
+  {
+    return;
+  }
+
   if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Ascii)
   {
     PrintAsAscii(rvsdgModule, outputFile, statisticsCollector);
