@@ -23,13 +23,14 @@ IsOrContainsPointerType(const rvsdg::type & type)
 }
 
 Andersen::Configuration
-Andersen::Configuration::DefaultConfiguration()
+Andersen::Configuration::CreateConfiguration()
 {
-  Configuration config;
-
   const auto configString = std::getenv(ENV_CONFIG_OVERRIDE);
   if (configString == nullptr)
-    return config;
+    return DefaultConfiguration();
+
+  // If a config string is provided, use a config with every technique disabled as a starting point
+  Configuration config;
 
   std::istringstream configStream(configString);
   std::string option;
@@ -43,13 +44,9 @@ Andersen::Configuration::DefaultConfiguration()
 
     if (option == CONFIG_OVS_ON)
       config.EnableOfflineVariableSubstitution(true);
-    else if (option == CONFIG_OVS_OFF)
-      config.EnableOfflineVariableSubstitution(false);
 
     else if (option == CONFIG_NORMALIZE_ON)
       config.EnableOfflineConstraintNormalization(true);
-    else if (option == CONFIG_NORMALIZE_OFF)
-      config.EnableOfflineConstraintNormalization(false);
 
     else if (option == CONFIG_SOLVER_NAIVE)
       config.SetSolver(Solver::Naive);
@@ -67,23 +64,18 @@ Andersen::Configuration::DefaultConfiguration()
 
     else if (option == CONFIG_ONLINE_CYCLE_DETECTION_ON)
       config.EnableOnlineCycleDetection(true);
-    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
-      config.EnableOnlineCycleDetection(false);
+
+    else if (option == CONFIG_HYBRID_CYCLE_DETECTION_ON)
+      config.EnableHybridCycleDetection(true);
 
     else if (option == CONFIG_LAZY_CYCLE_DETECTION_ON)
       config.EnableLazyCycleDetection(true);
-    else if (option == CONFIG_LAZY_CYCLE_DETECTION_OFF)
-      config.EnableLazyCycleDetection(false);
 
     else if (option == CONFIG_DIFFERENCE_PROPAGATION_ON)
       config.EnableDifferencePropagation(true);
-    else if (option == CONFIG_DIFFERENCE_PROPAGATION_OFF)
-      config.EnableDifferencePropagation(false);
 
     else if (option == CONFIG_PREFER_IMPLICIT_PROPAGATION_ON)
       config.EnablePreferImplicitPropagation(true);
-    else if (option == CONFIG_PREFER_IMPLICIT_PROPAGATION_OFF)
-      config.EnablePreferImplicitPropagation(false);
 
     else
     {
@@ -129,6 +121,8 @@ class Andersen::Statistics final : public util::Statistics
   // Online technique statistics
   static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
   static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
+
+  static constexpr const char * NumHybridCycleUnifications_ = "#HybridCycleUnifications";
 
   static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
   static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
@@ -272,6 +266,9 @@ public:
 
     if (statistics.NumOnlineCycleUnifications)
       AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
+
+    if (statistics.NumHybridCycleUnifications)
+      AddMeasurement(NumHybridCycleUnifications_, *statistics.NumHybridCycleUnifications);
 
     if (statistics.NumLazyCyclesDetectionAttempts)
       AddMeasurement(NumLazyCycleDetectionAttempts_, *statistics.NumLazyCyclesDetectionAttempts);
@@ -1054,6 +1051,7 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
     auto worklistStatistics = Constraints_->SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
+        config.IsHybridCycleDetectionEnabled(),
         config.IsLazyCycleDetectionEnabled(),
         config.IsDifferencePropagationEnabled(),
         config.IsPreferImplicitPropagationEnabled());
@@ -1094,8 +1092,6 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving");
-
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
@@ -1133,11 +1129,18 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     }
     if (error)
     {
-      std::cout << PointsToGraph::ToDot(*result) << std::endl;
-      std::cout << PointsToGraph::ToDot(*naiveResult) << std::endl;
+      if (dumpGraphs)
+      {
+        auto & graph = Constraints_->DrawSubsetGraph(writer);
+        graph.AppendToLabel("Solved Naively");
+        writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+      }
       JLM_UNREACHABLE("PointsToGraph double checking uncovered differences!");
     }
   }
+
+  if (dumpGraphs)
+    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
 
   // Cleanup
   Constraints_.reset();

@@ -884,6 +884,8 @@ TestPointerObjectSet()
   {
     for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
     {
+      // Hybrid Cycle Detection relies on OVS being performed first to get cycle data
+      const bool hybridCD = false;
       for (int lazyCD = 0; lazyCD <= 1; lazyCD++)
       {
         if (onlineCD && lazyCD)
@@ -896,6 +898,7 @@ TestPointerObjectSet()
           TestPointerObjectConstraintSetSolve<true>(
               policy,
               onlineCD,
+              hybridCD,
               lazyCD,
               differenceProp,
               preferImplicitPointees);
@@ -903,6 +906,7 @@ TestPointerObjectSet()
       }
     }
   }
+
   TestClonePointerObjectConstraintSet();
   return 0;
 }

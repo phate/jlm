@@ -40,13 +40,11 @@ public:
   /**
    * Environment variable for overriding the default configuration.
    * The variable should something look like
-   * "+OVS +Normalize -OnlineCD Solver=Worklist WLPolicy=LRF"
+   * "+OVS +Normalize Solver=Worklist WLPolicy=LRF"
    */
   static inline const char * const ENV_CONFIG_OVERRIDE = "JLM_ANDERSEN_CONFIG_OVERRIDE";
   static inline const char * const CONFIG_OVS_ON = "+OVS";
-  static inline const char * const CONFIG_OVS_OFF = "-OVS";
   static inline const char * const CONFIG_NORMALIZE_ON = "+Normalize";
-  static inline const char * const CONFIG_NORMALIZE_OFF = "-Normalize";
   static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
   static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
   static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
@@ -54,13 +52,10 @@ public:
   static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
   static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
-  static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_OFF = "-OnlineCD";
+  static inline const char * const CONFIG_HYBRID_CYCLE_DETECTION_ON = "+HybridCD";
   static inline const char * const CONFIG_LAZY_CYCLE_DETECTION_ON = "+LazyCD";
-  static inline const char * const CONFIG_LAZY_CYCLE_DETECTION_OFF = "-LazyCD";
   static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_ON = "+DiffProp";
-  static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_OFF = "-DiffProp";
   static inline const char * const CONFIG_PREFER_IMPLICIT_PROPAGATION_ON = "+PIP";
-  static inline const char * const CONFIG_PREFER_IMPLICIT_PROPAGATION_OFF = "-PIP";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
@@ -84,6 +79,7 @@ public:
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
           && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_
           && EnableOnlineCycleDetection_ == other.EnableOnlineCycleDetection_
+          && EnableHybridCycleDetection_ == other.EnableHybridCycleDetection_
           && EnableLazyCycleDetection_ == other.EnableLazyCycleDetection_
           && EnableDifferencePropagation_ == other.EnableDifferencePropagation_
           && EnablePreferImplicitPropagation_ == other.EnablePreferImplicitPropagation_;
@@ -180,6 +176,23 @@ public:
     }
 
     /**
+     * Enables or disables hybrid cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
+     */
+    void
+    EnableHybridCycleDetection(bool enable) noexcept
+    {
+      EnableHybridCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsHybridCycleDetectionEnabled() const noexcept
+    {
+      return EnableHybridCycleDetection_;
+    }
+
+    /**
      * Enables or disables lazy cycle detection in the Worklist solver, as described by
      *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
      * It detects some cycles, so it can not be combined with techniques that find all cycles.
@@ -229,11 +242,26 @@ public:
     }
 
     /**
-     * Creates the default Andersen constraint set solver configuration
-     * @return the solver configuration
+     * Returns the default configuration, unless overridden by an environment variable.
+     * When a variable is supplied, the variable overrides the default naive config.
      */
     [[nodiscard]] static Configuration
-    DefaultConfiguration();
+    CreateConfiguration();
+
+    static Configuration
+    DefaultConfiguration() {
+      Configuration config;
+      config.EnableOfflineVariableSubstitution(true);
+      config.EnableOfflineConstraintNormalization(true);
+      config.SetSolver(Solver::Worklist);
+      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
+      config.EnableOnlineCycleDetection(false);
+      config.EnableHybridCycleDetection(true);
+      config.EnableLazyCycleDetection(true);
+      config.EnableDifferencePropagation(true);
+      config.EnablePreferImplicitPropagation(true);
+      return config;
+    }
 
     /**
      * Creates a solver configuration using the naive solver,
@@ -243,26 +271,21 @@ public:
     [[nodiscard]] static Configuration
     NaiveSolverConfiguration() noexcept
     {
-      auto config = Configuration();
-      config.EnableOfflineVariableSubstitution(false);
-      config.EnableOfflineConstraintNormalization(false);
-      config.SetSolver(Solver::Naive);
-      config.EnableOnlineCycleDetection(false);
-      config.EnableDifferencePropagation(false);
-      config.EnablePreferImplicitPropagation(false);
-      return config;
+      return Configuration{};
     }
 
   private:
-    bool EnableOfflineVariableSubstitution_ = true;
-    bool EnableOfflineConstraintNormalization_ = true;
-    Solver Solver_ = Solver::Worklist;
+    // All techniques are turned off by default
+    bool EnableOfflineVariableSubstitution_ = false;
+    bool EnableOfflineConstraintNormalization_ = false;
+    Solver Solver_ = Solver::Naive;
     PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = false;
-    bool EnableLazyCycleDetection_ = true;
-    bool EnableDifferencePropagation_ = true;
-    bool EnablePreferImplicitPropagation_ = true;
+    bool EnableHybridCycleDetection_ = false;
+    bool EnableLazyCycleDetection_ = false;
+    bool EnableDifferencePropagation_ = false;
+    bool EnablePreferImplicitPropagation_ = false;
   };
 
   ~Andersen() noexcept override = default;
@@ -427,7 +450,7 @@ private:
   void
   SolveConstraints(const Configuration & config, Statistics & statistics);
 
-  Configuration Config_ = Configuration::DefaultConfiguration();
+  Configuration Config_ = Configuration::CreateConfiguration();
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;

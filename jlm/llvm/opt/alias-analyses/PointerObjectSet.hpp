@@ -807,6 +807,11 @@ public:
     std::optional<size_t> NumOnlineCycleUnifications;
 
     /**
+     * The number of unifications performed due to hybrid cycle detection.
+     */
+     std::optional<size_t> NumHybridCycleUnifications;
+
+    /**
      * The number of DFSs started in attempts at detecting cycles,
      * the number of cycles detected by lazy cycle detection,
      * and number of unifications made to eliminate the cycles,
@@ -940,6 +945,7 @@ public:
    *
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
+   * @param enableLazyCycleDetection if true, hybrid cycle detection will be performed.
    * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
    * @param enableDifferencePropagation if true, difference propagation will be enabled.
    * @param enablePreferImplicitPropation if true, enables PIP, which is novel to this codebase
@@ -949,6 +955,7 @@ public:
   SolveUsingWorklist(
       WorklistSolverPolicy policy,
       bool enableOnlineCycleDetection,
+      bool enableHybridCycleDetection,
       bool enableLazyCycleDetection,
       bool enableDifferencePropagation,
       bool enablePreferImplicitPropation);
@@ -1002,6 +1009,7 @@ private:
   template<
       typename Worklist,
       bool EnableOnlineCycleDetection,
+      bool EnableHybridCycleDetection,
       bool EnableLazyCycleDetection,
       bool EnableDifferencePropagation,
       bool EnablePreferImplicitPointees>
@@ -1017,6 +1025,11 @@ private:
   // When true, no new constraints can be added.
   // Only offline processing is allowed to modify the constraint set.
   bool ConstraintSetFrozen_;
+
+  // Offline Variable Substitution can determine that all pointees of a node p,
+  // should be unified together, possibly with some other PointerObjects.
+  // This happens when *p is in a cycle with regular nodes
+  std::unordered_map<PointerObjectIndex, PointerObjectIndex> RefNodeUnificationRoot_;
 };
 
 } // namespace jlm::llvm::aa

@@ -1112,7 +1112,8 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
       auto superset = Set_.GetUnificationRoot(supersetConstraint->GetSuperset());
 
       successors[subset].Insert(superset);
-      // Also add an edge for *subset -> *superset
+      // Do NOT add an edge for *subset -> *superset, from the original OVS paper.
+      // It is not mentioned in Hardekopf and Lin, 2007: The Ant and the Grasshopper.
       successors[subset + derefNodeOffset].Insert(superset + derefNodeOffset);
     }
     else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
@@ -1280,6 +1281,27 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
       unificationRoot[equivalenceSetLabel] = i;
   }
 
+  // For each ref node that is in a cycle with regular node, store it for hybrid cycle detection
+  // The idea: Any pointee of p should be unified with a, if *p and a are in the same SCC
+  // NOTE: We do not use equivalence set labels here, as they represent more than just cycles
+
+  // First find one unification root representing each SCC
+  std::vector<std::optional<PointerObjectIndex>> unificationRootPerSCC(numSccs, std::nullopt);
+  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+  {
+    if (!unificationRootPerSCC[sccIndex[i]])
+      unificationRootPerSCC[sccIndex[i]] = Set_.GetUnificationRoot(i);
+  }
+
+  // Assign unification roots to ref nodes that are in CYCLES with regular nodes
+  const size_t derefNodeOffset = Set_.NumPointerObjects();
+  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+  {
+    const auto optRoot = unificationRootPerSCC[sccIndex[i + derefNodeOffset]];
+    if (optRoot)
+      RefNodeUnificationRoot_[i] = *optRoot;
+  }
+
   return numUnifications;
 }
 
@@ -1346,6 +1368,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
 template<
     typename Worklist,
     bool EnableOnlineCycleDetection,
+    bool EnableHybridCycleDetection,
     bool EnableLazyCycleDetection,
     bool EnableDifferencePropagation,
     bool EnablePreferImplicitPointees>
@@ -1464,6 +1487,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     if constexpr (EnableDifferencePropagation)
       differencePropagation.OnPointerObjectsUnified(root, nonRoot);
 
+    if constexpr (EnableHybridCycleDetection)
+    {
+      // When unifying, keep at least one of the ref node unification roots
+      if (RefNodeUnificationRoot_.count(root) == 0)
+      {
+        const auto nonRootRefUnification = RefNodeUnificationRoot_.find(nonRoot);
+        if (nonRootRefUnification != RefNodeUnificationRoot_.end())
+          RefNodeUnificationRoot_[root] = nonRootRefUnification->second;
+      }
+    }
+
     return root;
   };
 
@@ -1496,6 +1530,8 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   if constexpr (EnableLazyCycleDetection)
     lazyCycleDetector.Initialize();
 
+  if constexpr (EnableHybridCycleDetection)
+    statistics.NumHybridCycleUnifications = 0;
 
   // The worklist, initialized with every unification root
   Worklist worklist;
@@ -1621,6 +1657,41 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     const auto newPointsToExternal = EnableDifferencePropagation
                                        ? differencePropagation.PointsToExternalIsNew(node)
                                        : Set_.IsPointingToExternal(node);
+
+    // Perform hybrid cycle detection if all pointees of node should be unified
+    if constexpr (EnableHybridCycleDetection)
+    {
+      // If all pointees of node should be unified, do it now
+      const auto & refUnificationRootIt = RefNodeUnificationRoot_.find(node);
+      if (refUnificationRootIt != RefNodeUnificationRoot_.end())
+      {
+        auto & refUnificationRoot = refUnificationRootIt->second;
+        // The ref unification root may no longer be a root, so update it first
+        refUnificationRoot = Set_.GetUnificationRoot(refUnificationRoot);
+
+        // if any unification happens, the result must be added to the worklist
+        bool anyUnification = false;
+        for (const auto pointee : newPointees.Items())
+        {
+          const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
+          if (pointeeRoot == refUnificationRoot)
+            continue;
+
+          (*statistics.NumHybridCycleUnifications)++;
+          anyUnification = true;
+          refUnificationRoot = UnifyPointerObjects(refUnificationRoot, pointeeRoot);
+        }
+
+        if (anyUnification)
+        {
+          JLM_ASSERT(Set_.IsUnificationRoot(refUnificationRoot));
+          worklist.PushWorkItem(refUnificationRoot);
+          // If the current node became unified due to HCD, stop the current work item visit.
+          if (Set_.GetUnificationRoot(node) == refUnificationRoot)
+            return;
+        }
+      }
+    }
 
     // First, propagate P(n) along all edges n -> superset
     for (const auto superset : supersetEdges[node].Items())
@@ -1775,7 +1846,6 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         differencePropagation.MarkPointeesEscapeAsHandled(node);
     }
 
-
     // Add all new superset edges, which also propagates points-to sets immediately
     // and possibly performs unifications to eliminate cycles.
     // Any unified nodes, or nodes with updated points-to sets, are added to the worklist.
@@ -1803,6 +1873,7 @@ PointerObjectConstraintSet::WorklistStatistics
 PointerObjectConstraintSet::SolveUsingWorklist(
     WorklistSolverPolicy policy,
     bool enableOnlineCycleDetection,
+    bool enableHybridCycleDetection,
     bool enableLazyCycleDetection,
     bool enableDifferencePropagation,
     bool enablePreferImplicitPropagation)
@@ -1813,18 +1884,20 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   // the rest are instances of std::bool_constant, either std::true_type or std::false_type
   const auto Dispatch = [&](auto tWorklist,
                             auto tOnlineCycleDetection,
+                            auto tHybridCycleDetection,
                             auto tLazyCycleDetection,
                             auto tDifferencePropagation,
                             auto tPreferImplicitPropagation) -> WorklistStatistics
   {
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
+    constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
     constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
     constexpr bool vDifferencePropagation = decltype(tDifferencePropagation)::value;
     constexpr bool vPreferImplicitPropagation = decltype(tPreferImplicitPropagation)::value;
 
-    if constexpr (vOnlineCycleDetection && vLazyCycleDetection)
+    if constexpr (vOnlineCycleDetection && (vLazyCycleDetection || vHybridCycleDetection))
     {
-      JLM_UNREACHABLE("Can not enable lazy cycle detection with online cycle detection");
+      JLM_UNREACHABLE("Can not enable lazy or hybrid cycle detection with online cycle detection");
     }
     else
     {
@@ -1832,6 +1905,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
       RunWorklistSolver<
           std::remove_pointer_t<decltype(tWorklist)>,
           vOnlineCycleDetection,
+          vHybridCycleDetection,
           vLazyCycleDetection,
           vDifferencePropagation,
           vPreferImplicitPropagation>(statistics);
@@ -1863,6 +1937,12 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else
     onlineCycleDetectionVariant = std::false_type{};
 
+  std::variant<std::true_type, std::false_type> hybridCycleDetectionVariant;
+  if (enableHybridCycleDetection)
+    hybridCycleDetectionVariant = std::true_type{};
+  else
+    hybridCycleDetectionVariant = std::false_type{};
+
   std::variant<std::true_type, std::false_type> lazyCycleDetectionVariant;
   if (enableLazyCycleDetection)
     lazyCycleDetectionVariant = std::true_type{};
@@ -1885,6 +1965,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
       Dispatch,
       policyVariant,
       onlineCycleDetectionVariant,
+      hybridCycleDetectionVariant,
       lazyCycleDetectionVariant,
       differencePropagationVariant,
       preferImplicitPropagationVariant);
