@@ -35,8 +35,8 @@ test()
   using namespace jlm;
 
   jlm::llvm::FunctionType ft(
-      { &*rvsdg::bittype::Create(1), &*rvsdg::bittype::Create(8), &*rvsdg::bittype::Create(8) },
-      { &*rvsdg::bittype::Create(8) });
+      { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
+      { rvsdg::bittype::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::operation));

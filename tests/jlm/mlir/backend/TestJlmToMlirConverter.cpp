@@ -29,8 +29,8 @@ TestLambda()
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType },
-        { &*jlm::rvsdg::bittype::Create(32), &iOStateType, &memoryStateType });
+        { iostatetype::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
@@ -150,8 +150,8 @@ TestAddOperation()
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType },
-        { &*jlm::rvsdg::bittype::Create(32), &iOStateType, &memoryStateType });
+        { iostatetype::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
@@ -251,8 +251,8 @@ TestComZeroExt()
     iostatetype iOStateType;
     MemoryStateType memoryStateType;
     FunctionType functionType(
-        { &iOStateType, &memoryStateType },
-        { &*jlm::rvsdg::bittype::Create(1), &iOStateType, &memoryStateType });
+        { iostatetype::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);

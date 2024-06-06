@@ -374,13 +374,13 @@ public:
   FunctionType
   fcttype() const
   {
-    std::vector<const jlm::rvsdg::type *> arguments;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> arguments;
     for (size_t n = 0; n < entry()->narguments(); n++)
-      arguments.push_back(&entry()->argument(n)->type());
+      arguments.push_back(entry()->argument(n)->type().copy());
 
-    std::vector<const jlm::rvsdg::type *> results;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> results;
     for (size_t n = 0; n < exit()->nresults(); n++)
-      results.push_back(&exit()->result(n)->type());
+      results.push_back(exit()->result(n)->type().copy());
 
     return FunctionType(arguments, results);
   }

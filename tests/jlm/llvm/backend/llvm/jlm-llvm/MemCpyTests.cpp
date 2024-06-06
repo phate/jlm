@@ -23,8 +23,11 @@ MemCpyConversion()
   MemoryStateType memoryStateType;
   jlm::rvsdg::bittype bit64Type(64);
   FunctionType functionType(
-      { &pointerType, &pointerType, &bit64Type, &memoryStateType },
-      { &memoryStateType });
+      { PointerType::Create(),
+        PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        MemoryStateType::Create() },
+      { MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 
@@ -87,8 +90,12 @@ MemCpyVolatileConversion()
   MemoryStateType memoryStateType;
   jlm::rvsdg::bittype bit64Type(64);
   FunctionType functionType(
-      { &pointerType, &pointerType, &bit64Type, &ioStateType, &memoryStateType },
-      { &ioStateType, &memoryStateType });
+      { PointerType::Create(),
+        PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        iostatetype::Create(),
+        MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 

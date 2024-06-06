@@ -26,8 +26,7 @@ test()
 
   using namespace jlm::llvm;
 
-  jlm::rvsdg::bittype bt65(65);
-  FunctionType ft({}, { &bt65 });
+  FunctionType ft({}, { jlm::rvsdg::bittype::Create(65) });
 
   jlm::rvsdg::bitvalue_repr vr(bs);
 

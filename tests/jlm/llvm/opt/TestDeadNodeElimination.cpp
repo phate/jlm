@@ -244,19 +244,19 @@ TestLambda()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  auto x = graph.add_import({ *vt, "x" });
+  auto y = graph.add_import({ *vt, "y" });
 
   auto lambda =
-      lambda::node::create(graph.root(), { { &vt }, { &vt, &vt } }, "f", linkage::external_linkage);
+      lambda::node::create(graph.root(), { { vt }, { vt, vt } }, "f", linkage::external_linkage);
 
   auto cv1 = lambda->add_ctxvar(x);
   auto cv2 = lambda->add_ctxvar(y);
-  jlm::tests::create_testop(lambda->subregion(), { lambda->fctargument(0), cv1 }, { &vt });
+  jlm::tests::create_testop(lambda->subregion(), { lambda->fctargument(0), cv1 }, { &*vt });
 
   auto output = lambda->finalize({ lambda->fctargument(0), cv2 });
 
@@ -276,14 +276,14 @@ TestPhi()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType({ &valueType }, { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  FunctionType functionType({ valueType }, { valueType });
 
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto x = rvsdg.add_import({ *valueType, "x" });
+  auto y = rvsdg.add_import({ *valueType, "y" });
+  auto z = rvsdg.add_import({ *valueType, "z" });
 
   auto setupF1 = [&](jlm::rvsdg::region & region, phi::rvoutput & rv2, jlm::rvsdg::argument & dx)
   {
@@ -294,7 +294,7 @@ TestPhi()
     auto result = jlm::tests::SimpleNode::Create(
                       *lambda1->subregion(),
                       { lambda1->fctargument(0), f2Argument, xArgument },
-                      { &valueType })
+                      { &*valueType })
                       .output(0);
 
     return lambda1->finalize({ result });
@@ -309,7 +309,7 @@ TestPhi()
     auto result = jlm::tests::SimpleNode::Create(
                       *lambda2->subregion(),
                       { lambda2->fctargument(0), f1Argument },
-                      { &valueType })
+                      { &*valueType })
                       .output(0);
 
     return lambda2->finalize({ result });
@@ -323,7 +323,7 @@ TestPhi()
     auto result = jlm::tests::SimpleNode::Create(
                       *lambda3->subregion(),
                       { lambda3->fctargument(0), zArgument },
-                      { &valueType })
+                      { &*valueType })
                       .output(0);
 
     return lambda3->finalize({ result });

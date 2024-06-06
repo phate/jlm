@@ -22,7 +22,9 @@ StoreConversion()
   PointerType pointerType;
   MemoryStateType memoryStateType;
   jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType({ &pointerType, &bit64Type, &memoryStateType }, { &memoryStateType });
+  FunctionType functionType(
+      { PointerType::Create(), jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() },
+      { MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 
@@ -82,8 +84,11 @@ StoreVolatileConversion()
   MemoryStateType memoryStateType;
   jlm::rvsdg::bittype bit64Type(64);
   FunctionType functionType(
-      { &pointerType, &bit64Type, &ioStateType, &memoryStateType },
-      { &ioStateType, &memoryStateType });
+      { PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        iostatetype::Create(),
+        MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 

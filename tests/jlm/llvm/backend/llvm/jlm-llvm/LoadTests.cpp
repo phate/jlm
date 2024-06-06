@@ -18,22 +18,25 @@ LoadConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
-  MemoryStateType memoryStateType;
-  jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType({ &pointerType, &memoryStateType }, { &bit64Type, &memoryStateType });
+  FunctionType functionType(
+      { PointerType::Create(), MemoryStateType::Create() },
+      { jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 
   auto cfg = cfg::create(ipgModule);
-  auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
+  auto addressArgument =
+      cfg->entry()->append_argument(argument::create("address", *PointerType::Create()));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
+      cfg->entry()->append_argument(argument::create("memoryState", *MemoryStateType::Create()));
 
   auto basicBlock = basic_block::create(*cfg);
   size_t alignment = 4;
-  auto loadTac = basicBlock->append_last(
-      LoadNonVolatileOperation::Create(addressArgument, memoryStateArgument, bit64Type, alignment));
+  auto loadTac = basicBlock->append_last(LoadNonVolatileOperation::Create(
+      addressArgument,
+      memoryStateArgument,
+      *jlm::rvsdg::bittype::Create(64),
+      alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
   basicBlock->add_outedge(cfg->exit());
@@ -78,8 +81,8 @@ LoadVolatileConversion()
   MemoryStateType memoryStateType;
   jlm::rvsdg::bittype bit64Type(64);
   FunctionType functionType(
-      { &pointerType, &ioStateType, &memoryStateType },
-      { &bit64Type, &ioStateType, &memoryStateType });
+      { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
+      { jlm::rvsdg::bittype::Create(64), iostatetype::Create(), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 

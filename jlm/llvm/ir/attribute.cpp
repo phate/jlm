@@ -82,7 +82,7 @@ type_attribute::operator==(const attribute & other) const
 std::unique_ptr<attribute>
 type_attribute::copy() const
 {
-  return std::unique_ptr<attribute>(new type_attribute(kind(), type()));
+  return std::make_unique<type_attribute>(kind(), type_);
 }
 
 /* attribute set class */

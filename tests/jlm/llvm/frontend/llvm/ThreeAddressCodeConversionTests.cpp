@@ -57,18 +57,16 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
   auto ipgModule = ipgraph_module::create(jlm::util::filepath(""), "", "");
   auto & ipgraph = ipgModule->ipgraph();
 
-  std::vector<const jlm::rvsdg::type *> operandTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> operandTypes;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
-    auto & operandType = operation.argument(n).type();
-    operandTypes.emplace_back(&operandType);
+    operandTypes.emplace_back(operation.argument(n).Type());
   }
 
-  std::vector<const jlm::rvsdg::type *> resultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes;
   for (size_t n = 0; n < operation.nresults(); n++)
   {
-    auto & resultType = operation.result(n).type();
-    resultTypes.emplace_back(&resultType);
+    resultTypes.emplace_back(operation.result(n).Type());
   }
 
   FunctionType functionType(operandTypes, resultTypes);

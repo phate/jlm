@@ -1116,7 +1116,7 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
 
 template<class OP>
 static std::unique_ptr<rvsdg::operation>
-create_unop(std::unique_ptr<rvsdg::type> st, std::unique_ptr<rvsdg::type> dt)
+create_unop(std::shared_ptr<const rvsdg::type> st, std::shared_ptr<const rvsdg::type> dt)
 {
   return std::unique_ptr<rvsdg::operation>(new OP(std::move(st), std::move(dt)));
 }
@@ -1131,8 +1131,8 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   static std::unordered_map<
       unsigned,
       std::unique_ptr<rvsdg::operation> (*)(
-          std::unique_ptr<rvsdg::type>,
-          std::unique_ptr<rvsdg::type>)>
+          std::shared_ptr<const rvsdg::type>,
+          std::shared_ptr<const rvsdg::type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<trunc_op> },
             { ::llvm::Instruction::ZExt, create_unop<zext_op> },
             { ::llvm::Instruction::UIToFP, create_unop<uitofp_op> },

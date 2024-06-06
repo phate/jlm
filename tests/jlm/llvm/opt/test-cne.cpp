@@ -388,22 +388,22 @@ test_lambda()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType ft({ &vt, &vt }, { &vt });
+  auto vt = jlm::tests::valuetype::Create();
+  FunctionType ft({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ vt, "x" });
+  auto x = graph.add_import({ *vt, "x" });
 
   auto lambda = lambda::node::create(graph.root(), ft, "f", linkage::external_linkage);
 
   auto d1 = lambda->add_ctxvar(x);
   auto d2 = lambda->add_ctxvar(x);
 
-  auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { &vt })[0];
+  auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { &*vt })[0];
 
   auto output = lambda->finalize({ b1 });
 
@@ -423,15 +423,15 @@ test_phi()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType ft({ &vt, &vt }, { &vt });
+  auto vt = jlm::tests::valuetype::Create();
+  FunctionType ft({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ vt, "x" });
+  auto x = graph.add_import({ *vt, "x" });
 
   phi::builder pb;
   pb.begin(graph.root());
