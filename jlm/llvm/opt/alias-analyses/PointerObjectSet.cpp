@@ -25,6 +25,13 @@ namespace jlm::llvm::aa
  */
 static constexpr bool ENABLE_UNIFICATION = true;
 
+/**
+ * Flag that enables replacing simple edges like a -> b
+ * with a -> GetUnificationRoot(b) when propagating a -> b during a visit of the work item a,
+ * and discovering that b is not a unification root.
+ */
+static constexpr bool NormalizeSimpleEdgesDuringWorklist = true;
+
 PointerObjectIndex
 PointerObjectSet::AddPointerObject(PointerObjectKind kind)
 {
@@ -1633,6 +1640,13 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     newSupersetEdges.Clear();
   };
 
+  // A temporary location to store edges that are normalized versions of existing simple edges
+  // When a simple edge a -> b is replaced by a -> GetUnificationRoot(b), the new edge can not be
+  // added while the set of simple edges is being iterated over.
+  // Adding the edge is done without triggering any propagation, as the edge is not actually new,
+  // just a normalized version of an already propagated edge.
+  std::vector<PointerObjectIndex> replacementSupersetEdges;
+
   // Ensure that all functions that have already escaped have informed their arguments and results
   // The worklist will only inform functions if their HasEscaped flag changes
   EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
@@ -1700,46 +1714,80 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       }
     }
 
-    // First, propagate P(n) along all edges n -> superset
-    for (const auto superset : supersetEdges[node].Items())
+    // Propagate P(n) along all edges n -> superset
     {
-      // FIXME: normalize edges while iterating over them
-      const auto supersetParent = Set_.GetUnificationRoot(superset);
-      if (supersetParent == node)
-        continue;
+      JLM_ASSERT(replacementSupersetEdges.empty());
+      bool abortVisitingNode = false;
 
-      if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(supersetParent))
+      auto supersets = supersetEdges[node].Items();
+      for (auto it = supersets.begin(); it != supersets.end();)
       {
-        // Instead of propagating to a node that can track all pointees implicitly,
-        // mark this node as all pointees escaping.
-        // The flag is added directly, to avoid adding node to the worklist,
-        // when node is already being visited by the worklist right now.
-        Set_.MarkAsPointeesEscaping(node);
-        continue;
-      }
+        const auto supersetParent = Set_.GetUnificationRoot(*it);
 
-      bool modified = false;
-      for (const auto pointee : newPointees.Items())
-        modified |= AddToPointsToSet(supersetParent, pointee);
-
-      if (newPointsToExternal)
-        modified |= Set_.MarkAsPointingToExternal(supersetParent);
-
-      if (modified)
-        worklist.PushWorkItem(supersetParent);
-
-      if (EnableLazyCycleDetection && !newPointees.IsEmpty() && !modified)
-      {
-        // If nothing was propagated along this edge, check if there is a cycle
-        // If a cycle is detected, this function eliminates it by unifying, and returns the root
-        auto optUnificationRoot = lazyCycleDetector.OnPropagatedNothing(node, supersetParent);
-        if (optUnificationRoot)
+        // Remove self-edges
+        if (supersetParent == node)
         {
-          // The new unification root is pushed, and handling of the current work item is aborted.
-          worklist.PushWorkItem(*optUnificationRoot);
-          return;
+          it = supersetEdges[node].Erase(it);
+          continue;
+        }
+
+        if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(supersetParent))
+        {
+          // Instead of propagating to a node that can track all pointees implicitly,
+          // mark this node as all pointees escaping, and remove the edge.
+          // The flag is added directly, to avoid adding node to the worklist,
+          // when node is already being visited by the worklist right now.
+          Set_.MarkAsPointeesEscaping(node);
+          it = supersetEdges[node].Erase(it);
+          continue;
+        }
+
+        // Replace the edge by a normalized edge, if possible
+        if (NormalizeSimpleEdgesDuringWorklist && supersetParent != *it)
+        {
+          it = supersetEdges[node].Erase(it);
+          replacementSupersetEdges.push_back(supersetParent);
+        }
+        else
+        {
+          // The current it-edge should be kept as is, prepare "it" for the next iteration.
+          ++it;
+        }
+
+        bool modified = false;
+        for (const auto pointee : newPointees.Items())
+          modified |= AddToPointsToSet(supersetParent, pointee);
+
+        if (newPointsToExternal)
+          modified |= Set_.MarkAsPointingToExternal(supersetParent);
+
+        if (modified)
+          worklist.PushWorkItem(supersetParent);
+
+        if (EnableLazyCycleDetection && !newPointees.IsEmpty() && !modified)
+        {
+          // If nothing was propagated along this edge, check if there is a cycle
+          // If a cycle is detected, this function eliminates it by unifying, and returns the root
+          auto optUnificationRoot = lazyCycleDetector.OnPropagatedNothing(node, supersetParent);
+          if (optUnificationRoot)
+          {
+            // The new unification root is pushed, and handling of the current work item is aborted.
+            worklist.PushWorkItem(*optUnificationRoot);
+            abortVisitingNode = true;
+            break;
+          }
         }
       }
+      // Any edges that were replaced should be added to the set of superset edge pointees now
+      if constexpr (NormalizeSimpleEdgesDuringWorklist)
+      {
+        for (auto superset : replacementSupersetEdges)
+          supersetEdges[node].Insert(superset);
+        replacementSupersetEdges.clear();
+      }
+      // If this worklist item was aborted,
+      if (abortVisitingNode)
+        return;
     }
 
     // If difference propagation is enabled, this bool is true if this is the first time node

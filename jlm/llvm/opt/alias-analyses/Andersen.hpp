@@ -250,15 +250,18 @@ public:
     CreateConfiguration();
 
     static Configuration
-    DefaultConfiguration() {
+    DefaultConfiguration()
+    {
       Configuration config;
       config.EnableOfflineVariableSubstitution(true);
-      config.EnableOfflineConstraintNormalization(true);
+      // Constraints are normalized inside the Worklist's representation either way
+      config.EnableOfflineConstraintNormalization(false);
       config.SetSolver(Solver::Worklist);
-      config.SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy::TopologicalSort);
+      config.SetWorklistSolverPolicy(
+          PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
       config.EnableOnlineCycleDetection(false);
-      config.EnableHybridCycleDetection(false);
-      config.EnableLazyCycleDetection(false);
+      config.EnableHybridCycleDetection(true);
+      config.EnableLazyCycleDetection(true);
       config.EnableDifferencePropagation(true);
       config.EnablePreferImplicitPropagation(true);
       return config;
