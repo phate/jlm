@@ -331,8 +331,7 @@ public:
    * @return true if the PushWorkItem method has been called since the last time
    * ResetPush() was called.
    */
-  [[nodiscard]]
-  bool
+  [[nodiscard]] bool
   HasPushBeenMade()
   {
     return PushMade_;
@@ -341,7 +340,8 @@ public:
   /**
    * Makes the dummy worklist forget about being pushed to.
    */
-  void ResetPush()
+  void
+  ResetPush()
   {
     PushMade_ = false;
   }

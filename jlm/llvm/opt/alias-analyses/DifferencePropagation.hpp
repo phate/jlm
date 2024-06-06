@@ -34,7 +34,8 @@ public:
   }
 
   [[nodiscard]] bool
-  IsInitialized() const noexcept {
+  IsInitialized() const noexcept
+  {
     return NewPointees_.size() == Set_.NumPointerObjects();
   }
 
@@ -114,7 +115,9 @@ public:
    * Clears the tracked set of new pointees of \p index, and stops tracking it.
    * @param index the index of the PointerObject, must be a unification root.
    */
-  void OnRemoveAllPointees(PointerObjectIndex index) {
+  void
+  OnRemoveAllPointees(PointerObjectIndex index)
+  {
     NewPointeesTracked_[index] = false;
     NewPointees_[index].Clear();
   }
@@ -144,7 +147,8 @@ public:
    * Must be a unification root.
    */
   void
-  MarkPointsToExternalAsHandled(PointerObjectIndex index) {
+  MarkPointsToExternalAsHandled(PointerObjectIndex index)
+  {
     JLM_ASSERT(Set_.IsUnificationRoot(index));
     JLM_ASSERT(Set_.IsPointingToExternal(index));
     PointsToExternalFlagSeen_[index] = true;
@@ -175,7 +179,8 @@ public:
    * Must be a unification root.
    */
   void
-  MarkPointeesEscapeAsHandled(PointerObjectIndex index) {
+  MarkPointeesEscapeAsHandled(PointerObjectIndex index)
+  {
     JLM_ASSERT(Set_.IsUnificationRoot(index));
     JLM_ASSERT(Set_.HasPointeesEscaping(index));
     PointeesEscapeFlagSeen_[index] = true;

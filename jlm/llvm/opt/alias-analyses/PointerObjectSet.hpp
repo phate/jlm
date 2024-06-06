@@ -431,7 +431,8 @@ public:
    * Removes all pointees from the PointerObject with the given \p index.
    * Can be used, e.g., when the PointerObject already points to all its pointees implicitly.
    */
-  void RemoveAllPointees(PointerObjectIndex index);
+  void
+  RemoveAllPointees(PointerObjectIndex index);
 
   /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
@@ -825,7 +826,7 @@ public:
     /**
      * The number of unifications performed due to hybrid cycle detection.
      */
-     std::optional<size_t> NumHybridCycleUnifications;
+    std::optional<size_t> NumHybridCycleUnifications;
 
     /**
      * The number of DFSs started in attempts at detecting cycles,
