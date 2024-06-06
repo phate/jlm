@@ -884,15 +884,22 @@ TestPointerObjectSet()
   {
     for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
     {
-      for (int differenceProp = 0; differenceProp <= 1; differenceProp++)
+      for (int lazyCD = 0; lazyCD <= 1; lazyCD++)
       {
-        // Enabling this changes the explicit points-to sets, which are being tested against
-        const bool preferImplicitPointees = false;
-        TestPointerObjectConstraintSetSolve<true>(
-            policy,
-            onlineCD,
-            differenceProp,
-            preferImplicitPointees);
+        if (onlineCD && lazyCD)
+          continue;
+
+        for (int differenceProp = 0; differenceProp <= 1; differenceProp++)
+        {
+          // Enabling this changes the explicit points-to sets, which are being tested against
+          const bool preferImplicitPointees = false;
+          TestPointerObjectConstraintSetSolve<true>(
+              policy,
+              onlineCD,
+              lazyCD,
+              differenceProp,
+              preferImplicitPointees);
+        }
       }
     }
   }

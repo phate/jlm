@@ -40,7 +40,7 @@ public:
 
   /**
    * Starts tracking any pointees added to \p index from this point onwards.
-   * index must be a unification root.
+   * @param index the index of the PointerObject, must be a unification root.
    */
   void
   ClearNewPointees(PointerObjectIndex index)
@@ -111,10 +111,19 @@ public:
   }
 
   /**
+   * Clears the tracked set of new pointees of \p index, and stops tracking it.
+   * @param index the index of the PointerObject, must be a unification root.
+   */
+  void OnRemoveAllPointees(PointerObjectIndex index) {
+    NewPointeesTracked_[index] = false;
+    NewPointees_[index].Clear();
+  }
+
+  /**
    * If the given PointerObject has the PointsToExternal flag now,
-   * but didn't have it the last time this function was called, it returns true. Otherwise false.
+   * and MarkPointsToExternalAsHandled(index) has not been called, return true. Otherwise false.
    * An exception is if the PointerObject has been unified with other PointerObjects,
-   * and some of the other PointerObjects had never returned true through this function.
+   * and some of the other PointerObjects did not have that flag handled already.
    * @param index the index of the PointerObject being queried. Must be a unification root
    * @return true if the PointerObject is newly flagged as PointsToExternal.
    */
@@ -125,17 +134,27 @@ public:
     JLM_ASSERT(Set_.IsUnificationRoot(index));
     if (!Set_.IsPointingToExternal(index))
       return false;
-    if (PointsToExternalFlagSeen_[index])
-      return false;
-    PointsToExternalFlagSeen_[index] = true;
-    return true;
+    return !PointsToExternalFlagSeen_[index];
   }
 
   /**
-   * If the given PointerObject has the AllPointeesEscape flag now,
-   * but didn't have it the last time this function was called, it returns true. Otherwise false.
+   * Call once the addition of the new flag PointsToExternal has been handled.
+   * After this call, PointsToExternalIsNew(index) will return false (unless new unifications).
+   * @param index the index of the PointerObject whose PointsToExternal flag has been handled.
+   * Must be a unification root.
+   */
+  void
+  MarkPointsToExternalAsHandled(PointerObjectIndex index) {
+    JLM_ASSERT(Set_.IsUnificationRoot(index));
+    JLM_ASSERT(Set_.IsPointingToExternal(index));
+    PointsToExternalFlagSeen_[index] = true;
+  }
+
+  /**
+   * If the given PointerObject has the PointeesEscape flag now,
+   * but didn't have it the last time ClearDifferenceTracking(index) was called, return true.
    * An exception is if the PointerObject has been unified with other PointerObjects,
-   * and some of the other PointerObjects had never returned true through this function.
+   * and some of the other PointerObjects had not have that flag seen.
    * @param index the index of the PointerObject being queried. Must be a unification root
    * @return true if the PointerObject is newly flagged as AllPointeesEscape.
    */
@@ -146,10 +165,20 @@ public:
     JLM_ASSERT(Set_.IsUnificationRoot(index));
     if (!Set_.HasPointeesEscaping(index))
       return false;
-    if (PointeesEscapeFlagSeen_[index])
-      return false;
+    return !PointeesEscapeFlagSeen_[index];
+  }
+
+  /**
+   * Call once the addition of the new flag PointeesEscape has been handled.
+   * After this call, PointeesEscapeIsNew(index) will return false (unless new unifications).
+   * @param index the index of the PointerObject whose PointeesEscape flag has been handled.
+   * Must be a unification root.
+   */
+  void
+  MarkPointeesEscapeAsHandled(PointerObjectIndex index) {
+    JLM_ASSERT(Set_.IsUnificationRoot(index));
+    JLM_ASSERT(Set_.HasPointeesEscaping(index));
     PointeesEscapeFlagSeen_[index] = true;
-    return true;
   }
 
   /**

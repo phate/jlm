@@ -799,14 +799,22 @@ public:
     size_t NumWorkItemsPopped{};
 
     /**
-     * The number of cycles detected by online cycle detection, if enabled.
+     * The number of cycles detected by online cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Online Cycle Detection is enabled.
      */
     std::optional<size_t> NumOnlineCyclesDetected;
+    std::optional<size_t> NumOnlineCycleUnifications;
 
     /**
-     * The number of unifications made by online cycle detection, if enabled.
+     * The number of DFSs started in attempts at detecting cycles,
+     * the number of cycles detected by lazy cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Lazy Cycle Detection is enabled.
      */
-    std::optional<size_t> NumOnlineCycleUnifications;
+    std::optional<size_t> NumLazyCyclesDetectionAttempts;
+    std::optional<size_t> NumLazyCyclesDetected;
+    std::optional<size_t> NumLazyCycleUnifications;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -924,19 +932,24 @@ public:
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
-   *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
+   *    - Online Cycle Detection
+   *    - Difference Propagation
+   *  - Hardekopf and Lin, 2007: "The Ant and the Grasshopper".
+   *    - Lazy cycle detection
+   *    - Hybrid cycle detection
+   *
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
+   * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
    * @param enableDifferencePropagation if true, difference propagation will be enabled.
-   * Online Cycle Detection and Difference Propagation are both described in:
-   *   Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
-   * @param enablePreferImplicitPropation if true, uses PIP, which has been defined in this codebase
+   * @param enablePreferImplicitPropation if true, enables PIP, which is novel to this codebase
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
   SolveUsingWorklist(
       WorklistSolverPolicy policy,
       bool enableOnlineCycleDetection,
+      bool enableLazyCycleDetection,
       bool enableDifferencePropagation,
       bool enablePreferImplicitPropation);
 
@@ -981,12 +994,15 @@ private:
    * @param statistics the WorklistStatistics instance that will get information about this run.
    * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
+   * @tparam EnableLazyCycleDetection if true, lazy cycle detection is enabled.
    * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
+   * @tparam EnablePreferImplicitPointees if true, prefer implicit pointees is enabled
    * @see SolveUsingWorklist() for the public interface.
    */
   template<
       typename Worklist,
       bool EnableOnlineCycleDetection,
+      bool EnableLazyCycleDetection,
       bool EnableDifferencePropagation,
       bool EnablePreferImplicitPointees>
   void

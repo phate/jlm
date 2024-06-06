@@ -70,6 +70,11 @@ Andersen::Configuration::DefaultConfiguration()
     else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
       config.EnableOnlineCycleDetection(false);
 
+    else if (option == CONFIG_LAZY_CYCLE_DETECTION_ON)
+      config.EnableLazyCycleDetection(true);
+    else if (option == CONFIG_LAZY_CYCLE_DETECTION_OFF)
+      config.EnableLazyCycleDetection(false);
+
     else if (option == CONFIG_DIFFERENCE_PROPAGATION_ON)
       config.EnableDifferencePropagation(true);
     else if (option == CONFIG_DIFFERENCE_PROPAGATION_OFF)
@@ -109,18 +114,27 @@ class Andersen::Statistics final : public util::Statistics
   // Includes base constraints and flags
   static constexpr const char * NumConstraintsTotal_ = "#ConstraintsTotal";
 
+  // Offline technique statistics
   static constexpr const char * NumUnificationsOvs_ = "#Unifications(OVS)";
   static constexpr const char * NumConstraintsRemovedOfflineNorm_ =
       "#ConstraintsRemoved(OfflineNorm)";
 
+  // Solver statistics
   static constexpr const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
 
   static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
   static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
       "#WorklistSolverWorkItemsPopped";
+
+  // Online technique statistics
   static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
   static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
 
+  static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
+  static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
+  static constexpr const char * NumLazyCycleUnifications_ = "#LazyCycleUnifications";
+
+  // After solving statistics
   static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
   static constexpr const char * NumUnificationRoots_ = "#UnificationRoots";
   // These next measurements only count flags and pointees of unification roots
@@ -258,6 +272,15 @@ public:
 
     if (statistics.NumOnlineCycleUnifications)
       AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
+
+    if (statistics.NumLazyCyclesDetectionAttempts)
+      AddMeasurement(NumLazyCycleDetectionAttempts_, *statistics.NumLazyCyclesDetectionAttempts);
+
+    if (statistics.NumLazyCyclesDetected)
+      AddMeasurement(NumLazyCyclesDetected_, *statistics.NumLazyCyclesDetected);
+
+    if (statistics.NumLazyCycleUnifications)
+      AddMeasurement(NumLazyCycleUnifications_, *statistics.NumLazyCycleUnifications);
   }
 
   void
@@ -1031,6 +1054,7 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
     auto worklistStatistics = Constraints_->SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
         config.IsDifferencePropagationEnabled(),
         config.IsPreferImplicitPropagationEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);

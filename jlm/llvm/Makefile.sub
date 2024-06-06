@@ -69,16 +69,17 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/inlining.hpp \
 	jlm/llvm/opt/cne.hpp \
 	jlm/llvm/opt/push.hpp \
+	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
+	jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
 	jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/Optimization.hpp \
-	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
-	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
-	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
-	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
-	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
+	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
 	jlm/llvm/opt/pull.hpp \
 	jlm/llvm/opt/optimization.hpp \
 	jlm/llvm/opt/reduction.hpp \

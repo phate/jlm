@@ -55,6 +55,8 @@ public:
   static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
   static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_OFF = "-OnlineCD";
+  static inline const char * const CONFIG_LAZY_CYCLE_DETECTION_ON = "+LazyCD";
+  static inline const char * const CONFIG_LAZY_CYCLE_DETECTION_OFF = "-LazyCD";
   static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_ON = "+DiffProp";
   static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_OFF = "-DiffProp";
   static inline const char * const CONFIG_PREFER_IMPLICIT_PROPAGATION_ON = "+PIP";
@@ -82,6 +84,7 @@ public:
           && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
           && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_
           && EnableOnlineCycleDetection_ == other.EnableOnlineCycleDetection_
+          && EnableLazyCycleDetection_ == other.EnableLazyCycleDetection_
           && EnableDifferencePropagation_ == other.EnableDifferencePropagation_
           && EnablePreferImplicitPropagation_ == other.EnablePreferImplicitPropagation_;
     }
@@ -162,7 +165,6 @@ public:
     /**
      * Enables or disables online cycle detection in the Worklist solver, as described by
      *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
-     * Only used by the worklist solver.
      * It detects all cycles, so it can not be combined with other cycle detection techniques.
      */
     void
@@ -175,6 +177,23 @@ public:
     IsOnlineCycleDetectionEnabled() const noexcept
     {
       return EnableOnlineCycleDetection_;
+    }
+
+    /**
+     * Enables or disables lazy cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
+     */
+    void
+    EnableLazyCycleDetection(bool enable) noexcept
+    {
+      EnableLazyCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsLazyCycleDetectionEnabled() const noexcept
+    {
+      return EnableLazyCycleDetection_;
     }
 
     /**
@@ -240,7 +259,8 @@ public:
     Solver Solver_ = Solver::Worklist;
     PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
-    bool EnableOnlineCycleDetection_ = true;
+    bool EnableOnlineCycleDetection_ = false;
+    bool EnableLazyCycleDetection_ = true;
     bool EnableDifferencePropagation_ = true;
     bool EnablePreferImplicitPropagation_ = true;
   };
