@@ -45,7 +45,7 @@ TestArgumentIterators()
         "f",
         linkage::external_linkage);
 
-    auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, { &*vt });
+    auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, { vt });
 
     lambda->finalize({ nullaryNode });
 
@@ -91,7 +91,7 @@ TestInvalidOperandRegion()
 
   auto lambdaNode =
       lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
-  auto result = jlm::tests::create_testop(rvsdg->root(), {}, { &*vt })[0];
+  auto result = jlm::tests::create_testop(rvsdg->root(), {}, { vt })[0];
 
   bool invalidRegionErrorCaught = false;
   try
@@ -133,7 +133,7 @@ TestRemoveLambdaInputsWhere()
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
                     { lambdaInput1->argument() },
-                    { &*valueType })
+                    { valueType })
                     .output(0);
 
   lambdaNode->finalize({ result });
@@ -202,7 +202,7 @@ TestPruneLambdaInputs()
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
                     { lambdaInput1->argument() },
-                    { &*valueType })
+                    { valueType })
                     .output(0);
 
   lambdaNode->finalize({ result });
@@ -238,7 +238,7 @@ TestCallSummaryComputationDead()
       "f",
       jlm::llvm::linkage::external_linkage);
 
-  auto result = tests::create_testop(lambdaNode->subregion(), {}, { &*vt })[0];
+  auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
   lambdaNode->finalize({ result });
 
@@ -272,7 +272,7 @@ TestCallSummaryComputationExport()
       "f",
       jlm::llvm::linkage::external_linkage);
 
-  auto result = tests::create_testop(lambdaNode->subregion(), {}, { &*vt })[0];
+  auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
   auto lambdaOutput = lambdaNode->finalize({ result });
   auto rvsdgExport = rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "f" });
@@ -313,7 +313,7 @@ TestCallSummaryComputationDirectCalls()
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
 
-    auto result = tests::create_testop(lambdaNode->subregion(), {}, { &*vt })[0];
+    auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
     return lambdaNode->finalize({ result, iOStateArgument, memoryStateArgument });
   };
@@ -362,7 +362,7 @@ TestCallSummaryComputationDirectCalls()
     auto result = tests::create_testop(
         lambdaNode->subregion(),
         { callXResults[0], callYResults[0] },
-        { &*vt })[0];
+        { vt })[0];
 
     auto lambdaOutput = lambdaNode->finalize({ result, callYResults[1], callYResults[2] });
     rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "z" });

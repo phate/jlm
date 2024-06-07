@@ -183,7 +183,7 @@ TestRemoveGammaOutputsWhere()
 
   // Arrange
   jlm::rvsdg::graph rvsdg;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ctltype ct(2);
 
   auto predicate = rvsdg.add_import({ *ctltype::Create(2), "" });
@@ -245,7 +245,7 @@ TestPruneOutputs()
 
   // Arrange
   jlm::rvsdg::graph rvsdg;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ctltype ct(2);
 
   auto predicate = rvsdg.add_import({ *ctltype::Create(2), "" });
@@ -294,7 +294,7 @@ TestIsInvariant()
 
   // Arrange
   jlm::rvsdg::graph rvsdg;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ctltype ct(2);
 
   auto predicate = rvsdg.add_import({ *ctltype::Create(2), "" });

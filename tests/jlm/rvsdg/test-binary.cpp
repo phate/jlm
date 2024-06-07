@@ -14,8 +14,8 @@ test_flattened_binary_reduction()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype vt;
-  jlm::tests::binary_op op(vt, vt, binary_op::flags::associative);
+  auto vt = jlm::tests::valuetype::Create();
+  jlm::tests::binary_op op(*vt, *vt, binary_op::flags::associative);
 
   /* test paralell reduction */
   {

@@ -25,7 +25,7 @@ class nullary_op : public simple_op
 public:
   virtual ~nullary_op() noexcept;
 
-  inline nullary_op(const jlm::rvsdg::port & result)
+  explicit inline nullary_op(const jlm::rvsdg::port & result)
       : simple_op({}, { result })
   {}
 };
