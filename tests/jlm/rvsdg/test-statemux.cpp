@@ -18,7 +18,7 @@ test_mux_mux_reduction()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::statetype st;
+  auto st = jlm::tests::statetype::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
@@ -58,7 +58,7 @@ test_multiple_origin_reduction()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::statetype st;
+  auto st = jlm::tests::statetype::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));

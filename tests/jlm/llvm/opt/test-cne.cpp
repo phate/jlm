@@ -24,7 +24,7 @@ test_simple()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -35,15 +35,15 @@ test_simple()
   auto y = graph.add_import({ vt, "y" });
   auto z = graph.add_import({ vt, "z" });
 
-  auto n1 = jlm::tests::create_testop(graph.root(), {}, { &vt })[0];
-  auto n2 = jlm::tests::create_testop(graph.root(), {}, { &vt })[0];
+  auto n1 = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
+  auto n2 = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
 
-  auto u1 = jlm::tests::create_testop(graph.root(), { z }, { &vt })[0];
+  auto u1 = jlm::tests::create_testop(graph.root(), { z }, { vt })[0];
 
-  auto b1 = jlm::tests::create_testop(graph.root(), { x, y }, { &vt })[0];
-  auto b2 = jlm::tests::create_testop(graph.root(), { x, y }, { &vt })[0];
-  auto b3 = jlm::tests::create_testop(graph.root(), { n1, z }, { &vt })[0];
-  auto b4 = jlm::tests::create_testop(graph.root(), { n2, z }, { &vt })[0];
+  auto b1 = jlm::tests::create_testop(graph.root(), { x, y }, { vt })[0];
+  auto b2 = jlm::tests::create_testop(graph.root(), { x, y }, { vt })[0];
+  auto b3 = jlm::tests::create_testop(graph.root(), { n1, z }, { vt })[0];
+  auto b4 = jlm::tests::create_testop(graph.root(), { n2, z }, { vt })[0];
 
   graph.add_export(n1, { n1->type(), "n1" });
   graph.add_export(n2, { n2->type(), "n2" });
@@ -68,8 +68,8 @@ test_gamma()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ct(2);
+  auto vt = jlm::tests::valuetype::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -81,8 +81,8 @@ test_gamma()
   auto y = graph.add_import({ vt, "y" });
   auto z = graph.add_import({ vt, "z" });
 
-  auto u1 = jlm::tests::create_testop(graph.root(), { x }, { &vt })[0];
-  auto u2 = jlm::tests::create_testop(graph.root(), { x }, { &vt })[0];
+  auto u1 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
+  auto u2 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
 
   auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
 
@@ -92,9 +92,9 @@ test_gamma()
   auto ev4 = gamma->add_entryvar(z);
   auto ev5 = gamma->add_entryvar(z);
 
-  auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { &vt })[0];
-  auto n2 = jlm::tests::create_testop(gamma->subregion(0), {}, { &vt })[0];
-  auto n3 = jlm::tests::create_testop(gamma->subregion(0), {}, { &vt })[0];
+  auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
+  auto n2 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
+  auto n3 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
 
   gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
   gamma->add_exitvar({ ev2->argument(0), ev2->argument(1) });
@@ -132,8 +132,8 @@ test_theta()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ct(2);
+  auto vt = jlm::tests::valuetype::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -151,9 +151,9 @@ test_theta()
   auto lv3 = theta->add_loopvar(x);
   auto lv4 = theta->add_loopvar(x);
 
-  auto u1 = jlm::tests::create_testop(region, { lv2->argument() }, { &vt })[0];
-  auto u2 = jlm::tests::create_testop(region, { lv3->argument() }, { &vt })[0];
-  auto b1 = jlm::tests::create_testop(region, { lv3->argument(), lv4->argument() }, { &vt })[0];
+  auto u1 = jlm::tests::create_testop(region, { lv2->argument() }, { vt })[0];
+  auto u2 = jlm::tests::create_testop(region, { lv3->argument() }, { vt })[0];
+  auto b1 = jlm::tests::create_testop(region, { lv3->argument(), lv4->argument() }, { vt })[0];
 
   lv2->result()->divert_to(u1);
   lv3->result()->divert_to(u2);
@@ -185,8 +185,8 @@ test_theta2()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ct(2);
+  auto vt = jlm::tests::valuetype::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -203,9 +203,9 @@ test_theta2()
   auto lv2 = theta->add_loopvar(x);
   auto lv3 = theta->add_loopvar(x);
 
-  auto u1 = jlm::tests::create_testop(region, { lv2->argument() }, { &vt })[0];
-  auto u2 = jlm::tests::create_testop(region, { lv3->argument() }, { &vt })[0];
-  auto b1 = jlm::tests::create_testop(region, { u2, u2 }, { &vt })[0];
+  auto u1 = jlm::tests::create_testop(region, { lv2->argument() }, { vt })[0];
+  auto u2 = jlm::tests::create_testop(region, { lv3->argument() }, { vt })[0];
+  auto b1 = jlm::tests::create_testop(region, { u2, u2 }, { vt })[0];
 
   lv2->result()->divert_to(u1);
   lv3->result()->divert_to(b1);
@@ -229,8 +229,8 @@ test_theta3()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ct(2);
+  auto vt = jlm::tests::valuetype::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -256,9 +256,9 @@ test_theta3()
   theta2->add_loopvar(lv4->argument());
   theta2->set_predicate(p->argument());
 
-  auto u1 = jlm::tests::test_op::create(r1, { theta2->output(1) }, { &vt });
-  auto b1 = jlm::tests::test_op::create(r1, { theta2->output(2), theta2->output(2) }, { &vt });
-  auto u2 = jlm::tests::test_op::create(r1, { theta2->output(3) }, { &vt });
+  auto u1 = jlm::tests::test_op::create(r1, { theta2->output(1) }, { vt });
+  auto b1 = jlm::tests::test_op::create(r1, { theta2->output(2), theta2->output(2) }, { vt });
+  auto u2 = jlm::tests::test_op::create(r1, { theta2->output(3) }, { vt });
 
   lv2->result()->divert_to(u1->output(0));
   lv3->result()->divert_to(b1->output(0));
@@ -288,8 +288,8 @@ test_theta4()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ct(2);
+  auto vt = jlm::tests::valuetype::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -311,8 +311,8 @@ test_theta4()
   auto lv6 = theta->add_loopvar(x);
   auto lv7 = theta->add_loopvar(x);
 
-  auto u1 = jlm::tests::test_op::create(region, { lv2->argument() }, { &vt });
-  auto b1 = jlm::tests::test_op::create(region, { lv3->argument(), lv3->argument() }, { &vt });
+  auto u1 = jlm::tests::test_op::create(region, { lv2->argument() }, { vt });
+  auto b1 = jlm::tests::test_op::create(region, { lv3->argument(), lv3->argument() }, { vt });
 
   lv2->result()->divert_to(lv4->argument());
   lv3->result()->divert_to(lv5->argument());
@@ -341,8 +341,8 @@ test_theta5()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::rvsdg::ctltype ct(2);
+  auto vt = jlm::tests::valuetype::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -403,7 +403,7 @@ test_lambda()
   auto d1 = lambda->add_ctxvar(x);
   auto d2 = lambda->add_ctxvar(x);
 
-  auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { &*vt })[0];
+  auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { vt })[0];
 
   auto output = lambda->finalize({ b1 });
 

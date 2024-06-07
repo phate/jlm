@@ -21,14 +21,14 @@ StoreNonVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   StoreNonVolatileOperation operation1(valueType, 2, 4);
   StoreNonVolatileOperation operation2(pointerType, 2, 4);
   StoreNonVolatileOperation operation3(valueType, 4, 4);
   StoreNonVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::test_op operation5({ &pointerType }, { &pointerType });
+  jlm::tests::test_op operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Act & Assert
   assert(operation1 == operation1);
@@ -51,14 +51,14 @@ StoreVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   StoreVolatileOperation operation1(valueType, 2, 4);
   StoreVolatileOperation operation2(pointerType, 2, 4);
   StoreVolatileOperation operation3(valueType, 4, 4);
   StoreVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::test_op operation5({ &pointerType }, { &pointerType });
+  jlm::tests::test_op operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);
@@ -81,7 +81,7 @@ StoreVolatileOperationCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   StoreVolatileOperation operation(valueType, 2, 4);
@@ -106,7 +106,7 @@ StoreVolatileOperationAccessors()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -114,7 +114,7 @@ StoreVolatileOperationAccessors()
   StoreVolatileOperation operation(valueType, numMemoryStates, alignment);
 
   // Assert
-  assert(operation.GetStoredType() == valueType);
+  assert(operation.GetStoredType() == *valueType);
   assert(operation.NumMemoryStates() == numMemoryStates);
   assert(operation.GetAlignment() == alignment);
   assert(
@@ -138,7 +138,7 @@ StoreVolatileNodeCopy()
   PointerType pointerType;
   iostatetype ioStateType;
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
   auto & address1 = *graph.add_import({ pointerType, "address1" });
@@ -177,9 +177,9 @@ TestCopy()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
-  MemoryStateType memoryStateType;
+  auto memoryStateType = MemoryStateType::Create();
 
   jlm::rvsdg::graph graph;
   auto address1 = graph.add_import({ pointerType, "address1" });
@@ -209,7 +209,7 @@ TestStoreMuxReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 
@@ -258,7 +258,7 @@ TestMultipleOriginReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 
@@ -297,7 +297,7 @@ TestStoreAllocaReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   MemoryStateType mt;
   jlm::rvsdg::bittype bt(32);
 
@@ -346,7 +346,7 @@ TestStoreStoreReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 

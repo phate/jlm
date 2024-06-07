@@ -17,7 +17,7 @@ TestSuccess()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 
@@ -71,7 +71,7 @@ TestWrongNumberOfOperands()
   // Arrange
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 
@@ -117,7 +117,7 @@ TestLoadWithoutStates()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   jlm::rvsdg::graph graph;
