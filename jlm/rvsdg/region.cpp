@@ -50,6 +50,17 @@ argument::create(
   return argument;
 }
 
+jlm::rvsdg::argument *
+argument::create(
+    jlm::rvsdg::region * region,
+    structural_input * input,
+    std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  auto argument = new jlm::rvsdg::argument(region, input, jlm::rvsdg::port(std::move(type)));
+  region->append_argument(argument);
+  return argument;
+}
+
 /* result */
 
 result::~result() noexcept
@@ -85,6 +96,18 @@ result::create(
     const jlm::rvsdg::port & port)
 {
   auto result = new jlm::rvsdg::result(region, origin, output, port);
+  region->append_result(result);
+  return result;
+}
+
+jlm::rvsdg::result *
+result::create(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::structural_output * output,
+    std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  auto result = new jlm::rvsdg::result(region, origin, output, jlm::rvsdg::port(std::move(type)));
   region->append_result(result);
   return result;
 }

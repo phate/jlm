@@ -62,6 +62,12 @@ public:
   static jlm::rvsdg::argument *
   create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);
 
+  static jlm::rvsdg::argument *
+  create(
+      jlm::rvsdg::region * region,
+      structural_input * input,
+      std::shared_ptr<const jlm::rvsdg::type> type);
+
 private:
   jlm::rvsdg::structural_input * input_;
 };
@@ -107,6 +113,13 @@ public:
       jlm::rvsdg::output * origin,
       jlm::rvsdg::structural_output * output,
       const jlm::rvsdg::port & port);
+
+  static jlm::rvsdg::result *
+  create(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::structural_output * output,
+      std::shared_ptr<const jlm::rvsdg::type> type);
 
 private:
   jlm::rvsdg::structural_output * output_;

@@ -42,14 +42,14 @@ template<typename reduction, const char * name>
 std::unique_ptr<operation>
 MakeBitUnaryOperation<reduction, name>::copy() const
 {
-  return std::unique_ptr<operation>(new MakeBitUnaryOperation(*this));
+  return std::make_unique<MakeBitUnaryOperation>(*this);
 }
 
 template<typename reduction, const char * name>
 std::unique_ptr<bitunary_op>
 MakeBitUnaryOperation<reduction, name>::create(size_t nbits) const
 {
-  return std::unique_ptr<bitunary_op>(new MakeBitUnaryOperation(nbits));
+  return std::make_unique<MakeBitUnaryOperation>(nbits);
 }
 
 template<typename reduction, const char * name, enum binary_op::flags opflags>

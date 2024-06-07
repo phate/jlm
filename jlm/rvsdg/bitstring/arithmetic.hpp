@@ -50,8 +50,8 @@ class MakeBitBinaryOperation final : public bitbinary_op
 public:
   ~MakeBitBinaryOperation() noexcept override;
 
-  explicit MakeBitBinaryOperation(const bittype & type) noexcept
-      : bitbinary_op(type)
+  explicit MakeBitBinaryOperation(std::size_t nbits) noexcept
+      : bitbinary_op(bittype::Create(nbits))
   {}
 
   bool
