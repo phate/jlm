@@ -442,6 +442,44 @@ PointerObjectSet::Clone() const
   return std::make_unique<PointerObjectSet>(*this);
 }
 
+bool
+PointerObjectSet::HasIdenticalSolAs(const PointerObjectSet & other) const
+{
+  if (NumPointerObjects() != other.NumPointerObjects())
+    return false;
+
+  // Check that each pointer object has the same Sol set in both sets
+  for (PointerObjectIndex i = 0; i < NumPointerObjects(); i++)
+  {
+    if (HasEscaped(i) != other.HasEscaped(i))
+      return false;
+
+    if (IsPointingToExternal(i) != other.IsPointingToExternal(i))
+      return false;
+
+    auto & thisPointsToSet = GetPointsToSet(i);
+    auto & otherPointsToSet = other.GetPointsToSet(i);
+
+    for (auto thisPointee : thisPointsToSet.Items())
+    {
+      // Skip doubled-up pointers, as they do not affect the points-to set
+      if (HasEscaped(thisPointee) && IsPointingToExternal(i))
+        continue;
+      if (!otherPointsToSet.Contains(thisPointee))
+        return false;
+    }
+    for (auto otherPointee : otherPointsToSet.Items())
+    {
+      // Skip doubled-up pointers, as they do not affect the points-to set
+      if (other.HasEscaped(otherPointee) && other.IsPointingToExternal(i))
+        continue;
+      if (!thisPointsToSet.Contains(otherPointee))
+        return false;
+    }
+  }
+  return true;
+}
+
 // Makes P(superset) a superset of P(subset)
 bool
 SupersetConstraint::ApplyDirectly(PointerObjectSet & set)

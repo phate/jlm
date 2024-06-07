@@ -161,7 +161,7 @@ protected:
   /**
    * Adds a measurement, identified by \p name, with the given value.
    * Requires that the measurement doesn't already exist.
-   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint16_4, double
+   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint64_t, double
    */
   template<typename T>
   void

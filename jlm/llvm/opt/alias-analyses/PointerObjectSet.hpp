@@ -441,6 +441,17 @@ public:
    */
   [[nodiscard]] std::unique_ptr<PointerObjectSet>
   Clone() const;
+
+  /**
+   * Compares two PointerObjectSets, where both stem from the same original set before solving.
+   * The method checks that the solutions they currently represent are identical,
+   * but only in terms of what Sol-set each PointerObject has.
+   * This means unifications do not have to match, neither to PointeesEscape flags.
+   * @param other the set being compared to
+   * @return true if this and other are identical, false otherwise
+   */
+  [[nodiscard]] bool
+  HasIdenticalSolAs(const PointerObjectSet & other) const;
 };
 
 /**

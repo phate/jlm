@@ -26,37 +26,22 @@ class Andersen final : public AliasAnalysis
 
 public:
   /**
-   * Environment variable that will trigger double checking of the analysis,
-   * by running analysis again with the naive solver and no extra processing.
-   * Any differences in the produced PointsToGraph result in an error.
+   * Environment variable that when set, triggers analyzing the program with every single
+   * valid combination of Configuration flags.
    */
-  static inline const char * const ENV_COMPARE_SOLVE_NAIVE = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
+  static inline const char * const ENV_TEST_ALL_CONFIGS = "JLM_ANDERSEN_TEST_ALL_CONFIGS";
+
+  /**
+   * Environment variable that will trigger double checking of the analysis.
+   * If ENV_TEST_ALL_CONFIGS is set, the output is double checked against them all.
+   * Otherwise, the output is double checked only against the default naive solver.
+   */
+  static inline const char * const ENV_DOUBLE_CHECK = "JLM_ANDERSEN_DOUBLE_CHECK";
 
   /**
    * Environment variable that will trigger dumping the subset graph before and after solving.
    */
   static inline const char * const ENV_DUMP_SUBSET_GRAPH = "JLM_ANDERSEN_DUMP_SUBSET_GRAPH";
-
-  /**
-   * Environment variable for overriding the default configuration.
-   * The variable should something look like
-   * "+OVS +Normalize Solver=Worklist WLPolicy=LRF"
-   */
-  static inline const char * const ENV_CONFIG_OVERRIDE = "JLM_ANDERSEN_CONFIG_OVERRIDE";
-  static inline const char * const CONFIG_OVS_ON = "+OVS";
-  static inline const char * const CONFIG_NORMALIZE_ON = "+Normalize";
-  static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
-  static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
-  static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
-  static inline const char * const CONFIG_WL_POLICY_TWO_PHASE_LRF = "WLPolicy=2LRF";
-  static inline const char * const CONFIG_WL_POLICY_TOPO = "WLPolicy=TOPO";
-  static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
-  static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
-  static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
-  static inline const char * const CONFIG_HYBRID_CYCLE_DETECTION_ON = "+HybridCD";
-  static inline const char * const CONFIG_LAZY_CYCLE_DETECTION_ON = "+LazyCD";
-  static inline const char * const CONFIG_DIFFERENCE_PROPAGATION_ON = "+DiffProp";
-  static inline const char * const CONFIG_PREFER_IMPLICIT_PROPAGATION_ON = "+PIP";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
@@ -72,25 +57,6 @@ public:
       Naive,
       Worklist
     };
-
-    [[nodiscard]] bool
-    operator==(const Configuration & other) const noexcept
-    {
-      return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
-          && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
-          && Solver_ == other.Solver_ && WorklistSolverPolicy_ == other.WorklistSolverPolicy_
-          && EnableOnlineCycleDetection_ == other.EnableOnlineCycleDetection_
-          && EnableHybridCycleDetection_ == other.EnableHybridCycleDetection_
-          && EnableLazyCycleDetection_ == other.EnableLazyCycleDetection_
-          && EnableDifferencePropagation_ == other.EnableDifferencePropagation_
-          && EnablePreferImplicitPropagation_ == other.EnablePreferImplicitPropagation_;
-    }
-
-    [[nodiscard]] bool
-    operator!=(const Configuration & other) const noexcept
-    {
-      return !operator==(other);
-    }
 
     /**
      * Sets which solver algorithm to use.
@@ -228,27 +194,26 @@ public:
     }
 
     /**
-     * Enables or disables prefering implicit propagation in the Worklist solver
+     * Enables or disables preferring implicit pointees in the Worklist solver
      */
     void
-    EnablePreferImplicitPropagation(bool enable) noexcept
+    EnablePreferImplicitPointees(bool enable) noexcept
     {
-      EnablePreferImplicitPropagation_ = enable;
+      EnablePreferImplicitPointees_ = enable;
     }
 
     [[nodiscard]] bool
-    IsPreferImplicitPropagationEnabled() const noexcept
+    IsPreferImplicitPointeesEnabled() const noexcept
     {
-      return EnablePreferImplicitPropagation_;
+      return EnablePreferImplicitPointees_;
     }
 
-    /**
-     * Returns the default configuration, unless overridden by an environment variable.
-     * When a variable is supplied, the variable overrides the default naive config.
-     */
-    [[nodiscard]] static Configuration
-    CreateConfiguration();
+    [[nodiscard]] std::string
+    ToString() const;
 
+    /**
+     * @return the default configuration
+     */
     static Configuration
     DefaultConfiguration()
     {
@@ -263,7 +228,7 @@ public:
       config.EnableHybridCycleDetection(true);
       config.EnableLazyCycleDetection(true);
       config.EnableDifferencePropagation(true);
-      config.EnablePreferImplicitPropagation(true);
+      config.EnablePreferImplicitPointees(true);
       return config;
     }
 
@@ -278,6 +243,13 @@ public:
       return Configuration{};
     }
 
+    /**
+     * @return a list containing all possible Configurations,
+     * avoiding useless combinations of techniques.
+     */
+    [[nodiscard]] static std::vector<Configuration>
+    GetAllConfigurations();
+
   private:
     // All techniques are turned off by default
     bool EnableOfflineVariableSubstitution_ = false;
@@ -289,7 +261,7 @@ public:
     bool EnableHybridCycleDetection_ = false;
     bool EnableLazyCycleDetection_ = false;
     bool EnableDifferencePropagation_ = false;
-    bool EnablePreferImplicitPropagation_ = false;
+    bool EnablePreferImplicitPointees_ = false;
   };
 
   ~Andersen() noexcept override = default;
@@ -446,15 +418,18 @@ private:
   AnalyzeModule(const RvsdgModule & module, Statistics & statistics);
 
   /**
-   * Works with the members Set_ and Constraints_, and solves the constraint problem
-   * using the techniques and solver specified in the given configuration
+   * Solves the constraint problem using the techniques and solver specified in the given config.
+   * @param constraints the instance of PointerObjectConstraintSet being operated on
    * @param config settings for the solving
    * @param statistics the Statistics instance used to track info about the analysis
    */
-  void
-  SolveConstraints(const Configuration & config, Statistics & statistics);
+  static void
+  SolveConstraints(
+      PointerObjectConstraintSet & constraints,
+      const Configuration & config,
+      Statistics & statistics);
 
-  Configuration Config_ = Configuration::CreateConfiguration();
+  Configuration Config_ = Configuration::DefaultConfiguration();
 
   std::unique_ptr<PointerObjectSet> Set_;
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;
