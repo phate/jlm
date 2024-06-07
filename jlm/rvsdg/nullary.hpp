@@ -25,8 +25,8 @@ class nullary_op : public simple_op
 public:
   virtual ~nullary_op() noexcept;
 
-  inline nullary_op(const jlm::rvsdg::port & result)
-      : simple_op({}, { result })
+  inline nullary_op(std::shared_ptr<const jlm::rvsdg::type> result)
+      : simple_op({}, { std::move(result) })
   {}
 };
 

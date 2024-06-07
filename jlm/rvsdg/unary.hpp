@@ -62,7 +62,7 @@ public:
   inline unary_op(
       std::shared_ptr<const jlm::rvsdg::type> operand,
       std::shared_ptr<const jlm::rvsdg::type> result)
-      : simple_op({ port(std::move(operand)) }, { port(std::move(result)) })
+      : simple_op({ std::move(operand) }, { std::move(result) })
   {}
 
   virtual unop_reduction_path_t

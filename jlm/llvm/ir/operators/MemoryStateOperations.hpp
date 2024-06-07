@@ -20,15 +20,10 @@ class MemoryStateOperation : public rvsdg::simple_op
 {
 protected:
   MemoryStateOperation(size_t numOperands, size_t numResults)
-      : simple_op(CreatePorts(numOperands), CreatePorts(numResults))
+      : simple_op(
+          { numOperands, MemoryStateType::Create() },
+          { numResults, MemoryStateType::Create() })
   {}
-
-private:
-  static std::vector<rvsdg::port>
-  CreatePorts(size_t size)
-  {
-    return { size, rvsdg::port(MemoryStateType()) };
-  }
 };
 
 /**

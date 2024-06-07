@@ -29,7 +29,7 @@ public:
   GetElementPtrOperation(
       const std::vector<rvsdg::bittype> & offsetTypes,
       const rvsdg::valuetype & pointeeType)
-      : simple_op(CreateOperandPorts(offsetTypes), { PointerType() }),
+      : simple_op(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
         PointeeType_(pointeeType.copy())
   {}
 
@@ -149,16 +149,16 @@ private:
     return offsetTypes;
   }
 
-  static std::vector<rvsdg::port>
-  CreateOperandPorts(const std::vector<rvsdg::bittype> & indexTypes)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateOperandTypes(const std::vector<rvsdg::bittype> & indexTypes)
   {
-    std::vector<rvsdg::port> ports({ PointerType() });
+    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
     for (const auto & type : indexTypes)
     {
-      ports.emplace_back(type);
+      types.emplace_back(type.copy());
     }
 
-    return ports;
+    return types;
   }
 
   std::shared_ptr<const rvsdg::type> PointeeType_;
