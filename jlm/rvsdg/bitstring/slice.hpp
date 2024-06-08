@@ -20,7 +20,7 @@ public:
   virtual ~bitslice_op() noexcept;
 
   inline bitslice_op(const bittype & argument, size_t low, size_t high) noexcept
-      : unary_op(argument, bittype(high - low)),
+      : unary_op(argument.copy(), bittype::Create(high - low)),
         low_(low)
   {}
 

@@ -19,8 +19,8 @@ class MakeBitComparisonOperation final : public bitcompare_op
 public:
   ~MakeBitComparisonOperation() noexcept override;
 
-  explicit MakeBitComparisonOperation(const bittype & type) noexcept
-      : bitcompare_op(type)
+  explicit MakeBitComparisonOperation(std::size_t nbits) noexcept
+      : bitcompare_op(bittype::Create(nbits))
   {}
 
   bool

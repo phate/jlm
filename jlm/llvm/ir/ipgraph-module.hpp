@@ -136,6 +136,25 @@ public:
   }
 
   inline llvm::variable *
+  create_variable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+  {
+    auto v = std::make_unique<llvm::variable>(std::move(type), name);
+    auto pv = v.get();
+    variables_.insert(std::move(v));
+    return pv;
+  }
+
+  inline llvm::variable *
+  create_variable(std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    static uint64_t c = 0;
+    auto v = std::make_unique<llvm::variable>(std::move(type), jlm::util::strfmt("v", c++));
+    auto pv = v.get();
+    variables_.insert(std::move(v));
+    return pv;
+  }
+
+  inline llvm::variable *
   create_variable(function_node * node)
   {
     JLM_ASSERT(!variable(node));

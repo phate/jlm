@@ -28,7 +28,7 @@ public:
   virtual ~unary_op() noexcept;
 
   inline unary_op(const rvsdg::port & srcport, const rvsdg::port & dstport) noexcept
-      : rvsdg::unary_op(srcport, dstport)
+      : rvsdg::unary_op(srcport.Type(), dstport.Type())
   {}
 
   virtual bool
@@ -90,7 +90,7 @@ public:
       const rvsdg::port & srcport,
       const rvsdg::port & dstport,
       const enum rvsdg::binary_op::flags & flags) noexcept
-      : rvsdg::binary_op({ srcport, srcport }, { dstport }),
+      : rvsdg::binary_op({ srcport.Type(), srcport.Type() }, dstport.Type()),
         flags_(flags)
   {}
 
