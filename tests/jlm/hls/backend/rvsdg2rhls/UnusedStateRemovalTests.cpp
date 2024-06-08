@@ -20,7 +20,7 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -103,7 +103,7 @@ TestTheta()
   auto result = jlm::tests::SimpleNode::Create(
                     *rvsdg.root(),
                     { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
-                    { &*valueType })
+                    { valueType })
                     .output(0);
 
   rvsdg.add_export(result, { *valueType, "f" });
@@ -144,10 +144,10 @@ TestLambda()
   auto argument3 = lambdaNode->add_ctxvar(x);
 
   auto result1 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { &*valueType })
+      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { valueType })
           .output(0);
   auto result3 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { &*valueType })
+      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { valueType })
           .output(0);
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });

@@ -21,7 +21,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
@@ -39,20 +39,20 @@ test()
   jlm::rvsdg::output *delta1, *delta2;
   {
     auto delta =
-        delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
+        delta::node::Create(region, *vt, "test-delta1", linkage::external_linkage, "", false);
     auto dep1 = delta->add_ctxvar(r2->argument());
     auto dep2 = delta->add_ctxvar(dep);
     delta1 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { &vt })[0]);
+        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   {
     auto delta =
-        delta::node::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
+        delta::node::Create(region, *vt, "test-delta2", linkage::external_linkage, "", false);
     auto dep1 = delta->add_ctxvar(r1->argument());
     auto dep2 = delta->add_ctxvar(dep);
     delta2 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { &vt })[0]);
+        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   r1->set_rvorigin(delta1);

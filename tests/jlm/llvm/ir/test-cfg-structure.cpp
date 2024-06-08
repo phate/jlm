@@ -19,7 +19,7 @@ test_straightening()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ipgraph_module module(jlm::util::filepath(""), "", "");
 
   jlm::llvm::cfg cfg(module);
@@ -33,9 +33,9 @@ test_straightening()
   bb3->add_outedge(cfg.exit());
 
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
-  bb1->append_last(jlm::tests::create_testop_tac({ arg }, { &vt }));
-  bb2->append_last(jlm::tests::create_testop_tac({ arg }, { &vt }));
-  bb3->append_last(jlm::tests::create_testop_tac({ arg }, { &vt }));
+  bb1->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
+  bb2->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
+  bb3->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
 
   auto bb3_last = static_cast<const basic_block *>(bb3)->tacs().last();
   straighten(cfg);

@@ -19,13 +19,13 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ipgraph_module im(jlm::util::filepath(""), "", "");
 
-  auto d0 = data_node::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);
+  auto d0 = data_node::Create(im.ipgraph(), "d0", *vt, linkage::external_linkage, "", false);
 
-  auto d1 = data_node::Create(im.ipgraph(), "d1", vt, linkage::external_linkage, "", false);
-  auto d2 = data_node::Create(im.ipgraph(), "d2", vt, linkage::external_linkage, "", false);
+  auto d1 = data_node::Create(im.ipgraph(), "d1", *vt, linkage::external_linkage, "", false);
+  auto d2 = data_node::Create(im.ipgraph(), "d2", *vt, linkage::external_linkage, "", false);
 
   auto v0 = im.create_global_value(d0);
   auto v1 = im.create_global_value(d1);
@@ -37,8 +37,8 @@ test()
   d2->add_dependency(d1);
 
   tacsvector_t tvec1, tvec2;
-  tvec1.push_back(jlm::tests::create_testop_tac({ v0, v2 }, { &vt }));
-  tvec2.push_back(jlm::tests::create_testop_tac({ v0, v1 }, { &vt }));
+  tvec1.push_back(jlm::tests::create_testop_tac({ v0, v2 }, { vt }));
+  tvec2.push_back(jlm::tests::create_testop_tac({ v0, v1 }, { vt }));
 
   d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
   d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));

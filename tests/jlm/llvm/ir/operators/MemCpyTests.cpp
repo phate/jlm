@@ -15,13 +15,13 @@ OperationEquality()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   jlm::rvsdg::bittype bit32Type(32);
   jlm::rvsdg::bittype bit64Type(64);
 
   MemCpyNonVolatileOperation operation1(bit32Type, 1);
   MemCpyNonVolatileOperation operation2(bit64Type, 4);
-  jlm::tests::test_op operation3({ &valueType }, { &valueType });
+  jlm::tests::test_op operation3({ valueType }, { valueType });
 
   // Act & Assert
   assert(operation1 == operation1);

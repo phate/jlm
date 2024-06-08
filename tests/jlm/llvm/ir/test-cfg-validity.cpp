@@ -17,7 +17,7 @@ test_single_operand_phi()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
 
   ipgraph_module im(jlm::util::filepath(""), "", "");
 

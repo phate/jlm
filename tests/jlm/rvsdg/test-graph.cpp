@@ -30,19 +30,19 @@ test_recursive_prune()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype t;
+  auto t = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
   auto imp = graph.add_import({ t, "i" });
 
-  auto n1 = jlm::tests::test_op::create(graph.root(), { imp }, { &t });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { imp }, { &t });
+  auto n1 = jlm::tests::test_op::create(graph.root(), { imp }, { t });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { imp }, { t });
 
   auto n3 = jlm::tests::structural_node::create(graph.root(), 1);
   structural_input::create(n3, imp, t);
   auto a1 = argument::create(n3->subregion(0), nullptr, t);
-  auto n4 = jlm::tests::test_op::create(n3->subregion(0), { a1 }, { &t });
-  auto n5 = jlm::tests::test_op::create(n3->subregion(0), { a1 }, { &t });
+  auto n4 = jlm::tests::test_op::create(n3->subregion(0), { a1 }, { t });
+  auto n5 = jlm::tests::test_op::create(n3->subregion(0), { a1 }, { t });
   result::create(n3->subregion(0), n4->output(0), nullptr, t);
   auto o1 = structural_output::create(n3, t);
 
@@ -90,17 +90,17 @@ test_prune_replace(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype type;
+  auto type = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { &type });
-  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0) }, { &type });
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
+  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0) }, { type });
 
   graph.add_export(n2->output(0), { n2->output(0)->type(), "n2" });
   graph.add_export(n3->output(0), { n2->output(0)->type(), "n3" });
 
-  auto n4 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { &type });
+  auto n4 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
 
   n2->output(0)->divert_users(n4->output(0));
   assert(n2->output(0)->nusers() == 0);
@@ -119,11 +119,11 @@ test_graph(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype type;
+  auto type = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
 
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type });
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
   assert(n1);
   assert(n1->depth() == 0);
 

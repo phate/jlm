@@ -31,8 +31,8 @@ test1()
   auto SetupF1 = [&]()
   {
     auto vt = jlm::tests::valuetype::Create();
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
     FunctionType functionType(
         { vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
@@ -40,7 +40,7 @@ test1()
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
     lambda->add_ctxvar(i);
 
-    auto t = jlm::tests::test_op::create(lambda->subregion(), { lambda->fctargument(0) }, { &*vt });
+    auto t = jlm::tests::test_op::create(lambda->subregion(), { lambda->fctargument(0) }, { vt });
 
     return lambda->finalize({ t->output(0), lambda->fctargument(1), lambda->fctargument(2) });
   };
@@ -48,9 +48,9 @@ test1()
   auto SetupF2 = [&](lambda::output * f1)
   {
     auto vt = jlm::tests::valuetype::Create();
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    jlm::rvsdg::ctltype ct(2);
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
+    auto ct = jlm::rvsdg::ctltype::Create(2);
     FunctionType functionType(
         { jlm::rvsdg::ctltype::Create(2), vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
@@ -107,8 +107,8 @@ test2()
 
   // Arrange
   auto vt = jlm::tests::valuetype::Create();
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
 
   FunctionType functionType1(
       { vt, iostatetype::Create(), MemoryStateType::Create() },
@@ -131,8 +131,8 @@ test2()
 
   auto SetupF2 = [&](lambda::output * f1)
   {
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
     FunctionType functionType(
         { iostatetype::Create(), MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
