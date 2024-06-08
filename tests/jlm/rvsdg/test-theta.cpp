@@ -55,7 +55,7 @@ TestRemoveThetaOutputsWhere()
 
   // Arrange
   graph rvsdg;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
@@ -105,7 +105,7 @@ TestPruneThetaOutputs()
 
   // Arrange
   graph rvsdg;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
@@ -140,7 +140,7 @@ TestRemoveThetaInputsWhere()
 
   // Arrange
   graph rvsdg;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
@@ -154,7 +154,7 @@ TestRemoveThetaInputsWhere()
   thetaNode->set_predicate(thetaOutput0->argument());
 
   auto result =
-      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { &valueType }).output(0);
+      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { valueType }).output(0);
 
   thetaOutput1->result()->divert_to(result);
   thetaOutput2->result()->divert_to(result);
@@ -196,7 +196,7 @@ TestPruneThetaInputs()
 
   // Arrange
   graph rvsdg;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
@@ -210,7 +210,7 @@ TestPruneThetaInputs()
   thetaNode->set_predicate(thetaOutput0->argument());
 
   auto result =
-      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { &valueType }).output(0);
+      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { valueType }).output(0);
 
   thetaOutput1->result()->divert_to(result);
   thetaOutput2->result()->divert_to(result);

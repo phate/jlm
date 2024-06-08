@@ -18,8 +18,8 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  jlm::tests::test_op op({}, { &vt });
+  auto vt = jlm::tests::valuetype::Create();
+  jlm::tests::test_op op({}, { vt });
 
   /* setup cfg */
 

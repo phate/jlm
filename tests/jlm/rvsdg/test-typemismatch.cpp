@@ -17,15 +17,15 @@ test_main(void)
 
   jlm::rvsdg::graph graph;
 
-  jlm::tests::statetype type;
-  jlm::tests::valuetype value_type;
+  auto type = jlm::tests::statetype::Create();
+  auto value_type = jlm::tests::valuetype::Create();
 
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type });
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
 
   bool error_handler_called = false;
   try
   {
-    jlm::tests::test_op::Create(graph.root(), { &value_type }, { n1->output(0) }, {});
+    jlm::tests::test_op::Create(graph.root(), { value_type }, { n1->output(0) }, {});
   }
   catch (jlm::util::type_error & e)
   {

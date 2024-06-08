@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::tests::valuetype vt;
+static const auto vt = jlm::tests::valuetype::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -38,7 +38,7 @@ test1()
   auto a = jlm::tests::create_testop(
       theta->subregion(),
       { lvx->argument(), lvy->argument() },
-      { &*jlm::rvsdg::bittype::Create(1) })[0];
+      { jlm::rvsdg::bittype::Create(1) })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
   auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
@@ -49,11 +49,11 @@ test1()
   auto b = jlm::tests::create_testop(
       gamma->subregion(0),
       { evx->argument(0), evy->argument(0) },
-      { &vt })[0];
+      { vt })[0];
   auto c = jlm::tests::create_testop(
       gamma->subregion(1),
       { evx->argument(1), evy->argument(1) },
-      { &vt })[0];
+      { vt })[0];
 
   auto xvy = gamma->add_exitvar({ b, c });
 
@@ -92,8 +92,8 @@ test2()
   auto n1 = jlm::tests::create_testop(
       theta->subregion(),
       { lv1->argument() },
-      { &*jlm::rvsdg::bittype::Create(1) })[0];
-  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &vt })[0];
+      { jlm::rvsdg::bittype::Create(1) })[0];
+  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { vt })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
   auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);

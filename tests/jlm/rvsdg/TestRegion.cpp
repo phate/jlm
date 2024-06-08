@@ -17,7 +17,7 @@ TestArgumentNodeMismatch()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
   auto import = graph.add_import({ vt, "import" });
@@ -48,7 +48,7 @@ TestResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
   auto import = graph.add_import({ vt, "import" });
@@ -153,8 +153,8 @@ TestRemoveResultsWhere()
   jlm::rvsdg::graph rvsdg;
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
-  jlm::tests::valuetype valueType;
-  auto node = jlm::tests::test_op::Create(&region, {}, {}, { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto node = jlm::tests::test_op::Create(&region, {}, {}, { valueType });
 
   auto result0 =
       jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
@@ -205,12 +205,12 @@ TestRemoveArgumentsWhere()
   jlm::rvsdg::graph rvsdg;
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
   auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
   auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
 
-  auto node = jlm::tests::test_op::Create(&region, { &valueType }, { argument1 }, { &valueType });
+  auto node = jlm::tests::test_op::Create(&region, { valueType }, { argument1 }, { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);
@@ -253,16 +253,16 @@ TestPruneArguments()
   jlm::rvsdg::graph rvsdg;
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
   jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
   auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
 
   auto node = jlm::tests::test_op::Create(
       &region,
-      { &valueType, &valueType },
+      { valueType, valueType },
       { argument0, argument2 },
-      { &valueType });
+      { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);

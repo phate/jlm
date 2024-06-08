@@ -20,7 +20,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
   ipgraph_module m(jlm::util::filepath(""), "", "");

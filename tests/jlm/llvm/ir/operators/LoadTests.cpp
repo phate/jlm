@@ -29,7 +29,7 @@ OperationEquality()
   LoadNonVolatileOperation operation2(pointerType, 2, 4);
   LoadNonVolatileOperation operation3(valueType, 4, 4);
   LoadNonVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::test_op operation5({ &pointerType }, { &pointerType });
+  jlm::tests::test_op operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);
@@ -52,7 +52,7 @@ TestCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   jlm::rvsdg::graph graph;
@@ -62,7 +62,7 @@ TestCopy()
   auto address2 = graph.add_import({ pointerType, "address2" });
   auto memoryState2 = graph.add_import({ memoryType, "memoryState2" });
 
-  auto loadResults = LoadNonVolatileNode::Create(address1, { memoryState1 }, valueType, 4);
+  auto loadResults = LoadNonVolatileNode::Create(address1, { memoryState1 }, *valueType, 4);
 
   // Act
   auto node = jlm::rvsdg::node_output::node(loadResults[0]);
@@ -124,7 +124,7 @@ TestMultipleOriginReduction()
 
   // Arrange
   MemoryStateType mt;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
 
   jlm::rvsdg::graph graph;
@@ -135,7 +135,7 @@ TestMultipleOriginReduction()
   auto a = graph.add_import({ pt, "a" });
   auto s = graph.add_import({ mt, "s" });
 
-  auto load = LoadNonVolatileNode::Create(a, { s, s, s, s }, vt, 4)[0];
+  auto load = LoadNonVolatileNode::Create(a, { s, s, s, s }, *vt, 4)[0];
 
   auto ex = graph.add_export(load, { load->type(), "l" });
 
@@ -206,7 +206,7 @@ TestLoadStoreReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 
@@ -220,7 +220,7 @@ TestLoadStoreReduction()
   auto s = graph.add_import({ mt, "state" });
 
   auto s1 = StoreNonVolatileNode::Create(a, v, { s }, 4)[0];
-  auto load = LoadNonVolatileNode::Create(a, { s1 }, vt, 4);
+  auto load = LoadNonVolatileNode::Create(a, { s1 }, *vt, 4);
 
   auto x1 = graph.add_export(load[0], { load[0]->type(), "value" });
   auto x2 = graph.add_export(load[1], { load[1]->type(), "state" });
@@ -246,7 +246,7 @@ TestLoadLoadReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   PointerType pt;
   MemoryStateType mt;
 
@@ -322,14 +322,14 @@ LoadVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   LoadVolatileOperation operation1(valueType, 2, 4);
   LoadVolatileOperation operation2(pointerType, 2, 4);
   LoadVolatileOperation operation3(valueType, 4, 4);
   LoadVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::test_op operation5({ &pointerType }, { &pointerType });
+  jlm::tests::test_op operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);
@@ -352,7 +352,7 @@ OperationCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   LoadVolatileOperation operation(valueType, 2, 4);
@@ -375,7 +375,7 @@ OperationAccessors()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -383,7 +383,7 @@ OperationAccessors()
   LoadVolatileOperation operation(valueType, numMemoryStates, alignment);
 
   // Assert
-  assert(operation.GetLoadedType() == valueType);
+  assert(operation.GetLoadedType() == *valueType);
   assert(operation.NumMemoryStates() == numMemoryStates);
   assert(operation.GetAlignment() == alignment);
   assert(operation.narguments() == numMemoryStates + 2); // [address, ioState, memoryStates]
@@ -403,9 +403,9 @@ NodeCopy()
 
   // Arrange
   PointerType pointerType;
-  iostatetype iOStateType;
+  auto iOStateType = iostatetype::Create();
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
   auto & address1 = *graph.add_import({ pointerType, "address1" });
@@ -427,7 +427,7 @@ NodeCopy()
   assert(loadNode.GetOperation() == copiedLoadNode->GetOperation());
   assert(copiedLoadNode->GetAddressInput().origin() == &address2);
   assert(copiedLoadNode->GetIoStateInput().origin() == &iOState2);
-  assert(copiedLoadNode->GetLoadedValueOutput().type() == valueType);
+  assert(copiedLoadNode->GetLoadedValueOutput().type() == *valueType);
 
   return 0;
 }

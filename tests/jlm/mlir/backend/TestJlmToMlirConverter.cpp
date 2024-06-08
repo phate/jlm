@@ -26,8 +26,8 @@ TestLambda()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
     FunctionType functionType(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
@@ -147,8 +147,8 @@ TestAddOperation()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
     FunctionType functionType(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
@@ -248,8 +248,8 @@ TestComZeroExt()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
     FunctionType functionType(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
