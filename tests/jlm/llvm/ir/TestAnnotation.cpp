@@ -95,7 +95,7 @@ TestLinearSubgraphAnnotation()
   };
 
   ipgraph_module module(jlm::util::filepath(""), "", "");
-  jlm::llvm::argument argument("argument", jlm::tests::valuetype());
+  jlm::llvm::argument argument("argument", jlm::tests::valuetype::Create());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
   /*

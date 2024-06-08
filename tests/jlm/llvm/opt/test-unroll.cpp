@@ -66,12 +66,12 @@ static inline void
 test_unrollinfo()
 {
   jlm::rvsdg::bittype bt32(32);
-  jlm::rvsdg::bitslt_op slt(bt32);
-  jlm::rvsdg::bitult_op ult(bt32);
-  jlm::rvsdg::bitule_op ule(bt32);
-  jlm::rvsdg::bitugt_op ugt(bt32);
-  jlm::rvsdg::bitsge_op sge(bt32);
-  jlm::rvsdg::biteq_op eq(bt32);
+  jlm::rvsdg::bitslt_op slt(32);
+  jlm::rvsdg::bitult_op ult(32);
+  jlm::rvsdg::bitule_op ule(32);
+  jlm::rvsdg::bitugt_op ugt(32);
+  jlm::rvsdg::bitsge_op sge(32);
+  jlm::rvsdg::biteq_op eq(32);
 
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);

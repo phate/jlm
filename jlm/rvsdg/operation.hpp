@@ -124,6 +124,20 @@ public:
         operands_(operands)
   {}
 
+  inline simple_op(
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> results)
+  {
+    for (auto & op : operands)
+    {
+      operands_.push_back(port(std::move(op)));
+    }
+    for (auto & res : results)
+    {
+      results_.push_back(port(std::move(res)));
+    }
+  }
+
   size_t
   narguments() const noexcept;
 

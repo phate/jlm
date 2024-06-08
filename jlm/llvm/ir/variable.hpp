@@ -28,7 +28,7 @@ public:
         type_(type.copy())
   {}
 
-  variable(std::unique_ptr<jlm::rvsdg::type> type, const std::string & name)
+  variable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
       : name_(name),
         type_(std::move(type))
   {}
@@ -63,6 +63,12 @@ public:
   type() const noexcept
   {
     return *type_;
+  }
+
+  inline const std::shared_ptr<const jlm::rvsdg::type>
+  Type() const noexcept
+  {
+    return type_;
   }
 
 private:

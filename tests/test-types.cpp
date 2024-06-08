@@ -61,4 +61,11 @@ statetype::copy() const
   return std::make_shared<statetype>(*this);
 }
 
+std::shared_ptr<const statetype>
+statetype::Create()
+{
+  static const statetype instance;
+  return std::shared_ptr<const statetype>(std::shared_ptr<void>(), &instance);
+}
+
 }

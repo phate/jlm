@@ -134,8 +134,10 @@ public:
 
   virtual ~binary_op() noexcept;
 
-  inline binary_op(const std::vector<jlm::rvsdg::port> & operands, const jlm::rvsdg::port & result)
-      : simple_op(operands, { result })
+  inline binary_op(
+      const std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
+      std::shared_ptr<const jlm::rvsdg::type> result)
+      : simple_op(std::move(operands), { std::move(result) })
   {}
 
   virtual binop_reduction_path_t

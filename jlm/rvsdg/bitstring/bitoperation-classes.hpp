@@ -23,7 +23,7 @@ public:
   virtual ~bitunary_op() noexcept;
 
   inline bitunary_op(const bittype & type) noexcept
-      : unary_op(type, type)
+      : unary_op(type.copy(), type.copy())
   {}
 
   inline const bittype &
@@ -54,8 +54,8 @@ class bitbinary_op : public jlm::rvsdg::binary_op
 public:
   virtual ~bitbinary_op() noexcept;
 
-  inline bitbinary_op(const bittype & type, size_t arity = 2) noexcept
-      : binary_op(std::vector<jlm::rvsdg::port>(arity, { type }), type)
+  inline bitbinary_op(const std::shared_ptr<const bittype> type, size_t arity = 2) noexcept
+      : binary_op({ arity, type }, type)
   {}
 
   /* reduction methods */
@@ -94,8 +94,8 @@ class bitcompare_op : public jlm::rvsdg::binary_op
 public:
   virtual ~bitcompare_op() noexcept;
 
-  inline bitcompare_op(const bittype & type) noexcept
-      : binary_op({ type, type }, *bittype::Create(1))
+  inline bitcompare_op(std::shared_ptr<const bittype> type) noexcept
+      : binary_op({ type, type }, bittype::Create(1))
   {}
 
   virtual binop_reduction_path_t
