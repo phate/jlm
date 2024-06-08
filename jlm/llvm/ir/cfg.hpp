@@ -28,13 +28,16 @@ class argument final : public variable
 public:
   ~argument() override;
 
-  argument(const std::string & name, const jlm::rvsdg::type & type, const attributeset & attributes)
-      : variable(*type.copy(), name),
+  argument(
+      const std::string & name,
+      std::shared_ptr<const jlm::rvsdg::type> type,
+      const attributeset & attributes)
+      : variable(std::move(type), name),
         attributes_(attributes)
   {}
 
-  argument(const std::string & name, const jlm::rvsdg::type & type)
-      : variable(*type.copy(), name)
+  argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::type> type)
+      : variable(std::move(type), name)
   {}
 
   argument(
@@ -66,13 +69,13 @@ public:
   static std::unique_ptr<argument>
   create(const std::string & name, const jlm::rvsdg::type & type, const attributeset & attributes)
   {
-    return std::make_unique<argument>(name, type, attributes);
+    return std::make_unique<argument>(name, type.copy(), attributes);
   }
 
   static std::unique_ptr<argument>
   create(
       const std::string & name,
-      std::unique_ptr<jlm::rvsdg::type> type,
+      std::shared_ptr<const jlm::rvsdg::type> type,
       const attributeset & attributes)
   {
     return std::make_unique<argument>(name, std::move(type), attributes);
@@ -81,7 +84,13 @@ public:
   static std::unique_ptr<argument>
   create(const std::string & name, const jlm::rvsdg::type & type)
   {
-    return create(name, type, {});
+    return create(name, type.copy(), {});
+  }
+
+  static std::unique_ptr<argument>
+  create(const std::string & name, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    return create(name, std::move(type), {});
   }
 
 private:
@@ -376,11 +385,11 @@ public:
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::type>> arguments;
     for (size_t n = 0; n < entry()->narguments(); n++)
-      arguments.push_back(entry()->argument(n)->type().copy());
+      arguments.push_back(entry()->argument(n)->Type());
 
     std::vector<std::shared_ptr<const jlm::rvsdg::type>> results;
     for (size_t n = 0; n < exit()->nresults(); n++)
-      results.push_back(exit()->result(n)->type().copy());
+      results.push_back(exit()->result(n)->Type());
 
     return FunctionType(arguments, results);
   }

@@ -27,6 +27,15 @@ public:
         ValueType_(valueType.copy())
   {}
 
+  impport(
+      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
+      const std::string & name,
+      const linkage & lnk)
+      : jlm::rvsdg::impport(PointerType(), name),
+        linkage_(lnk),
+        ValueType_(std::move(valueType))
+  {}
+
   impport(const impport & other)
       : jlm::rvsdg::impport(other),
         linkage_(other.linkage_),

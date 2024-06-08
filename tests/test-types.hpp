@@ -50,6 +50,9 @@ public:
 
   std::shared_ptr<const jlm::rvsdg::type>
   copy() const override;
+
+  static std::shared_ptr<const statetype>
+  Create();
 };
 
 }

@@ -34,6 +34,11 @@ public:
         name_(name)
   {}
 
+  impport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+      : port(std::move(type)),
+        name_(name)
+  {}
+
   impport(const impport & other)
       : port(other),
         name_(other.name_)
@@ -75,6 +80,11 @@ public:
 
   expport(const jlm::rvsdg::type & type, const std::string & name)
       : port(type),
+        name_(name)
+  {}
+
+  expport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+      : port(std::move(type)),
         name_(name)
   {}
 

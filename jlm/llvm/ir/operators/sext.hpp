@@ -21,14 +21,16 @@ public:
   virtual ~sext_op();
 
   inline sext_op(const rvsdg::bittype & otype, const rvsdg::bittype & rtype)
-      : unary_op({ otype }, { rtype })
+      : unary_op(otype.copy(), rtype.copy())
   {
     if (otype.nbits() >= rtype.nbits())
       throw jlm::util::error("expected operand's #bits to be smaller than results's #bits.");
   }
 
-  inline sext_op(std::unique_ptr<rvsdg::type> srctype, std::unique_ptr<rvsdg::type> dsttype)
-      : unary_op(*srctype, *dsttype)
+  inline sext_op(
+      std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::type> dsttype)
+      : unary_op(srctype, dsttype)
   {
     auto ot = dynamic_cast<const rvsdg::bittype *>(srctype.get());
     if (!ot)

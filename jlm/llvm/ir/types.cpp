@@ -115,6 +115,14 @@ FunctionType::operator=(FunctionType && rhs) noexcept
   return *this;
 }
 
+std::shared_ptr<const FunctionType>
+FunctionType::Create(
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
+{
+  return std::make_shared<FunctionType>(std::move(argumentTypes), std::move(resultTypes));
+}
+
 PointerType::~PointerType() noexcept = default;
 
 std::string
@@ -194,6 +202,38 @@ std::shared_ptr<const jlm::rvsdg::type>
 fptype::copy() const
 {
   return std::make_shared<fptype>(*this);
+}
+
+std::shared_ptr<const fptype>
+fptype::Create(fpsize size)
+{
+  switch (size)
+  {
+  case fpsize::half:
+  {
+    static const fptype instance(fpsize::half);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::flt:
+  {
+    static const fptype instance(fpsize::flt);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::dbl:
+  {
+    static const fptype instance(fpsize::dbl);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::x86fp80:
+  {
+    static const fptype instance(fpsize::x86fp80);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  default:
+  {
+    JLM_UNREACHABLE("unknown fpsize");
+  }
+  }
 }
 
 /* vararg type */
