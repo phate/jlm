@@ -35,7 +35,7 @@ class RvsdgModule;
  *
  * ### Gamma Nodes
  * The output of a gamma node is considered invariant if all the corresponding region results are
- * connected to the arguments of a single gamma input. All the users of a theta output are diverted
+ * connected to the arguments of a single gamma input. All the users of a gamma output are diverted
  * to the origin of this gamma input.
  *
  * ### Call Nodes
