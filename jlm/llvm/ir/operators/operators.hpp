@@ -440,6 +440,10 @@ public:
       : simple_op({}, { pointerType.copy() })
   {}
 
+  explicit ConstantPointerNullOperation(std::shared_ptr<const PointerType> pointerType)
+      : simple_op({}, { std::move(pointerType) })
+  {}
+
   bool
   operator==(const operation & other) const noexcept override;
 
@@ -458,27 +462,41 @@ public:
   static std::unique_ptr<llvm::tac>
   Create(const jlm::rvsdg::type & type)
   {
-    auto & pointerType = CheckAndExtractType(type);
+    auto & pointerType = CheckAndExtractType(type.copy());
 
     ConstantPointerNullOperation operation(pointerType);
+    return tac::create(operation, {});
+  }
+
+  static std::unique_ptr<llvm::tac>
+  Create(std::shared_ptr<const rvsdg::type> type)
+  {
+    ConstantPointerNullOperation operation(CheckAndExtractType(type));
     return tac::create(operation, {});
   }
 
   static jlm::rvsdg::output *
   Create(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
   {
-    auto & pointerType = CheckAndExtractType(type);
+    auto & pointerType = CheckAndExtractType(type.copy());
 
     ConstantPointerNullOperation operation(pointerType);
     return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
   }
 
-private:
-  static const PointerType &
-  CheckAndExtractType(const jlm::rvsdg::type & type)
+  static jlm::rvsdg::output *
+  Create(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
   {
-    if (auto pointerType = dynamic_cast<const PointerType *>(&type))
-      return *pointerType;
+    ConstantPointerNullOperation operation(CheckAndExtractType(type));
+    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
+  }
+
+private:
+  static const std::shared_ptr<const PointerType>
+  CheckAndExtractType(std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    if (auto pointerType = std::dynamic_pointer_cast<const PointerType>(type))
+      return pointerType;
 
     throw jlm::util::error("expected pointer type.");
   }
@@ -493,6 +511,12 @@ public:
 
   inline bits2ptr_op(const jlm::rvsdg::bittype & btype, const PointerType & ptype)
       : unary_op(btype.copy(), ptype.copy())
+  {}
+
+  inline bits2ptr_op(
+      std::shared_ptr<const jlm::rvsdg::bittype> btype,
+      std::shared_ptr<const PointerType> ptype)
+      : unary_op(std::move(btype), std::move(ptype))
   {}
 
   inline bits2ptr_op(
@@ -534,30 +558,60 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const variable * argument, const jlm::rvsdg::type & type)
   {
-    auto at = dynamic_cast<const jlm::rvsdg::bittype *>(&argument->type());
+    auto at = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
     if (!at)
       throw jlm::util::error("expected bitstring type.");
 
-    auto pt = dynamic_cast<const PointerType *>(&type);
+    auto pt = std::dynamic_pointer_cast<const PointerType>(type.copy());
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    bits2ptr_op op(*at, *pt);
+    bits2ptr_op op(at, pt);
+    return tac::create(op, { argument });
+  }
+
+  static std::unique_ptr<llvm::tac>
+  create(const variable * argument, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto at = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
+    if (!at)
+      throw jlm::util::error("expected bitstring type.");
+
+    auto pt = std::dynamic_pointer_cast<const PointerType>(type);
+    if (!pt)
+      throw jlm::util::error("expected pointer type.");
+
+    bits2ptr_op op(at, pt);
     return tac::create(op, { argument });
   }
 
   static jlm::rvsdg::output *
   create(jlm::rvsdg::output * operand, const jlm::rvsdg::type & type)
   {
-    auto ot = dynamic_cast<const jlm::rvsdg::bittype *>(&operand->type());
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
       throw jlm::util::error("expected bitstring type.");
 
-    auto pt = dynamic_cast<const PointerType *>(&type);
+    auto pt = std::dynamic_pointer_cast<const PointerType>(type.copy());
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    bits2ptr_op op(*ot, *pt);
+    bits2ptr_op op(ot, pt);
+    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+  }
+
+  static jlm::rvsdg::output *
+  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
+    if (!ot)
+      throw jlm::util::error("expected bitstring type.");
+
+    auto pt = std::dynamic_pointer_cast<const PointerType>(type);
+    if (!pt)
+      throw jlm::util::error("expected pointer type.");
+
+    bits2ptr_op op(ot, pt);
     return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
   }
 };
@@ -1455,11 +1509,17 @@ public:
   {}
 
   inline bitcast_op(
+      std::shared_ptr<const jlm::rvsdg::valuetype> srctype,
+      std::shared_ptr<const jlm::rvsdg::valuetype> dsttype)
+      : unary_op(std::move(srctype), std::move(dsttype))
+  {}
+
+  inline bitcast_op(
       std::shared_ptr<const jlm::rvsdg::type> srctype,
       std::shared_ptr<const jlm::rvsdg::type> dsttype)
       : unary_op(srctype, dsttype)
   {
-    check_types(*srctype, *dsttype);
+    check_types(srctype, dsttype);
   }
 
   bitcast_op(const bitcast_op &) = default;
@@ -1491,30 +1551,52 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const variable * operand, const jlm::rvsdg::type & type)
   {
-    auto pair = check_types(operand->type(), type);
+    auto pair = check_types(operand->Type(), type.copy());
 
-    bitcast_op op(*pair.first, *pair.second);
+    bitcast_op op(pair.first, pair.second);
     return tac::create(op, { operand });
   }
 
   static jlm::rvsdg::output *
   create(jlm::rvsdg::output * operand, const jlm::rvsdg::type & rtype)
   {
-    auto pair = check_types(operand->type(), rtype);
+    auto pair = check_types(operand->Type(), rtype.copy());
 
-    bitcast_op op(*pair.first, *pair.second);
+    bitcast_op op(pair.first, pair.second);
+    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+  }
+
+  static std::unique_ptr<llvm::tac>
+  create(const variable * operand, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto pair = check_types(operand->Type(), type);
+
+    bitcast_op op(pair.first, pair.second);
+    return tac::create(op, { operand });
+  }
+
+  static jlm::rvsdg::output *
+  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::type> rtype)
+  {
+    auto pair = check_types(operand->Type(), rtype);
+
+    bitcast_op op(pair.first, pair.second);
     return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
   }
 
 private:
-  static std::pair<const jlm::rvsdg::valuetype *, const jlm::rvsdg::valuetype *>
-  check_types(const jlm::rvsdg::type & otype, const jlm::rvsdg::type & rtype)
+  static std::pair<
+      std::shared_ptr<const jlm::rvsdg::valuetype>,
+      std::shared_ptr<const jlm::rvsdg::valuetype>>
+  check_types(
+      const std::shared_ptr<const jlm::rvsdg::type> & otype,
+      const std::shared_ptr<const jlm::rvsdg::type> & rtype)
   {
-    auto ot = dynamic_cast<const jlm::rvsdg::valuetype *>(&otype);
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(otype);
     if (!ot)
       throw jlm::util::error("expected value type.");
 
-    auto rt = dynamic_cast<const jlm::rvsdg::valuetype *>(&rtype);
+    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(rtype);
     if (!rt)
       throw jlm::util::error("expected value type.");
 
@@ -1529,8 +1611,8 @@ class ConstantStruct final : public jlm::rvsdg::simple_op
 public:
   virtual ~ConstantStruct();
 
-  inline ConstantStruct(const StructType & type)
-      : simple_op(create_srctypes(type), { type.copy() })
+  inline ConstantStruct(std::shared_ptr<const StructType> type)
+      : simple_op(create_srctypes(*type), { type })
   {}
 
   virtual bool
@@ -1551,9 +1633,9 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const std::vector<const variable *> & elements, const jlm::rvsdg::type & type)
   {
-    auto & structType = CheckAndExtractStructType(type);
+    auto structType = CheckAndExtractStructType(type.copy());
 
-    ConstantStruct op(structType);
+    ConstantStruct op(std::move(structType));
     return tac::create(op, elements);
   }
 
@@ -1563,9 +1645,21 @@ public:
       const std::vector<rvsdg::output *> & operands,
       const rvsdg::type & resultType)
   {
-    auto & structType = CheckAndExtractStructType(resultType);
+    auto structType = CheckAndExtractStructType(resultType.copy());
 
-    ConstantStruct operation(structType);
+    ConstantStruct operation(std::move(structType));
+    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+  }
+
+  static rvsdg::output &
+  Create(
+      rvsdg::region & region,
+      const std::vector<rvsdg::output *> & operands,
+      std::shared_ptr<const rvsdg::type> resultType)
+  {
+    auto structType = CheckAndExtractStructType(std::move(resultType));
+
+    ConstantStruct operation(std::move(structType));
     return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
   }
 
@@ -1580,15 +1674,15 @@ private:
     return types;
   }
 
-  static const StructType &
-  CheckAndExtractStructType(const rvsdg::type & type)
+  static std::shared_ptr<const StructType>
+  CheckAndExtractStructType(std::shared_ptr<const rvsdg::type> type)
   {
-    if (auto structType = dynamic_cast<const StructType *>(&type))
+    if (auto structType = std::dynamic_pointer_cast<const StructType>(type))
     {
-      return *structType;
+      return structType;
     }
 
-    throw util::type_error("StructType", type.debug_string());
+    throw util::type_error("StructType", type->debug_string());
   }
 };
 
@@ -1869,12 +1963,12 @@ class ConstantAggregateZero final : public jlm::rvsdg::simple_op
 public:
   virtual ~ConstantAggregateZero();
 
-  ConstantAggregateZero(const jlm::rvsdg::type & type)
-      : simple_op({}, { type.copy() })
+  ConstantAggregateZero(std::shared_ptr<const jlm::rvsdg::type> type)
+      : simple_op({}, { type })
   {
-    auto st = dynamic_cast<const StructType *>(&type);
-    auto at = dynamic_cast<const arraytype *>(&type);
-    auto vt = dynamic_cast<const vectortype *>(&type);
+    auto st = dynamic_cast<const StructType *>(type.get());
+    auto at = dynamic_cast<const arraytype *>(type.get());
+    auto vt = dynamic_cast<const vectortype *>(type.get());
     if (!st && !at && !vt)
       throw jlm::util::error("expected array, struct, or vector type.\n");
   }
@@ -1891,14 +1985,21 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const jlm::rvsdg::type & type)
   {
-    ConstantAggregateZero op(type);
+    ConstantAggregateZero op(type.copy());
     return tac::create(op, {});
   }
 
   static jlm::rvsdg::output *
   Create(jlm::rvsdg::region & region, const jlm::rvsdg::type & type)
   {
-    ConstantAggregateZero operation(type);
+    ConstantAggregateZero operation(type.copy());
+    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
+  }
+
+  static jlm::rvsdg::output *
+  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    ConstantAggregateZero operation(std::move(type));
     return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
   }
 };

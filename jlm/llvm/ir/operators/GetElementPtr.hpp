@@ -27,21 +27,15 @@ public:
 
 public:
   GetElementPtrOperation(
-      const std::vector<rvsdg::bittype> & offsetTypes,
-      const rvsdg::valuetype & pointeeType)
+      const std::vector<std::shared_ptr<const rvsdg::bittype>> & offsetTypes,
+      std::shared_ptr<const rvsdg::valuetype> pointeeType)
       : simple_op(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
-        PointeeType_(pointeeType.copy())
+        PointeeType_(std::move(pointeeType))
   {}
 
-  GetElementPtrOperation(const GetElementPtrOperation & other)
-      : simple_op(other),
-        PointeeType_(other.PointeeType_->copy())
-  {}
+  GetElementPtrOperation(const GetElementPtrOperation & other) = default;
 
-  GetElementPtrOperation(GetElementPtrOperation && other) noexcept
-      : simple_op(other),
-        PointeeType_(std::move(other.PointeeType_))
-  {}
+  GetElementPtrOperation(GetElementPtrOperation && other) noexcept = default;
 
   bool
   operator==(const operation & other) const noexcept override;
@@ -82,7 +76,40 @@ public:
     auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
     CheckPointerType(resultType);
 
-    GetElementPtrOperation operation(offsetTypes, pointeeType);
+    GetElementPtrOperation operation(
+        offsetTypes,
+        std::static_pointer_cast<const rvsdg::valuetype>(pointeeType.copy()));
+    std::vector<const variable *> operands(1, baseAddress);
+    operands.insert(operands.end(), offsets.begin(), offsets.end());
+
+    return tac::create(operation, operands);
+  }
+
+  /**
+   * Creates a GetElementPtr three address code.
+   *
+   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
+   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
+   *
+   * @param baseAddress The base address for the pointer calculation.
+   * @param offsets The offsets from the base address.
+   * @param pointeeType The type the base address points to.
+   * @param resultType The result type of the operation.
+   *
+   * @return A getElementPtr three address code.
+   */
+  static std::unique_ptr<llvm::tac>
+  Create(
+      const variable * baseAddress,
+      const std::vector<const variable *> & offsets,
+      std::shared_ptr<const rvsdg::valuetype> pointeeType,
+      std::shared_ptr<const rvsdg::type> resultType)
+  {
+    CheckPointerType(baseAddress->type());
+    auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
+    CheckPointerType(*resultType);
+
+    GetElementPtrOperation operation(offsetTypes, std::move(pointeeType));
     std::vector<const variable *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -113,7 +140,40 @@ public:
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
     CheckPointerType(resultType);
 
-    GetElementPtrOperation operation(offsetTypes, pointeeType);
+    GetElementPtrOperation operation(
+        offsetTypes,
+        std::static_pointer_cast<const rvsdg::valuetype>(pointeeType.copy()));
+    std::vector<rvsdg::output *> operands(1, baseAddress);
+    operands.insert(operands.end(), offsets.begin(), offsets.end());
+
+    return rvsdg::simple_node::create_normalized(baseAddress->region(), operation, operands)[0];
+  }
+
+  /**
+   * Creates a GetElementPtr RVSDG node.
+   *
+   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
+   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
+   *
+   * @param baseAddress The base address for the pointer calculation.
+   * @param offsets The offsets from the base address.
+   * @param pointeeType The type the base address points to.
+   * @param resultType The result type of the operation.
+   *
+   * @return The output of the created GetElementPtr RVSDG node.
+   */
+  static rvsdg::output *
+  Create(
+      rvsdg::output * baseAddress,
+      const std::vector<rvsdg::output *> & offsets,
+      std::shared_ptr<const rvsdg::valuetype> pointeeType,
+      std::shared_ptr<const rvsdg::type> resultType)
+  {
+    CheckPointerType(baseAddress->type());
+    auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
+    CheckPointerType(*resultType);
+
+    GetElementPtrOperation operation(offsetTypes, std::move(pointeeType));
     std::vector<rvsdg::output *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
@@ -131,15 +191,15 @@ private:
   }
 
   template<class T>
-  static std::vector<rvsdg::bittype>
+  static std::vector<std::shared_ptr<const rvsdg::bittype>>
   CheckAndExtractOffsetTypes(const std::vector<T *> & offsets)
   {
-    std::vector<rvsdg::bittype> offsetTypes;
+    std::vector<std::shared_ptr<const rvsdg::bittype>> offsetTypes;
     for (const auto & offset : offsets)
     {
-      if (auto offsetType = dynamic_cast<const rvsdg::bittype *>(&offset->type()))
+      if (auto offsetType = std::dynamic_pointer_cast<const rvsdg::bittype>(offset->Type()))
       {
-        offsetTypes.emplace_back(*offsetType);
+        offsetTypes.emplace_back(std::move(offsetType));
         continue;
       }
 
@@ -150,18 +210,15 @@ private:
   }
 
   static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateOperandTypes(const std::vector<rvsdg::bittype> & indexTypes)
+  CreateOperandTypes(const std::vector<std::shared_ptr<const rvsdg::bittype>> & indexTypes)
   {
     std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
-    for (const auto & type : indexTypes)
-    {
-      types.emplace_back(type.copy());
-    }
+    types.insert(types.end(), indexTypes.begin(), indexTypes.end());
 
     return types;
   }
 
-  std::shared_ptr<const rvsdg::type> PointeeType_;
+  std::shared_ptr<const rvsdg::valuetype> PointeeType_;
 };
 
 }
