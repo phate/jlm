@@ -65,7 +65,7 @@ create_theta(
 static inline void
 test_unrollinfo()
 {
-  jlm::rvsdg::bittype bt32(32);
+  auto bt32 = jlm::rvsdg::bittype::Create(32);
   jlm::rvsdg::bitslt_op slt(32);
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitule_op ule(32);
@@ -255,7 +255,7 @@ test_unknown_boundaries()
 
   theta->set_predicate(match);
 
-  auto ex1 = graph.add_export(lv1, { lv1->type(), "x" });
+  auto ex1 = graph.add_export(lv1, { lv1->Type(), "x" });
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(2);

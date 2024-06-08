@@ -72,7 +72,7 @@ TestDeadLoopNodeOutput()
 
   auto lambdaOutput = lambdaNode->finalize({ output0 });
 
-  rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "f" });
+  rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "f" });
 
   // Act
   EliminateDeadNodes(rvsdgModule);

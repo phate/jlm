@@ -21,8 +21,8 @@ test_malloc()
   {
     using namespace jlm::llvm;
 
-    MemoryStateType mt;
-    PointerType pt;
+    auto mt = MemoryStateType::Create();
+    auto pt = PointerType::Create();
     auto im = ipgraph_module::create(jlm::util::filepath(""), "", "");
 
     auto cfg = cfg::create(*im);
@@ -77,8 +77,8 @@ test_free()
     using namespace jlm::llvm;
 
     iostatetype iot;
-    MemoryStateType mt;
-    PointerType pt;
+    auto mt = MemoryStateType::Create();
+    auto pt = PointerType::Create();
 
     auto ipgmod = ipgraph_module::create(jlm::util::filepath(""), "", "");
 

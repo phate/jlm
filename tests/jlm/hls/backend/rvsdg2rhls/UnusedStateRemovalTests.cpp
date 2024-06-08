@@ -25,7 +25,7 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = rvsdg.add_import({ *jlm::rvsdg::ctltype::Create(2), "p" });
+  auto p = rvsdg.add_import({ jlm::rvsdg::ctltype::Create(2), "p" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
   auto z = rvsdg.add_import({ valueType, "z" });
@@ -84,10 +84,10 @@ TestTheta()
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = rvsdg.add_import({ *jlm::rvsdg::ctltype::Create(2), "p" });
-  auto x = rvsdg.add_import({ *valueType, "x" });
-  auto y = rvsdg.add_import({ *valueType, "y" });
-  auto z = rvsdg.add_import({ *valueType, "z" });
+  auto p = rvsdg.add_import({ jlm::rvsdg::ctltype::Create(2), "p" });
+  auto x = rvsdg.add_import({ valueType, "x" });
+  auto y = rvsdg.add_import({ valueType, "y" });
+  auto z = rvsdg.add_import({ valueType, "z" });
 
   auto thetaNode = jlm::rvsdg::theta_node::create(rvsdg.root());
 
@@ -106,7 +106,7 @@ TestTheta()
                     { valueType })
                     .output(0);
 
-  rvsdg.add_export(result, { *valueType, "f" });
+  rvsdg.add_export(result, { valueType, "f" });
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -134,7 +134,7 @@ TestLambda()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ *valueType, "x" });
+  auto x = rvsdg.add_import({ valueType, "x" });
 
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -152,7 +152,7 @@ TestLambda()
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  rvsdg.add_export(lambdaOutput, { PointerType(), "f" });
+  rvsdg.add_export(lambdaOutput, { PointerType::Create(), "f" });
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);

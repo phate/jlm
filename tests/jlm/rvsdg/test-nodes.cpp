@@ -18,8 +18,8 @@ test_node_copy(void)
   auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto s = graph.add_import({ *stype, "" });
-  auto v = graph.add_import({ *vtype, "" });
+  auto s = graph.add_import({ stype, "" });
+  auto v = graph.add_import({ vtype, "" });
 
   auto n1 = jlm::tests::structural_node::create(graph.root(), 3);
   auto i1 = structural_input::create(n1, s, stype);
@@ -102,7 +102,7 @@ test_node_depth()
   auto bin = jlm::tests::test_op::create(graph.root(), { null->output(0), x }, { vt });
   auto un = jlm::tests::test_op::create(graph.root(), { bin->output(0) }, { vt });
 
-  graph.add_export(un->output(0), { un->output(0)->type(), "x" });
+  graph.add_export(un->output(0), { un->output(0)->Type(), "x" });
 
   jlm::rvsdg::view(graph.root(), stdout);
 

@@ -29,7 +29,7 @@ test_flattened_binary_reduction()
     auto o2 = simple_node::create_normalized(graph.root(), op, { o1, i2 })[0];
     auto o3 = simple_node::create_normalized(graph.root(), op, { o2, i3 })[0];
 
-    auto ex = graph.add_export(o3, { o3->type(), "" });
+    auto ex = graph.add_export(o3, { o3->Type(), "" });
     graph.prune();
 
     jlm::rvsdg::view(graph, stdout);
@@ -63,7 +63,7 @@ test_flattened_binary_reduction()
     auto o2 = simple_node::create_normalized(graph.root(), op, { o1, i2 })[0];
     auto o3 = simple_node::create_normalized(graph.root(), op, { o2, i3 })[0];
 
-    auto ex = graph.add_export(o3, { o3->type(), "" });
+    auto ex = graph.add_export(o3, { o3->Type(), "" });
     graph.prune();
 
     jlm::rvsdg::view(graph, stdout);
