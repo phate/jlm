@@ -322,6 +322,30 @@ public:
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
+   *
+   * @param lambdaNode The lambda node for which to retrieve the
+   * LambdaEntryMemoryStateSplitOperation node.
+   * @return The LambdaEntryMemoryStateSplitOperation node connected to the memory state input if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateExitMerge()
+   */
+  static rvsdg::simple_node *
+  GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
+
+  /**
+   *
+   * @param lambdaNode The lambda node for which to retrieve the
+   * LambdaExitMemoryStateMergeOperation node.
+   * @return The LambdaExitMemoryStateMergeOperation node connected to the memory state output if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateEntrySplit()
+   */
+  [[nodiscard]] static rvsdg::simple_node *
+  GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept;
+
+  /**
    * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
    * After the invocation of \ref create(), the lambda node only features the function arguments.
    * Free variables can be added to the function node using \ref add_ctxvar(). The generation of the
