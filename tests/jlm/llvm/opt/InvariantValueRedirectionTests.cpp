@@ -37,7 +37,8 @@ TestGamma()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ctltype::Create(2);
-  FunctionType functionType({ controlType, valueType, valueType }, { valueType, valueType });
+  auto functionType =
+      FunctionType::Create({ controlType, valueType, valueType }, { valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -88,7 +89,7 @@ TestTheta()
   auto ioStateType = iostatetype::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ctltype::Create(2);
-  FunctionType functionType(
+  auto functionType = FunctionType::Create(
       { controlType, valueType, ioStateType },
       { controlType, valueType, ioStateType });
 
@@ -143,7 +144,7 @@ TestCall()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ctltype::Create(2);
-  FunctionType functionTypeTest1(
+  auto functionTypeTest1 = FunctionType::Create(
       { controlType, valueType, valueType, ioStateType, memoryStateType },
       { valueType, valueType, ioStateType, memoryStateType });
 
@@ -181,7 +182,7 @@ TestCall()
 
   lambda::output * lambdaOutputTest2;
   {
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { valueType, valueType, ioStateType, memoryStateType },
         { valueType, valueType, ioStateType, memoryStateType });
 
@@ -230,7 +231,7 @@ TestCallWithMemoryStateNodes()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ctltype::Create(2);
-  FunctionType functionTypeTest1(
+  auto functionTypeTest1 = FunctionType::Create(
       { controlType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
@@ -273,7 +274,7 @@ TestCallWithMemoryStateNodes()
 
   lambda::output * lambdaOutputTest2;
   {
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { valueType, ioStateType, memoryStateType },
         { valueType, ioStateType, memoryStateType });
 

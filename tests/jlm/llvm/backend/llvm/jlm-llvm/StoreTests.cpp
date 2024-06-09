@@ -22,7 +22,7 @@ StoreConversion()
   PointerType pointerType;
   auto memoryStateType = MemoryStateType::Create();
   jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType(
+  auto functionType = FunctionType::Create(
       { PointerType::Create(), jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -83,7 +83,7 @@ StoreVolatileConversion()
   iostatetype ioStateType;
   auto memoryStateType = MemoryStateType::Create();
   jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType(
+  auto functionType = FunctionType::Create(
       { PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         iostatetype::Create(),

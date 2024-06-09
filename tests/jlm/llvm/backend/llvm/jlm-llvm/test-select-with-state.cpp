@@ -40,7 +40,7 @@ test()
   cfg->exit()->append_result(s3);
   cfg->exit()->append_result(s3);
 
-  FunctionType ft(
+  auto ft = FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), MemoryStateType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create(), MemoryStateType::Create() });
   auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);

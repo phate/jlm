@@ -22,10 +22,10 @@ TestPhiCreation()
   auto vtype = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  FunctionType f0type(
+  auto f0type = FunctionType::Create(
       { vtype, iostatetype::Create(), MemoryStateType::Create() },
       { iostatetype::Create(), MemoryStateType::Create() });
-  FunctionType f1type(
+  auto f1type = FunctionType::Create(
       { vtype, iostatetype::Create(), MemoryStateType::Create() },
       { vtype, iostatetype::Create(), MemoryStateType::Create() });
 

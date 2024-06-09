@@ -20,7 +20,7 @@ TestArgumentIterators()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   {
-    FunctionType functionType({ vt }, { vt });
+    auto functionType = FunctionType::Create({ vt }, { vt });
 
     auto lambda = lambda::node::create(
         rvsdgModule.Rvsdg().root(),
@@ -37,7 +37,7 @@ TestArgumentIterators()
   }
 
   {
-    FunctionType functionType({}, { vt });
+    auto functionType = FunctionType::Create({}, { vt });
 
     auto lambda = lambda::node::create(
         rvsdgModule.Rvsdg().root(),
@@ -55,7 +55,7 @@ TestArgumentIterators()
   {
     auto rvsdgImport = rvsdgModule.Rvsdg().add_import({ vt, "" });
 
-    FunctionType functionType({ vt, vt, vt }, { vt, vt });
+    auto functionType = FunctionType::Create({ vt, vt, vt }, { vt, vt });
 
     auto lambda = lambda::node::create(
         rvsdgModule.Rvsdg().root(),
@@ -84,7 +84,7 @@ TestInvalidOperandRegion()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType functionType({}, { vt });
+  auto functionType = FunctionType::Create({}, { vt });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
@@ -116,7 +116,7 @@ TestRemoveLambdaInputsWhere()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  FunctionType functionType({}, { valueType });
+  auto functionType = FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -185,7 +185,7 @@ TestPruneLambdaInputs()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  FunctionType functionType({}, { valueType });
+  auto functionType = FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -227,7 +227,7 @@ TestCallSummaryComputationDead()
 
   // Arrange
   auto vt = tests::valuetype::Create();
-  jlm::llvm::FunctionType functionType({}, { vt });
+  auto functionType = jlm::llvm::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -261,7 +261,7 @@ TestCallSummaryComputationExport()
 
   // Arrange
   auto vt = tests::valuetype::Create();
-  jlm::llvm::FunctionType functionType({}, { vt });
+  auto functionType = jlm::llvm::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -296,7 +296,7 @@ TestCallSummaryComputationDirectCalls()
 
   // Arrange
   auto vt = tests::valuetype::Create();
-  jlm::llvm::FunctionType functionType(
+  auto functionType = jlm::llvm::FunctionType::Create(
       { jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() },
       { vt, jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
 
@@ -455,7 +455,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
   nf->set_mutable(false);
 
   auto valueType = jlm::tests::valuetype::Create();
-  FunctionType functionType({ valueType }, { valueType });
+  auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   auto lambdaNode =
       lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
@@ -494,8 +494,8 @@ TestCallSummaryComputationLambdaResult()
 
   auto pointerType = PointerType::Create();
   auto valueType = jlm::tests::valuetype::Create();
-  FunctionType functionTypeG({ valueType }, { valueType });
-  FunctionType functionTypeF({ valueType }, { PointerType::Create() });
+  auto functionTypeG = FunctionType::Create({ valueType }, { valueType });
+  auto functionTypeF = FunctionType::Create({ valueType }, { PointerType::Create() });
 
   auto lambdaNodeG =
       lambda::node::create(rvsdg.root(), functionTypeG, "g", linkage::external_linkage);

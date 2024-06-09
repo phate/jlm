@@ -16,9 +16,8 @@ TestDeadLoopNode()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  jlm::llvm::FunctionType functionType(
-      { jlm::rvsdg::ctltype::Create(2), valueType },
-      { valueType });
+  auto functionType =
+      jlm::llvm::FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -47,7 +46,7 @@ TestDeadLoopNodeOutput()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  jlm::llvm::FunctionType functionType(
+  auto functionType = jlm::llvm::FunctionType::Create(
       { jlm::rvsdg::ctltype::Create(2), valueType },
       { jlm::rvsdg::ctltype::Create(2) });
 

@@ -915,14 +915,14 @@ ConvertAggregationTreeToLambda(
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
-    const FunctionType & functionType,
+    std::shared_ptr<const FunctionType> functionType,
     const linkage & functionLinkage,
     const attributeset & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = lambda::node::create(
       &scopedVariableMap.GetTopRegion(),
-      functionType,
+      std::move(functionType),
       functionName,
       functionLinkage,
       functionAttributes);
@@ -964,7 +964,7 @@ ConvertControlFlowGraph(
       *demandMap,
       regionalizedVariableMap,
       functionName,
-      functionNode.fcttype(),
+      functionNode.GetFunctionType(),
       functionNode.linkage(),
       functionNode.attributes(),
       statisticsCollector);
