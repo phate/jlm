@@ -391,7 +391,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           rhls->Rvsdg().root(),
           new_ln->output(),
           nullptr,
-          new_ln->output()->type());
+          new_ln->output()->Type());
       // add function as input to rm and remove it
       llvm::impport im(
           ln->type(),

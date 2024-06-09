@@ -242,7 +242,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   JLM_ASSERT(ln->output()->nusers() == 1);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
   remove(ln);
-  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
+  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->Type());
   return new_lambda;
 }
 

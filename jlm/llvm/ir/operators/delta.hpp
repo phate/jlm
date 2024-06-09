@@ -335,7 +335,7 @@ public:
 
 private:
   cvinput(delta::node * node, rvsdg::output * origin)
-      : structural_input(node, origin, origin->port())
+      : structural_input(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -405,15 +405,26 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-private:
   output(delta::node * node, const rvsdg::port & port)
-      : structural_output(node, port)
+      : structural_output(node, port.Type())
   {}
 
+  output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type))
+  {}
+
+private:
   static output *
   create(delta::node * node, const rvsdg::port & port)
   {
-    auto output = std::unique_ptr<delta::output>(new delta::output(node, port));
+    auto output = std::make_unique<delta::output>(node, port);
+    return static_cast<delta::output *>(node->append_output(std::move(output)));
+  }
+
+  static output *
+  create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  {
+    auto output = std::make_unique<delta::output>(node, std::move(type));
     return static_cast<delta::output *>(node->append_output(std::move(output)));
   }
 

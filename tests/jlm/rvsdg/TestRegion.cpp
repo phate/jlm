@@ -91,13 +91,13 @@ TestContainsMethod()
   auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, vt);
   auto regionArgument1 =
       jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
-  unary_op::create(structuralNode1->subregion(0), { vt }, regionArgument1, { vt });
+  unary_op::create(structuralNode1->subregion(0), vt, regionArgument1, vt);
 
   auto structuralNode2 = structural_node::create(graph.root(), 1);
   auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, vt);
   auto regionArgument2 =
       jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
-  binary_op::create({ vt }, { vt }, regionArgument2, regionArgument2);
+  binary_op::create(vt, vt, regionArgument2, regionArgument2);
 
   assert(jlm::rvsdg::region::Contains<structural_op>(*graph.root(), false));
   assert(jlm::rvsdg::region::Contains<unary_op>(*graph.root(), true));

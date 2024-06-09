@@ -557,11 +557,14 @@ class cvinput final : public jlm::rvsdg::structural_input
 public:
   ~cvinput() override;
 
-private:
-  cvinput(phi::node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port)
-      : structural_input(node, origin, port)
+  cvinput(
+      phi::node * node,
+      jlm::rvsdg::output * origin,
+      std::shared_ptr<const jlm::rvsdg::type> type)
+      : structural_input(node, origin, std::move(type))
   {}
 
+private:
   cvinput(const cvinput &) = delete;
 
   cvinput(cvinput &&) = delete;
@@ -573,9 +576,12 @@ private:
   operator=(cvinput &&) = delete;
 
   static cvinput *
-  create(phi::node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port)
+  create(
+      phi::node * node,
+      jlm::rvsdg::output * origin,
+      std::shared_ptr<const jlm::rvsdg::type> type)
   {
-    auto input = std::unique_ptr<cvinput>(new cvinput(node, origin, port));
+    auto input = std::make_unique<cvinput>(node, origin, std::move(type));
     return static_cast<cvinput *>(node->append_input(std::move(input)));
   }
 
@@ -603,8 +609,8 @@ public:
   ~rvoutput() override;
 
 private:
-  rvoutput(phi::node * node, rvargument * argument, const jlm::rvsdg::port & port)
-      : structural_output(node, port),
+  rvoutput(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type)),
         argument_(argument)
   {}
 
@@ -619,7 +625,7 @@ private:
   operator=(rvoutput &&) = delete;
 
   static rvoutput *
-  create(phi::node * node, rvargument * argument, const jlm::rvsdg::port & port);
+  create(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::type> type);
 
 public:
   rvargument *
@@ -662,6 +668,11 @@ private:
         output_(nullptr)
   {}
 
+  rvargument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
+      : argument(region, nullptr, std::move(type)),
+        output_(nullptr)
+  {}
+
   rvargument(const rvargument &) = delete;
 
   rvargument(rvargument &&) = delete;
@@ -676,6 +687,14 @@ private:
   create(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
   {
     auto argument = new rvargument(region, port);
+    region->append_argument(argument);
+    return argument;
+  }
+
+  static rvargument *
+  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto argument = new rvargument(region, std::move(type));
     region->append_argument(argument);
     return argument;
   }
@@ -710,11 +729,18 @@ class cvargument final : public jlm::rvsdg::argument
 public:
   ~cvargument() override;
 
-private:
   cvargument(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
       : jlm::rvsdg::argument(region, input, port)
   {}
 
+  cvargument(
+      jlm::rvsdg::region * region,
+      phi::cvinput * input,
+      std::shared_ptr<const rvsdg::type> type)
+      : jlm::rvsdg::argument(region, input, std::move(type))
+  {}
+
+private:
   cvargument(const cvargument &) = delete;
 
   cvargument(cvargument &&) = delete;
@@ -729,6 +755,14 @@ private:
   create(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
   {
     auto argument = new cvargument(region, input, port);
+    region->append_argument(argument);
+    return argument;
+  }
+
+  static cvargument *
+  create(jlm::rvsdg::region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
+  {
+    auto argument = new cvargument(region, input, std::move(type));
     region->append_argument(argument);
     return argument;
   }
@@ -759,6 +793,14 @@ private:
       : jlm::rvsdg::result(region, origin, output, port)
   {}
 
+  rvresult(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      rvoutput * output,
+      std::shared_ptr<const rvsdg::type> type)
+      : jlm::rvsdg::result(region, origin, output, std::move(type))
+  {}
+
   rvresult(const rvresult &) = delete;
 
   rvresult(rvresult &&) = delete;
@@ -777,6 +819,18 @@ private:
       const jlm::rvsdg::port & port)
   {
     auto result = new rvresult(region, origin, output, port);
+    region->append_result(result);
+    return result;
+  }
+
+  static rvresult *
+  create(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      rvoutput * output,
+      std::shared_ptr<const rvsdg::type> type)
+  {
+    auto result = new rvresult(region, origin, output, type);
     region->append_result(result);
     return result;
   }
@@ -861,10 +915,10 @@ cvinput::argument() const noexcept
 }
 
 inline rvoutput *
-rvoutput::create(phi::node * node, rvargument * argument, const jlm::rvsdg::port & port)
+rvoutput::create(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::type> type)
 {
-  JLM_ASSERT(argument->type() == port.type());
-  auto output = std::unique_ptr<rvoutput>(new rvoutput(node, argument, port));
+  JLM_ASSERT(argument->type() == *type);
+  auto output = std::unique_ptr<rvoutput>(new rvoutput(node, argument, std::move(type)));
   return static_cast<rvoutput *>(node->append_output(std::move(output)));
 }
 

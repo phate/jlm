@@ -16,10 +16,6 @@ namespace jlm::rvsdg
 port::~port()
 {}
 
-port::port(const jlm::rvsdg::type & type)
-    : port(type.copy())
-{}
-
 port::port(std::shared_ptr<const jlm::rvsdg::type> type)
     : type_(std::move(type))
 {}
