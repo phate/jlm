@@ -108,10 +108,10 @@ private:
 
 struct ctltype_of_value
 {
-  ctltype
+  std::shared_ptr<const ctltype>
   operator()(const ctlvalue_repr & repr) const
   {
-    return ctltype(repr.nalternatives());
+    return ctltype::Create(repr.nalternatives());
   }
 };
 

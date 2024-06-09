@@ -21,8 +21,8 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  PointerType pt;
-  MemoryStateType mt;
+  auto pt = PointerType::Create();
+  auto mt = MemoryStateType::Create();
   ipgraph_module m(jlm::util::filepath(""), "", "");
 
   std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));

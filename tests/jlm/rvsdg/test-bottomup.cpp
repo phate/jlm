@@ -17,7 +17,7 @@ test_initialization()
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, {});
   auto n2 = jlm::tests::test_op::create(graph.root(), {}, { vtype });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "dummy" });
+  graph.add_export(n2->output(0), { n2->output(0)->Type(), "dummy" });
 
   bool n1_visited = false;
   bool n2_visited = false;
@@ -41,7 +41,7 @@ test_basic_traversal()
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "dummy" });
+  graph.add_export(n2->output(0), { n2->output(0)->Type(), "dummy" });
 
   {
     jlm::rvsdg::node * tmp;

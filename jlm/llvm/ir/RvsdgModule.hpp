@@ -22,7 +22,7 @@ public:
   virtual ~impport();
 
   impport(const jlm::rvsdg::valuetype & valueType, const std::string & name, const linkage & lnk)
-      : jlm::rvsdg::impport(PointerType(), name),
+      : jlm::rvsdg::impport(PointerType::Create(), name),
         linkage_(lnk),
         ValueType_(valueType.copy())
   {}
@@ -31,7 +31,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
       const std::string & name,
       const linkage & lnk)
-      : jlm::rvsdg::impport(PointerType(), name),
+      : jlm::rvsdg::impport(PointerType::Create(), name),
         linkage_(lnk),
         ValueType_(std::move(valueType))
   {}

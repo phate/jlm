@@ -34,7 +34,7 @@ test_mux_mux_reduction()
   auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
   auto mux3 = jlm::rvsdg::create_state_merge(st, { mux1, mux2[0], mux2[1], z });
 
-  auto ex = graph.add_export(mux3, { mux3->type(), "m" });
+  auto ex = graph.add_export(mux3, { mux3->Type(), "m" });
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -68,7 +68,7 @@ test_multiple_origin_reduction()
 
   auto x = graph.add_import({ st, "x" });
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, x });
-  auto ex = graph.add_export(mux1, { mux1->type(), "m" });
+  auto ex = graph.add_export(mux1, { mux1->Type(), "m" });
 
   view(graph.root(), stdout);
 

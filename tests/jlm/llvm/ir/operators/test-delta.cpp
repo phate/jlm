@@ -19,7 +19,7 @@ TestDeltaCreation()
 
   // Arrange & Act
   auto valueType = jlm::tests::valuetype::Create();
-  PointerType pointerType;
+  auto pointerType = PointerType::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto imp = rvsdgModule.Rvsdg().add_import({ valueType, "" });
@@ -44,8 +44,8 @@ TestDeltaCreation()
       false);
   auto d2 = delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, { valueType })[0]);
 
-  rvsdgModule.Rvsdg().add_export(d1, { d1->type(), "" });
-  rvsdgModule.Rvsdg().add_export(d2, { d2->type(), "" });
+  rvsdgModule.Rvsdg().add_export(d1, { d1->Type(), "" });
+  rvsdgModule.Rvsdg().add_export(d2, { d2->Type(), "" });
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 

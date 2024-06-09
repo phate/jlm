@@ -82,7 +82,7 @@ TestContainsMethod()
 {
   using namespace jlm::tests;
 
-  valuetype vt;
+  auto vt = valuetype::Create();
 
   jlm::rvsdg::graph graph;
   auto import = graph.add_import({ vt, "import" });

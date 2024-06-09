@@ -135,6 +135,20 @@ builder::add_recvar(const jlm::rvsdg::type & type)
   return output;
 }
 
+rvoutput *
+builder::add_recvar(std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  if (!node_)
+    return nullptr;
+
+  auto argument = rvargument::create(subregion(), type);
+  auto output = rvoutput::create(node_, argument, type);
+  rvresult::create(subregion(), argument, output, type);
+  argument->output_ = output;
+
+  return output;
+}
+
 phi::node *
 builder::end()
 {

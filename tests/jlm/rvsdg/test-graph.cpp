@@ -48,8 +48,8 @@ test_recursive_prune()
 
   auto n6 = jlm::tests::structural_node::create(n3->subregion(0), 1);
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "n2" });
-  graph.add_export(o1, { o1->type(), "n3" });
+  graph.add_export(n2->output(0), { n2->output(0)->Type(), "n2" });
+  graph.add_export(o1, { o1->Type(), "n3" });
 
   jlm::rvsdg::view(graph.root(), stdout);
   graph.prune();
@@ -97,8 +97,8 @@ test_prune_replace(void)
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "n2" });
-  graph.add_export(n3->output(0), { n2->output(0)->type(), "n3" });
+  graph.add_export(n2->output(0), { n2->output(0)->Type(), "n2" });
+  graph.add_export(n3->output(0), { n2->output(0)->Type(), "n3" });
 
   auto n4 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
 

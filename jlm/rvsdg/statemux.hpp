@@ -65,16 +65,8 @@ class mux_op final : public simple_op
 public:
   virtual ~mux_op() noexcept;
 
-  inline mux_op(const statetype & type, size_t narguments, size_t nresults)
-      : simple_op(
-          std::vector<jlm::rvsdg::port>(narguments, { type }),
-          std::vector<jlm::rvsdg::port>(nresults, { type }))
-  {}
-
   inline mux_op(std::shared_ptr<const statetype> type, size_t narguments, size_t nresults)
-      : simple_op(
-          std::vector<jlm::rvsdg::port>(narguments, { type }),
-          std::vector<jlm::rvsdg::port>(nresults, { type }))
+      : simple_op({ narguments, type }, { nresults, type })
   {}
 
   virtual bool
@@ -108,12 +100,12 @@ create_state_mux(
   if (operands.empty())
     throw jlm::util::error("Insufficient number of operands.");
 
-  auto st = dynamic_cast<const jlm::rvsdg::statetype *>(&type);
+  auto st = std::dynamic_pointer_cast<const jlm::rvsdg::statetype>(type.copy());
   if (!st)
     throw jlm::util::error("Expected state type.");
 
   auto region = operands.front()->region();
-  jlm::rvsdg::mux_op op(*st, operands.size(), nresults);
+  jlm::rvsdg::mux_op op(st, operands.size(), nresults);
   return simple_node::create_normalized(region, op, operands);
 }
 

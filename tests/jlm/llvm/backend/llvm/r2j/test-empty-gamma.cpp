@@ -41,7 +41,7 @@ test_with_match()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -83,7 +83,7 @@ test_without_match()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -128,7 +128,7 @@ test_gamma3()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev1->argument(1), ev2->argument(2) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

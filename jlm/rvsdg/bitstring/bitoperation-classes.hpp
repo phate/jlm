@@ -22,8 +22,8 @@ class bitunary_op : public jlm::rvsdg::unary_op
 public:
   virtual ~bitunary_op() noexcept;
 
-  inline bitunary_op(const bittype & type) noexcept
-      : unary_op(type.copy(), type.copy())
+  inline bitunary_op(const std::shared_ptr<const bittype> & type) noexcept
+      : unary_op(type, type)
   {}
 
   inline const bittype &
