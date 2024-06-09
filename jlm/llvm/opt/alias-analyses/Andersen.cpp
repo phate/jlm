@@ -1098,7 +1098,9 @@ Andersen::SolveConstraints(
   if (config.IsOfflineVariableSubstitutionEnabled())
   {
     statistics.StartOfflineVariableSubstitution();
-    auto numUnifications = constraints.PerformOfflineVariableSubstitution();
+    // If the solver uses hybrid cycle detection, tell OVS to store info about ref node cycles
+    bool hasHCD = config.IsHybridCycleDetectionEnabled();
+    auto numUnifications = constraints.PerformOfflineVariableSubstitution(hasHCD);
     statistics.StopOfflineVariableSubstitution(numUnifications);
   }
 
@@ -1182,9 +1184,9 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     else
       configs.push_back(Configuration::NaiveSolverConfiguration());
 
-    // If testing all, benchmarking is being done, so do 10 iterations of all configurations
+    // If testing all, benchmarking is being done, so do 50 iterations of all configurations
     // if double-checking against Set_, only do it on the first iteration
-    const auto iterations = testAllConfigs ? 10 : 1;
+    const auto iterations = testAllConfigs ? 50 : 1;
 
     for (auto i = 0; i < iterations; i++)
     {

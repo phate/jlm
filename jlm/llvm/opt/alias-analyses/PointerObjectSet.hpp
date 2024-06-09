@@ -944,11 +944,13 @@ public:
    * All PointerObjects v1, ... vN where n(v1), ... n(vN) share equivalence set label, get unified.
    * The run time is linear in the amount of PointerObjects and constraints.
    *
+   * @param storeRefCycleUnificationRoot if true, ref nodes in cycles with regular nodes are stored,
+   *   to be used by hybrid cycle detection during solving.
    * @return the number PointerObject unifications made
    * @see NormalizeConstraints() call it afterwards to remove constraints made unnecessary.
    */
   size_t
-  PerformOfflineVariableSubstitution();
+  PerformOfflineVariableSubstitution(bool storeRefCycleUnificationRoot);
 
   /**
    * Traverses the list of constraints, and does the following:

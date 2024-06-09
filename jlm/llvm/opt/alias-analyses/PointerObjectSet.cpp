@@ -1263,7 +1263,7 @@ AssignOvsEquivalenceSetLabels(
 }
 
 size_t
-PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
+PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycleUnificationRoot)
 {
   // Performing unification on direct nodes relies on all subset edges being known offline.
   // This is only safe if no more constraints are added to the node in the future.
@@ -1326,25 +1326,29 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
       unificationRoot[equivalenceSetLabel] = i;
   }
 
-  // For each ref node that is in a cycle with regular node, store it for hybrid cycle detection
-  // The idea: Any pointee of p should be unified with a, if *p and a are in the same SCC
-  // NOTE: We do not use equivalence set labels here, as they represent more than just cycles
-
-  // First find one unification root representing each SCC
-  std::vector<std::optional<PointerObjectIndex>> unificationRootPerSCC(numSccs, std::nullopt);
-  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+  // If hybrid cycle detection is enabled, it requires some information to be kept from OVS
+  if (storeRefCycleUnificationRoot)
   {
-    if (!unificationRootPerSCC[sccIndex[i]])
-      unificationRootPerSCC[sccIndex[i]] = Set_.GetUnificationRoot(i);
-  }
+    // For each ref node that is in a cycle with regular node, store it for hybrid cycle detection
+    // The idea: Any pointee of p should be unified with a, if *p and a are in the same SCC
+    // NOTE: We do not use equivalence set labels here, as they represent more than just cycles
 
-  // Assign unification roots to ref nodes that are in CYCLES with regular nodes
-  const size_t derefNodeOffset = Set_.NumPointerObjects();
-  for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
-  {
-    const auto optRoot = unificationRootPerSCC[sccIndex[i + derefNodeOffset]];
-    if (optRoot)
-      RefNodeUnificationRoot_[i] = *optRoot;
+    // First find one unification root representing each SCC
+    std::vector<std::optional<PointerObjectIndex>> unificationRootPerSCC(numSccs, std::nullopt);
+    for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+    {
+      if (!unificationRootPerSCC[sccIndex[i]])
+        unificationRootPerSCC[sccIndex[i]] = Set_.GetUnificationRoot(i);
+    }
+
+    // Assign unification roots to ref nodes that are in CYCLES with regular nodes
+    const size_t derefNodeOffset = Set_.NumPointerObjects();
+    for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+    {
+      const auto optRoot = unificationRootPerSCC[sccIndex[i + derefNodeOffset]];
+      if (optRoot)
+        RefNodeUnificationRoot_[i] = *optRoot;
+    }
   }
 
   return numUnifications;
@@ -2016,7 +2020,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     bool enableHybridCycleDetection,
     bool enableLazyCycleDetection,
     bool enableDifferencePropagation,
-    bool enablePreferImplicitPropagation)
+    bool enablePreferImplicitPointees)
 {
 
   // Takes all parameters as compile time types.
@@ -2027,14 +2031,14 @@ PointerObjectConstraintSet::SolveUsingWorklist(
                             auto tHybridCycleDetection,
                             auto tLazyCycleDetection,
                             auto tDifferencePropagation,
-                            auto tPreferImplicitPropagation) -> WorklistStatistics
+                            auto tPreferImplicitPointees) -> WorklistStatistics
   {
     using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
     constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
     constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
     constexpr bool vDifferencePropagation = decltype(tDifferencePropagation)::value;
-    constexpr bool vPreferImplicitPropagation = decltype(tPreferImplicitPropagation)::value;
+    constexpr bool vPreferImplicitPointees = decltype(tPreferImplicitPointees)::value;
 
     if constexpr (
         std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>
@@ -2055,7 +2059,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
           vHybridCycleDetection,
           vLazyCycleDetection,
           vDifferencePropagation,
-          vPreferImplicitPropagation>(statistics);
+          vPreferImplicitPointees>(statistics);
       return statistics;
     }
   };
@@ -2106,7 +2110,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     differencePropagationVariant = std::false_type{};
 
   std::variant<std::true_type, std::false_type> preferImplicitPropagationVariant;
-  if (enablePreferImplicitPropagation)
+  if (enablePreferImplicitPointees)
     preferImplicitPropagationVariant = std::true_type{};
   else
     preferImplicitPropagationVariant = std::false_type{};
