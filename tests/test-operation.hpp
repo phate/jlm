@@ -31,7 +31,9 @@ public:
       : rvsdg::unary_op(srcport.Type(), dstport.Type())
   {}
 
-  inline unary_op(std::shared_ptr<const rvsdg::type> srctype, std::shared_ptr<const rvsdg::type> dsttype) noexcept
+  inline unary_op(
+      std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::type> dsttype) noexcept
       : rvsdg::unary_op(std::move(srctype), std::move(dsttype))
   {}
 
@@ -77,7 +79,10 @@ public:
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::type> dsttype)
   {
-    return rvsdg::simple_node::create(region, unary_op(std::move(srctype), std::move(dsttype)), { operand });
+    return rvsdg::simple_node::create(
+        region,
+        unary_op(std::move(srctype), std::move(dsttype)),
+        { operand });
   }
 
   static inline rvsdg::output *
