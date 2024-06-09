@@ -17,7 +17,7 @@ TestUnknownBoundaries()
 
   // Arrange
   auto b32 = jlm::rvsdg::bittype::Create(32);
-  FunctionType ft({ b32, b32, b32 }, { b32, b32, b32 });
+  auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));

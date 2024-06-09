@@ -286,7 +286,7 @@ llvm::lambda::node *
 change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 {
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->type(), ln->name(), link, ln->attributes());
+      llvm::lambda::node::create(ln->region(), ln->Type(), ln->name(), link, ln->attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;

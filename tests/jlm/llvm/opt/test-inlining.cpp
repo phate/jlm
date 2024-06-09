@@ -33,7 +33,7 @@ test1()
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -51,7 +51,7 @@ test1()
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto ct = jlm::rvsdg::ctltype::Create(2);
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { jlm::rvsdg::ctltype::Create(2), vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -70,7 +70,7 @@ test1()
 
     auto callResults = CallNode::Create(
         gammaInputF1->argument(0),
-        f1->node()->type(),
+        f1->node()->Type(),
         { gammaInputValue->argument(0),
           gammaInputIoState->argument(0),
           gammaInputMemoryState->argument(0) });
@@ -110,12 +110,12 @@ test2()
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  FunctionType functionType1(
+  auto functionType1 = FunctionType::Create(
       { vt, iostatetype::Create(), MemoryStateType::Create() },
       { iostatetype::Create(), MemoryStateType::Create() });
   auto pt = PointerType::Create();
 
-  FunctionType functionType2(
+  auto functionType2 = FunctionType::Create(
       { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
       { iostatetype::Create(), MemoryStateType::Create() });
 
@@ -123,7 +123,7 @@ test2()
   auto & graph = rm.Rvsdg();
   auto i = graph.add_import({ pt, "i" });
 
-  auto SetupF1 = [&](const FunctionType & functionType)
+  auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
   {
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
     return lambda->finalize({ lambda->fctargument(1), lambda->fctargument(2) });
@@ -133,7 +133,7 @@ test2()
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
 

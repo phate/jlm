@@ -203,7 +203,7 @@ private:
   inline function_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      const FunctionType & type,
+      std::shared_ptr<const FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
       : ipgraph_node(clg),
@@ -225,6 +225,12 @@ public:
 
   const FunctionType &
   fcttype() const noexcept
+  {
+    return *FunctionType_;
+  }
+
+  const std::shared_ptr<const FunctionType> &
+  GetFunctionType() const noexcept
   {
     return FunctionType_;
   }
@@ -255,11 +261,12 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      const FunctionType & type,
+      std::shared_ptr<const FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
   {
-    std::unique_ptr<function_node> node(new function_node(ipg, name, type, linkage, attributes));
+    std::unique_ptr<function_node> node(
+        new function_node(ipg, name, std::move(type), linkage, attributes));
     auto tmp = node.get();
     ipg.add_node(std::move(node));
     return tmp;
@@ -269,14 +276,14 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      const FunctionType & type,
+      std::shared_ptr<const FunctionType> type,
       const llvm::linkage & linkage)
   {
-    return create(ipg, name, type, linkage, {});
+    return create(ipg, name, std::move(type), linkage, {});
   }
 
 private:
-  FunctionType FunctionType_;
+  std::shared_ptr<const FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
   attributeset attributes_;

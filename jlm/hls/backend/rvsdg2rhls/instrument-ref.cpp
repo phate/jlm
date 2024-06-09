@@ -24,7 +24,7 @@ llvm::lambda::node *
 change_function_name(llvm::lambda::node * ln, const std::string & name)
 {
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->type(), name, ln->linkage(), ln->attributes());
+      llvm::lambda::node::create(ln->region(), ln->Type(), name, ln->linkage(), ln->attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
@@ -188,7 +188,7 @@ instrument_ref(
       auto memstate = node->input(1)->origin();
       auto callOp = jlm::llvm::CallNode::Create(
           load_func,
-          loadFunctionType,
+          std::static_pointer_cast<const llvm::FunctionType>(loadFunctionType.copy()),
           { addr, width, ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
@@ -220,7 +220,7 @@ instrument_ref(
       auto memstate = node->output(1);
       auto callOp = jlm::llvm::CallNode::Create(
           alloca_func,
-          allocaFunctionType,
+          std::static_pointer_cast<const llvm::FunctionType>(allocaFunctionType.copy()),
           { addr, size, ioState, memstate });
       for (auto ou : old_users)
       {
@@ -254,7 +254,7 @@ instrument_ref(
       auto memstate = node->input(2)->origin();
       auto callOp = jlm::llvm::CallNode::Create(
           store_func,
-          storeFunctionType,
+          std::static_pointer_cast<const llvm::FunctionType>(storeFunctionType.copy()),
           { addr, data, width, ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(2)->divert_to(callOp[1]);

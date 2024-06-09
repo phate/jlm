@@ -196,7 +196,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       new_result_types.push_back(old_fcttype.ResultType(i).copy());
     }
   }
-  llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
+  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
       ln->region(),
       new_fcttype,

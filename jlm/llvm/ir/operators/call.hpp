@@ -24,9 +24,9 @@ class CallOperation final : public jlm::rvsdg::simple_op
 public:
   ~CallOperation() override;
 
-  explicit CallOperation(const FunctionType & functionType)
-      : simple_op(create_srctypes(functionType), functionType.Results()),
-        FunctionType_(functionType)
+  explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
+      : simple_op(create_srctypes(*functionType), functionType->Results()),
+        FunctionType_(std::move(functionType))
   {}
 
   bool
@@ -35,7 +35,7 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] const FunctionType &
+  [[nodiscard]] const std::shared_ptr<const FunctionType> &
   GetFunctionType() const noexcept
   {
     return FunctionType_;
@@ -47,12 +47,12 @@ public:
   static std::unique_ptr<tac>
   create(
       const variable * function,
-      const FunctionType & functionType,
+      std::shared_ptr<const FunctionType> functionType,
       const std::vector<const variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
-    CallOperation op(functionType);
+    CallOperation op(std::move(functionType));
     std::vector<const variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
     return tac::create(op, operands);
@@ -76,7 +76,7 @@ private:
       throw jlm::util::error("Expected pointer type.");
   }
 
-  FunctionType FunctionType_;
+  std::shared_ptr<const FunctionType> FunctionType_;
 };
 
 /** \brief Call node classifier
@@ -421,10 +421,10 @@ public:
   static std::vector<jlm::rvsdg::output *>
   Create(
       rvsdg::output * function,
-      const FunctionType & functionType,
+      std::shared_ptr<const FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
-    return CreateNode(function, functionType, arguments).Results();
+    return CreateNode(function, std::move(functionType), arguments).Results();
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -442,7 +442,7 @@ public:
       const CallOperation & callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    CheckFunctionType(callOperation.GetFunctionType());
+    CheckFunctionType(*callOperation.GetFunctionType());
 
     return *(new CallNode(region, callOperation, operands));
   }
@@ -450,12 +450,12 @@ public:
   static CallNode &
   CreateNode(
       rvsdg::output * function,
-      const FunctionType & functionType,
+      std::shared_ptr<const FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
-    CallOperation callOperation(functionType);
+    CallOperation callOperation(std::move(functionType));
     std::vector<rvsdg::output *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 

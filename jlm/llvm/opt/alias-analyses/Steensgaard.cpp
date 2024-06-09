@@ -1160,7 +1160,7 @@ void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
   auto & lambdaFunctionType = lambdaNode.operation().type();
-  auto & callFunctionType = callNode.GetOperation().GetFunctionType();
+  auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to

@@ -25,7 +25,7 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ jlm::rvsdg::bittype::Create(1), vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
