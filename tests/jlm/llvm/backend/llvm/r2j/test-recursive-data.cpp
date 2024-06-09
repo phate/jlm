@@ -22,7 +22,7 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  PointerType pt;
+  auto pt = PointerType::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
@@ -59,7 +59,7 @@ test()
   r2->set_rvorigin(delta2);
 
   auto phi = pb.end();
-  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->type(), "" });
+  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

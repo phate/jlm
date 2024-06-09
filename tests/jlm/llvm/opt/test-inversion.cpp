@@ -61,9 +61,9 @@ test1()
 
   theta->set_predicate(predicate);
 
-  auto ex1 = graph.add_export(theta->output(0), { theta->output(0)->type(), "x" });
-  auto ex2 = graph.add_export(theta->output(1), { theta->output(1)->type(), "y" });
-  auto ex3 = graph.add_export(theta->output(2), { theta->output(2)->type(), "z" });
+  auto ex1 = graph.add_export(theta->output(0), { theta->output(0)->Type(), "x" });
+  auto ex2 = graph.add_export(theta->output(1), { theta->output(1)->Type(), "y" });
+  auto ex3 = graph.add_export(theta->output(2), { theta->output(2)->Type(), "z" });
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::tginversion tginversion;
@@ -110,7 +110,7 @@ test2()
 
   theta->set_predicate(predicate);
 
-  auto ex = graph.add_export(theta->output(0), { theta->output(0)->type(), "x" });
+  auto ex = graph.add_export(theta->output(0), { theta->output(0)->Type(), "x" });
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::tginversion tginversion;

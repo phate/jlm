@@ -26,13 +26,13 @@ TestCopy()
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::graph rvsdg;
-  auto function1 = rvsdg.add_import({ PointerType(), "function1" });
-  auto value1 = rvsdg.add_import({ *valueType, "value1" });
+  auto function1 = rvsdg.add_import({ PointerType::Create(), "function1" });
+  auto value1 = rvsdg.add_import({ valueType, "value1" });
   auto iOState1 = rvsdg.add_import({ iOStateType, "iOState1" });
   auto memoryState1 = rvsdg.add_import({ memoryStateType, "memoryState1" });
 
-  auto function2 = rvsdg.add_import({ PointerType(), "function2" });
-  auto value2 = rvsdg.add_import({ *valueType, "value2" });
+  auto function2 = rvsdg.add_import({ PointerType::Create(), "function2" });
+  auto value2 = rvsdg.add_import({ valueType, "value2" });
   auto iOState2 = rvsdg.add_import({ iOStateType, "iOState2" });
   auto memoryState2 = rvsdg.add_import({ memoryStateType, "memoryState2" });
 
@@ -63,8 +63,8 @@ TestCallNodeAccessors()
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::graph rvsdg;
-  auto f = rvsdg.add_import({ PointerType(), "function" });
-  auto v = rvsdg.add_import({ *valueType, "value" });
+  auto f = rvsdg.add_import({ PointerType::Create(), "function" });
+  auto v = rvsdg.add_import({ valueType, "value" });
   auto i = rvsdg.add_import({ iOStateType, "IOState" });
   auto m = rvsdg.add_import({ memoryStateType, "memoryState" });
 
@@ -133,7 +133,7 @@ TestCallTypeClassifierIndirectCall()
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), { *PointerType::Create(), "f" });
+    graph->add_export(lambda->output(), { PointerType::Create(), "f" });
 
     return std::make_tuple(
         jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
@@ -234,7 +234,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-  graph->add_export(f->output(), { PointerType(), "f" });
+  graph->add_export(f->output(), { PointerType::Create(), "f" });
 
   //	jlm::rvsdg::view(graph->root(), stdout);
 
@@ -348,7 +348,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-  graph->add_export(f, { PointerType(), "f" });
+  graph->add_export(f, { PointerType::Create(), "f" });
 
   jlm::rvsdg::view(graph->root(), stdout);
 
@@ -383,7 +383,7 @@ TestCallTypeClassifierRecursiveDirectCall()
           iostatetype::Create(),
           MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
-    PointerType pt;
+    auto pt = PointerType::Create();
 
     jlm::llvm::phi::builder pb;
     pb.begin(graph->root());

@@ -1108,7 +1108,7 @@ ConvertStronglyConnectedComponent(
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, output);
 
     if (requiresExport(*ipgNode))
-      graph.add_export(output, { output->type(), ipgNodeVariable->name() });
+      graph.add_export(output, { output->Type(), ipgNodeVariable->name() });
 
     return;
   }
@@ -1171,7 +1171,7 @@ ConvertStronglyConnectedComponent(
     auto recursionVariable = recursionVariables[ipgNodeVariable];
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable);
     if (requiresExport(*ipgNode))
-      graph.add_export(recursionVariable, { recursionVariable->type(), ipgNodeVariable->name() });
+      graph.add_export(recursionVariable, { recursionVariable->Type(), ipgNodeVariable->name() });
   }
 }
 

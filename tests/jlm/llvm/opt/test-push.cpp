@@ -44,7 +44,7 @@ test_gamma()
 
   gamma->add_exitvar({ state, evs->argument(1) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->type(), "x" });
+  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "x" });
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::pushout pushout;
@@ -92,7 +92,7 @@ test_theta()
 
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(0), { theta->output(0)->type(), "c" });
+  graph.add_export(theta->output(0), { theta->output(0)->Type(), "c" });
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::pushout pushout;
@@ -107,8 +107,8 @@ test_push_theta_bottom()
 {
   using namespace jlm::llvm;
 
-  MemoryStateType mt;
-  PointerType pt;
+  auto mt = MemoryStateType::Create();
+  auto pt = PointerType::Create();
   auto ct = jlm::rvsdg::ctltype::Create(2);
 
   jlm::rvsdg::graph graph;
@@ -130,7 +130,7 @@ test_push_theta_bottom()
   lvs->result()->divert_to(s1);
   theta->set_predicate(lvc->argument());
 
-  auto ex = graph.add_export(lvs, { lvs->type(), "s" });
+  auto ex = graph.add_export(lvs, { lvs->Type(), "s" });
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::push_bottom(theta);

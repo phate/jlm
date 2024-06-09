@@ -20,8 +20,8 @@ test_main()
   auto o1 = jlm::tests::test_op::create(graph.root(), {}, { t })->output(0);
   auto o2 = jlm::tests::test_op::create(graph.root(), { i }, { t })->output(0);
 
-  auto e1 = graph.add_export(o1, { o1->type(), "o1" });
-  auto e2 = graph.add_export(o2, { o2->type(), "o2" });
+  auto e1 = graph.add_export(o1, { o1->Type(), "o1" });
+  auto e2 = graph.add_export(o2, { o2->Type(), "o2" });
 
   auto nf = dynamic_cast<jlm::rvsdg::simple_normal_form *>(
       graph.node_normal_form(typeid(jlm::tests::test_op)));
@@ -30,8 +30,8 @@ test_main()
   auto o3 = jlm::tests::create_testop(graph.root(), {}, { t })[0];
   auto o4 = jlm::tests::create_testop(graph.root(), { i }, { t })[0];
 
-  auto e3 = graph.add_export(o3, { o3->type(), "o3" });
-  auto e4 = graph.add_export(o4, { o4->type(), "o4" });
+  auto e3 = graph.add_export(o3, { o3->Type(), "o3" });
+  auto e4 = graph.add_export(o4, { o4->Type(), "o4" });
 
   nf->set_mutable(true);
   graph.normalize();

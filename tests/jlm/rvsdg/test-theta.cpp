@@ -16,9 +16,9 @@ TestThetaCreation()
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype t;
+  auto t = jlm::tests::valuetype::Create();
 
-  auto imp1 = graph.add_import({ *ctltype::Create(2), "imp1" });
+  auto imp1 = graph.add_import({ ctltype::Create(2), "imp1" });
   auto imp2 = graph.add_import({ t, "imp2" });
   auto imp3 = graph.add_import({ t, "imp3" });
 
@@ -32,7 +32,7 @@ TestThetaCreation()
   lv3->result()->divert_to(lv3->argument());
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(0), { theta->output(0)->type(), "exp" });
+  graph.add_export(theta->output(0), { theta->output(0)->Type(), "exp" });
   auto theta2 =
       static_cast<jlm::rvsdg::structural_node *>(theta)->copy(graph.root(), { imp1, imp2, imp3 });
   jlm::rvsdg::view(graph.root(), stdout);
@@ -57,7 +57,7 @@ TestRemoveThetaOutputsWhere()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
+  auto ctl = rvsdg.add_import({ ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
 
@@ -68,7 +68,7 @@ TestRemoveThetaOutputsWhere()
   auto thetaOutput2 = thetaNode->add_loopvar(y);
   thetaNode->set_predicate(thetaOutput0->argument());
 
-  rvsdg.add_export(thetaOutput0, { *ctltype::Create(2), "" });
+  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
 
   // Act & Assert
   auto deadInputs = thetaNode->RemoveThetaOutputsWhere(
@@ -107,7 +107,7 @@ TestPruneThetaOutputs()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
+  auto ctl = rvsdg.add_import({ ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
 
@@ -118,7 +118,7 @@ TestPruneThetaOutputs()
   thetaNode->add_loopvar(y);
   thetaNode->set_predicate(thetaOutput0->argument());
 
-  rvsdg.add_export(thetaOutput0, { *ctltype::Create(2), "" });
+  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
 
   // Act
   auto deadInputs = thetaNode->PruneThetaOutputs();
@@ -142,7 +142,7 @@ TestRemoveThetaInputsWhere()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
+  auto ctl = rvsdg.add_import({ ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
 
@@ -159,7 +159,7 @@ TestRemoveThetaInputsWhere()
   thetaOutput1->result()->divert_to(result);
   thetaOutput2->result()->divert_to(result);
 
-  rvsdg.add_export(thetaOutput0, { *ctltype::Create(2), "" });
+  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
 
   // Act & Assert
   auto deadOutputs = thetaNode->RemoveThetaInputsWhere(
@@ -198,7 +198,7 @@ TestPruneThetaInputs()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = rvsdg.add_import({ *ctltype::Create(2), "ctl" });
+  auto ctl = rvsdg.add_import({ ctltype::Create(2), "ctl" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
 
@@ -215,7 +215,7 @@ TestPruneThetaInputs()
   thetaOutput1->result()->divert_to(result);
   thetaOutput2->result()->divert_to(result);
 
-  rvsdg.add_export(thetaOutput0, { *ctltype::Create(2), "" });
+  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
 
   // Act
   auto deadOutputs = thetaNode->PruneThetaInputs();

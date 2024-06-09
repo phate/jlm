@@ -45,8 +45,8 @@ test_pullin_top()
   auto ev = gamma->add_entryvar(n5);
   gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->type(), "x" });
-  graph.add_export(n2, { n2->type(), "y" });
+  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "x" });
+  graph.add_export(n2, { n2->Type(), "y" });
 
   //	jlm::rvsdg::view(graph, stdout);
   pullin_top(gamma);
@@ -74,7 +74,7 @@ test_pullin_bottom()
   auto b1 = jlm::tests::create_testop(graph.root(), { gamma->output(0), x }, { vt })[0];
   auto b2 = jlm::tests::create_testop(graph.root(), { gamma->output(0), b1 }, { vt })[0];
 
-  auto xp = graph.add_export(b2, { b2->type(), "x" });
+  auto xp = graph.add_export(b2, { b2->Type(), "x" });
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::pullin_bottom(gamma);
@@ -93,7 +93,7 @@ test_pull()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto p = graph.add_import({ *jlm::rvsdg::ctltype::Create(2), "" });
+  auto p = graph.add_import({ jlm::rvsdg::ctltype::Create(2), "" });
 
   auto croot = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
 
@@ -113,7 +113,7 @@ test_pull()
 
   auto g1xv = gamma1->add_exitvar({ cg1, g2xv });
 
-  graph.add_export(g1xv, { g1xv->type(), "" });
+  graph.add_export(g1xv, { g1xv->Type(), "" });
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::pullin pullin;

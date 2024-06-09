@@ -53,7 +53,7 @@ TestArgumentIterators()
   }
 
   {
-    auto rvsdgImport = rvsdgModule.Rvsdg().add_import({ *vt, "" });
+    auto rvsdgImport = rvsdgModule.Rvsdg().add_import({ vt, "" });
 
     FunctionType functionType({ vt, vt, vt }, { vt, vt });
 
@@ -121,7 +121,7 @@ TestRemoveLambdaInputsWhere()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ *valueType, "x" });
+  auto x = rvsdg.add_import({ valueType, "x" });
 
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -190,7 +190,7 @@ TestPruneLambdaInputs()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ *valueType, "x" });
+  auto x = rvsdg.add_import({ valueType, "x" });
 
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -275,7 +275,7 @@ TestCallSummaryComputationExport()
   auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
   auto lambdaOutput = lambdaNode->finalize({ result });
-  auto rvsdgExport = rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "f" });
+  auto rvsdgExport = rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "f" });
 
   // Act
   auto callSummary = lambdaNode->ComputeCallSummary();
@@ -335,7 +335,7 @@ TestCallSummaryComputationDirectCalls()
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambdaNode->finalize(callResults);
-    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "y" });
+    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "y" });
 
     return lambdaOutput;
   };
@@ -365,7 +365,7 @@ TestCallSummaryComputationDirectCalls()
         { vt })[0];
 
     auto lambdaOutput = lambdaNode->finalize({ result, callYResults[1], callYResults[2] });
-    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "z" });
+    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "z" });
 
     return lambdaOutput;
   };
@@ -461,12 +461,17 @@ TestCallSummaryComputationFunctionPointerInDelta()
       lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
   lambdaNode->finalize({ lambdaNode->fctargument(0) });
 
-  auto deltaNode =
-      delta::node::Create(rvsdg->root(), PointerType(), "fp", linkage::external_linkage, "", false);
+  auto deltaNode = delta::node::Create(
+      rvsdg->root(),
+      PointerType::Create(),
+      "fp",
+      linkage::external_linkage,
+      "",
+      false);
   auto argument = deltaNode->add_ctxvar(lambdaNode->output());
   deltaNode->finalize(argument);
 
-  rvsdg->add_export(deltaNode->output(), { PointerType(), "fp" });
+  rvsdg->add_export(deltaNode->output(), { PointerType::Create(), "fp" });
 
   // Act
   auto callSummary = lambdaNode->ComputeCallSummary();
@@ -487,7 +492,7 @@ TestCallSummaryComputationLambdaResult()
   auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  PointerType pointerType;
+  auto pointerType = PointerType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   FunctionType functionTypeG({ valueType }, { valueType });
   FunctionType functionTypeF({ valueType }, { PointerType::Create() });

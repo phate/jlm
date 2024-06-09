@@ -65,7 +65,7 @@ TestGamma()
 
   auto lambdaOutput = lambdaNode->finalize({ gammaNode1->output(0), gammaNode1->output(1) });
 
-  rvsdg.add_export(lambdaOutput, { lambdaOutput->type(), "test" });
+  rvsdg.add_export(lambdaOutput, { lambdaOutput->Type(), "test" });
 
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
@@ -118,7 +118,7 @@ TestTheta()
 
   auto lambdaOutput = lambdaNode->finalize({ thetaOutput1, thetaOutput2, thetaOutput3 });
 
-  rvsdg.add_export(lambdaOutput, { lambdaOutput->type(), "test" });
+  rvsdg.add_export(lambdaOutput, { lambdaOutput->Type(), "test" });
 
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
@@ -201,7 +201,7 @@ TestCall()
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
 
     lambdaOutputTest2 = lambdaNode->finalize(outputs(&callNode));
-    rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->type(), "test2" });
+    rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->Type(), "test2" });
   }
 
   // Act
@@ -306,7 +306,7 @@ TestCallWithMemoryStateNodes()
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), callNode.GetIoStateOutput(), &lambdaExitMergeResult });
-    rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->type(), "test2" });
+    rvsdg.add_export(lambdaOutputTest2, { lambdaOutputTest2->Type(), "test2" });
   }
 
   // Act

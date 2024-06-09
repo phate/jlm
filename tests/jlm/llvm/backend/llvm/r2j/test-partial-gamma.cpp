@@ -39,7 +39,7 @@ test()
 
   auto f = lambda->finalize({ ex });
 
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

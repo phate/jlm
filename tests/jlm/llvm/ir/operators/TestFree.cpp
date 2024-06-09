@@ -69,9 +69,9 @@ TestRvsdgCreator()
   // Arrange
   jlm::rvsdg::graph rvsdg;
 
-  auto address = rvsdg.add_import({ PointerType(), "p" });
-  auto memoryState = rvsdg.add_import({ MemoryStateType(), "m" });
-  auto iOState = rvsdg.add_import({ iostatetype(), "io" });
+  auto address = rvsdg.add_import({ PointerType::Create(), "p" });
+  auto memoryState = rvsdg.add_import({ MemoryStateType::Create(), "m" });
+  auto iOState = rvsdg.add_import({ iostatetype::Create(), "io" });
 
   // Act
   auto freeResults0 = FreeOperation::Create(address, {}, iOState);
