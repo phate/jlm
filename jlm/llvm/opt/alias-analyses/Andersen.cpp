@@ -152,12 +152,12 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * NumRegistersMappedToPointerObject_ =
       "#RegistersMappedToPointerObject";
 
+  static constexpr const char * NumBaseConstraints_ = "#BaseConstraints";
   static constexpr const char * NumSupersetConstraints_ = "#SupersetConstraints";
   static constexpr const char * NumStoreConstraints_ = "#StoreConstraints";
   static constexpr const char * NumLoadConstraints_ = "#LoadConstraints";
   static constexpr const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
-  // Includes base constraints and flags
-  static constexpr const char * NumConstraintsTotal_ = "#ConstraintsTotal";
+  static constexpr const char * NumFlagConstraints_ = "#FlagConstraints";
 
   static constexpr const char * Configuration_ = "Configuration";
 
@@ -172,6 +172,8 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
   static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
       "#WorklistSolverWorkItemsPopped";
+  static constexpr const char * NumWorklistSolverWorkItemsNewPointees_ =
+      "#WorklistSolverWorkItemsNewPointees";
   static constexpr const char * NumTopologicalWorklistSweeps_ = "#TopologicalWorklistSweeps";
 
   // Online technique statistics
@@ -183,6 +185,8 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
   static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
   static constexpr const char * NumLazyCycleUnifications_ = "#LazyCycleUnifications";
+
+  static constexpr const char * NumPIPExplicitPointeesRemoved_ = "#PIPExplicitPointeesRemoved";
 
   // After solving statistics
   static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
@@ -251,11 +255,12 @@ public:
       numLoadConstraints += std::holds_alternative<LoadConstraint>(constraint);
       numFunctionCallConstraints += std::holds_alternative<FunctionCallConstraint>(constraint);
     }
+    AddMeasurement(NumBaseConstraints_, constraints.NumBaseConstraints());
     AddMeasurement(NumSupersetConstraints_, numSupersetConstraints);
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
-    AddMeasurement(NumConstraintsTotal_, constraints.GetTotalConstraintCount());
+    AddMeasurement(NumFlagConstraints_, constraints.NumFlagConstraints());
   }
 
   void
@@ -316,6 +321,7 @@ public:
 
     // How many work items were popped from the worklist in total
     AddMeasurement(NumWorklistSolverWorkItemsPopped_, statistics.NumWorkItemsPopped);
+    AddMeasurement(NumWorklistSolverWorkItemsNewPointees_, statistics.NumWorkItemNewPointees);
 
     if (statistics.NumTopologicalWorklistSweeps)
       AddMeasurement(NumTopologicalWorklistSweeps_, *statistics.NumTopologicalWorklistSweeps);
@@ -337,6 +343,9 @@ public:
 
     if (statistics.NumLazyCycleUnifications)
       AddMeasurement(NumLazyCycleUnifications_, *statistics.NumLazyCycleUnifications);
+
+    if (statistics.NumExplicitPointeesRemoved)
+      AddMeasurement(NumPIPExplicitPointeesRemoved_, *statistics.NumExplicitPointeesRemoved);
   }
 
   void
@@ -1197,6 +1206,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
         // These statistics will only contain solving data
         auto solvingStats = Statistics::Create(module.SourceFileName());
         SolveConstraints(*workingCopy.second, config, *solvingStats);
+        solvingStats->AddStatisticsFromSolution(*workingCopy.first);
         statisticsCollector.CollectDemandedStatistics(std::move(solvingStats));
 
         // Only double check on the first iteration

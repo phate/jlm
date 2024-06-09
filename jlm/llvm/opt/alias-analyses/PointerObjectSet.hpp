@@ -821,6 +821,12 @@ public:
     size_t NumWorkItemsPopped{};
 
     /**
+     * The sum of the number of new pointees, for each visited work item.
+     * If Difference Propagation is not enabled, all pointees are always regarded as new.
+     */
+    size_t NumWorkItemNewPointees{};
+
+    /**
      * The number of times the topological worklist orders the whole set of pointers
      * and visits them all in topoloogical order
      */
@@ -848,6 +854,12 @@ public:
     std::optional<size_t> NumLazyCyclesDetectionAttempts;
     std::optional<size_t> NumLazyCyclesDetected;
     std::optional<size_t> NumLazyCycleUnifications;
+
+    /**
+     * When Prefer Implicit Pointees is enabled, and a node's pointees can be tracked fully
+     * implicitly, its set of explicit pointees is cleared.
+     */
+    std::optional<size_t> NumExplicitPointeesRemoved;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -912,10 +924,16 @@ public:
   GetConstraints() const noexcept;
 
   /**
-   * @return the total number of constraints, including base constraints and flags
+   * @return the number of base constraints
    */
   [[nodiscard]] size_t
-  GetTotalConstraintCount() const noexcept;
+  NumBaseConstraints() const noexcept;
+
+  /**
+   * @return the number of flag constraints, including memory objects that are not pointees.
+   */
+  [[nodiscard]] size_t
+  NumFlagConstraints() const noexcept;
 
   /**
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
