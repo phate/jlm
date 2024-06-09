@@ -19,7 +19,7 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ vt }, { vt });
+  auto ft = FunctionType::Create({ vt }, { vt });
 
   ipgraph_module im(jlm::util::filepath(""), "", "");
 

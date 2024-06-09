@@ -178,7 +178,7 @@ node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 lambda::node *
 node::create(
     jlm::rvsdg::region * parent,
-    const FunctionType & type,
+    std::shared_ptr<const jlm::llvm::FunctionType> type,
     const std::string & name,
     const llvm::linkage & linkage,
     const attributeset & attributes)
@@ -186,7 +186,7 @@ node::create(
   lambda::operation op(type, name, linkage, attributes);
   auto node = new lambda::node(parent, std::move(op));
 
-  for (auto & argumentType : type.Arguments())
+  for (auto & argumentType : type->Arguments())
     lambda::fctargument::create(node->subregion(), *argumentType);
 
   return node;
@@ -231,7 +231,7 @@ node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> 
 lambda::node *
 node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
-  auto lambda = create(region, type(), name(), linkage(), attributes());
+  auto lambda = create(region, Type(), name(), linkage(), attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;

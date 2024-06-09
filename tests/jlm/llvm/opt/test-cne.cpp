@@ -389,7 +389,7 @@ test_lambda()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ vt, vt }, { vt });
+  auto ft = FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -424,7 +424,7 @@ test_phi()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ vt, vt }, { vt });
+  auto ft = FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();

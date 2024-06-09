@@ -251,8 +251,11 @@ TestLambda()
   auto x = graph.add_import({ vt, "x" });
   auto y = graph.add_import({ vt, "y" });
 
-  auto lambda =
-      lambda::node::create(graph.root(), { { vt }, { vt, vt } }, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(
+      graph.root(),
+      FunctionType::Create({ vt }, { vt, vt }),
+      "f",
+      linkage::external_linkage);
 
   auto cv1 = lambda->add_ctxvar(x);
   auto cv2 = lambda->add_ctxvar(y);
@@ -277,7 +280,7 @@ TestPhi()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  FunctionType functionType({ valueType }, { valueType });
+  auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();

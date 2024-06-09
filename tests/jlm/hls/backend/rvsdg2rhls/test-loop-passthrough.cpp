@@ -34,7 +34,7 @@ test()
 {
   using namespace jlm;
 
-  jlm::llvm::FunctionType ft(
+  auto ft = jlm::llvm::FunctionType::Create(
       { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
       { rvsdg::bittype::Create(8) });
 

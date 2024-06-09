@@ -26,7 +26,7 @@ test()
 
   using namespace jlm::llvm;
 
-  FunctionType ft({}, { jlm::rvsdg::bittype::Create(65) });
+  auto ft = FunctionType::Create({}, { jlm::rvsdg::bittype::Create(65) });
 
   jlm::rvsdg::bitvalue_repr vr(bs);
 

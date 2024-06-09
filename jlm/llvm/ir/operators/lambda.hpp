@@ -34,7 +34,7 @@ public:
   ~operation() override;
 
   operation(
-      jlm::llvm::FunctionType type,
+      std::shared_ptr<const jlm::llvm::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
       jlm::llvm::attributeset attributes)
@@ -44,49 +44,24 @@ public:
         attributes_(std::move(attributes))
   {}
 
-  operation(const operation & other)
-      : type_(other.type_),
-        name_(other.name_),
-        linkage_(other.linkage_),
-        attributes_(other.attributes_)
-  {}
+  operation(const operation & other) = default;
 
-  operation(operation && other) noexcept
-      : type_(std::move(other.type_)),
-        name_(std::move(other.name_)),
-        linkage_(other.linkage_)
-  {}
+  operation(operation && other) noexcept = default;
 
   operation &
-  operator=(const operation & other)
-  {
-    if (this == &other)
-      return *this;
-
-    type_ = other.type_;
-    name_ = other.name_;
-    linkage_ = other.linkage_;
-    attributes_ = other.attributes_;
-
-    return *this;
-  }
+  operator=(const operation & other) = default;
 
   operation &
-  operator=(operation && other) noexcept
-  {
-    if (this == &other)
-      return *this;
-
-    type_ = std::move(other.type_);
-    name_ = std::move(other.name_);
-    linkage_ = other.linkage_;
-    attributes_ = std::move(other.attributes_);
-
-    return *this;
-  }
+  operator=(operation && other) noexcept = default;
 
   [[nodiscard]] const jlm::llvm::FunctionType &
   type() const noexcept
+  {
+    return *type_;
+  }
+
+  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  Type() const noexcept
   {
     return type_;
   }
@@ -119,7 +94,7 @@ public:
   copy() const override;
 
 private:
-  jlm::llvm::FunctionType type_;
+  std::shared_ptr<const jlm::llvm::FunctionType> type_;
   std::string name_;
   jlm::llvm::linkage linkage_;
   jlm::llvm::attributeset attributes_;
@@ -219,6 +194,12 @@ public:
   type() const noexcept
   {
     return operation().type();
+  }
+
+  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  Type() const noexcept
+  {
+    return operation().Type();
   }
 
   [[nodiscard]] const std::string &
@@ -362,7 +343,7 @@ public:
   static node *
   create(
       jlm::rvsdg::region * parent,
-      const jlm::llvm::FunctionType & type,
+      std::shared_ptr<const jlm::llvm::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage,
       const jlm::llvm::attributeset & attributes);
@@ -373,7 +354,7 @@ public:
   static node *
   create(
       jlm::rvsdg::region * parent,
-      const jlm::llvm::FunctionType & type,
+      std::shared_ptr<const jlm::llvm::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage)
   {
