@@ -1787,8 +1787,6 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
                                        : pointeesEscaping;
 
     // Propagate P(n) along all edges n -> superset
-    bool abortVisitingNode = false;
-
     auto supersets = supersetEdges[node].Items();
     for (auto it = supersets.begin(); it != supersets.end();)
     {
