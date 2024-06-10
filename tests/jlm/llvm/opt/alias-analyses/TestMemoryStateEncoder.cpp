@@ -2068,14 +2068,15 @@ static void
 ValidateFreeNullTestSteensgaardAgnostic(const jlm::tests::FreeNullTest & test)
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto lambdaExitMerge = jlm::rvsdg::node_output::node(test.LambdaMain().fctresult(0)->origin());
+  auto lambdaExitMerge = node_output::node(test.LambdaMain().GetMemoryStateRegionResult().origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto free = jlm::rvsdg::node_output::node(test.LambdaMain().fctresult(1)->origin());
+  auto free = node_output::node(test.LambdaMain().fctresult(0)->origin());
   assert(is<FreeOperation>(*free, 2, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::node_output::node(lambdaExitMerge->input(0)->origin());
+  auto lambdaEntrySplit = node_output::node(lambdaExitMerge->input(0)->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 

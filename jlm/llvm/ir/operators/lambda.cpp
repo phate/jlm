@@ -148,13 +148,28 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
   return cvargument::create(subregion(), input);
 }
 
+rvsdg::argument &
+node::GetMemoryStateRegionArgument() const noexcept
+{
+  auto argument = fctargument(nfctarguments() - 1);
+  JLM_ASSERT(is<MemoryStateType>(argument->type()));
+  return *argument;
+}
+
+rvsdg::result &
+node::GetMemoryStateRegionResult() const noexcept
+{
+  auto result = fctresult(nfctresults() - 1);
+  JLM_ASSERT(is<MemoryStateType>(result->type()));
+  return *result;
+}
+
 rvsdg::simple_node *
 node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
 {
-  auto result = lambdaNode.fctresult(lambdaNode.nfctresults() - 1);
-  JLM_ASSERT(is<MemoryStateType>(result->type()));
+  auto & result = lambdaNode.GetMemoryStateRegionResult();
 
-  auto node = rvsdg::node_output::node(result->origin());
+  auto node = rvsdg::node_output::node(result.origin());
   return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
                                                        : nullptr;
 }
@@ -162,15 +177,14 @@ node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
 rvsdg::simple_node *
 node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 {
-  auto argument = lambdaNode.fctargument(lambdaNode.nfctarguments() - 1);
-  JLM_ASSERT(is<MemoryStateType>(argument->type()));
+  auto & argument = lambdaNode.GetMemoryStateRegionArgument();
 
   // If a memory state entry split node is present, then we would expect the node to be the only
   // user of the memory state argument.
-  if (argument->nusers() != 1)
+  if (argument.nusers() != 1)
     return nullptr;
 
-  auto node = rvsdg::node_input::GetNode(**argument->begin());
+  auto node = rvsdg::node_input::GetNode(**argument.begin());
   return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
                                                         : nullptr;
 }
