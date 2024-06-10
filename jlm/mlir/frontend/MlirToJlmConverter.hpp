@@ -108,12 +108,11 @@ private:
    * \param rvsdgRegion The RVSDG region that the inputs are retrieved from (if it's a region
    * argument). \param inputs The vector that the inputs are stored in.
    */
-  void
-  getConvertedInputs(
+  static ::llvm::SmallVector<jlm::rvsdg::output *>
+  GetConvertedInputs(
       ::mlir::Operation & mlirOp,
-      std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap,
-      rvsdg::region & rvsdgRegion,
-      ::llvm::SmallVector<jlm::rvsdg::output *> & inputs);
+      const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
+      const rvsdg::region & rvsdgRegion);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
@@ -125,7 +124,7 @@ private:
   rvsdg::node *
   ConvertCmpIOp(
       ::mlir::arith::CmpIOp & CompOp,
-      ::llvm::SmallVector<rvsdg::output *> & inputs,
+      const ::llvm::SmallVector<rvsdg::output *> & inputs,
       size_t nbits);
 
   /**
@@ -136,8 +135,8 @@ private:
    */
   rvsdg::node *
   ConvertBitBinaryNode(
-      ::mlir::Operation & mlirOperation,
-      ::llvm::SmallVector<rvsdg::output *> & inputs);
+      const ::mlir::Operation & mlirOperation,
+      const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR operation into an RVSDG node.
@@ -150,7 +149,7 @@ private:
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::region & rvsdgRegion,
-      ::llvm::SmallVector<rvsdg::output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.

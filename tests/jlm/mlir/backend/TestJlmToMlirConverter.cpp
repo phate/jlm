@@ -371,7 +371,10 @@ TestComZeroExt()
   return 0;
 }
 
-// TODO doc
+/** \brief TestMatch
+ *
+ * This test is similar to previous tests, but uses a match operation
+ */
 static int
 TestMatch()
 {
@@ -399,12 +402,9 @@ TestMatch()
     // Create a match operation
     std::cout << "Match Operation" << std::endl;
     auto predicateConst = jlm::rvsdg::create_bitconstant(lambda->subregion(), 8, 4);
-    std::unordered_map<uint64_t, uint64_t> mapping;
-    mapping[4] = 0;
-    mapping[5] = 1;
-    mapping[6] = 1;
 
-    auto match = jlm::rvsdg::match_op::Create(*predicateConst, mapping, 2, 2);
+    auto match =
+        jlm::rvsdg::match_op::Create(*predicateConst, { { 4, 0 }, { 5, 1 }, { 6, 1 } }, 2, 2);
 
     lambda->finalize({ match, iOStateArgument, memoryStateArgument });
 
@@ -456,7 +456,7 @@ TestMatch()
           if (matchRuleAttr.isDefault())
           {
             assert(matchRuleAttr.getIndex() == 2);
-            assert(matchRuleAttr.getValues().size() == 0);
+            assert(matchRuleAttr.getValues().empty());
             continue;
           }
 
@@ -478,7 +478,10 @@ TestMatch()
   return 0;
 }
 
-// TODO doc
+/** \brief TestGamma
+ *
+ * This test is similar to previous tests, but uses a gamma operation
+ */
 static int
 TestGamma()
 {
@@ -498,33 +501,30 @@ TestGamma()
     auto CtrlConstant = jlm::rvsdg::control_constant(graph->root(), 3, 1);
     auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
     auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
-    jlm::rvsdg::gamma_node * RvsdgGammaNode = jlm::rvsdg::gamma_node::create(
+    jlm::rvsdg::gamma_node * rvsdgGammaNode = jlm::rvsdg::gamma_node::create(
         CtrlConstant, // predicate
         3             // nalternatives
     );
 
-    RvsdgGammaNode->add_entryvar(entryvar1);
-    RvsdgGammaNode->add_entryvar(entryvar2);
+    rvsdgGammaNode->add_entryvar(entryvar1);
+    rvsdgGammaNode->add_entryvar(entryvar2);
 
     std::vector<jlm::rvsdg::output *> exitvars1;
     std::vector<jlm::rvsdg::output *> exitvars2;
     for (int i = 0; i < 3; i++)
     {
-      exitvars1.push_back(jlm::rvsdg::create_bitconstant(RvsdgGammaNode->subregion(i), 32, i + 1));
+      exitvars1.push_back(jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, i + 1));
       exitvars2.push_back(
-          jlm::rvsdg::create_bitconstant(RvsdgGammaNode->subregion(i), 32, 10 * (i + 1)));
+          jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, 10 * (i + 1)));
     }
 
-    RvsdgGammaNode->add_exitvar(exitvars1);
-    RvsdgGammaNode->add_exitvar(exitvars2);
+    rvsdgGammaNode->add_exitvar(exitvars1);
+    rvsdgGammaNode->add_exitvar(exitvars2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
     jlm::mlir::JlmToMlirConverter mlirgen;
     auto omega = mlirgen.ConvertModule(*rvsdgModule);
-
-    // TODO delete this
-    omega.dump();
 
     // Checking blocks and operations count
     std::cout << "Checking blocks and operations count" << std::endl;

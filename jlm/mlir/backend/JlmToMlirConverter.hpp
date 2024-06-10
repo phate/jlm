@@ -92,12 +92,11 @@ private:
    * \param block The MLIR block to get argument type inputs from.
    * \param inputs The vector of inputs to be populated.
    */
-  void
-  getConvertedInputs(
+  static ::llvm::SmallVector<::mlir::Value>
+  GetConvertedInputs(
       const rvsdg::node & node,
-      std::unordered_map<rvsdg::node *, ::mlir::Operation *> operationsMap,
-      ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> & inputs);
+      const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+      ::mlir::Block & block);
 
   /**
    * Converts an RVSDG node to an MLIR RVSDG operation.
@@ -110,7 +109,7 @@ private:
   ConvertNode(
       const rvsdg::node & node,
       ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> & inputs);
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
@@ -143,7 +142,7 @@ private:
   ConvertSimpleNode(
       const rvsdg::simple_node & node,
       ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> & inputs);
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode.
@@ -164,7 +163,7 @@ private:
   ConvertGamma(
       const rvsdg::gamma_node & gammaNode,
       ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> & inputs);
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
