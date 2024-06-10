@@ -62,10 +62,10 @@ is_applicable(const jlm::rvsdg::theta_node * theta)
     if (user == theta->predicate())
       continue;
 
-    if (!jlm::rvsdg::is<jlm::rvsdg::gamma_op>(input_node(user)))
+    if (!rvsdg::is<rvsdg::gamma_op>(rvsdg::input::GetNode(*user)))
       return nullptr;
 
-    gnode = dynamic_cast<jlm::rvsdg::gamma_node *>(input_node(user));
+    gnode = dynamic_cast<rvsdg::gamma_node *>(rvsdg::input::GetNode(*user));
   }
 
   return gnode;
