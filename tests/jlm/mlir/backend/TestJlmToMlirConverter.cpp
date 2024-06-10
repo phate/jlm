@@ -26,7 +26,7 @@ TestLambda()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
@@ -145,7 +145,7 @@ TestAddOperation()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
@@ -244,7 +244,7 @@ TestComZeroExt()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
 
@@ -390,7 +390,7 @@ TestMatch()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::ctltype::Create(2), iostatetype::Create(), MemoryStateType::Create() });
 
