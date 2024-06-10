@@ -532,14 +532,14 @@ public:
   }
 
 private:
-  fctargument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::argument(region, nullptr, type.copy())
+  fctargument(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+      : jlm::rvsdg::argument(region, nullptr, std::move(type))
   {}
 
   static fctargument *
-  create(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
+  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
-    auto argument = new fctargument(region, type);
+    auto argument = new fctargument(region, std::move(type));
     region->append_argument(argument);
     return argument;
   }

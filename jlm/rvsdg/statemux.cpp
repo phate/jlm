@@ -75,7 +75,7 @@ perform_multiple_origin_reduction(
     const std::vector<jlm::rvsdg::output *> & operands)
 {
   std::unordered_set<jlm::rvsdg::output *> set(operands.begin(), operands.end());
-  return create_state_mux(op.result(0).type(), { set.begin(), set.end() }, op.nresults());
+  return create_state_mux(op.result(0).Type(), { set.begin(), set.end() }, op.nresults());
 }
 
 static std::vector<jlm::rvsdg::output *>
@@ -102,7 +102,7 @@ perform_mux_mux_reduction(
       new_operands.push_back(operand);
   }
 
-  return create_state_mux(op.result(0).type(), new_operands, op.nresults());
+  return create_state_mux(op.result(0).Type(), new_operands, op.nresults());
 }
 
 mux_normal_form::~mux_normal_form() noexcept

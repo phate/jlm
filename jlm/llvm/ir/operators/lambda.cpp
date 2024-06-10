@@ -201,7 +201,7 @@ node::create(
   auto node = new lambda::node(parent, std::move(op));
 
   for (auto & argumentType : type->Arguments())
-    lambda::fctargument::create(node->subregion(), *argumentType);
+    lambda::fctargument::create(node->subregion(), argumentType);
 
   return node;
 }

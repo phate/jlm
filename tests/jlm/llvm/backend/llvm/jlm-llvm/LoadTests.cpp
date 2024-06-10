@@ -26,9 +26,9 @@ LoadConversion()
 
   auto cfg = cfg::create(ipgModule);
   auto addressArgument =
-      cfg->entry()->append_argument(argument::create("address", *PointerType::Create()));
+      cfg->entry()->append_argument(argument::create("address", PointerType::Create()));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", *MemoryStateType::Create()));
+      cfg->entry()->append_argument(argument::create("memoryState", MemoryStateType::Create()));
 
   auto basicBlock = basic_block::create(*cfg);
   size_t alignment = 4;
@@ -76,8 +76,8 @@ LoadVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
-  iostatetype ioStateType;
+  auto pointerType = PointerType::Create();
+  auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
   jlm::rvsdg::bittype bit64Type(64);
   auto functionType = FunctionType::Create(
