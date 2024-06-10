@@ -31,9 +31,7 @@ class port
 public:
   virtual ~port();
 
-  port(const jlm::rvsdg::type & type);
-
-  port(std::shared_ptr<const jlm::rvsdg::type> type);
+  explicit port(std::shared_ptr<const jlm::rvsdg::type> type);
 
   port(const port & other) = default;
 

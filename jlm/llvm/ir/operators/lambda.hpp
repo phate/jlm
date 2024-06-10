@@ -402,7 +402,7 @@ public:
 
 private:
   cvinput(lambda::node * node, jlm::rvsdg::output * origin)
-      : structural_input(node, origin, origin->port())
+      : structural_input(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -472,15 +472,15 @@ class output final : public jlm::rvsdg::structural_output
 public:
   ~output() override;
 
-private:
-  output(lambda::node * node, const jlm::rvsdg::port & port)
-      : structural_output(node, port)
+  output(lambda::node * node, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type))
   {}
 
+private:
   static output *
-  create(lambda::node * node, const jlm::rvsdg::port & port)
+  create(lambda::node * node, std::shared_ptr<const rvsdg::type> type)
   {
-    auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
+    auto output = std::make_unique<lambda::output>(node, std::move(type));
     return jlm::util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
   }
 
@@ -521,7 +521,7 @@ public:
 
 private:
   fctargument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::argument(region, nullptr, type)
+      : jlm::rvsdg::argument(region, nullptr, type.copy())
   {}
 
   static fctargument *

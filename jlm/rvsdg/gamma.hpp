@@ -324,8 +324,11 @@ public:
   virtual ~gamma_input() noexcept;
 
 private:
-  inline gamma_input(gamma_node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port)
-      : structural_input(node, origin, port)
+  inline gamma_input(
+      gamma_node * node,
+      jlm::rvsdg::output * origin,
+      std::shared_ptr<const rvsdg::type> type)
+      : structural_input(node, origin, std::move(type))
   {}
 
 public:
@@ -390,12 +393,10 @@ class gamma_output final : public structural_output
 public:
   virtual ~gamma_output() noexcept;
 
-private:
-  inline gamma_output(gamma_node * node, const jlm::rvsdg::port & port)
-      : structural_output(node, port)
+  inline gamma_output(gamma_node * node, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type))
   {}
 
-public:
   gamma_node *
   node() const noexcept
   {
@@ -466,8 +467,8 @@ is_gamma_output(const jlm::rvsdg::input * input) noexcept
 inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives)
     : structural_node(jlm::rvsdg::gamma_op(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(
-      std::unique_ptr<node_input>(new gamma_input(this, predicate, ctltype(nalternatives))));
+  node::add_input(std::unique_ptr<node_input>(
+      new gamma_input(this, predicate, ctltype::Create(nalternatives))));
 }
 
 inline jlm::rvsdg::gamma_input *
@@ -491,10 +492,10 @@ gamma_node::exitvar(size_t index) const noexcept
 inline jlm::rvsdg::gamma_input *
 gamma_node::add_entryvar(jlm::rvsdg::output * origin)
 {
-  node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->type())));
+  node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
 
   for (size_t n = 0; n < nsubregions(); n++)
-    argument::create(subregion(n), input(ninputs() - 1), origin->type());
+    argument::create(subregion(n), input(ninputs() - 1), origin->Type());
 
   return static_cast<jlm::rvsdg::gamma_input *>(input(ninputs() - 1));
 }
@@ -505,12 +506,12 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
   if (values.size() != nsubregions())
     throw jlm::util::error("Incorrect number of values.");
 
-  const auto & port = values[0]->port();
-  node::add_output(std::unique_ptr<node_output>(new gamma_output(this, port)));
+  const auto & type = values[0]->Type();
+  node::add_output(std::make_unique<gamma_output>(this, type));
 
   auto output = exitvar(nexitvars() - 1);
   for (size_t n = 0; n < nsubregions(); n++)
-    result::create(subregion(n), values[n], output, port);
+    result::create(subregion(n), values[n], output, type);
 
   return output;
 }

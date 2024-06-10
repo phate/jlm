@@ -114,7 +114,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
       newLambda->region(),
       newLambdaOutput,
       nullptr,
-      newLambdaOutput->type());
+      newLambdaOutput->Type());
 }
 
 static void

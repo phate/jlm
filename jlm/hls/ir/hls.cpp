@@ -11,10 +11,10 @@ namespace jlm::hls
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->type());
-  auto output = jlm::rvsdg::structural_output::create(this, origin->type());
+  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
+  auto output = jlm::rvsdg::structural_output::create(this, origin->Type());
 
-  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->type());
+  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->Type());
   auto argument_loop = add_backedge(origin->type());
 
   auto mux =
@@ -24,7 +24,7 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
   {
     *buffer = mux;
   }
-  jlm::rvsdg::result::create(subregion(), branch[0], output, origin->type());
+  jlm::rvsdg::result::create(subregion(), branch[0], output, origin->Type());
   auto result_loop = argument_loop->result();
   auto buf = hls::buffer_op::create(*branch[1], 2)[0];
   result_loop->divert_to(buf);
@@ -34,9 +34,9 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
 jlm::rvsdg::output *
 loop_node::add_loopconst(jlm::rvsdg::output * origin)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->type());
+  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
 
-  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->type());
+  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->Type());
   auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), *argument_in)[0];
   return buffer;
 }
@@ -52,7 +52,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
-    auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->type());
+    auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->Type());
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto narg = jlm::rvsdg::argument::create(loop->subregion(), inp, oarg->port());
@@ -60,7 +60,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
-    auto out = jlm::rvsdg::structural_output::create(loop, output(i)->type());
+    auto out = jlm::rvsdg::structural_output::create(loop, output(i)->Type());
     smap.insert(output(i), out);
     smap.insert(output(i), out);
   }

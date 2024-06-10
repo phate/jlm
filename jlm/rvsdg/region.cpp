@@ -39,6 +39,22 @@ argument::argument(
   }
 }
 
+argument::argument(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::structural_input * input,
+    std::shared_ptr<const rvsdg::type> type)
+    : output(region, std::move(type)),
+      input_(input)
+{
+  if (input)
+  {
+    if (input->node() != region->node())
+      throw jlm::util::error("Argument cannot be added to input.");
+
+    input->arguments.push_back(this);
+  }
+}
+
 jlm::rvsdg::argument *
 argument::create(
     jlm::rvsdg::region * region,
@@ -56,7 +72,7 @@ argument::create(
     structural_input * input,
     std::shared_ptr<const jlm::rvsdg::type> type)
 {
-  auto argument = new jlm::rvsdg::argument(region, input, jlm::rvsdg::port(std::move(type)));
+  auto argument = new jlm::rvsdg::argument(region, input, std::move(type));
   region->append_argument(argument);
   return argument;
 }
@@ -77,6 +93,23 @@ result::result(
     jlm::rvsdg::structural_output * output,
     const jlm::rvsdg::port & port)
     : input(origin, region, port),
+      output_(output)
+{
+  if (output)
+  {
+    if (output->node() != region->node())
+      throw jlm::util::error("Result cannot be added to output.");
+
+    output->results.push_back(this);
+  }
+}
+
+result::result(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::structural_output * output,
+    std::shared_ptr<const rvsdg::type> type)
+    : input(origin, region, std::move(type)),
       output_(output)
 {
   if (output)

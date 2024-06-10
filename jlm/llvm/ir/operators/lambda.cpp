@@ -219,7 +219,7 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   for (const auto & origin : results)
     lambda::result::create(origin);
 
-  return output::create(this, PointerType());
+  return output::create(this, PointerType::Create());
 }
 
 lambda::node *
