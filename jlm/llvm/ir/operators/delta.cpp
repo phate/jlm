@@ -148,7 +148,7 @@ node::finalize(jlm::rvsdg::output * origin)
 
   delta::result::create(origin);
 
-  return output::create(this, PointerType());
+  return output::create(this, PointerType::Create());
 }
 
 /* delta context variable input class */

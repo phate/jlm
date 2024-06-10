@@ -42,6 +42,11 @@ public:
 
   input(jlm::rvsdg::output * origin, jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
 
+  input(
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::region * region,
+      std::shared_ptr<const rvsdg::type> type);
+
   input(const input &) = delete;
 
   input(input &&) = delete;
@@ -305,6 +310,8 @@ public:
   virtual ~output() noexcept;
 
   output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
+
+  output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type);
 
   output(const output &) = delete;
 
@@ -590,7 +597,10 @@ is(const jlm::rvsdg::output * output) noexcept
 class node_input : public jlm::rvsdg::input
 {
 public:
-  node_input(jlm::rvsdg::output * origin, jlm::rvsdg::node * node, const jlm::rvsdg::port & port);
+  node_input(
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::node * node,
+      std::shared_ptr<const rvsdg::type> type);
 
   jlm::rvsdg::node *
   node() const noexcept
@@ -622,7 +632,7 @@ private:
 class node_output : public jlm::rvsdg::output
 {
 public:
-  node_output(jlm::rvsdg::node * node, const jlm::rvsdg::port & port);
+  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type);
 
   jlm::rvsdg::node *
   node() const noexcept

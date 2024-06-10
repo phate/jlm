@@ -558,7 +558,7 @@ public:
 
 private:
   backedge_argument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::argument(region, nullptr, type),
+      : jlm::rvsdg::argument(region, nullptr, type.copy()),
         result_(nullptr)
   {}
 

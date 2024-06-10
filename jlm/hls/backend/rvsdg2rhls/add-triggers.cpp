@@ -78,7 +78,7 @@ add_lambda_argument(llvm::lambda::node * ln, const jlm::rvsdg::type * type)
   //            ln->output()->divert_users(new_out);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
   remove(ln);
-  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
+  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->Type());
   return new_lambda;
 }
 

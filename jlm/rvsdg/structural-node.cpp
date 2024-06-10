@@ -23,8 +23,8 @@ structural_input::~structural_input() noexcept
 structural_input::structural_input(
     jlm::rvsdg::structural_node * node,
     jlm::rvsdg::output * origin,
-    const jlm::rvsdg::port & port)
-    : node_input(origin, node, port)
+    std::shared_ptr<const rvsdg::type> type)
+    : node_input(origin, node, std::move(type))
 {
   on_input_create(this);
 }
@@ -40,8 +40,8 @@ structural_output::~structural_output() noexcept
 
 structural_output::structural_output(
     jlm::rvsdg::structural_node * node,
-    const jlm::rvsdg::port & port)
-    : node_output(node, port)
+    std::shared_ptr<const rvsdg::type> type)
+    : node_output(node, std::move(type))
 {
   on_output_create(this);
 }

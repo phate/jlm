@@ -77,7 +77,10 @@ class simple_input final : public node_input
 public:
   virtual ~simple_input() noexcept;
 
-  simple_input(simple_node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port);
+  simple_input(
+      simple_node * node,
+      jlm::rvsdg::output * origin,
+      std::shared_ptr<const rvsdg::type> type);
 
 public:
   simple_node *
@@ -96,7 +99,7 @@ class simple_output final : public node_output
 public:
   virtual ~simple_output() noexcept;
 
-  simple_output(jlm::rvsdg::simple_node * node, const jlm::rvsdg::port & port);
+  simple_output(jlm::rvsdg::simple_node * node, std::shared_ptr<const rvsdg::type> type);
 
 public:
   simple_node *

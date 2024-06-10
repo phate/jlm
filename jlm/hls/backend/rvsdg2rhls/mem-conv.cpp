@@ -30,8 +30,8 @@ jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * respo
     auto parent_response = route_response(target->node()->region(), response);
     auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
     JLM_ASSERT(ln);
-    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->port());
-    auto argument = jlm::rvsdg::argument::create(target, input, response->type());
+    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
+    auto argument = jlm::rvsdg::argument::create(target, input, response->Type());
     return argument;
   }
 }
@@ -47,8 +47,8 @@ jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * reques
   {
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
-    auto output = jlm::rvsdg::structural_output::create(ln, request->port());
-    jlm::rvsdg::result::create(request->region(), request, output, request->type());
+    auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
+    jlm::rvsdg::result::create(request->region(), request, output, request->Type());
     return route_request(target, output);
   }
 }
@@ -696,7 +696,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  jlm::rvsdg::result::create(newLambda->region(), newOut, nullptr, newOut->type());
+  jlm::rvsdg::result::create(newLambda->region(), newOut, nullptr, newOut->Type());
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
   lambda->region()->RemoveResult((*lambda->output()->begin())->index());
