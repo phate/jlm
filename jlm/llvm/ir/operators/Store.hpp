@@ -89,25 +89,25 @@ class StoreOperation : public rvsdg::simple_op
 {
 protected:
   StoreOperation(
-      const std::vector<rvsdg::port> & operandPorts,
-      const std::vector<rvsdg::port> & resultPorts,
+      const std::vector<std::shared_ptr<const rvsdg::type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::type>> & resultTypes,
       size_t alignment)
-      : simple_op(operandPorts, resultPorts),
+      : simple_op(operandTypes, resultTypes),
         Alignment_(alignment)
   {
-    JLM_ASSERT(operandPorts.size() >= 2);
+    JLM_ASSERT(operandTypes.size() >= 2);
 
-    auto & addressType = operandPorts[0].type();
+    auto & addressType = *operandTypes[0];
     JLM_ASSERT(is<PointerType>(addressType));
 
-    auto & storedType = operandPorts[1].type();
+    auto & storedType = *operandTypes[1];
     JLM_ASSERT(is<rvsdg::valuetype>(storedType));
 
-    JLM_ASSERT(operandPorts.size() == resultPorts.size() + 2);
-    for (size_t n = 0; n < resultPorts.size(); n++)
+    JLM_ASSERT(operandTypes.size() == resultTypes.size() + 2);
+    for (size_t n = 0; n < resultTypes.size(); n++)
     {
-      auto & operandType = operandPorts[n + 2].type();
-      auto & resultType = resultPorts[n].type();
+      auto & operandType = *operandTypes[n + 2];
+      auto & resultType = *resultTypes[n];
       JLM_ASSERT(operandType == resultType);
       JLM_ASSERT(is<rvsdg::statetype>(operandType));
     }
@@ -148,8 +148,20 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-          CreateOperandPorts(storedType, numMemoryStates),
-          std::vector<jlm::rvsdg::port>(numMemoryStates, { MemoryStateType() }),
+          CreateOperandTypes(
+              std::static_pointer_cast<const rvsdg::valuetype>(storedType.copy()),
+              numMemoryStates),
+          { numMemoryStates, MemoryStateType::Create() },
+          alignment)
+  {}
+
+  StoreNonVolatileOperation(
+      std::shared_ptr<const rvsdg::valuetype> storedType,
+      size_t numMemoryStates,
+      size_t alignment)
+      : StoreOperation(
+          CreateOperandTypes(std::move(storedType), numMemoryStates),
+          { numMemoryStates, MemoryStateType::Create() },
           alignment)
   {}
 
@@ -193,13 +205,16 @@ private:
     throw util::error("Expected value type");
   }
 
-  static std::vector<rvsdg::port>
-  CreateOperandPorts(const rvsdg::valuetype & storedType, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateOperandTypes(std::shared_ptr<const rvsdg::valuetype> storedType, size_t numMemoryStates)
   {
-    std::vector<rvsdg::port> ports({ PointerType(), storedType });
-    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    return ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> types(
+        { PointerType::Create(), std::move(storedType) });
+    std::vector<std::shared_ptr<const rvsdg::type>> states(
+        numMemoryStates,
+        MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    return types;
   }
 };
 
@@ -411,8 +426,20 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-          CreateOperandPorts(storedType, numMemoryStates),
-          CreateResultPorts(numMemoryStates),
+          CreateOperandTypes(
+              std::static_pointer_cast<const rvsdg::valuetype>(storedType.copy()),
+              numMemoryStates),
+          CreateResultTypes(numMemoryStates),
+          alignment)
+  {}
+
+  StoreVolatileOperation(
+      std::shared_ptr<const rvsdg::valuetype> storedType,
+      size_t numMemoryStates,
+      size_t alignment)
+      : StoreOperation(
+          CreateOperandTypes(std::move(storedType), numMemoryStates),
+          CreateResultTypes(numMemoryStates),
           alignment)
   {}
 
@@ -452,22 +479,27 @@ private:
     throw jlm::util::error("Expected value type");
   }
 
-  static std::vector<rvsdg::port>
-  CreateOperandPorts(const rvsdg::valuetype & storedType, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateOperandTypes(std::shared_ptr<const rvsdg::valuetype> storedType, size_t numMemoryStates)
   {
-    std::vector<rvsdg::port> ports({ PointerType(), storedType, iostatetype() });
-    std::vector<rvsdg::port> states(numMemoryStates, { MemoryStateType() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    return ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> types(
+        { PointerType::Create(), std::move(storedType), iostatetype::Create() });
+    std::vector<std::shared_ptr<const rvsdg::type>> states(
+        numMemoryStates,
+        MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    return types;
   }
 
-  static std::vector<rvsdg::port>
-  CreateResultPorts(size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::type>>
+  CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<rvsdg::port> ports({ iostatetype() });
-    std::vector<rvsdg::port> memoryStates(numMemoryStates, { MemoryStateType() });
-    ports.insert(ports.end(), memoryStates.begin(), memoryStates.end());
-    return ports;
+    std::vector<std::shared_ptr<const rvsdg::type>> types({ iostatetype::Create() });
+    std::vector<std::shared_ptr<const rvsdg::type>> memoryStates(
+        numMemoryStates,
+        MemoryStateType::Create());
+    types.insert(types.end(), memoryStates.begin(), memoryStates.end());
+    return types;
   }
 };
 

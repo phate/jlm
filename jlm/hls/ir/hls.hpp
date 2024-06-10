@@ -25,8 +25,8 @@ class branch_op final : public jlm::rvsdg::simple_op
 private:
   branch_op(size_t nalternatives, const jlm::rvsdg::type & type, bool loop)
       : jlm::rvsdg::simple_op(
-          { jlm::rvsdg::ctltype(nalternatives), type },
-          std::vector<jlm::rvsdg::port>(nalternatives, type)),
+          { jlm::rvsdg::ctltype::Create(nalternatives), type.copy() },
+          { nalternatives, type.copy() }),
         loop(loop)
   {}
 
@@ -77,7 +77,7 @@ public:
   {}
 
   fork_op(size_t nalternatives, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ type }, std::vector<jlm::rvsdg::port>(nalternatives, type))
+      : jlm::rvsdg::simple_op({ type.copy() }, { nalternatives, type.copy() })
   {}
 
   bool
@@ -117,7 +117,7 @@ public:
   {}
 
   merge_op(size_t nalternatives, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>(nalternatives, type), { type })
+      : jlm::rvsdg::simple_op({ nalternatives, type.copy() }, { type.copy() })
   {}
 
   bool
@@ -158,7 +158,7 @@ public:
   {}
 
   mux_op(size_t nalternatives, const jlm::rvsdg::type & type, bool discarding, bool loop)
-      : jlm::rvsdg::simple_op(create_portvector(nalternatives, type), { type }),
+      : jlm::rvsdg::simple_op(create_typevector(nalternatives, type.copy()), { type.copy() }),
         discarding(discarding),
         loop(loop)
   {}
@@ -210,11 +210,12 @@ public:
   bool discarding;
   bool loop; // used only for dot output
 private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t nalternatives, const jlm::rvsdg::type & type)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  create_typevector(size_t nalternatives, std::shared_ptr<const jlm::rvsdg::type> type)
   {
-    auto vec = std::vector<jlm::rvsdg::port>(nalternatives + 1, type);
-    vec[0] = jlm::rvsdg::ctltype(nalternatives);
+    auto vec =
+        std::vector<std::shared_ptr<const jlm::rvsdg::type>>(nalternatives + 1, std::move(type));
+    vec[0] = jlm::rvsdg::ctltype::Create(nalternatives);
     return vec;
   }
 };
@@ -226,7 +227,7 @@ public:
   {}
 
   sink_op(const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ type }, {})
+      : jlm::rvsdg::simple_op({ type.copy() }, {})
   {}
 
   bool
@@ -264,7 +265,7 @@ public:
   {}
 
   predicate_buffer_op(const jlm::rvsdg::ctltype & type)
-      : jlm::rvsdg::simple_op({ type }, { type })
+      : jlm::rvsdg::simple_op({ type.copy() }, { type.copy() })
   {}
 
   bool
@@ -305,7 +306,7 @@ public:
   {}
 
   loop_constant_buffer_op(const jlm::rvsdg::ctltype & ctltype, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ ctltype, type }, { type })
+      : jlm::rvsdg::simple_op({ ctltype.copy(), type.copy() }, { type.copy() })
   {}
 
   bool
@@ -347,7 +348,7 @@ public:
   {}
 
   buffer_op(const jlm::rvsdg::type & type, size_t capacity, bool pass_through)
-      : jlm::rvsdg::simple_op({ type }, { type }),
+      : jlm::rvsdg::simple_op({ type.copy() }, { type.copy() }),
         capacity(capacity),
         pass_through(pass_through)
   {}
@@ -427,7 +428,7 @@ public:
   {}
 
   trigger_op(const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ trigger, type }, { type })
+      : jlm::rvsdg::simple_op({ trigger.copy(), type.copy() }, { type.copy() })
   {}
 
   bool
@@ -473,7 +474,7 @@ public:
   {}
 
   print_op(const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op({ type }, { type })
+      : jlm::rvsdg::simple_op({ type.copy() }, { type.copy() })
   {
     static size_t common_id{ 0 };
     _id = common_id++;
@@ -557,7 +558,7 @@ public:
 
 private:
   backedge_argument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::argument(region, nullptr, type),
+      : jlm::rvsdg::argument(region, nullptr, type.copy()),
         result_(nullptr)
   {}
 
@@ -742,7 +743,7 @@ public:
   {}
 
   load_op(const rvsdg::valuetype & pointeeType, size_t numStates)
-      : simple_op(CreateInPorts(pointeeType, numStates), CreateOutPorts(pointeeType, numStates))
+      : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
   {}
 
   bool
@@ -754,24 +755,30 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const rvsdg::valuetype & pointeeType, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const rvsdg::valuetype & pointeeType, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { llvm::PointerType::Create() }); // addr
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    ports.emplace_back(pointeeType); // result
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
+        1,
+        llvm::PointerType::Create()); // addr
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    types.emplace_back(pointeeType.copy()); // result
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const rvsdg::valuetype & pointeeType, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const rvsdg::valuetype & pointeeType, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { pointeeType });
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    ports.emplace_back(llvm::PointerType::Create()); // addr
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, pointeeType.copy());
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    types.emplace_back(llvm::PointerType::Create()); // addr
+    return types;
   }
 
   std::string
@@ -821,7 +828,7 @@ public:
   {}
 
   addr_queue_op(const llvm::PointerType & pointerType, size_t capacity, bool combinatorial)
-      : simple_op(CreateInPorts(pointerType), CreateOutPorts(pointerType)),
+      : simple_op(CreateInTypes(pointerType), CreateOutTypes(pointerType)),
         combinatorial(combinatorial),
         capacity(capacity)
   {}
@@ -835,19 +842,19 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const llvm::PointerType & pointerType)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const llvm::PointerType & pointerType)
   {
     // check, enq
-    std::vector<jlm::rvsdg::port> ports(2, { pointerType });
-    ports.emplace_back(llvm::MemoryStateType::Create()); // deq
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(2, pointerType.copy());
+    types.emplace_back(llvm::MemoryStateType::Create()); // deq
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const llvm::PointerType & pointerType)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const llvm::PointerType & pointerType)
   {
-    return { pointerType };
+    return { pointerType.copy() };
   }
 
   std::string
@@ -891,7 +898,7 @@ public:
   {}
 
   state_gate_op(const jlm::rvsdg::type & type, size_t numStates)
-      : simple_op(CreateInOutPorts(type, numStates), CreateInOutPorts(type, numStates))
+      : simple_op(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
   {}
 
   bool
@@ -902,13 +909,15 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInOutPorts(const jlm::rvsdg::type & type, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInOutTypes(const jlm::rvsdg::type & type, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { type });
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, type.copy());
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    return types;
   }
 
   std::string
@@ -942,7 +951,7 @@ public:
   {}
 
   decoupled_load_op(const rvsdg::valuetype & pointeeType)
-      : simple_op(CreateInPorts(pointeeType), CreateOutPorts(pointeeType))
+      : simple_op(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
   {}
 
   bool
@@ -953,20 +962,20 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const rvsdg::valuetype & pointeeType)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const rvsdg::valuetype & pointeeType)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { llvm::PointerType() });
-    ports.emplace_back(pointeeType); // result
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, llvm::PointerType::Create());
+    types.emplace_back(pointeeType.copy()); // result
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const rvsdg::valuetype & pointeeType)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const rvsdg::valuetype & pointeeType)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { pointeeType });
-    ports.emplace_back(llvm::PointerType()); // addr
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, pointeeType.copy());
+    types.emplace_back(llvm::PointerType::Create()); // addr
+    return types;
   }
 
   std::string
@@ -1011,7 +1020,7 @@ public:
   {}
 
   mem_resp_op(const std::vector<const rvsdg::valuetype *> & output_types)
-      : simple_op(CreateInPorts(output_types), CreateOutPorts(output_types))
+      : simple_op(CreateInTypes(output_types), CreateOutTypes(output_types))
   {}
 
   bool
@@ -1023,8 +1032,8 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const std::vector<const rvsdg::valuetype *> & output_types)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const std::vector<const rvsdg::valuetype *> & output_types)
   {
     size_t max_width = 64;
     // TODO: calculate size onece JlmSize is moved
@@ -1033,21 +1042,21 @@ public:
     //                    auto sz = jlm::hls::BaseHLS::JlmSize(tp);
     //                    max_width = sz>max_width?sz:max_width;
     //                }
-    std::vector<jlm::rvsdg::port> ports;
-    ports.emplace_back(get_mem_res_type(jlm::rvsdg::bittype(max_width)));
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types;
+    types.emplace_back(get_mem_res_type(jlm::rvsdg::bittype(max_width)));
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const std::vector<const rvsdg::valuetype *> & output_types)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const std::vector<const rvsdg::valuetype *> & output_types)
   {
-    std::vector<jlm::rvsdg::port> ports;
-    ports.reserve(output_types.size());
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types;
+    types.reserve(output_types.size());
     for (auto outputType : output_types)
     {
-      ports.emplace_back(*outputType);
+      types.emplace_back(outputType->copy());
     }
-    return ports;
+    return types;
   }
 
   std::string
@@ -1086,7 +1095,7 @@ public:
   mem_req_op(
       const std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
-      : simple_op(CreateInPorts(load_types, store_types), CreateOutPorts(load_types, store_types))
+      : simple_op(CreateInTypes(load_types, store_types), CreateOutTypes(load_types, store_types))
   {
     LoadTypes_ = new std::vector<std::shared_ptr<const rvsdg::type>>();
     StoreTypes_ = new std::vector<std::shared_ptr<const rvsdg::type>>();
@@ -1129,26 +1138,26 @@ public:
         && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(
       const std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
   {
-    std::vector<jlm::rvsdg::port> ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types;
     for (size_t i = 0; i < load_types.size(); i++)
     {
-      ports.emplace_back(llvm::PointerType()); // addr
+      types.emplace_back(llvm::PointerType::Create()); // addr
     }
     for (auto storeType : store_types)
     {
-      ports.emplace_back(llvm::PointerType()); // addr
-      ports.emplace_back(*storeType);          // data
+      types.emplace_back(llvm::PointerType::Create()); // addr
+      types.emplace_back(storeType->copy());           // data
     }
-    return ports;
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(
       const std::vector<const rvsdg::valuetype *> & load_types,
       const std::vector<const rvsdg::valuetype *> & store_types)
   {
@@ -1163,9 +1172,9 @@ public:
     //                    auto sz = jlm::hls::BaseHLS::JlmSize(tp);
     //                    max_width = sz>max_width?sz:max_width;
     //                }
-    std::vector<jlm::rvsdg::port> ports;
-    ports.emplace_back(get_mem_req_type(jlm::rvsdg::bittype(max_width), !store_types.empty()));
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types;
+    types.emplace_back(get_mem_req_type(jlm::rvsdg::bittype(max_width), !store_types.empty()));
+    return types;
   }
 
   std::string
@@ -1231,7 +1240,7 @@ public:
   {}
 
   store_op(const rvsdg::valuetype & pointeeType, size_t numStates)
-      : simple_op(CreateInPorts(pointeeType, numStates), CreateOutPorts(pointeeType, numStates))
+      : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
   {}
 
   bool
@@ -1243,22 +1252,27 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const rvsdg::valuetype & pointeeType, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const rvsdg::valuetype & pointeeType, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports({ llvm::PointerType(), pointeeType });
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
+        { llvm::PointerType::Create(), pointeeType.copy() });
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const rvsdg::valuetype & pointeeType, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const rvsdg::valuetype & pointeeType, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(numStates, { llvm::MemoryStateType::Create() });
-    ports.emplace_back(llvm::PointerType()); // addr
-    ports.emplace_back(pointeeType);         // data
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.emplace_back(llvm::PointerType::Create()); // addr
+    types.emplace_back(pointeeType.copy());          // data
+    return types;
   }
 
   std::string
@@ -1307,7 +1321,7 @@ public:
   {}
 
   local_mem_op(const llvm::arraytype & at)
-      : simple_op({}, CreateOutPorts(at))
+      : simple_op({}, CreateOutTypes(at))
   {}
 
   bool
@@ -1319,11 +1333,11 @@ public:
     return false;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const llvm::arraytype & at)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const llvm::arraytype & at)
   {
-    std::vector<jlm::rvsdg::port> ports(2, { at });
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(2, { at.copy() });
+    return types;
   }
 
   std::string
@@ -1353,7 +1367,7 @@ public:
   {}
 
   local_mem_resp_op(const jlm::llvm::arraytype & at, size_t resp_count)
-      : simple_op({ at }, CreateOutPorts(at, resp_count))
+      : simple_op({ at.copy() }, CreateOutTypes(at, resp_count))
   {}
 
   bool
@@ -1365,11 +1379,13 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const jlm::llvm::arraytype & at, size_t resp_count)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const jlm::llvm::arraytype & at, size_t resp_count)
   {
-    std::vector<jlm::rvsdg::port> ports(resp_count, at.element_type());
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
+        resp_count,
+        at.element_type().copy());
+    return types;
   }
 
   std::string
@@ -1401,7 +1417,7 @@ public:
   {}
 
   local_load_op(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
-      : simple_op(CreateInPorts(valuetype, numStates), CreateOutPorts(valuetype, numStates))
+      : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
@@ -1413,24 +1429,28 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { *jlm::rvsdg::bittype::Create(64) });
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    ports.emplace_back(valuetype); // result
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, jlm::rvsdg::bittype::Create(64));
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    types.emplace_back(valuetype.copy()); // result
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { valuetype });
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, valuetype.copy());
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+    return types;
   }
 
   std::string
@@ -1475,7 +1495,7 @@ public:
   {}
 
   local_store_op(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
-      : simple_op(CreateInPorts(valuetype, numStates), CreateOutPorts(valuetype, numStates))
+      : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
@@ -1487,22 +1507,27 @@ public:
     return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports({ *jlm::rvsdg::bittype::Create(64), valuetype });
-    std::vector<jlm::rvsdg::port> states(numStates, { llvm::MemoryStateType::Create() });
-    ports.insert(ports.end(), states.begin(), states.end());
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
+        { jlm::rvsdg::bittype::Create(64), valuetype.copy() });
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> states(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.insert(types.end(), states.begin(), states.end());
+    return types;
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateOutPorts(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateOutTypes(const jlm::rvsdg::valuetype & valuetype, size_t numStates)
   {
-    std::vector<jlm::rvsdg::port> ports(numStates, { llvm::MemoryStateType::Create() });
-    ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
-    ports.emplace_back(valuetype);                        // data
-    return ports;
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
+        numStates,
+        llvm::MemoryStateType::Create());
+    types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+    types.emplace_back(valuetype.copy());                // data
+    return types;
   }
 
   std::string
@@ -1547,7 +1572,7 @@ public:
   {}
 
   local_mem_req_op(const jlm::llvm::arraytype & at, size_t load_cnt, size_t store_cnt)
-      : simple_op(CreateInPorts(at, load_cnt, store_cnt), {})
+      : simple_op(CreateInTypes(at, load_cnt, store_cnt), {})
   {}
 
   bool
@@ -1561,20 +1586,20 @@ public:
         && ot->narguments() == narguments();
   }
 
-  static std::vector<jlm::rvsdg::port>
-  CreateInPorts(const jlm::llvm::arraytype & at, size_t load_cnt, size_t store_cnt)
+  static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
+  CreateInTypes(const jlm::llvm::arraytype & at, size_t load_cnt, size_t store_cnt)
   {
-    std::vector<jlm::rvsdg::port> ports(1, at);
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(1, at.copy());
     for (size_t i = 0; i < load_cnt; ++i)
     {
-      ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
+      types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
     }
     for (size_t i = 0; i < store_cnt; ++i)
     {
-      ports.emplace_back(*jlm::rvsdg::bittype::Create(64)); // addr
-      ports.emplace_back(at.element_type());                // data
+      types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+      types.emplace_back(at.element_type().copy());        // data
     }
-    return ports;
+    return types;
   }
 
   std::string

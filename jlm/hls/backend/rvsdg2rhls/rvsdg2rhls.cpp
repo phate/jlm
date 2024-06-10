@@ -211,11 +211,11 @@ convert_alloca(jlm::rvsdg::region * region)
       }
       else
       {
-        llvm::ConstantAggregateZero cop(po->value_type());
+        llvm::ConstantAggregateZero cop(po->value_type().copy());
         cout = jlm::rvsdg::simple_node::create_normalized(db->subregion(), cop, {})[0];
       }
       auto delta = db->finalize(cout);
-      region->graph()->add_export(delta, { delta_type, delta_name });
+      region->graph()->add_export(delta, { delta_type.copy(), delta_name });
       auto delta_local = route_to_region(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
@@ -286,7 +286,7 @@ llvm::lambda::node *
 change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 {
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->type(), ln->name(), link, ln->attributes());
+      llvm::lambda::node::create(ln->region(), ln->Type(), ln->name(), link, ln->attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
@@ -377,7 +377,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), arg);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          rm.Rvsdg().add_export(odn->output(), { odn->output()->type(), odn->name() });
+          rm.Rvsdg().add_export(odn->output(), { odn->output()->Type(), odn->name() });
         }
         else
         {
@@ -391,7 +391,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           rhls->Rvsdg().root(),
           new_ln->output(),
           nullptr,
-          new_ln->output()->type());
+          new_ln->output()->Type());
       // add function as input to rm and remove it
       llvm::impport im(
           ln->type(),

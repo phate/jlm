@@ -50,8 +50,8 @@ node::output(size_t n) const noexcept
 cvargument *
 node::add_ctxvar(jlm::rvsdg::output * origin)
 {
-  auto input = cvinput::create(this, origin, origin->type());
-  return cvargument::create(subregion(), input, origin->type());
+  auto input = cvinput::create(this, origin, origin->Type());
+  return cvargument::create(subregion(), input, origin->Type());
 }
 
 phi::node *
@@ -123,6 +123,20 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
 
 rvoutput *
 builder::add_recvar(const jlm::rvsdg::type & type)
+{
+  if (!node_)
+    return nullptr;
+
+  auto argument = rvargument::create(subregion(), type.copy());
+  auto output = rvoutput::create(node_, argument, type.copy());
+  rvresult::create(subregion(), argument, output, type.copy());
+  argument->output_ = output;
+
+  return output;
+}
+
+rvoutput *
+builder::add_recvar(std::shared_ptr<const jlm::rvsdg::type> type)
 {
   if (!node_)
     return nullptr;

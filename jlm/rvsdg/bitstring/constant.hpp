@@ -21,10 +21,10 @@ namespace jlm::rvsdg
 
 struct type_of_value
 {
-  bittype
+  std::shared_ptr<const bittype>
   operator()(const bitvalue_repr & repr) const
   {
-    return bittype(repr.nbits());
+    return bittype::Create(repr.nbits());
   }
 };
 

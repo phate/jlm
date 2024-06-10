@@ -246,9 +246,9 @@ decouple_load(
           else
           {
             auto new_in =
-                jlm::rvsdg::structural_input::create(new_loop, arg->input()->origin(), arg->type());
+                jlm::rvsdg::structural_input::create(new_loop, arg->input()->origin(), arg->Type());
             smap.insert(arg->input(), new_in);
-            new_arg = jlm::rvsdg::argument::create(new_loop->subregion(), new_in, arg->type());
+            new_arg = jlm::rvsdg::argument::create(new_loop->subregion(), new_in, arg->Type());
           }
           smap.insert(arg, new_arg);
           continue;
@@ -296,12 +296,12 @@ decouple_load(
       }
       auto new_res_origin = smap.lookup(res->origin());
       auto new_state_output =
-          jlm::rvsdg::structural_output::create(new_loop, new_res_origin->port());
+          jlm::rvsdg::structural_output::create(new_loop, new_res_origin->Type());
       jlm::rvsdg::result::create(
           new_loop->subregion(),
           new_res_origin,
           new_state_output,
-          new_res_origin->type());
+          new_res_origin->Type());
       res->output()->divert_users(new_state_output);
     }
   }
@@ -332,8 +332,8 @@ decouple_load(
 
   // create output for address
   auto load_addr = gate_out[0];
-  auto addr_output = jlm::rvsdg::structural_output::create(new_loop, load_addr->port());
-  jlm::rvsdg::result::create(new_loop->subregion(), load_addr, addr_output, load_addr->type());
+  auto addr_output = jlm::rvsdg::structural_output::create(new_loop, load_addr->Type());
+  jlm::rvsdg::result::create(new_loop->subregion(), load_addr, addr_output, load_addr->Type());
   // trace and remove loop input for mem data reponse
   auto mem_data_loop_out = new_load->input(new_load->ninputs() - 1)->origin();
   auto mem_data_loop_arg = dynamic_cast<jlm::rvsdg::argument *>(mem_data_loop_out);
@@ -363,9 +363,9 @@ decouple_load(
   // use a buffer here to make ready logic for response easy and consistent
   auto buf = buffer_op::create(*dload_out[0], 2, true)[0];
   // replace data output of loadNode
-  auto old_data_in = jlm::rvsdg::structural_input::create(loopNode, buf, dload_out[0]->type());
+  auto old_data_in = jlm::rvsdg::structural_input::create(loopNode, buf, dload_out[0]->Type());
   auto old_data_arg =
-      jlm::rvsdg::argument::create(loopNode->subregion(), old_data_in, dload_out[0]->type());
+      jlm::rvsdg::argument::create(loopNode->subregion(), old_data_in, dload_out[0]->Type());
   loadNode->output(0)->divert_users(old_data_arg);
   remove(loadNode);
 }

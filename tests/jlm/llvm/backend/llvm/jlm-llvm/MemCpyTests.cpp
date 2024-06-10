@@ -20,9 +20,9 @@ MemCpyConversion()
 
   // Arrange
   PointerType pointerType;
-  MemoryStateType memoryStateType;
+  auto memoryStateType = MemoryStateType::Create();
   jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType(
+  auto functionType = FunctionType::Create(
       { PointerType::Create(),
         PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
@@ -87,9 +87,9 @@ MemCpyVolatileConversion()
   // Arrange
   PointerType pointerType;
   iostatetype ioStateType;
-  MemoryStateType memoryStateType;
+  auto memoryStateType = MemoryStateType::Create();
   jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType(
+  auto functionType = FunctionType::Create(
       { PointerType::Create(),
         PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),

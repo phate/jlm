@@ -915,14 +915,14 @@ ConvertAggregationTreeToLambda(
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
-    const FunctionType & functionType,
+    std::shared_ptr<const FunctionType> functionType,
     const linkage & functionLinkage,
     const attributeset & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = lambda::node::create(
       &scopedVariableMap.GetTopRegion(),
-      functionType,
+      std::move(functionType),
       functionName,
       functionLinkage,
       functionAttributes);
@@ -964,7 +964,7 @@ ConvertControlFlowGraph(
       *demandMap,
       regionalizedVariableMap,
       functionName,
-      functionNode.fcttype(),
+      functionNode.GetFunctionType(),
       functionNode.linkage(),
       functionNode.attributes(),
       statisticsCollector);
@@ -1108,7 +1108,7 @@ ConvertStronglyConnectedComponent(
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, output);
 
     if (requiresExport(*ipgNode))
-      graph.add_export(output, { output->type(), ipgNodeVariable->name() });
+      graph.add_export(output, { output->Type(), ipgNodeVariable->name() });
 
     return;
   }
@@ -1171,7 +1171,7 @@ ConvertStronglyConnectedComponent(
     auto recursionVariable = recursionVariables[ipgNodeVariable];
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable);
     if (requiresExport(*ipgNode))
-      graph.add_export(recursionVariable, { recursionVariable->type(), ipgNodeVariable->name() });
+      graph.add_export(recursionVariable, { recursionVariable->Type(), ipgNodeVariable->name() });
   }
 }
 

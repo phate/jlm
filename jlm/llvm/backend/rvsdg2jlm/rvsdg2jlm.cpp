@@ -418,7 +418,7 @@ convert_lambda_node(const rvsdg::node & node, context & ctx)
   auto f = function_node::create(
       clg,
       lambda->name(),
-      lambda->type(),
+      lambda->Type(),
       lambda->linkage(),
       lambda->attributes());
   auto v = module.create_variable(f);
@@ -454,7 +454,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
       auto f = function_node::create(
           ipg,
           lambda->name(),
-          lambda->type(),
+          lambda->Type(),
           lambda->linkage(),
           lambda->attributes());
       ctx.insert(subregion->argument(n), module.create_variable(f));
@@ -558,7 +558,11 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
     auto import = static_cast<const llvm::impport *>(&argument->port());
     if (auto ftype = is_function_import(argument))
     {
-      auto f = function_node::create(ipg, import->name(), *ftype, import->linkage());
+      auto f = function_node::create(
+          ipg,
+          import->name(),
+          std::static_pointer_cast<const FunctionType>(ftype->copy()),
+          import->linkage());
       auto v = im.create_variable(f);
       ctx.insert(argument, v);
     }

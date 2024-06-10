@@ -19,20 +19,20 @@ TestCopy()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
-  FunctionType functionType(
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto functionType = FunctionType::Create(
       { valueType, iostatetype::Create(), MemoryStateType::Create() },
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::graph rvsdg;
-  auto function1 = rvsdg.add_import({ PointerType(), "function1" });
-  auto value1 = rvsdg.add_import({ *valueType, "value1" });
+  auto function1 = rvsdg.add_import({ PointerType::Create(), "function1" });
+  auto value1 = rvsdg.add_import({ valueType, "value1" });
   auto iOState1 = rvsdg.add_import({ iOStateType, "iOState1" });
   auto memoryState1 = rvsdg.add_import({ memoryStateType, "memoryState1" });
 
-  auto function2 = rvsdg.add_import({ PointerType(), "function2" });
-  auto value2 = rvsdg.add_import({ *valueType, "value2" });
+  auto function2 = rvsdg.add_import({ PointerType::Create(), "function2" });
+  auto value2 = rvsdg.add_import({ valueType, "value2" });
   auto iOState2 = rvsdg.add_import({ iOStateType, "iOState2" });
   auto memoryState2 = rvsdg.add_import({ memoryStateType, "memoryState2" });
 
@@ -56,15 +56,15 @@ TestCallNodeAccessors()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
-  FunctionType functionType(
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto functionType = FunctionType::Create(
       { valueType, iostatetype::Create(), MemoryStateType::Create() },
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::graph rvsdg;
-  auto f = rvsdg.add_import({ PointerType(), "function" });
-  auto v = rvsdg.add_import({ *valueType, "value" });
+  auto f = rvsdg.add_import({ PointerType::Create(), "function" });
+  auto v = rvsdg.add_import({ valueType, "value" });
   auto i = rvsdg.add_import({ iOStateType, "IOState" });
   auto m = rvsdg.add_import({ memoryStateType, "memoryState" });
 
@@ -81,15 +81,15 @@ TestCallNodeAccessors()
 
   assert(callNode.NumResults() == 3);
   assert(callNode.Result(0)->type() == *valueType);
-  assert(callNode.Result(1)->type() == iOStateType);
-  assert(callNode.Result(2)->type() == memoryStateType);
+  assert(callNode.Result(1)->type() == *iOStateType);
+  assert(callNode.Result(2)->type() == *memoryStateType);
 
   assert(callNode.GetFunctionInput()->origin() == f);
   assert(callNode.GetIoStateInput()->origin() == i);
   assert(callNode.GetMemoryStateInput()->origin() == m);
 
-  assert(callNode.GetIoStateOutput()->type() == iOStateType);
-  assert(callNode.GetMemoryStateOutput()->type() == memoryStateType);
+  assert(callNode.GetIoStateOutput()->type() == *iOStateType);
+  assert(callNode.GetMemoryStateOutput()->type() == *memoryStateType);
 }
 
 static void
@@ -99,12 +99,12 @@ TestCallTypeClassifierIndirectCall()
 
   // Arrange
   auto vt = jlm::tests::valuetype::Create();
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
-  FunctionType fcttype1(
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto fcttype1 = FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
-  FunctionType fcttype2(
+  auto fcttype2 = FunctionType::Create(
       { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -133,7 +133,7 @@ TestCallTypeClassifierIndirectCall()
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), { *PointerType::Create(), "f" });
+    graph->add_export(lambda->output(), { PointerType::Create(), "f" });
 
     return std::make_tuple(
         jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
@@ -163,10 +163,10 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
 
-  FunctionType functionTypeG(
+  auto functionTypeG = FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -177,7 +177,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto constant = jlm::tests::test_op::create(lambda->subregion(), {}, { &*vt });
+    auto constant = jlm::tests::test_op::create(lambda->subregion(), {}, { vt });
 
     auto lambdaOutput =
         lambda->finalize({ constant->output(0), iOStateArgument, memoryStateArgument });
@@ -207,10 +207,10 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     };
 
     auto vt = jlm::tests::valuetype::Create();
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
 
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -234,7 +234,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-  graph->add_export(f->output(), { PointerType(), "f" });
+  graph->add_export(f->output(), { PointerType::Create(), "f" });
 
   //	jlm::rvsdg::view(graph->root(), stdout);
 
@@ -259,10 +259,10 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
 
-  FunctionType functionTypeG(
+  auto functionTypeG = FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -273,7 +273,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto c1 = jlm::tests::test_op::create(lambda->subregion(), {}, { &*vt });
+    auto c1 = jlm::tests::test_op::create(lambda->subregion(), {}, { vt });
 
     return lambda->finalize({ c1->output(0), iOStateArgument, memoryStateArgument });
   };
@@ -320,10 +320,10 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     };
 
     auto vt = jlm::tests::valuetype::Create();
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
 
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -332,7 +332,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto value = jlm::tests::test_op::create(lambda->subregion(), {}, { &*vt })->output(0);
+    auto value = jlm::tests::test_op::create(lambda->subregion(), {}, { vt })->output(0);
 
     auto [loopValue, iOState, memoryState, callNode] = SetupOuterTheta(
         lambda->subregion(),
@@ -348,7 +348,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-  graph->add_export(f, { PointerType(), "f" });
+  graph->add_export(f, { PointerType::Create(), "f" });
 
   jlm::rvsdg::view(graph->root(), stdout);
 
@@ -375,15 +375,15 @@ TestCallTypeClassifierRecursiveDirectCall()
   auto SetupFib = [&]()
   {
     PointerType pbit64;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    FunctionType functionType(
+    auto iOStateType = iostatetype::Create();
+    auto memoryStateType = MemoryStateType::Create();
+    auto functionType = FunctionType::Create(
         { jlm::rvsdg::bittype::Create(64),
           PointerType::Create(),
           iostatetype::Create(),
           MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
-    PointerType pt;
+    auto pt = PointerType::Create();
 
     jlm::llvm::phi::builder pb;
     pb.begin(graph->root());

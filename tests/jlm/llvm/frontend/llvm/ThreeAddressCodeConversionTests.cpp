@@ -69,7 +69,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
     resultTypes.emplace_back(operation.result(n).Type());
   }
 
-  FunctionType functionType(operandTypes, resultTypes);
+  auto functionType = FunctionType::Create(operandTypes, resultTypes);
 
   auto functionNode =
       function_node::create(ipgraph, "test", functionType, linkage::external_linkage);
@@ -86,8 +86,8 @@ LoadVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  LoadVolatileOperation operation(valueType, 3, 4);
+  auto valueType = jlm::tests::valuetype::Create();
+  LoadVolatileOperation operation(*valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 
   // Act
@@ -115,7 +115,7 @@ StoreVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   StoreVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 

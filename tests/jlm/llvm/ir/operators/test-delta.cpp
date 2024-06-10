@@ -18,34 +18,34 @@ TestDeltaCreation()
   using namespace jlm::llvm;
 
   // Arrange & Act
-  jlm::tests::valuetype valueType;
-  PointerType pointerType;
+  auto valueType = jlm::tests::valuetype::Create();
+  auto pointerType = PointerType::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto imp = rvsdgModule.Rvsdg().add_import({ valueType, "" });
 
   auto delta1 = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      valueType,
+      *valueType,
       "test-delta1",
       linkage::external_linkage,
       "",
       true);
   auto dep = delta1->add_ctxvar(imp);
   auto d1 =
-      delta1->finalize(jlm::tests::create_testop(delta1->subregion(), { dep }, { &valueType })[0]);
+      delta1->finalize(jlm::tests::create_testop(delta1->subregion(), { dep }, { valueType })[0]);
 
   auto delta2 = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      valueType,
+      *valueType,
       "test-delta2",
       linkage::internal_linkage,
       "",
       false);
-  auto d2 = delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, { &valueType })[0]);
+  auto d2 = delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, { valueType })[0]);
 
-  rvsdgModule.Rvsdg().add_export(d1, { d1->type(), "" });
-  rvsdgModule.Rvsdg().add_export(d2, { d2->type(), "" });
+  rvsdgModule.Rvsdg().add_export(d1, { d1->Type(), "" });
+  rvsdgModule.Rvsdg().add_export(d2, { d2->Type(), "" });
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -54,11 +54,11 @@ TestDeltaCreation()
 
   assert(delta1->linkage() == linkage::external_linkage);
   assert(delta1->constant() == true);
-  assert(delta1->type() == valueType);
+  assert(delta1->type() == *valueType);
 
   assert(delta2->linkage() == linkage::internal_linkage);
   assert(delta2->constant() == false);
-  assert(delta2->type() == valueType);
+  assert(delta2->type() == *valueType);
 }
 
 static void
@@ -67,14 +67,14 @@ TestRemoveDeltaInputsWhere()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
 
   auto deltaNode = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      valueType,
+      *valueType,
       "delta",
       linkage::external_linkage,
       "",
@@ -86,7 +86,7 @@ TestRemoveDeltaInputsWhere()
   auto result = jlm::tests::SimpleNode::Create(
                     *deltaNode->subregion(),
                     { deltaInput1->argument() },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   deltaNode->finalize(result);
@@ -134,14 +134,14 @@ TestPruneDeltaInputs()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
 
   auto deltaNode = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      valueType,
+      *valueType,
       "delta",
       linkage::external_linkage,
       "",
@@ -154,7 +154,7 @@ TestPruneDeltaInputs()
   auto result = jlm::tests::SimpleNode::Create(
                     *deltaNode->subregion(),
                     { deltaInput1->argument() },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   deltaNode->finalize(result);

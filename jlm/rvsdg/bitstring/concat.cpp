@@ -17,9 +17,9 @@ namespace jlm::rvsdg
 jlm::rvsdg::output *
 bitconcat(const std::vector<jlm::rvsdg::output *> & operands)
 {
-  std::vector<jlm::rvsdg::bittype> types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::bittype>> types;
   for (const auto operand : operands)
-    types.push_back(dynamic_cast<const jlm::rvsdg::bittype &>(operand->type()));
+    types.push_back(std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type()));
 
   auto region = operands[0]->region();
   jlm::rvsdg::bitconcat_op op(std::move(types));
@@ -68,13 +68,13 @@ concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
   return nullptr;
 }
 
-std::vector<bittype>
+std::vector<std::shared_ptr<const bittype>>
 types_from_arguments(const std::vector<jlm::rvsdg::output *> & args)
 {
-  std::vector<bittype> types;
+  std::vector<std::shared_ptr<const bittype>> types;
   for (const auto arg : args)
   {
-    types.push_back(static_cast<const bittype &>(arg->type()));
+    types.push_back(std::dynamic_pointer_cast<const bittype>(arg->Type()));
   }
   return types;
 }
@@ -245,25 +245,16 @@ static void __attribute__((constructor)) register_node_normal_form(void)
       get_default_normal_form);
 }
 
-bittype
-bitconcat_op::aggregate_arguments(const std::vector<bittype> & types) noexcept
+std::shared_ptr<const bittype>
+bitconcat_op::aggregate_arguments(
+    const std::vector<std::shared_ptr<const bittype>> & types) noexcept
 {
   size_t total = 0;
   for (const auto & t : types)
   {
-    total += t.nbits();
+    total += t->nbits();
   }
-  return bittype(total);
-}
-
-std::vector<jlm::rvsdg::port>
-bitconcat_op::to_ports(const std::vector<bittype> & types)
-{
-  std::vector<jlm::rvsdg::port> ports;
-  for (const auto & type : types)
-    ports.push_back({ type });
-
-  return ports;
+  return bittype::Create(total);
 }
 
 bitconcat_op::~bitconcat_op() noexcept

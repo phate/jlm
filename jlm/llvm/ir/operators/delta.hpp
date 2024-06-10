@@ -26,7 +26,7 @@ public:
   ~operation() override;
 
   operation(
-      const rvsdg::valuetype & type,
+      std::shared_ptr<const rvsdg::valuetype> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -35,24 +35,12 @@ public:
         name_(name),
         Section_(std::move(section)),
         linkage_(linkage),
-        type_(type.copy())
+        type_(std::move(type))
   {}
 
-  operation(const operation & other)
-      : constant_(other.constant_),
-        name_(other.name_),
-        Section_(other.Section_),
-        linkage_(other.linkage_),
-        type_(other.type_->copy())
-  {}
+  operation(const operation & other) = default;
 
-  operation(operation && other) noexcept
-      : constant_(other.constant_),
-        name_(std::move(other.name_)),
-        Section_(std::move(other.Section_)),
-        linkage_(other.linkage_),
-        type_(std::move(other.type_))
-  {}
+  operation(operation && other) noexcept = default;
 
   operation &
   operator=(const operation &) = delete;
@@ -288,7 +276,40 @@ public:
       std::string section,
       bool constant)
   {
-    delta::operation op(type, name, linkage, std::move(section), constant);
+    delta::operation op(
+        std::static_pointer_cast<const rvsdg::valuetype>(type.copy()),
+        name,
+        linkage,
+        std::move(section),
+        constant);
+    return new delta::node(parent, std::move(op));
+  }
+
+  /**
+   * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
+   * After the invocation of \ref Create(), the delta node has no inputs or outputs.
+   * Free variables can be added to the delta node using \ref add_ctxvar(). The generation of the
+   * node can be finished using the \ref finalize() method.
+   *
+   * \param parent The region where the delta node is created.
+   * \param type The delta node's type.
+   * \param name The delta node's name.
+   * \param linkage The delta node's linkage.
+   * \param section The delta node's section.
+   * \param constant True, if the delta node is constant, otherwise false.
+   *
+   * \return A delta node without inputs or outputs.
+   */
+  static node *
+  Create(
+      rvsdg::region * parent,
+      std::shared_ptr<const rvsdg::valuetype> type,
+      const std::string & name,
+      const llvm::linkage & linkage,
+      std::string section,
+      bool constant)
+  {
+    delta::operation op(std::move(type), name, linkage, std::move(section), constant);
     return new delta::node(parent, std::move(op));
   }
 
@@ -314,7 +335,7 @@ public:
 
 private:
   cvinput(delta::node * node, rvsdg::output * origin)
-      : structural_input(node, origin, origin->port())
+      : structural_input(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -384,15 +405,26 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-private:
   output(delta::node * node, const rvsdg::port & port)
-      : structural_output(node, port)
+      : structural_output(node, port.Type())
   {}
 
+  output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type))
+  {}
+
+private:
   static output *
   create(delta::node * node, const rvsdg::port & port)
   {
-    auto output = std::unique_ptr<delta::output>(new delta::output(node, port));
+    auto output = std::make_unique<delta::output>(node, port);
+    return static_cast<delta::output *>(node->append_output(std::move(output)));
+  }
+
+  static output *
+  create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  {
+    auto output = std::make_unique<delta::output>(node, std::move(type));
     return static_cast<delta::output *>(node->append_output(std::move(output)));
   }
 

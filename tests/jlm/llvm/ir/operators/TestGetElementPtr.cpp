@@ -19,14 +19,14 @@ TestOperationEquality()
   auto declaration2 =
       StructType::Declaration::Create({ arrayType, jlm::rvsdg::bittype::Create(32) });
 
-  StructType structType1(false, *declaration1);
-  StructType structType2("myStructType", false, *declaration2);
+  auto structType1 = StructType::Create(false, *declaration1);
+  auto structType2 = StructType::Create("myStructType", false, *declaration2);
 
   GetElementPtrOperation operation1(
-      { *jlm::rvsdg::bittype::Create(32), *jlm::rvsdg::bittype::Create(32) },
+      { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) },
       structType1);
   GetElementPtrOperation operation2(
-      { *jlm::rvsdg::bittype::Create(32), *jlm::rvsdg::bittype::Create(32) },
+      { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) },
       structType2);
 
   assert(operation1 != operation2);

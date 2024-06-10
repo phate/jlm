@@ -29,8 +29,8 @@ class impport : public port
 public:
   virtual ~impport();
 
-  impport(const jlm::rvsdg::type & type, const std::string & name)
-      : port(type),
+  impport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+      : port(std::move(type)),
         name_(name)
   {}
 
@@ -73,8 +73,8 @@ class expport : public port
 public:
   virtual ~expport();
 
-  expport(const jlm::rvsdg::type & type, const std::string & name)
-      : port(type),
+  expport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+      : port(std::move(type)),
         name_(name)
   {}
 

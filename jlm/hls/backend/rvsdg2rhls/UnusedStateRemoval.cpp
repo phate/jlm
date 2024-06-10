@@ -62,7 +62,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     }
   }
 
-  llvm::FunctionType newFunctionType(newArgumentTypes, newResultTypes);
+  auto newFunctionType = llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = llvm::lambda::node::create(
       lambdaNode.region(),
       newFunctionType,
@@ -114,7 +114,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
       newLambda->region(),
       newLambdaOutput,
       nullptr,
-      newLambdaOutput->type());
+      newLambdaOutput->Type());
 }
 
 static void

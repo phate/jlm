@@ -439,7 +439,7 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region 
   {
     resultTypes.push_back(ConvertType(returnType)->copy());
   }
-  llvm::FunctionType functionType(std::move(argumentTypes), std::move(resultTypes));
+  auto functionType = llvm::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 
   // FIXME
   // The linkage should be part of the MLIR attributes so it can be extracted here

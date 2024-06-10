@@ -31,9 +31,7 @@ class port
 public:
   virtual ~port();
 
-  port(const jlm::rvsdg::type & type);
-
-  port(std::shared_ptr<const jlm::rvsdg::type> type);
+  explicit port(std::shared_ptr<const jlm::rvsdg::type> type);
 
   port(const port & other) = default;
 
@@ -118,11 +116,18 @@ public:
   virtual ~simple_op();
 
   inline simple_op(
-      const std::vector<jlm::rvsdg::port> & operands,
-      const std::vector<jlm::rvsdg::port> & results)
-      : results_(results),
-        operands_(operands)
-  {}
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> results)
+  {
+    for (auto & op : operands)
+    {
+      operands_.push_back(port(std::move(op)));
+    }
+    for (auto & res : results)
+    {
+      results_.push_back(port(std::move(res)));
+    }
+  }
 
   size_t
   narguments() const noexcept;
