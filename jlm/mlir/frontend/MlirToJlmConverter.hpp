@@ -106,7 +106,7 @@ private:
    * \param mlirOp The MLIR operation that the inputs are retrieved for.
    * \param operationsMap The map of operations that have been converted.
    * \param rvsdgRegion The RVSDG region that the inputs are retrieved from (if it's a region
-   * argument). \param inputs The vector that the inputs are stored in.
+   * argument). \return The vector that is populated with the inputs.
    */
   static ::llvm::SmallVector<jlm::rvsdg::output *>
   GetConvertedInputs(

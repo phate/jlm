@@ -90,7 +90,7 @@ private:
    * \param node The RVSDG node to get the inputs for.
    * \param operationsMap A map of RVSDG nodes to their corresponding MLIR operations.
    * \param block The MLIR block to get argument type inputs from.
-   * \param inputs The vector of inputs to be populated.
+   * \return The vector of inputs to the node.
    */
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
@@ -158,6 +158,7 @@ private:
    * \param gammaNode The RVSDG gamma node to be converted
    * \param block The MLIR RVSDG block to insert the gamma node.
    * \param inputs The inputs to the gamma node.
+   * \return The converted MLIR RVSDG GammaNode.
    */
   ::mlir::Operation *
   ConvertGamma(
