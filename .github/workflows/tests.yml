@@ -65,8 +65,8 @@ jobs:
       - name: Run llvm-test-suite
         run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
 
-  llvm-test-suite-andersen:
-    if: contains(github.event.pull_request.title, '[Andersen]')
+  llvm-test-suite-andersen-agnostic:
+    if: contains(github.event.pull_request.title, '[AndersenAgnostic]')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
       - name: Apply patch
         run: cd jlm-eval-suite && make apply-llvm-git-patch
       - name: Run llvm-test-suite-andersen
-        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen
+        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen-agnostic
 
   llvm-test-suite-steensgaard-agnostic:
     if: contains(github.event.pull_request.title, '[SteensgaardAgnostic]')
