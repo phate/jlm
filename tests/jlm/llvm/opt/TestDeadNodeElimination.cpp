@@ -401,7 +401,7 @@ TestDelta()
   auto z = rvsdg.add_import({ valueType, "z" });
 
   auto deltaNode =
-      delta::node::Create(rvsdg.root(), *valueType, "delta", linkage::external_linkage, "", false);
+      delta::node::Create(rvsdg.root(), valueType, "delta", linkage::external_linkage, "", false);
 
   auto xArgument = deltaNode->add_ctxvar(x);
   deltaNode->add_ctxvar(y);

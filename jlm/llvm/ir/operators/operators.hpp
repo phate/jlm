@@ -1624,7 +1624,7 @@ private:
   {
     std::vector<std::shared_ptr<const rvsdg::type>> types;
     for (size_t n = 0; n < type.GetDeclaration().NumElements(); n++)
-      types.push_back(type.GetDeclaration().GetElement(n).copy());
+      types.push_back(type.GetDeclaration().GetElementType(n));
 
     return types;
   }

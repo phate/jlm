@@ -22,7 +22,7 @@ StoreNonVolatileOperationEquality()
   // Arrange
   MemoryStateType memoryType;
   auto valueType = jlm::tests::valuetype::Create();
-  PointerType pointerType;
+  auto pointerType = PointerType::Create();
 
   StoreNonVolatileOperation operation1(valueType, 2, 4);
   StoreNonVolatileOperation operation2(pointerType, 2, 4);
@@ -52,7 +52,7 @@ StoreVolatileOperationEquality()
   // Arrange
   MemoryStateType memoryType;
   auto valueType = jlm::tests::valuetype::Create();
-  PointerType pointerType;
+  auto pointerType = PointerType::Create();
 
   StoreVolatileOperation operation1(valueType, 2, 4);
   StoreVolatileOperation operation2(pointerType, 2, 4);

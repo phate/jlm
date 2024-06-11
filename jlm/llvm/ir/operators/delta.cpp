@@ -51,7 +51,7 @@ node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> 
 delta::node *
 node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
-  auto delta = Create(region, type(), name(), linkage(), Section(), constant());
+  auto delta = Create(region, Type(), name(), linkage(), Section(), constant());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
