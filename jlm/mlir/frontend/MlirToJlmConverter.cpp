@@ -269,7 +269,7 @@ MlirToJlmConverter::ConvertOperation(
     const ::llvm::SmallVector<rvsdg::output *> & inputs)
 {
 
-  /* #region Arithmetic Integer Operation*/
+  // ** region Arithmetic Integer Operation **
   //! Here the LLVM dialect where only implemented for AddOp. Other operation should maybe be
   //! imported Need to choose which one of mlir::arith or mlir::LLVM to use for the MLIR
   //! representation
@@ -277,7 +277,7 @@ MlirToJlmConverter::ConvertOperation(
   // If the operation was converted it means it has been casted to a bit binary operation
   if (convertedNode)
     return convertedNode;
-  /* #endregion */
+  // ** endregion Arithmetic Integer Operation **
 
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
   {
@@ -318,7 +318,7 @@ MlirToJlmConverter::ConvertOperation(
     return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
   }
 
-  /* #region Structural nodes */
+  // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
     JLM_ASSERT(::mlir::isa<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()));
@@ -386,7 +386,7 @@ MlirToJlmConverter::ConvertOperation(
         mlirMatch.getMapping().size() // numAlternatives
         ));
   }
-  /* #endregion */
+  // ** endregion Structural nodes **
 
   else if (
       ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)

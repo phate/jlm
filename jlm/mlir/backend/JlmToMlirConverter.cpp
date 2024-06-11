@@ -324,7 +324,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(bitOp->ndstbits()),
         inputs[0]);
   }
-  /* #region structural nodes*/
+  // ** region structural nodes **
   else if (auto ctlOp = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&node.operation()))
   {
     MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
@@ -334,7 +334,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
   {
-    /* #region Create the MLIR mapping vector */
+    // ** region Create the MLIR mapping vector **
     //! MLIR match operation can match multiple values to one index
     //! But jlm implements this with multiple mappings
     //! For easy conversion, we only created one mapping per value
@@ -353,7 +353,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getContext(),
         ::llvm::ArrayRef<int64_t>(),
         matchOp->default_alternative()));
-    /* #endregion */
+    // ** endregion Create the MLIR mapping vector **
 
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
         Builder_->getUnknownLoc(),
@@ -361,7 +361,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0],                           // input
         ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
-  /* #endregion structural nodes */
+  // ** endregion structural nodes **
   else
   {
     auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());

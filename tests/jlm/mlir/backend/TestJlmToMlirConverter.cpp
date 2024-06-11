@@ -448,7 +448,7 @@ TestMatch()
         // 3 alternatives + default
         assert(mapping.size() == 4);
 
-        /* #region check alternatives */
+        // ** region check alternatives *$
         for (auto & attr : mapping)
         {
           assert(attr.isa<::mlir::rvsdg::MatchRuleAttr>());
@@ -468,7 +468,7 @@ TestMatch()
               (matchRuleAttr.getIndex() == 0 && value == 4)
               || (matchRuleAttr.getIndex() == 1 && (value == 5 || value == 6)));
         }
-        /* #endregion check alternatives */
+        // ** endregion check alternatives **
       }
     }
     assert(matchFound);
