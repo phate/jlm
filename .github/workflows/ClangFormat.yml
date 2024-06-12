@@ -16,4 +16,4 @@ jobs:
       - name: "Find source files"
         run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
       - name: "Check format"
-        run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
+        run: clang-format-17 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
