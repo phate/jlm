@@ -95,7 +95,7 @@ is_idv(jlm::rvsdg::input * input)
 {
   using namespace jlm::rvsdg;
 
-  auto node = input_node(input);
+  auto node = rvsdg::input::GetNode(*input);
   JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
   auto a = dynamic_cast<jlm::rvsdg::argument *>(input->origin());
