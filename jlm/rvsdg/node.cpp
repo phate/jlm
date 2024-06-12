@@ -87,10 +87,10 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   on_input_change(this, old_origin, new_origin);
 }
 
-jlm::rvsdg::node *
-input::GetNode(const jlm::rvsdg::input & input) noexcept
+rvsdg::node *
+input::GetNode(const rvsdg::input & input) noexcept
 {
-  auto nodeInput = dynamic_cast<const jlm::rvsdg::node_input *>(&input);
+  auto nodeInput = dynamic_cast<const rvsdg::node_input *>(&input);
   return nodeInput ? nodeInput->node() : nullptr;
 }
 

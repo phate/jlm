@@ -185,7 +185,7 @@ push(jlm::rvsdg::gamma_node * gamma)
       auto argument = region->argument(n);
       for (const auto & user : *argument)
       {
-        auto tmp = input_node(user);
+        auto tmp = jlm::rvsdg::input::GetNode(*user);
         if (tmp && tmp->depth() == 0)
           wl.push_back(tmp);
       }
@@ -206,7 +206,7 @@ push(jlm::rvsdg::gamma_node * gamma)
       {
         for (const auto & user : *argument)
         {
-          auto tmp = input_node(user);
+          auto tmp = jlm::rvsdg::input::GetNode(*user);
           if (tmp && tmp->depth() == 0)
             wl.push_back(tmp);
         }
@@ -261,7 +261,7 @@ push_top(jlm::rvsdg::theta_node * theta)
     auto argument = lv->argument();
     for (const auto & user : *argument)
     {
-      auto tmp = input_node(user);
+      auto tmp = jlm::rvsdg::input::GetNode(*user);
       if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
         wl.push_back(tmp);
     }
@@ -284,7 +284,7 @@ push_top(jlm::rvsdg::theta_node * theta)
     {
       for (const auto & user : *argument)
       {
-        auto tmp = input_node(user);
+        auto tmp = jlm::rvsdg::input::GetNode(*user);
         if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
           wl.push_back(tmp);
       }
@@ -361,7 +361,7 @@ pushout_store(jlm::rvsdg::node * storenode)
     std::unordered_set<jlm::rvsdg::input *> users;
     for (const auto & user : *states[n])
     {
-      if (input_node(user) != jlm::rvsdg::node_output::node(nstates[0]))
+      if (jlm::rvsdg::input::GetNode(*user) != jlm::rvsdg::node_output::node(nstates[0]))
         users.insert(user);
     }
 
