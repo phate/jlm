@@ -333,7 +333,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
 static inline bool
 phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
-  auto node = input_node(i);
+  auto node = rvsdg::input::GetNode(*i);
   JLM_ASSERT(is<rvsdg::theta_op>(node));
   auto theta = static_cast<const rvsdg::structural_node *>(node);
   auto input = static_cast<const rvsdg::structural_input *>(i);
