@@ -3588,8 +3588,8 @@ FreeNullTest::SetupRvsdg()
   using namespace jlm::llvm;
 
   auto functionType = FunctionType::Create(
-      { MemoryStateType::Create(), iostatetype::Create() },
-      { MemoryStateType::Create(), iostatetype::Create() });
+      { iostatetype::Create(), MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
 
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
@@ -3599,8 +3599,8 @@ FreeNullTest::SetupRvsdg()
 
   LambdaMain_ =
       lambda::node::create(graph->root(), functionType, "main", linkage::external_linkage);
-  auto memoryStateArgument = LambdaMain_->fctargument(0);
-  auto iOStateArgument = LambdaMain_->fctargument(1);
+  auto iOStateArgument = LambdaMain_->fctargument(0);
+  auto memoryStateArgument = LambdaMain_->fctargument(1);
 
   auto constantPointerNullResult =
       ConstantPointerNullOperation::Create(LambdaMain_->subregion(), PointerType::Create());
@@ -3608,7 +3608,7 @@ FreeNullTest::SetupRvsdg()
   auto FreeResults =
       FreeOperation::Create(constantPointerNullResult, { memoryStateArgument }, iOStateArgument);
 
-  LambdaMain_->finalize(FreeResults);
+  LambdaMain_->finalize({ FreeResults[1], FreeResults[0] });
 
   graph->add_export(LambdaMain_->output(), { PointerType::Create(), "main" });
 

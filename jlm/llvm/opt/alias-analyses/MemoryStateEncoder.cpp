@@ -46,38 +46,6 @@ public:
   }
 };
 
-static rvsdg::argument *
-GetMemoryStateArgument(const lambda::node & lambda)
-{
-  auto subregion = lambda.subregion();
-
-  // FIXME: This function should be part of the lambda node.
-  for (size_t n = 0; n < subregion->narguments(); n++)
-  {
-    auto argument = subregion->argument(n);
-    if (is<MemoryStateType>(argument->type()))
-      return argument;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
-}
-
-static rvsdg::result *
-GetMemoryStateResult(const lambda::node & lambda)
-{
-  auto subregion = lambda.subregion();
-
-  // FIXME: This function should be part of the lambda node.
-  for (size_t n = 0; n < subregion->nresults(); n++)
-  {
-    auto result = subregion->result(n);
-    if (is<MemoryStateType>(result->type()))
-      return result;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
-}
-
 /** \brief A cache for points-to graph memory nodes of pointer outputs.
  *
  */
@@ -798,9 +766,9 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambdaNode)
 void
 MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 {
-  auto memoryStateArgument = GetMemoryStateArgument(lambdaNode);
-  JLM_ASSERT(memoryStateArgument->nusers() == 1);
-  auto memoryStateArgumentUser = *memoryStateArgument->begin();
+  auto & memoryStateArgument = lambdaNode.GetMemoryStateRegionArgument();
+  JLM_ASSERT(memoryStateArgument.nusers() == 1);
+  auto memoryStateArgumentUser = *memoryStateArgument.begin();
 
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaEntryNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -808,7 +776,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
   stateMap.PushRegion(*lambdaNode.subregion());
 
   auto states =
-      LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, memoryNodes.Size());
+      LambdaEntryMemoryStateSplitOperation::Create(memoryStateArgument, memoryNodes.Size());
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())
@@ -841,12 +809,12 @@ MemoryStateEncoder::EncodeLambdaExit(const lambda::node & lambdaNode)
   auto subregion = lambdaNode.subregion();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaExitNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryStateResult = GetMemoryStateResult(lambdaNode);
+  auto & memoryStateResult = lambdaNode.GetMemoryStateRegionResult();
 
   auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
   auto & mergedState = LambdaExitMemoryStateMergeOperation::Create(*subregion, states);
-  memoryStateResult->divert_to(&mergedState);
+  memoryStateResult.divert_to(&mergedState);
 
   stateMap.PopRegion(*lambdaNode.subregion());
 }
