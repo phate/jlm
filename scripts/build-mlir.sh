@@ -9,6 +9,11 @@ JLM_ROOT_DIR=${SCRIPT_DIR}/..
 MLIR_BUILD=${JLM_ROOT_DIR}/build-mlir
 MLIR_INSTALL=${JLM_ROOT_DIR}/usr
 
+LLVM_VERSION=17
+LLVM_CONFIG=llvm-config-${LLVM_VERSION}
+LLVM_ROOT=$(${LLVM_CONFIG} --prefix)
+LLVM_LIB=$(${LLVM_CONFIG} --libdir)
+
 function commit()
 {
 	echo ${GIT_COMMIT}
@@ -61,10 +66,10 @@ git checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${MLIR_GIT_DIR} \
 	-B ${MLIR_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=clang-17 \
-	-DCMAKE_CXX_COMPILER=clang++-17 \
-	-DLLVM_DIR=/usr/lib/llvm-17/cmake/ \
-	-DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir \
+	-DCMAKE_C_COMPILER=clang-${LLVM_VERSION} \
+	-DCMAKE_CXX_COMPILER=clang++-${LLVM_VERSION} \
+	-DLLVM_DIR=${LLVM_ROOT}/cmake/ \
+	-DMLIR_DIR=${LLVM_LIB}/cmake/mlir \
 	-DCMAKE_INSTALL_PREFIX=${MLIR_INSTALL} \
 	-Wno-dev
 cmake --build ${MLIR_BUILD_DIR}

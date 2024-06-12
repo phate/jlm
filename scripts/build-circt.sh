@@ -10,6 +10,11 @@ CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
 CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
 LLVM_LIT_PATH=/usr/local/bin/lit
 
+LLVM_VERSION=17
+LLVM_CONFIG=llvm-config-${LLVM_VERSION}
+LLVM_ROOT=$(${LLVM_CONFIG} --prefix)
+LLVM_LIB=$(${LLVM_CONFIG} --libdir)
+
 function commit()
 {
 	echo ${GIT_COMMIT}
@@ -69,11 +74,11 @@ git checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${CIRCT_GIT_DIR} \
 	-B ${CIRCT_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=clang-17 \
-	-DCMAKE_CXX_COMPILER=clang++-17 \
+	-DCMAKE_C_COMPILER=clang-${LLVM_VERSION} \
+	-DCMAKE_CXX_COMPILER=clang++-${LLVM_VERSION} \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-	-DLLVM_DIR=/usr/lib/llvm-17/cmake/ \
-	-DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir \
+	-DLLVM_DIR=${LLVM_ROOT}/cmake/ \
+	-DMLIR_DIR=${LLVM_LIB}/cmake/mlir \
 	-DLLVM_EXTERNAL_LIT="${LLVM_LIT_PATH}" \
 	-DLLVM_LIT_ARGS="-v --show-unsupported" \
 	-DVERILATOR_DISABLE=ON \

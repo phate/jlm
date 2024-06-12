@@ -170,12 +170,12 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::AllocSize, attribute::kind::AllocSize },
         { ak::Dereferenceable, attribute::kind::Dereferenceable },
         { ak::DereferenceableOrNull, attribute::kind::DereferenceableOrNull },
+        { ak::NoFPClass, attribute::kind::NoFPClass },
         { ak::StackAlignment, attribute::kind::StackAlignment },
         { ak::UWTable, attribute::kind::UWTable },
         { ak::VScaleRange, attribute::kind::VScaleRange },
         { ak::LastIntAttr, attribute::kind::LastIntAttr },
-        { ak::EndAttrKinds, attribute::kind::EndAttrKinds },
-        { ak::NoFPClass, attribute::kind::NoFPClass } });
+        { ak::EndAttrKinds, attribute::kind::EndAttrKinds } });
 
   JLM_ASSERT(map.find(kind) != map.end());
   return map[kind];
