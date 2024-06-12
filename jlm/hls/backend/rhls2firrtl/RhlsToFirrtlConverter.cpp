@@ -4021,7 +4021,7 @@ RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
   auto status = circt::firrtl::exportFIRFile(
       module,
       output,
-      targetLineLength, 
+      targetLineLength,
       circt::firrtl::FIRVersion::defaultFIRVersion());
 
   if (status.failed())
@@ -4051,7 +4051,7 @@ RhlsToFirrtlConverter::toString(const circt::firrtl::CircuitOp circuit)
   // Export FIRRTL to string
   std::string outputString;
   ::llvm::raw_string_ostream output(outputString);
-  
+
   size_t targetLineLength = 100;
   auto status = circt::firrtl::exportFIRFile(
       module,
