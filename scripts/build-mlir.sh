@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=898845dc1d5361c59d9ac3805ac21be8d575634b
+GIT_COMMIT=ab630d5a881a0e8fc5bdfa63a5984186fa9096c0
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -61,10 +61,10 @@ git checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${MLIR_GIT_DIR} \
 	-B ${MLIR_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=clang-16 \
-	-DCMAKE_CXX_COMPILER=clang++-16 \
-	-DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
-	-DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
+	-DCMAKE_C_COMPILER=clang-17 \
+	-DCMAKE_CXX_COMPILER=clang++-17 \
+	-DLLVM_DIR=/usr/lib/llvm-17/cmake/ \
+	-DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir \
 	-DCMAKE_INSTALL_PREFIX=${MLIR_INSTALL} \
 	-Wno-dev
 cmake --build ${MLIR_BUILD_DIR}

@@ -7,6 +7,7 @@
 #include <jlm/llvm/frontend/LlvmInstructionConversion.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>

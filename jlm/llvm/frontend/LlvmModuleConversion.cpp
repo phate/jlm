@@ -174,7 +174,8 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::UWTable, attribute::kind::UWTable },
         { ak::VScaleRange, attribute::kind::VScaleRange },
         { ak::LastIntAttr, attribute::kind::LastIntAttr },
-        { ak::EndAttrKinds, attribute::kind::EndAttrKinds } });
+        { ak::EndAttrKinds, attribute::kind::EndAttrKinds },
+        { ak::NoFPClass, attribute::kind::NoFPClass } });
 
   JLM_ASSERT(map.find(kind) != map.end());
   return map[kind];
@@ -464,7 +465,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
   };
 
-  for (auto & gv : lm.getGlobalList())
+  for (auto & gv : lm.globals())
   {
     auto node = create_data_node(gv, ctx);
     ctx.insert_value(&gv, ctx.module().create_global_value(node));
@@ -504,7 +505,7 @@ convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 static void
 convert_globals(::llvm::Module & lm, context & ctx)
 {
-  for (auto & gv : lm.getGlobalList())
+  for (auto & gv : lm.globals())
     convert_global_value(gv, ctx);
 
   for (auto & f : lm.getFunctionList())

@@ -117,7 +117,8 @@ public:
     VScaleRange,
     LastIntAttr,
 
-    EndAttrKinds ///< Sentinel value useful for loops
+    EndAttrKinds, ///< Sentinel value useful for loops
+    NoFPClass
   };
 
   virtual ~attribute();

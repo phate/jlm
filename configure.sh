@@ -4,7 +4,7 @@ set -eu
 # Default values for all tunables.
 TARGET="release"
 ENABLE_ASSERTS="no"
-LLVM_CONFIG_BIN="llvm-config-16"
+LLVM_CONFIG_BIN="llvm-config-17"
 ENABLE_COVERAGE="no"
 ENABLE_HLS=
 CIRCT_PATH=
@@ -110,7 +110,7 @@ CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
-	CIRCT_LDFLAGS="-L${CIRCT_PATH}/lib -lMLIR -lCIRCTAnalysisTestPasses -lCIRCTDependenceAnalysis -lCIRCTExportFIRRTL -lCIRCTFIRRTL -lCIRCTFIRRTLTransforms -lCIRCTScheduling -lCIRCTSchedulingAnalysis -lCIRCTSeq -lCIRCTSupport -lCIRCTTransforms -lCIRCTHW"
+	CIRCT_LDFLAGS="-L${CIRCT_PATH}/lib -lMLIR -lCIRCTAnalysisTestPasses -lCIRCTDependenceAnalysis -lCIRCTExportFIRRTL -lCIRCTFIRRTL -lCIRCTFIRRTLTransforms -lCIRCTScheduling -lCIRCTSchedulingAnalysis -lCIRCTSeq -lCIRCTSupport -lCIRCTTransforms -lCIRCTHW -lCIRCTOM"
 fi
 
 CPPFLAGS_MLIR=""
@@ -141,6 +141,7 @@ MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
+LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
 EOF
 	if [ ! -z "${CXX-}" ] ; then
 		echo "CXX=${CXX}"

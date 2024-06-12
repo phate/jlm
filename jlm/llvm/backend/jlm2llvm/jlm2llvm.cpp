@@ -264,7 +264,8 @@ convert_attribute_kind(const attribute::kind & kind)
         { attribute::kind::VScaleRange, ak::VScaleRange },
         { attribute::kind::LastIntAttr, ak::LastIntAttr },
 
-        { attribute::kind::EndAttrKinds, ak::EndAttrKinds } });
+        { attribute::kind::EndAttrKinds, ak::EndAttrKinds },
+        { attribute::kind::NoFPClass, ak::NoFPClass } });
 
   JLM_ASSERT(map.find(kind) != map.end());
   return map[kind];
