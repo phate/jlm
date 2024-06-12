@@ -30,12 +30,12 @@ while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
 		--build-path)
 			shift
-			MLIR_BUILD="${PWD}/$1"
+			MLIR_BUILD=$(readlink -m "$1")
 			shift
 			;;
 		--install-path)
 			shift
-			MLIR_INSTALL="${PWD}/$1"
+			MLIR_INSTALL=$(readlink -m "$1")
 			shift
 			;;
 		--get-commit-hash)
