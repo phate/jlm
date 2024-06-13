@@ -31,9 +31,9 @@ function usage()
 
 while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
-		--build-path)
+		--benchmark-path)
 			shift
-			BUILD_ROOT=$(readlink -m "$1")
+			BENCHMARK_DIR=$(readlink -m "$1")
 			shift
 			;;
 		--get-commit-hash)
