@@ -54,5 +54,6 @@ fi
 
 export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
+git checkout ${GIT_COMMIT}
 make clean
 make -j `nproc` -O ${BENCHMARK_RUN_TARGET}
