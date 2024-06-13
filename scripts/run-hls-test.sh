@@ -34,7 +34,7 @@ function usage()
 {
 	echo "Usage: ./run-hls-test.sh [OPTION] [VAR=VALUE]"
 	echo ""
-	echo "  --benchmark-path PATH The path where to place the polybench suite."
+	echo "  --benchmark-path PATH The path where to place the HLS test suite."
 	echo "                        [${BENCHMARK_DIR}]"
 	echo "  --firtool COMMAND     The command for running firtool, which can include a path."
 	echo "                        [${FIRTOOL}]"
