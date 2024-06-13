@@ -37,16 +37,16 @@ function usage()
 	echo "  --benchmark-path PATH The path where to place the polybench suite."
 	echo "                        [${BENCHMARK_DIR}]"
 	echo "  --firtool COMMAND     The command for running firtool, which can include a path."
-	echo "               :         [${FIRTOOL}]"
+	echo "                        [${FIRTOOL}]"
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
 }
 
 while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
-		--build-path)
+		--benchmark-path)
 			shift
-			BUILD_ROOT=$(readlink -m "$1")
+			BENCHMARK_DIR=$(readlink -m "$1")
 			shift
 			;;
 		--firtool)
