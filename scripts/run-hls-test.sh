@@ -2,7 +2,7 @@
 set -eu
 
 # URL to the benchmark git repository and the commit to be used
-GIT_REPOSITORY=https://github.com/EECS-NTNU/hls-test-suite.git
+GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
 GIT_COMMIT=693c0348c9ce41ee6ae20a2f650b97bedf6f1158
 
 # Get the absolute path to this script and set default JLM paths
@@ -16,14 +16,6 @@ BENCHMARK_RUN_TARGET=run
 
 # We assume that the firtool is in the PATH
 FIRTOOL=firtool
-
-# Check if verilator exists
-if ! command -v verilator &> /dev/null
-then
-	echo "No verilator in ${PATH}" 
-	echo "Consider installing the verilator package for you Linux distro."
-	exit 1
-fi
 
 function commit()
 {
@@ -71,6 +63,14 @@ then
 	echo "${FIRTOOL} is not found."
 	echo "Make sure to use '--firtool COMMAND' to specify which firtool to use."
 	echo "You can use './scripts/build-circt.sh' to build it, if needed."
+	exit 1
+fi
+
+# Check if verilator exists
+if ! command -v verilator &> /dev/null
+then
+	echo "No verilator in ${PATH}" 
+	echo "Consider installing the verilator package for your Linux distro."
 	exit 1
 fi
 
