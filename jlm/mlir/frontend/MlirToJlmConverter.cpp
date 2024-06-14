@@ -160,14 +160,7 @@ MlirToJlmConverter::ConvertBitBinaryNode(
 {
   if (inputs.size() != 2)
     return nullptr;
-  if (auto castedOp = ::mlir::dyn_cast<::mlir::LLVM::AddOp>(&mlirOperation))
-  {
-    return rvsdg::node_output::node(rvsdg::bitadd_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddIOp>(&mlirOperation))
+  if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddIOp>(&mlirOperation))
   {
     return rvsdg::node_output::node(rvsdg::bitadd_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
@@ -270,9 +263,6 @@ MlirToJlmConverter::ConvertOperation(
 {
 
   // ** region Arithmetic Integer Operation **
-  //! Here the LLVM dialect where only implemented for AddOp. Other operation should maybe be
-  //! imported Need to choose which one of mlir::arith or mlir::LLVM to use for the MLIR
-  //! representation
   auto convertedNode = ConvertBitBinaryNode(mlirOperation, inputs);
   // If the operation was converted it means it has been casted to a bit binary operation
   if (convertedNode)

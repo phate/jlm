@@ -179,7 +179,8 @@ JlmToMlirConverter::ConvertBitBinaryNode(
   ::mlir::Operation * MlirOp;
   if (jlm::rvsdg::is<const rvsdg::bitadd_op>(bitOp))
   {
-    MlirOp = Builder_->create<::mlir::LLVM::AddOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+    MlirOp =
+        Builder_->create<::mlir::arith::AddIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
   }
   else if (jlm::rvsdg::is<const rvsdg::bitand_op>(bitOp))
   {

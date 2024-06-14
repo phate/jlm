@@ -205,7 +205,8 @@ TestAddOperation()
       // Checking add operation
       std::cout << "Checking add operation" << std::endl;
       assert(operation->getName().getStringRef().equals(
-          mlir::LLVM::AddOp::getOperationName())); // Last remaining operation is the add operation
+          mlir::arith::AddIOp::getOperationName())); // Last remaining operation is the add
+                                                     // operation
       assert(operation->getNumOperands() == 2);
       auto addOperand1 = operation->getOperand(0);
       auto addOperand2 = operation->getOperand(1);
@@ -216,7 +217,8 @@ TestAddOperation()
 
     useChainsUpTraverse(
         &lambdaBlock.getOperations().back(),
-        { mlir::arith::ConstantIntOp::getOperationName(), mlir::LLVM::AddOp::getOperationName() });
+        { mlir::arith::ConstantIntOp::getOperationName(),
+          mlir::arith::AddIOp::getOperationName() });
 
     omega->destroy();
   }
