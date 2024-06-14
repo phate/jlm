@@ -57,7 +57,7 @@ jobs:
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
       - name: "Run the llvm-test-suite-opt"
-        run: ./scripts/run-llvm-test.sh --make-target llvm-run-opt
+        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-opt
 
   llvm-test-suite-andersen-agnostic:
     if: contains(github.event.pull_request.title, '[AndersenAgnostic]')
@@ -67,7 +67,7 @@ jobs:
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
       - name: "Run the llvm-test-suite-andersen-agnostic"
-        run: ./scripts/run-llvm-test.sh --make-target llvm-run-andersen-agnostic
+        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-agnostic
 
   llvm-test-suite-steensgaard-agnostic:
     if: contains(github.event.pull_request.title, '[SteensgaardAgnostic]')
@@ -77,4 +77,4 @@ jobs:
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
       - name: "Run the llvm-test-suite-steensgard-agnostic"
-        run: ./scripts/run-llvm-test.sh --make-target llvm-run-steensgaard-agnostic
+        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-steensgaard-agnostic
