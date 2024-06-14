@@ -303,6 +303,18 @@ public:
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
+   * @return The memory state argument of the lambda subregion.
+   */
+  [[nodiscard]] rvsdg::argument &
+  GetMemoryStateRegionArgument() const noexcept;
+
+  /**
+   * @return The memory state result of the lambda subregion.
+   */
+  [[nodiscard]] rvsdg::result &
+  GetMemoryStateRegionResult() const noexcept;
+
+  /**
    *
    * @param lambdaNode The lambda node for which to retrieve the
    * LambdaEntryMemoryStateSplitOperation node.

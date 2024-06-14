@@ -2634,16 +2634,6 @@ private:
   }
 };
 
-/*
-  FIXME: This function should be in librvsdg and not in libllvm.
-*/
-static inline jlm::rvsdg::node *
-input_node(const jlm::rvsdg::input * input)
-{
-  auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(input);
-  return ni != nullptr ? ni->node() : nullptr;
-}
-
 }
 
 #endif
