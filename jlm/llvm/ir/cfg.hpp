@@ -67,24 +67,12 @@ public:
   }
 
   static std::unique_ptr<argument>
-  create(const std::string & name, const jlm::rvsdg::type & type, const attributeset & attributes)
-  {
-    return std::make_unique<argument>(name, type.copy(), attributes);
-  }
-
-  static std::unique_ptr<argument>
   create(
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::type> type,
       const attributeset & attributes)
   {
     return std::make_unique<argument>(name, std::move(type), attributes);
-  }
-
-  static std::unique_ptr<argument>
-  create(const std::string & name, const jlm::rvsdg::type & type)
-  {
-    return create(name, type.copy(), {});
   }
 
   static std::unique_ptr<argument>

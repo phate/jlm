@@ -19,9 +19,9 @@ MemCpyConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
+  auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  jlm::rvsdg::bittype bit64Type(64);
+  auto bit64Type = jlm::rvsdg::bittype::Create(64);
   auto functionType = FunctionType::Create(
       { PointerType::Create(),
         PointerType::Create(),
@@ -85,10 +85,10 @@ MemCpyVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
-  iostatetype ioStateType;
+  auto pointerType = PointerType::Create();
+  auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  jlm::rvsdg::bittype bit64Type(64);
+  auto bit64Type = jlm::rvsdg::bittype::Create(64);
   auto functionType = FunctionType::Create(
       { PointerType::Create(),
         PointerType::Create(),

@@ -150,7 +150,7 @@ instrument_ref(
   load_func = route_to_region(load_func, region);
   store_func = route_to_region(store_func, region);
   alloca_func = route_to_region(alloca_func, region);
-  jlm::llvm::PointerType void_ptr;
+  auto void_ptr = jlm::llvm::PointerType::Create();
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
@@ -181,7 +181,7 @@ instrument_ref(
       auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != void_ptr)
+      if (addr->type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
@@ -212,7 +212,7 @@ instrument_ref(
       auto size = jlm::rvsdg::create_bitconstant(region, 64, BaseHLS::JlmSize(at) / 8);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != void_ptr)
+      if (addr->type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
@@ -240,7 +240,7 @@ instrument_ref(
       auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != void_ptr)
+      if (addr->type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }

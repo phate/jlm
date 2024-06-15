@@ -71,7 +71,7 @@ create_pvariable(basic_block & bb, const rvsdg::ctltype & type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#p", c++, "#");
-  return bb.insert_before_branch(UndefValueOperation::Create(type, name))->result(0);
+  return bb.insert_before_branch(UndefValueOperation::Create(type.copy(), name))->result(0);
 }
 
 static const tacvariable *
@@ -79,7 +79,7 @@ create_qvariable(basic_block & bb, const rvsdg::ctltype & type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#q", c++, "#");
-  return bb.append_last(UndefValueOperation::Create(type, name))->result(0);
+  return bb.append_last(UndefValueOperation::Create(type.copy(), name))->result(0);
 }
 
 static const tacvariable *
@@ -87,7 +87,7 @@ create_tvariable(basic_block & bb, const rvsdg::ctltype & type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#q", c++, "#");
-  return bb.insert_before_branch(UndefValueOperation::Create(type, name))->result(0);
+  return bb.insert_before_branch(UndefValueOperation::Create(type.copy(), name))->result(0);
 }
 
 static const tacvariable *
@@ -96,8 +96,7 @@ create_rvariable(basic_block & bb)
   static size_t c = 0;
   auto name = util::strfmt("#r", c++, "#");
 
-  rvsdg::ctltype type(2);
-  return bb.append_last(UndefValueOperation::Create(type, name))->result(0);
+  return bb.append_last(UndefValueOperation::Create(rvsdg::ctltype::Create(2), name))->result(0);
 }
 
 static inline void

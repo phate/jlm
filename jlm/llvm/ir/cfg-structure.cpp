@@ -773,7 +773,7 @@ update_phi_operands(llvm::tac & phitac, const std::unordered_set<cfg_node *> & d
     }
   }
 
-  phitac.replace(phi_op(nodes, phi->type()), operands);
+  phitac.replace(phi_op(nodes, phi->Type()), operands);
 }
 
 static void

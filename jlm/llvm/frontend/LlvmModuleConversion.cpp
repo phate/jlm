@@ -63,7 +63,7 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     }
 
     auto phi_tac = static_cast<const tacvariable *>(ctx.lookup_value(phi))->tac();
-    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->type()), operands);
+    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
   }
 }
 
@@ -260,7 +260,7 @@ convert_argument(const ::llvm::Argument & argument, context & ctx)
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
-  return llvm::argument::create(name, *type, attributes);
+  return llvm::argument::create(name, type, attributes);
 }
 
 static void
@@ -346,15 +346,15 @@ create_cfg(::llvm::Function & f, context & ctx)
     if (f.isVarArg())
     {
       JLM_ASSERT(n < node->fcttype().NumArguments());
-      auto & type = node->fcttype().ArgumentType(n++);
+      auto & type = node->fcttype().Arguments()[n++];
       cfg.entry()->append_argument(argument::create("_varg_", type));
     }
     JLM_ASSERT(n < node->fcttype().NumArguments());
 
-    auto & iotype = node->fcttype().ArgumentType(n++);
+    auto & iotype = node->fcttype().Arguments()[n++];
     auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
 
-    auto & memtype = node->fcttype().ArgumentType(n++);
+    auto & memtype = node->fcttype().Arguments()[n++];
     auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
 
     JLM_ASSERT(n == node->fcttype().NumArguments());
@@ -377,7 +377,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   if (!f.getReturnType()->isVoidTy())
   {
     auto type = ConvertType(f.getReturnType(), ctx);
-    entry_block->append_last(UndefValueOperation::Create(*type, "_r_"));
+    entry_block->append_last(UndefValueOperation::Create(type, "_r_"));
     result = entry_block->last()->result(0);
 
     JLM_ASSERT(node->fcttype().NumResults() == 3);
