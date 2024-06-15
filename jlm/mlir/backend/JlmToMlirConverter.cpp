@@ -71,46 +71,59 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
 
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
-  std::unordered_map<rvsdg::node *, ::mlir::Value> nodes;
+  std::unordered_map<rvsdg::node *, ::mlir::Operation *> operationsMap;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
-    nodes[rvsdgNode] = ConvertNode(*rvsdgNode, block, nodes);
+    ::llvm::SmallVector<::mlir::Value> inputs =
+        GetConvertedInputs(*rvsdgNode, operationsMap, block);
+
+    operationsMap[rvsdgNode] = ConvertNode(*rvsdgNode, block, inputs);
   }
 
+  // This code is used to get the results of the region
+  //! It is similar to the GetConvertedInputs function
   ::llvm::SmallVector<::mlir::Value> results;
-  for (size_t i = 0; i < region.nresults(); ++i)
+  for (size_t i = 0; i < region.nresults(); i++)
   {
-    auto output = region.result(i)->origin();
-    rvsdg::node * outputNode = rvsdg::node_output::node(output);
-    if (outputNode == nullptr)
+    if (jlm::rvsdg::node_output * nodeOuput =
+            dynamic_cast<jlm::rvsdg::node_output *>(region.result(i)->origin()))
     {
-      // The result is connected directly to an argument
-      results.push_back(block.getArgument(output->index()));
+      results.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
+    }
+    else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(region.result(i)->origin()))
+    {
+      results.push_back(block.getArgument(arg->index()));
     }
     else
     {
-      // The identified node should always exist in the hash map of nodes
-      JLM_ASSERT(nodes.find(outputNode) != nodes.end());
-      results.push_back(nodes[outputNode]);
+      auto message = util::strfmt(
+          "Unimplemented input type: ",
+          region.result(i)->origin()->debug_string(),
+          ": ",
+          region.result(i)->origin()->type().debug_string(),
+          " for region result: ",
+          region.result(i)->debug_string(),
+          " at index: ",
+          i);
+      JLM_UNREACHABLE(message.c_str());
     }
   }
+
   return results;
 }
 
-::mlir::Value
-JlmToMlirConverter::ConvertNode(
+::llvm::SmallVector<::mlir::Value>
+JlmToMlirConverter::GetConvertedInputs(
     const rvsdg::node & node,
-    ::mlir::Block & block,
-    std::unordered_map<rvsdg::node *, ::mlir::Value> nodes)
+    const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+    ::mlir::Block & block)
 {
-  // Create a list of inputs to the MLIR operation
-  // TODO try to change to pointers
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
   {
-    if (auto output = dynamic_cast<jlm::rvsdg::simple_output *>(node.input(i)->origin()))
+    if (auto nodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(node.input(i)->origin()))
     {
-      inputs.push_back(nodes[output->node()]);
+      inputs.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
     }
     else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(node.input(i)->origin()))
     {
@@ -118,10 +131,27 @@ JlmToMlirConverter::ConvertNode(
     }
     else
     {
-      JLM_UNREACHABLE("Unhandled origin type.");
+      auto message = util::strfmt(
+          "Unimplemented input type: ",
+          node.input(i)->origin()->debug_string(),
+          ": ",
+          node.input(i)->origin()->type().debug_string(),
+          " for node: ",
+          node.operation().debug_string(),
+          " at index: ",
+          i);
+      JLM_UNREACHABLE(message.c_str());
     }
   }
+  return inputs;
+}
 
+::mlir::Operation *
+JlmToMlirConverter::ConvertNode(
+    const rvsdg::node & node,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
   if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
   {
     return ConvertSimpleNode(*simpleNode, block, inputs);
@@ -129,6 +159,10 @@ JlmToMlirConverter::ConvertNode(
   else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
   {
     return ConvertLambda(*lambda, block);
+  }
+  else if (auto gamma = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  {
+    return ConvertGamma(*gamma, block, inputs);
   }
   else
   {
@@ -145,7 +179,8 @@ JlmToMlirConverter::ConvertBitBinaryNode(
   ::mlir::Operation * MlirOp;
   if (jlm::rvsdg::is<const rvsdg::bitadd_op>(bitOp))
   {
-    MlirOp = Builder_->create<::mlir::LLVM::AddOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+    MlirOp =
+        Builder_->create<::mlir::arith::AddIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
   }
   else if (jlm::rvsdg::is<const rvsdg::bitand_op>(bitOp))
   {
@@ -260,11 +295,11 @@ JlmToMlirConverter::BitCompareNode(
   return MlirOp;
 }
 
-::mlir::Value
+::mlir::Operation *
 JlmToMlirConverter::ConvertSimpleNode(
     const rvsdg::simple_node & node,
     ::mlir::Block & block,
-    ::llvm::SmallVector<::mlir::Value> inputs)
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
   ::mlir::Operation * MlirOp;
   if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&(node.operation())))
@@ -290,6 +325,44 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(bitOp->ndstbits()),
         inputs[0]);
   }
+  // ** region structural nodes **
+  else if (auto ctlOp = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&node.operation()))
+  {
+    MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
+        Builder_->getUnknownLoc(),
+        ConvertType(node.output(0)->type()), // Control, ouput type
+        ctlOp->value().alternative());
+  }
+  else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
+  {
+    // ** region Create the MLIR mapping vector **
+    //! MLIR match operation can match multiple values to one index
+    //! But jlm implements this with multiple mappings
+    //! For easy conversion, we only created one mapping per value
+    ::llvm::SmallVector<::mlir::Attribute> mappingVector;
+    for (auto mapping : *matchOp)
+    {
+      ::mlir::rvsdg::MatchRuleAttr matchRule = ::mlir::rvsdg::MatchRuleAttr::get(
+          Builder_->getContext(),
+          ::llvm::ArrayRef(static_cast<int64_t>(mapping.first)),
+          mapping.second);
+
+      mappingVector.push_back(matchRule);
+    }
+    //! The default alternative has an empty mapping
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef<int64_t>(),
+        matchOp->default_alternative()));
+    // ** endregion Create the MLIR mapping vector **
+
+    MlirOp = Builder_->create<::mlir::rvsdg::Match>(
+        Builder_->getUnknownLoc(),
+        ConvertType(node.output(0)->type()), // Control, ouput type
+        inputs[0],                           // input
+        ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
+  }
+  // ** endregion structural nodes **
   else
   {
     auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());
@@ -297,10 +370,10 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
 
   block.push_back(MlirOp);
-  return ::mlir::Value(MlirOp->getResult(0));
+  return MlirOp;
 }
 
-::mlir::Value
+::mlir::Operation *
 JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Type> arguments;
@@ -352,6 +425,45 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   return lambda;
 }
 
+::mlir::Operation *
+JlmToMlirConverter::ConvertGamma(
+    const rvsdg::gamma_node & gammaNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
+  auto & gammaOp = *util::AssertedCast<const rvsdg::gamma_op>(&gammaNode.operation());
+
+  ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
+  for (size_t i = 0; i < gammaNode.noutputs(); ++i)
+  {
+    typeRangeOuput.push_back(ConvertType(gammaNode.output(i)->type()));
+  }
+
+  // The predicate is always the first input
+  // Predicate is used to select the region to execute
+  ::mlir::Value predicate = inputs[0];
+
+  auto gamma = Builder_->create<::mlir::rvsdg::GammaNode>(
+      Builder_->getUnknownLoc(),
+      ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
+      predicate,
+      ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }), // Inputs
+      gammaOp.nalternatives()                                          // regionsCount
+  );
+  block.push_back(gamma);
+
+  for (size_t i = 0; i < gammaOp.nalternatives(); ++i)
+  {
+    auto & gammaBlock = gamma.getRegion(i).emplaceBlock();
+    auto regionResults = ConvertRegion(*gammaNode.subregion(i), gammaBlock);
+    auto gammaResult =
+        Builder_->create<::mlir::rvsdg::GammaResult>(Builder_->getUnknownLoc(), regionResults);
+    gammaBlock.push_back(gammaResult);
+  }
+
+  return gamma;
+}
+
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::type & type)
 {
@@ -366,6 +478,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::type & type)
   else if (rvsdg::is<llvm::MemoryStateType>(type))
   {
     return Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
+  }
+  else if (auto clt = dynamic_cast<const rvsdg::ctltype *>(&type))
+  {
+    return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
   }
   else
   {
