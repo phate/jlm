@@ -240,7 +240,7 @@ LoadFromUndefTest::SetupRvsdg()
 
   Lambda_ = lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
-  auto undefValue = UndefValueOperation::Create(*Lambda_->subregion(), *pointerType);
+  auto undefValue = UndefValueOperation::Create(*Lambda_->subregion(), pointerType);
   auto loadResults = LoadNonVolatileNode::Create(
       undefValue,
       { Lambda_->fctargument(0) },
@@ -329,7 +329,7 @@ BitCastTest::SetupRvsdg()
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
-  auto cast = bitcast_op::create(fct->fctargument(0), *pointerType);
+  auto cast = bitcast_op::create(fct->fctargument(0), pointerType);
 
   fct->finalize({ cast });
 
@@ -627,7 +627,7 @@ CallTest2::SetupRvsdg()
 
   auto SetupCreate = [&]()
   {
-    PointerType pt32;
+    auto pt32 = PointerType::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = FunctionType::Create(
@@ -2518,7 +2518,7 @@ PhiWithDeltaTest::SetupRvsdg()
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
       StructType::Declaration::Create({ PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
-  auto arrayType = arraytype(structType, 2);
+  auto arrayType = arraytype::Create(structType, 2);
 
   jlm::llvm::phi::builder pb;
   pb.begin(rvsdg.root());
@@ -2533,7 +2533,7 @@ PhiWithDeltaTest::SetupRvsdg()
       false);
   auto myArrayArgument = delta->add_ctxvar(myArrayRecVar->argument());
 
-  auto aggregateZero = ConstantAggregateZero::Create(*delta->subregion(), *structType);
+  auto aggregateZero = ConstantAggregateZero::Create(*delta->subregion(), structType);
   auto & constantStruct =
       ConstantStruct::Create(*delta->subregion(), { myArrayArgument }, structType);
   auto constantArray = ConstantArray::Create({ aggregateZero, &constantStruct });
@@ -3909,7 +3909,7 @@ VariadicFunctionTest2::SetupRvsdg()
         pointerType);
     auto loadResultsGamma1 =
         LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
-    auto & zextResult = zext_op::Create(*gammaLoadResult->argument(1), *rvsdg::bittype::Create(64));
+    auto & zextResult = zext_op::Create(*gammaLoadResult->argument(1), rvsdg::bittype::Create(64));
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
         { &zextResult },

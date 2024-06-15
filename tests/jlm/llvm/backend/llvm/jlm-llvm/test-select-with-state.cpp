@@ -30,7 +30,7 @@ test()
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
-  auto p = cfg->entry()->append_argument(argument::create("p", *jlm::rvsdg::bittype::Create(1)));
+  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::bittype::Create(1)));
   auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
   auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 

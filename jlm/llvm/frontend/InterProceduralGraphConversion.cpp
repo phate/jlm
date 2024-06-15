@@ -632,7 +632,7 @@ Convert(
     }
     else
     {
-      auto value = UndefValueOperation::Create(*lambdaNode.subregion(), v.type());
+      auto value = UndefValueOperation::Create(*lambdaNode.subregion(), v.Type());
       topVariableMap.insert(&v, value);
     }
   }
@@ -767,7 +767,7 @@ Convert(
     rvsdg::output * value = nullptr;
     if (!outerVariableMap.contains(&v))
     {
-      value = UndefValueOperation::Create(parentRegion, v.type());
+      value = UndefValueOperation::Create(parentRegion, v.Type());
       outerVariableMap.insert(&v, value);
     }
     else
@@ -1127,7 +1127,7 @@ ConvertStronglyConnectedComponent(
   std::unordered_map<const variable *, phi::rvoutput *> recursionVariables;
   for (const auto & ipgNode : stronglyConnectedComponent)
   {
-    auto recursionVariable = pb.add_recvar(ipgNode->type());
+    auto recursionVariable = pb.add_recvar(ipgNode->type().copy());
     auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
     phiVariableMap.insert(ipgNodeVariable, recursionVariable->argument());
     JLM_ASSERT(recursionVariables.find(ipgNodeVariable) == recursionVariables.end());

@@ -275,7 +275,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!st)
       JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
-    return rvsdg::node_output::node(&llvm::zext_op::Create(*(inputs[0]), *ConvertType(type)));
+    return rvsdg::node_output::node(&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
   }
 
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))

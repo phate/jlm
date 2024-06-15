@@ -48,9 +48,9 @@ TestThreeAddressCodeCreator()
   // Arrange
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 
-  auto address = ipgModule.create_variable(PointerType(), "p");
-  auto memoryState = ipgModule.create_variable(MemoryStateType(), "m");
-  auto iOState = ipgModule.create_variable(iostatetype(), "io");
+  auto address = ipgModule.create_variable(PointerType::Create(), "p");
+  auto memoryState = ipgModule.create_variable(MemoryStateType::Create(), "m");
+  auto iOState = ipgModule.create_variable(iostatetype::Create(), "io");
 
   // Act
   auto free0 = FreeOperation::Create(address, {}, iOState);
