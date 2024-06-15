@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 // MLIR RVSDG dialects
 #include <JLM/JLMDialect.h>
@@ -18,7 +19,6 @@
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
-#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -32,7 +32,6 @@ public:
     Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
-    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
 
@@ -85,17 +84,30 @@ private:
   ConvertRegion(rvsdg::region & region, ::mlir::Block & block);
 
   /**
+   * Retreive the previously converted MLIR values from the map of operations
+   * \param node The RVSDG node to get the inputs for.
+   * \param operationsMap A map of RVSDG nodes to their corresponding MLIR operations.
+   * \param block The MLIR block to get argument type inputs from.
+   * \return The vector of inputs to the node.
+   */
+  static ::llvm::SmallVector<::mlir::Value>
+  GetConvertedInputs(
+      const rvsdg::node & node,
+      const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+      ::mlir::Block & block);
+
+  /**
    * Converts an RVSDG node to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-   * \param nodes A map of RVSDG nodes to their corresponding MLIR RVSDG values from previously
-   * converted nodes used to retrieve the node inputs. \return The converted MLIR RVSDG operation.
+   * \param inputs The inputs to the node.
+   * \return The converted MLIR RVSDG operation.
    */
-  ::mlir::Value
+  ::mlir::Operation *
   ConvertNode(
       const rvsdg::node & node,
       ::mlir::Block & block,
-      std::unordered_map<rvsdg::node *, ::mlir::Value> nodes);
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
@@ -124,11 +136,11 @@ private:
    * \param inputs The inputs to the simple_node.
    * \return The converted MLIR RVSDG operation.
    */
-  ::mlir::Value
+  ::mlir::Operation *
   ConvertSimpleNode(
       const rvsdg::simple_node & node,
       ::mlir::Block & block,
-      ::llvm::SmallVector<::mlir::Value> inputs);
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode.
@@ -136,8 +148,21 @@ private:
    * \param block The MLIR RVSDG block to insert the lambda node.
    * \return The converted MLIR RVSDG LambdaNode.
    */
-  ::mlir::Value
+  ::mlir::Operation *
   ConvertLambda(const llvm::lambda::node & node, ::mlir::Block & block);
+
+  /**
+   * Converts an RVSDG gamma node to an MLIR RVSDG GammaNode.
+   * \param gammaNode The RVSDG gamma node to be converted
+   * \param block The MLIR RVSDG block to insert the gamma node.
+   * \param inputs The inputs to the gamma node.
+   * \return The converted MLIR RVSDG GammaNode.
+   */
+  ::mlir::Operation *
+  ConvertGamma(
+      const rvsdg::gamma_node & gammaNode,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
