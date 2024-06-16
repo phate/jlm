@@ -58,7 +58,7 @@ destruct_ssa(llvm::cfg & cfg)
           break;
 
         auto phi = static_cast<const phi_op *>(&phitac->operation());
-        auto v = cfg.module().create_variable(phi->type());
+        auto v = cfg.module().create_variable(phi->Type());
 
         const variable * value = nullptr;
         for (size_t n = 0; n < phitac->noperands(); n++)

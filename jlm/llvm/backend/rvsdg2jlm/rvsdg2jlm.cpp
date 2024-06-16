@@ -134,7 +134,7 @@ create_cfg(const lambda::node & lambda, context & ctx)
   /* add arguments */
   for (auto & fctarg : lambda.fctarguments())
   {
-    auto argument = llvm::argument::create("", fctarg.type(), fctarg.attributes());
+    auto argument = llvm::argument::create("", fctarg.Type(), fctarg.attributes());
     auto v = cfg->entry()->append_argument(std::move(argument));
     ctx.insert(&fctarg, v);
   }
@@ -221,7 +221,7 @@ convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
     {
       auto vo0 = ctx.variable(o0);
       auto vo1 = ctx.variable(o1);
-      bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype(1)));
+      bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype::Create(1)));
       bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
     }
 
@@ -323,7 +323,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     }
 
     /* create phi instruction */
-    exit->append_last(phi_op::create(arguments, output->type()));
+    exit->append_last(phi_op::create(arguments, output->Type()));
     ctx.insert(output, exit->last()->result(0));
   }
 
@@ -372,7 +372,7 @@ convert_theta_node(const rvsdg::node & node, context & ctx)
     auto v = ctx.variable(argument->input()->origin());
     if (phi_needed(argument->input(), v))
     {
-      auto phi = entry->append_last(phi_op::create({}, argument->type()));
+      auto phi = entry->append_last(phi_op::create({}, argument->Type()));
       phis.push_back(phi);
       v = phi->result(0);
     }
@@ -395,7 +395,7 @@ convert_theta_node(const rvsdg::node & node, context & ctx)
     auto vr = ctx.variable(result->origin());
     auto phi = phis.front();
     phis.pop_front();
-    phi->replace(phi_op({ pre_entry, ctx.lpbb() }, vr->type()), { ve, vr });
+    phi->replace(phi_op({ pre_entry, ctx.lpbb() }, vr->Type()), { ve, vr });
     ctx.insert(result->output(), vr);
   }
   JLM_ASSERT(phis.empty());
@@ -464,7 +464,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
       JLM_ASSERT(is<delta::operation>(node));
       auto d = static_cast<const delta::node *>(node);
       auto data =
-          data_node::Create(ipg, d->name(), d->type(), d->linkage(), d->Section(), d->constant());
+          data_node::Create(ipg, d->name(), d->Type(), d->linkage(), d->Section(), d->constant());
       ctx.insert(subregion->argument(n), module.create_global_value(data));
     }
   }
@@ -509,7 +509,7 @@ convert_delta_node(const rvsdg::node & node, context & ctx)
   auto dnode = data_node::Create(
       m.ipgraph(),
       delta->name(),
-      delta->type(),
+      delta->Type(),
       delta->linkage(),
       delta->Section(),
       delta->constant());
@@ -568,13 +568,8 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
     }
     else
     {
-      auto dnode = data_node::Create(
-          ipg,
-          import->name(),
-          import->GetValueType(),
-          import->linkage(),
-          "",
-          false);
+      auto dnode =
+          data_node::Create(ipg, import->name(), import->Type(), import->linkage(), "", false);
       auto v = im.create_global_value(dnode);
       ctx.insert(argument, v);
     }

@@ -195,7 +195,7 @@ public:
     auto declaration = StructType::Declaration::Create();
     for (size_t n = 0; n < type->getNumElements(); n++)
     {
-      declaration->Append(*ConvertType(type->getElementType(n), *this));
+      declaration->Append(ConvertType(type->getElementType(n), *this));
     }
 
     declarations_[type] = declaration.get();

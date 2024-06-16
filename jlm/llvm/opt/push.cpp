@@ -340,7 +340,7 @@ pushout_store(jlm::rvsdg::node * storenode)
   auto ovalue = storenode->input(1)->origin();
 
   /* insert new value for store */
-  auto nvalue = theta->add_loopvar(UndefValueOperation::Create(*theta->region(), ovalue->type()));
+  auto nvalue = theta->add_loopvar(UndefValueOperation::Create(*theta->region(), ovalue->Type()));
   nvalue->result()->divert_to(ovalue);
 
   /* collect store operands */

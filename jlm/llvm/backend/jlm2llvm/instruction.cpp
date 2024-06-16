@@ -300,7 +300,7 @@ convert(
     context & ctx)
 {
   return CreateLoadInstruction(
-      operation.GetLoadedType(),
+      *operation.GetLoadedType(),
       operands[0],
       false,
       operation.GetAlignment(),
@@ -316,7 +316,7 @@ convert(
     context & ctx)
 {
   return CreateLoadInstruction(
-      operation.GetLoadedType(),
+      *operation.GetLoadedType(),
       operands[0],
       true,
       operation.GetAlignment(),

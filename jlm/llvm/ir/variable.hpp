@@ -23,11 +23,6 @@ class variable
 public:
   virtual ~variable() noexcept;
 
-  inline variable(const jlm::rvsdg::type & type, const std::string & name)
-      : name_(name),
-        type_(type.copy())
-  {}
-
   variable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
       : name_(name),
         type_(std::move(type))
@@ -94,8 +89,8 @@ class gblvariable : public variable
 public:
   virtual ~gblvariable();
 
-  inline gblvariable(const jlm::rvsdg::type & type, const std::string & name)
-      : variable(type, name)
+  inline gblvariable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+      : variable(std::move(type), name)
   {}
 };
 

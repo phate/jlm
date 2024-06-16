@@ -93,24 +93,6 @@ is_mux_op(const jlm::rvsdg::operation & op)
 
 static inline std::vector<jlm::rvsdg::output *>
 create_state_mux(
-    const jlm::rvsdg::type & type,
-    const std::vector<jlm::rvsdg::output *> & operands,
-    size_t nresults)
-{
-  if (operands.empty())
-    throw jlm::util::error("Insufficient number of operands.");
-
-  auto st = std::dynamic_pointer_cast<const jlm::rvsdg::statetype>(type.copy());
-  if (!st)
-    throw jlm::util::error("Expected state type.");
-
-  auto region = operands.front()->region();
-  jlm::rvsdg::mux_op op(st, operands.size(), nresults);
-  return simple_node::create_normalized(region, op, operands);
-}
-
-static inline std::vector<jlm::rvsdg::output *>
-create_state_mux(
     std::shared_ptr<const jlm::rvsdg::type> type,
     const std::vector<jlm::rvsdg::output *> & operands,
     size_t nresults)
@@ -129,24 +111,10 @@ create_state_mux(
 
 static inline jlm::rvsdg::output *
 create_state_merge(
-    const jlm::rvsdg::type & type,
-    const std::vector<jlm::rvsdg::output *> & operands)
-{
-  return create_state_mux(type, operands, 1)[0];
-}
-
-static inline jlm::rvsdg::output *
-create_state_merge(
     std::shared_ptr<const jlm::rvsdg::type> type,
     const std::vector<jlm::rvsdg::output *> & operands)
 {
   return create_state_mux(std::move(type), operands, 1)[0];
-}
-
-static inline std::vector<jlm::rvsdg::output *>
-create_state_split(const jlm::rvsdg::type & type, jlm::rvsdg::output * operand, size_t nresults)
-{
-  return create_state_mux(type, { operand }, nresults);
 }
 
 static inline std::vector<jlm::rvsdg::output *>

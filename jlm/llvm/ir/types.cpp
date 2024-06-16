@@ -24,15 +24,7 @@ FunctionType::FunctionType(
       ArgumentTypes_(std::move(argumentTypes))
 {}
 
-FunctionType::FunctionType(const FunctionType & rhs)
-    : jlm::rvsdg::valuetype(rhs)
-{
-  for (auto & type : rhs.ArgumentTypes_)
-    ArgumentTypes_.push_back(type->copy());
-
-  for (auto & type : rhs.ResultTypes_)
-    ResultTypes_.push_back(type->copy());
-}
+FunctionType::FunctionType(const FunctionType & rhs) = default;
 
 FunctionType::FunctionType(FunctionType && other) noexcept
     : jlm::rvsdg::valuetype(other),
@@ -93,19 +85,7 @@ FunctionType::copy() const
 }
 
 FunctionType &
-FunctionType::operator=(const FunctionType & rhs)
-{
-  ResultTypes_.clear();
-  ArgumentTypes_.clear();
-
-  for (auto & type : rhs.ArgumentTypes_)
-    ArgumentTypes_.push_back(type->copy());
-
-  for (auto & type : rhs.ResultTypes_)
-    ResultTypes_.push_back(type->copy());
-
-  return *this;
-}
+FunctionType::operator=(const FunctionType & rhs) = default;
 
 FunctionType &
 FunctionType::operator=(FunctionType && rhs) noexcept
