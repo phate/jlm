@@ -22,8 +22,8 @@ OperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  jlm::tests::valuetype valueType;
-  PointerType pointerType;
+  auto valueType = jlm::tests::valuetype::Create();
+  auto pointerType = PointerType::Create();
 
   LoadNonVolatileOperation operation1(valueType, 2, 4);
   LoadNonVolatileOperation operation2(pointerType, 2, 4);
@@ -62,7 +62,7 @@ TestCopy()
   auto address2 = graph.add_import({ pointerType, "address2" });
   auto memoryState2 = graph.add_import({ memoryType, "memoryState2" });
 
-  auto loadResults = LoadNonVolatileNode::Create(address1, { memoryState1 }, *valueType, 4);
+  auto loadResults = LoadNonVolatileNode::Create(address1, { memoryState1 }, valueType, 4);
 
   // Act
   auto node = jlm::rvsdg::node_output::node(loadResults[0]);
@@ -135,7 +135,7 @@ TestMultipleOriginReduction()
   auto a = graph.add_import({ pt, "a" });
   auto s = graph.add_import({ mt, "s" });
 
-  auto load = LoadNonVolatileNode::Create(a, { s, s, s, s }, *vt, 4)[0];
+  auto load = LoadNonVolatileNode::Create(a, { s, s, s, s }, vt, 4)[0];
 
   auto ex = graph.add_export(load, { load->Type(), "l" });
 
@@ -220,7 +220,7 @@ TestLoadStoreReduction()
   auto s = graph.add_import({ mt, "state" });
 
   auto s1 = StoreNonVolatileNode::Create(a, v, { s }, 4)[0];
-  auto load = LoadNonVolatileNode::Create(a, { s1 }, *vt, 4);
+  auto load = LoadNonVolatileNode::Create(a, { s1 }, vt, 4);
 
   auto x1 = graph.add_export(load[0], { load[0]->Type(), "value" });
   auto x2 = graph.add_export(load[1], { load[1]->Type(), "state" });
@@ -323,7 +323,7 @@ LoadVolatileOperationEquality()
   // Arrange
   MemoryStateType memoryType;
   auto valueType = jlm::tests::valuetype::Create();
-  PointerType pointerType;
+  auto pointerType = PointerType::Create();
 
   LoadVolatileOperation operation1(valueType, 2, 4);
   LoadVolatileOperation operation2(pointerType, 2, 4);
@@ -383,7 +383,7 @@ OperationAccessors()
   LoadVolatileOperation operation(valueType, numMemoryStates, alignment);
 
   // Assert
-  assert(operation.GetLoadedType() == *valueType);
+  assert(operation.GetLoadedType() == valueType);
   assert(operation.NumMemoryStates() == numMemoryStates);
   assert(operation.GetAlignment() == alignment);
   assert(operation.narguments() == numMemoryStates + 2); // [address, ioState, memoryStates]

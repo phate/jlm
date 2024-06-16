@@ -48,7 +48,7 @@ TestUnknownBoundaries()
   theta->set_predicate(match);
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
-  rm.Rvsdg().add_export(f, { f->type().copy(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

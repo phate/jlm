@@ -69,39 +69,6 @@ public:
   Create(
       const variable * baseAddress,
       const std::vector<const variable *> & offsets,
-      const rvsdg::valuetype & pointeeType,
-      const rvsdg::type & resultType)
-  {
-    CheckPointerType(baseAddress->type());
-    auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
-    CheckPointerType(resultType);
-
-    GetElementPtrOperation operation(
-        offsetTypes,
-        std::static_pointer_cast<const rvsdg::valuetype>(pointeeType.copy()));
-    std::vector<const variable *> operands(1, baseAddress);
-    operands.insert(operands.end(), offsets.begin(), offsets.end());
-
-    return tac::create(operation, operands);
-  }
-
-  /**
-   * Creates a GetElementPtr three address code.
-   *
-   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
-   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
-   *
-   * @param baseAddress The base address for the pointer calculation.
-   * @param offsets The offsets from the base address.
-   * @param pointeeType The type the base address points to.
-   * @param resultType The result type of the operation.
-   *
-   * @return A getElementPtr three address code.
-   */
-  static std::unique_ptr<llvm::tac>
-  Create(
-      const variable * baseAddress,
-      const std::vector<const variable *> & offsets,
       std::shared_ptr<const rvsdg::valuetype> pointeeType,
       std::shared_ptr<const rvsdg::type> resultType)
   {
@@ -114,39 +81,6 @@ public:
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
     return tac::create(operation, operands);
-  }
-
-  /**
-   * Creates a GetElementPtr RVSDG node.
-   *
-   * FIXME: We should not explicitly hand in the resultType parameter, but rather compute it from
-   * the pointeeType and the offsets. See LLVM's GetElementPtr instruction for reference.
-   *
-   * @param baseAddress The base address for the pointer calculation.
-   * @param offsets The offsets from the base address.
-   * @param pointeeType The type the base address points to.
-   * @param resultType The result type of the operation.
-   *
-   * @return The output of the created GetElementPtr RVSDG node.
-   */
-  static rvsdg::output *
-  Create(
-      rvsdg::output * baseAddress,
-      const std::vector<rvsdg::output *> & offsets,
-      const rvsdg::valuetype & pointeeType,
-      const rvsdg::type & resultType)
-  {
-    CheckPointerType(baseAddress->type());
-    auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
-    CheckPointerType(resultType);
-
-    GetElementPtrOperation operation(
-        offsetTypes,
-        std::static_pointer_cast<const rvsdg::valuetype>(pointeeType.copy()));
-    std::vector<rvsdg::output *> operands(1, baseAddress);
-    operands.insert(operands.end(), offsets.begin(), offsets.end());
-
-    return rvsdg::simple_node::create_normalized(baseAddress->region(), operation, operands)[0];
   }
 
   /**

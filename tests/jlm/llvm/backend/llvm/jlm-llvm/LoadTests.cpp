@@ -35,7 +35,7 @@ LoadConversion()
   auto loadTac = basicBlock->append_last(LoadNonVolatileOperation::Create(
       addressArgument,
       memoryStateArgument,
-      *jlm::rvsdg::bittype::Create(64),
+      jlm::rvsdg::bittype::Create(64),
       alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
@@ -79,7 +79,7 @@ LoadVolatileConversion()
   auto pointerType = PointerType::Create();
   auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  jlm::rvsdg::bittype bit64Type(64);
+  auto bit64Type = jlm::rvsdg::bittype::Create(64);
   auto functionType = FunctionType::Create(
       { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(64), iostatetype::Create(), MemoryStateType::Create() });
