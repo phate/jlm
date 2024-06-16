@@ -76,9 +76,6 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
-
   static std::shared_ptr<const FunctionType>
   Create(
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
@@ -105,9 +102,6 @@ public:
 
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   static std::shared_ptr<const PointerType>
   Create();
@@ -141,9 +135,6 @@ public:
 
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   inline size_t
   nelements() const noexcept
@@ -200,9 +191,6 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
-
   inline const fpsize &
   size() const noexcept
   {
@@ -229,9 +217,6 @@ public:
 
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   virtual std::string
   debug_string() const override;
@@ -312,9 +297,6 @@ public:
 
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -455,9 +437,6 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
-
   virtual std::string
   debug_string() const override;
 
@@ -479,9 +458,6 @@ public:
 
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   virtual std::string
   debug_string() const override;
@@ -507,9 +483,6 @@ public:
 
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   virtual std::string
   debug_string() const override;
@@ -537,9 +510,6 @@ public:
 
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
-
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
 
   static std::shared_ptr<const MemoryStateType>
   Create();

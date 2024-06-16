@@ -419,12 +419,6 @@ public:
     return type;
   };
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override
-  {
-    return std::make_shared<triggertype>(*this);
-  }
-
   static std::shared_ptr<const triggertype>
   Create();
 
@@ -723,12 +717,6 @@ public:
     }
     // TODO: do something different?
     return {};
-  }
-
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override
-  {
-    return std::make_shared<bundletype>(*this);
   }
 
   virtual std::string
