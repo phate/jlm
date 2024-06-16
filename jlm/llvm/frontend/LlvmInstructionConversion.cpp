@@ -86,7 +86,7 @@ convert_undefvalue(
   JLM_ASSERT(c->getValueID() == ::llvm::Value::UndefValueVal);
 
   auto t = ConvertType(c->getType(), ctx);
-  tacs.push_back(UndefValueOperation::Create(*t));
+  tacs.push_back(UndefValueOperation::Create(t));
 
   return tacs.back()->result(0);
 }
@@ -126,7 +126,7 @@ convert_constantFP(
   auto c = ::llvm::cast<::llvm::ConstantFP>(constant);
 
   auto type = ConvertType(c->getType(), ctx);
-  tacs.push_back(ConstantFP::create(c->getValueAPF(), *type));
+  tacs.push_back(ConstantFP::create(c->getValueAPF(), type));
 
   return tacs.back()->result(0);
 }
@@ -151,7 +151,7 @@ convert_constantPointerNull(
   auto & c = *::llvm::cast<const ::llvm::ConstantPointerNull>(constant);
 
   auto t = ConvertPointerType(c.getType(), ctx);
-  tacs.push_back(ConstantPointerNullOperation::Create(*t));
+  tacs.push_back(ConstantPointerNullOperation::Create(t));
 
   return tacs.back()->result(0);
 }
@@ -176,7 +176,7 @@ convert_constantAggregateZero(
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantAggregateZeroVal);
 
   auto type = ConvertType(c->getType(), ctx);
-  tacs.push_back(ConstantAggregateZero::create(*type));
+  tacs.push_back(ConstantAggregateZero::create(type));
 
   return tacs.back()->result(0);
 }
@@ -252,7 +252,7 @@ ConvertConstantStruct(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ConvertType(c->getType(), ctx);
-  tacs.push_back(ConstantStruct::create(elements, *type));
+  tacs.push_back(ConstantStruct::create(elements, type));
 
   return tacs.back()->result(0);
 }
@@ -270,7 +270,7 @@ convert_constantVector(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ConvertType(c->getType(), ctx);
-  tacs.push_back(constantvector_op::create(elements, *type));
+  tacs.push_back(constantvector_op::create(elements, type));
 
   return tacs.back()->result(0);
 }
@@ -300,7 +300,7 @@ ConvertConstant(
     llvm::context & context)
 {
   auto type = ConvertType(poisonValue->getType(), context);
-  threeAddressCodeVector.push_back(PoisonValueOperation::Create(*type));
+  threeAddressCodeVector.push_back(PoisonValueOperation::Create(type));
 
   return threeAddressCodeVector.back()->result(0);
 }
@@ -528,7 +528,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy()))
   {
     auto pt = ::llvm::cast<::llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
-    binop = std::make_unique<ptrcmp_op>(*ConvertPointerType(pt, ctx), ptrmap[p]);
+    binop = std::make_unique<ptrcmp_op>(ConvertPointerType(pt, ctx), ptrmap[p]);
   }
   else
     JLM_UNREACHABLE("This should have never happend.");
@@ -539,7 +539,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   if (t->isVectorTy())
   {
     tacs.push_back(
-        vectorbinary_op::create(*static_cast<rvsdg::binary_op *>(binop.get()), op1, op2, *type));
+        vectorbinary_op::create(*static_cast<rvsdg::binary_op *>(binop.get()), op1, op2, type));
   }
   else
   {
@@ -584,7 +584,7 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   fpcmp_op operation(map[i->getPredicate()], ExtractFloatingPointSize(fptype));
 
   if (t->isVectorTy())
-    tacs.push_back(vectorbinary_op::create(operation, op1, op2, *type));
+    tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
   else
     tacs.push_back(tac::create(operation, { op1, op2 }));
 
@@ -683,7 +683,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::PHI);
 
   auto type = ConvertType(i->getType(), ctx);
-  tacs.push_back(phi_op::create({}, *type));
+  tacs.push_back(phi_op::create({}, type));
   return tacs.back()->result(0);
 }
 
@@ -1009,7 +1009,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
   if (i->getType()->isVectorTy())
   {
     auto & binop = *static_cast<rvsdg::binary_op *>(operation.get());
-    tacs.push_back(vectorbinary_op::create(binop, op1, op2, *type));
+    tacs.push_back(vectorbinary_op::create(binop, op1, op2, type));
   }
   else
   {
@@ -1104,8 +1104,10 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
   if (type->isVectorTy())
   {
     auto vectorType = ConvertType(type, ctx);
-    threeAddressCodeVector.push_back(
-        vectorunary_op::create(fpneg_op(*scalarType), operand, *vectorType));
+    threeAddressCodeVector.push_back(vectorunary_op::create(
+        fpneg_op(std::static_pointer_cast<const fptype>(scalarType)),
+        operand,
+        vectorType));
   }
   else
   {
@@ -1158,7 +1160,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   JLM_ASSERT(is<rvsdg::unary_op>(*unop));
 
   if (dt->isVectorTy())
-    tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, *type));
+    tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, type));
   else
     tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(unop.get()), { op }));
 

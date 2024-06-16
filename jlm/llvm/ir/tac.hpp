@@ -26,8 +26,11 @@ class tacvariable final : public variable
 public:
   virtual ~tacvariable();
 
-  tacvariable(llvm::tac * tac, const jlm::rvsdg::type & type, const std::string & name)
-      : variable(type, name),
+  tacvariable(
+      llvm::tac * tac,
+      std::shared_ptr<const jlm::rvsdg::type> type,
+      const std::string & name)
+      : variable(std::move(type), name),
         tac_(tac)
   {}
 
@@ -38,9 +41,9 @@ public:
   }
 
   static std::unique_ptr<tacvariable>
-  create(llvm::tac * tac, const jlm::rvsdg::type & type, const std::string & name)
+  create(llvm::tac * tac, std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
   {
-    return std::make_unique<tacvariable>(tac, type, name);
+    return std::make_unique<tacvariable>(tac, std::move(type), name);
   }
 
 private:
@@ -155,7 +158,7 @@ private:
 
     for (size_t n = 0; n < operation.nresults(); n++)
     {
-      auto & type = operation.result(n).type();
+      auto & type = operation.result(n).Type();
       results_.push_back(tacvariable::create(this, type, names[n]));
     }
   }
