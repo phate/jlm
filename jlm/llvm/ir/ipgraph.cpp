@@ -115,6 +115,12 @@ function_node::type() const noexcept
   return pointerType;
 }
 
+std::shared_ptr<const jlm::rvsdg::type>
+function_node::Type() const
+{
+  return PointerType::Create();
+}
+
 const llvm::linkage &
 function_node::linkage() const noexcept
 {
@@ -157,6 +163,12 @@ data_node::type() const noexcept
 {
   static PointerType pointerType;
   return pointerType;
+}
+
+std::shared_ptr<const rvsdg::type>
+data_node::Type() const
+{
+  return PointerType::Create();
 }
 
 const llvm::linkage &

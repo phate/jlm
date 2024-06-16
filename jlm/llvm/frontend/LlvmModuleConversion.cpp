@@ -448,7 +448,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     return data_node::Create(
         ctx.module().ipgraph(),
         name,
-        *type,
+        type,
         linkage,
         std::move(section),
         constant);

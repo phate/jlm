@@ -765,7 +765,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     loadNodes.push_back(loadOutput->node());
     auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
         &loadOutput->node()->operation());
-    loadTypes.push_back(&loadOp->GetLoadedType());
+    loadTypes.push_back(&*loadOp->GetLoadedType());
   }
   std::vector<jlm::rvsdg::simple_node *> storeNodes;
   for (auto storeNode : originalStoreNodes)

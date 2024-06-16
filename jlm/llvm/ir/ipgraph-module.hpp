@@ -23,7 +23,7 @@ public:
   virtual ~gblvalue();
 
   inline gblvalue(data_node * node)
-      : gblvariable(node->type(), node->name()),
+      : gblvariable(node->Type(), node->name()),
         node_(node)
   {}
 

@@ -39,7 +39,7 @@ test()
   jlm::rvsdg::output *delta1, *delta2;
   {
     auto delta =
-        delta::node::Create(region, *vt, "test-delta1", linkage::external_linkage, "", false);
+        delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
     auto dep1 = delta->add_ctxvar(r2->argument());
     auto dep2 = delta->add_ctxvar(dep);
     delta1 =
@@ -48,7 +48,7 @@ test()
 
   {
     auto delta =
-        delta::node::Create(region, *vt, "test-delta2", linkage::external_linkage, "", false);
+        delta::node::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
     auto dep1 = delta->add_ctxvar(r1->argument());
     auto dep2 = delta->add_ctxvar(dep);
     delta2 =

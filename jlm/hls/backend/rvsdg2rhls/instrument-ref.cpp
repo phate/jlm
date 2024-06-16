@@ -88,7 +88,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
-  jlm::llvm::FunctionType loadFunctionType(
+  auto loadFunctionType = jlm::llvm::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         llvm::iostatetype::Create(),
@@ -100,7 +100,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       jlm::llvm::linkage::external_linkage);
   auto reference_load = graph.add_import(load_imp);
   // addr, data, width, memstate
-  jlm::llvm::FunctionType storeFunctionType(
+  auto storeFunctionType = jlm::llvm::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         jlm::rvsdg::bittype::Create(64),
@@ -113,7 +113,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       jlm::llvm::linkage::external_linkage);
   auto reference_store = graph.add_import(store_imp);
   // addr, size, memstate
-  jlm::llvm::FunctionType allocaFunctionType(
+  auto allocaFunctionType = jlm::llvm::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         llvm::iostatetype::Create(),
@@ -129,11 +129,11 @@ instrument_ref(llvm::RvsdgModule & rm)
       root,
       newLambda->subregion()->argument(ioStateArgumentIndex),
       reference_load,
-      loadFunctionType,
+      *loadFunctionType,
       reference_store,
-      storeFunctionType,
+      *storeFunctionType,
       reference_alloca,
-      allocaFunctionType);
+      *allocaFunctionType);
 }
 
 void
@@ -141,11 +141,11 @@ instrument_ref(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    jlm::llvm::FunctionType & loadFunctionType,
+    const jlm::llvm::FunctionType & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    jlm::llvm::FunctionType & storeFunctionType,
+    const jlm::llvm::FunctionType & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    jlm::llvm::FunctionType & allocaFunctionType)
+    const jlm::llvm::FunctionType & allocaFunctionType)
 {
   load_func = route_to_region(load_func, region);
   store_func = route_to_region(store_func, region);
@@ -176,7 +176,7 @@ instrument_ref(
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
-      size_t bitWidth = BaseHLS::JlmSize(&loadOp->GetLoadedType());
+      size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
       int log2Bytes = log2(bitWidth / 8);
       auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
 

@@ -158,10 +158,12 @@ public:
     return Alignment_;
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
   GetLoadedType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(&result(0).type());
+    auto type = std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0).Type());
+    JLM_ASSERT(type);
+    return type;
   }
 
   [[nodiscard]] virtual size_t
@@ -186,18 +188,6 @@ class LoadVolatileOperation final : public LoadOperation
 {
 public:
   ~LoadVolatileOperation() noexcept override;
-
-  LoadVolatileOperation(
-      const rvsdg::valuetype & loadedType,
-      size_t numMemoryStates,
-      size_t alignment)
-      : LoadOperation(
-          CreateOperandTypes(numMemoryStates),
-          CreateResultTypes(
-              std::static_pointer_cast<const rvsdg::valuetype>(loadedType.copy()),
-              numMemoryStates),
-          alignment)
-  {}
 
   LoadVolatileOperation(
       std::shared_ptr<const rvsdg::valuetype> loadedType,
@@ -226,10 +216,10 @@ public:
       const variable * address,
       const variable * iOState,
       const variable * memoryState,
-      const rvsdg::valuetype & loadedType,
+      std::shared_ptr<const rvsdg::valuetype> loadedType,
       size_t alignment)
   {
-    LoadVolatileOperation operation(loadedType, 1, alignment);
+    LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
     return tac::create(operation, { address, iOState, memoryState });
   }
 
@@ -419,21 +409,6 @@ public:
       rvsdg::output & address,
       rvsdg::output & iOState,
       const std::vector<rvsdg::output *> & memoryStates,
-      const rvsdg::valuetype & loadedType,
-      size_t alignment)
-  {
-    std::vector<rvsdg::output *> operands({ &address, &iOState });
-    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
-
-    LoadVolatileOperation operation(loadedType, memoryStates.size(), alignment);
-    return CreateNode(*address.region(), operation, operands);
-  }
-
-  static LoadVolatileNode &
-  CreateNode(
-      rvsdg::output & address,
-      rvsdg::output & iOState,
-      const std::vector<rvsdg::output *> & memoryStates,
       std::shared_ptr<const rvsdg::valuetype> loadedType,
       size_t alignment)
   {
@@ -465,18 +440,6 @@ public:
   ~LoadNonVolatileOperation() noexcept override;
 
   LoadNonVolatileOperation(
-      const rvsdg::valuetype & loadedType,
-      size_t numMemoryStates,
-      size_t alignment)
-      : LoadOperation(
-          CreateOperandTypes(numMemoryStates),
-          CreateResultTypes(
-              std::static_pointer_cast<const rvsdg::valuetype>(loadedType.copy()),
-              numMemoryStates),
-          alignment)
-  {}
-
-  LoadNonVolatileOperation(
       std::shared_ptr<const rvsdg::valuetype> loadedType,
       size_t numMemoryStates,
       size_t alignment)
@@ -503,17 +466,6 @@ public:
   {
     return jlm::util::AssertedCast<load_normal_form>(
         graph->node_normal_form(typeid(LoadNonVolatileOperation)));
-  }
-
-  static std::unique_ptr<llvm::tac>
-  Create(
-      const variable * address,
-      const variable * state,
-      const rvsdg::valuetype & loadedType,
-      size_t alignment)
-  {
-    LoadNonVolatileOperation operation(loadedType, 1, alignment);
-    return tac::create(operation, { address, state });
   }
 
   static std::unique_ptr<llvm::tac>
@@ -584,34 +536,10 @@ public:
   Create(
       rvsdg::output * address,
       const std::vector<rvsdg::output *> & memoryStates,
-      const rvsdg::valuetype & loadedType,
-      size_t alignment)
-  {
-    return rvsdg::outputs(&CreateNode(*address, memoryStates, loadedType, alignment));
-  }
-
-  static std::vector<rvsdg::output *>
-  Create(
-      rvsdg::output * address,
-      const std::vector<rvsdg::output *> & memoryStates,
       std::shared_ptr<const rvsdg::valuetype> loadedType,
       size_t alignment)
   {
     return rvsdg::outputs(&CreateNode(*address, memoryStates, std::move(loadedType), alignment));
-  }
-
-  static LoadNonVolatileNode &
-  CreateNode(
-      rvsdg::output & address,
-      const std::vector<rvsdg::output *> & memoryStates,
-      const rvsdg::valuetype & loadedType,
-      size_t alignment)
-  {
-    std::vector<rvsdg::output *> operands({ &address });
-    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
-
-    LoadNonVolatileOperation loadOperation(loadedType, memoryStates.size(), alignment);
-    return CreateNode(*address.region(), loadOperation, operands);
   }
 
   static LoadNonVolatileNode &

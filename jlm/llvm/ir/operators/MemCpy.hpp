@@ -72,9 +72,9 @@ class MemCpyNonVolatileOperation final : public MemCpyOperation
 public:
   ~MemCpyNonVolatileOperation() override;
 
-  MemCpyNonVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
+  MemCpyNonVolatileOperation(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-          CreateOperandTypes(lengthType, numMemoryStates),
+          CreateOperandTypes(std::move(lengthType), numMemoryStates),
           CreateResultTypes(numMemoryStates))
   {}
 
@@ -100,7 +100,7 @@ public:
     std::vector<const variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyNonVolatileOperation operation(length->type(), memoryStates.size());
+    MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
     return tac::create(operation, operands);
   }
 
@@ -114,18 +114,16 @@ public:
     std::vector<rvsdg::output *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyNonVolatileOperation operation(length->type(), memoryStates.size());
+    MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
     return rvsdg::simple_node::create_normalized(destination->region(), operation, operands);
   }
 
 private:
   static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateOperandTypes(const rvsdg::type & length, size_t numMemoryStates)
+  CreateOperandTypes(std::shared_ptr<const rvsdg::type> length, size_t numMemoryStates)
   {
     auto pointerType = PointerType::Create();
-    std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType,
-                                                              pointerType,
-                                                              length.copy() };
+    std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType, pointerType, length };
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
   }
@@ -153,9 +151,9 @@ class MemCpyVolatileOperation final : public MemCpyOperation
 public:
   ~MemCpyVolatileOperation() noexcept override;
 
-  MemCpyVolatileOperation(const rvsdg::type & lengthType, size_t numMemoryStates)
+  MemCpyVolatileOperation(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-          CreateOperandTypes(lengthType, numMemoryStates),
+          CreateOperandTypes(std::move(lengthType), numMemoryStates),
           CreateResultTypes(numMemoryStates))
   {}
 
@@ -182,7 +180,7 @@ public:
     std::vector<const variable *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyVolatileOperation operation(length.type(), memoryStates.size());
+    MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
     return tac::create(operation, operands);
   }
 
@@ -197,18 +195,18 @@ public:
     std::vector<rvsdg::output *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyVolatileOperation operation(length.type(), memoryStates.size());
+    MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
     return *rvsdg::simple_node::create(destination.region(), operation, operands);
   }
 
 private:
   static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateOperandTypes(const rvsdg::type & lengthType, size_t numMemoryStates)
+  CreateOperandTypes(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
   {
     auto pointerType = PointerType::Create();
     std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType,
                                                               pointerType,
-                                                              lengthType.copy(),
+                                                              std::move(lengthType),
                                                               iostatetype::Create() };
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
