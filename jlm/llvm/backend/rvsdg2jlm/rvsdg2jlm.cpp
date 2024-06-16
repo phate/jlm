@@ -52,17 +52,17 @@ public:
 namespace rvsdg2jlm
 {
 
-static const FunctionType *
+static std::shared_ptr<const FunctionType>
 is_function_import(const rvsdg::argument * argument)
 {
   JLM_ASSERT(argument->region()->graph()->root() == argument->region());
 
   if (auto rvsdgImport = dynamic_cast<const impport *>(&argument->port()))
   {
-    return dynamic_cast<const FunctionType *>(&rvsdgImport->GetValueType());
+    return std::dynamic_pointer_cast<const FunctionType>(rvsdgImport->Type());
   }
 
-  return nullptr;
+  return {};
 }
 
 static std::unique_ptr<data_node_init>
@@ -558,11 +558,7 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
     auto import = static_cast<const llvm::impport *>(&argument->port());
     if (auto ftype = is_function_import(argument))
     {
-      auto f = function_node::create(
-          ipg,
-          import->name(),
-          std::static_pointer_cast<const FunctionType>(ftype->copy()),
-          import->linkage());
+      auto f = function_node::create(ipg, import->name(), ftype, import->linkage());
       auto v = im.create_variable(f);
       ctx.insert(argument, v);
     }
