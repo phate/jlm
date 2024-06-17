@@ -1786,6 +1786,50 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
                                        ? differencePropagation.PointeesEscapeIsNew(node)
                                        : pointeesEscaping;
 
+    // Mark pointees as escaping, if node has the PointeesEscaping flag
+    if (pointeesEscaping)
+    {
+      // If this is the first time node is being visited with the PointeesEscaping flag set,
+      // add the escaped flag to all pointees. Otherwise, only add it to new pointees.
+      const auto & newEscapingPointees =
+          newPointeesEscaping ? Set_.GetPointsToSet(node) : newPointees;
+      for (const auto pointee : newEscapingPointees.Items())
+      {
+        const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
+
+        // Marking a node as escaped will imply two flags on the unification root:
+        // - PointeesEscaping
+        // - PointsToExternal
+        const bool rootAlreadyHasFlags =
+            Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
+
+        // Mark the pointee itself as escaped, not the pointee's unifiction root!
+        if (!Set_.MarkAsEscaped(pointee))
+          continue;
+
+        // If the PointerObject we just marked as escaped is a function, inform it about escaping
+        if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
+          HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
+
+        // If the pointee's unification root previously didn't have both the flags implied by
+        // having one of the unification members escaping, add the root to the worklist
+        if (!rootAlreadyHasFlags)
+        {
+          JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
+          JLM_ASSERT(Set_.IsPointingToExternal(pointeeRoot));
+          worklist.PushWorkItem(pointeeRoot);
+        }
+      }
+    }
+
+    // If this node can track all pointees implicitly, remove its explicit nodes
+    if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(node))
+    {
+      *(statistics.NumExplicitPointeesRemoved) += Set_.GetPointsToSet(node).Size();
+      // This also causes newPointees to become empty
+      RemoveAllPointees(node);
+    }
+
     // Propagate P(n) along all edges n -> superset
     auto supersets = supersetEdges[node].Items();
     for (auto it = supersets.begin(); it != supersets.end();)
@@ -1832,50 +1876,6 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
           return;
         }
       }
-    }
-
-    // Mark pointees as escaping, if node has the PointeesEscaping flag
-    if (pointeesEscaping)
-    {
-      // If this is the first time node is being visited with the PointeesEscaping flag set,
-      // add the escaped flag to all pointees. Otherwise, only add it to new pointees.
-      const auto & newEscapingPointees =
-          newPointeesEscaping ? Set_.GetPointsToSet(node) : newPointees;
-      for (const auto pointee : newEscapingPointees.Items())
-      {
-        const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
-
-        // Marking a node as escaped will imply two flags on the unification root:
-        // - PointeesEscaping
-        // - PointsToExternal
-        const bool rootAlreadyHasFlags =
-            Set_.HasPointeesEscaping(pointeeRoot) && Set_.IsPointingToExternal(pointeeRoot);
-
-        // Mark the pointee itself as escaped, not the pointee's unifiction root!
-        if (!Set_.MarkAsEscaped(pointee))
-          continue;
-
-        // If the PointerObject we just marked as escaped is a function, inform it about escaping
-        if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
-          HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
-
-        // If the pointee's unification root previously didn't have both the flags implied by
-        // having one of the unification members escaping, add the root to the worklist
-        if (!rootAlreadyHasFlags)
-        {
-          JLM_ASSERT(Set_.HasPointeesEscaping(pointeeRoot));
-          JLM_ASSERT(Set_.IsPointingToExternal(pointeeRoot));
-          worklist.PushWorkItem(pointeeRoot);
-        }
-      }
-    }
-
-    // If this node can track all pointees implicitly, remove its explicit nodes
-    if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(node))
-    {
-      *(statistics.NumExplicitPointeesRemoved) += Set_.GetPointsToSet(node).Size();
-      // This also causes newPointees to become empty
-      RemoveAllPointees(node);
     }
 
     // Stores on the form *n = value.
