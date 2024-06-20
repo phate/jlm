@@ -112,13 +112,13 @@ public:
     AllocSize,
     Dereferenceable,
     DereferenceableOrNull,
+    NoFPClass,
     StackAlignment,
     UWTable,
     VScaleRange,
     LastIntAttr,
 
-    EndAttrKinds, ///< Sentinel value useful for loops
-    NoFPClass
+    EndAttrKinds ///< Sentinel value useful for loops
   };
 
   virtual ~attribute();
