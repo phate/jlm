@@ -13,5 +13,7 @@ jobs:
         uses: ./.github/actions/InstallPackages
         with:
           install-clang-format: true
+      - name: "Configure jlm with HLS and MLIR enabled"
+        run: ./configure.sh --enable-mlir --enable-hls
       - name: "Check format"
         run: make format-dry-run
