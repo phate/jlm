@@ -34,7 +34,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
 
   auto storeResults = StoreNonVolatileNode::Create(address, value, { memoryState }, 4);
   auto loadResults =
-      LoadNonVolatileNode::Create(address, storeResults, *jlm::rvsdg::bittype::Create(8), 4);
+      LoadNonVolatileNode::Create(address, storeResults, jlm::rvsdg::bittype::Create(8), 4);
 
   auto exportedValue = graph.add_export(loadResults[0], { jlm::rvsdg::bittype::Create(8), "v" });
   graph.add_export(loadResults[1], { memoryStateType, "s" });

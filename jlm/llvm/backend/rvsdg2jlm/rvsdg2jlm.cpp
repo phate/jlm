@@ -464,7 +464,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
       JLM_ASSERT(is<delta::operation>(node));
       auto d = static_cast<const delta::node *>(node);
       auto data =
-          data_node::Create(ipg, d->name(), d->type(), d->linkage(), d->Section(), d->constant());
+          data_node::Create(ipg, d->name(), d->Type(), d->linkage(), d->Section(), d->constant());
       ctx.insert(subregion->argument(n), module.create_global_value(data));
     }
   }
@@ -509,7 +509,7 @@ convert_delta_node(const rvsdg::node & node, context & ctx)
   auto dnode = data_node::Create(
       m.ipgraph(),
       delta->name(),
-      delta->type(),
+      delta->Type(),
       delta->linkage(),
       delta->Section(),
       delta->constant());
@@ -568,13 +568,8 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
     }
     else
     {
-      auto dnode = data_node::Create(
-          ipg,
-          import->name(),
-          import->GetValueType(),
-          import->linkage(),
-          "",
-          false);
+      auto dnode =
+          data_node::Create(ipg, import->name(), import->Type(), import->linkage(), "", false);
       auto v = im.create_global_value(dnode);
       ctx.insert(argument, v);
     }

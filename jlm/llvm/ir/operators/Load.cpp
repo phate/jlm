@@ -337,9 +337,9 @@ is_load_store_reducible(
   // FIXME: This is too restrictive and can be improved upon by inserting truncation or narrowing
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
-  auto & loadedValueType = loadOperation.GetLoadedType();
+  auto loadedValueType = loadOperation.GetLoadedType();
   auto & storedValueType = storeNode->GetStoredValueInput().type();
-  if (loadedValueType != storedValueType)
+  if (*loadedValueType != storedValueType)
   {
     return false;
   }

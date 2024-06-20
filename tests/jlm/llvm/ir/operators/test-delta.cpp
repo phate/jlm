@@ -26,7 +26,7 @@ TestDeltaCreation()
 
   auto delta1 = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      *valueType,
+      valueType,
       "test-delta1",
       linkage::external_linkage,
       "",
@@ -37,7 +37,7 @@ TestDeltaCreation()
 
   auto delta2 = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      *valueType,
+      valueType,
       "test-delta2",
       linkage::internal_linkage,
       "",
@@ -74,7 +74,7 @@ TestRemoveDeltaInputsWhere()
 
   auto deltaNode = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      *valueType,
+      valueType,
       "delta",
       linkage::external_linkage,
       "",
@@ -141,7 +141,7 @@ TestPruneDeltaInputs()
 
   auto deltaNode = delta::node::Create(
       rvsdgModule.Rvsdg().root(),
-      *valueType,
+      valueType,
       "delta",
       linkage::external_linkage,
       "",

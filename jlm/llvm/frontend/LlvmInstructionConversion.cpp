@@ -610,7 +610,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
         address,
         ctx.iostate(),
         ctx.memory_state(),
-        *loadedType,
+        loadedType,
         alignment);
     tacs.push_back(std::move(loadVolatileTac));
 
@@ -621,7 +621,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   else
   {
     auto loadTac =
-        LoadNonVolatileOperation::Create(address, ctx.memory_state(), *loadedType, alignment);
+        LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
     tacs.push_back(std::move(loadTac));
     loadedValue = tacs.back()->result(0);
     memoryState = tacs.back()->result(1);
@@ -701,7 +701,7 @@ convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tac
   auto pointeeType = ConvertType(i->getSourceElementType(), ctx);
   auto resultType = ConvertType(i->getType(), ctx);
 
-  tacs.push_back(GetElementPtrOperation::Create(base, indices, *pointeeType, *resultType));
+  tacs.push_back(GetElementPtrOperation::Create(base, indices, pointeeType, resultType));
 
   return tacs.back()->result(0);
 }
@@ -1030,7 +1030,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto vtype = ConvertType(i->getAllocatedType(), ctx);
   auto alignment = i->getAlign().value();
 
-  tacs.push_back(alloca_op::create(*vtype, size, alignment));
+  tacs.push_back(alloca_op::create(vtype, size, alignment));
   auto result = tacs.back()->result(0);
   auto astate = tacs.back()->result(1);
 

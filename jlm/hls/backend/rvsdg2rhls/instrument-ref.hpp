@@ -20,11 +20,11 @@ instrument_ref(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    llvm::FunctionType & loadFunctionType,
+    const llvm::FunctionType & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    llvm::FunctionType & storeFunctionType,
+    const llvm::FunctionType & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    llvm::FunctionType & allocaFunctionType);
+    const llvm::FunctionType & allocaFunctionType);
 
 } // namespace jlm::hls
 

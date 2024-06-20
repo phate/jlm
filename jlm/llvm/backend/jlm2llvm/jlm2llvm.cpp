@@ -479,7 +479,7 @@ convert_ipgraph(const llvm::ipgraph & clg, context & ctx)
 
     if (auto dataNode = dynamic_cast<const data_node *>(&node))
     {
-      auto type = convert_type(dataNode->GetValueType(), ctx);
+      auto type = convert_type(*dataNode->GetValueType(), ctx);
       auto linkage = convert_linkage(dataNode->linkage());
 
       auto gv = new ::llvm::GlobalVariable(
