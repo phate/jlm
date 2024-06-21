@@ -536,9 +536,6 @@ public:
   }
 
   phi::rvoutput *
-  add_recvar(const jlm::rvsdg::type & type);
-
-  phi::rvoutput *
   add_recvar(std::shared_ptr<const jlm::rvsdg::type> type);
 
   phi::node *

@@ -1382,9 +1382,7 @@ public:
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
   CreateOutTypes(const jlm::llvm::arraytype & at, size_t resp_count)
   {
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(
-        resp_count,
-        at.element_type().copy());
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> types(resp_count, at.GetElementType());
     return types;
   }
 
@@ -1597,7 +1595,7 @@ public:
     for (size_t i = 0; i < store_cnt; ++i)
     {
       types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
-      types.emplace_back(at.element_type().copy());        // data
+      types.emplace_back(at.GetElementType());             // data
     }
     return types;
   }

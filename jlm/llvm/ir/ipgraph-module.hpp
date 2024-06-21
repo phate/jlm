@@ -23,7 +23,7 @@ public:
   virtual ~gblvalue();
 
   inline gblvalue(data_node * node)
-      : gblvariable(node->type(), node->name()),
+      : gblvariable(node->Type(), node->name()),
         node_(node)
   {}
 
@@ -114,25 +114,6 @@ public:
     functions_[node] = ptr;
     variables_.insert(std::move(v));
     return ptr;
-  }
-
-  inline llvm::variable *
-  create_variable(const jlm::rvsdg::type & type, const std::string & name)
-  {
-    auto v = std::make_unique<llvm::variable>(type, name);
-    auto pv = v.get();
-    variables_.insert(std::move(v));
-    return pv;
-  }
-
-  inline llvm::variable *
-  create_variable(const jlm::rvsdg::type & type)
-  {
-    static uint64_t c = 0;
-    auto v = std::make_unique<llvm::variable>(type, jlm::util::strfmt("v", c++));
-    auto pv = v.get();
-    variables_.insert(std::move(v));
-    return pv;
   }
 
   inline llvm::variable *

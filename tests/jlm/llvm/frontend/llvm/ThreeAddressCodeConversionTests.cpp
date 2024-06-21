@@ -29,7 +29,7 @@ SetupControlFlowGraph(
   std::vector<const variable *> operands;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
-    auto & operandType = operation.argument(n).type();
+    auto & operandType = operation.argument(n).Type();
     auto operand = cfg->entry()->append_argument(argument::create("", operandType));
     operands.emplace_back(operand);
   }
@@ -87,7 +87,7 @@ LoadVolatileConversion()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  LoadVolatileOperation operation(*valueType, 3, 4);
+  LoadVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 
   // Act

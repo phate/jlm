@@ -84,7 +84,13 @@ public:
   [[nodiscard]] const rvsdg::valuetype &
   type() const noexcept
   {
-    return *jlm::util::AssertedCast<const rvsdg::valuetype>(type_.get());
+    return *type_;
+  }
+
+  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  Type() const noexcept
+  {
+    return type_;
   }
 
 private:
@@ -92,7 +98,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const rvsdg::type> type_;
+  std::shared_ptr<const rvsdg::valuetype> type_;
 };
 
 class cvargument;
@@ -160,6 +166,12 @@ public:
   type() const noexcept
   {
     return operation().type();
+  }
+
+  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  Type() const noexcept
+  {
+    return operation().Type();
   }
 
   const std::string &
@@ -251,39 +263,6 @@ public:
 
   virtual delta::node *
   copy(rvsdg::region * region, rvsdg::substitution_map & smap) const override;
-
-  /**
-   * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
-   * After the invocation of \ref Create(), the delta node has no inputs or outputs.
-   * Free variables can be added to the delta node using \ref add_ctxvar(). The generation of the
-   * node can be finished using the \ref finalize() method.
-   *
-   * \param parent The region where the delta node is created.
-   * \param type The delta node's type.
-   * \param name The delta node's name.
-   * \param linkage The delta node's linkage.
-   * \param section The delta node's section.
-   * \param constant True, if the delta node is constant, otherwise false.
-   *
-   * \return A delta node without inputs or outputs.
-   */
-  static node *
-  Create(
-      rvsdg::region * parent,
-      const rvsdg::valuetype & type,
-      const std::string & name,
-      const llvm::linkage & linkage,
-      std::string section,
-      bool constant)
-  {
-    delta::operation op(
-        std::static_pointer_cast<const rvsdg::valuetype>(type.copy()),
-        name,
-        linkage,
-        std::move(section),
-        constant);
-    return new delta::node(parent, std::move(op));
-  }
 
   /**
    * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.

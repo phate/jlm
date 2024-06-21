@@ -45,10 +45,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
-      - name: Clone polybench
-        run: git clone https://github.com/phate/polybench-jlm.git
-      - name: Check polybench
-        run: make -C polybench-jlm check -j `nproc`
+      - name: "Run polybench"
+        run: ./scripts/run-polybench.sh
 
   llvm-test-suite:
     runs-on: ubuntu-22.04
@@ -56,14 +54,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
-      - name: Clone jlm-test-suite
-        run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
-      - name: Update submodules
-        run: make -C jlm-eval-suite submodule
-      - name: Apply patch
-        run: cd jlm-eval-suite && make apply-llvm-git-patch
-      - name: Run llvm-test-suite
-        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-opt
+      - name: "Run the llvm-test-suite-opt"
+        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-opt
 
   llvm-test-suite-andersen-agnostic:
     if: contains(github.event.pull_request.title, '[AndersenAgnostic]')
@@ -72,14 +64,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
-      - name: Clone jlm-test-suite
-        run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
-      - name: Update submodules
-        run: make -C jlm-eval-suite submodule
-      - name: Apply patch
-        run: cd jlm-eval-suite && make apply-llvm-git-patch
-      - name: Run llvm-test-suite-andersen
-        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-andersen-agnostic
+      - name: "Run the llvm-test-suite-andersen-agnostic"
+        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-andersen-agnostic
 
   llvm-test-suite-steensgaard-agnostic:
     if: contains(github.event.pull_request.title, '[SteensgaardAgnostic]')
@@ -88,11 +74,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
-      - name: Clone jlm-test-suite
-        run: git clone --depth 1 https://github.com/phate/jlm-eval-suite.git
-      - name: Update submodules
-        run: make -C jlm-eval-suite submodule
-      - name: Apply patch
-        run: cd jlm-eval-suite && make apply-llvm-git-patch
-      - name: Run llvm-test-suite-steensgaard-agnostic
-        run: cd jlm-eval-suite/llvm-test-suite && make llvm-run-steensgaard-agnostic
+      - name: "Run the llvm-test-suite-steensgard-agnostic"
+        run: ./scripts/run-llvm-test-suite.sh --make-target llvm-run-steensgaard-agnostic

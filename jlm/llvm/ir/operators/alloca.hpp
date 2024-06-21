@@ -54,27 +54,19 @@ public:
   inline const rvsdg::valuetype &
   value_type() const noexcept
   {
-    return *::jlm::util::AssertedCast<const rvsdg::valuetype>(AllocatedType_.get());
+    return *AllocatedType_;
+  }
+
+  inline const std::shared_ptr<const rvsdg::valuetype> &
+  ValueType() const noexcept
+  {
+    return AllocatedType_;
   }
 
   inline size_t
   alignment() const noexcept
   {
     return alignment_;
-  }
-
-  static std::unique_ptr<llvm::tac>
-  create(const rvsdg::valuetype & allocatedType, const variable * size, size_t alignment)
-  {
-    auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
-    if (!bt)
-      throw jlm::util::error("expected bits type.");
-
-    alloca_op op(
-        std::static_pointer_cast<const rvsdg::valuetype>(allocatedType.copy()),
-        std::move(bt),
-        alignment);
-    return tac::create(op, { size });
   }
 
   static std::unique_ptr<llvm::tac>
@@ -89,20 +81,6 @@ public:
 
     alloca_op op(std::move(allocatedType), std::move(bt), alignment);
     return tac::create(op, { size });
-  }
-
-  static std::vector<rvsdg::output *>
-  create(const rvsdg::valuetype & allocatedType, rvsdg::output * size, size_t alignment)
-  {
-    auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
-    if (!bt)
-      throw jlm::util::error("expected bits type.");
-
-    alloca_op op(
-        std::static_pointer_cast<const rvsdg::valuetype>(allocatedType.copy()),
-        std::move(bt),
-        alignment);
-    return rvsdg::simple_node::create_normalized(size->region(), op, { size });
   }
 
   static std::vector<rvsdg::output *>
@@ -121,7 +99,7 @@ public:
 
 private:
   size_t alignment_;
-  std::shared_ptr<const rvsdg::type> AllocatedType_;
+  std::shared_ptr<const rvsdg::valuetype> AllocatedType_;
 };
 
 }

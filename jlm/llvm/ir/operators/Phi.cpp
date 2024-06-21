@@ -76,7 +76,7 @@ node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) con
   std::vector<rvoutput *> newrvs;
   for (auto it = begin_rv(); it != end_rv(); it++)
   {
-    auto newrv = pb.add_recvar(it->type());
+    auto newrv = pb.add_recvar(it->Type());
     subregionmap.insert(it->argument(), newrv->argument());
     newrvs.push_back(newrv);
   }
@@ -120,20 +120,6 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
 }
 
 /* phi builder class */
-
-rvoutput *
-builder::add_recvar(const jlm::rvsdg::type & type)
-{
-  if (!node_)
-    return nullptr;
-
-  auto argument = rvargument::create(subregion(), type.copy());
-  auto output = rvoutput::create(node_, argument, type.copy());
-  rvresult::create(subregion(), argument, output, type.copy());
-  argument->output_ = output;
-
-  return output;
-}
 
 rvoutput *
 builder::add_recvar(std::shared_ptr<const jlm::rvsdg::type> type)

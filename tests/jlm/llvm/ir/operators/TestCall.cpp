@@ -122,11 +122,11 @@ TestCallTypeClassifierIndirectCall()
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = alloca_op::create(*PointerType::Create(), one, 8);
+    auto alloca = alloca_op::create(PointerType::Create(), one, 8);
 
     auto store = StoreNonVolatileNode::Create(alloca[0], lambda->fctargument(0), { alloca[1] }, 8);
 
-    auto load = LoadNonVolatileNode::Create(alloca[0], store, *PointerType::Create(), 8);
+    auto load = LoadNonVolatileNode::Create(alloca[0], store, PointerType::Create(), 8);
 
     auto callResults =
         CallNode::Create(load[0], fcttype1, { iOStateArgument, memoryStateArgument });
@@ -374,7 +374,7 @@ TestCallTypeClassifierRecursiveDirectCall()
 
   auto SetupFib = [&]()
   {
-    PointerType pbit64;
+    auto pbit64 = PointerType::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = FunctionType::Create(
@@ -426,21 +426,21 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepnm1 = GetElementPtrOperation::Create(
         resultev->argument(0),
         { nm1 },
-        *jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(64),
         pbit64);
     auto ldnm1 = LoadNonVolatileNode::Create(
         gepnm1,
         { callfibm2Results[1] },
-        *jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(64),
         8);
 
     auto gepnm2 = GetElementPtrOperation::Create(
         resultev->argument(0),
         { nm2 },
-        *jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(64),
         pbit64);
     auto ldnm2 =
-        LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, *jlm::rvsdg::bittype::Create(64), 8);
+        LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bittype::Create(64), 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
@@ -454,7 +454,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
-        *jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(64),
         pbit64);
     auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
 

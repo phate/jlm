@@ -388,7 +388,7 @@ private:
   rvsdg::output &
   InsertUndefinedMemoryState(rvsdg::region & region) noexcept
   {
-    auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType());
+    auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType::Create());
     UndefinedMemoryStates_[&region] = undefinedMemoryState;
     return *undefinedMemoryState;
   }

@@ -31,7 +31,7 @@ test_malloc()
     bb->add_outedge(cfg->exit());
 
     auto size =
-        cfg->entry()->append_argument(argument::create("size", *jlm::rvsdg::bittype::Create(64)));
+        cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::bittype::Create(64)));
 
     bb->append_last(malloc_op::create(size));
 
@@ -76,7 +76,7 @@ test_free()
   {
     using namespace jlm::llvm;
 
-    iostatetype iot;
+    auto iot = iostatetype::Create();
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
 

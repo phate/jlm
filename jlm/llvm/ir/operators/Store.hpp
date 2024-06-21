@@ -144,18 +144,6 @@ public:
   ~StoreNonVolatileOperation() noexcept override;
 
   StoreNonVolatileOperation(
-      const rvsdg::valuetype & storedType,
-      size_t numMemoryStates,
-      size_t alignment)
-      : StoreOperation(
-          CreateOperandTypes(
-              std::static_pointer_cast<const rvsdg::valuetype>(storedType.copy()),
-              numMemoryStates),
-          { numMemoryStates, MemoryStateType::Create() },
-          alignment)
-  {}
-
-  StoreNonVolatileOperation(
       std::shared_ptr<const rvsdg::valuetype> storedType,
       size_t numMemoryStates,
       size_t alignment)
@@ -187,19 +175,19 @@ public:
   static std::unique_ptr<llvm::tac>
   Create(const variable * address, const variable * value, const variable * state, size_t alignment)
   {
-    auto & storedType = CheckAndExtractStoredType(value->type());
+    auto storedType = CheckAndExtractStoredType(value->Type());
 
     StoreNonVolatileOperation op(storedType, 1, alignment);
     return tac::create(op, { address, value, state });
   }
 
 private:
-  static const jlm::rvsdg::valuetype &
-  CheckAndExtractStoredType(const rvsdg::type & type)
+  static const std::shared_ptr<const jlm::rvsdg::valuetype>
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
   {
-    if (auto storedType = dynamic_cast<const rvsdg::valuetype *>(&type))
+    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
     {
-      return *storedType;
+      return storedType;
     }
 
     throw util::error("Expected value type");
@@ -365,12 +353,12 @@ public:
       const std::vector<rvsdg::output *> & memoryStates,
       size_t alignment)
   {
-    auto & storedType = CheckAndExtractStoredType(value.type());
+    auto storedType = CheckAndExtractStoredType(value.Type());
 
     std::vector<rvsdg::output *> operands({ &address, &value });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreNonVolatileOperation storeOperation(storedType, memoryStates.size(), alignment);
+    StoreNonVolatileOperation storeOperation(std::move(storedType), memoryStates.size(), alignment);
     return CreateNode(*address.region(), storeOperation, operands);
   }
 
@@ -393,12 +381,12 @@ public:
   }
 
 private:
-  static const rvsdg::valuetype &
-  CheckAndExtractStoredType(const rvsdg::type & type)
+  static std::shared_ptr<const rvsdg::valuetype>
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
   {
-    if (auto storedType = dynamic_cast<const rvsdg::valuetype *>(&type))
+    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
     {
-      return *storedType;
+      return storedType;
     }
 
     throw util::error("Expected value type.");
@@ -420,18 +408,6 @@ class StoreVolatileOperation final : public StoreOperation
 {
 public:
   ~StoreVolatileOperation() noexcept override;
-
-  StoreVolatileOperation(
-      const rvsdg::valuetype & storedType,
-      size_t numMemoryStates,
-      size_t alignment)
-      : StoreOperation(
-          CreateOperandTypes(
-              std::static_pointer_cast<const rvsdg::valuetype>(storedType.copy()),
-              numMemoryStates),
-          CreateResultTypes(numMemoryStates),
-          alignment)
-  {}
 
   StoreVolatileOperation(
       std::shared_ptr<const rvsdg::valuetype> storedType,
@@ -463,18 +439,18 @@ public:
       const variable * memoryState,
       size_t alignment)
   {
-    auto & storedType = CheckAndExtractStoredType(value->type());
+    auto storedType = CheckAndExtractStoredType(value->Type());
 
     StoreVolatileOperation op(storedType, 1, alignment);
     return tac::create(op, { address, value, ioState, memoryState });
   }
 
 private:
-  static const rvsdg::valuetype &
-  CheckAndExtractStoredType(const rvsdg::type & type)
+  static std::shared_ptr<const rvsdg::valuetype>
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
   {
-    if (auto storedType = dynamic_cast<const rvsdg::valuetype *>(&type))
-      return *storedType;
+    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
+      return storedType;
 
     throw jlm::util::error("Expected value type");
   }
@@ -564,7 +540,7 @@ public:
       const std::vector<rvsdg::output *> & memoryStates,
       size_t alignment)
   {
-    auto & storedType = CheckAndExtractStoredType(value.type());
+    auto storedType = CheckAndExtractStoredType(value.Type());
 
     std::vector<rvsdg::output *> operands({ &address, &value, &ioState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
@@ -583,11 +559,11 @@ public:
   }
 
 private:
-  static const rvsdg::valuetype &
-  CheckAndExtractStoredType(const rvsdg::type & type)
+  static std::shared_ptr<const rvsdg::valuetype>
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
   {
-    if (auto storedType = dynamic_cast<const rvsdg::valuetype *>(&type))
-      return *storedType;
+    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
+      return storedType;
 
     throw jlm::util::error("Expected value type.");
   }

@@ -90,9 +90,9 @@ TestRemovePhiArgumentsWhere()
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
 
-  auto phiOutput0 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput1 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput2 = phiBuilder.add_recvar(*valueType);
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
   auto phiArgument3 = phiBuilder.add_ctxvar(x);
   auto phiArgument4 = phiBuilder.add_ctxvar(x);
 
@@ -173,9 +173,9 @@ TestPrunePhiArguments()
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
 
-  auto phiOutput0 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput1 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput2 = phiBuilder.add_recvar(*valueType);
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
   phiBuilder.add_ctxvar(x);
   auto phiArgument4 = phiBuilder.add_ctxvar(x);
 
@@ -217,9 +217,9 @@ TestRemovePhiOutputsWhere()
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
 
-  auto phiOutput0 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput1 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput2 = phiBuilder.add_recvar(*valueType);
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
 
   auto result = jlm::tests::SimpleNode::Create(
                     *phiBuilder.subregion(),
@@ -266,9 +266,9 @@ TestPrunePhiOutputs()
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
 
-  auto phiOutput0 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput1 = phiBuilder.add_recvar(*valueType);
-  auto phiOutput2 = phiBuilder.add_recvar(*valueType);
+  auto phiOutput0 = phiBuilder.add_recvar(valueType);
+  auto phiOutput1 = phiBuilder.add_recvar(valueType);
+  auto phiOutput2 = phiBuilder.add_recvar(valueType);
 
   auto result = jlm::tests::SimpleNode::Create(
                     *phiBuilder.subregion(),
