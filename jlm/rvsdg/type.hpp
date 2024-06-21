@@ -32,9 +32,6 @@ public:
     return !(*this == other);
   }
 
-  virtual std::shared_ptr<const type>
-  copy() const = 0;
-
   virtual std::string
   debug_string() const = 0;
 };

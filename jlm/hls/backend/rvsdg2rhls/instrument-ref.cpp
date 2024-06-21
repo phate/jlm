@@ -129,11 +129,11 @@ instrument_ref(llvm::RvsdgModule & rm)
       root,
       newLambda->subregion()->argument(ioStateArgumentIndex),
       reference_load,
-      *loadFunctionType,
+      loadFunctionType,
       reference_store,
-      *storeFunctionType,
+      storeFunctionType,
       reference_alloca,
-      *allocaFunctionType);
+      allocaFunctionType);
 }
 
 void
@@ -141,11 +141,11 @@ instrument_ref(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    const jlm::llvm::FunctionType & loadFunctionType,
+    const std::shared_ptr<const jlm::llvm::FunctionType> & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    const jlm::llvm::FunctionType & storeFunctionType,
+    const std::shared_ptr<const jlm::llvm::FunctionType> & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    const jlm::llvm::FunctionType & allocaFunctionType)
+    const std::shared_ptr<const jlm::llvm::FunctionType> & allocaFunctionType)
 {
   load_func = route_to_region(load_func, region);
   store_func = route_to_region(store_func, region);
@@ -188,7 +188,7 @@ instrument_ref(
       auto memstate = node->input(1)->origin();
       auto callOp = jlm::llvm::CallNode::Create(
           load_func,
-          std::static_pointer_cast<const llvm::FunctionType>(loadFunctionType.copy()),
+          loadFunctionType,
           { addr, width, ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
@@ -220,7 +220,7 @@ instrument_ref(
       auto memstate = node->output(1);
       auto callOp = jlm::llvm::CallNode::Create(
           alloca_func,
-          std::static_pointer_cast<const llvm::FunctionType>(allocaFunctionType.copy()),
+          allocaFunctionType,
           { addr, size, ioState, memstate });
       for (auto ou : old_users)
       {
@@ -254,7 +254,7 @@ instrument_ref(
       auto memstate = node->input(2)->origin();
       auto callOp = jlm::llvm::CallNode::Create(
           store_func,
-          std::static_pointer_cast<const llvm::FunctionType>(storeFunctionType.copy()),
+          storeFunctionType,
           { addr, data, width, ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(2)->divert_to(callOp[1]);

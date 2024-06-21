@@ -53,7 +53,7 @@ JsonHLS::get_text(llvm::RvsdgModule & rm)
     }
     auto req_bt = dynamic_cast<const bundletype *>(&mem_reqs[i]->type());
     auto resp_bt = dynamic_cast<const bundletype *>(&mem_resps[i]->type());
-    auto size = JlmSize(resp_bt->get_element_type("data"));
+    auto size = JlmSize(&*resp_bt->get_element_type("data"));
     auto has_write = req_bt->get_element_type("write") != nullptr;
     json << "{ \"size\": " << size << ", \"has_write\": " << has_write << "}";
   }

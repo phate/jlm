@@ -20,11 +20,11 @@ instrument_ref(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    const llvm::FunctionType & loadFunctionType,
+    const std::shared_ptr<const llvm::FunctionType> & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    const llvm::FunctionType & storeFunctionType,
+    const std::shared_ptr<const llvm::FunctionType> & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    const llvm::FunctionType & allocaFunctionType);
+    const std::shared_ptr<const llvm::FunctionType> & allocaFunctionType);
 
 } // namespace jlm::hls
 
