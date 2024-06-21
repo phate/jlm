@@ -8,6 +8,13 @@
 namespace jlm::hls
 {
 
+std::shared_ptr<const triggertype>
+triggertype::Create()
+{
+  static const triggertype instance;
+  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), &instance);
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
@@ -15,7 +22,7 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
   auto output = jlm::rvsdg::structural_output::create(this, origin->Type());
 
   auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->Type());
-  auto argument_loop = add_backedge(origin->type());
+  auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
       hls::mux_op::create(*predicate_buffer(), { argument_in, argument_loop }, false, true)[0];
@@ -69,7 +76,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
     auto arg = subregion()->argument(i);
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
-      auto na = loop->add_backedge(arg->type());
+      auto na = loop->add_backedge(arg->Type());
       smap.insert(ba, na);
     }
   }
@@ -98,9 +105,9 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
 }
 
 backedge_argument *
-loop_node::add_backedge(const jlm::rvsdg::type & type)
+loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::type> type)
 {
-  auto argument_loop = backedge_argument::create(subregion(), type);
+  auto argument_loop = backedge_argument::create(subregion(), std::move(type));
   auto result_loop = backedge_result::create(argument_loop);
   argument_loop->result_ = result_loop;
   result_loop->argument_ = argument_loop;
@@ -114,7 +121,7 @@ loop_node::create(jlm::rvsdg::region * parent, bool init)
   if (init)
   {
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
-    auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype(2));
+    auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype::Create(2));
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
@@ -135,28 +142,26 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
 }
 
 std::shared_ptr<const bundletype>
-get_mem_req_type(const rvsdg::valuetype & elementType, bool write)
+get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write)
 {
-  auto elements =
-      new std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>>();
-  elements->emplace_back("addr", llvm::PointerType::Create());
-  elements->emplace_back("size", std::make_unique<jlm::rvsdg::bittype>(4));
-  elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
+  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> elements;
+  elements.emplace_back("addr", llvm::PointerType::Create());
+  elements.emplace_back("size", jlm::rvsdg::bittype::Create(4));
+  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
   if (write)
   {
-    elements->emplace_back("data", elementType.copy());
-    elements->emplace_back("write", std::make_unique<jlm::rvsdg::bittype>(1));
+    elements.emplace_back("data", std::move(elementType));
+    elements.emplace_back("write", jlm::rvsdg::bittype::Create(1));
   }
-  return std::make_shared<bundletype>(elements);
+  return std::make_shared<bundletype>(std::move(elements));
 }
 
 std::shared_ptr<const bundletype>
-get_mem_res_type(const jlm::rvsdg::valuetype & dataType)
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::valuetype> dataType)
 {
-  auto elements =
-      new std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>>();
-  elements->emplace_back("data", dataType.copy());
-  elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
-  return std::make_shared<bundletype>(elements);
+  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> elements;
+  elements.emplace_back("data", std::move(dataType));
+  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
+  return std::make_shared<bundletype>(std::move(elements));
 }
 }

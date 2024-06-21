@@ -19,8 +19,11 @@ class bitslice_op : public jlm::rvsdg::unary_op
 public:
   virtual ~bitslice_op() noexcept;
 
-  inline bitslice_op(const bittype & argument, size_t low, size_t high) noexcept
-      : unary_op(argument.copy(), bittype::Create(high - low)),
+  inline bitslice_op(
+      const std::shared_ptr<const bittype> & argument,
+      size_t low,
+      size_t high) noexcept
+      : unary_op(argument, bittype::Create(high - low)),
         low_(low)
   {}
 

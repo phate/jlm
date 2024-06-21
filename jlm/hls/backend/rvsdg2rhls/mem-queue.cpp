@@ -167,7 +167,7 @@ route_to_region(jlm::rvsdg::region * target, jlm::rvsdg::output * out)
   // route out to convergence point from out
   jlm::rvsdg::output * common_out = jlm::hls::route_request(common_region, out);
   // add a backedge to prevent cycles
-  auto arg = common_loop->add_backedge(out->type());
+  auto arg = common_loop->add_backedge(out->Type());
   arg->result()->divert_to(common_out);
   // route inwards from convergence point to target
   auto result = jlm::hls::route_response(target, arg);
