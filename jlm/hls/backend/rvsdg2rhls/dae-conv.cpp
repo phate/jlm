@@ -240,7 +240,7 @@ decouple_load(
           jlm::rvsdg::argument * new_arg;
           if (auto be = dynamic_cast<backedge_argument *>(arg))
           {
-            new_arg = new_loop->add_backedge(arg->type());
+            new_arg = new_loop->add_backedge(arg->Type());
             backedge_args.push_back(be);
           }
           else

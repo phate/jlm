@@ -698,7 +698,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
 
   auto reqType = dynamic_cast<const bundletype *>(&node->output(0)->type());
   // TODO: more robust check
-  auto hasWrite = reqType->elements_->size() == 5;
+  auto hasWrite = reqType->elements_.size() == 5;
 
   mlir::BlockArgument memReq = GetOutPort(module, 0);
   mlir::Value memReqData;
@@ -3868,9 +3868,9 @@ RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::type * type)
   {
     using BundleElement = circt::firrtl::BundleType::BundleElement;
     ::llvm::SmallVector<BundleElement> elements;
-    for (size_t i = 0; i < bt->elements_->size(); ++i)
+    for (size_t i = 0; i < bt->elements_.size(); ++i)
     {
-      auto t = &bt->elements_->at(i);
+      auto t = &bt->elements_.at(i);
       elements.push_back(
           BundleElement(Builder_->getStringAttr(t->first), false, GetFirrtlType(t->second.get())));
     }

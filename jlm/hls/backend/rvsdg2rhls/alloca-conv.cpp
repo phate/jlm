@@ -138,12 +138,12 @@ alloca_conv(jlm::rvsdg::region * region)
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       // ensure that the alloca is an array type
-      auto at = dynamic_cast<const jlm::llvm::arraytype *>(&po->value_type());
+      auto at = std::dynamic_pointer_cast<const jlm::llvm::arraytype>(po->ValueType());
       JLM_ASSERT(at);
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));
       // create memory + response
-      auto mem_outs = local_mem_op::create(*at, node->region());
+      auto mem_outs = local_mem_op::create(at, node->region());
       auto resp_outs = local_mem_resp_op::create(*mem_outs[0], ta.load_nodes.size());
       std::cout << "alloca converted " << at->debug_string() << std::endl;
       // replace gep outputs (convert pointer to index calculation)

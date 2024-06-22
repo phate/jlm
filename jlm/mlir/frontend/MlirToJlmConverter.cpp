@@ -422,12 +422,12 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region 
   std::vector<std::shared_ptr<const rvsdg::type>> argumentTypes;
   for (auto argumentType : lambdaRefType.getParameterTypes())
   {
-    argumentTypes.push_back(ConvertType(argumentType)->copy());
+    argumentTypes.push_back(ConvertType(argumentType));
   }
   std::vector<std::shared_ptr<const rvsdg::type>> resultTypes;
   for (auto returnType : lambdaRefType.getReturnTypes())
   {
-    resultTypes.push_back(ConvertType(returnType)->copy());
+    resultTypes.push_back(ConvertType(returnType));
   }
   auto functionType = llvm::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 

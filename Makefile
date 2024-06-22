@@ -31,3 +31,8 @@ include jlm/mlir/Makefile.sub
 endif
 
 include Makefile.rules
+
+# Provide support for custom make targets
+ifneq ("$(wildcard Makefile.custom)","")
+include Makefile.custom
+endif

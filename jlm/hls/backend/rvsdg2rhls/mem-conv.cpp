@@ -572,12 +572,12 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
-    newArgumentTypes.push_back(oldFunctionType.ArgumentType(i).copy());
+    newArgumentTypes.push_back(oldFunctionType.Arguments()[i]);
   }
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
-    newResultTypes.push_back(oldFunctionType.ResultType(i).copy());
+    newResultTypes.push_back(oldFunctionType.Results()[i]);
   }
 
   //
@@ -587,9 +587,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   port_load_store_decouple portNodes;
   trace_pointer_arguments(lambda, portNodes);
 
-  auto responseTypePtr = get_mem_res_type(*jlm::rvsdg::bittype::Create(64));
-  auto requestTypePtr = get_mem_req_type(*jlm::rvsdg::bittype::Create(64), false);
-  auto requestTypePtrWrite = get_mem_req_type(*jlm::rvsdg::bittype::Create(64), true);
+  auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(64));
+  auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(64), false);
+  auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(64), true);
 
   std::unordered_set<jlm::rvsdg::simple_node *> accountedNodes;
   for (auto & portNode : portNodes)
@@ -757,7 +757,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   // nodes in the new lambda
   //
   std::vector<jlm::rvsdg::simple_node *> loadNodes;
-  std::vector<const jlm::rvsdg::valuetype *> loadTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::valuetype>> loadTypes;
   for (auto loadNode : originalLoadNodes)
   {
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
@@ -765,7 +765,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     loadNodes.push_back(loadOutput->node());
     auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
         &loadOutput->node()->operation());
-    loadTypes.push_back(&*loadOp->GetLoadedType());
+    loadTypes.push_back(loadOp->GetLoadedType());
   }
   std::vector<jlm::rvsdg::simple_node *> storeNodes;
   for (auto storeNode : originalStoreNodes)
@@ -781,7 +781,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto decoupledOutput =
         dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(decoupledNode->output(0)));
     decoupledNodes.push_back(decoupledOutput->node());
-    loadTypes.push_back(&*jlm::rvsdg::bittype::Create(32));
+    loadTypes.push_back(jlm::rvsdg::bittype::Create(32));
   }
 
   auto lambdaRegion = lambda->subregion();
@@ -798,16 +798,16 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
     auto address = route_request(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
-    const jlm::rvsdg::valuetype * type;
+    std::shared_ptr<const jlm::rvsdg::valuetype> type;
     if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->operation()))
     {
-      type = &loadOperation->GetLoadedType();
+      type = loadOperation->GetLoadedType();
     }
     else if (
         auto loadOperation =
             dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation()))
     {
-      type = &loadOperation->GetLoadedType();
+      type = loadOperation->GetLoadedType();
     }
     else
     {
@@ -828,9 +828,8 @@ jlm::hls::ConnectRequestResponseMemPorts(
     // TODO: routing is probably not necessary
     auto addr = route_request(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
-    loadTypes.push_back(
-        &dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation())
-             ->GetLoadedType());
+    loadTypes.push_back(dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation())
+                            ->GetLoadedType());
   }
   std::vector<jlm::rvsdg::output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)

@@ -38,12 +38,6 @@ ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->nalternatives_ == nalternatives_;
 }
 
-std::shared_ptr<const jlm::rvsdg::type>
-ctltype::copy() const
-{
-  return std::make_shared<ctltype>(*this);
-}
-
 std::shared_ptr<const ctltype>
 ctltype::Create(std::size_t nalternatives)
 {
