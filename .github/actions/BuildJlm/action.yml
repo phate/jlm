@@ -19,7 +19,7 @@ inputs:
 
   cxx:
     description: "Set C++ compiler. Default is 'clang++'."
-    default: "clang++-17"
+    default: "clang++"
     required: false
 
   make-target:
