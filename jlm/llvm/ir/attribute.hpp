@@ -112,6 +112,7 @@ public:
     AllocSize,
     Dereferenceable,
     DereferenceableOrNull,
+    NoFPClass,
     StackAlignment,
     UWTable,
     VScaleRange,

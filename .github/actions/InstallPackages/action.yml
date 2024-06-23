@@ -51,10 +51,10 @@ runs:
         || inputs.install-mlir == 'true'
         || inputs.install-clang-format == 'true'}}
       run: |
-        export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-16)
+        export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-17)
         if [[ -z $HAS_LLVM_REPOSITORY ]]; then
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-          sudo add-apt-repository --no-update deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main
+          sudo add-apt-repository --no-update deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main
         fi
       shell: bash
 
@@ -65,29 +65,29 @@ runs:
     - name: "Install LLVM package"
       if: ${{inputs.install-llvm == 'true'}}
       run: |
-        sudo apt-get install llvm-16-dev
-        pip install "lit~=16.0"
+        sudo apt-get install llvm-17-dev
+        pip install "lit~=17.0"
         pip show lit
       shell: bash
 
     - name: "Install clang package"
       if: ${{inputs.install-clang == 'true'}}
-      run: sudo apt-get install clang-16
+      run: sudo apt-get install clang-17
       shell: bash
 
     - name: "Install MLIR packages"
       if: ${{inputs.install-mlir == 'true'}}
       run: |
-        sudo apt-get install libmlir-16-dev mlir-16-tools
+        sudo apt-get install libmlir-17-dev mlir-17-tools
         if ! [ -f /usr/lib/x86_64-linux-gnu/libMLIR.so ]; then
-          sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/
-          sudo ln -s /usr/lib/llvm-16/lib/libMLIR.so.16 /usr/lib/x86_64-linux-gnu/libMLIR.so
+          sudo ln -s /usr/lib/llvm-17/lib/libMLIR.so.17 /usr/lib/x86_64-linux-gnu/
+          sudo ln -s /usr/lib/llvm-17/lib/libMLIR.so.17 /usr/lib/x86_64-linux-gnu/libMLIR.so
         fi
       shell: bash
 
     - name: "Install clang-format package"
       if: ${{inputs.install-clang-format == 'true'}}
-      run: sudo apt-get install clang-format-16
+      run: sudo apt-get install clang-format-17
       shell: bash
 
     - name: "Install ninja package"
