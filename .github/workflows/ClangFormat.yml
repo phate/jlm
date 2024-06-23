@@ -12,8 +12,9 @@ jobs:
       - name: "Install clang format"
         uses: ./.github/actions/InstallPackages
         with:
+          install-llvm: true # Needed to configure jlm
           install-clang-format: true
-      - name: "Find source files"
-        run: find . -name "*.cpp" -or -name "*.hpp" > sourceFiles.txt
+      - name: "Configure jlm with HLS and MLIR enabled"
+        run: ./configure.sh --enable-mlir --enable-hls
       - name: "Check format"
-        run: clang-format-16 --Werror --dry-run --style="file:.clang-format" --verbose --files=sourceFiles.txt
+        run: make format-dry-run

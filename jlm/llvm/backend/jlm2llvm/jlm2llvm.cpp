@@ -259,6 +259,7 @@ convert_attribute_kind(const attribute::kind & kind)
         { attribute::kind::AllocSize, ak::AllocSize },
         { attribute::kind::Dereferenceable, ak::Dereferenceable },
         { attribute::kind::DereferenceableOrNull, ak::DereferenceableOrNull },
+        { attribute::kind::NoFPClass, ak::NoFPClass },
         { attribute::kind::StackAlignment, ak::StackAlignment },
         { attribute::kind::UWTable, ak::UWTable },
         { attribute::kind::VScaleRange, ak::VScaleRange },

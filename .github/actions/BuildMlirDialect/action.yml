@@ -33,17 +33,7 @@ runs:
     - name: "Build MLIR RVSDG Dialect if we didn't hit in the cache"
       if: steps.cache-mlir.outputs.cache-hit != 'true'
       run: |
-        cd ${{ github.workspace }}/mlir-rvsdg
-        git checkout 6bfb270607f35b787bc849182f184e83548aa404
-        mkdir build
-        cd build
-        cmake -G Ninja .. \
-           -DCMAKE_C_COMPILER=clang-16 \
-           -DCMAKE_CXX_COMPILER=clang++-16 \
-           -DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
-           -DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
-           -DCMAKE_INSTALL_PREFIX=../../lib/mlir-rvsdg
-        cmake --build .
-        ninja install
+        ./scripts/build-mlir.sh \
+          --install-path ${{ github.workspace }}/lib/mlir-rvsdg
       shell: bash
 

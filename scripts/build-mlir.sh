@@ -1,13 +1,18 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=898845dc1d5361c59d9ac3805ac21be8d575634b
+GIT_COMMIT=ab630d5a881a0e8fc5bdfa63a5984186fa9096c0
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR=${SCRIPT_DIR}/..
 MLIR_BUILD=${JLM_ROOT_DIR}/build-mlir
 MLIR_INSTALL=${JLM_ROOT_DIR}/usr
+
+LLVM_VERSION=17
+LLVM_CONFIG=llvm-config-${LLVM_VERSION}
+LLVM_ROOT=$(${LLVM_CONFIG} --prefix)
+LLVM_LIB=$(${LLVM_CONFIG} --libdir)
 
 function commit()
 {
@@ -30,12 +35,12 @@ while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
 		--build-path)
 			shift
-			MLIR_BUILD="${PWD}/$1"
+			MLIR_BUILD=$(readlink -m "$1")
 			shift
 			;;
 		--install-path)
 			shift
-			MLIR_INSTALL="${PWD}/$1"
+			MLIR_INSTALL=$(readlink -m "$1")
 			shift
 			;;
 		--get-commit-hash)
@@ -61,10 +66,10 @@ git checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${MLIR_GIT_DIR} \
 	-B ${MLIR_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=clang-16 \
-	-DCMAKE_CXX_COMPILER=clang++-16 \
-	-DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
-	-DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
+	-DCMAKE_C_COMPILER=clang-${LLVM_VERSION} \
+	-DCMAKE_CXX_COMPILER=clang++-${LLVM_VERSION} \
+	-DLLVM_DIR=${LLVM_ROOT}/cmake/ \
+	-DMLIR_DIR=${LLVM_LIB}/cmake/mlir \
 	-DCMAKE_INSTALL_PREFIX=${MLIR_INSTALL} \
 	-Wno-dev
 cmake --build ${MLIR_BUILD_DIR}
