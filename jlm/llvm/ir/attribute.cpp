@@ -85,31 +85,28 @@ type_attribute::copy() const
   return std::make_unique<type_attribute>(kind(), type_);
 }
 
-/* attribute set class */
-
-attributeset &
-attributeset::operator=(const attributeset & other)
+attributeset::EnumAttributeRange
+attributeset::EnumAttributes() const
 {
-  if (this == &other)
-    return *this;
-
-  attributes_.clear();
-  for (auto & attribute : other)
-    attributes_.push_back(attribute.copy());
-
-  return *this;
+  return EnumAttributes_.Items();
 }
 
-attributeset::constiterator
-attributeset::begin() const
+attributeset::IntAttributeRange
+attributeset::IntAttributes() const
 {
-  return constiterator(attributes_.begin());
+  return IntAttributes_.Items();
 }
 
-attributeset::constiterator
-attributeset::end() const
+attributeset::TypeAttributeRange
+attributeset::TypeAttributes() const
 {
-  return constiterator(attributes_.end());
+  return TypeAttributes_.Items();
+}
+
+attributeset::StringAttributeRange
+attributeset::StringAttributes() const
+{
+  return StringAttributes_.Items();
 }
 
 }

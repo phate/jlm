@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 
 #include <memory>
 #include <string>
@@ -123,18 +124,6 @@ public:
 
   virtual ~attribute();
 
-  attribute() = default;
-
-  attribute(const attribute &) = delete;
-
-  attribute(attribute &&) = delete;
-
-  attribute &
-  operator=(const attribute &) = delete;
-
-  attribute &
-  operator=(attribute &&) = delete;
-
   virtual bool
   operator==(const attribute &) const = 0;
 
@@ -155,13 +144,11 @@ class string_attribute final : public attribute
 public:
   ~string_attribute() override;
 
-private:
   string_attribute(const std::string & kind, const std::string & value)
       : kind_(kind),
         value_(value)
   {}
 
-public:
   const std::string &
   kind() const noexcept
   {
@@ -198,12 +185,10 @@ class enum_attribute : public attribute
 public:
   ~enum_attribute() override;
 
-protected:
   enum_attribute(const attribute::kind & kind)
       : kind_(kind)
   {}
 
-public:
   const attribute::kind &
   kind() const noexcept
   {
@@ -233,13 +218,11 @@ class int_attribute final : public enum_attribute
 public:
   ~int_attribute() override;
 
-private:
   int_attribute(attribute::kind kind, uint64_t value)
       : enum_attribute(kind),
         value_(value)
   {}
 
-public:
   uint64_t
   value() const noexcept
   {
@@ -286,86 +269,119 @@ public:
   virtual std::unique_ptr<attribute>
   copy() const override;
 
-  static std::unique_ptr<attribute>
-  create_byval(std::shared_ptr<const jlm::rvsdg::valuetype> type)
-  {
-    return std::make_unique<type_attribute>(kind::ByVal, std::move(type));
-  }
-
-  static std::unique_ptr<attribute>
-  CreateStructRetAttribute(std::shared_ptr<const jlm::rvsdg::valuetype> type)
-  {
-    return std::make_unique<type_attribute>(kind::StructRet, std::move(type));
-  }
-
 private:
   std::shared_ptr<const jlm::rvsdg::valuetype> type_;
 };
+
+}
+
+namespace jlm::util
+{
+
+template<>
+struct Hash<jlm::llvm::enum_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::enum_attribute & attribute) const noexcept
+  {
+    return std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+  }
+};
+
+template<>
+struct Hash<jlm::llvm::int_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::int_attribute & attribute) const noexcept
+  {
+    return std::hash<jlm::llvm::attribute::kind>()(attribute.kind())
+         ^ std::hash<uint64_t>()(attribute.value()) << 1;
+  }
+};
+
+template<>
+struct Hash<jlm::llvm::string_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::string_attribute & attribute) const noexcept
+  {
+    return std::hash<std::string>()(attribute.kind())
+         ^ std::hash<std::string>()(attribute.value()) << 1;
+  }
+};
+
+template<>
+struct Hash<jlm::llvm::type_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::type_attribute & attribute) const noexcept
+  {
+    // FIXME: I have no better idea of how to handle this currently
+    return std::hash<ptrdiff_t>()(reinterpret_cast<ptrdiff_t>(&attribute));
+  }
+};
+
+}
+
+namespace jlm::llvm
+{
 
 /** \brief Attribute set
  */
 class attributeset final
 {
-  class constiterator;
+  using EnumAttributeHashSet = util::HashSet<enum_attribute>;
+  using IntAttributeHashSet = util::HashSet<int_attribute>;
+  using TypeAttributeHashSet = util::HashSet<type_attribute>;
+  using StringAttributeHashSet = util::HashSet<string_attribute>;
+
+  using EnumAttributeRange = util::iterator_range<EnumAttributeHashSet::ItemConstIterator>;
+  using IntAttributeRange = util::iterator_range<IntAttributeHashSet::ItemConstIterator>;
+  using TypeAttributeRange = util::iterator_range<TypeAttributeHashSet::ItemConstIterator>;
+  using StringAttributeRange = util::iterator_range<StringAttributeHashSet::ItemConstIterator>;
 
 public:
-  ~attributeset()
-  {}
+  [[nodiscard]] EnumAttributeRange
+  EnumAttributes() const;
 
-  attributeset() = default;
+  [[nodiscard]] IntAttributeRange
+  IntAttributes() const;
 
-  attributeset(std::vector<std::unique_ptr<attribute>> attributes)
-      : attributes_(std::move(attributes))
-  {}
+  [[nodiscard]] TypeAttributeRange
+  TypeAttributes() const;
 
-  attributeset(const attributeset & other)
-  {
-    *this = other;
-  }
-
-  attributeset(attributeset && other)
-      : attributes_(std::move(other.attributes_))
-  {}
-
-  attributeset &
-  operator=(const attributeset & other);
-
-  attributeset &
-  operator=(attributeset && other)
-  {
-    if (this == &other)
-      return *this;
-
-    attributes_ = std::move(other.attributes_);
-
-    return *this;
-  }
-
-  constiterator
-  begin() const;
-
-  constiterator
-  end() const;
+  [[nodiscard]] StringAttributeRange
+  StringAttributes() const;
 
   void
-  insert(const attribute & a)
+  InsertEnumAttribute(const enum_attribute & attribute)
   {
-    attributes_.push_back(a.copy());
+    EnumAttributes_.Insert(attribute);
   }
 
   void
-  insert(std::unique_ptr<attribute> a)
+  InsertIntAttribute(const int_attribute & attribute)
   {
-    attributes_.push_back(std::move(a));
+    IntAttributes_.Insert(attribute);
+  }
+
+  void
+  InsertTypeAttribute(const type_attribute & attribute)
+  {
+    TypeAttributes_.Insert(attribute);
+  }
+
+  void
+  InsertStringAttribute(const string_attribute & attribute)
+  {
+    StringAttributes_.Insert(attribute);
   }
 
   bool
   operator==(const attributeset & other) const noexcept
   {
-    /*
-      FIXME: Ah, since this is not a real set, we cannot cheaply implement a comparison.
-    */
-    return false;
+    return IntAttributes_ == other.IntAttributes_ && EnumAttributes_ == other.EnumAttributes_
+        && TypeAttributes_ == other.TypeAttributes_ && StringAttributes_ == other.StringAttributes_;
   }
 
   bool
@@ -375,73 +391,10 @@ public:
   }
 
 private:
-  /*
-    FIXME: Implement a proper set. Elements are not unique here.
-  */
-  std::vector<std::unique_ptr<attribute>> attributes_;
-};
-
-/** \brief Attribute set const iterator
- */
-class attributeset::constiterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = const attribute *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const attribute **;
-  using reference = const attribute *&;
-
-private:
-  friend ::jlm::llvm::attributeset;
-
-private:
-  constiterator(const std::vector<std::unique_ptr<attribute>>::const_iterator & it)
-      : it_(it)
-  {}
-
-public:
-  const attribute *
-  operator->() const
-  {
-    return it_->get();
-  }
-
-  const attribute &
-  operator*()
-  {
-    return *operator->();
-  }
-
-  constiterator &
-  operator++()
-  {
-    it_++;
-    return *this;
-  }
-
-  constiterator
-  operator++(int)
-  {
-    constiterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const constiterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const constiterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  std::vector<std::unique_ptr<attribute>>::const_iterator it_;
+  EnumAttributeHashSet EnumAttributes_{};
+  IntAttributeHashSet IntAttributes_{};
+  TypeAttributeHashSet TypeAttributes_{};
+  StringAttributeHashSet StringAttributes_{};
 };
 
 }

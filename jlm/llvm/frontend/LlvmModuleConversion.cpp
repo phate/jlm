@@ -181,75 +181,78 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
   return map[kind];
 }
 
-static std::unique_ptr<llvm::attribute>
-convert_attribute(const ::llvm::Attribute & attribute, context & ctx)
+static enum_attribute
+ConvertEnumAttribute(const ::llvm::Attribute & attribute, context & ctx)
 {
-  auto convert_type_attribute = [](const ::llvm::Attribute & attribute, context & ctx)
+  JLM_ASSERT(attribute.isEnumAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return { kind };
+}
+
+static int_attribute
+ConvertIntAttribute(const ::llvm::Attribute & attribute, context & ctx)
+{
+  JLM_ASSERT(attribute.isIntAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return { kind, attribute.getValueAsInt() };
+}
+
+static type_attribute
+ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
+{
+  JLM_ASSERT(attribute.isTypeAttribute());
+
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
   {
-    JLM_ASSERT(attribute.isTypeAttribute());
+    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    return { attribute::kind::ByVal, std::move(type) };
+  }
 
-    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
-    {
-      auto type = ConvertType(attribute.getValueAsType(), ctx);
-      return type_attribute::create_byval(std::move(type));
-    }
-
-    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
-    {
-      auto type = ConvertType(attribute.getValueAsType(), ctx);
-      return type_attribute::CreateStructRetAttribute(std::move(type));
-    }
-
-    JLM_UNREACHABLE("Unhandled attribute");
-  };
-
-  auto convert_string_attribute = [](const ::llvm::Attribute & attribute)
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
   {
-    JLM_ASSERT(attribute.isStringAttribute());
-    return string_attribute::create(
-        attribute.getKindAsString().str(),
-        attribute.getValueAsString().str());
-  };
-
-  auto convert_enum_attribute = [](const ::llvm::Attribute & attribute)
-  {
-    JLM_ASSERT(attribute.isEnumAttribute());
-
-    auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-    return enum_attribute::create(kind);
-  };
-
-  auto convert_int_attribute = [](const ::llvm::Attribute & attribute)
-  {
-    JLM_ASSERT(attribute.isIntAttribute());
-
-    auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-    return int_attribute::create(kind, attribute.getValueAsInt());
-  };
-
-  if (attribute.isTypeAttribute())
-    return convert_type_attribute(attribute, ctx);
-
-  if (attribute.isStringAttribute())
-    return convert_string_attribute(attribute);
-
-  if (attribute.isEnumAttribute())
-    return convert_enum_attribute(attribute);
-
-  if (attribute.isIntAttribute())
-    return convert_int_attribute(attribute);
+    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    return { attribute::kind::StructRet, std::move(type) };
+  }
 
   JLM_UNREACHABLE("Unhandled attribute");
+}
+
+static string_attribute
+ConvertStringAttribute(const ::llvm::Attribute & attribute, context & ctx)
+{
+  JLM_ASSERT(attribute.isStringAttribute());
+  return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
 static attributeset
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributes;
+  attributeset attributeSet;
   for (auto & attribute : as)
-    attributes.insert(convert_attribute(attribute, ctx));
+  {
+    if (attribute.isEnumAttribute())
+    {
+      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute, ctx));
+    }
+    else if (attribute.isIntAttribute())
+    {
+      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute, ctx));
+    }
+    else if (attribute.isTypeAttribute())
+    {
+      attributeSet.InsertTypeAttribute(ConvertTypeAttribute(attribute, ctx));
+    }
+    else if (attribute.isStringAttribute())
+    {
+      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute, ctx));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled attribute");
+    }
+  }
 
-  return attributes;
+  return attributeSet;
 }
 
 static std::unique_ptr<llvm::argument>
