@@ -122,7 +122,7 @@ public:
     EndAttrKinds ///< Sentinel value useful for loops
   };
 
-  virtual ~attribute();
+  virtual ~attribute() noexcept;
 
   virtual bool
   operator==(const attribute &) const = 0;
@@ -132,9 +132,6 @@ public:
   {
     return !operator==(other);
   }
-
-  virtual std::unique_ptr<attribute>
-  copy() const = 0;
 };
 
 /** \brief String attribute
@@ -142,36 +139,27 @@ public:
 class string_attribute final : public attribute
 {
 public:
-  ~string_attribute() override;
+  ~string_attribute() noexcept override;
 
   string_attribute(const std::string & kind, const std::string & value)
       : kind_(kind),
         value_(value)
   {}
 
-  const std::string &
+  [[nodiscard]] const std::string &
   kind() const noexcept
   {
     return kind_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   value() const noexcept
   {
     return value_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create(const std::string & kind, const std::string & value)
-  {
-    return std::unique_ptr<attribute>(new string_attribute(kind, value));
-  }
 
 private:
   std::string kind_;
@@ -183,29 +171,20 @@ private:
 class enum_attribute : public attribute
 {
 public:
-  ~enum_attribute() override;
+  ~enum_attribute() noexcept override;
 
-  enum_attribute(const attribute::kind & kind)
+  explicit enum_attribute(const attribute::kind & kind)
       : kind_(kind)
   {}
 
-  const attribute::kind &
+  [[nodiscard]] const attribute::kind &
   kind() const noexcept
   {
     return kind_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create(const attribute::kind & kind)
-  {
-    return std::unique_ptr<attribute>(new enum_attribute(kind));
-  }
 
 private:
   attribute::kind kind_;
@@ -216,30 +195,21 @@ private:
 class int_attribute final : public enum_attribute
 {
 public:
-  ~int_attribute() override;
+  ~int_attribute() noexcept override;
 
   int_attribute(attribute::kind kind, uint64_t value)
       : enum_attribute(kind),
         value_(value)
   {}
 
-  uint64_t
+  [[nodiscard]] uint64_t
   value() const noexcept
   {
     return value_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create(const attribute::kind & kind, uint64_t value)
-  {
-    return std::unique_ptr<attribute>(new int_attribute(kind, value));
-  }
 
 private:
   uint64_t value_;
@@ -250,24 +220,21 @@ private:
 class type_attribute final : public enum_attribute
 {
 public:
-  ~type_attribute() override;
+  ~type_attribute() noexcept override;
 
   type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::valuetype> type)
       : enum_attribute(kind),
         type_(std::move(type))
   {}
 
-  const jlm::rvsdg::valuetype &
+  [[nodiscard]] const jlm::rvsdg::valuetype &
   type() const noexcept
   {
     return *type_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
 
 private:
   std::shared_ptr<const jlm::rvsdg::valuetype> type_;

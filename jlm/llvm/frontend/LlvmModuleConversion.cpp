@@ -182,15 +182,15 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
 }
 
 static enum_attribute
-ConvertEnumAttribute(const ::llvm::Attribute & attribute, context & ctx)
+ConvertEnumAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isEnumAttribute());
   auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-  return { kind };
+  return enum_attribute(kind);
 }
 
 static int_attribute
-ConvertIntAttribute(const ::llvm::Attribute & attribute, context & ctx)
+ConvertIntAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isIntAttribute());
   auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
@@ -218,7 +218,7 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
 }
 
 static string_attribute
-ConvertStringAttribute(const ::llvm::Attribute & attribute, context & ctx)
+ConvertStringAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isStringAttribute());
   return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
@@ -232,11 +232,11 @@ convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
   {
     if (attribute.isEnumAttribute())
     {
-      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute, ctx));
+      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute));
     }
     else if (attribute.isIntAttribute())
     {
-      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute, ctx));
+      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute));
     }
     else if (attribute.isTypeAttribute())
     {
@@ -244,7 +244,7 @@ convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
     }
     else if (attribute.isStringAttribute())
     {
-      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute, ctx));
+      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute));
     }
     else
     {
