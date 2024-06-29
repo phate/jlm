@@ -705,10 +705,6 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // Remove imports for decouple_ function pointers
   dne(newLambda->subregion());
 
-  auto xmlFile = fopen("before_remove_unused_state.rvsdg", "w");
-  jlm::rvsdg::view_xml(root, xmlFile);
-  fclose(xmlFile);
-
   //
   // TODO
   // Remove unused state also creates a new lambda, which we have already done above.
