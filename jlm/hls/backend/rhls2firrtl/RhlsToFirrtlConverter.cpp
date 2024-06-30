@@ -275,6 +275,11 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
+  else if (dynamic_cast<const llvm::bits2ptr_op *>(&(node->operation())))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    Connect(body, outData, input0);
+  }
   else if (auto op = dynamic_cast<const jlm::rvsdg::match_op *>(&(node->operation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
@@ -462,6 +467,8 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * no
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
 {
+  auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->operation());
+  bool isConstant = op->IsConstant();
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
@@ -472,71 +479,88 @@ RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
   auto inValid = GetSubfield(body, inBundle, "valid");
   auto inData = GetSubfield(body, inBundle, "data");
 
+  auto oneBitValue = GetConstant(body, 1, 1);
+  auto zeroBitValue = GetConstant(body, 1, 0);
+
   //
   // Output registers
   //
-  auto clock = GetClockSignal(module);
-  auto reset = GetResetSignal(module);
-  ::llvm::SmallVector<circt::firrtl::RegResetOp> firedRegs;
-  ::llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
-  auto oneBitValue = GetConstant(body, 1, 1);
-  auto zeroBitValue = GetConstant(body, 1, 0);
-  // outputs can only fire if input is valid. This should not be necessary, unless other components
-  // misbehave
-  mlir::Value allFired = inValid;
-  for (size_t i = 0; i < node->noutputs(); ++i)
+  if (isConstant)
   {
-    std::string validName("out");
-    validName.append(std::to_string(i));
-    validName.append("_fired_reg");
-    auto firedReg = Builder_->create<circt::firrtl::RegResetOp>(
-        Builder_->getUnknownLoc(),
-        GetIntType(1),
-        clock,
-        reset,
-        zeroBitValue,
-        Builder_->getStringAttr(validName));
-    body->push_back(firedReg);
-    firedRegs.push_back(firedReg);
-
-    // Get the bundle
-    auto port = GetOutPort(module, i);
-    auto portReady = GetSubfield(body, port, "ready");
-    auto portValid = GetSubfield(body, port, "valid");
-    auto portData = GetSubfield(body, port, "data");
-
-    auto notFiredReg = AddNotOp(body, firedReg.getResult());
-    auto andOp = AddAndOp(body, inValid, notFiredReg);
-    Connect(body, portValid, andOp);
-    Connect(body, portData, inData);
-
-    auto orOp = AddOrOp(body, portReady, firedReg.getResult());
-    allFired = AddAndOp(body, allFired, orOp);
-
-    // Conditions needed for the when statements
-    whenConditions.push_back(AddAndOp(body, portReady, portValid));
+    Connect(body, inReady, oneBitValue);
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
+      // Get the bundle
+      auto port = GetOutPort(module, i);
+      auto portValid = GetSubfield(body, port, "valid");
+      auto portData = GetSubfield(body, port, "data");
+      Connect(body, portValid, inValid);
+      Connect(body, portData, inData);
+    }
   }
-  allFired = AddNodeOp(body, allFired, "all_fired")->getResult(0);
-  Connect(body, inReady, allFired);
+  else
+  {
+    auto clock = GetClockSignal(module);
+    auto reset = GetResetSignal(module);
+    ::llvm::SmallVector<circt::firrtl::RegResetOp> firedRegs;
+    ::llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
+    // outputs can only fire if input is valid. This should not be necessary, unless other
+    // components misbehave
+    mlir::Value allFired = inValid;
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
+      std::string validName("out");
+      validName.append(std::to_string(i));
+      validName.append("_fired_reg");
+      auto firedReg = Builder_->create<circt::firrtl::RegResetOp>(
+          Builder_->getUnknownLoc(),
+          GetIntType(1),
+          clock,
+          reset,
+          zeroBitValue,
+          Builder_->getStringAttr(validName));
+      body->push_back(firedReg);
+      firedRegs.push_back(firedReg);
 
-  // When statement
-  auto condition = AddNotOp(body, allFired);
-  auto whenOp = AddWhenOp(body, condition, true);
-  // getThenBlock() cause an error during commpilation
-  // So we first get the builder and then its associated body
-  auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-  // Then region
-  for (size_t i = 0; i < node->noutputs(); i++)
-  {
-    auto nestedWhen = AddWhenOp(thenBody, whenConditions[i], false);
-    auto nestedBody = nestedWhen.getThenBodyBuilder().getBlock();
-    Connect(nestedBody, firedRegs[i].getResult(), oneBitValue);
-  }
-  // Else region
-  auto elseBody = whenOp.getElseBodyBuilder().getBlock();
-  for (size_t i = 0; i < node->noutputs(); i++)
-  {
-    Connect(elseBody, firedRegs[i].getResult(), zeroBitValue);
+      // Get the bundle
+      auto port = GetOutPort(module, i);
+      auto portReady = GetSubfield(body, port, "ready");
+      auto portValid = GetSubfield(body, port, "valid");
+      auto portData = GetSubfield(body, port, "data");
+
+      auto notFiredReg = AddNotOp(body, firedReg.getResult());
+      auto andOp = AddAndOp(body, inValid, notFiredReg.getResult());
+      Connect(body, portValid, andOp);
+      Connect(body, portData, inData);
+
+      auto orOp = AddOrOp(body, portReady, firedReg.getResult());
+      allFired = AddAndOp(body, allFired, orOp);
+
+      // Conditions needed for the when statements
+      whenConditions.push_back(AddAndOp(body, portReady, portValid));
+    }
+    allFired = AddNodeOp(body, allFired, "all_fired").getResult();
+    Connect(body, inReady, allFired);
+
+    // When statement
+    auto condition = AddNotOp(body, allFired);
+    auto whenOp = AddWhenOp(body, condition, true);
+    // getThenBlock() cause an error during commpilation
+    // So we first get the builder and then its associated body
+    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+    // Then region
+    for (size_t i = 0; i < node->noutputs(); i++)
+    {
+      auto nestedWhen = AddWhenOp(thenBody, whenConditions[i], false);
+      auto nestedBody = nestedWhen.getThenBodyBuilder().getBlock();
+      Connect(nestedBody, firedRegs[i].getResult(), oneBitValue);
+    }
+    // Else region
+    auto elseBody = whenOp.getElseBodyBuilder().getBlock();
+    for (size_t i = 0; i < node->noutputs(); i++)
+    {
+      Connect(elseBody, firedRegs[i].getResult(), zeroBitValue);
+    }
   }
 
   return module;
