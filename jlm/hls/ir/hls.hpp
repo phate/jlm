@@ -39,7 +39,7 @@ public:
   {
     auto ot = dynamic_cast<const branch_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(0).type() == argument(0).type()
+    return ot && ot->loop == loop && ot->argument(0).type() == argument(0).type()
         && ot->result(0).type() == result(0).type();
   }
 
