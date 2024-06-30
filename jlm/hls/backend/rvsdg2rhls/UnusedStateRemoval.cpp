@@ -36,33 +36,33 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 {
   auto & oldFunctionType = lambdaNode.type();
 
-  std::vector<const jlm::rvsdg::type *> newArgumentTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
     auto argument = lambdaNode.subregion()->argument(i);
-    auto & argumentType = oldFunctionType.ArgumentType(i);
-    JLM_ASSERT(argumentType == argument->type());
+    auto argumentType = oldFunctionType.Arguments()[i];
+    JLM_ASSERT(*argumentType == argument->type());
 
     if (!IsPassthroughArgument(*argument))
     {
-      newArgumentTypes.push_back(&argumentType);
+      newArgumentTypes.push_back(argumentType);
     }
   }
 
-  std::vector<const jlm::rvsdg::type *> newResultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
     auto result = lambdaNode.subregion()->result(i);
-    auto & resultType = oldFunctionType.ResultType(i);
-    JLM_ASSERT(resultType == result->type());
+    auto resultType = oldFunctionType.Results()[i];
+    JLM_ASSERT(*resultType == result->type());
 
     if (!IsPassthroughResult(*result))
     {
-      newResultTypes.push_back(&resultType);
+      newResultTypes.push_back(resultType);
     }
   }
 
-  llvm::FunctionType newFunctionType(newArgumentTypes, newResultTypes);
+  auto newFunctionType = llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = llvm::lambda::node::create(
       lambdaNode.region(),
       newFunctionType,
@@ -114,7 +114,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
       newLambda->region(),
       newLambdaOutput,
       nullptr,
-      newLambdaOutput->type());
+      newLambdaOutput->Type());
 }
 
 static void

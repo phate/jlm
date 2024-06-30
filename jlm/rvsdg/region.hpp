@@ -42,6 +42,11 @@ protected:
       jlm::rvsdg::structural_input * input,
       const jlm::rvsdg::port & port);
 
+  argument(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::structural_input * input,
+      std::shared_ptr<const rvsdg::type> type);
+
   argument(const argument &) = delete;
 
   argument(argument &&) = delete;
@@ -61,6 +66,12 @@ public:
 
   static jlm::rvsdg::argument *
   create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);
+
+  static jlm::rvsdg::argument *
+  create(
+      jlm::rvsdg::region * region,
+      structural_input * input,
+      std::shared_ptr<const jlm::rvsdg::type> type);
 
 private:
   jlm::rvsdg::structural_input * input_;
@@ -83,6 +94,12 @@ protected:
       jlm::rvsdg::output * origin,
       jlm::rvsdg::structural_output * output,
       const jlm::rvsdg::port & port);
+
+  result(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::structural_output * output,
+      std::shared_ptr<const rvsdg::type> type);
 
   result(const result &) = delete;
 
@@ -107,6 +124,13 @@ public:
       jlm::rvsdg::output * origin,
       jlm::rvsdg::structural_output * output,
       const jlm::rvsdg::port & port);
+
+  static jlm::rvsdg::result *
+  create(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::structural_output * output,
+      std::shared_ptr<const jlm::rvsdg::type> type);
 
 private:
   jlm::rvsdg::structural_output * output_;

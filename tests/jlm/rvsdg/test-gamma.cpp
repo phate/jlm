@@ -16,14 +16,12 @@ test_gamma(void)
 {
   using namespace jlm::rvsdg;
 
-  bittype bit2(2);
-
   jlm::rvsdg::graph graph;
-  auto cmp = graph.add_import({ bit2, "" });
-  auto v0 = graph.add_import({ bit32, "" });
-  auto v1 = graph.add_import({ bit32, "" });
-  auto v2 = graph.add_import({ bit32, "" });
-  auto v3 = graph.add_import({ ctl2, "" });
+  auto cmp = graph.add_import({ bittype::Create(2), "" });
+  auto v0 = graph.add_import({ bittype::Create(32), "" });
+  auto v1 = graph.add_import({ bittype::Create(32), "" });
+  auto v2 = graph.add_import({ bittype::Create(32), "" });
+  auto v3 = graph.add_import({ ctltype::Create(2), "" });
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
 
@@ -33,7 +31,7 @@ test_gamma(void)
   auto ev2 = gamma->add_entryvar(v2);
   gamma->add_exitvar({ ev0->argument(0), ev1->argument(1), ev2->argument(2) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->type(), "dummy" });
+  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "dummy" });
 
   assert(gamma && gamma->operation() == jlm::rvsdg::gamma_op(3));
 
@@ -60,9 +58,9 @@ test_predicate_reduction(void)
 
   bittype bits2(2);
 
-  auto v0 = graph.add_import({ bit32, "" });
-  auto v1 = graph.add_import({ bit32, "" });
-  auto v2 = graph.add_import({ bit32, "" });
+  auto v0 = graph.add_import({ bittype::Create(32), "" });
+  auto v1 = graph.add_import({ bittype::Create(32), "" });
+  auto v2 = graph.add_import({ bittype::Create(32), "" });
 
   auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
 
@@ -72,7 +70,7 @@ test_predicate_reduction(void)
   auto ev2 = gamma->add_entryvar(v2);
   gamma->add_exitvar({ ev0->argument(0), ev1->argument(1), ev2->argument(2) });
 
-  auto r = graph.add_export(gamma->output(0), { gamma->output(0)->type(), "" });
+  auto r = graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "" });
 
   graph.normalize();
   //	jlm::rvsdg::view(graph.root(), stdout);
@@ -87,19 +85,19 @@ test_invariant_reduction(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::valuetype vtype;
+  auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
   gamma_op::normal_form(&graph)->set_invariant_reduction(true);
 
-  auto pred = graph.add_import({ ctl2, "" });
+  auto pred = graph.add_import({ ctltype::Create(2), "" });
   auto v = graph.add_import({ vtype, "" });
 
   auto gamma = jlm::rvsdg::gamma_node::create(pred, 2);
   auto ev = gamma->add_entryvar(v);
   gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
-  auto r = graph.add_export(gamma->output(0), { gamma->output(0)->type(), "" });
+  auto r = graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "" });
 
   graph.normalize();
   //	jlm::rvsdg::view(graph.root(), stdout);
@@ -117,7 +115,7 @@ test_control_constant_reduction()
   jlm::rvsdg::graph graph;
   gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
 
-  auto x = graph.add_import({ bit1, "x" });
+  auto x = graph.add_import({ bittype::Create(1), "x" });
 
   auto c = match(1, { { 0, 0 } }, 1, 2, x);
 
@@ -132,8 +130,8 @@ test_control_constant_reduction()
   auto xv1 = gamma->add_exitvar({ t, f });
   auto xv2 = gamma->add_exitvar({ n0, n1 });
 
-  auto ex1 = graph.add_export(xv1, { xv1->type(), "" });
-  auto ex2 = graph.add_export(xv2, { xv2->type(), "" });
+  auto ex1 = graph.add_export(xv1, { xv1->Type(), "" });
+  auto ex2 = graph.add_export(xv2, { xv2->Type(), "" });
 
   jlm::rvsdg::view(graph.root(), stdout);
   graph.normalize();
@@ -155,7 +153,7 @@ test_control_constant_reduction2()
   jlm::rvsdg::graph graph;
   gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
 
-  auto import = graph.add_import({ bittype(2), "import" });
+  auto import = graph.add_import({ bittype::Create(2), "import" });
 
   auto c = match(2, { { 3, 2 }, { 2, 1 }, { 1, 0 } }, 3, 4, import);
 
@@ -168,7 +166,7 @@ test_control_constant_reduction2()
 
   auto xv = gamma->add_exitvar({ t1, t2, t3, f });
 
-  auto ex = graph.add_export(xv, { xv->type(), "" });
+  auto ex = graph.add_export(xv, { xv->Type(), "" });
 
   jlm::rvsdg::view(graph.root(), stdout);
   graph.normalize();
@@ -185,10 +183,10 @@ TestRemoveGammaOutputsWhere()
 
   // Arrange
   jlm::rvsdg::graph rvsdg;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ctltype ct(2);
 
-  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto predicate = rvsdg.add_import({ ctltype::Create(2), "" });
   auto v0 = rvsdg.add_import({ vt, "" });
   auto v1 = rvsdg.add_import({ vt, "" });
   auto v2 = rvsdg.add_import({ vt, "" });
@@ -209,8 +207,8 @@ TestRemoveGammaOutputsWhere()
   auto gammaOutput3 =
       gammaNode->add_exitvar({ gammaInput3->argument(0), gammaInput3->argument(1) });
 
-  rvsdg.add_export(gammaOutput0, { gammaOutput0->type(), "" });
-  rvsdg.add_export(gammaOutput2, { gammaOutput2->type(), "" });
+  rvsdg.add_export(gammaOutput0, { gammaOutput0->Type(), "" });
+  rvsdg.add_export(gammaOutput2, { gammaOutput2->Type(), "" });
 
   // Act & Assert
   assert(gammaNode->noutputs() == 4);
@@ -247,10 +245,10 @@ TestPruneOutputs()
 
   // Arrange
   jlm::rvsdg::graph rvsdg;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ctltype ct(2);
 
-  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto predicate = rvsdg.add_import({ ctltype::Create(2), "" });
   auto v0 = rvsdg.add_import({ vt, "" });
   auto v1 = rvsdg.add_import({ vt, "" });
   auto v2 = rvsdg.add_import({ vt, "" });
@@ -269,8 +267,8 @@ TestPruneOutputs()
       gammaNode->add_exitvar({ gammaInput2->argument(0), gammaInput2->argument(1) });
   gammaNode->add_exitvar({ gammaInput3->argument(0), gammaInput3->argument(1) });
 
-  rvsdg.add_export(gammaOutput0, { gammaOutput0->type(), "" });
-  rvsdg.add_export(gammaOutput2, { gammaOutput2->type(), "" });
+  rvsdg.add_export(gammaOutput0, { gammaOutput0->Type(), "" });
+  rvsdg.add_export(gammaOutput2, { gammaOutput2->Type(), "" });
 
   // Act
   gammaNode->PruneOutputs();
@@ -296,10 +294,10 @@ TestIsInvariant()
 
   // Arrange
   jlm::rvsdg::graph rvsdg;
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   ctltype ct(2);
 
-  auto predicate = rvsdg.add_import({ ctl2, "" });
+  auto predicate = rvsdg.add_import({ ctltype::Create(2), "" });
   auto v0 = rvsdg.add_import({ vt, "" });
   auto v1 = rvsdg.add_import({ vt, "" });
 

@@ -9,6 +9,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 
+#include <algorithm>
+
 namespace jlm::rvsdg
 {
 
@@ -102,7 +104,7 @@ graph::ExtractTailNodes(const graph & rvsdg)
         return false;
       }
 
-      if (rvsdg::node_input::node(*input))
+      if (rvsdg::input::GetNode(*input))
       {
         return false;
       }

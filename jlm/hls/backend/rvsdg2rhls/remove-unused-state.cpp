@@ -5,7 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -46,14 +46,14 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
   {
     if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const llvm::aa::LambdaExitMemStateOperator *>(&node->operation()))
+      if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->operation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->ninputs(); ++i)
         {
           if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(simplenode->input(i)->origin()))
           {
-            if (dynamic_cast<const llvm::aa::LambdaEntryMemStateOperator *>(
+            if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
                     &so->node()->operation()))
             {
               // skip things coming from entry
@@ -67,7 +67,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
           // special case were no entry/exit operator is needed
           auto entry_node =
               dynamic_cast<jlm::rvsdg::node_output *>(simplenode->input(0)->origin())->node();
-          JLM_ASSERT(dynamic_cast<const llvm::aa::LambdaEntryMemStateOperator *>(
+          JLM_ASSERT(dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
               &entry_node->operation()));
           simplenode->output(0)->divert_users(entry_node->input(0)->origin());
           remove(simplenode);
@@ -75,12 +75,12 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
         }
         else if (nv.size() != simplenode->ninputs())
         {
-          auto new_state = llvm::aa::LambdaExitMemStateOperator::Create(region, nv);
-          simplenode->output(0)->divert_users(new_state);
+          auto & new_state = llvm::LambdaExitMemoryStateMergeOperation::Create(*region, nv);
+          simplenode->output(0)->divert_users(&new_state);
           remove(simplenode);
         }
       }
-      else if (dynamic_cast<const llvm::aa::LambdaEntryMemStateOperator *>(&node->operation()))
+      else if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&node->operation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
@@ -92,8 +92,8 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
         }
         if (nv.size() != simplenode->noutputs())
         {
-          auto new_states = llvm::aa::LambdaEntryMemStateOperator::Create(
-              simplenode->input(0)->origin(),
+          auto new_states = llvm::LambdaEntryMemoryStateSplitOperation::Create(
+              *simplenode->input(0)->origin(),
               nv.size());
           for (size_t i = 0; i < nv.size(); ++i)
           {
@@ -174,18 +174,18 @@ jlm::llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln)
 {
   auto old_fcttype = ln->type();
-  std::vector<const jlm::rvsdg::type *> new_argument_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
     auto arg = ln->subregion()->argument(i);
-    auto argtype = &old_fcttype.ArgumentType(i);
+    auto argtype = old_fcttype.Arguments()[i];
     JLM_ASSERT(*argtype == arg->type());
     if (!is_passthrough(arg))
     {
       new_argument_types.push_back(argtype);
     }
   }
-  std::vector<const jlm::rvsdg::type *> new_result_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_result_types;
   for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
   {
     auto res = ln->subregion()->result(i);
@@ -193,10 +193,10 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
     JLM_ASSERT(*restype == res->type());
     if (!is_passthrough(res))
     {
-      new_result_types.push_back(&old_fcttype.ResultType(i));
+      new_result_types.push_back(old_fcttype.Results()[i]);
     }
   }
-  llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
+  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
       ln->region(),
       new_fcttype,
@@ -242,7 +242,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   JLM_ASSERT(ln->output()->nusers() == 1);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
   remove(ln);
-  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
+  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->Type());
   return new_lambda;
 }
 

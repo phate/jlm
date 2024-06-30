@@ -39,6 +39,24 @@ input::input(
   origin->add_user(this);
 }
 
+input::input(
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::region * region,
+    std::shared_ptr<const rvsdg::type> type)
+    : index_(0),
+      origin_(origin),
+      region_(region),
+      port_(std::make_unique<rvsdg::port>(std::move(type)))
+{
+  if (region != origin->region())
+    throw jlm::util::error("Invalid operand region.");
+
+  if (port_->type() != origin->type())
+    throw jlm::util::type_error(port_->type().debug_string(), origin->type().debug_string());
+
+  origin->add_user(this);
+}
+
 std::string
 input::debug_string() const
 {
@@ -69,10 +87,10 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   on_input_change(this, old_origin, new_origin);
 }
 
-jlm::rvsdg::node *
-input::GetNode(const jlm::rvsdg::input & input) noexcept
+rvsdg::node *
+input::GetNode(const rvsdg::input & input) noexcept
 {
-  auto nodeInput = dynamic_cast<const jlm::rvsdg::node_input *>(&input);
+  auto nodeInput = dynamic_cast<const rvsdg::node_input *>(&input);
   return nodeInput ? nodeInput->node() : nullptr;
 }
 
@@ -87,6 +105,12 @@ output::output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
     : index_(0),
       region_(region),
       port_(port.copy())
+{}
+
+output::output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
+    : index_(0),
+      region_(region),
+      port_(std::make_unique<rvsdg::port>(std::move(type)))
 {}
 
 std::string
@@ -148,15 +172,15 @@ namespace jlm::rvsdg
 node_input::node_input(
     jlm::rvsdg::output * origin,
     jlm::rvsdg::node * node,
-    const jlm::rvsdg::port & port)
-    : jlm::rvsdg::input(origin, node->region(), port),
+    std::shared_ptr<const rvsdg::type> type)
+    : jlm::rvsdg::input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
 /* node_output class */
 
-node_output::node_output(jlm::rvsdg::node * node, const jlm::rvsdg::port & port)
-    : jlm::rvsdg::output(node->region(), port),
+node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type)
+    : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}
 

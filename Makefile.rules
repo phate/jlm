@@ -177,10 +177,10 @@ docs: .PHONY
 
 format:
 	@for FILE in $(SOURCES) $(HEADERS) ; do \
-		clang-format-16 --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
+		clang-format-$(LLVM_VERSION) --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
 	done
 
 format-dry-run:
 	@for FILE in $(SOURCES) $(HEADERS) ; do \
-		clang-format-16 --dry-run --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
+		clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
 	done

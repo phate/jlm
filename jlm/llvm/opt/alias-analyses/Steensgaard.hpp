@@ -97,10 +97,10 @@ private:
   AnalyzeMalloc(const rvsdg::simple_node & node);
 
   void
-  AnalyzeLoad(const LoadNonVolatileNode & loadNode);
+  AnalyzeLoad(const LoadNode & loadNode);
 
   void
-  AnalyzeStore(const StoreNonVolatileNode & storeNode);
+  AnalyzeStore(const StoreNode & storeNode);
 
   void
   AnalyzeCall(const CallNode & callNode);

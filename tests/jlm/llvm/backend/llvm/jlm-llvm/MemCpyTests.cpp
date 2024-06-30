@@ -19,12 +19,15 @@ MemCpyConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
-  MemoryStateType memoryStateType;
-  jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType(
-      { &pointerType, &pointerType, &bit64Type, &memoryStateType },
-      { &memoryStateType });
+  auto pointerType = PointerType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto functionType = FunctionType::Create(
+      { PointerType::Create(),
+        PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        MemoryStateType::Create() },
+      { MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 
@@ -82,13 +85,17 @@ MemCpyVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
-  iostatetype ioStateType;
-  MemoryStateType memoryStateType;
-  jlm::rvsdg::bittype bit64Type(64);
-  FunctionType functionType(
-      { &pointerType, &pointerType, &bit64Type, &ioStateType, &memoryStateType },
-      { &ioStateType, &memoryStateType });
+  auto pointerType = PointerType::Create();
+  auto ioStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto functionType = FunctionType::Create(
+      { PointerType::Create(),
+        PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        iostatetype::Create(),
+        MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 

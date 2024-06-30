@@ -163,14 +163,14 @@ structural_node::copy(rvsdg::region * parent, rvsdg::substitution_map & smap) co
   {
     auto origin = smap.lookup(input(n)->origin());
     auto neworigin = origin ? origin : input(n)->origin();
-    auto new_input = rvsdg::structural_input::create(node, neworigin, input(n)->port());
+    auto new_input = rvsdg::structural_input::create(node, neworigin, input(n)->Type());
     smap.insert(input(n), new_input);
   }
 
   /* copy outputs */
   for (size_t n = 0; n < noutputs(); n++)
   {
-    auto new_output = rvsdg::structural_output::create(node, output(n)->port());
+    auto new_output = rvsdg::structural_output::create(node, output(n)->Type());
     smap.insert(output(n), new_output);
   }
 

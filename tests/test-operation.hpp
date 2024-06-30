@@ -28,7 +28,13 @@ public:
   virtual ~unary_op() noexcept;
 
   inline unary_op(const rvsdg::port & srcport, const rvsdg::port & dstport) noexcept
-      : rvsdg::unary_op(srcport, dstport)
+      : rvsdg::unary_op(srcport.Type(), dstport.Type())
+  {}
+
+  inline unary_op(
+      std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::type> dsttype) noexcept
+      : rvsdg::unary_op(std::move(srctype), std::move(dsttype))
   {}
 
   virtual bool
@@ -53,7 +59,7 @@ public:
       rvsdg::output * operand,
       const rvsdg::port & dstport)
   {
-    return rvsdg::simple_node::create(region, unary_op(srcport, dstport), { operand });
+    return rvsdg::simple_node::create(region, std::move(unary_op(srcport, dstport)), { operand });
   }
 
   static inline rvsdg::output *
@@ -63,6 +69,29 @@ public:
       const rvsdg::port & dstport)
   {
     unary_op op(srcport, dstport);
+    return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+  }
+
+  static inline rvsdg::node *
+  create(
+      rvsdg::region * region,
+      std::shared_ptr<const rvsdg::type> srctype,
+      rvsdg::output * operand,
+      std::shared_ptr<const rvsdg::type> dsttype)
+  {
+    return rvsdg::simple_node::create(
+        region,
+        unary_op(std::move(srctype), std::move(dsttype)),
+        { operand });
+  }
+
+  static inline rvsdg::output *
+  create_normalized(
+      std::shared_ptr<const rvsdg::type> srctype,
+      rvsdg::output * operand,
+      std::shared_ptr<const rvsdg::type> dsttype)
+  {
+    unary_op op(std::move(srctype), std::move(dsttype));
     return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
   }
 };
@@ -87,10 +116,10 @@ public:
   virtual ~binary_op() noexcept;
 
   inline binary_op(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
+      const std::shared_ptr<const rvsdg::type> & srctype,
+      std::shared_ptr<const rvsdg::type> dsttype,
       const enum rvsdg::binary_op::flags & flags) noexcept
-      : rvsdg::binary_op({ srcport, srcport }, { dstport }),
+      : rvsdg::binary_op({ srctype, srctype }, std::move(dsttype)),
         flags_(flags)
   {}
 
@@ -121,7 +150,18 @@ public:
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
-    binary_op op(srcport, dstport, rvsdg::binary_op::flags::none);
+    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
+    return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
+  }
+
+  static inline rvsdg::node *
+  create(
+      const std::shared_ptr<const rvsdg::type> & srctype,
+      std::shared_ptr<const rvsdg::type> dsttype,
+      rvsdg::output * op1,
+      rvsdg::output * op2)
+  {
+    binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
     return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
   }
 
@@ -132,7 +172,18 @@ public:
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
-    binary_op op(srcport, dstport, rvsdg::binary_op::flags::none);
+    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
+    return rvsdg::simple_node::create_normalized(op1->region(), op, { op1, op2 })[0];
+  }
+
+  static inline rvsdg::output *
+  create_normalized(
+      const std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::type> dsttype,
+      rvsdg::output * op1,
+      rvsdg::output * op2)
+  {
+    binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
     return rvsdg::simple_node::create_normalized(op1->region(), op, { op1, op2 })[0];
   }
 
@@ -181,9 +232,9 @@ public:
   virtual ~test_op();
 
   inline test_op(
-      const std::vector<const rvsdg::type *> & arguments,
-      const std::vector<const rvsdg::type *> & results)
-      : simple_op(create_ports(arguments), create_ports(results))
+      std::vector<std::shared_ptr<const rvsdg::type>> arguments,
+      std::vector<std::shared_ptr<const rvsdg::type>> results)
+      : simple_op(std::move(arguments), std::move(results))
   {}
 
   test_op(const test_op &) = default;
@@ -201,36 +252,25 @@ public:
   create(
       rvsdg::region * region,
       const std::vector<rvsdg::output *> & operands,
-      const std::vector<const rvsdg::type *> & result_types)
+      std::vector<std::shared_ptr<const rvsdg::type>> result_types)
   {
-    std::vector<const rvsdg::type *> operand_types;
+    std::vector<std::shared_ptr<const rvsdg::type>> operand_types;
     for (const auto & operand : operands)
-      operand_types.push_back(&operand->type());
+      operand_types.push_back(operand->Type());
 
-    test_op op(operand_types, result_types);
+    test_op op(std::move(operand_types), std::move(result_types));
     return rvsdg::simple_node::create(region, op, { operands });
   }
 
   static rvsdg::simple_node *
   Create(
       rvsdg::region * region,
-      const std::vector<const rvsdg::type *> & operandTypes,
+      std::vector<std::shared_ptr<const rvsdg::type>> operandTypes,
       const std::vector<rvsdg::output *> & operands,
-      const std::vector<const rvsdg::type *> & resultTypes)
+      std::vector<std::shared_ptr<const rvsdg::type>> resultTypes)
   {
-    test_op op(operandTypes, resultTypes);
+    test_op op(std::move(operandTypes), std::move(resultTypes));
     return rvsdg::simple_node::create(region, op, { operands });
-  }
-
-private:
-  static inline std::vector<rvsdg::port>
-  create_ports(const std::vector<const rvsdg::type *> & types)
-  {
-    std::vector<rvsdg::port> ports;
-    for (const auto & type : types)
-      ports.push_back({ *type });
-
-    return ports;
   }
 };
 
@@ -253,24 +293,24 @@ public:
   Create(
       rvsdg::region & region,
       const std::vector<rvsdg::output *> & operands,
-      const std::vector<const rvsdg::type *> & resultTypes)
+      std::vector<std::shared_ptr<const rvsdg::type>> resultTypes)
   {
     auto operandTypes = ExtractTypes(operands);
-    test_op operation(operandTypes, resultTypes);
+    test_op operation(std::move(operandTypes), std::move(resultTypes));
 
     auto node = new SimpleNode(region, operation, operands);
     return *node;
   }
 
 private:
-  static std::vector<const rvsdg::type *>
+  static std::vector<std::shared_ptr<const rvsdg::type>>
   ExtractTypes(const std::vector<rvsdg::output *> & outputs)
   {
-    std::vector<const rvsdg::type *> types;
+    std::vector<std::shared_ptr<const rvsdg::type>> types;
     types.reserve(outputs.size());
     for (auto output : outputs)
     {
-      types.emplace_back(&output->type());
+      types.emplace_back(output->Type());
     }
 
     return types;
@@ -280,13 +320,13 @@ private:
 static inline std::unique_ptr<llvm::tac>
 create_testop_tac(
     const std::vector<const llvm::variable *> & arguments,
-    const std::vector<const rvsdg::type *> & result_types)
+    std::vector<std::shared_ptr<const rvsdg::type>> result_types)
 {
-  std::vector<const rvsdg::type *> argument_types;
+  std::vector<std::shared_ptr<const rvsdg::type>> argument_types;
   for (const auto & arg : arguments)
-    argument_types.push_back(&arg->type());
+    argument_types.push_back(arg->Type());
 
-  test_op op(argument_types, result_types);
+  test_op op(std::move(argument_types), std::move(result_types));
   return llvm::tac::create(op, arguments);
 }
 
@@ -294,13 +334,13 @@ static inline std::vector<rvsdg::output *>
 create_testop(
     rvsdg::region * region,
     const std::vector<rvsdg::output *> & operands,
-    const std::vector<const rvsdg::type *> & result_types)
+    std::vector<std::shared_ptr<const rvsdg::type>> result_types)
 {
-  std::vector<const rvsdg::type *> operand_types;
+  std::vector<std::shared_ptr<const rvsdg::type>> operand_types;
   for (const auto & operand : operands)
-    operand_types.push_back(&operand->type());
+    operand_types.push_back(operand->Type());
 
-  test_op op(operand_types, result_types);
+  test_op op(std::move(operand_types), std::move(result_types));
   return rvsdg::simple_node::create_normalized(region, op, { operands });
 }
 

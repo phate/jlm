@@ -26,7 +26,7 @@ public:
   ~operation() override;
 
   operation(
-      const rvsdg::valuetype & type,
+      std::shared_ptr<const rvsdg::valuetype> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -35,24 +35,12 @@ public:
         name_(name),
         Section_(std::move(section)),
         linkage_(linkage),
-        type_(type.copy())
+        type_(std::move(type))
   {}
 
-  operation(const operation & other)
-      : constant_(other.constant_),
-        name_(other.name_),
-        Section_(other.Section_),
-        linkage_(other.linkage_),
-        type_(other.type_->copy())
-  {}
+  operation(const operation & other) = default;
 
-  operation(operation && other) noexcept
-      : constant_(other.constant_),
-        name_(std::move(other.name_)),
-        Section_(std::move(other.Section_)),
-        linkage_(other.linkage_),
-        type_(std::move(other.type_))
-  {}
+  operation(operation && other) noexcept = default;
 
   operation &
   operator=(const operation &) = delete;
@@ -96,7 +84,13 @@ public:
   [[nodiscard]] const rvsdg::valuetype &
   type() const noexcept
   {
-    return *jlm::util::AssertedCast<rvsdg::valuetype>(type_.get());
+    return *type_;
+  }
+
+  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  Type() const noexcept
+  {
+    return type_;
   }
 
 private:
@@ -104,7 +98,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::unique_ptr<rvsdg::type> type_;
+  std::shared_ptr<const rvsdg::valuetype> type_;
 };
 
 class cvargument;
@@ -172,6 +166,12 @@ public:
   type() const noexcept
   {
     return operation().type();
+  }
+
+  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  Type() const noexcept
+  {
+    return operation().Type();
   }
 
   const std::string &
@@ -282,13 +282,13 @@ public:
   static node *
   Create(
       rvsdg::region * parent,
-      const rvsdg::valuetype & type,
+      std::shared_ptr<const rvsdg::valuetype> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
   {
-    delta::operation op(type, name, linkage, std::move(section), constant);
+    delta::operation op(std::move(type), name, linkage, std::move(section), constant);
     return new delta::node(parent, std::move(op));
   }
 
@@ -314,7 +314,7 @@ public:
 
 private:
   cvinput(delta::node * node, rvsdg::output * origin)
-      : structural_input(node, origin, origin->port())
+      : structural_input(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -384,15 +384,26 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-private:
   output(delta::node * node, const rvsdg::port & port)
-      : structural_output(node, port)
+      : structural_output(node, port.Type())
   {}
 
+  output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type))
+  {}
+
+private:
   static output *
   create(delta::node * node, const rvsdg::port & port)
   {
-    auto output = std::unique_ptr<delta::output>(new delta::output(node, port));
+    auto output = std::make_unique<delta::output>(node, port);
+    return static_cast<delta::output *>(node->append_output(std::move(output)));
+  }
+
+  static output *
+  create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  {
+    auto output = std::make_unique<delta::output>(node, std::move(type));
     return static_cast<delta::output *>(node->append_output(std::move(output)));
   }
 

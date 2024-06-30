@@ -20,12 +20,12 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
+  auto p = rvsdg.add_import({ jlm::rvsdg::ctltype::Create(2), "p" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
   auto z = rvsdg.add_import({ valueType, "z" });
@@ -77,14 +77,14 @@ TestTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType(
-      { &jlm::rvsdg::ctl2, &valueType, &valueType, &valueType },
-      { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create(
+      { jlm::rvsdg::ctltype::Create(2), valueType, valueType, valueType },
+      { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
+  auto p = rvsdg.add_import({ jlm::rvsdg::ctltype::Create(2), "p" });
   auto x = rvsdg.add_import({ valueType, "x" });
   auto y = rvsdg.add_import({ valueType, "y" });
   auto z = rvsdg.add_import({ valueType, "z" });
@@ -103,7 +103,7 @@ TestTheta()
   auto result = jlm::tests::SimpleNode::Create(
                     *rvsdg.root(),
                     { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   rvsdg.add_export(result, { valueType, "f" });
@@ -126,10 +126,10 @@ TestLambda()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType(
-      { &valueType, &valueType },
-      { &valueType, &valueType, &valueType, &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create(
+      { valueType, valueType },
+      { valueType, valueType, valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -144,15 +144,15 @@ TestLambda()
   auto argument3 = lambdaNode->add_ctxvar(x);
 
   auto result1 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { &valueType })
+      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { valueType })
           .output(0);
   auto result3 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { &valueType })
+      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { valueType })
           .output(0);
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  rvsdg.add_export(lambdaOutput, { PointerType(), "f" });
+  rvsdg.add_export(lambdaOutput, { PointerType::Create(), "f" });
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);

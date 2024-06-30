@@ -1,115 +1,240 @@
 /*
- * Copyright 2014 2015 Helge Bahmann <hcb@chaoticmind.net>
+ * Copyright 2014 2015 2024 Helge Bahmann <hcb@chaoticmind.net>
  * Copyright 2011 2012 2013 2014 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/rvsdg/bitstring/arithmetic-impl.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 
 namespace jlm::rvsdg
 {
 
-#define DEFINE_BITUNARY_OPERATION(NAME, REDUCTION, DEBUG_STRING)            \
-  NAME##_op::~NAME##_op() noexcept                                          \
-  {}                                                                        \
-                                                                            \
-  bool NAME##_op::operator==(const operation & other) const noexcept        \
-  {                                                                         \
-    auto op = dynamic_cast<const NAME##_op *>(&other);                      \
-    return op && op->type() == type();                                      \
-  }                                                                         \
-                                                                            \
-  bitvalue_repr NAME##_op::reduce_constant(const bitvalue_repr & arg) const \
-  {                                                                         \
-    return REDUCTION;                                                       \
-  }                                                                         \
-                                                                            \
-  std::string NAME##_op::debug_string() const                               \
-  {                                                                         \
-    return jlm::util::strfmt(#DEBUG_STRING, type().nbits());                \
-  }                                                                         \
-                                                                            \
-  std::unique_ptr<operation> NAME##_op::copy() const                        \
-  {                                                                         \
-    return std::unique_ptr<operation>(new NAME##_op(*this));                \
-  }                                                                         \
-                                                                            \
-  std::unique_ptr<bitunary_op> NAME##_op::create(size_t nbits) const        \
-  {                                                                         \
-    return std::unique_ptr<bitunary_op>(new NAME##_op(nbits));              \
+// This provides the explicit template instantiations underlying
+// all bitstring operation classes: This ensures that there is a
+// single definition for all virtual functions, vmts etc in the
+// rvsdg library (instead of the compiler template-instantiating
+// them multiple times in each translation unit, and then relying
+// on linker to do de-duplication).
+
+struct reduce_neg
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg) const
+  {
+    return arg.neg();
   }
+};
 
-#define DEFINE_BITBINARY_OPERATION(NAME, REDUCTION, DEBUG_STRING, FLAGS) \
-  NAME##_op::~NAME##_op() noexcept                                       \
-  {}                                                                     \
-                                                                         \
-  bool NAME##_op::operator==(const operation & other) const noexcept     \
-  {                                                                      \
-    auto op = dynamic_cast<const NAME##_op *>(&other);                   \
-    return op && op->type() == type();                                   \
-  }                                                                      \
-                                                                         \
-  bitvalue_repr NAME##_op::reduce_constants(                             \
-      const bitvalue_repr & arg1,                                        \
-      const bitvalue_repr & arg2) const                                  \
-  {                                                                      \
-    return REDUCTION;                                                    \
-  }                                                                      \
-                                                                         \
-  enum binary_op::flags NAME##_op::flags() const noexcept                \
-  {                                                                      \
-    return FLAGS;                                                        \
-  }                                                                      \
-                                                                         \
-  std::string NAME##_op::debug_string() const                            \
-  {                                                                      \
-    return jlm::util::strfmt(#DEBUG_STRING, type().nbits());             \
-  }                                                                      \
-                                                                         \
-  std::unique_ptr<operation> NAME##_op::copy() const                     \
-  {                                                                      \
-    return std::unique_ptr<operation>(new NAME##_op(*this));             \
-  }                                                                      \
-                                                                         \
-  std::unique_ptr<bitbinary_op> NAME##_op::create(size_t nbits) const    \
-  {                                                                      \
-    return std::unique_ptr<bitbinary_op>(new NAME##_op(nbits));          \
+const char BitNegateLabel[] = "BitNegate";
+template class MakeBitUnaryOperation<reduce_neg, BitNegateLabel>;
+
+struct reduce_not
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg) const
+  {
+    return arg.lnot();
   }
+};
 
-DEFINE_BITUNARY_OPERATION(bitneg, arg.neg(), BITNEGATE)
-DEFINE_BITUNARY_OPERATION(bitnot, arg.lnot(), BITNOT)
+const char BitNotLabel[] = "BitNot";
+template class MakeBitUnaryOperation<reduce_not, BitNotLabel>;
 
-DEFINE_BITBINARY_OPERATION(
-    bitadd,
-    arg1.add(arg2),
-    BITADD,
-    binary_op::flags::associative | binary_op::flags::commutative)
-DEFINE_BITBINARY_OPERATION(bitand, arg1.land(arg2), BITAND, binary_op::flags::associative | binary_op::flags::commutative)
-DEFINE_BITBINARY_OPERATION(bitashr, arg1.ashr(arg2.to_uint()), BITASHR, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(
-    bitmul,
-    arg1.mul(arg2),
-    BITMUL,
-    binary_op::flags::associative | binary_op::flags::commutative)
-DEFINE_BITBINARY_OPERATION(
-    bitor,
-    arg1.lor(arg2),
-    BITOR,
-    binary_op::flags::associative | binary_op::flags::commutative)
-DEFINE_BITBINARY_OPERATION(bitsdiv, arg1.sdiv(arg2), BITSDIV, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitshl, arg1.shl(arg2.to_uint()), BITSHL, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitshr, arg1.shr(arg2.to_uint()), BITSHR, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitsmod, arg1.smod(arg2), BITSMOD, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitsmulh, arg1.smulh(arg2), BITSMULH, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitsub, arg1.sub(arg2), BITSUB, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitudiv, arg1.udiv(arg2), BITUDIV, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitumod, arg1.umod(arg2), BITUMOD, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(bitumulh, arg1.umulh(arg2), BITUMULH, binary_op::flags::none)
-DEFINE_BITBINARY_OPERATION(
-    bitxor,
-    arg1.lxor(arg2),
-    BITXOR,
-    binary_op::flags::associative | binary_op::flags::commutative)
+struct reduce_add
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.add(arg2);
+  }
+};
+
+const char BitAddLabel[] = "BitAdd";
+template class MakeBitBinaryOperation<
+    reduce_add,
+    BitAddLabel,
+    binary_op::flags::associative | binary_op::flags::commutative>;
+
+struct reduce_and
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.land(arg2);
+  }
+};
+
+const char BitAndLabel[] = "BitAnd";
+template class MakeBitBinaryOperation<
+    reduce_and,
+    BitAndLabel,
+    binary_op::flags::associative | binary_op::flags::commutative>;
+
+struct reduce_ashr
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.ashr(arg2.to_uint());
+  }
+};
+
+const char BitAShrLabel[] = "BitAShr";
+template class MakeBitBinaryOperation<reduce_ashr, BitAShrLabel, binary_op::flags::none>;
+
+struct reduce_mul
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.mul(arg2);
+  }
+};
+
+const char BitMulLabel[] = "BitMul";
+template class MakeBitBinaryOperation<
+    reduce_mul,
+    BitMulLabel,
+    binary_op::flags::associative | binary_op::flags::commutative>;
+
+struct reduce_or
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.lor(arg2);
+  }
+};
+
+const char BitOrLabel[] = "BitOr";
+template class MakeBitBinaryOperation<
+    reduce_or,
+    BitOrLabel,
+    binary_op::flags::associative | binary_op::flags::commutative>;
+
+struct reduce_sdiv
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.sdiv(arg2);
+  }
+};
+
+const char BitSDivLabel[] = "BitSDiv";
+template class MakeBitBinaryOperation<reduce_sdiv, BitSDivLabel, binary_op::flags::none>;
+
+struct reduce_shl
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.shl(arg2.to_uint());
+  }
+};
+
+const char BitShlLabel[] = "BitShl";
+template class MakeBitBinaryOperation<reduce_shl, BitShlLabel, binary_op::flags::none>;
+
+struct reduce_shr
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.shr(arg2.to_uint());
+  }
+};
+
+const char BitShrLabel[] = "BitShr";
+template class MakeBitBinaryOperation<reduce_shr, BitShrLabel, binary_op::flags::none>;
+
+struct reduce_smod
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.smod(arg2);
+  }
+};
+
+const char BitSModLabel[] = "BitSMod";
+template class MakeBitBinaryOperation<reduce_smod, BitSModLabel, binary_op::flags::none>;
+
+struct reduce_smulh
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.smulh(arg2);
+  }
+};
+
+const char BitSMulHLabel[] = "BitSMulH";
+template class MakeBitBinaryOperation<reduce_smulh, BitSMulHLabel, binary_op::flags::commutative>;
+
+struct reduce_sub
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.sub(arg2);
+  }
+};
+
+const char BitSubLabel[] = "BitSub";
+template class MakeBitBinaryOperation<reduce_sub, BitSubLabel, binary_op::flags::none>;
+
+struct reduce_udiv
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.udiv(arg2);
+  }
+};
+
+const char BitUDivLabel[] = "BitUDiv";
+template class MakeBitBinaryOperation<reduce_udiv, BitUDivLabel, binary_op::flags::none>;
+
+struct reduce_umod
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.umod(arg2);
+  }
+};
+
+const char BitUModLabel[] = "BitUMod";
+template class MakeBitBinaryOperation<reduce_umod, BitUModLabel, binary_op::flags::none>;
+
+struct reduce_umulh
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.umulh(arg2);
+  }
+};
+
+const char BitUMulHLabel[] = "BitUMulH";
+template class MakeBitBinaryOperation<reduce_umulh, BitUMulHLabel, binary_op::flags::commutative>;
+
+struct reduce_xor
+{
+  bitvalue_repr
+  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  {
+    return arg1.lxor(arg2);
+  }
+};
+
+const char BitXorLabel[] = "BitXor";
+template class MakeBitBinaryOperation<
+    reduce_xor,
+    BitXorLabel,
+    binary_op::flags::associative | binary_op::flags::commutative>;
 
 }

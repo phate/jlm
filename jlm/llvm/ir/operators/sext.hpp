@@ -20,21 +20,25 @@ class sext_op final : public rvsdg::unary_op
 public:
   virtual ~sext_op();
 
-  inline sext_op(const rvsdg::bittype & otype, const rvsdg::bittype & rtype)
-      : unary_op({ otype }, { rtype })
+  inline sext_op(
+      std::shared_ptr<const rvsdg::bittype> otype,
+      std::shared_ptr<const rvsdg::bittype> rtype)
+      : unary_op(otype, rtype)
   {
-    if (otype.nbits() >= rtype.nbits())
+    if (otype->nbits() >= rtype->nbits())
       throw jlm::util::error("expected operand's #bits to be smaller than results's #bits.");
   }
 
-  inline sext_op(std::unique_ptr<rvsdg::type> srctype, std::unique_ptr<rvsdg::type> dsttype)
-      : unary_op(*srctype, *dsttype)
+  inline sext_op(
+      std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::type> dsttype)
+      : unary_op(srctype, dsttype)
   {
-    auto ot = dynamic_cast<const rvsdg::bittype *>(srctype.get());
+    auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(srctype);
     if (!ot)
       throw jlm::util::error("expected bits type.");
 
-    auto rt = dynamic_cast<const rvsdg::bittype *>(dsttype.get());
+    auto rt = std::dynamic_pointer_cast<const rvsdg::bittype>(dsttype);
     if (!rt)
       throw jlm::util::error("expected bits type.");
 
@@ -70,28 +74,28 @@ public:
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const rvsdg::type & type)
+  create(const variable * operand, const std::shared_ptr<const rvsdg::type> & type)
   {
-    auto ot = dynamic_cast<const rvsdg::bittype *>(&operand->type());
+    auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)
       throw jlm::util::error("expected bits type.");
 
-    auto rt = dynamic_cast<const rvsdg::bittype *>(&type);
+    auto rt = std::dynamic_pointer_cast<const rvsdg::bittype>(type);
     if (!rt)
       throw jlm::util::error("expected bits type.");
 
-    sext_op op(*ot, *rt);
+    sext_op op(std::move(ot), std::move(rt));
     return tac::create(op, { operand });
   }
 
   static rvsdg::output *
   create(size_t ndstbits, rvsdg::output * operand)
   {
-    auto ot = dynamic_cast<const rvsdg::bittype *>(&operand->type());
+    auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)
       throw jlm::util::error("expected bits type.");
 
-    sext_op op(*ot, rvsdg::bittype(ndstbits));
+    sext_op op(std::move(ot), rvsdg::bittype::Create(ndstbits));
     return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
   }
 };

@@ -26,8 +26,8 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<rvsdg::type>
-  copy() const override;
+  static std::shared_ptr<const valuetype>
+  Create();
 };
 
 class statetype final : public rvsdg::statetype
@@ -45,8 +45,8 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<rvsdg::type>
-  copy() const override;
+  static std::shared_ptr<const statetype>
+  Create();
 };
 
 }

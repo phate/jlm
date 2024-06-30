@@ -95,7 +95,7 @@ private:
       : structural_node(jlm::rvsdg::theta_op(), parent, 1)
   {
     auto predicate = jlm::rvsdg::control_false(subregion());
-    result::create(subregion(), predicate, nullptr, ctltype(2));
+    result::create(subregion(), predicate, nullptr, ctltype::Create(2));
   }
 
 public:
@@ -265,13 +265,14 @@ class theta_input final : public structural_input
 public:
   virtual ~theta_input() noexcept;
 
-private:
-  inline theta_input(theta_node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port)
-      : structural_input(node, origin, port),
+  inline theta_input(
+      theta_node * node,
+      jlm::rvsdg::output * origin,
+      std::shared_ptr<const rvsdg::type> type)
+      : structural_input(node, origin, std::move(type)),
         output_(nullptr)
   {}
 
-public:
   theta_node *
   node() const noexcept
   {
@@ -320,13 +321,11 @@ class theta_output final : public structural_output
 public:
   virtual ~theta_output() noexcept;
 
-private:
-  inline theta_output(theta_node * node, const jlm::rvsdg::port & port)
-      : structural_output(node, port),
+  inline theta_output(theta_node * node, const std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type)),
         input_(nullptr)
   {}
 
-public:
   theta_node *
   node() const noexcept
   {

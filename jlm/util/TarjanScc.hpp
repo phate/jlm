@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <stack>
 #include <vector>
 
@@ -27,45 +28,50 @@ namespace jlm::util
  * The ordering is a list of all nodes, sorted by descending SCC index.
  * Within a single SCC, the ordering of nodes is arbitrary.
  *
- * @tparam SuccessorFunctor a functor with the signature (size_t) -> iterable<size_t>
+ * @tparam NodeType the integer type used to index nodes
+ * @tparam SuccessorFunctor a functor with the signature (NodeType) -> iterable<NodeType>
  * @param numNodes the number of nodes. Nodes are indexed from 0 to numNodes-1
  * @param successors an instance of the SucessorFunctor
  * @param sccIndex output vector to be filled with the index of the SCC each node ends up in
  * @param topologicalOrder output vector to be filled with the nodes in a weak topological order
  * @return the number of SCCs in the graph. One more than the largest SCC index
  */
-template<typename SuccessorFunctor>
-size_t
+template<typename NodeType, typename SuccessorFunctor>
+NodeType
 FindStronglyConnectedComponents(
-    size_t numNodes,
+    NodeType numNodes,
     SuccessorFunctor & successors,
-    std::vector<size_t> & sccIndex,
-    std::vector<size_t> & topologicalOrder)
+    std::vector<NodeType> & sccIndex,
+    std::vector<NodeType> & topologicalOrder)
 {
-  size_t sccsFinished = 0;
+  NodeType sccsFinished = 0;
   // The number of nodes that have been assigned to a finished SCC
-  size_t nodesFinished = 0;
+  NodeType nodesFinished = 0;
 
   // What SCC each node ends up in
   sccIndex.resize(numNodes);
   // Partially ordered topological order
   topologicalOrder.resize(numNodes);
 
-  // Non-recursive implementation of Tarjan's SCC
-  const int64_t NOT_VISITED = -1;
-  const int64_t SCC_FINISHED = -2;
-  std::vector<int64_t> order(numNodes, NOT_VISITED);
-  int64_t nextOrder = 0;
-  // The lowest order seen through any path of edges that do not enter finished SCCs
-  std::vector<int64_t> lowLink(numNodes);
+  // Use the max values of the NodeType as sentinel values
+  const NodeType NOT_VISITED = std::numeric_limits<NodeType>::max();
+  const NodeType SCC_FINISHED = NOT_VISITED - 1;
+  JLM_ASSERT(numNodes <= SCC_FINISHED);
 
-  // The DFS stack is a regular DFS traversal stack
-  std::stack<size_t> dfsStack;
+  // Non-recursive implementation of Tarjan's SCC
+  std::vector<NodeType> order(numNodes, NOT_VISITED);
+  NodeType nextOrder = 0;
+  // The lowest order seen through any path of edges that do not enter finished SCCs
+  std::vector<NodeType> lowLink(numNodes);
+
+  // The DFS stack is a regular DFS traversal stack.
+  // Note that the same element can be pushed many times, but will only be visited twice
+  std::stack<NodeType> dfsStack;
   // The SCC stack is only popped once an SCC is found
-  std::stack<size_t> sccStack;
+  std::stack<NodeType> sccStack;
 
   // Find SCCs
-  for (size_t startNode = 0; startNode < numNodes; startNode++)
+  for (NodeType startNode = 0; startNode < numNodes; startNode++)
   {
     // Only start DFSs at unvisited nodes
     if (order[startNode] != NOT_VISITED)
@@ -89,9 +95,14 @@ FindStronglyConnectedComponents(
             dfsStack.push(next);
         }
       }
-      else // This is the second time node is visited, all children have been processed
+      else if (order[node] == SCC_FINISHED) // This node has already been fully processed
       {
         dfsStack.pop();
+      }
+      else // This node is being visited for the second time, i.e., the dfs post-visit
+      {
+        dfsStack.pop();
+
         for (auto next : successors(node))
         {
           // Ignore edges to nodes that are already part of a finished SCC

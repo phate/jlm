@@ -7,7 +7,7 @@
 #include <test-types.hpp>
 
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/rvsdg/view.hpp>
 
@@ -17,9 +17,9 @@ TestSuccess()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
-  PointerType pt;
-  MemoryStateType mt;
+  auto vt = jlm::tests::valuetype::Create();
+  auto pt = PointerType::Create();
+  auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
@@ -31,11 +31,11 @@ TestSuccess()
   auto s2 = graph.add_import({ mt, "s2" });
   auto s3 = graph.add_import({ mt, "s3" });
 
-  auto mux = MemStateMergeOperator::Create({ s1, s2, s3 });
+  auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto ld = LoadNonVolatileNode::Create(a, { mux }, vt, 4);
 
-  auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
-  auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s" });
+  auto ex1 = graph.add_export(ld[0], { ld[0]->Type(), "v" });
+  auto ex2 = graph.add_export(ld[1], { ld[1]->Type(), "s" });
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
@@ -56,7 +56,7 @@ TestSuccess()
   assert(load->input(3)->origin() == s3);
 
   auto merge = jlm::rvsdg::node_output::node(ex2->origin());
-  assert(is<MemStateMergeOperator>(merge));
+  assert(is<MemoryStateMergeOperation>(merge));
   assert(merge->ninputs() == 3);
   for (size_t n = 0; n < merge->ninputs(); n++)
   {
@@ -71,9 +71,9 @@ TestWrongNumberOfOperands()
   // Arrange
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  PointerType pt;
-  MemoryStateType mt;
+  auto vt = jlm::tests::valuetype::Create();
+  auto pt = PointerType::Create();
+  auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
@@ -84,12 +84,12 @@ TestWrongNumberOfOperands()
   auto s1 = graph.add_import({ mt, "s1" });
   auto s2 = graph.add_import({ mt, "s2" });
 
-  auto merge = MemStateMergeOperator::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
+  auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
   auto ld = LoadNonVolatileNode::Create(a, { merge, merge }, vt, 4);
 
-  auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
-  auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s1" });
-  auto ex3 = graph.add_export(ld[2], { ld[2]->type(), "s2" });
+  auto ex1 = graph.add_export(ld[0], { ld[0]->Type(), "v" });
+  auto ex2 = graph.add_export(ld[1], { ld[1]->Type(), "s1" });
+  auto ex3 = graph.add_export(ld[2], { ld[2]->Type(), "s2" });
 
   jlm::rvsdg::view(graph.root(), stdout);
 
@@ -117,8 +117,8 @@ TestLoadWithoutStates()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  PointerType pointerType;
+  auto valueType = jlm::tests::valuetype::Create();
+  auto pointerType = PointerType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);

@@ -70,16 +70,16 @@ theta_node::loopvar_iterator::operator++() noexcept
 jlm::rvsdg::theta_output *
 theta_node::add_loopvar(jlm::rvsdg::output * origin)
 {
-  node::add_input(std::unique_ptr<node_input>(new theta_input(this, origin, origin->type())));
-  node::add_output(std::unique_ptr<node_output>(new theta_output(this, origin->type())));
+  node::add_input(std::make_unique<theta_input>(this, origin, origin->Type()));
+  node::add_output(std::make_unique<theta_output>(this, origin->Type()));
 
   auto input = theta_node::input(ninputs() - 1);
   auto output = theta_node::output(noutputs() - 1);
   input->output_ = output;
   output->input_ = input;
 
-  auto argument = argument::create(subregion(), input, origin->type());
-  result::create(subregion(), argument, output, origin->type());
+  auto argument = argument::create(subregion(), input, origin->Type());
+  result::create(subregion(), argument, output, origin->Type());
   return output;
 }
 

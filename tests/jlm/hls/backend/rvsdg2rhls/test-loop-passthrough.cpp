@@ -34,8 +34,9 @@ test()
 {
   using namespace jlm;
 
-  rvsdg::bittype bt1(1);
-  jlm::llvm::FunctionType ft({ &bt1, &rvsdg::bit8, &rvsdg::bit8 }, { &rvsdg::bit8 });
+  auto ft = jlm::llvm::FunctionType::Create(
+      { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
+      { rvsdg::bittype::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::operation));
@@ -54,7 +55,7 @@ test()
   auto loop_out = loop->add_loopvar(lambda->fctargument(1));
 
   auto f = lambda->finalize({ loop_out });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   rvsdg::view(rm.Rvsdg(), stdout);
   hls::DotHLS dhls;

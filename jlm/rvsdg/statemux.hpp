@@ -65,10 +65,8 @@ class mux_op final : public simple_op
 public:
   virtual ~mux_op() noexcept;
 
-  inline mux_op(const statetype & type, size_t narguments, size_t nresults)
-      : simple_op(
-          std::vector<jlm::rvsdg::port>(narguments, { type }),
-          std::vector<jlm::rvsdg::port>(nresults, { type }))
+  inline mux_op(std::shared_ptr<const statetype> type, size_t narguments, size_t nresults)
+      : simple_op({ narguments, type }, { nresults, type })
   {}
 
   virtual bool
@@ -95,34 +93,37 @@ is_mux_op(const jlm::rvsdg::operation & op)
 
 static inline std::vector<jlm::rvsdg::output *>
 create_state_mux(
-    const jlm::rvsdg::type & type,
+    std::shared_ptr<const jlm::rvsdg::type> type,
     const std::vector<jlm::rvsdg::output *> & operands,
     size_t nresults)
 {
   if (operands.empty())
     throw jlm::util::error("Insufficient number of operands.");
 
-  auto st = dynamic_cast<const jlm::rvsdg::statetype *>(&type);
+  auto st = std::dynamic_pointer_cast<const jlm::rvsdg::statetype>(type);
   if (!st)
     throw jlm::util::error("Expected state type.");
 
   auto region = operands.front()->region();
-  jlm::rvsdg::mux_op op(*st, operands.size(), nresults);
+  jlm::rvsdg::mux_op op(std::move(st), operands.size(), nresults);
   return simple_node::create_normalized(region, op, operands);
 }
 
 static inline jlm::rvsdg::output *
 create_state_merge(
-    const jlm::rvsdg::type & type,
+    std::shared_ptr<const jlm::rvsdg::type> type,
     const std::vector<jlm::rvsdg::output *> & operands)
 {
-  return create_state_mux(type, operands, 1)[0];
+  return create_state_mux(std::move(type), operands, 1)[0];
 }
 
 static inline std::vector<jlm::rvsdg::output *>
-create_state_split(const jlm::rvsdg::type & type, jlm::rvsdg::output * operand, size_t nresults)
+create_state_split(
+    std::shared_ptr<const jlm::rvsdg::type> type,
+    jlm::rvsdg::output * operand,
+    size_t nresults)
 {
-  return create_state_mux(type, { operand }, nresults);
+  return create_state_mux(std::move(type), { operand }, nresults);
 }
 
 }

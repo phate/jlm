@@ -148,10 +148,51 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
   return cvargument::create(subregion(), input);
 }
 
+rvsdg::argument &
+node::GetMemoryStateRegionArgument() const noexcept
+{
+  auto argument = fctargument(nfctarguments() - 1);
+  JLM_ASSERT(is<MemoryStateType>(argument->type()));
+  return *argument;
+}
+
+rvsdg::result &
+node::GetMemoryStateRegionResult() const noexcept
+{
+  auto result = fctresult(nfctresults() - 1);
+  JLM_ASSERT(is<MemoryStateType>(result->type()));
+  return *result;
+}
+
+rvsdg::simple_node *
+node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
+{
+  auto & result = lambdaNode.GetMemoryStateRegionResult();
+
+  auto node = rvsdg::node_output::node(result.origin());
+  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+                                                       : nullptr;
+}
+
+rvsdg::simple_node *
+node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
+{
+  auto & argument = lambdaNode.GetMemoryStateRegionArgument();
+
+  // If a memory state entry split node is present, then we would expect the node to be the only
+  // user of the memory state argument.
+  if (argument.nusers() != 1)
+    return nullptr;
+
+  auto node = rvsdg::node_input::GetNode(**argument.begin());
+  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+                                                        : nullptr;
+}
+
 lambda::node *
 node::create(
     jlm::rvsdg::region * parent,
-    const FunctionType & type,
+    std::shared_ptr<const jlm::llvm::FunctionType> type,
     const std::string & name,
     const llvm::linkage & linkage,
     const attributeset & attributes)
@@ -159,7 +200,7 @@ node::create(
   lambda::operation op(type, name, linkage, attributes);
   auto node = new lambda::node(parent, std::move(op));
 
-  for (auto & argumentType : type.Arguments())
+  for (auto & argumentType : type->Arguments())
     lambda::fctargument::create(node->subregion(), argumentType);
 
   return node;
@@ -192,7 +233,7 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   for (const auto & origin : results)
     lambda::result::create(origin);
 
-  return output::create(this, PointerType());
+  return output::create(this, PointerType::Create());
 }
 
 lambda::node *
@@ -204,7 +245,7 @@ node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> 
 lambda::node *
 node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
-  auto lambda = create(region, type(), name(), linkage(), attributes());
+  auto lambda = create(region, Type(), name(), linkage(), attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;

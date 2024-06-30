@@ -63,7 +63,7 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     }
 
     auto phi_tac = static_cast<const tacvariable *>(ctx.lookup_value(phi))->tac();
-    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->type()), operands);
+    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
   }
 }
 
@@ -170,6 +170,7 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::AllocSize, attribute::kind::AllocSize },
         { ak::Dereferenceable, attribute::kind::Dereferenceable },
         { ak::DereferenceableOrNull, attribute::kind::DereferenceableOrNull },
+        { ak::NoFPClass, attribute::kind::NoFPClass },
         { ak::StackAlignment, attribute::kind::StackAlignment },
         { ak::UWTable, attribute::kind::UWTable },
         { ak::VScaleRange, attribute::kind::VScaleRange },
@@ -260,7 +261,7 @@ convert_argument(const ::llvm::Argument & argument, context & ctx)
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
-  return llvm::argument::create(name, *type, attributes);
+  return llvm::argument::create(name, type, attributes);
 }
 
 static void
@@ -346,15 +347,15 @@ create_cfg(::llvm::Function & f, context & ctx)
     if (f.isVarArg())
     {
       JLM_ASSERT(n < node->fcttype().NumArguments());
-      auto & type = node->fcttype().ArgumentType(n++);
+      auto & type = node->fcttype().Arguments()[n++];
       cfg.entry()->append_argument(argument::create("_varg_", type));
     }
     JLM_ASSERT(n < node->fcttype().NumArguments());
 
-    auto & iotype = node->fcttype().ArgumentType(n++);
+    auto & iotype = node->fcttype().Arguments()[n++];
     auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
 
-    auto & memtype = node->fcttype().ArgumentType(n++);
+    auto & memtype = node->fcttype().Arguments()[n++];
     auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
 
     JLM_ASSERT(n == node->fcttype().NumArguments());
@@ -377,7 +378,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   if (!f.getReturnType()->isVoidTy())
   {
     auto type = ConvertType(f.getReturnType(), ctx);
-    entry_block->append_last(UndefValueOperation::Create(*type, "_r_"));
+    entry_block->append_last(UndefValueOperation::Create(type, "_r_"));
     result = entry_block->last()->result(0);
 
     JLM_ASSERT(node->fcttype().NumResults() == 3);
@@ -448,7 +449,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     return data_node::Create(
         ctx.module().ipgraph(),
         name,
-        *type,
+        type,
         linkage,
         std::move(section),
         constant);
@@ -461,10 +462,10 @@ declare_globals(::llvm::Module & lm, context & ctx)
     auto type = ConvertFunctionType(f.getFunctionType(), ctx);
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
 
-    return function_node::create(ctx.module().ipgraph(), name, *type, linkage, attributes);
+    return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
   };
 
-  for (auto & gv : lm.getGlobalList())
+  for (auto & gv : lm.globals())
   {
     auto node = create_data_node(gv, ctx);
     ctx.insert_value(&gv, ctx.module().create_global_value(node));
@@ -504,7 +505,7 @@ convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 static void
 convert_globals(::llvm::Module & lm, context & ctx)
 {
-  for (auto & gv : lm.getGlobalList())
+  for (auto & gv : lm.globals())
     convert_global_value(gv, ctx);
 
   for (auto & f : lm.getFunctionList())

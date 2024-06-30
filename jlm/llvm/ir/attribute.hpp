@@ -112,6 +112,7 @@ public:
     AllocSize,
     Dereferenceable,
     DereferenceableOrNull,
+    NoFPClass,
     StackAlignment,
     UWTable,
     VScaleRange,
@@ -268,18 +269,11 @@ class type_attribute final : public enum_attribute
 public:
   ~type_attribute() override;
 
-private:
-  type_attribute(attribute::kind kind, std::unique_ptr<jlm::rvsdg::valuetype> type)
+  type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::valuetype> type)
       : enum_attribute(kind),
         type_(std::move(type))
   {}
 
-  type_attribute(attribute::kind kind, const jlm::rvsdg::valuetype & type)
-      : enum_attribute(kind),
-        type_(static_cast<jlm::rvsdg::valuetype *>(type.copy().release()))
-  {}
-
-public:
   const jlm::rvsdg::valuetype &
   type() const noexcept
   {
@@ -293,20 +287,19 @@ public:
   copy() const override;
 
   static std::unique_ptr<attribute>
-  create_byval(std::unique_ptr<jlm::rvsdg::valuetype> type)
+  create_byval(std::shared_ptr<const jlm::rvsdg::valuetype> type)
   {
-    std::unique_ptr<type_attribute> ta(new type_attribute(kind::ByVal, std::move(type)));
-    return ta;
+    return std::make_unique<type_attribute>(kind::ByVal, std::move(type));
   }
 
   static std::unique_ptr<attribute>
-  CreateStructRetAttribute(std::unique_ptr<jlm::rvsdg::valuetype> type)
+  CreateStructRetAttribute(std::shared_ptr<const jlm::rvsdg::valuetype> type)
   {
-    return std::unique_ptr<attribute>(new type_attribute(kind::StructRet, std::move(type)));
+    return std::make_unique<type_attribute>(kind::StructRet, std::move(type));
   }
 
 private:
-  std::unique_ptr<jlm::rvsdg::valuetype> type_;
+  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
 };
 
 /** \brief Attribute set

@@ -21,23 +21,18 @@ class impport final : public jlm::rvsdg::impport
 public:
   virtual ~impport();
 
-  impport(const jlm::rvsdg::valuetype & valueType, const std::string & name, const linkage & lnk)
-      : jlm::rvsdg::impport(PointerType(), name),
+  impport(
+      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
+      const std::string & name,
+      const linkage & lnk)
+      : jlm::rvsdg::impport(PointerType::Create(), name),
         linkage_(lnk),
-        ValueType_(valueType.copy())
+        ValueType_(std::move(valueType))
   {}
 
-  impport(const impport & other)
-      : jlm::rvsdg::impport(other),
-        linkage_(other.linkage_),
-        ValueType_(other.ValueType_->copy())
-  {}
+  impport(const impport & other) = default;
 
-  impport(impport && other)
-      : jlm::rvsdg::impport(other),
-        linkage_(std::move(other.linkage_)),
-        ValueType_(std::move(other.ValueType_))
-  {}
+  impport(impport && other) = default;
 
   impport &
   operator=(const impport &) = delete;
@@ -51,10 +46,16 @@ public:
     return linkage_;
   }
 
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
+  Type() const noexcept
+  {
+    return ValueType_;
+  }
+
   [[nodiscard]] const jlm::rvsdg::valuetype &
   GetValueType() const noexcept
   {
-    return *jlm::util::AssertedCast<jlm::rvsdg::valuetype>(ValueType_.get());
+    return *ValueType_;
   }
 
   virtual bool
@@ -65,7 +66,7 @@ public:
 
 private:
   jlm::llvm::linkage linkage_;
-  std::unique_ptr<jlm::rvsdg::type> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::valuetype> ValueType_;
 };
 
 static inline bool

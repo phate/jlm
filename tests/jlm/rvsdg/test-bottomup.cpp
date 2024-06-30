@@ -13,11 +13,11 @@ static void
 test_initialization()
 {
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype vtype;
+  auto vtype = jlm::tests::valuetype::Create();
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, {});
-  auto n2 = jlm::tests::test_op::create(graph.root(), {}, { &vtype });
+  auto n2 = jlm::tests::test_op::create(graph.root(), {}, { vtype });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "dummy" });
+  graph.add_export(n2->output(0), { n2->output(0)->Type(), "dummy" });
 
   bool n1_visited = false;
   bool n2_visited = false;
@@ -37,11 +37,11 @@ static void
 test_basic_traversal()
 {
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype type;
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type, &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { &type });
+  auto type = jlm::tests::valuetype::Create();
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "dummy" });
+  graph.add_export(n2->output(0), { n2->output(0)->Type(), "dummy" });
 
   {
     jlm::rvsdg::node * tmp;
@@ -61,10 +61,10 @@ static void
 test_order_enforcement_traversal()
 {
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype type;
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type, &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { &type });
-  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { &type });
+  auto type = jlm::tests::valuetype::Create();
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
+  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { type });
 
   jlm::rvsdg::node * tmp;
   {
