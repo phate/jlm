@@ -362,7 +362,7 @@ separate_load_edge(
           auto mem_sg_out = jlm::hls::state_gate_op::create(*new_load_outputs[0], { mem_edge });
           mem_edge = mem_sg_out[1];
 
-          sn->output(0)->divert_users(mem_sg_out[0]);
+          sn->output(0)->divert_users(new_load_outputs[0]);
           si->divert_to(addr_edge);
           sn->output(1)->divert_users(mem_edge);
           remove(sn);
