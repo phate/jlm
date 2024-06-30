@@ -338,9 +338,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         continue;
       }
       inline_calls(ln->subregion());
-      dump_xml(rm, "post_inline.rvsdg");
       split_opt(rm);
-      dump_xml(rm, "post_opt.rvsdg");
       //            convert_alloca(ln->subregion());
       jlm::rvsdg::substitution_map smap;
       for (size_t i = 0; i < ln->ninputs(); ++i)
