@@ -54,18 +54,6 @@ public:
     return attributes_;
   }
 
-  void
-  add(const llvm::attribute & attribute)
-  {
-    attributes_.insert(attribute);
-  }
-
-  void
-  add(std::unique_ptr<llvm::attribute> attribute)
-  {
-    attributes_.insert(std::move(attribute));
-  }
-
   static std::unique_ptr<argument>
   create(
       const std::string & name,

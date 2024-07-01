@@ -41,6 +41,7 @@ class HashSet
 {
   using InternalSet = std::unordered_set<ItemType, HashFunctor>;
 
+public:
   class ItemConstIterator final
   {
   public:
@@ -107,7 +108,6 @@ class HashSet
     typename InternalSet::const_iterator It_;
   };
 
-public:
   ~HashSet() noexcept = default;
 
   HashSet() = default;

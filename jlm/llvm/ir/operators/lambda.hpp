@@ -520,12 +520,6 @@ public:
   }
 
   void
-  add(const jlm::llvm::attribute & attribute)
-  {
-    attributes_.insert(attribute);
-  }
-
-  void
   set_attributes(const jlm::llvm::attributeset & attributes)
   {
     attributes_ = attributes;

@@ -271,42 +271,54 @@ convert_attribute_kind(const attribute::kind & kind)
   return map[kind];
 }
 
-static ::llvm::AttributeSet
-convert_attributes(const attributeset & as, context & ctx)
+static ::llvm::Attribute
+ConvertEnumAttribute(const llvm::enum_attribute & attribute, context & ctx)
 {
-  auto convert_attribute = [](const llvm::attribute & attribute, context & ctx)
-  {
-    auto & llvmctx = ctx.llvm_module().getContext();
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto ea = dynamic_cast<const enum_attribute *>(&attribute);
+  auto kind = convert_attribute_kind(ea->kind());
+  return ::llvm::Attribute::get(llvmContext, kind);
+}
 
-    if (auto sa = dynamic_cast<const string_attribute *>(&attribute))
-      return ::llvm::Attribute::get(llvmctx, sa->kind(), sa->value());
+static ::llvm::Attribute
+ConvertIntAttribute(const llvm::int_attribute & attribute, context & ctx)
+{
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto kind = convert_attribute_kind(attribute.kind());
+  return ::llvm::Attribute::get(llvmContext, kind, attribute.value());
+}
 
-    if (typeid(attribute) == typeid(enum_attribute))
-    {
-      auto ea = dynamic_cast<const enum_attribute *>(&attribute);
-      auto kind = convert_attribute_kind(ea->kind());
-      return ::llvm::Attribute::get(llvmctx, kind);
-    }
+static ::llvm::Attribute
+ConvertTypeAttribute(const llvm::type_attribute & attribute, context & ctx)
+{
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto kind = convert_attribute_kind(attribute.kind());
+  auto type = convert_type(attribute.type(), ctx);
+  return ::llvm::Attribute::get(llvmContext, kind, type);
+}
 
-    if (auto ia = dynamic_cast<const int_attribute *>(&attribute))
-    {
-      auto kind = convert_attribute_kind(ia->kind());
-      return ::llvm::Attribute::get(llvmctx, kind, ia->value());
-    }
+static ::llvm::Attribute
+ConvertStringAttribute(const llvm::string_attribute & attribute, context & ctx)
+{
+  auto & llvmContext = ctx.llvm_module().getContext();
+  return ::llvm::Attribute::get(llvmContext, attribute.kind(), attribute.value());
+}
 
-    if (auto ta = dynamic_cast<const type_attribute *>(&attribute))
-    {
-      auto kind = convert_attribute_kind(ta->kind());
-      auto type = convert_type(ta->type(), ctx);
-      return ::llvm::Attribute::get(llvmctx, kind, type);
-    }
-
-    JLM_UNREACHABLE("This should have never happened!");
-  };
-
+static ::llvm::AttributeSet
+convert_attributes(const attributeset & attributeSet, context & ctx)
+{
   ::llvm::AttrBuilder builder(ctx.llvm_module().getContext());
-  for (auto & attribute : as)
-    builder.addAttribute(convert_attribute(attribute, ctx));
+  for (auto & attribute : attributeSet.EnumAttributes())
+    builder.addAttribute(ConvertEnumAttribute(attribute, ctx));
+
+  for (auto & attribute : attributeSet.IntAttributes())
+    builder.addAttribute(ConvertIntAttribute(attribute, ctx));
+
+  for (auto & attribute : attributeSet.TypeAttributes())
+    builder.addAttribute(ConvertTypeAttribute(attribute, ctx));
+
+  for (auto & attribute : attributeSet.StringAttributes())
+    builder.addAttribute(ConvertStringAttribute(attribute, ctx));
 
   return ::llvm::AttributeSet::get(ctx.llvm_module().getContext(), builder);
 }
