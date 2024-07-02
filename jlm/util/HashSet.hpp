@@ -31,9 +31,18 @@ struct Hash<std::pair<First, Second>>
   }
 };
 
+// FIXME: add documentation
+template<typename T, typename... Args>
+void
+CombineHash(std::size_t & seed, const T & arg, Args... args)
+{
+  seed ^= std::hash<T>()(arg) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  (CombineHash(seed, args), ...);
+}
+
 /**
- * Represents a set of values. A set is a collection that contains no duplicate elements, and whose
- * elements are in no particular order.
+ * Represents a set of values. A set is a collection that contains no duplicate elements, and
+ * whose elements are in no particular order.
  * @tparam ItemType The type of the items in the hash set.
  */
 template<typename ItemType, typename HashFunctor = Hash<ItemType>>

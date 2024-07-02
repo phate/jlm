@@ -26,8 +26,15 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const valuetype>
   Create();
+
+private:
+  static const valuetype *
+  GetInstance() noexcept;
 };
 
 class statetype final : public rvsdg::statetype
@@ -45,8 +52,15 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const statetype>
   Create();
+
+private:
+  static const statetype *
+  GetInstance() noexcept;
 };
 
 }

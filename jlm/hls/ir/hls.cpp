@@ -4,15 +4,40 @@
  */
 
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::hls
 {
 
+std::size_t
+triggertype::ComputeHash() const noexcept
+{
+  return std::hash<const triggertype *>()(GetInstance());
+}
+
 std::shared_ptr<const triggertype>
 triggertype::Create()
 {
+  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), GetInstance());
+}
+
+const triggertype *
+triggertype::GetInstance() noexcept
+{
   static const triggertype instance;
-  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), &instance);
+  return &instance;
+}
+
+std::size_t
+bundletype::ComputeHash() const noexcept
+{
+  std::size_t seed = 0;
+  for (auto & element : elements_)
+  {
+    util::CombineHash(seed, element.first, element.second->ComputeHash());
+  }
+
+  return seed;
 }
 
 jlm::rvsdg::structural_output *

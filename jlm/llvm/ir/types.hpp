@@ -76,6 +76,9 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const FunctionType>
   Create(
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
@@ -103,8 +106,15 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const PointerType>
   Create();
+
+private:
+  static const PointerType *
+  GetInstance() noexcept;
 };
 
 /* array type */
@@ -135,6 +145,9 @@ public:
 
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   inline size_t
   nelements() const noexcept
@@ -191,6 +204,9 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   inline const fpsize &
   size() const noexcept
   {
@@ -218,11 +234,18 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   virtual std::string
   debug_string() const override;
 
   static std::shared_ptr<const varargtype>
   Create();
+
+private:
+  static const varargtype *
+  GetInstance() noexcept;
 };
 
 static inline bool
@@ -297,6 +320,9 @@ public:
 
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -402,6 +428,9 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   size_t
   size() const noexcept
   {
@@ -484,11 +513,18 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   virtual std::string
   debug_string() const override;
 
   static std::shared_ptr<const iostatetype>
   Create();
+
+private:
+  static const iostatetype *
+  GetInstance() noexcept;
 };
 
 /** \brief Memory state type class
@@ -511,8 +547,15 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const MemoryStateType>
   Create();
+
+private:
+  static const MemoryStateType *
+  GetInstance() noexcept;
 };
 
 template<class ELEMENTYPE>
