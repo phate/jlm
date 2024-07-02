@@ -38,6 +38,12 @@ ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->nalternatives_ == nalternatives_;
 }
 
+std::size_t
+ctltype::ComputeHash() const noexcept
+{
+  return std::hash<size_t>()(nalternatives_);
+}
+
 std::shared_ptr<const ctltype>
 ctltype::Create(std::size_t nalternatives)
 {

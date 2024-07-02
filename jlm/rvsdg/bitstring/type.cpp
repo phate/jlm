@@ -28,6 +28,12 @@ bittype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type != nullptr && this->nbits() == type->nbits();
 }
 
+std::size_t
+bittype::ComputeHash() const noexcept
+{
+  return std::hash<size_t>()(nbits_);
+}
+
 std::shared_ptr<const bittype>
 bittype::Create(std::size_t nbits)
 {

@@ -34,6 +34,10 @@ public:
 
   virtual std::string
   debug_string() const = 0;
+
+  // FIXME: add documentation
+  [[nodiscard]] virtual std::size_t
+  ComputeHash() const noexcept = 0;
 };
 
 class valuetype : public jlm::rvsdg::type

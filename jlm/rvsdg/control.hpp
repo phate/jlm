@@ -35,6 +35,9 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
+  std::size_t
+  ComputeHash() const noexcept override;
+
   inline size_t
   nalternatives() const noexcept
   {
