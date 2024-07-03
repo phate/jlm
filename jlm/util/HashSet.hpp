@@ -34,9 +34,11 @@ struct Hash<std::pair<First, Second>>
 // FIXME: add documentation
 template<typename T, typename... Args>
 void
-CombineHash(std::size_t & seed, const T & arg, Args... args)
+CombineHash(std::size_t & seed, T hash, Args... args)
 {
-  seed ^= std::hash<T>()(arg) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  static_assert(std::is_same<decltype(hash), std::size_t>::value, "Hash value must be std::size_t");
+
+  seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   (CombineHash(seed, args), ...);
 }
 

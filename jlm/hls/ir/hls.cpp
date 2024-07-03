@@ -28,7 +28,8 @@ bundletype::ComputeHash() const noexcept
   std::size_t seed = 0;
   for (auto & element : elements_)
   {
-    util::CombineHash(seed, element.first, element.second->ComputeHash());
+    auto firstHash = std::hash<std::string>()(element.first);
+    util::CombineHash(seed, firstHash, element.second->ComputeHash());
   }
 
   return seed;
