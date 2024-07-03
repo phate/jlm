@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=ffd3191dc3046cc54618fc4a43cc656eda755a69
+GIT_COMMIT=806876decd60a91cc6ec4773b6edeca20156f528
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -17,6 +17,9 @@ BENCHMARK_RUN_TARGET=run
 # We assume that the firtool is in the PATH
 FIRTOOL=firtool
 
+# Execute benchmarks in parallel by default
+PARALLEL_THREADS=`nproc`
+
 function commit()
 {
 	echo ${GIT_COMMIT}
@@ -27,9 +30,11 @@ function usage()
 	echo "Usage: ./run-hls-test.sh [OPTION] [VAR=VALUE]"
 	echo ""
 	echo "  --benchmark-path PATH The path where to place the HLS test suite."
-	echo "                        [${BENCHMARK_DIR}]"
+	echo "                        Default=[${BENCHMARK_DIR}]"
 	echo "  --firtool COMMAND     The command for running firtool, which can include a path."
-	echo "                        [${FIRTOOL}]"
+	echo "                        Default=[${FIRTOOL}]"
+	echo "  --parallel #THREADS   The number of threads to run in parallel."
+	echo "                        Default=[${PARALLEL_THREADS}]"
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
 }
@@ -44,6 +49,11 @@ while [[ "$#" -ge 1 ]] ; do
 		--firtool)
 			shift
 			FIRTOOL=$(readlink -m "$1")
+			shift
+			;;
+		--parallel)
+			shift
+			PARALLEL_THREADS=$1
 			shift
 			;;
 		--get-commit-hash)
@@ -83,4 +93,5 @@ export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
 git checkout ${GIT_COMMIT}
 make clean
-make FIRTOOL=${FIRTOOL} ${BENCHMARK_RUN_TARGET}
+echo "make -j ${PARALLEL_THREADS} -O FIRTOOL=${FIRTOOL} ${BENCHMARK_RUN_TARGET}"
+make -j ${PARALLEL_THREADS} -O FIRTOOL=${FIRTOOL} ${BENCHMARK_RUN_TARGET}
