@@ -31,10 +31,6 @@ public:
 
   static std::shared_ptr<const valuetype>
   Create();
-
-private:
-  static const valuetype *
-  GetInstance() noexcept;
 };
 
 class statetype final : public rvsdg::statetype
@@ -57,10 +53,6 @@ public:
 
   static std::shared_ptr<const statetype>
   Create();
-
-private:
-  static const statetype *
-  GetInstance() noexcept;
 };
 
 }

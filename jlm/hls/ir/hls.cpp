@@ -12,20 +12,14 @@ namespace jlm::hls
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
-  return std::hash<const triggertype *>()(GetInstance());
+  return util::ComputeConstantHash("jlm::hls::triggertype");
 }
 
 std::shared_ptr<const triggertype>
 triggertype::Create()
 {
-  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), GetInstance());
-}
-
-const triggertype *
-triggertype::GetInstance() noexcept
-{
   static const triggertype instance;
-  return &instance;
+  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), &instance);
 }
 
 std::size_t

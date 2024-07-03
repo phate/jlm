@@ -111,10 +111,6 @@ public:
 
   static std::shared_ptr<const PointerType>
   Create();
-
-private:
-  static const PointerType *
-  GetInstance() noexcept;
 };
 
 /* array type */
@@ -242,10 +238,6 @@ public:
 
   static std::shared_ptr<const varargtype>
   Create();
-
-private:
-  static const varargtype *
-  GetInstance() noexcept;
 };
 
 static inline bool
@@ -521,10 +513,6 @@ public:
 
   static std::shared_ptr<const iostatetype>
   Create();
-
-private:
-  static const iostatetype *
-  GetInstance() noexcept;
 };
 
 /** \brief Memory state type class
@@ -552,10 +540,6 @@ public:
 
   static std::shared_ptr<const MemoryStateType>
   Create();
-
-private:
-  static const MemoryStateType *
-  GetInstance() noexcept;
 };
 
 template<class ELEMENTYPE>

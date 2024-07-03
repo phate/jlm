@@ -131,20 +131,14 @@ PointerType::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 PointerType::ComputeHash() const noexcept
 {
-  return std::hash<const PointerType *>()(GetInstance());
-}
-
-const PointerType *
-PointerType::GetInstance() noexcept
-{
-  static const PointerType instance;
-  return &instance;
+  return util::ComputeConstantHash("jlm::llvm::PointerType");
 }
 
 std::shared_ptr<const PointerType>
 PointerType::Create()
 {
-  return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), GetInstance());
+  static const PointerType instance;
+  return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
 }
 
 /* array type */
@@ -249,7 +243,7 @@ varargtype::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 varargtype::ComputeHash() const noexcept
 {
-  return std::hash<const varargtype *>()(GetInstance());
+  return util::ComputeConstantHash("jlm::llvm::varargtype");
 }
 
 std::string
@@ -258,17 +252,11 @@ varargtype::debug_string() const
   return "vararg";
 }
 
-const varargtype *
-varargtype::GetInstance() noexcept
-{
-  static const varargtype instance;
-  return &instance;
-}
-
 std::shared_ptr<const varargtype>
 varargtype::Create()
 {
-  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), GetInstance());
+  static const varargtype instance;
+  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), &instance);
 }
 
 StructType::~StructType() = default;
@@ -360,7 +348,7 @@ iostatetype::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 iostatetype::ComputeHash() const noexcept
 {
-  return std::hash<const iostatetype *>()(GetInstance());
+  return util::ComputeConstantHash("jlm::llvm::iostatetype");
 }
 
 std::string
@@ -369,17 +357,11 @@ iostatetype::debug_string() const
   return "iostate";
 }
 
-const iostatetype *
-iostatetype::GetInstance() noexcept
-{
-  static const iostatetype instance;
-  return &instance;
-}
-
 std::shared_ptr<const iostatetype>
 iostatetype::Create()
 {
-  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), GetInstance());
+  static const iostatetype instance;
+  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), &instance);
 }
 
 /**
@@ -402,21 +384,14 @@ MemoryStateType::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 MemoryStateType::ComputeHash() const noexcept
 {
-  return std::hash<const MemoryStateType *>()(GetInstance());
+  return util::ComputeConstantHash("jlm::llvm::MemoryStateType");
 }
 
 std::shared_ptr<const MemoryStateType>
 MemoryStateType::Create()
 {
   static const MemoryStateType instance;
-  return std::shared_ptr<const MemoryStateType>(std::shared_ptr<void>(), GetInstance());
-}
-
-const MemoryStateType *
-MemoryStateType::GetInstance() noexcept
-{
-  static const MemoryStateType instance;
-  return &instance;
+  return std::shared_ptr<const MemoryStateType>(std::shared_ptr<void>(), &instance);
 }
 
 }

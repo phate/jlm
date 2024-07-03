@@ -5,6 +5,8 @@
 
 #include "test-types.hpp"
 
+#include <jlm/util/HashSet.hpp>
+
 namespace jlm::tests
 {
 
@@ -28,20 +30,14 @@ valuetype::operator==(const rvsdg::type & other) const noexcept
 std::size_t
 valuetype::ComputeHash() const noexcept
 {
-  return std::hash<const valuetype *>()(GetInstance());
+  return util::ComputeConstantHash("jlm::tests::valuetype");
 }
 
 std::shared_ptr<const valuetype>
 valuetype::Create()
 {
-  return std::shared_ptr<const valuetype>(std::shared_ptr<void>(), GetInstance());
-}
-
-const valuetype *
-valuetype::GetInstance() noexcept
-{
   static const valuetype instance;
-  return &instance;
+  return std::shared_ptr<const valuetype>(std::shared_ptr<void>(), &instance);
 }
 
 /* statetype */
@@ -64,20 +60,14 @@ statetype::operator==(const rvsdg::type & other) const noexcept
 std::size_t
 statetype::ComputeHash() const noexcept
 {
-  return std::hash<const statetype *>()(GetInstance());
+  return util::ComputeConstantHash("jlm::tests::statetype");
 }
 
 std::shared_ptr<const statetype>
 statetype::Create()
 {
-  return std::shared_ptr<const statetype>(std::shared_ptr<void>(), GetInstance());
-}
-
-const statetype *
-statetype::GetInstance() noexcept
-{
   static const statetype instance;
-  return &instance;
+  return std::shared_ptr<const statetype>(std::shared_ptr<void>(), &instance);
 }
 
 }

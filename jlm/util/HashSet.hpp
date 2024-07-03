@@ -40,6 +40,19 @@ CombineHash(std::size_t & seed, const T & arg, Args... args)
   (CombineHash(seed, args), ...);
 }
 
+// FIXME: add documentation
+constexpr std::size_t
+ComputeConstantHash(const std::string_view & s)
+{
+  std::size_t v = 0;
+  for (auto c : s)
+  {
+    v = v * 5 + c;
+  }
+
+  return v;
+}
+
 /**
  * Represents a set of values. A set is a collection that contains no duplicate elements, and
  * whose elements are in no particular order.

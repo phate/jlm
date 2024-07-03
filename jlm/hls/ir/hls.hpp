@@ -424,10 +424,6 @@ public:
 
   static std::shared_ptr<const triggertype>
   Create();
-
-private:
-  static const triggertype *
-  GetInstance() noexcept;
 };
 
 class trigger_op final : public jlm::rvsdg::simple_op
