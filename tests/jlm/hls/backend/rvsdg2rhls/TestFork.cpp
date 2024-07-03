@@ -87,7 +87,7 @@ TestConstantFork()
 
   // Arrange
   auto b32 = rvsdg::bittype::Create(32);
-  auto ft = FunctionType::Create({b32}, { b32 });
+  auto ft = FunctionType::Create({ b32 }, { b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::operation));

@@ -71,12 +71,16 @@ public:
 };
 
 /**
- * Forks ensures 1-to-1 connections between producers and consumers, i.e., to handle fanout of
+ * Forks ensures 1-to-1 connections between producers and consumers, i.e., they handle fanout of
  * signals. Normal forks have a register inside to ensure that a token consumed on one output is not
- * repeated. The fork only acknowledge once all outputs have been consumed. CFORK (constant fork) -
- * Handles special case when we know that the input is always valid and constant, thus no
- * handshaking is necessary.
- *                       - Deduplication necessitates using forks for constants in a cheap way.
+ * repeated. The fork only creates an acknowledge on its single input once all outputs have been
+ * consumed.
+ *
+ * CFORK (constant fork):
+ * Handles the special case when the same constant is used as input for multiple nodes. It would be
+ * possible to have a constant for each input, but deduplication replaces the constants with a
+ * single constant fork. Since the input of the fork is always the same value and is always valid.
+ * No handshaking is necessary and the outputs of the fork is always valid.
  */
 class fork_op final : public jlm::rvsdg::simple_op
 {
@@ -84,10 +88,23 @@ public:
   virtual ~fork_op()
   {}
 
+  /**
+   * Create a fork operation that is not a constant fork.
+   *
+   * /param nalternatives Number of outputs.
+   * /param value The signal type, which is the same for the input and all outputs.
+   */
   fork_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::type> & type)
       : jlm::rvsdg::simple_op({ type }, { nalternatives, type })
   {}
 
+  /**
+   * Create a fork operation.
+   *
+   * /param nalternatives Number of outputs.
+   * /param value The signal type, which is the same for the input and all outputs.
+   * /param isConstant If true, the fork is a constant fork.
+   */
   fork_op(
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::type> & type,
@@ -105,6 +122,10 @@ public:
         && forkOp->nresults() == nresults() && forkOp->IsConstant() == IsConstant_;
   }
 
+  /**
+   * Debug string for the fork operation.
+   * /return HLS_CFORK if the fork is a constant fork, else HLS_FORK.
+   */
   std::string
   debug_string() const override
   {
@@ -117,6 +138,15 @@ public:
     return std::unique_ptr<jlm::rvsdg::operation>(new fork_op(*this));
   }
 
+  /**
+   * Create a fork operation with a single input and multiple outputs.
+   *
+   * /param nalternatives Number of outputs.
+   * /param value The signal type, which is the same for the input and all outputs.
+   * /param isConstant If true, the fork is a constant fork.
+   *
+   * /return A vector of outputs.
+   */
   static std::vector<jlm::rvsdg::output *>
   create(size_t nalternatives, jlm::rvsdg::output & value, bool isConstant = false)
   {
@@ -126,6 +156,12 @@ public:
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
   }
 
+  /**
+   * Cechk if a fork is a constant fork (CFORK).
+   *
+   * /return True if the fork is a constant fork, i.e., the input of the fork is a constant, else
+   * false.
+   */
   bool
   IsConstant() const
   {
@@ -133,7 +169,7 @@ public:
   }
 
 private:
-  bool IsConstant_;
+  bool IsConstant_ = false;
 };
 
 class merge_op final : public jlm::rvsdg::simple_op
