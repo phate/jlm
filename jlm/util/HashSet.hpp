@@ -31,7 +31,16 @@ struct Hash<std::pair<First, Second>>
   }
 };
 
-// FIXME: add documentation
+/**
+ * Combines multiple hash values given a seed value.
+ *
+ * @tparam Args The type of the hash values, i.e., std::size_t.
+ * @param seed The seed value. It contains the combined hash values after the function invocation.
+ * @param hash The first hash value.
+ * @param args The other hash values.
+ *
+ * @see CombineHashes
+ */
 template<typename... Args>
 void
 CombineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
@@ -40,7 +49,16 @@ CombineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
   (CombineHashesWithSeed(seed, args), ...);
 }
 
-// FIXME: add documentation
+/**
+ * Combines multiple hash values with the seed value 0.
+ *
+ * @tparam Args The type of the hash values, i.e, std::size_t.
+ * @param hash The first hash value.
+ * @param args The other hash values.
+ * @return The combined hash values.
+ *
+ * @see CombineHashesWithSeed
+ */
 template<typename... Args>
 std::size_t
 CombineHashes(std::size_t hash, Args... args)
