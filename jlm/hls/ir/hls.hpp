@@ -70,6 +70,14 @@ public:
   bool loop; // only used for dot output
 };
 
+/**
+ * Forks ensures 1-to-1 connections between producers and consumers, i.e., to handle fanout of
+ * signals. Normal forks have a register inside to ensure that a token consumed on one output is not
+ * repeated. The fork only acknowledge once all outputs have been consumed. CFORK (constant fork) -
+ * Handles special case when we know that the input is always valid and constant, thus no
+ * handshaking is necessary.
+ *                       - Deduplication necessitates using forks for constants in a cheap way.
+ */
 class fork_op final : public jlm::rvsdg::simple_op
 {
 public:
