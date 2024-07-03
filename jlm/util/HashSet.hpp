@@ -6,85 +6,13 @@
 #ifndef JLM_UTIL_HASHSET_HPP
 #define JLM_UTIL_HASHSET_HPP
 
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <unordered_set>
 
 namespace jlm::util
 {
-
-/**
- * Our own version of std::hash that also supports hashing std::pair
- */
-template<typename T>
-struct Hash : std::hash<T>
-{
-};
-
-template<typename First, typename Second>
-struct Hash<std::pair<First, Second>>
-{
-  std::size_t
-  operator()(const std::pair<First, Second> & value) const noexcept
-  {
-    return std::hash<First>()(value.first) ^ std::hash<Second>()(value.second) << 1;
-  }
-};
-
-/**
- * Combines multiple hash values given a seed value.
- *
- * @tparam Args The type of the hash values, i.e., std::size_t.
- * @param seed The seed value. It contains the combined hash values after the function invocation.
- * @param hash The first hash value.
- * @param args The other hash values.
- *
- * @see CombineHashes
- */
-template<typename... Args>
-void
-CombineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
-{
-  seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  (CombineHashesWithSeed(seed, args), ...);
-}
-
-/**
- * Combines multiple hash values with the seed value 0.
- *
- * @tparam Args The type of the hash values, i.e, std::size_t.
- * @param hash The first hash value.
- * @param args The other hash values.
- * @return The combined hash values.
- *
- * @see CombineHashesWithSeed
- */
-template<typename... Args>
-std::size_t
-CombineHashes(std::size_t hash, Args... args)
-{
-  std::size_t seed = 0;
-  CombineHashesWithSeed(seed, hash, std::forward<Args>(args)...);
-  return seed;
-}
-
-/**
- * Computes a hash value from string \p s at compile-time.
- *
- * @param s The string from which to compute the hash value.
- * @return A hash value of \p s.
- */
-constexpr std::size_t
-ComputeConstantHash(const std::string_view & s)
-{
-  std::size_t v = 0;
-  for (auto c : s)
-  {
-    v = v * 5 + c;
-  }
-
-  return v;
-}
 
 /**
  * Represents a set of values. A set is a collection that contains no duplicate elements, and

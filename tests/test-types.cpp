@@ -5,7 +5,7 @@
 
 #include "test-types.hpp"
 
-#include <jlm/util/HashSet.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::tests
 {

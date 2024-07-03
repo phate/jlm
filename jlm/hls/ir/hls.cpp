@@ -4,7 +4,7 @@
  */
 
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/util/HashSet.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::hls
 {
