@@ -162,10 +162,8 @@ arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 arraytype::ComputeHash() const noexcept
 {
-  std::size_t seed = 0;
   auto numElementsHash = std::hash<std::size_t>()(nelements_);
-  util::CombineHashesWithSeed(seed, type_->ComputeHash(), numElementsHash);
-  return seed;
+  return util::CombineHashes(type_->ComputeHash(), numElementsHash);
 }
 
 /* floating point type */
@@ -273,12 +271,10 @@ StructType::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 StructType::ComputeHash() const noexcept
 {
-  std::size_t seed = 0;
   auto isPackedHash = std::hash<bool>()(IsPacked_);
   auto nameHash = std::hash<std::string>()(Name_);
   auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
-  util::CombineHashesWithSeed(seed, isPackedHash, nameHash, declarationHash);
-  return seed;
+  return util::CombineHashes(isPackedHash, nameHash, declarationHash);
 }
 
 std::string
@@ -299,10 +295,8 @@ vectortype::operator==(const jlm::rvsdg::type & other) const noexcept
 std::size_t
 vectortype::ComputeHash() const noexcept
 {
-  std::size_t seed = 0;
   auto sizeHash = std::hash<size_t>()(size_);
-  util::CombineHashesWithSeed(seed, sizeHash, type_->ComputeHash());
-  return seed;
+  return util::CombineHashes(sizeHash, type_->ComputeHash());
 }
 
 /* fixedvectortype */

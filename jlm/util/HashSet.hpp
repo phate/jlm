@@ -31,13 +31,23 @@ struct Hash<std::pair<First, Second>>
   }
 };
 
-// FIXME: add documentatoin
+// FIXME: add documentation
 template<typename... Args>
 void
 CombineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
 {
   seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   (CombineHashesWithSeed(seed, args), ...);
+}
+
+// FIXME: add documentation
+template<typename... Args>
+std::size_t
+CombineHashes(std::size_t hash, Args... args)
+{
+  std::size_t seed = 0;
+  CombineHashesWithSeed(seed, hash, std::forward<Args>(args)...);
+  return seed;
 }
 
 /**
