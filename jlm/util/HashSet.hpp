@@ -34,10 +34,10 @@ struct Hash<std::pair<First, Second>>
 // FIXME: add documentatoin
 template<typename... Args>
 void
-CombineHash(std::size_t & seed, std::size_t hash, Args... args)
+CombineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
 {
   seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  (CombineHash(seed, args), ...);
+  (CombineHashesWithSeed(seed, args), ...);
 }
 
 /**

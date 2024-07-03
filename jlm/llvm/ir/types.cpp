@@ -85,11 +85,11 @@ FunctionType::ComputeHash() const noexcept
   std::size_t seed = 0;
   for (auto argumentType : ArgumentTypes_)
   {
-    util::CombineHash(seed, argumentType->ComputeHash());
+    util::CombineHashesWithSeed(seed, argumentType->ComputeHash());
   }
   for (auto resultType : ResultTypes_)
   {
-    util::CombineHash(seed, resultType->ComputeHash());
+    util::CombineHashesWithSeed(seed, resultType->ComputeHash());
   }
 
   return seed;
@@ -164,7 +164,7 @@ arraytype::ComputeHash() const noexcept
 {
   std::size_t seed = 0;
   auto numElementsHash = std::hash<std::size_t>()(nelements_);
-  util::CombineHash(seed, type_->ComputeHash(), numElementsHash);
+  util::CombineHashesWithSeed(seed, type_->ComputeHash(), numElementsHash);
   return seed;
 }
 
@@ -277,7 +277,7 @@ StructType::ComputeHash() const noexcept
   auto isPackedHash = std::hash<bool>()(IsPacked_);
   auto nameHash = std::hash<std::string>()(Name_);
   auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
-  util::CombineHash(seed, isPackedHash, nameHash, declarationHash);
+  util::CombineHashesWithSeed(seed, isPackedHash, nameHash, declarationHash);
   return seed;
 }
 
@@ -301,7 +301,7 @@ vectortype::ComputeHash() const noexcept
 {
   std::size_t seed = 0;
   auto sizeHash = std::hash<size_t>()(size_);
-  util::CombineHash(seed, sizeHash, type_->ComputeHash());
+  util::CombineHashesWithSeed(seed, sizeHash, type_->ComputeHash());
   return seed;
 }
 

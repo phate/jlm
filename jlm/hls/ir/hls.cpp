@@ -29,7 +29,7 @@ bundletype::ComputeHash() const noexcept
   for (auto & element : elements_)
   {
     auto firstHash = std::hash<std::string>()(element.first);
-    util::CombineHash(seed, firstHash, element.second->ComputeHash());
+    util::CombineHashesWithSeed(seed, firstHash, element.second->ComputeHash());
   }
 
   return seed;
