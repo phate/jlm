@@ -12,7 +12,7 @@ namespace jlm::hls
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
-  return util::ComputeConstantHash("jlm::hls::triggertype");
+  return typeid(triggertype).hash_code();
 }
 
 std::shared_ptr<const triggertype>
@@ -25,7 +25,7 @@ triggertype::Create()
 std::size_t
 bundletype::ComputeHash() const noexcept
 {
-  std::size_t seed = 0;
+  std::size_t seed = typeid(bundletype).hash_code();
   for (auto & element : elements_)
   {
     auto firstHash = std::hash<std::string>()(element.first);

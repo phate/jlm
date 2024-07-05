@@ -27,7 +27,7 @@ TestComputeHash()
   assert(floatingPointType1.ComputeHash() == floatingPointType3.ComputeHash());
 
   assert(floatingPointType2.ComputeHash() == floatingPointType2.ComputeHash());
-  assert(floatingPointType2.ComputeHash() == floatingPointType3.ComputeHash());
+  assert(floatingPointType2.ComputeHash() != floatingPointType3.ComputeHash());
 
   assert(floatingPointType3.ComputeHash() == floatingPointType3.ComputeHash());
 
