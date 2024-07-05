@@ -37,4 +37,4 @@ TestComputeHash()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/ir/TriggerTypeTests-TestComputeHash", TestComputeHash);
+JLM_UNIT_TEST_REGISTER("jlm/hls/ir/BundleTypeTests-TestComputeHash", TestComputeHash);
