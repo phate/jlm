@@ -37,8 +37,8 @@ add_forks(jlm::rvsdg::region * region)
         add_forks(structnode->subregion(n));
       }
     }
-    bool isConstant = rvsdg::is<rvsdg::bitconstant_op>(node->operation())
-                   || rvsdg::is<rvsdg::ctlconstant_op>(node->operation());
+    // If a node has no inputs it is a constant
+    bool isConstant = node->ninputs() == 0;
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
       auto out = node->output(i);

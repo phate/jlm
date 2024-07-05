@@ -129,7 +129,7 @@ public:
   std::string
   debug_string() const override
   {
-    return IsConstant_ ? "HLS_CFORK" : "HLS_FORK";
+    return IsConstant() ? "HLS_CFORK" : "HLS_FORK";
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -162,8 +162,8 @@ public:
    * /return True if the fork is a constant fork, i.e., the input of the fork is a constant, else
    * false.
    */
-  bool
-  IsConstant() const
+  [[nodiscard]] bool
+  IsConstant() const noexcept
   {
     return IsConstant_;
   }
