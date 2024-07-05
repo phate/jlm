@@ -200,7 +200,7 @@ fptype::ComputeHash() const noexcept
 {
   auto typeHash = typeid(fptype).hash_code();
   auto sizeHash = std::hash<fpsize>()(size_);
-  ;
+
   return util::CombineHashes(typeHash, sizeHash);
 }
 
