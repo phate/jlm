@@ -37,8 +37,8 @@ public:
       const RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
       : util::Statistics(
-          Statistics::Id::RegionAwareMemoryNodeProvisioning,
-          rvsdgModule.SourceFileName()),
+            Statistics::Id::RegionAwareMemoryNodeProvisioning,
+            rvsdgModule.SourceFileName()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())

@@ -43,6 +43,7 @@ FirrtlToVerilogConverter::Convert(
   firrtl::FIRParserOptions options;
   options.infoLocatorHandling = firrtl::FIRParserOptions::InfoLocHandling::IgnoreInfo;
   options.numAnnotationFiles = 0;
+  options.scalarizePublicModules = true;
   options.scalarizeExtModules = true;
   auto module = importFIRFile(sourceMgr, &context, ts, options);
   if (!module)
@@ -51,20 +52,30 @@ FirrtlToVerilogConverter::Convert(
     return false;
   }
 
-  // Manually set up the options for the firtool
-  cl::OptionCategory mainCategory("firtool Options");
-  firtool::FirtoolOptions firtoolOptions(mainCategory);
-  firtoolOptions.preserveAggregate = firrtl::PreserveAggregate::PreserveMode::None;
-  firtoolOptions.preserveMode = firrtl::PreserveValues::PreserveMode::None;
-  firtoolOptions.buildMode = firtool::FirtoolOptions::BuildModeRelease;
-  firtoolOptions.exportChiselInterface = false;
+  // Manually set the options for the firtool
+  firtool::FirtoolOptions firtoolOptions;
+  firtoolOptions.setOutputFilename(outputVerilogFile.to_str());
+  firtoolOptions.setPreserveAggregate(firrtl::PreserveAggregate::PreserveMode::None);
+  firtoolOptions.setPreserveValues(firrtl::PreserveValues::PreserveMode::None);
+  firtoolOptions.setBuildMode(firtool::FirtoolOptions::BuildModeDefault);
+  firtoolOptions.setChiselInterfaceOutDirectory("");
+  firtoolOptions.setDisableHoistingHWPassthrough(true);
+  firtoolOptions.setOmirOutFile("");
+  firtoolOptions.setBlackBoxRootPath("");
+  firtoolOptions.setReplSeqMemFile("");
+  firtoolOptions.setOutputAnnotationFilename("");
 
   // Populate the pass manager and apply them to the module
   mlir::PassManager pm(&context);
+  if (failed(firtool::populatePreprocessTransforms(pm, firtoolOptions)))
+  {
+    std::cerr << "Failed to populate preprocess transforms" << std::endl;
+    return false;
+  }
 
   // Firtool sets a blackBoxRoot based on the inputFilename path, but this functionality is not used
   // so we set it to an empty string (the final argument)
-  if (failed(firtool::populateCHIRRTLToLowFIRRTL(pm, firtoolOptions, *module, "")))
+  if (failed(firtool::populateCHIRRTLToLowFIRRTL(pm, firtoolOptions, "")))
   {
     std::cerr << "Failed to populate CHIRRTL to LowFIRRTL" << std::endl;
     return false;
@@ -79,28 +90,17 @@ FirrtlToVerilogConverter::Convert(
     std::cerr << "Failed to populate HW to SV" << std::endl;
     return false;
   }
+  std::error_code errorCode;
+  llvm::raw_fd_ostream os(outputVerilogFile.to_str(), errorCode);
+  if (failed(firtool::populateExportVerilog(pm, firtoolOptions, os)))
+  {
+    std::cerr << "Failed to populate Export Verilog" << std::endl;
+    return false;
+  }
 
   if (failed(pm.run(module.get())))
   {
     std::cerr << "Failed to run pass manager" << std::endl;
-    return false;
-  }
-
-  mlir::PassManager exportPm(&context);
-
-  // Legalize unsupported operations within the modules.
-  exportPm.nest<hw::HWModuleOp>().addPass(sv::createHWLegalizeModulesPass());
-
-  // Tidy up the IR to improve verilog emission quality.
-  exportPm.nest<hw::HWModuleOp>().addPass(sv::createPrettifyVerilogPass());
-
-  std::error_code errorCode;
-  llvm::raw_fd_ostream os(outputVerilogFile.to_str(), errorCode);
-  exportPm.addPass(createExportVerilogPass(os));
-
-  if (failed(exportPm.run(module.get())))
-  {
-    std::cerr << "Failed to run export pass manager" << std::endl;
     return false;
   }
 

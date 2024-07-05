@@ -238,7 +238,8 @@ get_default_normal_form(
   return new concat_normal_form(parent, graph);
 }
 
-static void __attribute__((constructor)) register_node_normal_form(void)
+static void __attribute__((constructor))
+register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::bitconcat_op),

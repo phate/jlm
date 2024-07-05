@@ -1135,7 +1135,9 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       name,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
 
   auto body = module.getBodyBlock();
@@ -1218,7 +1220,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
       2,
       1,
       depth,
-      RUWAttr::New,
+      circt::firrtl::RUWAttr::New,
       memNames,
       "mem");
   body->push_back(memory);
@@ -2526,7 +2528,9 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       moduleName,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
@@ -2884,7 +2888,9 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       moduleName,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
@@ -3567,7 +3573,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
   {
     auto portName = module.getPortName(i);
     auto port = module.getArgument(i);
-    if (portName.startswith("o"))
+    if (portName.starts_with("o"))
     {
       // out port
       for (auto & use : port.getUses())
@@ -3860,7 +3866,9 @@ RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::simple_node * node, bool m
   return Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       name,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
 }
 
@@ -4042,11 +4050,8 @@ RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
   std::error_code EC;
   ::llvm::raw_fd_ostream output(fileName, EC);
   size_t targetLineLength = 100;
-  auto status = circt::firrtl::exportFIRFile(
-      module,
-      output,
-      targetLineLength,
-      circt::firrtl::FIRVersion::defaultFIRVersion());
+  constexpr circt::firrtl::FIRVersion defaultFIRVersion(4, 0, 0);
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, defaultFIRVersion);
 
   if (status.failed())
   {
@@ -4077,11 +4082,8 @@ RhlsToFirrtlConverter::toString(const circt::firrtl::CircuitOp circuit)
   ::llvm::raw_string_ostream output(outputString);
 
   size_t targetLineLength = 100;
-  auto status = circt::firrtl::exportFIRFile(
-      module,
-      output,
-      targetLineLength,
-      circt::firrtl::FIRVersion::defaultFIRVersion());
+  constexpr circt::firrtl::FIRVersion defaultFIRVersion(4, 0, 0);
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, defaultFIRVersion);
   if (status.failed())
     throw std::logic_error("Exporting of firrtl failed");
 

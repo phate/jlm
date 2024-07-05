@@ -25,7 +25,8 @@ LoadConversion()
   std::unique_ptr<Module> llvmModule(new Module("module", context));
 
   auto int64Type = Type::getInt64Ty(context);
-  auto pointerType = Type::getInt64PtrTy(context);
+  // ADDRESS_SPACE_GENERIC == 0
+  auto pointerType = llvm::PointerType::get(Type::getInt64Ty(context), 0);
 
   auto functionType = FunctionType::get(int64Type, ArrayRef<Type *>({ pointerType }), false);
   auto function =
