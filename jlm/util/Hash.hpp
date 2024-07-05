@@ -26,7 +26,7 @@ struct Hash<std::pair<First, Second>>
   std::size_t
   operator()(const std::pair<First, Second> & value) const noexcept
   {
-    return std::hash<First>()(value.first) ^ std::hash<Second>()(value.second) << 1;
+    return Hash<First>()(value.first) ^ Hash<Second>()(value.second) << 1;
   }
 };
 
