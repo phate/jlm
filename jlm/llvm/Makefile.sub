@@ -168,6 +168,8 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/FixedVectorTypeTests \
 	tests/jlm/llvm/ir/FloatingPointTypeTests \
 	tests/jlm/llvm/ir/FunctionTypeTests \
+	tests/jlm/llvm/ir/IoStateTypeTests \
+	tests/jlm/llvm/ir/MemoryStateTypeTests \
 	tests/jlm/llvm/ir/PointerTypeTests \
 	tests/jlm/llvm/ir/ScalableVectorTypeTests \
 	tests/jlm/llvm/ir/StructTypeTests \
