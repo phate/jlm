@@ -30,7 +30,7 @@ valuetype::operator==(const rvsdg::type & other) const noexcept
 std::size_t
 valuetype::ComputeHash() const noexcept
 {
-  return util::ComputeConstantHash("jlm::tests::valuetype");
+  return typeid(valuetype).hash_code();
 }
 
 std::shared_ptr<const valuetype>
@@ -60,7 +60,7 @@ statetype::operator==(const rvsdg::type & other) const noexcept
 std::size_t
 statetype::ComputeHash() const noexcept
 {
-  return util::ComputeConstantHash("jlm::tests::statetype");
+  return typeid(statetype).hash_code();
 }
 
 std::shared_ptr<const statetype>

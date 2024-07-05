@@ -67,24 +67,6 @@ CombineHashes(std::size_t hash, Args... args)
   return seed;
 }
 
-/**
- * Computes a hash value from string \p s at compile-time.
- *
- * @param s The string from which to compute the hash value.
- * @return A hash value of \p s.
- */
-constexpr std::size_t
-ComputeConstantHash(const std::string_view & s)
-{
-  std::size_t v = 0;
-  for (auto c : s)
-  {
-    v = v * 5 + c;
-  }
-
-  return v;
-}
-
 }
 
 #endif
