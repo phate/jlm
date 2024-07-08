@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/dot-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/json-hls.hpp>
@@ -89,6 +90,12 @@ main(int argc, char ** argv)
       output = hls.run(*rvsdgModule);
     }
     stringToFile(output, commandLineOptions.OutputFiles_.to_str() + ".fir");
+
+    // Currently writing the FIRRTL to a file and then reading it back in to convert to Verilog.
+    // Could be optimized by directly passing FIRRTL to the converter.
+    jlm::hls::FirrtlToVerilogConverter(
+        commandLineOptions.OutputFiles_.to_str() + ".fir",
+        commandLineOptions.OutputFiles_.to_str() + ".v");
 
     jlm::hls::VerilatorHarnessHLS vhls;
     stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
