@@ -203,7 +203,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto gammaOutput = is_gamma_output(&output))
+  if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(&output))
   {
     MarkOutput(*gammaOutput->node()->predicate()->origin());
     for (const auto & result : gammaOutput->results)

@@ -27,15 +27,6 @@ is_gamma_argument(const rvsdg::output * output)
 }
 
 /*
-  FIXME: This function exists in librvsdg, but is currently (2020-05-19) broken.
-*/
-static inline const rvsdg::gamma_output *
-is_gamma_output(const rvsdg::output * output)
-{
-  return dynamic_cast<const rvsdg::gamma_output *>(output);
-}
-
-/*
   FIXME: This should be defined in librvsdg.
 */
 static inline const rvsdg::result *
