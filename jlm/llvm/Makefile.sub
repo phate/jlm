@@ -164,15 +164,6 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/operators/TestPhi \
 	tests/jlm/llvm/ir/operators/test-sext \
 	tests/jlm/llvm/ir/operators/StoreTests \
-	tests/jlm/llvm/ir/ArrayTypeTests \
-	tests/jlm/llvm/ir/FixedVectorTypeTests \
-	tests/jlm/llvm/ir/FloatingPointTypeTests \
-	tests/jlm/llvm/ir/FunctionTypeTests \
-	tests/jlm/llvm/ir/IoStateTypeTests \
-	tests/jlm/llvm/ir/MemoryStateTypeTests \
-	tests/jlm/llvm/ir/PointerTypeTests \
-	tests/jlm/llvm/ir/ScalableVectorTypeTests \
-	tests/jlm/llvm/ir/StructTypeTests \
 	tests/jlm/llvm/ir/test-aggregation \
 	tests/jlm/llvm/ir/test-cfg \
 	tests/jlm/llvm/ir/test-cfg-node \
@@ -185,7 +176,6 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/test-ssa-destruction \
 	tests/jlm/llvm/ir/TestTypes \
 	tests/jlm/llvm/ir/TestAnnotation \
-	tests/jlm/llvm/ir/VariadicArgumentTypeTests \
 	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
 	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
