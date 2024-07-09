@@ -102,6 +102,7 @@ main(int argc, char ** argv)
     }
 
     jlm::hls::VerilatorHarnessHLS vhls;
+    vhls.SetIncludeFileName(commandLineOptions.OutputFiles_.base());
     stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
 
     // TODO: hide behind flag

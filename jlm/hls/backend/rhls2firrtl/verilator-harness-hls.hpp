@@ -23,7 +23,35 @@ class VerilatorHarnessHLS : public BaseHLS
   std::string
   get_text(llvm::RvsdgModule & rm) override;
 
+public:
+  /**
+   * The generated harness inserts an header file as an include that is used when simulating with
+   * Verilator. This include must have the same name as the Verilog file that is passed as input to
+   * verilator.
+   *
+   * \param includeFileName The base name, i.e., no extension, of the Verilog file that is to be
+   *                        passed as input to Verilator.
+   */
+  void
+  SetIncludeFileName(const std::string & includeFileName)
+  {
+    IncludeFileName_ = includeFileName;
+  }
+
 private:
+  std::string IncludeFileName_ = "";
+
+  /**
+   * Get the include filename that has been set by SetIncludeFileName().
+   *
+   * \return The include filename that has been set by SetIncludeFileName().
+   */
+  std::string &
+  GetIncludeFileName()
+  {
+    return IncludeFileName_;
+  }
+
   std::string
   convert_to_c_type(const jlm::rvsdg::type * type);
 
