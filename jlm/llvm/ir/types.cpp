@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <unordered_map>
@@ -78,6 +79,26 @@ FunctionType::operator==(const jlm::rvsdg::type & _other) const noexcept
   return true;
 }
 
+std::size_t
+FunctionType::ComputeHash() const noexcept
+{
+  std::size_t seed = typeid(FunctionType).hash_code();
+
+  util::CombineHashesWithSeed(seed, NumArguments());
+  for (auto argumentType : ArgumentTypes_)
+  {
+    util::CombineHashesWithSeed(seed, argumentType->ComputeHash());
+  }
+
+  util::CombineHashesWithSeed(seed, NumResults());
+  for (auto resultType : ResultTypes_)
+  {
+    util::CombineHashesWithSeed(seed, resultType->ComputeHash());
+  }
+
+  return seed;
+}
+
 FunctionType &
 FunctionType::operator=(const FunctionType & rhs) = default;
 
@@ -111,6 +132,12 @@ PointerType::operator==(const jlm::rvsdg::type & other) const noexcept
   return jlm::rvsdg::is<PointerType>(other);
 }
 
+std::size_t
+PointerType::ComputeHash() const noexcept
+{
+  return typeid(PointerType).hash_code();
+}
+
 std::shared_ptr<const PointerType>
 PointerType::Create()
 {
@@ -136,6 +163,14 @@ arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
+std::size_t
+arraytype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(arraytype).hash_code();
+  auto numElementsHash = std::hash<std::size_t>()(nelements_);
+  return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
+}
+
 /* floating point type */
 
 fptype::~fptype()
@@ -158,6 +193,15 @@ fptype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
   auto type = dynamic_cast<const fptype *>(&other);
   return type && type->size() == size();
+}
+
+std::size_t
+fptype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(fptype).hash_code();
+  auto sizeHash = std::hash<fpsize>()(size_);
+
+  return util::CombineHashes(typeHash, sizeHash);
 }
 
 std::shared_ptr<const fptype>
@@ -203,6 +247,12 @@ varargtype::operator==(const jlm::rvsdg::type & other) const noexcept
   return dynamic_cast<const varargtype *>(&other) != nullptr;
 }
 
+std::size_t
+varargtype::ComputeHash() const noexcept
+{
+  return typeid(varargtype).hash_code();
+}
+
 std::string
 varargtype::debug_string() const
 {
@@ -224,6 +274,16 @@ StructType::operator==(const jlm::rvsdg::type & other) const noexcept
   auto type = dynamic_cast<const StructType *>(&other);
   return type && type->IsPacked_ == IsPacked_ && type->Name_ == Name_
       && &type->Declaration_ == &Declaration_;
+}
+
+std::size_t
+StructType::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(StructType).hash_code();
+  auto isPackedHash = std::hash<bool>()(IsPacked_);
+  auto nameHash = std::hash<std::string>()(Name_);
+  auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
+  return util::CombineHashes(typeHash, isPackedHash, nameHash, declarationHash);
 }
 
 std::string
@@ -252,6 +312,14 @@ fixedvectortype::operator==(const jlm::rvsdg::type & other) const noexcept
   return vectortype::operator==(other);
 }
 
+std::size_t
+fixedvectortype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(fixedvectortype).hash_code();
+  auto sizeHash = std::hash<size_t>()(size());
+  return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
+}
+
 std::string
 fixedvectortype::debug_string() const
 {
@@ -269,6 +337,14 @@ scalablevectortype::operator==(const jlm::rvsdg::type & other) const noexcept
   return vectortype::operator==(other);
 }
 
+std::size_t
+scalablevectortype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(scalablevectortype).hash_code();
+  auto sizeHash = std::hash<size_t>()(size());
+  return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
+}
+
 std::string
 scalablevectortype::debug_string() const
 {
@@ -284,6 +360,12 @@ bool
 iostatetype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
   return jlm::rvsdg::is<iostatetype>(other);
+}
+
+std::size_t
+iostatetype::ComputeHash() const noexcept
+{
+  return typeid(iostatetype).hash_code();
 }
 
 std::string
@@ -314,6 +396,12 @@ bool
 MemoryStateType::operator==(const jlm::rvsdg::type & other) const noexcept
 {
   return jlm::rvsdg::is<MemoryStateType>(other);
+}
+
+std::size_t
+MemoryStateType::ComputeHash() const noexcept
+{
+  return typeid(MemoryStateType).hash_code();
 }
 
 std::shared_ptr<const MemoryStateType>
