@@ -419,10 +419,11 @@ public:
     return type;
   };
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const triggertype>
   Create();
-
-private:
 };
 
 class trigger_op final : public jlm::rvsdg::simple_op
@@ -704,6 +705,9 @@ public:
     }
     return true;
   };
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::type>
   get_element_type(std::string element) const

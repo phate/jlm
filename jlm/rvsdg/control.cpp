@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::rvsdg
 {
@@ -36,6 +37,14 @@ ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
 {
   auto type = dynamic_cast<const ctltype *>(&other);
   return type && type->nalternatives_ == nalternatives_;
+}
+
+std::size_t
+ctltype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(ctltype).hash_code();
+  auto numAlternativesHash = std::hash<size_t>()(nalternatives_);
+  return util::CombineHashes(typeHash, numAlternativesHash);
 }
 
 std::shared_ptr<const ctltype>
