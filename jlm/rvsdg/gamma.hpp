@@ -456,12 +456,6 @@ public:
   IsInvariant(rvsdg::output ** invariantOrigin = nullptr) const noexcept;
 };
 
-static inline bool
-is_gamma_output(const jlm::rvsdg::input * input) noexcept
-{
-  return dynamic_cast<const jlm::rvsdg::gamma_input *>(input) != nullptr;
-}
-
 /* gamma node method definitions */
 
 inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives)
