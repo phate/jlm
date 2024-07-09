@@ -6,8 +6,41 @@ on:
 
 jobs:
 
+  build-circt:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Install LLVM, Clang, MLIR, and Ninja"
+      uses: ./.github/actions/InstallPackages
+      with:
+        install-llvm: true
+        install-mlir: true
+        install-ninja: true
+    - name: "Get the commit used for building CIRCT and use it as the cache key"
+      id: get-circt-hash
+      run: |
+        echo GIT_HASH=`./scripts/build-circt.sh --get-commit-hash` >> $GITHUB_OUTPUT
+      shell: bash
+    - name: "Try to fetch CIRCT from the cache"
+      id: cache-circt
+      uses: actions/cache@v4
+      with:
+        save-always: true
+        path: |
+          ${{ github.workspace }}/build-circt/circt
+        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.GIT_HASH }}
+    - name: "Build CIRCT if we didn't hit in the cache"
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      run: |
+        ./scripts/build-circt.sh \
+          --build-path ${{ github.workspace }}/build-circt \
+          --install-path ${{ github.workspace }}/build-circt/circt \
+          --llvm-lit-path ~/.local/bin/lit
+      shell: bash
+
   hls-test-suite:
     runs-on: ubuntu-22.04
+    needs: build-circt
     steps:
     - uses: actions/checkout@v4
       with:
