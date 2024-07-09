@@ -179,9 +179,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto output = is_gamma_output(origin))
+    if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(origin))
     {
-      if (auto input = invariantInput(*output))
+      if (auto input = invariantInput(*gammaOutput))
       {
         origin = input->origin();
         continue;

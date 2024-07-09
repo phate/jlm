@@ -243,7 +243,7 @@ public:
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is_gamma_output(Output_))
+    if (is<rvsdg::gamma_output>(Output_))
     {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
