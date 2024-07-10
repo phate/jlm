@@ -70,28 +70,66 @@ public:
   bool loop; // only used for dot output
 };
 
+/**
+ * Forks ensures 1-to-1 connections between producers and consumers, i.e., they handle fanout of
+ * signals. Normal forks have a register inside to ensure that a token consumed on one output is not
+ * repeated. The fork only creates an acknowledge on its single input once all outputs have been
+ * consumed.
+ *
+ * CFORK (constant fork):
+ * Handles the special case when the same constant is used as input for multiple nodes. It would be
+ * possible to have a constant for each input, but deduplication replaces the constants with a
+ * single constant fork. Since the input of the fork is always the same value and is always valid.
+ * No handshaking is necessary and the outputs of the fork is always valid.
+ */
 class fork_op final : public jlm::rvsdg::simple_op
 {
 public:
   virtual ~fork_op()
   {}
 
+  /**
+   * Create a fork operation that is not a constant fork.
+   *
+   * /param nalternatives Number of outputs.
+   * /param value The signal type, which is the same for the input and all outputs.
+   */
   fork_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::type> & type)
       : jlm::rvsdg::simple_op({ type }, { nalternatives, type })
+  {}
+
+  /**
+   * Create a fork operation.
+   *
+   * /param nalternatives Number of outputs.
+   * /param value The signal type, which is the same for the input and all outputs.
+   * /param isConstant If true, the fork is a constant fork.
+   */
+  fork_op(
+      size_t nalternatives,
+      const std::shared_ptr<const jlm::rvsdg::type> & type,
+      bool isConstant)
+      : rvsdg::simple_op({ type }, { nalternatives, type }),
+        IsConstant_(isConstant)
   {}
 
   bool
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const fork_op *>(&other);
+    auto forkOp = dynamic_cast<const fork_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(0).type() == argument(0).type() && ot->nresults() == nresults();
+    return forkOp && forkOp->argument(0).type() == argument(0).type()
+        && forkOp->nresults() == nresults() && forkOp->IsConstant() == IsConstant_;
   }
 
+  /**
+   * Debug string for the fork operation.
+   * /return HLS_CFORK if the fork is a constant fork, else HLS_FORK.
+   */
   std::string
   debug_string() const override
   {
-    return "HLS_FORK";
+    return IsConstant() ? "HLS_CFORK" : "HLS_FORK";
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -100,14 +138,38 @@ public:
     return std::unique_ptr<jlm::rvsdg::operation>(new fork_op(*this));
   }
 
+  /**
+   * Create a fork operation with a single input and multiple outputs.
+   *
+   * /param nalternatives Number of outputs.
+   * /param value The signal type, which is the same for the input and all outputs.
+   * /param isConstant If true, the fork is a constant fork.
+   *
+   * /return A vector of outputs.
+   */
   static std::vector<jlm::rvsdg::output *>
-  create(size_t nalternatives, jlm::rvsdg::output & value)
+  create(size_t nalternatives, jlm::rvsdg::output & value, bool isConstant = false)
   {
 
     auto region = value.region();
-    fork_op op(nalternatives, value.Type());
+    fork_op op(nalternatives, value.Type(), isConstant);
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
   }
+
+  /**
+   * Cechk if a fork is a constant fork (CFORK).
+   *
+   * /return True if the fork is a constant fork, i.e., the input of the fork is a constant, else
+   * false.
+   */
+  [[nodiscard]] bool
+  IsConstant() const noexcept
+  {
+    return IsConstant_;
+  }
+
+private:
+  bool IsConstant_ = false;
 };
 
 class merge_op final : public jlm::rvsdg::simple_op
@@ -419,10 +481,11 @@ public:
     return type;
   };
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const triggertype>
   Create();
-
-private:
 };
 
 class trigger_op final : public jlm::rvsdg::simple_op
@@ -704,6 +767,9 @@ public:
     }
     return true;
   };
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::type>
   get_element_type(std::string element) const

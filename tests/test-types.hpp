@@ -26,6 +26,9 @@ public:
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
 
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
   static std::shared_ptr<const valuetype>
   Create();
 };
@@ -44,6 +47,9 @@ public:
 
   virtual bool
   operator==(const rvsdg::type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   static std::shared_ptr<const statetype>
   Create();
