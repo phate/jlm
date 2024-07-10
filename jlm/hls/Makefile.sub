@@ -38,7 +38,7 @@ libhls_SOURCES = \
     jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
-    jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp \
+	jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp \
 	\
 	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
