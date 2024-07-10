@@ -52,8 +52,8 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--get-commit-hash)
-			commit >&2
-			exit 1
+			commit >&1
+			exit 0
 			;;
 		--help)
 			usage >&2

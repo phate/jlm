@@ -11,6 +11,7 @@ libutil_HEADERS = \
     jlm/util/disjointset.hpp \
     jlm/util/file.hpp \
     jlm/util/GraphWriter.hpp \
+    jlm/util/Hash.hpp \
     jlm/util/HashSet.hpp \
     jlm/util/intrusive-hash.hpp \
     jlm/util/intrusive-list.hpp \
