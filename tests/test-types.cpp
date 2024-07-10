@@ -5,6 +5,8 @@
 
 #include "test-types.hpp"
 
+#include <jlm/util/Hash.hpp>
+
 namespace jlm::tests
 {
 
@@ -23,6 +25,12 @@ bool
 valuetype::operator==(const rvsdg::type & other) const noexcept
 {
   return dynamic_cast<const valuetype *>(&other) != nullptr;
+}
+
+std::size_t
+valuetype::ComputeHash() const noexcept
+{
+  return typeid(valuetype).hash_code();
 }
 
 std::shared_ptr<const valuetype>
@@ -47,6 +55,12 @@ bool
 statetype::operator==(const rvsdg::type & other) const noexcept
 {
   return dynamic_cast<const statetype *>(&other) != nullptr;
+}
+
+std::size_t
+statetype::ComputeHash() const noexcept
+{
+  return typeid(statetype).hash_code();
 }
 
 std::shared_ptr<const statetype>
