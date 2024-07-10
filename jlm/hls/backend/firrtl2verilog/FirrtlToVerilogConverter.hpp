@@ -24,24 +24,29 @@ using namespace circt;
 using namespace llvm;
 
 /**
- * Converts FIRRTL to Verilog by reading FIRRTL from a file and writing the converted Verilog to another file.
- * The functionality is heavily inspired by the processBuffer() function of the firtool in the CIRCT project.
+ * Converts FIRRTL to Verilog by reading FIRRTL from a file and writing the converted Verilog to
+ * another file. The functionality is heavily inspired by the processBuffer() function of the
+ * firtool in the CIRCT project.
  *
  * \param inputFirrtlFile The complete path to the FIRRTL file to convert to Verilog.
  * \param outputVerilogFile The complete path to the Verilog file to write the converted Verilog to.
+ * \return True if the conversion was successful, false otherwise.
  */
-static void
-FirrtlToVerilogConverter(const std::string inputFirrtlFile, const std::string outputVerilogFile)
+static bool
+FirrtlToVerilogConverter(
+    const util::filepath inputFirrtlFile,
+    const util::filepath outputVerilogFile)
 {
   mlir::MLIRContext context;
   mlir::TimingScope ts;
 
   // Set up and read the input FIRRTL file
   std::string errorMessage;
-  auto input = mlir::openInputFile(inputFirrtlFile, &errorMessage);
-  if (!input) {
-    llvm::errs() << errorMessage << "\n";
-    exit(1);
+  auto input = mlir::openInputFile(inputFirrtlFile.to_str(), &errorMessage);
+  if (!input)
+  {
+    std::cerr << errorMessage << std::endl;
+    return false;
   }
   llvm::SourceMgr sourceMgr;
   sourceMgr.AddNewSourceBuffer(std::move(input), llvm::SMLoc());
@@ -54,8 +59,8 @@ FirrtlToVerilogConverter(const std::string inputFirrtlFile, const std::string ou
   auto module = importFIRFile(sourceMgr, &context, ts, options);
   if (!module)
   {
-    llvm::errs() << "Failed to parse FIRRTL input\n";
-    exit(1);
+    std::cerr << "Failed to parse FIRRTL input" << std::endl;
+    return false;
   }
 
   // Manually set up the options for the firtool
@@ -65,38 +70,32 @@ FirrtlToVerilogConverter(const std::string inputFirrtlFile, const std::string ou
   firtoolOptions.preserveMode = firrtl::PreserveValues::PreserveMode::None;
   firtoolOptions.buildMode = firtool::FirtoolOptions::BuildModeRelease;
   firtoolOptions.exportChiselInterface = false;
-  seq::ExternalizeClockGateOptions clockOptions;
-  clockOptions.moduleName = "EICG_wrapper";
-  clockOptions.inputName = "in";
-  clockOptions.outputName = "out";
-  clockOptions.enableName = "en";
-  clockOptions.testEnableName = "test_en";
-  clockOptions.instName = "ckg";
-  firtoolOptions.clockGateOpts = clockOptions;
 
   // Populate the pass manager and apply them to the module
   mlir::PassManager pm(&context);
 
-  if (failed(firtool::populateCHIRRTLToLowFIRRTL(pm, firtoolOptions, *module, inputFirrtlFile)))
+  // Firtool sets a blackBoxRoot based on the inputFilename path, but this functionality is not used
+  // so we set it to an empty string (the final argument)
+  if (failed(firtool::populateCHIRRTLToLowFIRRTL(pm, firtoolOptions, *module, "")))
   {
-    llvm::errs() << "Failed to populate CHIRRTL to LowFIRRTL\n";
-    exit(1);
+    std::cerr << "Failed to populate CHIRRTL to LowFIRRTL" << std::endl;
+    return false;
   }
   if (failed(firtool::populateLowFIRRTLToHW(pm, firtoolOptions)))
   {
-    llvm::errs() << "Failed to populate LowFIRRTL to HW\n";
-    exit(1);
+    std::cerr << "Failed to populate LowFIRRTL to HW" << std::endl;
+    return false;
   }
   if (failed(firtool::populateHWToSV(pm, firtoolOptions)))
   {
-    llvm::errs() << "Failed to populate HW to SV\n";
-    exit(1);
+    std::cerr << "Failed to populate HW to SV" << std::endl;
+    return false;
   }
 
   if (failed(pm.run(module.get())))
   {
-    llvm::errs() << "Failed to run pass manager\n";
-    exit(1);
+    std::cerr << "Failed to run pass manager" << std::endl;
+    return false;
   }
 
   mlir::PassManager exportPm(&context);
@@ -108,16 +107,17 @@ FirrtlToVerilogConverter(const std::string inputFirrtlFile, const std::string ou
   exportPm.nest<hw::HWModuleOp>().addPass(sv::createPrettifyVerilogPass());
 
   std::error_code errorCode;
-  llvm::raw_fd_ostream os(outputVerilogFile, errorCode);
+  llvm::raw_fd_ostream os(outputVerilogFile.to_str(), errorCode);
   exportPm.addPass(createExportVerilogPass(os));
 
   if (failed(exportPm.run(module.get())))
   {
-    llvm::errs() << "Failed to run export pass manager\n";
-    exit(1);
+    std::cerr << "Failed to run export pass manager" << std::endl;
+    return false;
   }
 
   (void)module.release();
+  return true;
 }
 
 } // namespace jlm::hls
