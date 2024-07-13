@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=cc32a6c6702a5fe0ade64ee906b8d80c45d48f94
+GIT_COMMIT=debf1ed774c2bbdbfc8e7bc987a21f72e8f08f65
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -52,8 +52,8 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--get-commit-hash)
-			commit >&2
-			exit 1
+			commit >&1
+			exit 0
 			;;
 		--help)
 			usage >&2
@@ -84,6 +84,4 @@ cmake -G Ninja \
 	-DVERILATOR_DISABLE=ON \
 	-DCMAKE_INSTALL_PREFIX=${CIRCT_INSTALL}
 ninja -C ${CIRCT_BUILD_DIR}
-# Dialects other than FIRRTL fail the check
-#ninja -C ${CIRCT_BUILD_DIR} check-circt
 ninja -C ${CIRCT_BUILD_DIR} install
