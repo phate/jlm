@@ -88,7 +88,7 @@ main(int argc, char ** argv)
       auto output = hls.ToString(*rvsdgModule);
       stringToFile(output, firrtlFile.to_str());
       jlm::util::filepath outputVerilogFile(commandLineOptions.OutputFiles_.to_str() + ".v");
-      if (!jlm::hls::FirrtlToVerilogConverter(firrtlFile, outputVerilogFile))
+      if (!jlm::hls::FirrtlToVerilogConverter::Convert(firrtlFile, outputVerilogFile))
       {
         std::cerr << "The FIRRTL to Verilog conversion failed.\n" << std::endl;
         exit(1);
