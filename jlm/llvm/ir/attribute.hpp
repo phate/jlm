@@ -261,8 +261,9 @@ struct Hash<jlm::llvm::int_attribute>
   std::size_t
   operator()(const jlm::llvm::int_attribute & attribute) const noexcept
   {
-    return std::hash<jlm::llvm::attribute::kind>()(attribute.kind())
-         ^ std::hash<uint64_t>()(attribute.value()) << 1;
+    auto kindHash = std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    auto valueHash = std::hash<uint64_t>()(attribute.value());
+    return util::CombineHashes(kindHash, valueHash);
   }
 };
 
@@ -272,8 +273,9 @@ struct Hash<jlm::llvm::string_attribute>
   std::size_t
   operator()(const jlm::llvm::string_attribute & attribute) const noexcept
   {
-    return std::hash<std::string>()(attribute.kind())
-         ^ std::hash<std::string>()(attribute.value()) << 1;
+    auto kindHash = std::hash<std::string>()(attribute.kind());
+    auto valueHash = std::hash<std::string>()(attribute.value());
+    return util::CombineHashes(kindHash, valueHash);
   }
 };
 
@@ -283,8 +285,9 @@ struct Hash<jlm::llvm::type_attribute>
   std::size_t
   operator()(const jlm::llvm::type_attribute & attribute) const noexcept
   {
-    // FIXME: I have no better idea of how to handle this currently
-    return std::hash<ptrdiff_t>()(reinterpret_cast<ptrdiff_t>(&attribute));
+    auto kindHash = std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    auto typeHash = attribute.type().ComputeHash();
+    return util::CombineHashes(kindHash, typeHash);
   }
 };
 
