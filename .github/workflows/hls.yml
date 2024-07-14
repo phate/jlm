@@ -21,4 +21,4 @@ jobs:
       with:
         install-verilator: true
     - name: "Run hls-test-suite"
-      run: ./scripts/run-hls-test.sh --firtool ${{ github.workspace }}/build-circt/circt/bin/firtool
+      run: ./scripts/run-hls-test.sh
