@@ -112,7 +112,44 @@ CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
-	CIRCT_LDFLAGS="-L${CIRCT_PATH}/lib -lMLIR -lCIRCTAnalysisTestPasses -lCIRCTDependenceAnalysis -lCIRCTExportFIRRTL -lCIRCTFIRRTL -lCIRCTFIRRTLTransforms -lCIRCTScheduling -lCIRCTSchedulingAnalysis -lCIRCTSeq -lCIRCTSupport -lCIRCTTransforms -lCIRCTHW -lCIRCTOM"
+	CIRCT_LDFLAGS_ARRAY=(
+		"-L${CIRCT_PATH}/lib"
+		"-lMLIR"
+		"-lMLIRBytecodeReader"
+		"-lMLIRBytecodeWriter"
+		"-lMLIRParser"
+		"-lMLIRSupport"
+		"-lMLIRIR"
+		"-lMLIROptLib"
+		"-lMLIRFuncDialect"
+		"-lMLIRTransforms"
+		"-lCIRCTAnalysisTestPasses"
+		"-lCIRCTDependenceAnalysis"
+		"-lCIRCTExportFIRRTL"
+		"-lCIRCTScheduling"
+		"-lCIRCTSchedulingAnalysis"
+		"-lCIRCTFirtool"
+		"-lCIRCTFIRRTLReductions"
+		"-lCIRCTFIRRTLToHW"
+		"-lCIRCTExportVerilog"
+		"-lCIRCTImportFIRFile"
+		"-lCIRCTFIRRTLTransforms"
+		"-lCIRCTHWTransforms"
+		"-lCIRCTSVTransforms"
+		"-lCIRCTTransforms"
+		"-lCIRCTSV"
+		"-lCIRCTComb"
+		"-lCIRCTLTL"
+		"-lCIRCTVerif"
+		"-lCIRCTFIRRTL"
+		"-lCIRCTSeq"
+		"-lCIRCTSeqTransforms"
+		"-lCIRCTHW"
+		"-lCIRCTVerifToSV"
+		"-lCIRCTExportChiselInterface"
+		"-lCIRCTOM"
+		"-lCIRCTSupport"
+	)
 fi
 
 CPPFLAGS_MLIR=""
@@ -137,7 +174,7 @@ CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMEN
 CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT} ${CPPFLAGS_MLIR}
 ENABLE_HLS=${ENABLE_HLS}
 CIRCT_PATH=${CIRCT_PATH}
-CIRCT_LDFLAGS=${CIRCT_LDFLAGS}
+CIRCT_LDFLAGS=${CIRCT_LDFLAGS_ARRAY[*]}
 ENABLE_MLIR=${ENABLE_MLIR}
 MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
