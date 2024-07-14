@@ -360,20 +360,15 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       commandLineOptions.UseCirct_);
   m2r2.AddEdge(hls);
 
-  auto inputFiles = util::filepath(commandLineOptions.OutputFile_.to_str() + ".re*.ll");
-  std::vector<util::filepath> linkerInputFiles;
-  linkerInputFiles.push_back(inputFiles);
-  auto & llvmLink = LlvmLinkCommand::Create(
-      *commandGraph,
-      linkerInputFiles,
-      util::filepath(commandLineOptions.OutputFile_.to_str() + ".merged.ll"),
-      true,
-      false);
+  auto linkerInputFiles = util::filepath(commandLineOptions.OutputFile_.to_str() + ".re*.ll");
+  auto mergedFile = util::filepath(commandLineOptions.OutputFile_.to_str() + ".merged.ll");
+  auto & llvmLink =
+      LlvmLinkCommand::Create(*commandGraph, { linkerInputFiles }, mergedFile, true, false);
   hls.AddEdge(llvmLink);
 
   auto & compileMerged = LlcCommand::Create(
       *commandGraph,
-      util::filepath(commandLineOptions.OutputFile_.to_str() + ".merged.ll"),
+      mergedFile,
       util::filepath(commandLineOptions.OutputFile_.to_str() + ".o"),
       LlcCommand::OptimizationLevel::O3,
       LlcCommand::RelocationModel::Pic);
