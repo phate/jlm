@@ -32,9 +32,15 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
+	\
+	jlm/hls/backend/rvsdg2rhls/static/ThetaConversion.cpp \
+	jlm/hls/backend/rvsdg2rhls/static/rvsdg2rhls.cpp \
     \
     jlm/hls/ir/hls.cpp \
-    \
+	jlm/hls/ir/static-hls.cpp \
+	jlm/hls/ir/static/loop.cpp \
+	jlm/hls/ir/static/fsm.cpp \
+	\
     jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
@@ -68,7 +74,13 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
 	jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp \
 	\
+	jlm/hls/backend/rvsdg2rhls/static/ThetaConversion.hpp \
+	jlm/hls/backend/rvsdg2rhls/static/rvsdg2rhls.hpp \
+	\
 	jlm/hls/ir/hls.hpp \
+	jlm/hls/ir/static-hls.hpp \
+	jlm/hls/ir/static/loop.hpp \
+	jlm/hls/ir/static/fsm.hpp \
 	\
 	jlm/hls/util/view.hpp \
 
