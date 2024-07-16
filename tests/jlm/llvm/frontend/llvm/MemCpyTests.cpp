@@ -25,8 +25,7 @@ MemCpyConversion()
   std::unique_ptr<Module> llvmModule(new Module("module", context));
 
   auto int64Type = Type::getInt64Ty(context);
-  // ADDRESS_SPACE_GENERIC == 0
-  auto pointerType = llvm::PointerType::get(Type::getInt64Ty(context), 0);
+  auto pointerType = llvm::PointerType::getUnqual(Type::getInt64Ty(context));
   auto voidType = Type::getVoidTy(context);
 
   auto functionType =
