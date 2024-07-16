@@ -79,6 +79,7 @@ main(int argc, char ** argv)
     jlm::hls::rvsdg2rhls(*rvsdgModule);
 
     jlm::util::filepath firrtlFile(commandLineOptions.OutputFiles_.to_str() + ".fir");
+    jlm::util::filepath outputVerilogFile(commandLineOptions.OutputFiles_.to_str() + ".v");
     if (commandLineOptions.UseCirct_)
     {
       // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
@@ -87,7 +88,6 @@ main(int argc, char ** argv)
       jlm::hls::RhlsToFirrtlConverter hls;
       auto output = hls.ToString(*rvsdgModule);
       stringToFile(output, firrtlFile.to_str());
-      jlm::util::filepath outputVerilogFile(commandLineOptions.OutputFiles_.to_str() + ".v");
       if (!jlm::hls::FirrtlToVerilogConverter::Convert(firrtlFile, outputVerilogFile))
       {
         std::cerr << "The FIRRTL to Verilog conversion failed.\n" << std::endl;
@@ -101,8 +101,7 @@ main(int argc, char ** argv)
       stringToFile(output, firrtlFile.to_str());
     }
 
-    jlm::hls::VerilatorHarnessHLS vhls;
-    vhls.SetIncludeFileName(commandLineOptions.OutputFiles_.base());
+    jlm::hls::VerilatorHarnessHLS vhls(outputVerilogFile);
     stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
 
     // TODO: hide behind flag
