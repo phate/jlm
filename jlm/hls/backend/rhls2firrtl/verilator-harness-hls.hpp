@@ -38,7 +38,7 @@ private:
   /**
    * \return The Verilog filename that is to be used together with the generated harness as input to Verilator.
    */
-  [[nodiscard]] const util::filepath
+  [[nodiscard]] const util::filepath &
   GetVerilogFileName() const noexcept
   {
     return VerilogFile_;
