@@ -23,7 +23,27 @@ class VerilatorHarnessHLS : public BaseHLS
   std::string
   get_text(llvm::RvsdgModule & rm) override;
 
+public:
+  /**
+   * Construct a Verilator harness generator.
+   *
+   * /param verilogFile The filename to the Verilog file that is to be used together with the generated harness as input to Verilator.
+   */
+  VerilatorHarnessHLS(const util::filepath verilogFile)
+      : VerilogFile_(std::move(verilogFile)){};
+
 private:
+  const util::filepath VerilogFile_;
+
+  /**
+   * \return The Verilog filename that is to be used together with the generated harness as input to Verilator.
+   */
+  [[nodiscard]] const util::filepath &
+  GetVerilogFileName() const noexcept
+  {
+    return VerilogFile_;
+  }
+
   std::string
   convert_to_c_type(const jlm::rvsdg::type * type);
 

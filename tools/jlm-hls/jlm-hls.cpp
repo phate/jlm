@@ -91,7 +91,7 @@ main(int argc, char ** argv)
       exit(1);
     }
 
-    jlm::hls::VerilatorHarnessHLS vhls;
+    jlm::hls::VerilatorHarnessHLS vhls(outputVerilogFile);
     stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
 
     // TODO: hide behind flag
