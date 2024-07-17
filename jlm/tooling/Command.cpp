@@ -603,7 +603,6 @@ JlmHlsCommand::ToString() const
       "-o ",
       OutputFolder_.to_str(),
       " ",
-      UseCirct_ ? "--circt " : "",
       InputFile_.to_str());
 }
 
