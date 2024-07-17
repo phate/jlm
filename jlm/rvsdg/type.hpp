@@ -32,11 +32,16 @@ public:
     return !(*this == other);
   }
 
-  virtual std::shared_ptr<const type>
-  copy() const = 0;
-
   virtual std::string
   debug_string() const = 0;
+
+  /**
+   * Computes a hash value for the instance of the type.
+   *
+   * @return A hash value.
+   */
+  [[nodiscard]] virtual std::size_t
+  ComputeHash() const noexcept = 0;
 };
 
 class valuetype : public jlm::rvsdg::type

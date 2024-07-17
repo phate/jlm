@@ -21,9 +21,6 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   auto mem_resps = get_mem_resps(ln);
   JLM_ASSERT(mem_reqs.size() == mem_resps.size());
   cpp << "#define TRACE_CHUNK_SIZE 100000\n"
-#ifndef HLS_USE_VCD
-         "#define FST 1\n"
-#endif
          //		"#define HLS_MEM_DEBUG 1\n"
          "\n"
          "#include <verilated.h>\n"
@@ -42,9 +39,11 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "#else\n"
          "#include \"verilated_vcd_c.h\"\n"
          "#endif\n"
+         // Include the Verilator generated header, which provides access to Verilog signals
+         // The name of the header is based on the Verilog filename used as input to Verilator
          "#include \"V"
-      << file_name << ".h\"\n"
-      << "#define V_NAME V" << file_name << "\n"
+      << GetVerilogFileName().base() << ".h\"\n"
+      << "#define V_NAME V" << GetVerilogFileName().base() << "\n"
       << "#define TIMEOUT 10000000\n"
          "#define xstr(s) str(s)\n"
          "#define str(s) #s\n"

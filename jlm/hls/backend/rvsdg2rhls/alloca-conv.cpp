@@ -138,12 +138,12 @@ alloca_conv(jlm::rvsdg::region * region)
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       // ensure that the alloca is an array type
-      auto at = dynamic_cast<const jlm::llvm::arraytype *>(&po->value_type());
+      auto at = std::dynamic_pointer_cast<const jlm::llvm::arraytype>(po->ValueType());
       JLM_ASSERT(at);
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));
       // create memory + response
-      auto mem_outs = local_mem_op::create(*at, node->region());
+      auto mem_outs = local_mem_op::create(at, node->region());
       auto resp_outs = local_mem_resp_op::create(*mem_outs[0], ta.load_nodes.size());
       std::cout << "alloca converted " << at->debug_string() << std::endl;
       // replace gep outputs (convert pointer to index calculation)
@@ -199,7 +199,7 @@ alloca_conv(jlm::rvsdg::region * region)
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto merge_in = *node->output(1)->begin();
-      auto merge_node = llvm::input_node(merge_in);
+      auto merge_node = rvsdg::input::GetNode(*merge_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&merge_node->operation()))
       {
         // merge after alloca -> remove merge

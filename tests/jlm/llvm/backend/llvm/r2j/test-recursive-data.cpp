@@ -21,8 +21,8 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  PointerType pt;
+  auto vt = jlm::tests::valuetype::Create();
+  auto pt = PointerType::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
@@ -43,7 +43,7 @@ test()
     auto dep1 = delta->add_ctxvar(r2->argument());
     auto dep2 = delta->add_ctxvar(dep);
     delta1 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { &vt })[0]);
+        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   {
@@ -52,14 +52,14 @@ test()
     auto dep1 = delta->add_ctxvar(r1->argument());
     auto dep2 = delta->add_ctxvar(dep);
     delta2 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { &vt })[0]);
+        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   r1->set_rvorigin(delta1);
   r2->set_rvorigin(delta2);
 
   auto phi = pb.end();
-  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->type(), "" });
+  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

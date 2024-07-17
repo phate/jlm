@@ -19,11 +19,11 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ vt }, { vt });
+  auto ft = FunctionType::Create({ vt }, { vt });
 
   ipgraph_module im(jlm::util::filepath(""), "", "");
 
-  auto d = data_node::Create(im.ipgraph(), "d", *vt, linkage::external_linkage, "", false);
+  auto d = data_node::Create(im.ipgraph(), "d", vt, linkage::external_linkage, "", false);
   auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
 
   im.create_global_value(d);

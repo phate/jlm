@@ -7,6 +7,7 @@
 #define JLM_LLVM_IR_OPERATORS_CALL_HPP
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -23,9 +24,9 @@ class CallOperation final : public jlm::rvsdg::simple_op
 public:
   ~CallOperation() override;
 
-  explicit CallOperation(const FunctionType & functionType)
-      : simple_op(create_srcports(functionType), create_dstports(functionType)),
-        FunctionType_(functionType)
+  explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
+      : simple_op(create_srctypes(*functionType), functionType->Results()),
+        FunctionType_(std::move(functionType))
   {}
 
   bool
@@ -34,7 +35,7 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] const FunctionType &
+  [[nodiscard]] const std::shared_ptr<const FunctionType> &
   GetFunctionType() const noexcept
   {
     return FunctionType_;
@@ -46,36 +47,26 @@ public:
   static std::unique_ptr<tac>
   create(
       const variable * function,
-      const FunctionType & functionType,
+      std::shared_ptr<const FunctionType> functionType,
       const std::vector<const variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
-    CallOperation op(functionType);
+    CallOperation op(std::move(functionType));
     std::vector<const variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
     return tac::create(op, operands);
   }
 
 private:
-  static inline std::vector<jlm::rvsdg::port>
-  create_srcports(const FunctionType & functionType)
+  static inline std::vector<std::shared_ptr<const rvsdg::type>>
+  create_srctypes(const FunctionType & functionType)
   {
-    std::vector<jlm::rvsdg::port> ports(1, { PointerType() });
+    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
     for (auto & argumentType : functionType.Arguments())
-      ports.emplace_back(argumentType);
+      types.emplace_back(argumentType);
 
-    return ports;
-  }
-
-  static inline std::vector<jlm::rvsdg::port>
-  create_dstports(const FunctionType & functionType)
-  {
-    std::vector<jlm::rvsdg::port> ports;
-    for (auto & resultType : functionType.Results())
-      ports.emplace_back(resultType);
-
-    return ports;
+    return types;
   }
 
   static void
@@ -85,7 +76,7 @@ private:
       throw jlm::util::error("Expected pointer type.");
   }
 
-  FunctionType FunctionType_;
+  std::shared_ptr<const FunctionType> FunctionType_;
 };
 
 /** \brief Call node classifier
@@ -384,16 +375,56 @@ public:
     return memoryState;
   }
 
+  /**
+   *
+   * @param callNode The call node for which to retrieve the CallEntryMemoryStateMergeOperation
+   * node.
+   * @return The CallEntryMemoryStateMergeOperation node connected to the memory state input if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateInput()
+   * @see GetMemoryStateExitSplit()
+   */
+  [[nodiscard]] static rvsdg::simple_node *
+  GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
+  {
+    auto node = rvsdg::node_output::node(callNode.GetMemoryStateInput()->origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+                                                        : nullptr;
+  }
+
+  /**
+   *
+   * @param callNode The call node for which to retrieve the CallExitMemoryStateSplitOperation node.
+   * @return The CallExitMemoryStateSplitOperation node connected to the memory state output if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateOutput()
+   * @see GetMemoryStateEntryMerge()
+   */
+  [[nodiscard]] static rvsdg::simple_node *
+  GetMemoryStateExitSplit(const CallNode & callNode) noexcept
+  {
+    // If a memory state exit split node is present, then we would expect the node to be the only
+    // user of the memory state output.
+    if (callNode.GetMemoryStateOutput()->nusers() != 1)
+      return nullptr;
+
+    auto node = rvsdg::node_input::GetNode(**callNode.GetMemoryStateOutput()->begin());
+    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+                                                       : nullptr;
+  }
+
   rvsdg::node *
   copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<jlm::rvsdg::output *>
   Create(
       rvsdg::output * function,
-      const FunctionType & functionType,
+      std::shared_ptr<const FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
-    return CreateNode(function, functionType, arguments).Results();
+    return CreateNode(function, std::move(functionType), arguments).Results();
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -411,7 +442,7 @@ public:
       const CallOperation & callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    CheckFunctionType(callOperation.GetFunctionType());
+    CheckFunctionType(*callOperation.GetFunctionType());
 
     return *(new CallNode(region, callOperation, operands));
   }
@@ -419,12 +450,12 @@ public:
   static CallNode &
   CreateNode(
       rvsdg::output * function,
-      const FunctionType & functionType,
+      std::shared_ptr<const FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
-    CallOperation callOperation(functionType);
+    CallOperation callOperation(std::move(functionType));
     std::vector<rvsdg::output *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 

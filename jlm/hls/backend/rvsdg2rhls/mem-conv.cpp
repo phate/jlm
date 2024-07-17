@@ -30,8 +30,8 @@ jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * respo
     auto parent_response = route_response(target->node()->region(), response);
     auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
     JLM_ASSERT(ln);
-    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->port());
-    auto argument = jlm::rvsdg::argument::create(target, input, response->type());
+    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
+    auto argument = jlm::rvsdg::argument::create(target, input, response->Type());
     return argument;
   }
 }
@@ -47,8 +47,8 @@ jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * reques
   {
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
-    auto output = jlm::rvsdg::structural_output::create(ln, request->port());
-    jlm::rvsdg::result::create(request->region(), request, output, request->type());
+    auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
+    jlm::rvsdg::result::create(request->region(), request, output, request->Type());
     return route_request(target, output);
   }
 }
@@ -572,12 +572,12 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
-    newArgumentTypes.push_back(oldFunctionType.ArgumentType(i).copy());
+    newArgumentTypes.push_back(oldFunctionType.Arguments()[i]);
   }
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
-    newResultTypes.push_back(oldFunctionType.ResultType(i).copy());
+    newResultTypes.push_back(oldFunctionType.Results()[i]);
   }
 
   //
@@ -587,9 +587,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   port_load_store_decouple portNodes;
   trace_pointer_arguments(lambda, portNodes);
 
-  auto responseTypePtr = get_mem_res_type(*jlm::rvsdg::bittype::Create(64));
-  auto requestTypePtr = get_mem_req_type(*jlm::rvsdg::bittype::Create(64), false);
-  auto requestTypePtrWrite = get_mem_req_type(*jlm::rvsdg::bittype::Create(64), true);
+  auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(64));
+  auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(64), false);
+  auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(64), true);
 
   std::unordered_set<jlm::rvsdg::simple_node *> accountedNodes;
   for (auto & portNode : portNodes)
@@ -633,7 +633,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
   // Create new lambda and copy the region from the old lambda
   //
-  jlm::llvm::FunctionType newFunctionType(newArgumentTypes, newResultTypes);
+  auto newFunctionType = jlm::llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = jlm::llvm::lambda::node::create(
       lambda->region(),
       newFunctionType,
@@ -696,7 +696,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  jlm::rvsdg::result::create(newLambda->region(), newOut, nullptr, newOut->type());
+  jlm::rvsdg::result::create(newLambda->region(), newOut, nullptr, newOut->Type());
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
   lambda->region()->RemoveResult((*lambda->output()->begin())->index());
@@ -704,10 +704,6 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
   // Remove imports for decouple_ function pointers
   dne(newLambda->subregion());
-
-  auto xmlFile = fopen("before_remove_unused_state.rvsdg", "w");
-  jlm::rvsdg::view_xml(root, xmlFile);
-  fclose(xmlFile);
 
   //
   // TODO
@@ -757,7 +753,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   // nodes in the new lambda
   //
   std::vector<jlm::rvsdg::simple_node *> loadNodes;
-  std::vector<const jlm::rvsdg::valuetype *> loadTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::valuetype>> loadTypes;
   for (auto loadNode : originalLoadNodes)
   {
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
@@ -765,7 +761,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     loadNodes.push_back(loadOutput->node());
     auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
         &loadOutput->node()->operation());
-    loadTypes.push_back(&loadOp->GetLoadedType());
+    loadTypes.push_back(loadOp->GetLoadedType());
   }
   std::vector<jlm::rvsdg::simple_node *> storeNodes;
   for (auto storeNode : originalStoreNodes)
@@ -781,7 +777,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto decoupledOutput =
         dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(decoupledNode->output(0)));
     decoupledNodes.push_back(decoupledOutput->node());
-    loadTypes.push_back(&*jlm::rvsdg::bittype::Create(32));
+    loadTypes.push_back(jlm::rvsdg::bittype::Create(32));
   }
 
   auto lambdaRegion = lambda->subregion();
@@ -798,16 +794,16 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
     auto address = route_request(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
-    const jlm::rvsdg::valuetype * type;
+    std::shared_ptr<const jlm::rvsdg::valuetype> type;
     if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->operation()))
     {
-      type = &loadOperation->GetLoadedType();
+      type = loadOperation->GetLoadedType();
     }
     else if (
         auto loadOperation =
             dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation()))
     {
-      type = &loadOperation->GetLoadedType();
+      type = loadOperation->GetLoadedType();
     }
     else
     {
@@ -828,9 +824,8 @@ jlm::hls::ConnectRequestResponseMemPorts(
     // TODO: routing is probably not necessary
     auto addr = route_request(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
-    loadTypes.push_back(
-        &dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation())
-             ->GetLoadedType());
+    loadTypes.push_back(dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation())
+                            ->GetLoadedType());
   }
   std::vector<jlm::rvsdg::output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)

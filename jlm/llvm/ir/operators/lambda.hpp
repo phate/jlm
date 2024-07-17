@@ -34,7 +34,7 @@ public:
   ~operation() override;
 
   operation(
-      jlm::llvm::FunctionType type,
+      std::shared_ptr<const jlm::llvm::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
       jlm::llvm::attributeset attributes)
@@ -44,49 +44,24 @@ public:
         attributes_(std::move(attributes))
   {}
 
-  operation(const operation & other)
-      : type_(other.type_),
-        name_(other.name_),
-        linkage_(other.linkage_),
-        attributes_(other.attributes_)
-  {}
+  operation(const operation & other) = default;
 
-  operation(operation && other) noexcept
-      : type_(std::move(other.type_)),
-        name_(std::move(other.name_)),
-        linkage_(other.linkage_)
-  {}
+  operation(operation && other) noexcept = default;
 
   operation &
-  operator=(const operation & other)
-  {
-    if (this == &other)
-      return *this;
-
-    type_ = other.type_;
-    name_ = other.name_;
-    linkage_ = other.linkage_;
-    attributes_ = other.attributes_;
-
-    return *this;
-  }
+  operator=(const operation & other) = default;
 
   operation &
-  operator=(operation && other) noexcept
-  {
-    if (this == &other)
-      return *this;
-
-    type_ = std::move(other.type_);
-    name_ = std::move(other.name_);
-    linkage_ = other.linkage_;
-    attributes_ = std::move(other.attributes_);
-
-    return *this;
-  }
+  operator=(operation && other) noexcept = default;
 
   [[nodiscard]] const jlm::llvm::FunctionType &
   type() const noexcept
+  {
+    return *type_;
+  }
+
+  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  Type() const noexcept
   {
     return type_;
   }
@@ -119,7 +94,7 @@ public:
   copy() const override;
 
 private:
-  jlm::llvm::FunctionType type_;
+  std::shared_ptr<const jlm::llvm::FunctionType> type_;
   std::string name_;
   jlm::llvm::linkage linkage_;
   jlm::llvm::attributeset attributes_;
@@ -219,6 +194,12 @@ public:
   type() const noexcept
   {
     return operation().type();
+  }
+
+  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  Type() const noexcept
+  {
+    return operation().Type();
   }
 
   [[nodiscard]] const std::string &
@@ -322,6 +303,42 @@ public:
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
+   * @return The memory state argument of the lambda subregion.
+   */
+  [[nodiscard]] rvsdg::argument &
+  GetMemoryStateRegionArgument() const noexcept;
+
+  /**
+   * @return The memory state result of the lambda subregion.
+   */
+  [[nodiscard]] rvsdg::result &
+  GetMemoryStateRegionResult() const noexcept;
+
+  /**
+   *
+   * @param lambdaNode The lambda node for which to retrieve the
+   * LambdaEntryMemoryStateSplitOperation node.
+   * @return The LambdaEntryMemoryStateSplitOperation node connected to the memory state input if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateExitMerge()
+   */
+  static rvsdg::simple_node *
+  GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
+
+  /**
+   *
+   * @param lambdaNode The lambda node for which to retrieve the
+   * LambdaExitMemoryStateMergeOperation node.
+   * @return The LambdaExitMemoryStateMergeOperation node connected to the memory state output if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateEntrySplit()
+   */
+  [[nodiscard]] static rvsdg::simple_node *
+  GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept;
+
+  /**
    * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
    * After the invocation of \ref create(), the lambda node only features the function arguments.
    * Free variables can be added to the function node using \ref add_ctxvar(). The generation of the
@@ -338,7 +355,7 @@ public:
   static node *
   create(
       jlm::rvsdg::region * parent,
-      const jlm::llvm::FunctionType & type,
+      std::shared_ptr<const jlm::llvm::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage,
       const jlm::llvm::attributeset & attributes);
@@ -349,7 +366,7 @@ public:
   static node *
   create(
       jlm::rvsdg::region * parent,
-      const jlm::llvm::FunctionType & type,
+      std::shared_ptr<const jlm::llvm::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage)
   {
@@ -397,7 +414,7 @@ public:
 
 private:
   cvinput(lambda::node * node, jlm::rvsdg::output * origin)
-      : structural_input(node, origin, origin->port())
+      : structural_input(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -467,15 +484,15 @@ class output final : public jlm::rvsdg::structural_output
 public:
   ~output() override;
 
-private:
-  output(lambda::node * node, const jlm::rvsdg::port & port)
-      : structural_output(node, port)
+  output(lambda::node * node, std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type))
   {}
 
+private:
   static output *
-  create(lambda::node * node, const jlm::rvsdg::port & port)
+  create(lambda::node * node, std::shared_ptr<const rvsdg::type> type)
   {
-    auto output = std::unique_ptr<lambda::output>(new lambda::output(node, port));
+    auto output = std::make_unique<lambda::output>(node, std::move(type));
     return jlm::util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
   }
 
@@ -515,14 +532,14 @@ public:
   }
 
 private:
-  fctargument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
-      : jlm::rvsdg::argument(region, nullptr, type)
+  fctargument(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+      : jlm::rvsdg::argument(region, nullptr, std::move(type))
   {}
 
   static fctargument *
-  create(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
+  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
-    auto argument = new fctargument(region, type);
+    auto argument = new fctargument(region, std::move(type));
     region->append_argument(argument);
     return argument;
   }

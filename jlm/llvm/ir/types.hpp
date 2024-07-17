@@ -76,8 +76,8 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   static std::shared_ptr<const FunctionType>
   Create(
@@ -106,8 +106,8 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   static std::shared_ptr<const PointerType>
   Create();
@@ -142,8 +142,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   inline size_t
   nelements() const noexcept
@@ -154,7 +154,13 @@ public:
   inline const jlm::rvsdg::valuetype &
   element_type() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::valuetype *>(type_.get());
+    return *type_;
+  }
+
+  inline const std::shared_ptr<const jlm::rvsdg::valuetype> &
+  GetElementType() const noexcept
+  {
+    return type_;
   }
 
   static std::shared_ptr<const arraytype>
@@ -165,7 +171,7 @@ public:
 
 private:
   size_t nelements_;
-  std::shared_ptr<const jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
 };
 
 /* floating point type */
@@ -194,8 +200,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   inline const fpsize &
   size() const noexcept
@@ -224,8 +230,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -307,8 +313,8 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  [[nodiscard]] std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -360,10 +366,19 @@ public:
     return *util::AssertedCast<const valuetype>(Types_[index].get());
   }
 
-  void
-  Append(const jlm::rvsdg::valuetype & type)
+  [[nodiscard]] std::shared_ptr<const valuetype>
+  GetElementType(size_t index) const noexcept
   {
-    Types_.push_back(type.copy());
+    JLM_ASSERT(index < NumElements());
+    auto type = std::dynamic_pointer_cast<const valuetype>(Types_[index]);
+    JLM_ASSERT(type);
+    return type;
+  }
+
+  void
+  Append(std::shared_ptr<const jlm::rvsdg::valuetype> type)
+  {
+    Types_.push_back(std::move(type));
   }
 
   static std::unique_ptr<Declaration>
@@ -440,8 +455,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -465,8 +480,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -493,8 +508,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -523,8 +538,8 @@ public:
   bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   static std::shared_ptr<const MemoryStateType>
   Create();

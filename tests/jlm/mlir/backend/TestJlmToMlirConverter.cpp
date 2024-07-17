@@ -26,9 +26,7 @@ TestLambda()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
@@ -123,7 +121,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
 /** \brief TestAddOperation
  *
  * This test is similar to TestLambda, but it adds a add operation to the
- * lambda block and do a graph traversal.
+ * lambda block and does a graph traversal.
  * This function is similar to the TestDivOperation function in the frontend tests.
  *
  * This function tests the generation of an add operation using 2 bit constants as operands in the
@@ -147,9 +145,7 @@ TestAddOperation()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
@@ -209,7 +205,8 @@ TestAddOperation()
       // Checking add operation
       std::cout << "Checking add operation" << std::endl;
       assert(operation->getName().getStringRef().equals(
-          mlir::LLVM::AddOp::getOperationName())); // Last remaining operation is the add operation
+          mlir::arith::AddIOp::getOperationName())); // Last remaining operation is the add
+                                                     // operation
       assert(operation->getNumOperands() == 2);
       auto addOperand1 = operation->getOperand(0);
       auto addOperand2 = operation->getOperand(1);
@@ -220,7 +217,8 @@ TestAddOperation()
 
     useChainsUpTraverse(
         &lambdaBlock.getOperations().back(),
-        { mlir::arith::ConstantIntOp::getOperationName(), mlir::LLVM::AddOp::getOperationName() });
+        { mlir::arith::ConstantIntOp::getOperationName(),
+          mlir::arith::AddIOp::getOperationName() });
 
     omega->destroy();
   }
@@ -230,8 +228,8 @@ TestAddOperation()
 /** \brief TestAddOperation
  *
  * This test is similar to previous tests, but uses a mul, zero extension
- * and comparison operation, test the types of the operations
- * and do the use chain traversal.
+ * and comparison operation, it tests operations types
+ * and does the use chain traversal.
  */
 static int
 TestComZeroExt()
@@ -248,9 +246,7 @@ TestComZeroExt()
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    iostatetype iOStateType;
-    MemoryStateType memoryStateType;
-    FunctionType functionType(
+    auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
 
@@ -377,6 +373,234 @@ TestComZeroExt()
   return 0;
 }
 
+/** \brief TestMatch
+ *
+ * This test is similar to previous tests, but uses a match operation
+ */
+static int
+TestMatch()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  {
+    // Setup the function
+    std::cout << "Function Setup" << std::endl;
+    auto functionType = FunctionType::Create(
+        { iostatetype::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::ctltype::Create(2), iostatetype::Create(), MemoryStateType::Create() });
+
+    auto lambda =
+        lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
+    auto iOStateArgument = lambda->fctargument(0);
+    auto memoryStateArgument = lambda->fctargument(1);
+
+    // Create a match operation
+    std::cout << "Match Operation" << std::endl;
+    auto predicateConst = jlm::rvsdg::create_bitconstant(lambda->subregion(), 8, 4);
+
+    auto match =
+        jlm::rvsdg::match_op::Create(*predicateConst, { { 4, 0 }, { 5, 1 }, { 6, 1 } }, 2, 2);
+
+    lambda->finalize({ match, iOStateArgument, memoryStateArgument });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Checking blocks and operations count
+    std::cout << "Checking blocks and operations count" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    assert(omegaRegion.getBlocks().size() == 1);
+    auto & omegaBlock = omegaRegion.front();
+    // Lamda + terminating operation
+    assert(omegaBlock.getOperations().size() == 2);
+
+    // Checking lambda block operations
+    std::cout << "Checking lambda block operations" << std::endl;
+    auto & mlirLambda = omegaBlock.front();
+    auto & lambdaRegion = mlirLambda.getRegion(0);
+    auto & lambdaBlock = lambdaRegion.front();
+    // 1 Bits contants + Match + terminating operation
+    assert(lambdaBlock.getOperations().size() == 3);
+
+    bool matchFound = false;
+    for (auto & operation : lambdaBlock.getOperations())
+    {
+      if (mlir::isa<mlir::rvsdg::Match>(operation))
+      {
+        matchFound = true;
+        std::cout << "Checking match operation" << std::endl;
+        auto matchOp = mlir::cast<mlir::rvsdg::Match>(operation);
+
+        assert(mlir::isa<mlir::arith::ConstantIntOp>(matchOp.getInput().getDefiningOp()));
+        auto constant = mlir::cast<mlir::arith::ConstantIntOp>(matchOp.getInput().getDefiningOp());
+        assert(constant.value() == 4);
+        assert(constant.getType().isInteger(8));
+
+        auto mapping = matchOp.getMapping();
+        mapping.dump();
+        // 3 alternatives + default
+        assert(mapping.size() == 4);
+
+        // ** region check alternatives *$
+        for (auto & attr : mapping)
+        {
+          assert(attr.isa<::mlir::rvsdg::MatchRuleAttr>());
+          auto matchRuleAttr = attr.cast<::mlir::rvsdg::MatchRuleAttr>();
+          if (matchRuleAttr.isDefault())
+          {
+            assert(matchRuleAttr.getIndex() == 2);
+            assert(matchRuleAttr.getValues().empty());
+            continue;
+          }
+
+          assert(matchRuleAttr.getValues().size() == 1);
+
+          const int64_t value = matchRuleAttr.getValues().front();
+
+          assert(
+              (matchRuleAttr.getIndex() == 0 && value == 4)
+              || (matchRuleAttr.getIndex() == 1 && (value == 5 || value == 6)));
+        }
+        // ** endregion check alternatives **
+      }
+    }
+    assert(matchFound);
+
+    omega->destroy();
+  }
+  return 0;
+}
+
+/** \brief TestGamma
+ *
+ * This test is similar to previous tests, but uses a gamma operation
+ */
+static int
+TestGamma()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+
+  {
+
+    // Create a gamma operation
+    std::cout << "Gamma Operation" << std::endl;
+    auto CtrlConstant = jlm::rvsdg::control_constant(graph->root(), 3, 1);
+    auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
+    auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
+    jlm::rvsdg::gamma_node * rvsdgGammaNode = jlm::rvsdg::gamma_node::create(
+        CtrlConstant, // predicate
+        3             // nalternatives
+    );
+
+    rvsdgGammaNode->add_entryvar(entryvar1);
+    rvsdgGammaNode->add_entryvar(entryvar2);
+
+    std::vector<jlm::rvsdg::output *> exitvars1;
+    std::vector<jlm::rvsdg::output *> exitvars2;
+    for (int i = 0; i < 3; i++)
+    {
+      exitvars1.push_back(jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, i + 1));
+      exitvars2.push_back(
+          jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, 10 * (i + 1)));
+    }
+
+    rvsdgGammaNode->add_exitvar(exitvars1);
+    rvsdgGammaNode->add_exitvar(exitvars2);
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Checking blocks and operations count
+    std::cout << "Checking blocks and operations count" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    assert(omegaRegion.getBlocks().size() == 1);
+    auto & omegaBlock = omegaRegion.front();
+    // 1 control + 2 constants + gamma + terminating operation
+    assert(omegaBlock.getOperations().size() == 5);
+
+    bool gammaFound = false;
+    for (auto & operation : omegaBlock.getOperations())
+    {
+      if (mlir::isa<mlir::rvsdg::GammaNode>(operation))
+      {
+        gammaFound = true;
+        std::cout << "Checking gamma operation" << std::endl;
+        auto gammaOp = mlir::cast<mlir::rvsdg::GammaNode>(operation);
+        assert(gammaOp.getNumRegions() == 3);
+        // 1 predicate + 2 entryVars
+        assert(gammaOp.getNumOperands() == 3);
+        assert(gammaOp.getNumResults() == 2);
+
+        std::cout << "Checking gamma predicate" << std::endl;
+        assert(mlir::isa<mlir::rvsdg::ConstantCtrl>(gammaOp.getPredicate().getDefiningOp()));
+        auto controlConstant =
+            mlir::cast<mlir::rvsdg::ConstantCtrl>(gammaOp.getPredicate().getDefiningOp());
+        assert(controlConstant.getValue() == 1);
+        assert(mlir::isa<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType()));
+        auto ctrlType = mlir::cast<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType());
+        assert(ctrlType.getNumOptions() == 3);
+
+        std::cout << "Checking gamma entryVars" << std::endl;
+        //! getInputs() corresponds to the entryVars
+        auto entryVars = gammaOp.getInputs();
+        assert(entryVars.size() == 2);
+        assert(mlir::isa<mlir::arith::ConstantIntOp>(entryVars[0].getDefiningOp()));
+        assert(mlir::isa<mlir::arith::ConstantIntOp>(entryVars[1].getDefiningOp()));
+        auto entryVar1 = mlir::cast<mlir::arith::ConstantIntOp>(entryVars[0].getDefiningOp());
+        auto entryVar2 = mlir::cast<mlir::arith::ConstantIntOp>(entryVars[1].getDefiningOp());
+        assert(entryVar1.value() == 5);
+        assert(entryVar2.value() == 6);
+
+        std::cout << "Checking gamma subregions" << std::endl;
+        for (size_t i = 0; i < gammaOp.getNumRegions(); i++)
+        {
+          assert(gammaOp.getRegion(i).getBlocks().size() == 1);
+          auto & gammaBlock = gammaOp.getRegion(i).front();
+          // 2 bit constants + gamma result
+          assert(gammaBlock.getOperations().size() == 3);
+
+          std::cout << "Checking gamma exitVars" << std::endl;
+          auto gammaResult = gammaBlock.getTerminator();
+          assert(mlir::isa<mlir::rvsdg::GammaResult>(gammaResult));
+          auto gammaResultOp = mlir::cast<mlir::rvsdg::GammaResult>(gammaResult);
+          assert(gammaResultOp.getNumOperands() == 2);
+          for (size_t j = 0; j < gammaResultOp.getNumOperands(); j++)
+          {
+            assert(
+                mlir::isa<mlir::arith::ConstantIntOp>(gammaResultOp.getOperand(j).getDefiningOp()));
+            auto constant =
+                mlir::cast<mlir::arith::ConstantIntOp>(gammaResultOp.getOperand(j).getDefiningOp());
+            assert(static_cast<size_t>(constant.value()) == (1 - j) * (i + 1) + 10 * (i + 1) * j);
+          }
+        }
+      }
+    }
+    assert(gammaFound);
+    omega->destroy();
+  }
+  return 0;
+}
+
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirLambdaGen", TestLambda)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirAddOperationGen", TestAddOperation)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirComZeroExtGen", TestComZeroExt)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirMatchGen", TestMatch)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirGammaGen", TestGamma)

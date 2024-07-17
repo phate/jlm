@@ -20,9 +20,9 @@ test()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  PointerType pt;
-  MemoryStateType mt;
+  auto vt = jlm::tests::valuetype::Create();
+  auto pt = PointerType::Create();
+  auto mt = MemoryStateType::Create();
   ipgraph_module m(jlm::util::filepath(""), "", "");
 
   std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
@@ -30,7 +30,7 @@ test()
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
-  auto p = cfg->entry()->append_argument(argument::create("p", *jlm::rvsdg::bittype::Create(1)));
+  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::bittype::Create(1)));
   auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
   auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
@@ -40,7 +40,7 @@ test()
   cfg->exit()->append_result(s3);
   cfg->exit()->append_result(s3);
 
-  FunctionType ft(
+  auto ft = FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), MemoryStateType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create(), MemoryStateType::Create() });
   auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);

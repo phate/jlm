@@ -18,8 +18,8 @@ class MakeBitUnaryOperation final : public bitunary_op
 public:
   ~MakeBitUnaryOperation() noexcept override;
 
-  explicit MakeBitUnaryOperation(const bittype & type) noexcept
-      : bitunary_op(type)
+  explicit MakeBitUnaryOperation(std::size_t nbits) noexcept
+      : bitunary_op(bittype::Create(nbits))
   {}
 
   bool
@@ -50,8 +50,8 @@ class MakeBitBinaryOperation final : public bitbinary_op
 public:
   ~MakeBitBinaryOperation() noexcept override;
 
-  explicit MakeBitBinaryOperation(const bittype & type) noexcept
-      : bitbinary_op(type)
+  explicit MakeBitBinaryOperation(std::size_t nbits) noexcept
+      : bitbinary_op(bittype::Create(nbits))
   {}
 
   bool

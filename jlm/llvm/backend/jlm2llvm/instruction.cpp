@@ -206,7 +206,7 @@ convert(
     operands.push_back(ctx.value(argument));
   }
 
-  auto ftype = convert_type(op.GetFunctionType(), ctx);
+  auto ftype = convert_type(*op.GetFunctionType(), ctx);
   return builder.CreateCall(ftype, function, operands);
 }
 
@@ -300,7 +300,7 @@ convert(
     context & ctx)
 {
   return CreateLoadInstruction(
-      operation.GetLoadedType(),
+      *operation.GetLoadedType(),
       operands[0],
       false,
       operation.GetAlignment(),
@@ -316,7 +316,7 @@ convert(
     context & ctx)
 {
   return CreateLoadInstruction(
-      operation.GetLoadedType(),
+      *operation.GetLoadedType(),
       operands[0],
       true,
       operation.GetAlignment(),

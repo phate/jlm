@@ -36,8 +36,8 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   /**
    * \brief Creates bit type of specified width

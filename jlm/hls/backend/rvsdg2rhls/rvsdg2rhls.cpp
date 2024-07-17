@@ -194,11 +194,11 @@ convert_alloca(jlm::rvsdg::region * region)
     {
       auto rr = region->graph()->root();
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
-      llvm::PointerType delta_type;
+      auto delta_type = llvm::PointerType::Create();
       std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
       auto db = llvm::delta::node::Create(
           rr,
-          po->value_type(),
+          std::static_pointer_cast<const rvsdg::valuetype>(po->ValueType()),
           delta_name,
           llvm::linkage::external_linkage,
           "",
@@ -211,7 +211,7 @@ convert_alloca(jlm::rvsdg::region * region)
       }
       else
       {
-        llvm::ConstantAggregateZero cop(po->value_type());
+        llvm::ConstantAggregateZero cop(po->ValueType());
         cout = jlm::rvsdg::simple_node::create_normalized(db->subregion(), cop, {})[0];
       }
       auto delta = db->finalize(cout);
@@ -222,7 +222,7 @@ convert_alloca(jlm::rvsdg::region * region)
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
-      auto mux_node = llvm::input_node(mux_in);
+      auto mux_node = rvsdg::input::GetNode(*mux_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->operation()))
       {
         // merge after alloca -> remove merge
@@ -257,7 +257,7 @@ rename_delta(llvm::delta::node * odn)
   std::cout << "renaming delta node " << odn->name() << " to " << name << "\n";
   auto db = llvm::delta::node::Create(
       odn->region(),
-      odn->type(),
+      std::static_pointer_cast<const rvsdg::valuetype>(odn->Type()),
       name,
       llvm::linkage::external_linkage,
       "",
@@ -286,7 +286,7 @@ llvm::lambda::node *
 change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 {
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->type(), ln->name(), link, ln->attributes());
+      llvm::lambda::node::create(ln->region(), ln->Type(), ln->name(), link, ln->attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
@@ -338,9 +338,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         continue;
       }
       inline_calls(ln->subregion());
-      dump_xml(rm, "post_inline.rvsdg");
       split_opt(rm);
-      dump_xml(rm, "post_opt.rvsdg");
       //            convert_alloca(ln->subregion());
       jlm::rvsdg::substitution_map smap;
       for (size_t i = 0; i < ln->ninputs(); ++i)
@@ -369,7 +367,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           }
           std::cout << "delta node " << odn->name() << ": " << odn->type().debug_string() << "\n";
           // add import for delta to rhls
-          llvm::impport im(odn->type(), odn->name(), llvm::linkage::external_linkage);
+          llvm::impport im(odn->Type(), odn->name(), llvm::linkage::external_linkage);
           //						JLM_ASSERT(im.name()==odn->name());
           auto arg = rhls->Rvsdg().add_import(im);
           auto tmp = dynamic_cast<const llvm::impport *>(&arg->port());
@@ -377,7 +375,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), arg);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          rm.Rvsdg().add_export(odn->output(), { odn->output()->type(), odn->name() });
+          rm.Rvsdg().add_export(odn->output(), { odn->output()->Type(), odn->name() });
         }
         else
         {
@@ -391,10 +389,10 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           rhls->Rvsdg().root(),
           new_ln->output(),
           nullptr,
-          new_ln->output()->type());
+          new_ln->output()->Type());
       // add function as input to rm and remove it
       llvm::impport im(
-          ln->type(),
+          ln->Type(),
           ln->name(),
           llvm::linkage::external_linkage); // TODO: change linkage?
       auto arg = rm.Rvsdg().add_import(im);

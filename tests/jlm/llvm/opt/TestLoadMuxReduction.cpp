@@ -17,9 +17,9 @@ TestSuccess()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype vt;
-  PointerType pt;
-  MemoryStateType mt;
+  auto vt = jlm::tests::valuetype::Create();
+  auto pt = PointerType::Create();
+  auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
@@ -34,8 +34,8 @@ TestSuccess()
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto ld = LoadNonVolatileNode::Create(a, { mux }, vt, 4);
 
-  auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
-  auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s" });
+  auto ex1 = graph.add_export(ld[0], { ld[0]->Type(), "v" });
+  auto ex2 = graph.add_export(ld[1], { ld[1]->Type(), "s" });
 
   // jlm::rvsdg::view(graph.root(), stdout);
 
@@ -71,9 +71,9 @@ TestWrongNumberOfOperands()
   // Arrange
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  PointerType pt;
-  MemoryStateType mt;
+  auto vt = jlm::tests::valuetype::Create();
+  auto pt = PointerType::Create();
+  auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
@@ -87,9 +87,9 @@ TestWrongNumberOfOperands()
   auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
   auto ld = LoadNonVolatileNode::Create(a, { merge, merge }, vt, 4);
 
-  auto ex1 = graph.add_export(ld[0], { ld[0]->type(), "v" });
-  auto ex2 = graph.add_export(ld[1], { ld[1]->type(), "s1" });
-  auto ex3 = graph.add_export(ld[2], { ld[2]->type(), "s2" });
+  auto ex1 = graph.add_export(ld[0], { ld[0]->Type(), "v" });
+  auto ex2 = graph.add_export(ld[1], { ld[1]->Type(), "s1" });
+  auto ex3 = graph.add_export(ld[2], { ld[2]->Type(), "s2" });
 
   jlm::rvsdg::view(graph.root(), stdout);
 
@@ -117,8 +117,8 @@ TestLoadWithoutStates()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  PointerType pointerType;
+  auto valueType = jlm::tests::valuetype::Create();
+  auto pointerType = PointerType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);

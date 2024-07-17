@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::rvsdg
 {
@@ -38,10 +39,12 @@ ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->nalternatives_ == nalternatives_;
 }
 
-std::shared_ptr<const jlm::rvsdg::type>
-ctltype::copy() const
+std::size_t
+ctltype::ComputeHash() const noexcept
 {
-  return std::make_shared<ctltype>(*this);
+  auto typeHash = typeid(ctltype).hash_code();
+  auto numAlternativesHash = std::hash<size_t>()(nalternatives_);
+  return util::CombineHashes(typeHash, numAlternativesHash);
 }
 
 std::shared_ptr<const ctltype>
@@ -91,7 +94,7 @@ match_op::match_op(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : jlm::rvsdg::unary_op(bittype(nbits), ctltype(nalternatives)),
+    : jlm::rvsdg::unary_op(bittype::Create(nbits), ctltype::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}

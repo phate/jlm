@@ -84,6 +84,18 @@ public:
     return mlirGen.toString(circuit);
   }
 
+  std::unique_ptr<mlir::ModuleOp>
+  ConvertToMduleOp(llvm::RvsdgModule & rvsdgModule)
+  {
+    auto lambdaNode = get_hls_lambda(rvsdgModule);
+    auto mlirGen = RhlsToFirrtlConverter();
+    auto circuit = mlirGen.MlirGen(lambdaNode);
+    std::unique_ptr<mlir::ModuleOp> module =
+        std::make_unique<mlir::ModuleOp>(mlir::ModuleOp::create(Builder_->getUnknownLoc()));
+    module->push_back(circuit);
+    return module;
+  }
+
 private:
   std::string
   toString(const circt::firrtl::CircuitOp circuit);

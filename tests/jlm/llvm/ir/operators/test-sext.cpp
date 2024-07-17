@@ -14,7 +14,7 @@
 static inline void
 test_bitunary_reduction()
 {
-  jlm::rvsdg::bittype bt32(32);
+  auto bt32 = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::graph graph;
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
@@ -25,7 +25,7 @@ test_bitunary_reduction()
   auto y = jlm::rvsdg::bitnot_op::create(32, x);
   auto z = jlm::llvm::sext_op::create(64, y);
 
-  auto ex = graph.add_export(z, { z->type(), "x" });
+  auto ex = graph.add_export(z, { z->Type(), "x" });
 
   // jlm::rvsdg::view(graph, stdout);
 
@@ -41,7 +41,7 @@ test_bitunary_reduction()
 static inline void
 test_bitbinary_reduction()
 {
-  jlm::rvsdg::bittype bt32(32);
+  auto bt32 = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::graph graph;
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
@@ -53,7 +53,7 @@ test_bitbinary_reduction()
   auto z = jlm::rvsdg::bitadd_op::create(32, x, y);
   auto w = jlm::llvm::sext_op::create(64, z);
 
-  auto ex = graph.add_export(w, { w->type(), "x" });
+  auto ex = graph.add_export(w, { w->Type(), "x" });
 
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -71,7 +71,7 @@ test_inverse_reduction()
 {
   using namespace jlm;
 
-  jlm::rvsdg::bittype bt64(64);
+  auto bt64 = jlm::rvsdg::bittype::Create(64);
 
   jlm::rvsdg::graph graph;
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
@@ -82,7 +82,7 @@ test_inverse_reduction()
   auto y = jlm::llvm::trunc_op::create(32, x);
   auto z = jlm::llvm::sext_op::create(64, y);
 
-  auto ex = graph.add_export(z, { z->type(), "x" });
+  auto ex = graph.add_export(z, { z->Type(), "x" });
 
   jlm::rvsdg::view(graph, stdout);
 

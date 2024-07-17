@@ -34,7 +34,7 @@ test()
 {
   using namespace jlm;
 
-  jlm::llvm::FunctionType ft(
+  auto ft = jlm::llvm::FunctionType::Create(
       { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
       { rvsdg::bittype::Create(8) });
 
@@ -55,7 +55,7 @@ test()
   auto loop_out = loop->add_loopvar(lambda->fctargument(1));
 
   auto f = lambda->finalize({ loop_out });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   rvsdg::view(rm.Rvsdg(), stdout);
   hls::DotHLS dhls;

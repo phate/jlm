@@ -183,6 +183,9 @@ public:
   virtual const jlm::rvsdg::type &
   type() const noexcept = 0;
 
+  virtual std::shared_ptr<const jlm::rvsdg::type>
+  Type() const = 0;
+
   virtual const llvm::linkage &
   linkage() const noexcept = 0;
 
@@ -203,7 +206,7 @@ private:
   inline function_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      const FunctionType & type,
+      std::shared_ptr<const FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
       : ipgraph_node(clg),
@@ -223,8 +226,17 @@ public:
   virtual const jlm::rvsdg::type &
   type() const noexcept override;
 
+  std::shared_ptr<const jlm::rvsdg::type>
+  Type() const override;
+
   const FunctionType &
   fcttype() const noexcept
+  {
+    return *FunctionType_;
+  }
+
+  const std::shared_ptr<const FunctionType> &
+  GetFunctionType() const noexcept
   {
     return FunctionType_;
   }
@@ -255,11 +267,12 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      const FunctionType & type,
+      std::shared_ptr<const FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
   {
-    std::unique_ptr<function_node> node(new function_node(ipg, name, type, linkage, attributes));
+    std::unique_ptr<function_node> node(
+        new function_node(ipg, name, std::move(type), linkage, attributes));
     auto tmp = node.get();
     ipg.add_node(std::move(node));
     return tmp;
@@ -269,14 +282,14 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      const FunctionType & type,
+      std::shared_ptr<const FunctionType> type,
       const llvm::linkage & linkage)
   {
-    return create(ipg, name, type, linkage, {});
+    return create(ipg, name, std::move(type), linkage, {});
   }
 
 private:
-  FunctionType FunctionType_;
+  std::shared_ptr<const FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
   attributeset attributes_;
@@ -289,7 +302,7 @@ public:
   virtual ~fctvariable();
 
   inline fctvariable(function_node * node)
-      : gblvariable(node->type(), node->name()),
+      : gblvariable(node->Type(), node->name()),
         node_(node)
   {}
 
@@ -364,7 +377,7 @@ private:
   inline data_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      const jlm::rvsdg::valuetype & valueType,
+      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -373,17 +386,20 @@ private:
         name_(name),
         Section_(std::move(section)),
         linkage_(linkage),
-        ValueType_(valueType.copy())
+        ValueType_(std::move(valueType))
   {}
 
 public:
   virtual const PointerType &
   type() const noexcept override;
 
-  [[nodiscard]] const jlm::rvsdg::valuetype &
+  std::shared_ptr<const jlm::rvsdg::type>
+  Type() const override;
+
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
   GetValueType() const noexcept
   {
-    return *jlm::util::AssertedCast<const jlm::rvsdg::valuetype>(ValueType_.get());
+    return ValueType_;
   }
 
   const std::string &
@@ -419,7 +435,7 @@ public:
     if (!init)
       return;
 
-    if (init->value()->type() != GetValueType())
+    if (init->value()->type() != *GetValueType())
       throw jlm::util::error("Invalid type.");
 
     init_ = std::move(init);
@@ -429,13 +445,13 @@ public:
   Create(
       llvm::ipgraph & clg,
       const std::string & name,
-      const jlm::rvsdg::valuetype & valueType,
+      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
   {
     std::unique_ptr<data_node> node(
-        new data_node(clg, name, valueType, linkage, std::move(section), constant));
+        new data_node(clg, name, std::move(valueType), linkage, std::move(section), constant));
     auto ptr = node.get();
     clg.add_node(std::move(node));
     return ptr;
@@ -446,7 +462,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const jlm::rvsdg::type> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::valuetype> ValueType_;
   std::unique_ptr<data_node_init> init_;
 };
 

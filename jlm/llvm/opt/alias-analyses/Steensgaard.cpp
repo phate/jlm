@@ -243,7 +243,7 @@ public:
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is_gamma_output(Output_))
+    if (is<rvsdg::gamma_output>(Output_))
     {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
@@ -1160,7 +1160,7 @@ void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
   auto & lambdaFunctionType = lambdaNode.operation().type();
-  auto & callFunctionType = callNode.GetOperation().GetFunctionType();
+  auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to

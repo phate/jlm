@@ -4,11 +4,11 @@ Jlm is an experimental compiler/optimizer that consumes and produces LLVM IR. It
 Regionalized Value State Dependence Graph (RVSDG) as intermediate representation for optimizations.
 
 ## Dependencies
-* Clang/LLVM 16
+* Clang/LLVM 17
 * Doxygen 1.9.1
 
 ### HLS dependencies
-* CIRCT that is built with LLVM/MLIR 16
+* CIRCT that is built with LLVM/MLIR 17
 * Verilator 4.038
 
 ### Optional dependencies
@@ -20,7 +20,7 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 make all
 ```
 
-This presumes that llvm-config-16 can be found in $PATH. If that is not the case,
+This presumes that llvm-config-17 can be found in $PATH. If that is not the case,
 you may need to explicitly configure it:
 
 ```

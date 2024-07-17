@@ -65,13 +65,13 @@ create_theta(
 static inline void
 test_unrollinfo()
 {
-  jlm::rvsdg::bittype bt32(32);
-  jlm::rvsdg::bitslt_op slt(bt32);
-  jlm::rvsdg::bitult_op ult(bt32);
-  jlm::rvsdg::bitule_op ule(bt32);
-  jlm::rvsdg::bitugt_op ugt(bt32);
-  jlm::rvsdg::bitsge_op sge(bt32);
-  jlm::rvsdg::biteq_op eq(bt32);
+  auto bt32 = jlm::rvsdg::bittype::Create(32);
+  jlm::rvsdg::bitslt_op slt(32);
+  jlm::rvsdg::bitult_op ult(32);
+  jlm::rvsdg::bitule_op ule(32);
+  jlm::rvsdg::bitugt_op ugt(32);
+  jlm::rvsdg::bitsge_op sge(32);
+  jlm::rvsdg::biteq_op eq(32);
 
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
@@ -233,8 +233,8 @@ test_unknown_boundaries()
 {
   using namespace jlm::llvm;
 
-  jlm::rvsdg::bittype bt(32);
-  jlm::tests::test_op op({ &bt }, { &bt });
+  auto bt = jlm::rvsdg::bittype::Create(32);
+  jlm::tests::test_op op({ bt }, { bt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -255,7 +255,7 @@ test_unknown_boundaries()
 
   theta->set_predicate(match);
 
-  auto ex1 = graph.add_export(lv1, { lv1->type(), "x" });
+  auto ex1 = graph.add_export(lv1, { lv1->Type(), "x" });
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(2);

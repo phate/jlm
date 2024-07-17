@@ -20,8 +20,8 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   using namespace jlm::llvm;
 
   // Arrange
-  PointerType pointerType;
-  MemoryStateType memoryStateType;
+  auto pointerType = PointerType::Create();
+  auto memoryStateType = MemoryStateType::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
@@ -29,14 +29,14 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   nf->set_load_store_reducible(false);
 
   auto address = graph.add_import({ pointerType, "address" });
-  auto value = graph.add_import({ *jlm::rvsdg::bittype::Create(32), "value" });
+  auto value = graph.add_import({ jlm::rvsdg::bittype::Create(32), "value" });
   auto memoryState = graph.add_import({ memoryStateType, "memoryState" });
 
   auto storeResults = StoreNonVolatileNode::Create(address, value, { memoryState }, 4);
   auto loadResults =
-      LoadNonVolatileNode::Create(address, storeResults, *jlm::rvsdg::bittype::Create(8), 4);
+      LoadNonVolatileNode::Create(address, storeResults, jlm::rvsdg::bittype::Create(8), 4);
 
-  auto exportedValue = graph.add_export(loadResults[0], { *jlm::rvsdg::bittype::Create(8), "v" });
+  auto exportedValue = graph.add_export(loadResults[0], { jlm::rvsdg::bittype::Create(8), "v" });
   graph.add_export(loadResults[1], { memoryStateType, "s" });
 
   jlm::rvsdg::view(graph.root(), stdout);

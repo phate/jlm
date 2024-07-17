@@ -39,6 +39,22 @@ argument::argument(
   }
 }
 
+argument::argument(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::structural_input * input,
+    std::shared_ptr<const rvsdg::type> type)
+    : output(region, std::move(type)),
+      input_(input)
+{
+  if (input)
+  {
+    if (input->node() != region->node())
+      throw jlm::util::error("Argument cannot be added to input.");
+
+    input->arguments.push_back(this);
+  }
+}
+
 jlm::rvsdg::argument *
 argument::create(
     jlm::rvsdg::region * region,
@@ -46,6 +62,17 @@ argument::create(
     const jlm::rvsdg::port & port)
 {
   auto argument = new jlm::rvsdg::argument(region, input, port);
+  region->append_argument(argument);
+  return argument;
+}
+
+jlm::rvsdg::argument *
+argument::create(
+    jlm::rvsdg::region * region,
+    structural_input * input,
+    std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  auto argument = new jlm::rvsdg::argument(region, input, std::move(type));
   region->append_argument(argument);
   return argument;
 }
@@ -77,6 +104,23 @@ result::result(
   }
 }
 
+result::result(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::structural_output * output,
+    std::shared_ptr<const rvsdg::type> type)
+    : input(origin, region, std::move(type)),
+      output_(output)
+{
+  if (output)
+  {
+    if (output->node() != region->node())
+      throw jlm::util::error("Result cannot be added to output.");
+
+    output->results.push_back(this);
+  }
+}
+
 jlm::rvsdg::result *
 result::create(
     jlm::rvsdg::region * region,
@@ -85,6 +129,18 @@ result::create(
     const jlm::rvsdg::port & port)
 {
   auto result = new jlm::rvsdg::result(region, origin, output, port);
+  region->append_result(result);
+  return result;
+}
+
+jlm::rvsdg::result *
+result::create(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::structural_output * output,
+    std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  auto result = new jlm::rvsdg::result(region, origin, output, jlm::rvsdg::port(std::move(type)));
   region->append_result(result);
   return result;
 }
@@ -301,6 +357,50 @@ region::NumRegions(const jlm::rvsdg::region & region) noexcept
   }
 
   return numRegions;
+}
+
+std::string
+region::ToTree(const rvsdg::region & region) noexcept
+{
+  return ToTree(region, 0);
+}
+
+std::string
+region::ToTree(const rvsdg::region & region, size_t identationDepth) noexcept
+{
+  std::string subTree;
+  auto identationChar = '-';
+
+  // Convert current region to a string
+  if (region.IsRootRegion())
+  {
+    subTree = "RootRegion\n";
+    identationDepth += 1;
+  }
+  else if (region.node()->nsubregions() != 1)
+  {
+    auto indentationString = std::string(identationDepth, identationChar);
+    subTree += util::strfmt(indentationString, "Region[", region.index(), "]\n");
+    identationDepth += 1;
+  }
+
+  // Convert the region's structural nodes with their subregions to a string
+  for (const auto & node : region.nodes)
+  {
+    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+    {
+      auto identationString = std::string(identationDepth, identationChar);
+      auto nodeString = structuralNode->operation().debug_string();
+      subTree += util::strfmt(identationString, nodeString, '\n');
+
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        subTree += ToTree(*structuralNode->subregion(n), identationDepth + 1);
+      }
+    }
+  }
+
+  return subTree;
 }
 
 size_t

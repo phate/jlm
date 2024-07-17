@@ -178,11 +178,11 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
     auto arg = ln->subregion()->argument(i);
-    auto argtype = &old_fcttype.ArgumentType(i);
+    auto argtype = old_fcttype.Arguments()[i];
     JLM_ASSERT(*argtype == arg->type());
     if (!is_passthrough(arg))
     {
-      new_argument_types.push_back(argtype->copy());
+      new_argument_types.push_back(argtype);
     }
   }
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_result_types;
@@ -193,10 +193,10 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
     JLM_ASSERT(*restype == res->type());
     if (!is_passthrough(res))
     {
-      new_result_types.push_back(old_fcttype.ResultType(i).copy());
+      new_result_types.push_back(old_fcttype.Results()[i]);
     }
   }
-  llvm::FunctionType new_fcttype(new_argument_types, new_result_types);
+  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
       ln->region(),
       new_fcttype,
@@ -242,7 +242,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   JLM_ASSERT(ln->output()->nusers() == 1);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
   remove(ln);
-  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->type());
+  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->Type());
   return new_lambda;
 }
 

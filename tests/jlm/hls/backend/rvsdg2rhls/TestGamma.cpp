@@ -18,7 +18,7 @@ TestWithMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -35,7 +35,7 @@ TestWithMatch()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -55,7 +55,7 @@ TestWithoutMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -71,7 +71,7 @@ TestWithoutMatch()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

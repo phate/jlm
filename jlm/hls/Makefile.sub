@@ -2,9 +2,10 @@
 # See COPYING for terms of redistribution.
 
 libhls_SOURCES = \
+    jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.cpp \
+    \
     jlm/hls/backend/rhls2firrtl/base-hls.cpp \
     jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
     jlm/hls/backend/rhls2firrtl/json-hls.cpp \
     jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
@@ -44,9 +45,10 @@ libhls_SOURCES = \
     jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
+	jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp \
+	\
 	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
-	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/json-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
 	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
@@ -86,6 +88,7 @@ libhls_HEADERS = \
 
 libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
+	tests/jlm/hls/backend/rvsdg2rhls/TestFork \
 	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \

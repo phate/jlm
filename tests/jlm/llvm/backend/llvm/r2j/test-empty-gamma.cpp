@@ -24,7 +24,7 @@ test_with_match()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -41,7 +41,7 @@ test_with_match()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -67,7 +67,7 @@ test_without_match()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -83,7 +83,7 @@ test_without_match()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -110,7 +110,7 @@ test_gamma3()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  FunctionType ft({ jlm::rvsdg::bittype::Create(32), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(32), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -128,7 +128,7 @@ test_gamma3()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev1->argument(1), ev2->argument(2) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->type(), "" });
+  rm.Rvsdg().add_export(f, { f->Type(), "" });
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
