@@ -374,13 +374,13 @@ region::ToTree(const rvsdg::region & region, size_t identationDepth) noexcept
   // Convert current region to a string
   if (region.IsRootRegion())
   {
-    subTree = "Root\n";
+    subTree = "RootRegion\n";
     identationDepth += 1;
   }
   else if (region.node()->nsubregions() != 1)
   {
     auto indentationString = std::string(identationDepth, identationChar);
-    subTree += util::strfmt(indentationString, &region, '\n');
+    subTree += util::strfmt(indentationString, "Region[", region.index(), "]\n");
     identationDepth += 1;
   }
 
