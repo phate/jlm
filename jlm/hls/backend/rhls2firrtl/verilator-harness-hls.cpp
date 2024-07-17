@@ -39,9 +39,11 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "#else\n"
          "#include \"verilated_vcd_c.h\"\n"
          "#endif\n"
+         // Include the Verilator generated header, which provides access to Verilog signals
+         // The name of the header is based on the Verilog filename used as input to Verilator
          "#include \"V"
-      << GetIncludeName() << "\"\n"
-      << "#define V_NAME V" << GetVName() << "\n"
+      << GetVerilogFileName().base() << ".h\"\n"
+      << "#define V_NAME V" << GetVerilogFileName().base() << "\n"
       << "#define TIMEOUT 10000000\n"
          "#define xstr(s) str(s)\n"
          "#define str(s) #s\n"
