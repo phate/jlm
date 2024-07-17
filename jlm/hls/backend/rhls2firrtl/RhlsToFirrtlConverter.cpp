@@ -8,7 +8,6 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <circt/Dialect/FIRRTL/FIRParser.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
 namespace jlm::hls
@@ -4050,8 +4049,7 @@ RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
   std::error_code EC;
   ::llvm::raw_fd_ostream output(fileName, EC);
   size_t targetLineLength = 100;
-  constexpr circt::firrtl::FIRVersion defaultFIRVersion(4, 0, 0);
-  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, defaultFIRVersion);
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, DefaultFIRVersion_);
 
   if (status.failed())
   {
@@ -4082,8 +4080,7 @@ RhlsToFirrtlConverter::toString(const circt::firrtl::CircuitOp circuit)
   ::llvm::raw_string_ostream output(outputString);
 
   size_t targetLineLength = 100;
-  constexpr circt::firrtl::FIRVersion defaultFIRVersion(4, 0, 0);
-  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, defaultFIRVersion);
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, DefaultFIRVersion_);
   if (status.failed())
     throw std::logic_error("Exporting of firrtl failed");
 
