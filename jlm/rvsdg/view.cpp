@@ -170,50 +170,6 @@ view(const jlm::rvsdg::region * region, FILE * out)
   fflush(out);
 }
 
-std::string
-region_tree(const jlm::rvsdg::region * region)
-{
-  std::function<std::string(const jlm::rvsdg::region *, size_t)> f =
-      [&](const jlm::rvsdg::region * region, size_t depth)
-  {
-    std::string subtree;
-    if (region->node())
-    {
-      if (region->node()->nsubregions() != 1)
-      {
-        subtree += std::string(depth, '-') + jlm::util::strfmt(region) + "\n";
-        depth += 1;
-      }
-    }
-    else
-    {
-      subtree = "ROOT\n";
-      depth += 1;
-    }
-
-    for (const auto & node : region->nodes)
-    {
-      if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
-      {
-        subtree += std::string(depth, '-') + snode->operation().debug_string() + "\n";
-        for (size_t n = 0; n < snode->nsubregions(); n++)
-          subtree += f(snode->subregion(n), depth + 1);
-      }
-    }
-
-    return subtree;
-  };
-
-  return f(region, 0);
-}
-
-void
-region_tree(const jlm::rvsdg::region * region, FILE * out)
-{
-  fputs(region_tree(region).c_str(), out);
-  fflush(out);
-}
-
 /* xml */
 
 static inline std::string
