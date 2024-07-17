@@ -47,7 +47,7 @@ fsm_state::add_ctl_result(size_t nalternatives, jlm::rvsdg::structural_output* s
     //TODO connecting these regions result to a dummy empty structural node like this is not clean and may break asumptions made in the jlm code base
     //! This is just a temporary workaround
     // note: calling create() will add the result to the results list of the structural_output
-    jlm::rvsdg::result::create(this, ctrl_const, structural_output, jlm::rvsdg::ctltype(nalternatives));
+    jlm::rvsdg::result::create(this, ctrl_const, structural_output, jlm::rvsdg::ctltype::Create(nalternatives));
 };
 
 void
@@ -163,7 +163,7 @@ fsm_node_builder::create(jlm::rvsdg::region * parent)
 jlm::rvsdg::structural_output *
 fsm_node_temp::add_ctl_output(size_t nalternatives)
 {
-    auto structural_output = jlm::rvsdg::structural_output::create(this, jlm::rvsdg::ctltype(nalternatives));
+    auto structural_output = jlm::rvsdg::structural_output::create(this, jlm::rvsdg::ctltype::Create(nalternatives));
     for (auto state : states_)
     {
         state->add_ctl_result(nalternatives, structural_output);

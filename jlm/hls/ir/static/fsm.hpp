@@ -20,7 +20,7 @@ class fsm_state final : private jlm::rvsdg::region
   friend fsm_node_temp;
 private:
   inline fsm_state(jlm::rvsdg::structural_node * node, size_t index)
-      : region(node, index), index_(index)
+      : region(node, index)/*, index_(index)*/
   {}
 
 public:
@@ -42,7 +42,7 @@ public:
   void apply_mux_ctl();
 
 private:
-  size_t index_;
+  // size_t index_;
   std::unordered_map<jlm::rvsdg::input*, size_t> muxes_ctl_;
 };
 

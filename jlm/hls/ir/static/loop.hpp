@@ -202,13 +202,13 @@ public:
   }
 
 private:
-  backedge_argument(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
+  backedge_argument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> & type)
       : jlm::rvsdg::argument(region, nullptr, type),
         result_(nullptr)
   {}
 
   static backedge_argument *
-  create(jlm::rvsdg::region * region, const jlm::rvsdg::type & type)
+  create(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> & type)
   {
     auto argument = new backedge_argument(region, type);
     region->append_argument(argument);

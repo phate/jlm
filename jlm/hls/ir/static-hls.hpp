@@ -56,9 +56,9 @@ namespace jlm::static_hls
 class mux_op final : public jlm::rvsdg::simple_op
 {
 private:
-  mux_op(std::vector<jlm::rvsdg::port>& operands_type, const jlm::rvsdg::type & type)
+  mux_op(std::vector<std::shared_ptr<const jlm::rvsdg::type>>& operands_type, const std::shared_ptr<const jlm::rvsdg::type>& result_type)
       // : jlm::rvsdg::simple_op(create_portvector(nalternatives, type), { type })
-      : jlm::rvsdg::simple_op(operands_type, { type })
+      : jlm::rvsdg::simple_op(operands_type, { result_type })
   {}
 
 public:
@@ -106,9 +106,9 @@ public:
     auto operands = std::vector<jlm::rvsdg::output *>();
     operands.push_back(&predicate);
     operands.insert(operands.end(), alternatives.begin(), alternatives.end());
-    auto operands_type = std::vector<jlm::rvsdg::port>(alternatives.size() + 1, alternatives.front()->type());
-    operands_type[0] = jlm::rvsdg::ctltype(alternatives.size());
-    mux_op op(operands_type, alternatives.front()->type());
+    auto operands_type = std::vector<std::shared_ptr<const jlm::rvsdg::type>>(alternatives.size() + 1, alternatives.front()->Type());
+    operands_type.at(0) = jlm::rvsdg::ctltype::Create(alternatives.size());
+    mux_op op(operands_type, alternatives.front()->Type());
     op.nalternatives_ = alternatives.size();
     op.has_predicate_ = true;
     return jlm::rvsdg::simple_node::create(region, op, operands);
@@ -126,21 +126,21 @@ public:
 
     // operands.push_back();
     operands.insert(operands.end(), alternatives.begin(), alternatives.end());
-    auto operands_type = std::vector<jlm::rvsdg::port>(alternatives.size(), alternatives.front()->type());
-    mux_op op(operands_type, alternatives.front()->type());
+    auto operands_type = std::vector<std::shared_ptr<const jlm::rvsdg::type>>(alternatives.size(), alternatives.front()->Type());
+    mux_op op(operands_type, alternatives.front()->Type());
     op.nalternatives_ = alternatives.size();
     op.has_predicate_ = false;
     return jlm::rvsdg::simple_node::create(region, op, operands);
   };
 
 private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t nalternatives, const jlm::rvsdg::type & type)
-  {
-    auto vec = std::vector<jlm::rvsdg::port>(nalternatives + 1, type);
-    vec[0] = jlm::rvsdg::ctltype(nalternatives);
-    return vec;
-  };
+  // static std::vector<jlm::rvsdg::port>
+  // create_portvector(size_t nalternatives, const jlm::rvsdg::type & type)
+  // {
+  //   auto vec = std::vector<jlm::rvsdg::port>(nalternatives + 1, type);
+  //   vec[0] = jlm::rvsdg::ctltype(nalternatives);
+  //   return vec;
+  // };
 
   size_t nalternatives_;
   bool has_predicate_;
@@ -173,8 +173,8 @@ public:
   virtual ~reg_op()
   {}
 
-  reg_op(const jlm::rvsdg::type & type)
-      : jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>{jlm::rvsdg::ctltype(2), type}, { type })
+  reg_op(const std::shared_ptr<const jlm::rvsdg::type> & type)
+      : jlm::rvsdg::simple_op(std::vector<std::shared_ptr<const jlm::rvsdg::type>>{jlm::rvsdg::ctltype::Create(2), type}, { type })
       // : jlm::rvsdg::simple_op(std::vector<jlm::rvsdg::port>{type}, { type })
   {
     id_ = instances_count++;
@@ -210,20 +210,20 @@ public:
       jlm::rvsdg::output & input,
       std::string origin_debug_string)
   {
-    reg_op op(input.type());
+    reg_op op(input.Type());
     op.origin_debug_string_ = origin_debug_string;
     return jlm::rvsdg::simple_node::create(input.region(), op, { &store_input, &input });
     // return jlm::rvsdg::simple_node::create_normalized(input.region(), op, { &store_input, &input })[0];
   }
 
 private:
-  static std::vector<jlm::rvsdg::port>
-  create_portvector(size_t nalternatives, const jlm::rvsdg::type & type)
-  {
-    auto vec = std::vector<jlm::rvsdg::port>(nalternatives + 1, type);
-    vec[0] = jlm::rvsdg::ctltype(nalternatives);
-    return vec;
-  }
+  // static std::vector<jlm::rvsdg::port>
+  // create_portvector(size_t nalternatives, const jlm::rvsdg::type & type)
+  // {
+  //   auto vec = std::vector<jlm::rvsdg::port>(nalternatives + 1, type);
+  //   vec[0] = jlm::rvsdg::ctltype(nalternatives);
+  //   return vec;
+  // }
   size_t id_ = 0; //TODO delete this, only for debugging
   std::string origin_debug_string_ = "";
 };

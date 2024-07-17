@@ -54,10 +54,10 @@ loop_node::create(jlm::rvsdg::region * parent)
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::theta_input * theta_input)
 {
-    auto input = jlm::rvsdg::structural_input::create(this, theta_input->origin(), theta_input->origin()->type());
-    auto output = jlm::rvsdg::structural_output::create(this, theta_input->origin()->type());
+    auto input = jlm::rvsdg::structural_input::create(this, theta_input->origin(), theta_input->origin()->Type());
+    auto output = jlm::rvsdg::structural_output::create(this, theta_input->origin()->Type());
 
-    auto argument_in = jlm::rvsdg::argument::create(control_subregion(), input, theta_input->origin()->type());
+    auto argument_in = jlm::rvsdg::argument::create(control_subregion(), input, theta_input->origin()->Type());
     
     reg_smap_.insert(theta_input->argument(), argument_in);
 
@@ -110,7 +110,7 @@ loop_node::add_node(jlm::rvsdg::node * node) {
         for (size_t i = 0; i < node->ninputs(); i++)
         {
             //! Create arg in compute region
-            auto input_arg = backedge_argument::create(compute_subregion(), node->input(i)->type());
+            auto input_arg = backedge_argument::create(compute_subregion(), node->input(i)->Type());
             inputs_args.push_back(input_arg);
 
             auto input_new_origin = reg_smap_.lookup(node->input(i)->origin());
@@ -196,7 +196,7 @@ backedge_result *
 loop_node::add_backedge(jlm::rvsdg::output* origin)
 {
   auto result_loop = backedge_result::create(origin);
-  auto argument_loop = backedge_argument::create(control_subregion(), origin->type());
+  auto argument_loop = backedge_argument::create(control_subregion(), origin->Type());
   argument_loop->result_ = result_loop;
   result_loop->argument_ = argument_loop;
   return result_loop;
@@ -299,7 +299,7 @@ void
 loop_node::finalize()
 {
     //FIXME this is a temporary solution with an argument
-    auto arg = jlm::rvsdg::argument::create(control_subregion(), nullptr, jlm::rvsdg::ctltype(fsm_->nalternatives()));
+    auto arg = jlm::rvsdg::argument::create(control_subregion(), nullptr, jlm::rvsdg::ctltype::Create(fsm_->nalternatives()));
     connect_muxes();
     fsm_->apply_mux_ctl();
     fsm_->generate_gamma(arg);
