@@ -5,7 +5,6 @@
 
 #include <jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/dot-hls.hpp>
-#include <jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/json-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
@@ -78,30 +77,21 @@ main(int argc, char ** argv)
     jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.to_str() + ".ref.ll");
     jlm::hls::rvsdg2rhls(*rvsdgModule);
 
+    // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
+    // Could potentially change to pass the FIRRTL directly to the converter, but the converter
+    // is based on CIRCT's Firtool library, which assumes that the FIRRTL is read from a file.
+    jlm::hls::RhlsToFirrtlConverter hls;
+    auto output = hls.ToString(*rvsdgModule);
     jlm::util::filepath firrtlFile(commandLineOptions.OutputFiles_.to_str() + ".fir");
-    if (commandLineOptions.UseCirct_)
+    stringToFile(output, firrtlFile.to_str());
+    jlm::util::filepath outputVerilogFile(commandLineOptions.OutputFiles_.to_str() + ".v");
+    if (!jlm::hls::FirrtlToVerilogConverter::Convert(firrtlFile, outputVerilogFile))
     {
-      // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
-      // Could potentially change to pass the FIRRTL directly to the converter, but the converter
-      // is based on CIRCT's Firtool library, which assumes that the FIRRTL is read from a file.
-      jlm::hls::RhlsToFirrtlConverter hls;
-      auto output = hls.ToString(*rvsdgModule);
-      stringToFile(output, firrtlFile.to_str());
-      jlm::util::filepath outputVerilogFile(commandLineOptions.OutputFiles_.to_str() + ".v");
-      if (!jlm::hls::FirrtlToVerilogConverter::Convert(firrtlFile, outputVerilogFile))
-      {
-        std::cerr << "The FIRRTL to Verilog conversion failed.\n" << std::endl;
-        exit(1);
-      }
-    }
-    else
-    {
-      jlm::hls::FirrtlHLS hls;
-      auto output = hls.run(*rvsdgModule);
-      stringToFile(output, firrtlFile.to_str());
+      std::cerr << "The FIRRTL to Verilog conversion failed.\n" << std::endl;
+      exit(1);
     }
 
-    jlm::hls::VerilatorHarnessHLS vhls;
+    jlm::hls::VerilatorHarnessHLS vhls(outputVerilogFile);
     stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
 
     // TODO: hide behind flag
