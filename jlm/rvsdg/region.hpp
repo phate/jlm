@@ -390,6 +390,16 @@ public:
   [[nodiscard]] static size_t
   NumRegions(const jlm::rvsdg::region & region) noexcept;
 
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a tree in
+   * ASCII format.
+   *
+   * @param region The top-level region that is converted
+   * @return A string containing the ASCII tree of \p region
+   */
+  [[nodiscard]] static std::string
+  ToTree(const rvsdg::region & region) noexcept;
+
   region_nodes_list nodes;
 
   region_top_node_list top_nodes;
@@ -397,6 +407,9 @@ public:
   region_bottom_node_list bottom_nodes;
 
 private:
+  [[nodiscard]] static std::string
+  ToTree(const rvsdg::region & region, size_t identationDepth) noexcept;
+
   size_t index_;
   jlm::rvsdg::graph * graph_;
   jlm::rvsdg::structural_node * node_;

@@ -57,12 +57,6 @@ view(const jlm::rvsdg::graph & graph, FILE * out)
 }
 
 std::string
-region_tree(const jlm::rvsdg::region * region);
-
-void
-region_tree(const jlm::rvsdg::region * region, FILE * out);
-
-std::string
 to_xml(const jlm::rvsdg::region * region);
 
 void
