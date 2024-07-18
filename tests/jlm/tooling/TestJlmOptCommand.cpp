@@ -5,8 +5,11 @@
 
 #include <test-registry.hpp>
 
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <fstream>
 
 static void
 TestStatistics()
@@ -56,3 +59,33 @@ TestJlmOptCommand()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand", TestJlmOptCommand)
+
+static int
+PrintRvsdgTreeToFile()
+{
+  using namespace jlm;
+
+  // Arrange
+  util::filepath outputFile("/tmp/RvsdgTree");
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  util::StatisticsCollector statisticsCollector;
+
+  // Act
+  tooling::JlmOptCommand::PrintRvsdgModule(
+      rvsdgModule,
+      outputFile,
+      tooling::JlmOptCommandLineOptions::OutputFormat::Tree,
+      statisticsCollector);
+
+  // Assert
+  std::stringstream buffer;
+  std::ifstream istream(outputFile.to_str());
+  buffer << istream.rdbuf();
+
+  assert(buffer.str() == "RootRegion\n");
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand-PrintRvsdgTreeToFile", PrintRvsdgTreeToFile)

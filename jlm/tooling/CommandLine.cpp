@@ -308,6 +308,7 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
     { OutputFormat::Ascii, "ascii" },
     { OutputFormat::Llvm, "llvm" },
     { OutputFormat::Mlir, "mlir" },
+    { OutputFormat::Tree, "tree" },
     { OutputFormat::Xml, "xml" }
   };
 
@@ -843,6 +844,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 #ifdef ENABLE_MLIR
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Mlir, "Output MLIR"),
 #endif
+          CreateOutputFormatOption(
+              JlmOptCommandLineOptions::OutputFormat::Tree,
+              "Output Rvsdg Tree"),
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
