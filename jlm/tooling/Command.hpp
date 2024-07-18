@@ -369,6 +369,13 @@ public:
     return CommandLineOptions_;
   }
 
+  static void
+  PrintRvsdgModule(
+      llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+      util::StatisticsCollector & statisticsCollector);
+
 private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseInputFile(
@@ -383,13 +390,6 @@ private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseMlirIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
-
-  static void
-  PrintRvsdgModule(
-      llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
-      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
-      util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsAscii(
@@ -411,6 +411,12 @@ private:
 
   static void
   PrintAsMlir(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsRvsdgTree(
       const llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
