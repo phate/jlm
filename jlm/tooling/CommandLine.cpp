@@ -846,7 +846,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 #endif
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Tree,
-              "Output Rvsdg Region Tree"),
+              "Output Rvsdg Tree"),
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
