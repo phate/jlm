@@ -7,6 +7,46 @@
 
 #include <jlm/tooling/CommandLine.hpp>
 
+#include <cstring>
+
+// FIXME: We have a similar function in TestJlcCommandLineParser.cpp. We need to clean up.
+static const jlm::tooling::JlmOptCommandLineOptions &
+ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
+{
+  auto cleanUp = [](const std::vector<char *> & array)
+  {
+    for (const auto & ptr : array)
+    {
+      delete[] ptr;
+    }
+  };
+
+  std::vector<char *> array;
+  for (const auto & commandLineArgument : commandLineArguments)
+  {
+    array.push_back(new char[commandLineArgument.size() + 1]);
+    strncpy(array.back(), commandLineArgument.data(), commandLineArgument.size());
+    array.back()[commandLineArgument.size()] = '\0';
+  }
+
+  static jlm::tooling::JlmOptCommandLineParser commandLineParser;
+  const jlm::tooling::JlmOptCommandLineOptions * commandLineOptions;
+  try
+  {
+    commandLineOptions =
+        &commandLineParser.ParseCommandLineArguments(static_cast<int>(array.size()), &array[0]);
+  }
+  catch (...)
+  {
+    cleanUp(array);
+    throw;
+  }
+
+  cleanUp(array);
+
+  return *commandLineOptions;
+}
+
 static void
 TestOptimizationCommandLineArgumentConversion()
 {
@@ -97,3 +137,41 @@ Test()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommandLineParser", Test)
+
+static int
+OutputFormatParsing()
+{
+  using namespace jlm::tooling;
+
+  auto testOutputFormatParsing =
+      [](const char * outputFormatString,
+         jlm::tooling::JlmOptCommandLineOptions::OutputFormat outputFormat)
+  {
+    // Arrange
+    std::vector<std::string> commandLineArguments(
+        { "jlm-opt", "--output-format", outputFormatString, "foo.c" });
+
+    // Act
+    auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
+
+    // Assert
+    assert(commandLineOptions.GetOutputFormat() == outputFormat);
+  };
+
+  auto start = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::FirstEnumValue) + 1;
+  auto end = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::LastEnumValue);
+
+  for (size_t n = start; n != end; n++)
+  {
+    auto outputFormat = static_cast<JlmOptCommandLineOptions::OutputFormat>(n);
+    auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
+
+    testOutputFormatParsing(outputFormatString, outputFormat);
+  }
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/tooling/TestJlmOptCommandLineParser-OutputFormatParsing",
+    OutputFormatParsing)
