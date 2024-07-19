@@ -213,9 +213,9 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto argument = is_gamma_argument(&output))
+  if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(&output))
   {
-    MarkOutput(*argument->input()->origin());
+    MarkOutput(*gammaArgument->input()->origin());
     return;
   }
 
