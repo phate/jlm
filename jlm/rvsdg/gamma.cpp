@@ -375,6 +375,8 @@ gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & sma
   return gamma;
 }
 
+GammaArgument::~GammaArgument() noexcept = default;
+
 }
 
 jlm::rvsdg::node_normal_form *
