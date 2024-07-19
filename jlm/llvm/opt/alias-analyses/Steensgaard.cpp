@@ -225,7 +225,7 @@ public:
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
-    if (is_gamma_argument(Output_))
+    if (is<rvsdg::GammaArgument>(Output_))
     {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
