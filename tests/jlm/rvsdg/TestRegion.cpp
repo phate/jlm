@@ -294,3 +294,54 @@ Test()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion", Test)
+
+static int
+TestToTree_EmptyRvsdg()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  graph rvsdg;
+
+  // Act
+  auto tree = region::ToTree(*rvsdg.root());
+  std::cout << tree << std::flush;
+
+  // Assert
+  assert(tree == "RootRegion\n");
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion-TestToTree_EmptyRvsdg", TestToTree_EmptyRvsdg)
+
+static int
+TestToTree_RvsdgWithStructuralNodes()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  graph rvsdg;
+  auto structuralNode = jlm::tests::structural_node::create(rvsdg.root(), 2);
+  jlm::tests::structural_node::create(structuralNode->subregion(1), 3);
+
+  // Act
+  auto tree = region::ToTree(*rvsdg.root());
+  std::cout << tree << std::flush;
+
+  // Assert
+  auto numLines = std::count(tree.begin(), tree.end(), '\n');
+
+  // We should find '\n' 8 times: 1 root region + 2 structural nodes + 5 subregions
+  assert(numLines == 8);
+
+  // Check that the last line printed looks accordingly
+  auto lastLine = std::string("----Region[2]\n");
+  assert(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine) == 0);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/TestRegion-TestToTree_RvsdgWithStructuralNodes",
+    TestToTree_RvsdgWithStructuralNodes)

@@ -308,6 +308,7 @@ JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
     { OutputFormat::Ascii, "ascii" },
     { OutputFormat::Llvm, "llvm" },
     { OutputFormat::Mlir, "mlir" },
+    { OutputFormat::Tree, "tree" },
     { OutputFormat::Xml, "xml" }
   };
 
@@ -325,7 +326,6 @@ JlmHlsCommandLineOptions::Reset() noexcept
   OutputFormat_ = OutputFormat::Firrtl;
   HlsFunction_ = "";
   ExtractHlsFunction_ = false;
-  UseCirct_ = false;
 }
 
 void
@@ -844,6 +844,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 #ifdef ENABLE_MLIR
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Mlir, "Output MLIR"),
 #endif
+          CreateOutputFormatOption(
+              JlmOptCommandLineOptions::OutputFormat::Tree,
+              "Output Rvsdg Tree"),
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
@@ -995,8 +998,6 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::Prefix,
       cl::desc("Extracts function specified by hls-function"));
 
-  cl::opt<bool> useCirct("circt", cl::Prefix, cl::desc("Use CIRCT to generate FIRRTL"));
-
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
       cl::values(
           ::clEnumValN(
@@ -1019,7 +1020,6 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   CommandLineOptions_.HlsFunction_ = std::move(hlsFunction);
   CommandLineOptions_.OutputFiles_ = outputFolder;
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
-  CommandLineOptions_.UseCirct_ = useCirct;
   CommandLineOptions_.OutputFormat_ = format;
 
   return CommandLineOptions_;
@@ -1159,7 +1159,7 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   cl::opt<bool> generateFirrtl("firrtl", cl::ValueDisallowed, cl::desc("Generate firrtl"));
 
-  cl::opt<bool> useCirct("circt", cl::Prefix, cl::desc("Use CIRCT to generate FIRRTL"));
+  cl::opt<bool> useCirct("circt", cl::Prefix, cl::desc("DEPRACATED - CIRCT is always used to generate FIRRTL"));
 
   cl::ParseCommandLineOptions(argc, argv);
 
@@ -1243,7 +1243,6 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   CommandLineOptions_.UsePthreads_ = usePthreads;
   CommandLineOptions_.Md_ = mD;
   CommandLineOptions_.GenerateFirrtl_ = generateFirrtl;
-  CommandLineOptions_.UseCirct_ = useCirct;
 
   for (auto & inputFile : inputFiles)
   {

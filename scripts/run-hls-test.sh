@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=806876decd60a91cc6ec4773b6edeca20156f528
+GIT_COMMIT=effbe0bff96b396fb41e7c95bb74c7c772567136
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -13,9 +13,6 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 # Set default path for where the benchmark will be cloned and make target for running it
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
 BENCHMARK_RUN_TARGET=run
-
-# We assume that the firtool is in the PATH
-FIRTOOL=firtool
 
 # Execute benchmarks in parallel by default
 PARALLEL_THREADS=`nproc`
@@ -31,8 +28,6 @@ function usage()
 	echo ""
 	echo "  --benchmark-path PATH The path where to place the HLS test suite."
 	echo "                        Default=[${BENCHMARK_DIR}]"
-	echo "  --firtool COMMAND     The command for running firtool, which can include a path."
-	echo "                        Default=[${FIRTOOL}]"
 	echo "  --parallel #THREADS   The number of threads to run in parallel."
 	echo "                        Default=[${PARALLEL_THREADS}]"
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
@@ -44,11 +39,6 @@ while [[ "$#" -ge 1 ]] ; do
 		--benchmark-path)
 			shift
 			BENCHMARK_DIR=$(readlink -m "$1")
-			shift
-			;;
-		--firtool)
-			shift
-			FIRTOOL=$(readlink -m "$1")
 			shift
 			;;
 		--parallel)
@@ -67,15 +57,6 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-# Check if firtool exists
-if ! command -v ${FIRTOOL} &> /dev/null
-then
-	echo "${FIRTOOL} is not found."
-	echo "Make sure to use '--firtool COMMAND' to specify which firtool to use."
-	echo "You can use './scripts/build-circt.sh' to build it, if needed."
-	exit 1
-fi
-
 # Check if verilator exists
 if ! command -v verilator &> /dev/null
 then
@@ -93,5 +74,5 @@ export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
 git checkout ${GIT_COMMIT}
 make clean
-echo "make -j ${PARALLEL_THREADS} -O FIRTOOL=${FIRTOOL} ${BENCHMARK_RUN_TARGET}"
-make -j ${PARALLEL_THREADS} -O FIRTOOL=${FIRTOOL} ${BENCHMARK_RUN_TARGET}
+echo "make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}"
+make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}

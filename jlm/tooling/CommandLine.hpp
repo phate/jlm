@@ -54,6 +54,7 @@ public:
     Ascii,
     Llvm,
     Mlir,
+    Tree,
     Xml,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -385,8 +386,7 @@ public:
       : InputFile_(""),
         OutputFiles_(""),
         OutputFormat_(OutputFormat::Firrtl),
-        ExtractHlsFunction_(false),
-        UseCirct_(false)
+        ExtractHlsFunction_(false)
   {}
 
   void
@@ -397,7 +397,6 @@ public:
   OutputFormat OutputFormat_;
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
-  bool UseCirct_;
 };
 
 /**
@@ -438,7 +437,6 @@ public:
         Suppress_(false),
         UsePthreads_(false),
         GenerateFirrtl_(false),
-        UseCirct_(false),
         Hls_(false),
         Md_(false),
         OptimizationLevel_(OptimizationLevel::O0),
@@ -456,7 +454,6 @@ public:
   bool Suppress_;
   bool UsePthreads_;
   bool GenerateFirrtl_;
-  bool UseCirct_;
   bool Hls_;
 
   bool Md_;

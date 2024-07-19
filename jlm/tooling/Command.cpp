@@ -471,6 +471,28 @@ JlmOptCommand::PrintAsMlir(
 }
 
 void
+JlmOptCommand::PrintAsRvsdgTree(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector &)
+{
+  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto tree = rvsdg::region::ToTree(rootRegion);
+
+  if (outputFile == "")
+  {
+    std::cout << tree << std::flush;
+  }
+  else
+  {
+    std::ofstream fs;
+    fs.open(outputFile.to_str());
+    fs << tree;
+    fs.close();
+  }
+}
+
+void
 JlmOptCommand::PrintRvsdgModule(
     llvm::RvsdgModule & rvsdgModule,
     const util::filepath & outputFile,
@@ -492,6 +514,10 @@ JlmOptCommand::PrintRvsdgModule(
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Mlir)
   {
     PrintAsMlir(rvsdgModule, outputFile, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Tree)
+  {
+    PrintAsRvsdgTree(rvsdgModule, outputFile, statisticsCollector);
   }
   else
   {
@@ -603,7 +629,6 @@ JlmHlsCommand::ToString() const
       "-o ",
       OutputFolder_.to_str(),
       " ",
-      UseCirct_ ? "--circt " : "",
       InputFile_.to_str());
 }
 
