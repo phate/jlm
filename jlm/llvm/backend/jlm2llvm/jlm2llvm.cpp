@@ -275,8 +275,7 @@ static ::llvm::Attribute
 ConvertEnumAttribute(const llvm::enum_attribute & attribute, context & ctx)
 {
   auto & llvmContext = ctx.llvm_module().getContext();
-  auto ea = dynamic_cast<const enum_attribute *>(&attribute);
-  auto kind = convert_attribute_kind(ea->kind());
+  auto kind = convert_attribute_kind(attribute.kind());
   return ::llvm::Attribute::get(llvmContext, kind);
 }
 
