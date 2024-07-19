@@ -476,17 +476,14 @@ public:
   ~GammaArgument() noexcept override;
 
 private:
-  GammaArgument(
-      rvsdg::region & region,
-      structural_input & input,
-      std::shared_ptr<const rvsdg::type> type)
-      : argument(&region, &input, std::move(type))
+  GammaArgument(rvsdg::region & region, gamma_input & input)
+      : argument(&region, &input, input.Type())
   {}
 
   static GammaArgument &
-  Create(rvsdg::region & region, structural_input & input, std::shared_ptr<const rvsdg::type> type)
+  Create(rvsdg::region & region, gamma_input & input)
   {
-    auto gammaArgument = new GammaArgument(region, input, std::move(type));
+    auto gammaArgument = new GammaArgument(region, input);
     region.append_argument(gammaArgument);
     return *gammaArgument;
   }
@@ -513,14 +510,16 @@ gamma_node::exitvar(size_t index) const noexcept
 inline jlm::rvsdg::gamma_input *
 gamma_node::add_entryvar(jlm::rvsdg::output * origin)
 {
-  node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
+  auto input =
+      node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
+  auto gammaInput = static_cast<jlm::rvsdg::gamma_input *>(input);
 
   for (size_t n = 0; n < nsubregions(); n++)
   {
-    GammaArgument::Create(*subregion(n), *input(ninputs() - 1), origin->Type());
+    GammaArgument::Create(*subregion(n), *gammaInput);
   }
 
-  return static_cast<jlm::rvsdg::gamma_input *>(input(ninputs() - 1));
+  return gammaInput;
 }
 
 inline jlm::rvsdg::gamma_output *
