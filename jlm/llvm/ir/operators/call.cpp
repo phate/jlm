@@ -190,9 +190,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto argument = is_gamma_argument(origin))
+    if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(origin))
     {
-      origin = argument->input()->origin();
+      origin = gammaArgument->input()->origin();
       continue;
     }
 

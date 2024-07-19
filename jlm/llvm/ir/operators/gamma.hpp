@@ -14,21 +14,6 @@ namespace jlm::llvm
 /*
   FIXME: This should be defined in librvsdg.
 */
-static inline const rvsdg::argument *
-is_gamma_argument(const rvsdg::output * output)
-{
-  using namespace rvsdg;
-
-  auto a = dynamic_cast<const rvsdg::argument *>(output);
-  if (a && is<gamma_op>(a->region()->node()))
-    return a;
-
-  return nullptr;
-}
-
-/*
-  FIXME: This should be defined in librvsdg.
-*/
 static inline const rvsdg::result *
 is_gamma_result(const rvsdg::input * input)
 {

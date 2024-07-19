@@ -235,7 +235,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return true;
   }
 
-  if (is_gamma_argument(o1) && is_gamma_argument(o2))
+  if (is<rvsdg::GammaArgument>(o1) && is<rvsdg::GammaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
     auto a1 = static_cast<jlm::rvsdg::argument *>(o1);
