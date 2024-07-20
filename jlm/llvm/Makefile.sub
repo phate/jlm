@@ -111,7 +111,6 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/MemoryStateOperations.hpp \
-	jlm/llvm/ir/operators/gamma.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/theta.hpp \
 	jlm/llvm/ir/operators/delta.hpp \

@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 

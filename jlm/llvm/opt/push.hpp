@@ -8,14 +8,14 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 
-namespace jlm::llvm
-{
-
-namespace rvsdg
+namespace jlm::rvsdg
 {
 class gamma_node;
 class theta_node;
 }
+
+namespace jlm::llvm
+{
 
 class RvsdgModule;
 
