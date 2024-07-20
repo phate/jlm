@@ -10,6 +10,7 @@
 
 namespace jlm::rvsdg
 {
+class gamma_node;
 class theta_node;
 }
 

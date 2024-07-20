@@ -9,6 +9,11 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/util/disjointset.hpp>
 
+namespace jlm::rvsdg
+{
+class gamma_node;
+}
+
 namespace jlm::llvm::aa
 {
 
