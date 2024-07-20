@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 
 #include <deque>
 
@@ -313,9 +314,9 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto result = is_gamma_result(input))
+    if (auto gammaResult = dynamic_cast<const rvsdg::GammaResult *>(input))
     {
-      auto output = result->output();
+      auto output = gammaResult->output();
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }

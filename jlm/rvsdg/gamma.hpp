@@ -489,6 +489,30 @@ private:
   }
 };
 
+/**
+ * Represents a region result in a gamma subregion.
+ */
+class GammaResult final : public result
+{
+  friend gamma_node;
+
+public:
+  ~GammaResult() noexcept override;
+
+private:
+  GammaResult(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
+      : result(&region, &origin, &gammaOutput, origin.Type())
+  {}
+
+  static GammaResult &
+  Create(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
+  {
+    auto gammaResult = new GammaResult(region, origin, gammaOutput);
+    origin.region()->append_result(gammaResult);
+    return *gammaResult;
+  }
+};
+
 inline jlm::rvsdg::gamma_input *
 gamma_node::predicate() const noexcept
 {
@@ -533,7 +557,9 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
 
   auto output = exitvar(nexitvars() - 1);
   for (size_t n = 0; n < nsubregions(); n++)
-    result::create(subregion(n), values[n], output, type);
+  {
+    GammaResult::Create(*subregion(n), *values[n], *output);
+  }
 
   return output;
 }
