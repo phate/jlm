@@ -15,7 +15,7 @@ using namespace jlm::static_hls;
 void
 rvsdg2rhls(llvm::RvsdgModule & rvsdgModule)
 {
-    ConvertThetaNodes(rvsdgModule);
+  ConvertThetaNodes(rvsdgModule);
 }
 
 } // namespace jlm::static_hls

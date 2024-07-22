@@ -1,12 +1,12 @@
 /*
-* Copyright 2024 Louis Maurin <louis7maurin@gmail.com>
-* See COPYING for terms of redistribution.
-*/
+ * Copyright 2024 Louis Maurin <louis7maurin@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
 #include "test-registry.hpp"
 
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 #include <jlm/rvsdg/view.hpp>
@@ -15,7 +15,8 @@
 #include <jlm/hls/ir/static/loop.hpp>
 
 std::unique_ptr<jlm::llvm::RvsdgModule>
-CreateTestModule() {
+CreateTestModule()
+{
   using namespace jlm::llvm;
 
   auto module = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
@@ -27,9 +28,9 @@ CreateTestModule() {
   MemoryStateType mt;
   auto pointerType = PointerType::Create();
   auto fcttype = FunctionType::Create(
-        { jlm::rvsdg::bittype::Create(32) },
-        // { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) },
-        { jlm::rvsdg::bittype::Create(32) });
+      { jlm::rvsdg::bittype::Create(32) },
+      // { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) },
+      { jlm::rvsdg::bittype::Create(32) });
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
 
   auto thetanode = jlm::rvsdg::theta_node::create(fct->subregion());
@@ -62,63 +63,61 @@ CreateTestModule() {
 }
 
 static int
-TestTheta() {
-    auto rvsdgModule = CreateTestModule();
-    
-    std::cout << "**********  Original graph  **********" << std::endl;
-    jlm::rvsdg::view(*rvsdgModule->Rvsdg().root()->graph(), stdout);
+TestTheta()
+{
+  auto rvsdgModule = CreateTestModule();
 
+  std::cout << "**********  Original graph  **********" << std::endl;
+  jlm::rvsdg::view(*rvsdgModule->Rvsdg().root()->graph(), stdout);
 
-    std::cout << "**********  Running static rvsdg2rhls  **********" << std::endl;
-    jlm::static_hls::rvsdg2rhls(*rvsdgModule);
+  std::cout << "**********  Running static rvsdg2rhls  **********" << std::endl;
+  jlm::static_hls::rvsdg2rhls(*rvsdgModule);
 
-    std::cout << "**********  Converted graph  **********" << std::endl;
-    jlm::rvsdg::view(*rvsdgModule->Rvsdg().root()->graph(), stdout);
+  std::cout << "**********  Converted graph  **********" << std::endl;
+  jlm::rvsdg::view(*rvsdgModule->Rvsdg().root()->graph(), stdout);
 
+  auto lambda = &*rvsdgModule->Rvsdg().root()->begin();
+  auto lambda_node = jlm::util::AssertedCast<jlm::llvm::lambda::node>(lambda);
 
+  auto loop = &*lambda_node->subregion()->begin();
+  auto loop_node = jlm::util::AssertedCast<jlm::static_hls::loop_node>(loop);
 
-    auto lambda = &*rvsdgModule->Rvsdg().root()->begin();
-    auto lambda_node = jlm::util::AssertedCast<jlm::llvm::lambda::node>(lambda);
+  auto orig_module = CreateTestModule();
 
-    auto loop = &*lambda_node->subregion()->begin();
-    auto loop_node = jlm::util::AssertedCast<jlm::static_hls::loop_node>(loop);
+  auto orig_lambda = &*orig_module->Rvsdg().root()->begin();
+  auto orig_lambda_node = static_cast<jlm::llvm::lambda::node *>(orig_lambda);
 
-    auto orig_module = CreateTestModule();
+  auto orig_theta = &*orig_lambda_node->subregion()->begin();
+  auto orig_theta_node = static_cast<jlm::rvsdg::theta_node *>(orig_theta);
 
-    auto orig_lambda = &*orig_module->Rvsdg().root()->begin();
-    auto orig_lambda_node = static_cast<jlm::llvm::lambda::node*>(orig_lambda);
+  for (auto & node : jlm::rvsdg::topdown_traverser(orig_theta_node->subregion()))
+  {
+    auto imp_node = loop_node->is_op_implemented(node->operation());
+    JLM_ASSERT(imp_node);
 
-    auto orig_theta = &*orig_lambda_node->subregion()->begin();
-    auto orig_theta_node = static_cast<jlm::rvsdg::theta_node*>(orig_theta);
-
-
-
-    for (auto& node : jlm::rvsdg::topdown_traverser(orig_theta_node->subregion()))
+    for (size_t i = 0; i < imp_node->ninputs(); i++)
     {
-      auto imp_node = loop_node->is_op_implemented(node->operation());
-      JLM_ASSERT(imp_node);
+      if (!dynamic_cast<const jlm::rvsdg::node_output *>(imp_node->input(i)->origin()))
+        continue;
 
-      for (size_t i=0; i<imp_node->ninputs(); i++)
+      bool origin_found_in_users = false;
+      for (auto user : loop_node->get_users(imp_node->input(i)))
       {
-        if (!dynamic_cast<const jlm::rvsdg::node_output*>(imp_node->input(i)->origin())) continue;
-
-        bool origin_found_in_users = false;
-        for (auto user : loop_node->get_users(imp_node->input(i)))
+        auto reg_smap = loop_node->get_reg_smap();
+        auto output_origin = reg_smap->lookup(imp_node->input(i)->origin());
+        if (!output_origin)
         {
-          auto reg_smap = loop_node->get_reg_smap();
-          auto output_origin = reg_smap->lookup(imp_node->input(i)->origin());
-          if (!output_origin) 
-          {
-            std::cout << "output_origin not in reg_smap for " << imp_node->operation().debug_string() << "input " << i << std::endl;
-          }
-          if (output_origin == user) origin_found_in_users = true;
+          std::cout << "output_origin not in reg_smap for " << imp_node->operation().debug_string()
+                    << "input " << i << std::endl;
         }
-        JLM_ASSERT(origin_found_in_users);
+        if (output_origin == user)
+          origin_found_in_users = true;
       }
-      
+      JLM_ASSERT(origin_found_in_users);
     }
+  }
 
-    return 0;
+  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/static/TestTheta", TestTheta)

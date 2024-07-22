@@ -4,8 +4,8 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/static/ThetaConversion.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 #include <jlm/hls/ir/static/loop.hpp>
 
@@ -27,7 +27,6 @@ addSimpleNodes(jlm::rvsdg::region & region, jlm::static_hls::loop_node & loop)
       JLM_UNREACHABLE("Static HLS only support simple nodes in theta node at this point");
     }
   }
-
 }
 
 static void
@@ -37,7 +36,6 @@ ConvertThetaNode(jlm::rvsdg::theta_node & theta)
 
   auto loop = static_hls::loop_node::create(theta.region());
 
-  
   // add loopvars and populate the smap
   for (size_t i = 0; i < theta.ninputs(); i++)
   {
@@ -54,11 +52,10 @@ ConvertThetaNode(jlm::rvsdg::theta_node & theta)
     loop->add_loopback_arg(theta.input(i));
   }
 
-
   loop->print_nodes_registers();
 
   std::cout << "**** Printing operations users ****" << std::endl;
-  for (auto& node : loop->compute_subregion()->nodes)
+  for (auto & node : loop->compute_subregion()->nodes)
   {
     for (size_t i = 0; i < node.ninputs(); i++)
     {
@@ -66,12 +63,13 @@ ConvertThetaNode(jlm::rvsdg::theta_node & theta)
       std::cout << " input " << i;
       std::cout << " users: ";
       auto users = loop->get_users(node.input(i));
-      for (auto& user : users)
+      for (auto & user : users)
       {
-        if (auto node_out = dynamic_cast<jlm::rvsdg::node_output*>(user))
+        if (auto node_out = dynamic_cast<jlm::rvsdg::node_output *>(user))
         {
           std::cout << node_out->node()->operation().debug_string() << ", ";
-        } else if (auto arg = dynamic_cast<jlm::rvsdg::argument*>(user))
+        }
+        else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(user))
         {
           std::cout << "control arg " << arg->index() << ", ";
         }
