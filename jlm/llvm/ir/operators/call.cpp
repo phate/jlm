@@ -197,9 +197,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto output = is_theta_output(origin))
+    if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(origin))
     {
-      if (auto input = invariantInput(*output))
+      if (auto input = invariantInput(*thetaOutput))
       {
         origin = input->origin();
         continue;
