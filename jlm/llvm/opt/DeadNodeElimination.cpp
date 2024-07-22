@@ -220,7 +220,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto thetaOutput = is_theta_output(&output))
+  if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
   {
     MarkOutput(*thetaOutput->node()->predicate()->origin());
     MarkOutput(*thetaOutput->result()->origin());

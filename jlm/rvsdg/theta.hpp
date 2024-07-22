@@ -356,12 +356,6 @@ private:
 };
 
 static inline bool
-is_theta_output(const jlm::rvsdg::theta_output * output) noexcept
-{
-  return dynamic_cast<const jlm::rvsdg::theta_output *>(output) != nullptr;
-}
-
-static inline bool
 is_invariant(const jlm::rvsdg::theta_output * output) noexcept
 {
   return output->result()->origin() == output->argument();

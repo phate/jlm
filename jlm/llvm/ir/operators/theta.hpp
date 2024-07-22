@@ -38,15 +38,6 @@ is_theta_result(const jlm::rvsdg::input * input)
   return nullptr;
 }
 
-/*
-  FIXME: This function exists in librvsdg, but is currently (2020-05-21) broken.
-*/
-static inline const jlm::rvsdg::theta_output *
-is_theta_output(const jlm::rvsdg::output * output)
-{
-  return dynamic_cast<const jlm::rvsdg::theta_output *>(output);
-}
-
 }
 
 #endif
