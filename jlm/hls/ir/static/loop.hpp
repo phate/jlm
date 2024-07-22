@@ -65,8 +65,6 @@ private:
   {}
 
 public:
-  //FIXME add a method that removes muxes with only one input
-
   /*! \brief Debug function that prints the registers for each node output of the control region.
   */
   void print_nodes_registers() const;
@@ -75,14 +73,19 @@ public:
   void
   print_fsm() const;
 
-  /*! \brief Gets the connected control region result from a node input in the compute region.
+  inline const jlm::rvsdg::substitution_map* get_reg_smap() const
+  {
+    return &reg_smap_;
+  }
+
+  /*! \brief Get the connected control region result from a node input in the compute region.
   * \param input The node input in the compute region.
   * \return The connected control region result.
   */
   jlm::rvsdg::result *
   get_origin_result(jlm::rvsdg::node_input * input) const;
 
-  /*! \brief Gets list a register nodes connected to a node input in the compute region.
+  /*! \brief Get a list of registers nodes connected to a node input in the compute region.
   * Also prints is the input is a loop input
   * \param node The node input in the compute region.
   * \return The list of register nodes connected to the node input.
