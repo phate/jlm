@@ -180,7 +180,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (o1->type() != o2->type())
     return false;
 
-  if (is_theta_argument(o1) && is_theta_argument(o2))
+  if (is<rvsdg::ThetaArgument>(o1) && is<rvsdg::ThetaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
     auto a1 = static_cast<jlm::rvsdg::argument *>(o1);

@@ -99,7 +99,7 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
   if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
     return invariantInput(*thetaOutput, invariantOutputs);
 
-  if (auto thetaArgument = is_theta_argument(&output))
+  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
   {
     auto thetaInput = static_cast<const rvsdg::theta_input *>(thetaArgument->input());
     return invariantInput(*thetaInput->output(), invariantOutputs);
@@ -208,9 +208,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto argument = is_theta_argument(origin))
+    if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(origin))
     {
-      if (auto input = invariantInput(*argument))
+      if (auto input = invariantInput(*thetaArgument))
       {
         origin = input->origin();
         continue;

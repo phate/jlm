@@ -228,7 +228,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto thetaArgument = is_theta_argument(&output))
+  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
   {
     auto thetaInput = util::AssertedCast<const jlm::rvsdg::theta_input>(thetaArgument->input());
     MarkOutput(*thetaInput->output());

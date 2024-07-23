@@ -232,7 +232,7 @@ public:
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is_theta_argument(Output_))
+    if (is<rvsdg::ThetaArgument>(Output_))
     {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
