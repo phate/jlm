@@ -368,7 +368,9 @@ public:
 private:
   ThetaArgument(rvsdg::region & region, theta_input & input)
       : argument(&region, &input, input.Type())
-  {}
+  {
+    JLM_ASSERT(is<theta_op>(region.node()));
+  }
 
   static ThetaArgument &
   Create(rvsdg::region & region, theta_input & input)
