@@ -355,6 +355,32 @@ private:
   jlm::rvsdg::theta_input * input_;
 };
 
+/**
+ * Represents a region argument in a theta subregion.
+ */
+class ThetaArgument final : public argument
+{
+  friend theta_node;
+
+public:
+  ~ThetaArgument() noexcept override;
+
+private:
+  ThetaArgument(rvsdg::region & region, theta_input & input)
+      : argument(&region, &input, input.Type())
+  {
+    JLM_ASSERT(is<theta_op>(region.node()));
+  }
+
+  static ThetaArgument &
+  Create(rvsdg::region & region, theta_input & input)
+  {
+    auto thetaArgument = new ThetaArgument(region, input);
+    region.append_argument(thetaArgument);
+    return *thetaArgument;
+  }
+};
+
 static inline bool
 is_invariant(const jlm::rvsdg::theta_output * output) noexcept
 {
