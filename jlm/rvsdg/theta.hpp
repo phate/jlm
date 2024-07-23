@@ -355,6 +355,9 @@ private:
   jlm::rvsdg::theta_input * input_;
 };
 
+/**
+ * Represents a region argument in a theta subregion.
+ */
 class ThetaArgument final : public argument
 {
   friend theta_node;
