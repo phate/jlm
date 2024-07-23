@@ -14,18 +14,6 @@ namespace jlm::llvm
 /*
   FIXME: This should be defined in librvsdg.
 */
-static inline const jlm::rvsdg::argument *
-is_theta_argument(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  auto a = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  if (a && is<theta_op>(a->region()->node()))
-    return a;
-
-  return nullptr;
-}
-
 static inline const jlm::rvsdg::result *
 is_theta_result(const jlm::rvsdg::input * input)
 {
