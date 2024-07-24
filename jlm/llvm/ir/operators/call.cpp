@@ -168,7 +168,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     if (is<rvsdg::simple_op>(rvsdg::node_output::node(origin)))
       return origin;
 
-    if (is_phi_recvar_argument(origin))
+    if (is<phi::rvargument>(origin))
     {
       return origin;
     }
@@ -219,10 +219,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (is_phi_cv(origin))
+    if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(origin))
     {
-      auto argument = util::AssertedCast<const rvsdg::argument>(origin);
-      origin = argument->input()->origin();
+      origin = phiInputArgument->input()->origin();
       continue;
     }
 
@@ -248,7 +247,7 @@ CallNode::ClassifyCall(const CallNode & callNode)
 
   if (auto argument = dynamic_cast<rvsdg::argument *>(output))
   {
-    if (is_phi_recvar_argument(argument))
+    if (is<phi::rvargument>(argument))
     {
       return CallTypeClassifier::CreateRecursiveDirectCallClassifier(*argument);
     }
