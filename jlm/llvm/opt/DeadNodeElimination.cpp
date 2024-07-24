@@ -250,10 +250,9 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (is_phi_output(&output))
+  if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))
   {
-    auto structuralOutput = util::AssertedCast<const jlm::rvsdg::structural_output>(&output);
-    MarkOutput(*structuralOutput->results.first()->origin());
+    MarkOutput(*phiOutput->result()->origin());
     return;
   }
 
