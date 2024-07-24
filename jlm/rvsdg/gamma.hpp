@@ -378,12 +378,6 @@ public:
   }
 };
 
-static inline bool
-is_gamma_input(const jlm::rvsdg::input * input) noexcept
-{
-  return dynamic_cast<const jlm::rvsdg::gamma_input *>(input) != nullptr;
-}
-
 /* gamma output */
 
 class gamma_output final : public structural_output

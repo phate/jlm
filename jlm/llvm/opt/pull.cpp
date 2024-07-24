@@ -223,7 +223,7 @@ is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::n
   {
     for (const auto & user : *(node->output(n)))
     {
-      JLM_ASSERT(is_gamma_input(user));
+      JLM_ASSERT(is<rvsdg::gamma_input>(*user));
       inputs.insert(static_cast<const jlm::rvsdg::gamma_input *>(user));
     }
   }
