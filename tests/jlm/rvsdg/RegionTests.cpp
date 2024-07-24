@@ -254,7 +254,7 @@ PruneArguments()
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-PruneArguments", PruneArguments)
 
 static int
-TestToTree_EmptyRvsdg()
+ToTree_EmptyRvsdg()
 {
   using namespace jlm::rvsdg;
 
@@ -271,10 +271,10 @@ TestToTree_EmptyRvsdg()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-TestToTree_EmptyRvsdg", TestToTree_EmptyRvsdg)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-ToTree_EmptyRvsdg", ToTree_EmptyRvsdg)
 
 static int
-TestToTree_RvsdgWithStructuralNodes()
+ToTree_RvsdgWithStructuralNodes()
 {
   using namespace jlm::rvsdg;
 
@@ -301,5 +301,5 @@ TestToTree_RvsdgWithStructuralNodes()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/RegionTests-TestToTree_RvsdgWithStructuralNodes",
-    TestToTree_RvsdgWithStructuralNodes)
+    "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodes",
+    ToTree_RvsdgWithStructuralNodes)
