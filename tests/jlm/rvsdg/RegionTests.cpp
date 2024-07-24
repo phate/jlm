@@ -12,8 +12,8 @@
 /**
  * Test check for adding argument to input of wrong structural node.
  */
-static void
-TestArgumentNodeMismatch()
+static int
+ArgumentNodeMismatch()
 {
   using namespace jlm::rvsdg;
 
@@ -38,13 +38,17 @@ TestArgumentNodeMismatch()
   }
 
   assert(inputErrorHandlerCalled);
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-ArgumentNodeMismatch", ArgumentNodeMismatch)
 
 /**
  * Test check for adding result to output of wrong structural node.
  */
-static void
-TestResultNodeMismatch()
+static int
+ResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
 
@@ -72,13 +76,17 @@ TestResultNodeMismatch()
   }
 
   assert(outputErrorHandlerCalled);
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-ResultNodeMismatch", ResultNodeMismatch)
 
 /**
  * Test region::Contains().
  */
-static void
-TestContainsMethod()
+static int
+Contains()
 {
   using namespace jlm::tests;
 
@@ -103,13 +111,17 @@ TestContainsMethod()
   assert(jlm::rvsdg::region::Contains<unary_op>(*graph.root(), true));
   assert(jlm::rvsdg::region::Contains<binary_op>(*graph.root(), true));
   assert(!jlm::rvsdg::region::Contains<test_op>(*graph.root(), true));
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
 
 /**
  * Test region::IsRootRegion().
  */
-static void
-TestIsRootRegion()
+static int
+IsRootRegion()
 {
   jlm::rvsdg::graph graph;
 
@@ -117,13 +129,17 @@ TestIsRootRegion()
 
   assert(graph.root()->IsRootRegion());
   assert(!structuralNode->subregion(0)->IsRootRegion());
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-IsRootRegion", IsRootRegion)
 
 /**
  * Test region::NumRegions()
  */
-static void
-TestNumRegions()
+static int
+NumRegions()
 {
   using namespace jlm::rvsdg;
 
@@ -141,13 +157,17 @@ TestNumRegions()
 
     assert(region::NumRegions(*graph.root()) == 1 + 4 + 2 + 5);
   }
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions", NumRegions)
 
 /**
  * Test region::RemoveResultsWhere()
  */
-static void
-TestRemoveResultsWhere()
+static int
+RemoveResultsWhere()
 {
   // Arrange
   jlm::rvsdg::graph rvsdg;
@@ -193,13 +213,17 @@ TestRemoveResultsWhere()
         return true;
       });
   assert(region.nresults() == 0);
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResultsWhere", RemoveResultsWhere)
 
 /**
  * Test region::RemoveArgumentsWhere()
  */
-static void
-TestRemoveArgumentsWhere()
+static int
+RemoveArgumentsWhere()
 {
   // Arrange
   jlm::rvsdg::graph rvsdg;
@@ -241,13 +265,17 @@ TestRemoveArgumentsWhere()
         return argument.index() == 0;
       });
   assert(region.narguments() == 0);
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArgumentsWhere", RemoveArgumentsWhere)
 
 /**
  * Test region::PruneArguments()
  */
-static void
-TestPruneArguments()
+static int
+PruneArguments()
 {
   // Arrange
   jlm::rvsdg::graph rvsdg;
@@ -275,25 +303,11 @@ TestPruneArguments()
   region.remove_node(node);
   region.PruneArguments();
   assert(region.narguments() == 0);
-}
-
-static int
-Test()
-{
-  TestArgumentNodeMismatch();
-  TestResultNodeMismatch();
-
-  TestContainsMethod();
-  TestIsRootRegion();
-  TestNumRegions();
-  TestRemoveResultsWhere();
-  TestRemoveArgumentsWhere();
-  TestPruneArguments();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests", Test)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-PruneArguments", PruneArguments)
 
 static int
 TestToTree_EmptyRvsdg()
