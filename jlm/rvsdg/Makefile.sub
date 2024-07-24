@@ -69,6 +69,9 @@ librvsdg_HEADERS = \
 
 librvsdg_TESTS = \
 	tests/jlm/rvsdg/bitstring/bitstring \
+	tests/jlm/rvsdg/ArgumentTests \
+	tests/jlm/rvsdg/RegionTests \
+	tests/jlm/rvsdg/ResultTests \
 	tests/jlm/rvsdg/test-binary \
 	tests/jlm/rvsdg/test-bottomup \
 	tests/jlm/rvsdg/test-cse \
@@ -79,7 +82,6 @@ librvsdg_TESTS = \
 	tests/jlm/rvsdg/test-theta \
 	tests/jlm/rvsdg/test-topdown \
 	tests/jlm/rvsdg/test-typemismatch \
-	tests/jlm/rvsdg/TestRegion \
 	tests/jlm/rvsdg/TestStructuralNode \
 
 librvsdg_TEST_LIBS = \
