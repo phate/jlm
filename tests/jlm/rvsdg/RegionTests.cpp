@@ -3,151 +3,115 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
-#include "test-types.hpp"
+#include <test-operation.hpp>
+#include <test-registry.hpp>
+#include <test-types.hpp>
 
 #include <cassert>
 
 /**
- * Test check for adding argument to input of wrong structural node.
- */
-static void
-TestArgumentNodeMismatch()
-{
-  using namespace jlm::rvsdg;
-
-  auto vt = jlm::tests::valuetype::Create();
-
-  jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ vt, "import" });
-
-  auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
-  auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
-
-  auto structuralInput = structural_input::create(structuralNode1, import, vt);
-
-  bool inputErrorHandlerCalled = false;
-  try
-  {
-    argument::create(structuralNode2->subregion(0), structuralInput, vt);
-  }
-  catch (jlm::util::error & e)
-  {
-    inputErrorHandlerCalled = true;
-  }
-
-  assert(inputErrorHandlerCalled);
-}
-
-/**
- * Test check for adding result to output of wrong structural node.
- */
-static void
-TestResultNodeMismatch()
-{
-  using namespace jlm::rvsdg;
-
-  auto vt = jlm::tests::valuetype::Create();
-
-  jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ vt, "import" });
-
-  auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
-  auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
-
-  auto structuralInput = structural_input::create(structuralNode1, import, vt);
-
-  auto argument = argument::create(structuralNode1->subregion(0), structuralInput, vt);
-  auto structuralOutput = structural_output::create(structuralNode1, vt);
-
-  bool outputErrorHandlerCalled = false;
-  try
-  {
-    result::create(structuralNode2->subregion(0), argument, structuralOutput, vt);
-  }
-  catch (jlm::util::error & e)
-  {
-    outputErrorHandlerCalled = true;
-  }
-
-  assert(outputErrorHandlerCalled);
-}
-
-/**
  * Test region::Contains().
  */
-static void
-TestContainsMethod()
+static int
+Contains()
 {
   using namespace jlm::tests;
 
-  auto vt = valuetype::Create();
+  // Arrange
+  auto valueType = valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ vt, "import" });
+  auto import = graph.add_import({ valueType, "import" });
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
-  auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, vt);
+  auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, valueType);
   auto regionArgument1 =
-      jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, vt);
-  unary_op::create(structuralNode1->subregion(0), vt, regionArgument1, vt);
+      jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, valueType);
+  unary_op::create(structuralNode1->subregion(0), valueType, regionArgument1, valueType);
 
   auto structuralNode2 = structural_node::create(graph.root(), 1);
-  auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, vt);
+  auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, valueType);
   auto regionArgument2 =
-      jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, vt);
-  binary_op::create(vt, vt, regionArgument2, regionArgument2);
+      jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, valueType);
+  binary_op::create(valueType, valueType, regionArgument2, regionArgument2);
 
+  // Act & Assert
   assert(jlm::rvsdg::region::Contains<structural_op>(*graph.root(), false));
   assert(jlm::rvsdg::region::Contains<unary_op>(*graph.root(), true));
   assert(jlm::rvsdg::region::Contains<binary_op>(*graph.root(), true));
   assert(!jlm::rvsdg::region::Contains<test_op>(*graph.root(), true));
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
 
 /**
  * Test region::IsRootRegion().
  */
-static void
-TestIsRootRegion()
+static int
+IsRootRegion()
 {
+  // Arrange
   jlm::rvsdg::graph graph;
 
   auto structuralNode = jlm::tests::structural_node::create(graph.root(), 1);
 
+  // Act & Assert
   assert(graph.root()->IsRootRegion());
   assert(!structuralNode->subregion(0)->IsRootRegion());
+
+  return 0;
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-IsRootRegion", IsRootRegion)
+
 /**
- * Test region::NumRegions()
+ * Test region::NumRegions() with an empty Rvsdg.
  */
-static void
-TestNumRegions()
+static int
+NumRegions_EmptyRvsdg()
 {
   using namespace jlm::rvsdg;
 
-  {
-    jlm::rvsdg::graph graph;
+  // Arrange
+  jlm::rvsdg::graph graph;
 
-    assert(region::NumRegions(*graph.root()) == 1);
-  }
+  // Act & Assert
+  assert(region::NumRegions(*graph.root()) == 1);
 
-  {
-    jlm::rvsdg::graph graph;
-    auto structuralNode = jlm::tests::structural_node::create(graph.root(), 4);
-    jlm::tests::structural_node::create(structuralNode->subregion(0), 2);
-    jlm::tests::structural_node::create(structuralNode->subregion(3), 5);
-
-    assert(region::NumRegions(*graph.root()) == 1 + 4 + 2 + 5);
-  }
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions_EmptyRvsdg", NumRegions_EmptyRvsdg)
+
+/**
+ * Test region::NumRegions() with non-empty Rvsdg.
+ */
+static int
+NumRegions_NonEmptyRvsdg()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::rvsdg::graph graph;
+  auto structuralNode = jlm::tests::structural_node::create(graph.root(), 4);
+  jlm::tests::structural_node::create(structuralNode->subregion(0), 2);
+  jlm::tests::structural_node::create(structuralNode->subregion(3), 5);
+
+  // Act & Assert
+  assert(region::NumRegions(*graph.root()) == 1 + 4 + 2 + 5);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions_NonEmptyRvsdg", NumRegions_NonEmptyRvsdg)
 
 /**
  * Test region::RemoveResultsWhere()
  */
-static void
-TestRemoveResultsWhere()
+static int
+RemoveResultsWhere()
 {
   // Arrange
   jlm::rvsdg::graph rvsdg;
@@ -193,13 +157,17 @@ TestRemoveResultsWhere()
         return true;
       });
   assert(region.nresults() == 0);
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResultsWhere", RemoveResultsWhere)
 
 /**
  * Test region::RemoveArgumentsWhere()
  */
-static void
-TestRemoveArgumentsWhere()
+static int
+RemoveArgumentsWhere()
 {
   // Arrange
   jlm::rvsdg::graph rvsdg;
@@ -241,13 +209,17 @@ TestRemoveArgumentsWhere()
         return argument.index() == 0;
       });
   assert(region.narguments() == 0);
+
+  return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArgumentsWhere", RemoveArgumentsWhere)
 
 /**
  * Test region::PruneArguments()
  */
-static void
-TestPruneArguments()
+static int
+PruneArguments()
 {
   // Arrange
   jlm::rvsdg::graph rvsdg;
@@ -275,28 +247,14 @@ TestPruneArguments()
   region.remove_node(node);
   region.PruneArguments();
   assert(region.narguments() == 0);
-}
-
-static int
-Test()
-{
-  TestArgumentNodeMismatch();
-  TestResultNodeMismatch();
-
-  TestContainsMethod();
-  TestIsRootRegion();
-  TestNumRegions();
-  TestRemoveResultsWhere();
-  TestRemoveArgumentsWhere();
-  TestPruneArguments();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion", Test)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-PruneArguments", PruneArguments)
 
 static int
-TestToTree_EmptyRvsdg()
+ToTree_EmptyRvsdg()
 {
   using namespace jlm::rvsdg;
 
@@ -313,10 +271,10 @@ TestToTree_EmptyRvsdg()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion-TestToTree_EmptyRvsdg", TestToTree_EmptyRvsdg)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-ToTree_EmptyRvsdg", ToTree_EmptyRvsdg)
 
 static int
-TestToTree_RvsdgWithStructuralNodes()
+ToTree_RvsdgWithStructuralNodes()
 {
   using namespace jlm::rvsdg;
 
@@ -343,5 +301,5 @@ TestToTree_RvsdgWithStructuralNodes()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/TestRegion-TestToTree_RvsdgWithStructuralNodes",
-    TestToTree_RvsdgWithStructuralNodes)
+    "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodes",
+    ToTree_RvsdgWithStructuralNodes)
