@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/ssa.hpp>
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 

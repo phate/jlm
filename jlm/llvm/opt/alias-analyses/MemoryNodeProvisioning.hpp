@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/HashSet.hpp>
 
 #include <vector>
