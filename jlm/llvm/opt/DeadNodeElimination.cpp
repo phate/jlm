@@ -14,13 +14,6 @@
 namespace jlm::llvm
 {
 
-static bool
-is_phi_argument(const jlm::rvsdg::output * output)
-{
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return argument && argument->region()->node() && is<phi::operation>(argument->region()->node());
-}
-
 /** \brief Dead Node Elimination context class
  *
  * This class keeps track of all the nodes and outputs that are alive. In contrast to all other
@@ -264,17 +257,15 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (is_phi_argument(&output))
+  if (auto phiRecursionArgument = dynamic_cast<const phi::rvargument *>(&output))
   {
-    auto argument = util::AssertedCast<const jlm::rvsdg::argument>(&output);
-    if (argument->input())
-    {
-      MarkOutput(*argument->input()->origin());
-    }
-    else
-    {
-      MarkOutput(*argument->region()->result(argument->index())->origin());
-    }
+    MarkOutput(*phiRecursionArgument->result()->origin());
+    return;
+  }
+
+  if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(&output))
+  {
+    MarkOutput(*phiInputArgument->input()->origin());
     return;
   }
 
