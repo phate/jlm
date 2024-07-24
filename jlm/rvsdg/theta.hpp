@@ -375,6 +375,32 @@ private:
   }
 };
 
+/**
+ * Represents a region result in a theta subregion.
+ */
+class ThetaResult final : public result
+{
+  friend theta_node;
+
+public:
+  ~ThetaResult() noexcept override;
+
+private:
+  ThetaResult(ThetaArgument & thetaArgument, theta_output & thetaOutput)
+      : result(thetaArgument.region(), &thetaArgument, &thetaOutput, thetaArgument.Type())
+  {
+    JLM_ASSERT(is<theta_op>(thetaArgument.region()->node()));
+  }
+
+  static ThetaResult &
+  Create(ThetaArgument & thetaArgument, theta_output & thetaOutput)
+  {
+    auto thetaResult = new ThetaResult(thetaArgument, thetaOutput);
+    thetaArgument.region()->append_result(thetaResult);
+    return *thetaResult;
+  }
+};
+
 static inline bool
 is_invariant(const jlm::rvsdg::theta_output * output) noexcept
 {

@@ -45,6 +45,8 @@ theta_output::~theta_output() noexcept
 
 ThetaArgument::~ThetaArgument() noexcept = default;
 
+ThetaResult::~ThetaResult() noexcept = default;
+
 /* theta node */
 
 theta_node::~theta_node()
@@ -81,7 +83,7 @@ theta_node::add_loopvar(jlm::rvsdg::output * origin)
   output->input_ = input;
 
   auto & thetaArgument = ThetaArgument::Create(*subregion(), *input);
-  result::create(subregion(), &thetaArgument, output, origin->Type());
+  ThetaResult::Create(thetaArgument, *output);
   return output;
 }
 
