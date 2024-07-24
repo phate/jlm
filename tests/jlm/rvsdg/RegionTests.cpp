@@ -293,7 +293,7 @@ Test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion", Test)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests", Test)
 
 static int
 TestToTree_EmptyRvsdg()
@@ -313,7 +313,7 @@ TestToTree_EmptyRvsdg()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestRegion-TestToTree_EmptyRvsdg", TestToTree_EmptyRvsdg)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-TestToTree_EmptyRvsdg", TestToTree_EmptyRvsdg)
 
 static int
 TestToTree_RvsdgWithStructuralNodes()
@@ -343,5 +343,5 @@ TestToTree_RvsdgWithStructuralNodes()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/rvsdg/TestRegion-TestToTree_RvsdgWithStructuralNodes",
+    "jlm/rvsdg/RegionTests-TestToTree_RvsdgWithStructuralNodes",
     TestToTree_RvsdgWithStructuralNodes)
