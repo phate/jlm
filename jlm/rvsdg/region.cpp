@@ -9,6 +9,7 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/AnnotationMap.hpp>
 
 namespace jlm::rvsdg
 {
@@ -360,27 +361,49 @@ region::NumRegions(const jlm::rvsdg::region & region) noexcept
 }
 
 std::string
-region::ToTree(const rvsdg::region & region) noexcept
+region::ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept
 {
-  return ToTree(region, 0);
+  return ToTree(region, annotationMap, 0);
 }
 
 std::string
-region::ToTree(const rvsdg::region & region, size_t identationDepth) noexcept
+region::ToTree(const rvsdg::region & region) noexcept
 {
-  std::string subTree;
-  auto identationChar = '-';
+  util::AnnotationMap annotationMap;
+  return ToTree(region, annotationMap, 0);
+}
+
+std::string
+region::ToTree(
+    const rvsdg::region & region,
+    const util::AnnotationMap & annotationMap,
+    size_t identationDepth) noexcept
+{
+  static const char identationChar = '-';
+  static const char annotationSeparator = ' ';
+  static const char labelValueSeparator = ':';
+
+  auto regionAnnotationString =
+      GetAnnotationString(&region, annotationMap, annotationSeparator, labelValueSeparator);
 
   // Convert current region to a string
+  std::string subTree;
   if (region.IsRootRegion())
   {
-    subTree = "RootRegion\n";
+    subTree = util::strfmt("RootRegion", annotationSeparator, regionAnnotationString, "\n");
     identationDepth += 1;
   }
   else if (region.node()->nsubregions() != 1)
   {
     auto indentationString = std::string(identationDepth, identationChar);
-    subTree += util::strfmt(indentationString, "Region[", region.index(), "]\n");
+    subTree += util::strfmt(
+        indentationString,
+        "Region[",
+        region.index(),
+        "]",
+        annotationSeparator,
+        regionAnnotationString,
+        "\n");
     identationDepth += 1;
   }
 
@@ -391,16 +414,86 @@ region::ToTree(const rvsdg::region & region, size_t identationDepth) noexcept
     {
       auto identationString = std::string(identationDepth, identationChar);
       auto nodeString = structuralNode->operation().debug_string();
-      subTree += util::strfmt(identationString, nodeString, '\n');
+      auto annotationString = GetAnnotationString(
+          structuralNode,
+          annotationMap,
+          annotationSeparator,
+          labelValueSeparator);
+      subTree +=
+          util::strfmt(identationString, nodeString, annotationSeparator, annotationString, '\n');
 
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        subTree += ToTree(*structuralNode->subregion(n), identationDepth + 1);
+        subTree += ToTree(*structuralNode->subregion(n), annotationMap, identationDepth + 1);
       }
     }
   }
 
   return subTree;
+}
+
+std::string
+region::GetAnnotationString(
+    const void * key,
+    const util::AnnotationMap & annotationMap,
+    char annotationSeparator,
+    char labelValueSeparator)
+{
+  if (!annotationMap.HasAnnotations(key))
+    return "";
+
+  auto & annotations = annotationMap.GetAnnotations(key);
+  return ToString(annotations, annotationSeparator, labelValueSeparator);
+}
+
+std::string
+region::ToString(
+    const std::vector<util::Annotation> & annotations,
+    char annotationSeparator,
+    char labelValueSeparator)
+{
+  std::stringstream stream;
+  auto it = annotations.begin();
+  for (; it != annotations.end(); it++)
+  {
+    auto annotationString = ToString(*it, labelValueSeparator);
+    stream << annotationString;
+  }
+
+  if (it != annotations.end())
+  {
+    stream << annotationSeparator;
+  }
+
+  return stream.str();
+}
+
+std::string
+region::ToString(const util::Annotation & annotation, char labelValueSeparator)
+{
+  std::string value;
+  if (annotation.HasValueType<std::string_view>())
+  {
+    value = util::strfmt(annotation.Value<std::string_view>());
+  }
+  else if (annotation.HasValueType<int64_t>())
+  {
+    value = util::strfmt(annotation.Value<int64_t>());
+  }
+  else if (annotation.HasValueType<uint64_t>())
+  {
+    value = util::strfmt(annotation.Value<uint64_t>());
+  }
+  else if (annotation.HasValueType<double>())
+  {
+    value = util::strfmt(annotation.Value<double>());
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled annotation type.");
+  }
+
+  return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
 
 size_t

@@ -96,7 +96,7 @@ private:
  */
 class AnnotationMap final
 {
-  using AnnotationMapType = std::unordered_map<const void *, Annotation>;
+  using AnnotationMapType = std::unordered_map<const void *, std::vector<Annotation>>;
 
   class ConstIterator final
   {
@@ -115,22 +115,22 @@ class AnnotationMap final
     {}
 
   public:
-    [[nodiscard]] const jlm::util::Annotation *
-    GetAnnotation() const noexcept
+    [[nodiscard]] const std::vector<Annotation> &
+    Annotations() const noexcept
     {
-      return &It_.operator->()->second;
+      return It_.operator->()->second;
     }
 
-    const jlm::util::Annotation &
+    const std::vector<Annotation> &
     operator*() const
     {
-      return *GetAnnotation();
+      return Annotations();
     }
 
-    const jlm::util::Annotation *
+    const std::vector<Annotation> *
     operator->() const
     {
-      return GetAnnotation();
+      return &Annotations();
     }
 
     ConstIterator &
@@ -184,7 +184,7 @@ public:
    * @return True if the annotation exists, otherwise false.
    */
   [[nodiscard]] bool
-  HasAnnotation(const void * key) const noexcept
+  HasAnnotations(const void * key) const noexcept
   {
     return Map_.find(key) != Map_.end();
   }
@@ -194,10 +194,10 @@ public:
    *
    * @return A reference to an instance of Annotation.
    */
-  [[nodiscard]] const Annotation &
-  GetAnnotation(const void * key) const noexcept
+  [[nodiscard]] const std::vector<Annotation> &
+  GetAnnotations(const void * key) const noexcept
   {
-    JLM_ASSERT(HasAnnotation(key));
+    JLM_ASSERT(HasAnnotations(key));
     return Map_.at(key);
   }
 
@@ -208,8 +208,8 @@ public:
   void
   AddAnnotation(const void * key, Annotation annotation)
   {
-    JLM_ASSERT(!HasAnnotation(key));
-    Map_.emplace(key, annotation);
+    JLM_ASSERT(!HasAnnotations(key));
+    Map_[key].emplace_back(std::move(annotation));
   }
 
 private:

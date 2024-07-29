@@ -13,6 +13,12 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 
+namespace jlm::util
+{
+class Annotation;
+class AnnotationMap;
+}
+
 namespace jlm::rvsdg
 {
 
@@ -395,6 +401,17 @@ public:
    * ASCII format.
    *
    * @param region The top-level region that is converted
+   * @param annotationMap A map with annotations for region%s or structural_node%s.
+   * @return A string containing the ASCII tree of \p region.
+   */
+  [[nodiscard]] static std::string
+  ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept;
+
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a tree in
+   * ASCII format.
+   *
+   * @param region The top-level region that is converted
    * @return A string containing the ASCII tree of \p region
    */
   [[nodiscard]] static std::string
@@ -408,7 +425,26 @@ public:
 
 private:
   [[nodiscard]] static std::string
-  ToTree(const rvsdg::region & region, size_t identationDepth) noexcept;
+  ToTree(
+      const rvsdg::region & region,
+      const util::AnnotationMap & annotationMap,
+      size_t identationDepth) noexcept;
+
+  [[nodiscard]] static std::string
+  GetAnnotationString(
+      const void * key,
+      const util::AnnotationMap & annotationMap,
+      char annotationSeparator,
+      char labelValueSeparator);
+
+  [[nodiscard]] static std::string
+  ToString(
+      const std::vector<util::Annotation> & annotations,
+      char annotationSeparator,
+      char labelValueSeparator);
+
+  [[nodiscard]] static std::string
+  ToString(const util::Annotation & annotation, char labelValueSeparator);
 
   size_t index_;
   jlm::rvsdg::graph * graph_;

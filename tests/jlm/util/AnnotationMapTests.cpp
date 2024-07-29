@@ -92,15 +92,19 @@ AnnotationMap()
   map.AddAnnotation((const void *)&AnnotationEquality, annotation);
 
   // Act & Assert
-  assert(map.HasAnnotation((const void *)&AnnotationEquality));
-  assert(!map.HasAnnotation((const void *)&AnnotationKeyValueRetrieval));
+  assert(map.HasAnnotations((const void *)&AnnotationEquality));
+  assert(!map.HasAnnotations((const void *)&AnnotationKeyValueRetrieval));
 
-  auto retrievedAnnotation = map.GetAnnotation((const void *)&AnnotationEquality);
-  assert(retrievedAnnotation == annotation);
+  auto annotations = map.GetAnnotations((const void *)&AnnotationEquality);
+  assert(annotations.size() == 1);
+  assert(annotations[0] == annotation);
 
-  for (auto & iteratedAnnotation : map.Annotations())
+  for (auto & iteratedAnnotations : map.Annotations())
   {
-    assert(iteratedAnnotation == annotation);
+    for (auto & iteratedAnnotation : iteratedAnnotations)
+    {
+      assert(iteratedAnnotation == annotation);
+    }
   }
 
   return 0;
