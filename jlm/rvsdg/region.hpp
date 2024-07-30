@@ -424,11 +424,12 @@ public:
   region_bottom_node_list bottom_nodes;
 
 private:
-  [[nodiscard]] static std::string
+  static void
   ToTree(
       const rvsdg::region & region,
       const util::AnnotationMap & annotationMap,
-      size_t identationDepth) noexcept;
+      size_t identationDepth,
+      std::stringstream & stream) noexcept;
 
   [[nodiscard]] static std::string
   GetAnnotationString(

@@ -363,73 +363,60 @@ region::NumRegions(const jlm::rvsdg::region & region) noexcept
 std::string
 region::ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept
 {
-  return ToTree(region, annotationMap, 0);
+  std::stringstream stream;
+  ToTree(region, annotationMap, 0, stream);
+  return stream.str();
 }
 
 std::string
 region::ToTree(const rvsdg::region & region) noexcept
 {
+  std::stringstream stream;
   util::AnnotationMap annotationMap;
-  return ToTree(region, annotationMap, 0);
+  ToTree(region, annotationMap, 0, stream);
+  return stream.str();
 }
 
-std::string
+void
 region::ToTree(
     const rvsdg::region & region,
     const util::AnnotationMap & annotationMap,
-    size_t identationDepth) noexcept
+    size_t identationDepth,
+    std::stringstream & stream) noexcept
 {
   static const char identationChar = '-';
   static const char annotationSeparator = ' ';
   static const char labelValueSeparator = ':';
 
+  auto identationString = std::string(identationDepth, identationChar);
+  auto regionString =
+      region.IsRootRegion() ? "RootRegion" : util::strfmt("Region[", region.index(), "]");
   auto regionAnnotationString =
       GetAnnotationString(&region, annotationMap, annotationSeparator, labelValueSeparator);
 
   // Convert current region to a string
-  std::string subTree;
-  if (region.IsRootRegion())
-  {
-    subTree = util::strfmt("RootRegion", annotationSeparator, regionAnnotationString, "\n");
-    identationDepth += 1;
-  }
-  else if (region.node()->nsubregions() != 1)
-  {
-    auto indentationString = std::string(identationDepth, identationChar);
-    subTree += util::strfmt(
-        indentationString,
-        "Region[",
-        region.index(),
-        "]",
-        annotationSeparator,
-        regionAnnotationString,
-        "\n");
-    identationDepth += 1;
-  }
+  stream << identationString << regionString << regionAnnotationString << '\n';
+  identationDepth += 1;
 
   // Convert the region's structural nodes with their subregions to a string
-  for (const auto & node : region.nodes)
+  for (auto & node : region.nodes)
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
     {
-      auto identationString = std::string(identationDepth, identationChar);
       auto nodeString = structuralNode->operation().debug_string();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,
           annotationSeparator,
           labelValueSeparator);
-      subTree +=
-          util::strfmt(identationString, nodeString, annotationSeparator, annotationString, '\n');
+      stream << identationString << nodeString << annotationString << '\n';
 
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        subTree += ToTree(*structuralNode->subregion(n), annotationMap, identationDepth + 1);
+        ToTree(*structuralNode->subregion(n), annotationMap, identationDepth + 1, stream);
       }
     }
   }
-
-  return subTree;
 }
 
 std::string
@@ -453,16 +440,10 @@ region::ToString(
     char labelValueSeparator)
 {
   std::stringstream stream;
-  auto it = annotations.begin();
-  for (; it != annotations.end(); it++)
+  for (auto it = annotations.begin(); it != annotations.end(); it++)
   {
     auto annotationString = ToString(*it, labelValueSeparator);
-    stream << annotationString;
-  }
-
-  if (it != annotations.end())
-  {
-    stream << annotationSeparator;
+    stream << annotationSeparator << annotationString;
   }
 
   return stream.str();

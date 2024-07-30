@@ -208,7 +208,6 @@ public:
   void
   AddAnnotation(const void * key, Annotation annotation)
   {
-    JLM_ASSERT(!HasAnnotations(key));
     Map_[key].emplace_back(std::move(annotation));
   }
 
