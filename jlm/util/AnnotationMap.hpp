@@ -3,6 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#ifndef JLM_UTIL_ANNOTATION_MAP_HPP
+#define JLM_UTIL_ANNOTATION_MAP_HPP
+
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
 
@@ -215,3 +218,5 @@ private:
 };
 
 }
+
+#endif
