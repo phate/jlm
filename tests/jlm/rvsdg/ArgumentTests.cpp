@@ -46,3 +46,35 @@ ArgumentNodeMismatch()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ArgumentTests-ArgumentNodeMismatch", ArgumentNodeMismatch)
+
+static int
+ArgumentInputTypeMismatch()
+{
+  using namespace jlm::tests;
+
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto stateType = jlm::tests::statetype::Create();
+
+  jlm::rvsdg::graph rvsdg;
+  auto x = rvsdg.add_import({ valueType, "import" });
+
+  auto structuralNode = structural_node::create(rvsdg.root(), 1);
+  auto structuralInput = jlm::rvsdg::structural_input::create(structuralNode, x, valueType);
+
+  // Act & Assert
+  try
+  {
+    jlm::rvsdg::argument::create(structuralNode->subregion(0), structuralInput, stateType);
+    // The line below should not be executed as the line above is expected to throw an exception.
+    assert(false);
+  }
+  catch (...)
+  {}
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/ArgumentTests-ArgumentInputTypeMismatch",
+    ArgumentInputTypeMismatch)
