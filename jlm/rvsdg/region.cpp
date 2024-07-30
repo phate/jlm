@@ -440,9 +440,9 @@ region::ToString(
     char labelValueSeparator)
 {
   std::stringstream stream;
-  for (auto it = annotations.begin(); it != annotations.end(); it++)
+  for (auto & annotation : annotations)
   {
-    auto annotationString = ToString(*it, labelValueSeparator);
+    auto annotationString = ToString(annotation, labelValueSeparator);
     stream << annotationSeparator << annotationString;
   }
 
