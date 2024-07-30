@@ -202,8 +202,7 @@ public:
   }
 
   /**
-   * Adds \p annotation with the given \p key to the map. Requires that \p key is not yet
-   * present.
+   * Adds \p annotation with the given \p key to the map.
    */
   void
   AddAnnotation(const void * key, Annotation annotation)
