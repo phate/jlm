@@ -454,7 +454,7 @@ private:
   ToTree(
       const rvsdg::region & region,
       const util::AnnotationMap & annotationMap,
-      size_t identationDepth,
+      size_t indentationDepth,
       std::stringstream & stream) noexcept;
 
   [[nodiscard]] static std::string

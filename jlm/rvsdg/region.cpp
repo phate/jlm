@@ -381,22 +381,22 @@ void
 region::ToTree(
     const rvsdg::region & region,
     const util::AnnotationMap & annotationMap,
-    size_t identationDepth,
+    size_t indentationDepth,
     std::stringstream & stream) noexcept
 {
-  static const char identationChar = '-';
+  static const char indentationChar = '-';
   static const char annotationSeparator = ' ';
   static const char labelValueSeparator = ':';
 
-  auto identationString = std::string(identationDepth, identationChar);
+  auto indentationString = std::string(indentationDepth, indentationChar);
   auto regionString =
       region.IsRootRegion() ? "RootRegion" : util::strfmt("Region[", region.index(), "]");
   auto regionAnnotationString =
       GetAnnotationString(&region, annotationMap, annotationSeparator, labelValueSeparator);
 
   // Convert current region to a string
-  stream << identationString << regionString << regionAnnotationString << '\n';
-  identationDepth += 1;
+  stream << indentationString << regionString << regionAnnotationString << '\n';
+  indentationDepth += 1;
 
   // Convert the region's structural nodes with their subregions to a string
   for (auto & node : region.nodes)
@@ -409,11 +409,11 @@ region::ToTree(
           annotationMap,
           annotationSeparator,
           labelValueSeparator);
-      stream << identationString << nodeString << annotationString << '\n';
+      stream << indentationString << nodeString << annotationString << '\n';
 
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        ToTree(*structuralNode->subregion(n), annotationMap, identationDepth + 1, stream);
+        ToTree(*structuralNode->subregion(n), annotationMap, indentationDepth + 1, stream);
       }
     }
   }
