@@ -453,9 +453,9 @@ std::string
 region::ToString(const util::Annotation & annotation, char labelValueSeparator)
 {
   std::string value;
-  if (annotation.HasValueType<std::string_view>())
+  if (annotation.HasValueType<std::string>())
   {
-    value = util::strfmt(annotation.Value<std::string_view>());
+    value = annotation.Value<std::string>();
   }
   else if (annotation.HasValueType<int64_t>())
   {

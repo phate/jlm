@@ -18,15 +18,15 @@ namespace jlm::util
 {
 
 /**
- * Represents a simple key-value pair with a label and a value of type std::string_view, int64_t,
+ * Represents a simple key-value pair with a label and a value of type std::string, int64_t,
  * uint64_t, or double.
  */
 class Annotation final
 {
-  using AnnotationValue = std::variant<std::string_view, int64_t, uint64_t, double>;
+  using AnnotationValue = std::variant<std::string, int64_t, uint64_t, double>;
 
 public:
-  Annotation(std::string_view label, std::string_view value)
+  Annotation(std::string_view label, std::string value)
       : Label_(std::move(label)),
         Value_(std::move(value))
   {}
