@@ -388,17 +388,18 @@ region::ToTree(
   static const char annotationSeparator = ' ';
   static const char labelValueSeparator = ':';
 
+  // Convert current region to a string
   auto indentationString = std::string(indentationDepth, indentationChar);
   auto regionString =
       region.IsRootRegion() ? "RootRegion" : util::strfmt("Region[", region.index(), "]");
   auto regionAnnotationString =
       GetAnnotationString(&region, annotationMap, annotationSeparator, labelValueSeparator);
 
-  // Convert current region to a string
   stream << indentationString << regionString << regionAnnotationString << '\n';
-  indentationDepth += 1;
 
   // Convert the region's structural nodes with their subregions to a string
+  indentationDepth++;
+  indentationString = std::string(indentationDepth, indentationChar);
   for (auto & node : region.nodes)
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))

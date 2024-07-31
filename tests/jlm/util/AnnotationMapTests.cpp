@@ -21,8 +21,8 @@ AnnotationKeyValueRetrieval()
 
   // Act & Assert
   assert(stringAnnotation.Label() == "string");
-  assert(stringAnnotation.Value<std::string_view>() == "value");
-  assert(stringAnnotation.HasValueType<std::string_view>());
+  assert(stringAnnotation.Value<std::string>() == "value");
+  assert(stringAnnotation.HasValueType<std::string>());
   assert(!stringAnnotation.HasValueType<uint64_t>());
 
   assert(intAnnotation.Label() == "int");

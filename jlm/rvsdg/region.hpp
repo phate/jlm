@@ -400,14 +400,15 @@ public:
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
    * ASCII format of the following form:
    *
-   * RootRegion
-   * -STRUCTURAL_TEST_NODE
-   * --Region[0]
-   * --Region[1]
-   * ---STRUCTURAL_TEST_NODE
-   * ----Region[0]
-   * ----Region[1]
-   * ----Region[2] NumNodes:0 NumArguments:0
+   * RootRegion                              \n
+   * -STRUCTURAL_TEST_NODE                   \n
+   * --Region[0]                             \n
+   * --Region[1]                             \n
+   * ---STRUCTURAL_TEST_NODE                 \n
+   * ----Region[0]                           \n
+   * ----Region[1]                           \n
+   * ----Region[2] NumNodes:0 NumArguments:0 \n
+   *
    *
    * The above tree has a single structural node in the RVSDG's root region. This node has two
    * subregions, where the second subregion contains another structural node with three subregions.
@@ -415,7 +416,8 @@ public:
    * \p annotationMap.
    *
    * @param region The top-level region that is converted
-   * @param annotationMap A map with annotations for region%s or structural_node%s.
+   * @param annotationMap A map with annotations for instances of \ref region%s or
+   * structural_node%s.
    * @return A string containing the ASCII tree of \p region.
    */
   [[nodiscard]] static std::string
@@ -425,14 +427,15 @@ public:
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
    * ASCII format of the following form:
    *
-   * RootRegion
-   * -STRUCTURAL_TEST_NODE
-   * --Region[0]
-   * --Region[1]
-   * ---STRUCTURAL_TEST_NODE
-   * ----Region[0]
-   * ----Region[1]
-   * ----Region[2]
+   * RootRegion              \n
+   * -STRUCTURAL_TEST_NODE   \n
+   * --Region[0]             \n
+   * --Region[1]             \n
+   * ---STRUCTURAL_TEST_NODE \n
+   * ----Region[0]           \n
+   * ----Region[1]           \n
+   * ----Region[2]           \n
+   *
    *
    * The above tree has a single structural node in the RVSDG's root region. This node has two
    * subregions, where the second subregion contains another structural node with three subregions.
