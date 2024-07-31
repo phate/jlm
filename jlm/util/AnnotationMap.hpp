@@ -74,7 +74,7 @@ public:
   [[nodiscard]] bool
   HasValueType() const noexcept
   {
-    return std::holds_alternative<TValue>(&Value_);
+    return std::holds_alternative<TValue>(Value_);
   }
 
   bool
