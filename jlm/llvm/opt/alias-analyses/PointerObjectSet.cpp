@@ -1403,14 +1403,6 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
   }
 
-  // Makes pointer point to pointee.
-  // Returns true if the pointee was new. Does not add pointer to the worklist.
-  const auto & AddToPointsToSet = [&](PointerObjectIndex pointer,
-                                      PointerObjectIndex pointee) -> bool
-  {
-    return Set_.AddToPointsToSet(pointer, pointee);
-  };
-
   // Makes superset point to everything subset points to, and propagates the PointsToEscaped flag.
   // Returns true if any pointees were new, or the flag was new.
   // Does not add superset to the worklist.
@@ -1522,7 +1514,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
 
     // A new edge was added, propagate points to-sets. If the superset changes, add to the worklist
-    if (Set_.MakePointsToSetSuperset(superset, subset))
+    if (MakePointsToSetSuperset(superset, subset))
       worklist.PushWorkItem(superset);
   };
 
@@ -1615,7 +1607,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       // The current it-edge should be kept as is, prepare "it" for the next iteration.
       ++it;
 
-      if (Set_.MakePointsToSetSuperset(supersetParent, node))
+      if (MakePointsToSetSuperset(supersetParent, node))
         worklist.PushWorkItem(supersetParent);
     }
 
@@ -1695,17 +1687,14 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   // Takes all parameters as compile time types.
   // tWorklist is a pointer to one of the Worklist implementations.
   // the rest are instances of std::bool_constant, either std::true_type or std::false_type
-  const auto Dispatch = [&](auto tWorklist,
-                            auto tOnlineCycleDetection) -> WorklistStatistics
+  const auto Dispatch = [&](auto tWorklist, auto tOnlineCycleDetection) -> WorklistStatistics
   {
     using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
 
     WorklistStatistics statistics(policy);
-    RunWorklistSolver<
-          Worklist,
-          vOnlineCycleDetection>(statistics);
-      return statistics;
+    RunWorklistSolver<Worklist, vOnlineCycleDetection>(statistics);
+    return statistics;
   };
 
   std::variant<
@@ -1732,10 +1721,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else
     onlineCycleDetectionVariant = std::false_type{};
 
-  return std::visit(
-      Dispatch,
-      policyVariant,
-      onlineCycleDetectionVariant);
+  return std::visit(Dispatch, policyVariant, onlineCycleDetectionVariant);
 }
 
 const char *

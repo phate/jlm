@@ -7,8 +7,8 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <cassert>
 
@@ -887,7 +887,9 @@ TestPointerObjectSet()
     if (config.IsOfflineConstraintNormalizationEnabled())
       continue;
 
-    TestPointerObjectConstraintSetSolve<true>(config.GetWorklistSoliverPolicy(), config.IsOnlineCycleDetectionEnabled());
+    TestPointerObjectConstraintSetSolve<true>(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled());
   }
 
   TestClonePointerObjectConstraintSet();
