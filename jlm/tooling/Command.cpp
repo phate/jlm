@@ -624,12 +624,7 @@ JlmHlsCommand::~JlmHlsCommand() noexcept = default;
 std::string
 JlmHlsCommand::ToString() const
 {
-  return util::strfmt(
-      "jlm-hls ",
-      "-o ",
-      OutputFolder_.to_str(),
-      " ",
-      InputFile_.to_str());
+  return util::strfmt("jlm-hls ", "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
 }
 
 void
