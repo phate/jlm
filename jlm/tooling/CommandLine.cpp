@@ -1159,7 +1159,10 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   cl::opt<bool> generateFirrtl("firrtl", cl::ValueDisallowed, cl::desc("Generate firrtl"));
 
-  cl::opt<bool> useCirct("circt", cl::Prefix, cl::desc("DEPRACATED - CIRCT is always used to generate FIRRTL"));
+  cl::opt<bool> useCirct(
+      "circt",
+      cl::Prefix,
+      cl::desc("DEPRACATED - CIRCT is always used to generate FIRRTL"));
 
   cl::ParseCommandLineOptions(argc, argv);
 
