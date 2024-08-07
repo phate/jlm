@@ -1,13 +1,13 @@
 #!/bin/bash
-set -eux
+set -eu
 
 GIT_COMMIT=debf1ed774c2bbdbfc8e7bc987a21f72e8f08f65
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
-CIRCT_BUILD="${JLM_ROOT_DIR}/build-circt"
-CIRCT_INSTALL="${JLM_ROOT_DIR}/usr"
+CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
+CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
 LLVM_LIT_PATH=/usr/local/bin/lit
 
 LLVM_VERSION=17
