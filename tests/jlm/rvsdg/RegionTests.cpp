@@ -7,6 +7,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
+#include <algorithm>
 #include <cassert>
 
 /**
