@@ -227,7 +227,7 @@ public:
   static std::unique_ptr<CallTypeClassifier>
   CreateRecursiveDirectCallClassifier(jlm::rvsdg::argument & output)
   {
-    JLM_ASSERT(is_phi_recvar_argument(&output));
+    JLM_ASSERT(is<phi::rvargument>(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 

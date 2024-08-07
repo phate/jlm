@@ -985,50 +985,6 @@ phi::node::RemovePhiOutputsWhere(const F & match)
 
 }
 
-/*
-  FIXME: This should be defined in librvsdg.
-*/
-static inline bool
-is_phi_output(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  return is<phi::operation>(node_output::node(output));
-}
-
-/*
-  FIXME: This should be defined in librvsdg.
-*/
-static inline bool
-is_phi_cv(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  auto a = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return a && is<phi::operation>(a->region()->node()) && a->input() != nullptr;
-}
-
-static inline bool
-is_phi_recvar_argument(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  auto a = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return a && is<phi::operation>(a->region()->node()) && a->input() == nullptr;
-}
-
-/*
-  FIXME: This should be defined in librvsdg.
-*/
-static inline jlm::rvsdg::result *
-phi_result(const jlm::rvsdg::output * output)
-{
-  JLM_ASSERT(is_phi_output(output));
-  auto result = jlm::rvsdg::node_output::node(output)->region()->result(output->index());
-  JLM_ASSERT(result->output() == output);
-  return result;
-}
-
 }
 
 #endif

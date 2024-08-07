@@ -5,6 +5,8 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 #include <deque>
 
@@ -313,9 +315,9 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto result = is_gamma_result(input))
+    if (auto gammaResult = dynamic_cast<const rvsdg::GammaResult *>(input))
     {
-      auto output = result->output();
+      auto output = gammaResult->output();
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }
@@ -327,9 +329,9 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto result = is_theta_result(input))
+    if (auto thetaResult = dynamic_cast<const rvsdg::ThetaResult *>(input))
     {
-      auto output = result->output();
+      auto output = thetaResult->output();
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }

@@ -6,18 +6,13 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 namespace jlm::llvm
 {
-
-static bool
-is_phi_argument(const jlm::rvsdg::output * output)
-{
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return argument && argument->region()->node() && is<phi::operation>(argument->region()->node());
-}
 
 /** \brief Dead Node Elimination context class
  *
@@ -213,13 +208,13 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto argument = is_gamma_argument(&output))
+  if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(&output))
   {
-    MarkOutput(*argument->input()->origin());
+    MarkOutput(*gammaArgument->input()->origin());
     return;
   }
 
-  if (auto thetaOutput = is_theta_output(&output))
+  if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
   {
     MarkOutput(*thetaOutput->node()->predicate()->origin());
     MarkOutput(*thetaOutput->result()->origin());
@@ -227,7 +222,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto thetaArgument = is_theta_argument(&output))
+  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
   {
     auto thetaInput = util::AssertedCast<const jlm::rvsdg::theta_input>(thetaArgument->input());
     MarkOutput(*thetaInput->output());
@@ -255,24 +250,21 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (is_phi_output(&output))
+  if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))
   {
-    auto structuralOutput = util::AssertedCast<const jlm::rvsdg::structural_output>(&output);
-    MarkOutput(*structuralOutput->results.first()->origin());
+    MarkOutput(*phiOutput->result()->origin());
     return;
   }
 
-  if (is_phi_argument(&output))
+  if (auto phiRecursionArgument = dynamic_cast<const phi::rvargument *>(&output))
   {
-    auto argument = util::AssertedCast<const jlm::rvsdg::argument>(&output);
-    if (argument->input())
-    {
-      MarkOutput(*argument->input()->origin());
-    }
-    else
-    {
-      MarkOutput(*argument->region()->result(argument->index())->origin());
-    }
+    MarkOutput(*phiRecursionArgument->result()->origin());
+    return;
+  }
+
+  if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(&output))
+  {
+    MarkOutput(*phiInputArgument->input()->origin());
     return;
   }
 

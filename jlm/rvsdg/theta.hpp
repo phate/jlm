@@ -300,12 +300,6 @@ private:
 };
 
 static inline bool
-is_theta_input(const jlm::rvsdg::input * input) noexcept
-{
-  return dynamic_cast<const jlm::rvsdg::theta_input *>(input) != nullptr;
-}
-
-static inline bool
 is_invariant(const jlm::rvsdg::theta_input * input) noexcept
 {
   return input->result()->origin() == input->argument();
@@ -355,11 +349,57 @@ private:
   jlm::rvsdg::theta_input * input_;
 };
 
-static inline bool
-is_theta_output(const jlm::rvsdg::theta_output * output) noexcept
+/**
+ * Represents a region argument in a theta subregion.
+ */
+class ThetaArgument final : public argument
 {
-  return dynamic_cast<const jlm::rvsdg::theta_output *>(output) != nullptr;
-}
+  friend theta_node;
+
+public:
+  ~ThetaArgument() noexcept override;
+
+private:
+  ThetaArgument(rvsdg::region & region, theta_input & input)
+      : argument(&region, &input, input.Type())
+  {
+    JLM_ASSERT(is<theta_op>(region.node()));
+  }
+
+  static ThetaArgument &
+  Create(rvsdg::region & region, theta_input & input)
+  {
+    auto thetaArgument = new ThetaArgument(region, input);
+    region.append_argument(thetaArgument);
+    return *thetaArgument;
+  }
+};
+
+/**
+ * Represents a region result in a theta subregion.
+ */
+class ThetaResult final : public result
+{
+  friend theta_node;
+
+public:
+  ~ThetaResult() noexcept override;
+
+private:
+  ThetaResult(ThetaArgument & thetaArgument, theta_output & thetaOutput)
+      : result(thetaArgument.region(), &thetaArgument, &thetaOutput, thetaArgument.Type())
+  {
+    JLM_ASSERT(is<theta_op>(thetaArgument.region()->node()));
+  }
+
+  static ThetaResult &
+  Create(ThetaArgument & thetaArgument, theta_output & thetaOutput)
+  {
+    auto thetaResult = new ThetaResult(thetaArgument, thetaOutput);
+    thetaArgument.region()->append_result(thetaResult);
+    return *thetaResult;
+  }
+};
 
 static inline bool
 is_invariant(const jlm::rvsdg::theta_output * output) noexcept

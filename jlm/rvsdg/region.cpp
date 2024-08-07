@@ -359,6 +359,50 @@ region::NumRegions(const jlm::rvsdg::region & region) noexcept
   return numRegions;
 }
 
+std::string
+region::ToTree(const rvsdg::region & region) noexcept
+{
+  return ToTree(region, 0);
+}
+
+std::string
+region::ToTree(const rvsdg::region & region, size_t identationDepth) noexcept
+{
+  std::string subTree;
+  auto identationChar = '-';
+
+  // Convert current region to a string
+  if (region.IsRootRegion())
+  {
+    subTree = "RootRegion\n";
+    identationDepth += 1;
+  }
+  else if (region.node()->nsubregions() != 1)
+  {
+    auto indentationString = std::string(identationDepth, identationChar);
+    subTree += util::strfmt(indentationString, "Region[", region.index(), "]\n");
+    identationDepth += 1;
+  }
+
+  // Convert the region's structural nodes with their subregions to a string
+  for (const auto & node : region.nodes)
+  {
+    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+    {
+      auto identationString = std::string(identationDepth, identationChar);
+      auto nodeString = structuralNode->operation().debug_string();
+      subTree += util::strfmt(identationString, nodeString, '\n');
+
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        subTree += ToTree(*structuralNode->subregion(n), identationDepth + 1);
+      }
+    }
+  }
+
+  return subTree;
+}
+
 size_t
 nnodes(const jlm::rvsdg::region * region) noexcept
 {

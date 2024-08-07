@@ -378,12 +378,6 @@ public:
   }
 };
 
-static inline bool
-is_gamma_input(const jlm::rvsdg::input * input) noexcept
-{
-  return dynamic_cast<const jlm::rvsdg::gamma_input *>(input) != nullptr;
-}
-
 /* gamma output */
 
 class gamma_output final : public structural_output
@@ -465,6 +459,54 @@ inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternativ
       new gamma_input(this, predicate, ctltype::Create(nalternatives))));
 }
 
+/**
+ * Represents a region argument in a gamma subregion.
+ */
+class GammaArgument final : public argument
+{
+  friend gamma_node;
+
+public:
+  ~GammaArgument() noexcept override;
+
+private:
+  GammaArgument(rvsdg::region & region, gamma_input & input)
+      : argument(&region, &input, input.Type())
+  {}
+
+  static GammaArgument &
+  Create(rvsdg::region & region, gamma_input & input)
+  {
+    auto gammaArgument = new GammaArgument(region, input);
+    region.append_argument(gammaArgument);
+    return *gammaArgument;
+  }
+};
+
+/**
+ * Represents a region result in a gamma subregion.
+ */
+class GammaResult final : public result
+{
+  friend gamma_node;
+
+public:
+  ~GammaResult() noexcept override;
+
+private:
+  GammaResult(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
+      : result(&region, &origin, &gammaOutput, origin.Type())
+  {}
+
+  static GammaResult &
+  Create(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
+  {
+    auto gammaResult = new GammaResult(region, origin, gammaOutput);
+    origin.region()->append_result(gammaResult);
+    return *gammaResult;
+  }
+};
+
 inline jlm::rvsdg::gamma_input *
 gamma_node::predicate() const noexcept
 {
@@ -486,12 +528,16 @@ gamma_node::exitvar(size_t index) const noexcept
 inline jlm::rvsdg::gamma_input *
 gamma_node::add_entryvar(jlm::rvsdg::output * origin)
 {
-  node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
+  auto input =
+      node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
+  auto gammaInput = static_cast<jlm::rvsdg::gamma_input *>(input);
 
   for (size_t n = 0; n < nsubregions(); n++)
-    argument::create(subregion(n), input(ninputs() - 1), origin->Type());
+  {
+    GammaArgument::Create(*subregion(n), *gammaInput);
+  }
 
-  return static_cast<jlm::rvsdg::gamma_input *>(input(ninputs() - 1));
+  return gammaInput;
 }
 
 inline jlm::rvsdg::gamma_output *
@@ -505,7 +551,9 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
 
   auto output = exitvar(nexitvars() - 1);
   for (size_t n = 0; n < nsubregions(); n++)
-    result::create(subregion(n), values[n], output, type);
+  {
+    GammaResult::Create(*subregion(n), *values[n], *output);
+  }
 
   return output;
 }

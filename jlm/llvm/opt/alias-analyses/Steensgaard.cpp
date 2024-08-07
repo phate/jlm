@@ -7,6 +7,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -225,19 +227,19 @@ public:
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
-    if (is_gamma_argument(Output_))
+    if (is<rvsdg::GammaArgument>(Output_))
     {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is_theta_argument(Output_))
+    if (is<rvsdg::ThetaArgument>(Output_))
     {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is_theta_output(Output_))
+    if (is<rvsdg::theta_output>(Output_))
     {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);

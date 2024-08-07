@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/pull.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -222,7 +223,7 @@ is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::n
   {
     for (const auto & user : *(node->output(n)))
     {
-      JLM_ASSERT(is_gamma_input(user));
+      JLM_ASSERT(is<rvsdg::gamma_input>(*user));
       inputs.insert(static_cast<const jlm::rvsdg::gamma_input *>(user));
     }
   }

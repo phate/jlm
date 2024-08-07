@@ -6,6 +6,8 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/cne.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -178,7 +180,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (o1->type() != o2->type())
     return false;
 
-  if (is_theta_argument(o1) && is_theta_argument(o2))
+  if (is<rvsdg::ThetaArgument>(o1) && is<rvsdg::ThetaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
     auto a1 = static_cast<jlm::rvsdg::argument *>(o1);
@@ -221,7 +223,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return true;
   }
 
-  if (is_gamma_argument(o1) && is_gamma_argument(o2))
+  if (is<rvsdg::GammaArgument>(o1) && is<rvsdg::GammaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
     auto a1 = static_cast<jlm::rvsdg::argument *>(o1);

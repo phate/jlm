@@ -11,6 +11,12 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
+namespace jlm::rvsdg
+{
+class gamma_node;
+class theta_node;
+}
+
 namespace jlm::llvm::aa
 {
 

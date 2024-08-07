@@ -8,15 +8,9 @@
 namespace jlm::llvm
 {
 
-/* attribute class */
+attribute::~attribute() noexcept = default;
 
-attribute::~attribute()
-{}
-
-/* string attribute class */
-
-string_attribute::~string_attribute()
-{}
+string_attribute::~string_attribute() noexcept = default;
 
 bool
 string_attribute::operator==(const attribute & other) const
@@ -25,16 +19,7 @@ string_attribute::operator==(const attribute & other) const
   return sa && sa->kind() == kind() && sa->value() == value();
 }
 
-std::unique_ptr<attribute>
-string_attribute::copy() const
-{
-  return std::unique_ptr<attribute>(new string_attribute(kind(), value()));
-}
-
-/* enum attribute class */
-
-enum_attribute::~enum_attribute()
-{}
+enum_attribute::~enum_attribute() noexcept = default;
 
 bool
 enum_attribute::operator==(const attribute & other) const
@@ -43,16 +28,7 @@ enum_attribute::operator==(const attribute & other) const
   return ea && ea->kind() == kind();
 }
 
-std::unique_ptr<attribute>
-enum_attribute::copy() const
-{
-  return std::unique_ptr<attribute>(new enum_attribute(kind()));
-}
-
-/* integer attribute class */
-
-int_attribute::~int_attribute()
-{}
+int_attribute::~int_attribute() noexcept = default;
 
 bool
 int_attribute::operator==(const attribute & other) const
@@ -61,16 +37,7 @@ int_attribute::operator==(const attribute & other) const
   return ia && ia->kind() == kind() && ia->value() == value();
 }
 
-std::unique_ptr<attribute>
-int_attribute::copy() const
-{
-  return std::unique_ptr<attribute>(new int_attribute(kind(), value()));
-}
-
-/* type attribute class */
-
-type_attribute::~type_attribute()
-{}
+type_attribute::~type_attribute() noexcept = default;
 
 bool
 type_attribute::operator==(const attribute & other) const
@@ -79,37 +46,28 @@ type_attribute::operator==(const attribute & other) const
   return ta && ta->kind() == kind() && ta->type() == type();
 }
 
-std::unique_ptr<attribute>
-type_attribute::copy() const
+attributeset::EnumAttributeRange
+attributeset::EnumAttributes() const
 {
-  return std::make_unique<type_attribute>(kind(), type_);
+  return EnumAttributes_.Items();
 }
 
-/* attribute set class */
-
-attributeset &
-attributeset::operator=(const attributeset & other)
+attributeset::IntAttributeRange
+attributeset::IntAttributes() const
 {
-  if (this == &other)
-    return *this;
-
-  attributes_.clear();
-  for (auto & attribute : other)
-    attributes_.push_back(attribute.copy());
-
-  return *this;
+  return IntAttributes_.Items();
 }
 
-attributeset::constiterator
-attributeset::begin() const
+attributeset::TypeAttributeRange
+attributeset::TypeAttributes() const
 {
-  return constiterator(attributes_.begin());
+  return TypeAttributes_.Items();
 }
 
-attributeset::constiterator
-attributeset::end() const
+attributeset::StringAttributeRange
+attributeset::StringAttributes() const
 {
-  return constiterator(attributes_.end());
+  return StringAttributes_.Items();
 }
 
 }
