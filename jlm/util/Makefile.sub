@@ -5,6 +5,7 @@ libutil_SOURCES = \
 	jlm/util/Statistics.cpp \
 
 libutil_HEADERS = \
+    jlm/util/AnnotationMap.hpp \
     jlm/util/BijectiveMap.hpp \
     jlm/util/callbacks.hpp \
     jlm/util/common.hpp \
@@ -24,6 +25,7 @@ libutil_HEADERS = \
     jlm/util/Worklist.hpp \
 
 libutil_TESTS += \
+	tests/jlm/util/AnnotationMapTests \
 	tests/jlm/util/test-disjointset \
 	tests/jlm/util/test-intrusive-hash \
 	tests/jlm/util/test-intrusive-list \
