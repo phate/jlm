@@ -19,7 +19,7 @@ function commit()
 
 function usage()
 {
-	echo "Usage: ./build-circt.sh [OPTION] [VAR=VALUE]"
+	echo "Usage: ./build-mlir.sh [OPTION] [VAR=VALUE]"
 	echo ""
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
