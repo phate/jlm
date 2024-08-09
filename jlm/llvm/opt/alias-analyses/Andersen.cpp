@@ -63,6 +63,7 @@ Andersen::Configuration::GetAllConfigurations()
 
   auto PickOnlineCycleDetection = [&](Configuration config)
   {
+    config.EnableOnlineCycleDetection(false);
     configs.push_back(config);
     config.EnableOnlineCycleDetection(true);
     configs.push_back(config);
@@ -81,6 +82,7 @@ Andersen::Configuration::GetAllConfigurations()
   };
   auto PickOfflineNormalization = [&](Configuration config)
   {
+    config.EnableOfflineConstraintNormalization(false);
     configs.push_back(config);
     config.EnableOfflineConstraintNormalization(true);
     configs.push_back(config);
@@ -94,12 +96,13 @@ Andersen::Configuration::GetAllConfigurations()
   };
   auto PickOfflineVariableSubstitution = [&](Configuration config)
   {
+    config.EnableOfflineVariableSubstitution(false);
     PickSolver(config);
     config.EnableOfflineVariableSubstitution(true);
     PickSolver(config);
   };
 
-  // Start with a configuration with every technique disabled, add all variations
+  // Adds one configuration for all valid combinations of features
   PickOfflineVariableSubstitution(NaiveSolverConfiguration());
 
   return configs;
