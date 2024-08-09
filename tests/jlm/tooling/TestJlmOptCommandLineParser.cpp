@@ -147,7 +147,6 @@ OutputFormatParsing()
 #endif
 
     auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
-
     testOutputFormatParsing(outputFormatString, outputFormat);
   }
 
