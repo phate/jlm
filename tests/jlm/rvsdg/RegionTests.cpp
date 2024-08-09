@@ -9,6 +9,7 @@
 
 #include <jlm/util/AnnotationMap.hpp>
 
+#include <algorithm>
 #include <cassert>
 
 /**
