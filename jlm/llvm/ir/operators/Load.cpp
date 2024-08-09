@@ -676,7 +676,8 @@ create_load_normal_form(
   return new jlm::llvm::load_normal_form(opclass, parent, graph);
 }
 
-static void __attribute__((constructor)) register_normal_form()
+static void __attribute__((constructor))
+register_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::llvm::LoadNonVolatileOperation),

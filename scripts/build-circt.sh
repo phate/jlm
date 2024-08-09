@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=debf1ed774c2bbdbfc8e7bc987a21f72e8f08f65
+GIT_COMMIT=2dc8240d91a0f993d616b152aa4d7520156862fe
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -10,7 +10,7 @@ CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
 CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
 LLVM_LIT_PATH=/usr/local/bin/lit
 
-LLVM_VERSION=17
+LLVM_VERSION=18
 LLVM_CONFIG_BIN=llvm-config-${LLVM_VERSION}
 
 function commit()

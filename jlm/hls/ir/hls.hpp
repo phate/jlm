@@ -25,8 +25,8 @@ class branch_op final : public jlm::rvsdg::simple_op
 private:
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::type> & type, bool loop)
       : jlm::rvsdg::simple_op(
-          { jlm::rvsdg::ctltype::Create(nalternatives), type },
-          { nalternatives, type }),
+            { jlm::rvsdg::ctltype::Create(nalternatives), type },
+            { nalternatives, type }),
         loop(loop)
   {}
 

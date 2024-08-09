@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=ab630d5a881a0e8fc5bdfa63a5984186fa9096c0
+GIT_COMMIT=90f30f1112906f2868fb42a6fa1a20fb8a20e03b
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -9,7 +9,7 @@ JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 MLIR_BUILD=${JLM_ROOT_DIR}/build-mlir
 MLIR_INSTALL=${JLM_ROOT_DIR}/usr
 
-LLVM_VERSION=17
+LLVM_VERSION=18
 LLVM_CONFIG_BIN=llvm-config-${LLVM_VERSION}
 
 function commit()

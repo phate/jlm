@@ -23,6 +23,7 @@
 #include <mlir/IR/Verifier.h>
 
 #include <circt/Dialect/FIRRTL/FIREmitter.h>
+#include <circt/Dialect/FIRRTL/FIRParser.h>
 #include <circt/Dialect/FIRRTL/FIRRTLDialect.h>
 #include <circt/Dialect/FIRRTL/FIRRTLOps.h>
 #include <circt/Dialect/FIRRTL/FIRRTLTypes.h>
@@ -48,7 +49,8 @@ public:
   }
 
   RhlsToFirrtlConverter()
-      : Context_(std::make_unique<::mlir::MLIRContext>())
+      : Context_(std::make_unique<::mlir::MLIRContext>()),
+        DefaultFIRVersion_{ 4, 0, 0 }
   {
     Context_->getOrLoadDialect<circt::firrtl::FIRRTLDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
@@ -279,6 +281,7 @@ private:
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;
+  const circt::firrtl::FIRVersion DefaultFIRVersion_;
 };
 
 } // namespace jlm::hls

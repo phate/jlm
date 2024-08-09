@@ -74,8 +74,8 @@ public:
 
   MemCpyNonVolatileOperation(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-          CreateOperandTypes(std::move(lengthType), numMemoryStates),
-          CreateResultTypes(numMemoryStates))
+            CreateOperandTypes(std::move(lengthType), numMemoryStates),
+            CreateResultTypes(numMemoryStates))
   {}
 
   bool
@@ -153,8 +153,8 @@ public:
 
   MemCpyVolatileOperation(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
       : MemCpyOperation(
-          CreateOperandTypes(std::move(lengthType), numMemoryStates),
-          CreateResultTypes(numMemoryStates))
+            CreateOperandTypes(std::move(lengthType), numMemoryStates),
+            CreateResultTypes(numMemoryStates))
   {}
 
   bool
