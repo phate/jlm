@@ -225,7 +225,9 @@ TestLoadFromUndef()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoadFromUndef", TestLoadFromUndef)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestLoadFromUndef",
+    TestLoadFromUndef)
 
 static int
 TestGetElementPtr()
@@ -250,7 +252,9 @@ TestGetElementPtr()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestGetElementPtr", TestGetElementPtr)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestGetElementPtr",
+    TestGetElementPtr)
 
 static int
 TestBitCast()
@@ -299,7 +303,9 @@ TestConstantPointerNull()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestConstantPointerNull", TestConstantPointerNull)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConstantPointerNull",
+    TestConstantPointerNull)
 
 static int
 TestBits2Ptr()
@@ -474,7 +480,9 @@ TestIndirectCall1()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall1", TestIndirectCall1)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall1",
+    TestIndirectCall1)
 
 static int
 TestIndirectCall2()
@@ -498,7 +506,9 @@ TestIndirectCall2()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall2", TestIndirectCall2)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall2",
+    TestIndirectCall2)
 
 static int
 TestExternalCall1()
@@ -526,7 +536,9 @@ TestExternalCall1()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalCall1", TestExternalCall1)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalCall1",
+    TestExternalCall1)
 
 static int
 TestGamma()
@@ -787,7 +799,9 @@ TestExternalMemory()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalMemory", TestExternalMemory)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalMemory",
+    TestExternalMemory)
 
 static int
 TestEscapedMemory1()
@@ -819,7 +833,9 @@ TestEscapedMemory1()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory1", TestEscapedMemory1)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory1",
+    TestEscapedMemory1)
 
 static int
 TestEscapedMemory2()
@@ -866,7 +882,9 @@ TestEscapedMemory2()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory2", TestEscapedMemory2)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory2",
+    TestEscapedMemory2)
 
 static int
 TestEscapedMemory3()
@@ -894,7 +912,9 @@ TestEscapedMemory3()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory3", TestEscapedMemory3)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory3",
+    TestEscapedMemory3)
 
 static int
 TestMemcpy()
@@ -975,7 +995,8 @@ TestStatistics()
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStatistics", TestStatistics)
 
 static int
-TestConfiguration() {
+TestConfiguration()
+{
   using namespace jlm::llvm::aa;
   auto config = Andersen::Configuration::DefaultConfiguration();
 
@@ -1013,7 +1034,9 @@ TestConfiguration() {
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestConfiguration", TestConfiguration)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConfiguration",
+    TestConfiguration)
 
 static int
 TestConstructPointsToGraph()
@@ -1101,4 +1124,6 @@ TestConstructPointsToGraph()
 
   return 0;
 }
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestConstructPointsToGraph", TestConstructPointsToGraph)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConstructPointsToGraph",
+    TestConstructPointsToGraph)
