@@ -164,8 +164,12 @@ OutputFormatParsing()
   for (size_t n = start; n != end; n++)
   {
     auto outputFormat = static_cast<JlmOptCommandLineOptions::OutputFormat>(n);
-    auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
+#ifndef ENABLE_MLIR
+    if (outputFormat == JlmOptCommandLineOptions::OutputFormat::Mlir)
+      continue;
+#endif
 
+    auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
     testOutputFormatParsing(outputFormatString, outputFormat);
   }
 
