@@ -9,17 +9,42 @@
 
 #include <cstring>
 
+// FIXME: We have a similar function in TestJlcCommandLineParser.cpp. We need to clean up.
 static const jlm::tooling::JlmOptCommandLineOptions &
 ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
 {
-  std::vector<const char *> cStrings;
+  auto cleanUp = [](const std::vector<char *> & array)
+  {
+    for (const auto & ptr : array)
+    {
+      delete[] ptr;
+    }
+  };
+
+  std::vector<char *> array;
   for (const auto & commandLineArgument : commandLineArguments)
-    cStrings.push_back(commandLineArgument.c_str());
+  {
+    array.push_back(new char[commandLineArgument.size() + 1]);
+    strncpy(array.back(), commandLineArgument.data(), commandLineArgument.size());
+    array.back()[commandLineArgument.size()] = '\0';
+  }
 
   static jlm::tooling::JlmOptCommandLineParser commandLineParser;
-  return commandLineParser.ParseCommandLineArguments(
-      static_cast<int>(cStrings.size()),
-      cStrings.data());
+  const jlm::tooling::JlmOptCommandLineOptions * commandLineOptions;
+  try
+  {
+    commandLineOptions =
+        &commandLineParser.ParseCommandLineArguments(static_cast<int>(array.size()), &array[0]);
+  }
+  catch (...)
+  {
+    cleanUp(array);
+    throw;
+  }
+
+  cleanUp(array);
+
+  return *commandLineOptions;
 }
 
 static void
@@ -145,7 +170,6 @@ OutputFormatParsing()
 #endif
 
     auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
-
     testOutputFormatParsing(outputFormatString, outputFormat);
   }
 

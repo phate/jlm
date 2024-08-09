@@ -361,7 +361,7 @@ CommandLineParser::Exception::~Exception() noexcept = default;
 JlcCommandLineParser::~JlcCommandLineParser() noexcept = default;
 
 const JlcCommandLineOptions &
-JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
+JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 {
   auto checkAndConvertJlmOptOptimizations =
       [](const ::llvm::cl::list<std::string> & optimizations,
@@ -712,7 +712,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
 JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept = default;
 
 const JlmOptCommandLineOptions &
-JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
+JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 {
   using namespace ::llvm;
 
@@ -956,7 +956,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 }
 
 const JlmOptCommandLineOptions &
-JlmOptCommandLineParser::Parse(int argc, const char * const * argv)
+JlmOptCommandLineParser::Parse(int argc, char ** argv)
 {
   static JlmOptCommandLineParser parser;
   return parser.ParseCommandLineArguments(argc, argv);
@@ -965,7 +965,7 @@ JlmOptCommandLineParser::Parse(int argc, const char * const * argv)
 JlmHlsCommandLineParser::~JlmHlsCommandLineParser() noexcept = default;
 
 const JlmHlsCommandLineOptions &
-JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
+JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 {
   CommandLineOptions_.Reset();
 
@@ -1026,7 +1026,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 }
 
 const JlmHlsCommandLineOptions &
-JlmHlsCommandLineParser::Parse(int argc, const char * const * argv)
+JlmHlsCommandLineParser::Parse(int argc, char ** argv)
 {
   static JlmHlsCommandLineParser parser;
   return parser.ParseCommandLineArguments(argc, argv);
@@ -1035,7 +1035,7 @@ JlmHlsCommandLineParser::Parse(int argc, const char * const * argv)
 JhlsCommandLineParser::~JhlsCommandLineParser() noexcept = default;
 
 const JhlsCommandLineOptions &
-JhlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
+JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 {
   CommandLineOptions_.Reset();
 
@@ -1304,7 +1304,7 @@ JhlsCommandLineParser::CreateDependencyFileFromFile(const util::filepath & f)
 }
 
 const JhlsCommandLineOptions &
-JhlsCommandLineParser::Parse(int argc, const char * const * argv)
+JhlsCommandLineParser::Parse(int argc, char ** argv)
 {
   static JhlsCommandLineParser parser;
   return parser.ParseCommandLineArguments(argc, argv);

@@ -584,7 +584,7 @@ public:
   CommandLineParser() = default;
 
   virtual const CommandLineOptions &
-  ParseCommandLineArguments(int argc, const char * const * argv) = 0;
+  ParseCommandLineArguments(int argc, char ** argv) = 0;
 };
 
 /**
@@ -596,7 +596,7 @@ public:
   ~JlcCommandLineParser() noexcept override;
 
   const JlcCommandLineOptions &
-  ParseCommandLineArguments(int argc, const char * const * argv) override;
+  ParseCommandLineArguments(int argc, char ** argv) override;
 
 private:
   static bool
@@ -629,10 +629,10 @@ public:
   ~JlmOptCommandLineParser() noexcept override;
 
   const JlmOptCommandLineOptions &
-  ParseCommandLineArguments(int argc, const char * const * argv) override;
+  ParseCommandLineArguments(int argc, char ** argv) override;
 
   static const JlmOptCommandLineOptions &
-  Parse(int argc, const char * const * argv);
+  Parse(int argc, char ** argv);
 
 private:
   std::unique_ptr<JlmOptCommandLineOptions> CommandLineOptions_;
@@ -647,10 +647,10 @@ public:
   ~JlmHlsCommandLineParser() noexcept override;
 
   const JlmHlsCommandLineOptions &
-  ParseCommandLineArguments(int argc, const char * const * argv) override;
+  ParseCommandLineArguments(int argc, char ** argv) override;
 
   static const JlmHlsCommandLineOptions &
-  Parse(int argc, const char * const * argv);
+  Parse(int argc, char ** argv);
 
 private:
   JlmHlsCommandLineOptions CommandLineOptions_;
@@ -665,10 +665,10 @@ public:
   ~JhlsCommandLineParser() noexcept override;
 
   const JhlsCommandLineOptions &
-  ParseCommandLineArguments(int argc, const char * const * argv) override;
+  ParseCommandLineArguments(int argc, char ** argv) override;
 
   static const JhlsCommandLineOptions &
-  Parse(int argc, const char * const * arv);
+  Parse(int argc, char ** arv);
 
 private:
   static bool

@@ -17,8 +17,6 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include <algorithm>
-
 namespace jlm::hls
 {
 
