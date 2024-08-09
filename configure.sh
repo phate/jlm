@@ -114,15 +114,6 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 	CIRCT_LDFLAGS_ARRAY=(
 		"-L${CIRCT_PATH}/lib"
-		"-lMLIR"
-		"-lMLIRBytecodeReader"
-		"-lMLIRBytecodeWriter"
-		"-lMLIRParser"
-		"-lMLIRSupport"
-		"-lMLIRIR"
-		"-lMLIROptLib"
-		"-lMLIRFuncDialect"
-		"-lMLIRTransforms"
 		"-lCIRCTAnalysisTestPasses"
 		"-lCIRCTDependenceAnalysis"
 		"-lCIRCTExportFIRRTL"
@@ -149,6 +140,7 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 		"-lCIRCTExportChiselInterface"
 		"-lCIRCTOM"
 		"-lCIRCTSupport"
+		"-lMLIR"
 	)
 fi
 
@@ -156,7 +148,7 @@ CPPFLAGS_MLIR=""
 if [ "${ENABLE_MLIR}" == "yes" ] ; then
 	CPPFLAGS_MLIR="-I${MLIR_PATH}/include -DENABLE_MLIR"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
-	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
+	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIRJLM -lMLIRRVSDG -lMLIR"
 fi
 
 if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
@@ -181,7 +173,7 @@ MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
 LLVM_VERSION=${LLVM_VERSION}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
-LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
+export LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
 EOF
 	if [ ! -z "${CXX-}" ] ; then
 		echo "CXX=${CXX}"

@@ -4,3 +4,4 @@ Makefile.custom
 docs/html
 build
 build-*
+usr

@@ -7,6 +7,8 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
+#include <jlm/util/AnnotationMap.hpp>
+
 #include <algorithm>
 #include <cassert>
 
@@ -275,6 +277,32 @@ ToTree_EmptyRvsdg()
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-ToTree_EmptyRvsdg", ToTree_EmptyRvsdg)
 
 static int
+ToTree_EmptyRvsdgWithAnnotations()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  graph rvsdg;
+
+  AnnotationMap annotationMap;
+  annotationMap.AddAnnotation(rvsdg.root(), Annotation("NumNodes", rvsdg.root()->nodes.size()));
+
+  // Act
+  auto tree = region::ToTree(*rvsdg.root(), annotationMap);
+  std::cout << tree << std::flush;
+
+  // Assert
+  assert(tree == "RootRegion NumNodes:0\n");
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/RegionTests-ToTree_EmptyRvsdgWithAnnotations",
+    ToTree_EmptyRvsdgWithAnnotations)
+
+static int
 ToTree_RvsdgWithStructuralNodes()
 {
   using namespace jlm::rvsdg;
@@ -282,6 +310,7 @@ ToTree_RvsdgWithStructuralNodes()
   // Arrange
   graph rvsdg;
   auto structuralNode = jlm::tests::structural_node::create(rvsdg.root(), 2);
+  jlm::tests::structural_node::create(structuralNode->subregion(0), 1);
   jlm::tests::structural_node::create(structuralNode->subregion(1), 3);
 
   // Act
@@ -291,8 +320,8 @@ ToTree_RvsdgWithStructuralNodes()
   // Assert
   auto numLines = std::count(tree.begin(), tree.end(), '\n');
 
-  // We should find '\n' 8 times: 1 root region + 2 structural nodes + 5 subregions
-  assert(numLines == 8);
+  // We should find '\n' 10 times: 1 root region + 3 structural nodes + 6 subregions
+  assert(numLines == 10);
 
   // Check that the last line printed looks accordingly
   auto lastLine = std::string("----Region[2]\n");
@@ -304,3 +333,40 @@ ToTree_RvsdgWithStructuralNodes()
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodes",
     ToTree_RvsdgWithStructuralNodes)
+
+static int
+ToTree_RvsdgWithStructuralNodesAndAnnotations()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
+
+  // Arrange
+  graph rvsdg;
+  auto structuralNode1 = jlm::tests::structural_node::create(rvsdg.root(), 2);
+  auto structuralNode2 = jlm::tests::structural_node::create(structuralNode1->subregion(1), 3);
+  auto subregion2 = structuralNode2->subregion(2);
+
+  AnnotationMap annotationMap;
+  annotationMap.AddAnnotation(subregion2, Annotation("NumNodes", subregion2->nodes.size()));
+  annotationMap.AddAnnotation(subregion2, Annotation("NumArguments", subregion2->narguments()));
+
+  // Act
+  auto tree = region::ToTree(*rvsdg.root(), annotationMap);
+  std::cout << tree << std::flush;
+
+  // Assert
+  auto numLines = std::count(tree.begin(), tree.end(), '\n');
+
+  // We should find '\n' 8 times: 1 root region + 2 structural nodes + 5 subregions
+  assert(numLines == 8);
+
+  // Check that the last line printed looks accordingly
+  auto lastLine = std::string("----Region[2] NumNodes:0 NumArguments:0\n");
+  assert(tree.compare(tree.size() - lastLine.size(), lastLine.size(), lastLine) == 0);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodesAndAnnotations",
+    ToTree_RvsdgWithStructuralNodesAndAnnotations)
