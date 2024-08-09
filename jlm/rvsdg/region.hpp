@@ -13,6 +13,12 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 
+namespace jlm::util
+{
+class Annotation;
+class AnnotationMap;
+}
+
 namespace jlm::rvsdg
 {
 
@@ -392,7 +398,47 @@ public:
 
   /**
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
-   * ASCII format.
+   * ASCII format of the following form:
+   *
+   * RootRegion                              \n
+   * -STRUCTURAL_TEST_NODE                   \n
+   * --Region[0]                             \n
+   * --Region[1]                             \n
+   * ---STRUCTURAL_TEST_NODE                 \n
+   * ----Region[0]                           \n
+   * ----Region[1]                           \n
+   * ----Region[2] NumNodes:0 NumArguments:0 \n
+   *
+   *
+   * The above tree has a single structural node in the RVSDG's root region. This node has two
+   * subregions, where the second subregion contains another structural node with three subregions.
+   * For the third subregion, two annotations with label NumNodes and NumArguments was provided in
+   * \p annotationMap.
+   *
+   * @param region The top-level region that is converted
+   * @param annotationMap A map with annotations for instances of \ref region%s or
+   * structural_node%s.
+   * @return A string containing the ASCII tree of \p region.
+   */
+  [[nodiscard]] static std::string
+  ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept;
+
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a tree in
+   * ASCII format of the following form:
+   *
+   * RootRegion              \n
+   * -STRUCTURAL_TEST_NODE   \n
+   * --Region[0]             \n
+   * --Region[1]             \n
+   * ---STRUCTURAL_TEST_NODE \n
+   * ----Region[0]           \n
+   * ----Region[1]           \n
+   * ----Region[2]           \n
+   *
+   *
+   * The above tree has a single structural node in the RVSDG's root region. This node has two
+   * subregions, where the second subregion contains another structural node with three subregions.
    *
    * @param region The top-level region that is converted
    * @return A string containing the ASCII tree of \p region
@@ -407,8 +453,28 @@ public:
   region_bottom_node_list bottom_nodes;
 
 private:
+  static void
+  ToTree(
+      const rvsdg::region & region,
+      const util::AnnotationMap & annotationMap,
+      size_t indentationDepth,
+      std::stringstream & stream) noexcept;
+
   [[nodiscard]] static std::string
-  ToTree(const rvsdg::region & region, size_t identationDepth) noexcept;
+  GetAnnotationString(
+      const void * key,
+      const util::AnnotationMap & annotationMap,
+      char annotationSeparator,
+      char labelValueSeparator);
+
+  [[nodiscard]] static std::string
+  ToString(
+      const std::vector<util::Annotation> & annotations,
+      char annotationSeparator,
+      char labelValueSeparator);
+
+  [[nodiscard]] static std::string
+  ToString(const util::Annotation & annotation, char labelValueSeparator);
 
   size_t index_;
   jlm::rvsdg::graph * graph_;
