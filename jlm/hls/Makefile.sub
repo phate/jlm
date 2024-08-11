@@ -36,6 +36,8 @@ libhls_SOURCES = \
     \
     jlm/hls/ir/hls.cpp \
     \
+    jlm/hls/opt/cne.cpp \
+    \
     jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
@@ -71,6 +73,8 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp \
 	\
 	jlm/hls/ir/hls.hpp \
+	\
+	jlm/hls/opt/cne.hpp \
 	\
 	jlm/hls/util/view.hpp \
 
