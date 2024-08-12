@@ -115,7 +115,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
   }
   else if (dynamic_cast<const llvm::PointerType *>(type))
   {
-    return 64;
+    return GetPointerSizeInBits();
   }
   else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(type))
   {
