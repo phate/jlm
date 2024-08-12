@@ -278,7 +278,7 @@ bool
 PointerObjectSet::CanTrackPointeesImplicitly(PointerObjectIndex index) const noexcept
 {
   auto root = GetUnificationRoot(index);
-  return PointerObjects_[root].PointsToExternal && PointerObjects_[root].PointeesEscaping;
+  return PointerObjects_[root].CanTrackPointeesImplicitly();
 }
 
 PointerObjectIndex
@@ -384,6 +384,24 @@ PointerObjectSet::MakePointsToSetSuperset(PointerObjectIndex superset, PointerOb
   return modified;
 }
 
+bool
+PointerObjectSet::IsPointingTo(PointerObjectIndex pointer, PointerObjectIndex pointee) const
+{
+  // Check if it is an implicit pointee
+  if (IsPointingToExternal(pointer) && HasEscaped(pointee))
+  {
+    return true;
+  }
+
+  // Otherwise, check if it is an explicit pointee
+  if (GetPointsToSet(pointer).Contains(pointee))
+  {
+    return true;
+  }
+
+  return false;
+}
+
 std::unique_ptr<PointerObjectSet>
 PointerObjectSet::Clone() const
 {
@@ -399,29 +417,23 @@ PointerObjectSet::HasIdenticalSolAs(const PointerObjectSet & other) const
   // Check that each pointer object has the same Sol set in both sets
   for (PointerObjectIndex i = 0; i < NumPointerObjects(); i++)
   {
+    // Either i escapes in both sets, or in neither set
     if (HasEscaped(i) != other.HasEscaped(i))
       return false;
 
+    // Either i points to external in both sets, or in neither set
     if (IsPointingToExternal(i) != other.IsPointingToExternal(i))
       return false;
 
-    auto & thisPointsToSet = GetPointsToSet(i);
-    auto & otherPointsToSet = other.GetPointsToSet(i);
-
-    for (auto thisPointee : thisPointsToSet.Items())
+    // Each explicit pointee of i in one set, should also be a pointee of i in the opposite set
+    for (auto thisPointee : GetPointsToSet(i).Items())
     {
-      // Skip doubled-up pointers, as they do not affect the points-to set
-      if (HasEscaped(thisPointee) && IsPointingToExternal(i))
-        continue;
-      if (!otherPointsToSet.Contains(thisPointee))
+      if (!other.IsPointingTo(i, thisPointee))
         return false;
     }
-    for (auto otherPointee : otherPointsToSet.Items())
+    for (auto otherPointee : other.GetPointsToSet(i).Items())
     {
-      // Skip doubled-up pointers, as they do not affect the points-to set
-      if (other.HasEscaped(otherPointee) && other.IsPointingToExternal(i))
-        continue;
-      if (!thisPointsToSet.Contains(otherPointee))
+      if (!IsPointingTo(i, otherPointee))
         return false;
     }
   }
@@ -1093,7 +1105,7 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
   std::vector<util::HashSet<PointerObjectIndex>> successors(totalNodeCount);
   std::vector<bool> isDirectNode(totalNodeCount, false);
 
-  // Initialize all registers with empty points-to sets as direct nodes
+  // Nodes representing registers can be direct nodes, but only if they have empty points-to sets
   for (auto [_, index] : Set_.GetRegisterMap())
     isDirectNode[index] = Set_.GetPointsToSet(index).IsEmpty();
 

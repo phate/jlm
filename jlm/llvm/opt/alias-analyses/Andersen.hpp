@@ -176,7 +176,11 @@ public:
     [[nodiscard]] static Configuration
     NaiveSolverConfiguration() noexcept
     {
-      return Configuration{};
+      Configuration config;
+      config.EnableOfflineVariableSubstitution(false);
+      config.EnableOfflineConstraintNormalization(false);
+      config.SetSolver(Solver::Naive);
+      return config;
     }
 
     /**

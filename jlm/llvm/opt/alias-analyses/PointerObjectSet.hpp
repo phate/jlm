@@ -407,6 +407,14 @@ public:
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
 
   /**
+   * @param pointer the PointerObject possibly pointing to \p pointee
+   * @param pointee the PointerObject possibly being pointed at
+   * @return true if \p pointer points to \p pointee, either explicitly, implicitly, or both.
+   */
+  bool
+  IsPointingTo(PointerObjectIndex pointer, PointerObjectIndex pointee) const;
+
+  /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
    * flags, unifications and points-to sets.
    * @return an owned clone of this
@@ -920,8 +928,9 @@ public:
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
-   *    - Online Cycle Detection
    *  - Hardekopf and Lin, 2007: "The Ant and the Grasshopper".
+   * These papers also describe a set of techniques that potentially improve solving performance:
+   *  - Online Cycle Detection (Pearce, 2003)
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
    * @return an instance of WorklistStatistics describing solver statistics
