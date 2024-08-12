@@ -34,6 +34,15 @@ public:
   static int
   JlmSize(const jlm::rvsdg::type * type);
 
+  /**
+   * @return The size of a pointer in bits.
+   */
+  [[nodiscard]] static size_t
+  GetPointerSizeInBits()
+  {
+    return 64;
+  }
+
 private:
   virtual std::string
   extension() = 0;

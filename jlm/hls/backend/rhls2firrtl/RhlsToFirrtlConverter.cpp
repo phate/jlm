@@ -327,7 +327,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
       int bits = JlmSize(pointeeType);
       if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
       {
-        ;
+        pointeeType = nullptr;
       }
       else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
       {
@@ -341,13 +341,13 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
       auto input = GetSubfield(body, inBundles[i], "data");
       auto asSInt = AddAsSIntOp(body, input);
       int bytes = bits / 8;
-      auto constantOp = GetConstant(body, 64, bytes);
+      auto constantOp = GetConstant(body, GetPointerSizeInBits(), bytes);
       auto cvtOp = AddCvtOp(body, constantOp);
       auto offset = AddMulOp(body, asSInt, cvtOp);
       result = AddAddOp(body, result, offset);
     }
     auto asUInt = AddAsUIntOp(body, result);
-    Connect(body, outData, AddBitsOp(body, asUInt, 63, 0));
+    Connect(body, outData, AddBitsOp(body, asUInt, GetPointerSizeInBits() - 1, 0));
   }
   else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->operation())))
   {
@@ -1576,7 +1576,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
     }
     else if (dynamic_cast<const llvm::PointerType *>(&node->output(0)->type()))
     {
-      bitWidth = 64;
+      bitWidth = GetPointerSizeInBits();
     }
     else
     {
@@ -3138,7 +3138,7 @@ RhlsToFirrtlConverter::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo
   memReqElements.push_back(BundleElement(
       Builder_->getStringAttr("addr"),
       false,
-      circt::firrtl::IntType::get(Builder_->getContext(), false, 64)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, GetPointerSizeInBits())));
   memReqElements.push_back(BundleElement(
       Builder_->getStringAttr("data"),
       false,
@@ -3798,6 +3798,7 @@ RhlsToFirrtlConverter::InitializeMemReq(circt::firrtl::FModuleOp module)
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto invalid1 = GetInvalid(body, 1);
   auto invalid3 = GetInvalid(body, 3);
+  auto invalidPtr = GetInvalid(body, GetPointerSizeInBits());
   auto invalid64 = GetInvalid(body, 64);
 
   auto memValid = GetSubfield(body, mem, "valid");
@@ -3807,7 +3808,7 @@ RhlsToFirrtlConverter::InitializeMemReq(circt::firrtl::FModuleOp module)
   auto memWidth = GetSubfield(body, mem, "width");
 
   Connect(body, memValid, zeroBitValue);
-  Connect(body, memAddr, invalid64);
+  Connect(body, memAddr, invalidPtr);
   Connect(body, memData, invalid64);
   Connect(body, memWrite, invalid1);
   Connect(body, memWidth, invalid3);
@@ -3931,7 +3932,7 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
       int bits = JlmSize(pointeeType);
       if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
       {
-        ;
+        pointeeType = nullptr;
       }
       else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
       {
@@ -3959,7 +3960,7 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
       }
       else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
       {
-        bitWidth = 64;
+        bitWidth = GetPointerSizeInBits();
       }
       else
       {
