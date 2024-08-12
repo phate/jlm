@@ -18,6 +18,8 @@ namespace jlm::hls
 
 /**
  * \brief Common Node Elimination
+ * This is mainly a copy of the CNE optimization in the LLVM backend with the addition of support
+ * for the hls::loop_op.
  */
 class cne final : public llvm::optimization
 {

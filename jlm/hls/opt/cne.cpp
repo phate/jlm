@@ -420,7 +420,6 @@ mark(const jlm::rvsdg::structural_node * node, cnectx & ctx)
                 { typeid(llvm::phi::operation), mark_phi },
                 { typeid(llvm::delta::operation), mark_delta } });
 
-
   auto & op = node->operation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](node, ctx);
