@@ -16,6 +16,10 @@ class RvsdgModule;
 namespace jlm::hls
 {
 
+// FIXME
+// The cne optimization should be generalized such that it can be used for both the LLVM and HLS
+// backend.
+
 /**
  * \brief Common Node Elimination
  * This is mainly a copy of the CNE optimization in the LLVM backend with the addition of support
