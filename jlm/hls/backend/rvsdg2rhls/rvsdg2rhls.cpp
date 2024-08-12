@@ -24,6 +24,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
+#include <jlm/hls/opt/cne.hpp>
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
@@ -32,7 +33,6 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
@@ -56,7 +56,7 @@ split_opt(llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
-  jlm::llvm::cne cne;
+  jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
   jlm::llvm::nodereduction red;
@@ -74,7 +74,7 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
-  jlm::llvm::cne cne;
+  jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
   jlm::util::StatisticsCollector statisticsCollector;
