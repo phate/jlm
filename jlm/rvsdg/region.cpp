@@ -36,6 +36,11 @@ argument::argument(
     if (input->node() != region->node())
       throw jlm::util::error("Argument cannot be added to input.");
 
+    if (input->type() != *Type())
+    {
+      throw util::type_error(Type()->debug_string(), input->type().debug_string());
+    }
+
     input->arguments.push_back(this);
   }
 }

@@ -75,7 +75,22 @@ ArgumentInputTypeMismatch()
   {
     exceptionWasCaught = true;
   }
+  assert(exceptionWasCaught);
 
+  exceptionWasCaught = false;
+  try
+  {
+    jlm::rvsdg::argument::create(
+        structuralNode->subregion(0),
+        structuralInput,
+        jlm::rvsdg::port(stateType));
+    // The line below should not be executed as the line above is expected to throw an exception.
+    assert(false);
+  }
+  catch (type_error &)
+  {
+    exceptionWasCaught = true;
+  }
   assert(exceptionWasCaught);
 
   return 0;
