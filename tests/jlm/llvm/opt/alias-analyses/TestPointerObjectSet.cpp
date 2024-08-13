@@ -7,8 +7,8 @@
 
 #include <test-registry.hpp>
 
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
-#include <jlm/util/Worklist.hpp>
 
 #include <cassert>
 
@@ -875,14 +875,23 @@ TestPointerObjectSet()
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
   TestPointerObjectConstraintSetSolve<false>();
-  using Policy = jlm::llvm::aa::PointerObjectConstraintSet::WorklistSolverPolicy;
-  for (int onlineCD = 0; onlineCD <= 1; onlineCD++)
+
+  auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
+  for (const auto & config : allConfigs)
   {
-    TestPointerObjectConstraintSetSolve<true>(Policy::LeastRecentlyFired, onlineCD);
-    TestPointerObjectConstraintSetSolve<true>(Policy::TwoPhaseLeastRecentlyFired, onlineCD);
-    TestPointerObjectConstraintSetSolve<true>(Policy::FirstInFirstOut, onlineCD);
-    TestPointerObjectConstraintSetSolve<true>(Policy::LastInFirstOut, onlineCD);
+    // Ignore all configs that enable features that do not affect SolveUsingWorklist()
+    if (config.GetSolver() != jlm::llvm::aa::Andersen::Configuration::Solver::Worklist)
+      continue;
+    if (config.IsOfflineVariableSubstitutionEnabled())
+      continue;
+    if (config.IsOfflineConstraintNormalizationEnabled())
+      continue;
+
+    TestPointerObjectConstraintSetSolve<true>(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled());
   }
+
   TestClonePointerObjectConstraintSet();
   return 0;
 }

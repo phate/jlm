@@ -167,6 +167,12 @@ public:
   NumPointerObjects() const noexcept;
 
   /**
+   * @return the number of PointerObjects where CanTrackPointeesImplicitly() is true
+   */
+  [[nodiscard]] size_t
+  NumPointerObjectsWithImplicitPointees() const noexcept;
+
+  /**
    * @return the number of PointerObjects in the set matching the specified \p kind.
    */
   [[nodiscard]] size_t
@@ -336,6 +342,14 @@ public:
   MarkAsPointingToExternal(PointerObjectIndex index);
 
   /**
+   * @return true if the PointerObject with the given \p index is flagged as both
+   * PointsToExternal and PointeesEscaping.
+   * In that case, any explicit pointee will also be implicit, so it is better to avoid explicit.
+   */
+  [[nodiscard]] bool
+  CanTrackPointeesImplicitly(PointerObjectIndex index) const noexcept;
+
+  /**
    * @return the root in the unification the PointerObject with the given \p index belongs to.
    * PointerObjects that have not been unified will always be their own root.
    */
@@ -381,7 +395,8 @@ public:
   AddToPointsToSet(PointerObjectIndex pointer, PointerObjectIndex pointee);
 
   /**
-   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference
+   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference.
+   * Also propagates the PointsToExternal flag.
    * @param superset the index of the PointerObject that shall point to everything subset points to
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
    * as well
@@ -392,12 +407,31 @@ public:
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
 
   /**
+   * @param pointer the PointerObject possibly pointing to \p pointee
+   * @param pointee the PointerObject possibly being pointed at
+   * @return true if \p pointer points to \p pointee, either explicitly, implicitly, or both.
+   */
+  bool
+  IsPointingTo(PointerObjectIndex pointer, PointerObjectIndex pointee) const;
+
+  /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
    * flags, unifications and points-to sets.
    * @return an owned clone of this
    */
   [[nodiscard]] std::unique_ptr<PointerObjectSet>
   Clone() const;
+
+  /**
+   * Compares the Sol sets of all PointerObjects between two PointerObjectSets.
+   * Assumes that this and \p other represent the same set of PointerObjects, and in the same order.
+   * Only the final Sol set of each PointerObject matters, so unifications do not need to match.
+   * The set of escaped PointerObjects must match.
+   * @param other the set being compared to
+   * @return true if this and \p other are identical, false otherwise
+   */
+  [[nodiscard]] bool
+  HasIdenticalSolAs(const PointerObjectSet & other) const;
 };
 
 /**
@@ -757,6 +791,12 @@ public:
     size_t NumWorkItemsPopped{};
 
     /**
+     * The sum of the number of new pointees, for each visited work item.
+     * If Difference Propagation is not enabled, all pointees are always regarded as new.
+     */
+    size_t NumWorkItemNewPointees{};
+
+    /**
      * The number of cycles detected by online cycle detection, if enabled.
      */
     std::optional<size_t> NumOnlineCyclesDetected;
@@ -823,10 +863,22 @@ public:
   AddConstraint(ConstraintVariant c);
 
   /**
-   * Retrieves all added constraints that were not simple one-off flag changes
+   * @return all added constraints that were not simple one-off pointee inclusions or flag changes
    */
   [[nodiscard]] const std::vector<ConstraintVariant> &
   GetConstraints() const noexcept;
+
+  /**
+   * @return the number of base constraints
+   */
+  [[nodiscard]] size_t
+  NumBaseConstraints() const noexcept;
+
+  /**
+   * @return the number of flag constraints, including memory objects that are not pointees.
+   */
+  [[nodiscard]] size_t
+  NumFlagConstraints() const noexcept;
 
   /**
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
@@ -876,10 +928,11 @@ public:
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
-   *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
+   *  - Hardekopf and Lin, 2007: "The Ant and the Grasshopper".
+   * These papers also describe a set of techniques that potentially improve solving performance:
+   *  - Online Cycle Detection (Pearce, 2003)
    * @param policy the worklist iteration order policy to use
-   * @param enableOnlineCycleDetection if true, online cycle detection will be performed, from
-   *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
+   * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
