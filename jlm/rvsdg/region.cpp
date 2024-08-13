@@ -111,6 +111,11 @@ result::result(
     if (output->node() != region->node())
       throw jlm::util::error("Result cannot be added to output.");
 
+    if (*Type() != *output->Type())
+    {
+      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+    }
+
     output->results.push_back(this);
   }
 }
@@ -127,6 +132,11 @@ result::result(
   {
     if (output->node() != region->node())
       throw jlm::util::error("Result cannot be added to output.");
+
+    if (*Type() != *output->Type())
+    {
+      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+    }
 
     output->results.push_back(this);
   }
@@ -151,7 +161,7 @@ result::create(
     jlm::rvsdg::structural_output * output,
     std::shared_ptr<const jlm::rvsdg::type> type)
 {
-  auto result = new jlm::rvsdg::result(region, origin, output, jlm::rvsdg::port(std::move(type)));
+  auto result = new jlm::rvsdg::result(region, origin, output, std::move(type));
   region->append_result(result);
   return result;
 }
