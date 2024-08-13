@@ -51,6 +51,7 @@ static int
 ArgumentInputTypeMismatch()
 {
   using namespace jlm::tests;
+  using namespace jlm::util;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -63,14 +64,19 @@ ArgumentInputTypeMismatch()
   auto structuralInput = jlm::rvsdg::structural_input::create(structuralNode, x, valueType);
 
   // Act & Assert
+  bool exceptionWasCaught = false;
   try
   {
     jlm::rvsdg::argument::create(structuralNode->subregion(0), structuralInput, stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
-  catch (...)
-  {}
+  catch (type_error &)
+  {
+    exceptionWasCaught = true;
+  }
+
+  assert(exceptionWasCaught);
 
   return 0;
 }
