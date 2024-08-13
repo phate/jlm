@@ -100,7 +100,7 @@ result::result(
   {
     if (output->node() != region->node())
       throw jlm::util::error("Result cannot be added to output.");
-    
+
     if (*Type() != *output->Type())
     {
       throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
