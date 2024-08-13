@@ -320,7 +320,7 @@ ToTree_RvsdgWithStructuralNodes()
   // Assert
   auto numLines = std::count(tree.begin(), tree.end(), '\n');
 
-  // We should find '\n' 8 times: 1 root region + 3 structural nodes + 6 subregions
+  // We should find '\n' 10 times: 1 root region + 3 structural nodes + 6 subregions
   assert(numLines == 10);
 
   // Check that the last line printed looks accordingly
