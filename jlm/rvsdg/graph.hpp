@@ -22,6 +22,23 @@
 namespace jlm::rvsdg
 {
 
+// FIXME: add documentation
+class GraphImport : public argument
+{
+protected:
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name);
+
+public:
+  [[nodiscard]] const std::string &
+  Name() const noexcept
+  {
+    return Name_;
+  }
+
+private:
+  std::string Name_;
+};
+
 /* impport class */
 
 class impport : public port

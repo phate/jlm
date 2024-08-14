@@ -14,6 +14,51 @@
 namespace jlm::llvm
 {
 
+// FIXME: add documentation
+class GraphImport final : public rvsdg::GraphImport
+{
+private:
+  GraphImport(
+      rvsdg::graph & graph,
+      std::shared_ptr<const rvsdg::valuetype> valueType,
+      std::string name,
+      llvm::linkage linkage)
+      : rvsdg::GraphImport(graph, PointerType::Create(), std::move(name)),
+        Linkage_(std::move(linkage)),
+        ValueType_(std::move(valueType))
+  {}
+
+public:
+  [[nodiscard]] const linkage &
+  Linkage() const noexcept
+  {
+    return Linkage_;
+  }
+
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
+  ValueType() const noexcept
+  {
+    return ValueType_;
+  }
+
+  static GraphImport &
+  Create(
+      rvsdg::graph & graph,
+      std::shared_ptr<const rvsdg::valuetype> valueType,
+      std::string name,
+      llvm::linkage linkage)
+  {
+    auto graphImport =
+        new GraphImport(graph, std::move(valueType), std::move(name), std::move(linkage));
+    graph.root()->append_argument(graphImport);
+    return *graphImport;
+  }
+
+private:
+  llvm::linkage Linkage_;
+  std::shared_ptr<const rvsdg::valuetype> ValueType_;
+};
+
 /* impport class */
 
 class impport final : public jlm::rvsdg::impport
