@@ -36,7 +36,6 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/sext.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
-    jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
     jlm/llvm/ir/tac.cpp \
     jlm/llvm/ir/types.cpp \

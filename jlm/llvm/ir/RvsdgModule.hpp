@@ -59,67 +59,6 @@ private:
   std::shared_ptr<const rvsdg::valuetype> ValueType_;
 };
 
-/* impport class */
-
-class impport final : public jlm::rvsdg::impport
-{
-public:
-  virtual ~impport();
-
-  impport(
-      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
-      const std::string & name,
-      const linkage & lnk)
-      : jlm::rvsdg::impport(PointerType::Create(), name),
-        linkage_(lnk),
-        ValueType_(std::move(valueType))
-  {}
-
-  impport(const impport & other) = default;
-
-  impport(impport && other) = default;
-
-  impport &
-  operator=(const impport &) = delete;
-
-  impport &
-  operator=(impport &&) = delete;
-
-  const jlm::llvm::linkage &
-  linkage() const noexcept
-  {
-    return linkage_;
-  }
-
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
-  Type() const noexcept
-  {
-    return ValueType_;
-  }
-
-  [[nodiscard]] const jlm::rvsdg::valuetype &
-  GetValueType() const noexcept
-  {
-    return *ValueType_;
-  }
-
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
-
-private:
-  jlm::llvm::linkage linkage_;
-  std::shared_ptr<const jlm::rvsdg::valuetype> ValueType_;
-};
-
-static inline bool
-is_import(const jlm::rvsdg::output * output)
-{
-  return dynamic_cast<const rvsdg::GraphImport *>(output);
-}
-
 static inline bool
 is_export(const jlm::rvsdg::input * input)
 {

@@ -39,50 +39,6 @@ private:
   std::string Name_;
 };
 
-/* impport class */
-
-class impport : public port
-{
-public:
-  virtual ~impport();
-
-  impport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
-      : port(std::move(type)),
-        name_(name)
-  {}
-
-  impport(const impport & other)
-      : port(other),
-        name_(other.name_)
-  {}
-
-  impport(impport && other)
-      : port(other),
-        name_(std::move(other.name_))
-  {}
-
-  impport &
-  operator=(const impport &) = delete;
-
-  impport &
-  operator=(impport &&) = delete;
-
-  const std::string &
-  name() const noexcept
-  {
-    return name_;
-  }
-
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
-
-private:
-  std::string name_;
-};
-
 /* expport class */
 
 class expport : public port
@@ -160,12 +116,6 @@ public:
 
   jlm::rvsdg::node_normal_form *
   node_normal_form(const std::type_info & type) noexcept;
-
-  inline jlm::rvsdg::argument *
-  add_import(const impport & port)
-  {
-    return argument::create(root(), nullptr, port);
-  }
 
   inline jlm::rvsdg::input *
   add_export(jlm::rvsdg::output * operand, const expport & port)
