@@ -21,7 +21,7 @@ namespace jlm::tests
 {
 
 // FIXME: documentation
-class GraphImport final : rvsdg::GraphImport
+class GraphImport final : public rvsdg::GraphImport
 {
   GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
       : rvsdg::GraphImport(graph, std::move(type), std::move(name))

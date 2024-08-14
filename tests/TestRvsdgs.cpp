@@ -1964,8 +1964,16 @@ ImportTest::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto d1 = &GraphImport::Create(*graph, jlm::rvsdg::bittype::Create(32), "d1", linkage::external_linkage));
-  auto d2 = &GraphImport::Create(*graph, jlm::rvsdg::bittype::Create(32), "d2", linkage::external_linkage));
+  auto d1 = &GraphImport::Create(
+      *graph,
+      jlm::rvsdg::bittype::Create(32),
+      "d1",
+      linkage::external_linkage);
+  auto d2 = &GraphImport::Create(
+      *graph,
+      jlm::rvsdg::bittype::Create(32),
+      "d2",
+      linkage::external_linkage);
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
@@ -2908,7 +2916,11 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return &GraphImport::Create(*rvsdg, externalFunctionType, "externalFunction", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunctionType,
+        "externalFunction",
+        linkage::external_linkage);
   };
 
   auto SetupGlobal = [&]()
@@ -3731,7 +3743,7 @@ VariadicFunctionTest1::SetupRvsdg()
       { iostatetype::Create(), MemoryStateType::Create() });
 
   // Setup h()
-  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, "h", linkage::external_linkage));
+  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, "h", linkage::external_linkage);
 
   // Setup f()
   {

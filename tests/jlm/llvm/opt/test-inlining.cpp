@@ -26,7 +26,7 @@ test1()
   // Arrange
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto i = graph.add_import({ jlm::tests::valuetype::Create(), "i" });
+  auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "i");
 
   auto SetupF1 = [&]()
   {
@@ -121,7 +121,7 @@ test2()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto i = graph.add_import({ pt, "i" });
+  auto i = &jlm::tests::GraphImport::Create(graph, pt, "i");
 
   auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
   {

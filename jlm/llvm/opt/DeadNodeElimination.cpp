@@ -193,7 +193,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 
   Context_->MarkAlive(output);
 
-  if (is_import(&output))
+  if (is<rvsdg::GraphImport>(&output))
   {
     return;
   }

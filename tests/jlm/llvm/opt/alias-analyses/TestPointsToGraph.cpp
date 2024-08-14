@@ -94,10 +94,11 @@ private:
     auto & rootRegion = *rvsdg.root();
     for (size_t n = 0; n < rootRegion.narguments(); n++)
     {
-      auto & argument = *rootRegion.argument(n);
+      auto & graphImport = *jlm::util::AssertedCast<const GraphImport>(rootRegion.argument(n));
 
-      auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, argument);
-      auto & registerNode = aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &argument });
+      auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, graphImport);
+      auto & registerNode =
+          aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &graphImport });
       registerNode.AddEdge(importNode);
     }
   }

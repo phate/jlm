@@ -15,7 +15,7 @@ test_initialization()
   auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto i = graph.add_import({ vtype, "i" });
+  auto i = &jlm::tests::GraphImport::Create(graph, vtype, "i");
 
   auto constant = jlm::tests::test_op::create(graph.root(), {}, { vtype });
   auto unary = jlm::tests::test_op::create(graph.root(), { i }, { vtype });

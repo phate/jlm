@@ -119,7 +119,7 @@ instrument_ref(llvm::RvsdgModule & rm)
         llvm::iostatetype::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
-  auto reference_alloca = llvm::GraphImport::Create(
+  auto & reference_alloca = llvm::GraphImport::Create(
       graph,
       allocaFunctionType,
       "reference_alloca",

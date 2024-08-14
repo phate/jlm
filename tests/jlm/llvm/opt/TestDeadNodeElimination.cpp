@@ -33,8 +33,9 @@ TestRoot()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  graph.add_import({ jlm::tests::valuetype::Create(), "x" });
-  auto y = graph.add_import({ jlm::tests::valuetype::Create(), "y" });
+
+  jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "y");
   graph.add_export(y, { y->Type(), "z" });
 
   //	jlm::rvsdg::view(graph.root(), stdout);
@@ -54,9 +55,9 @@ TestGamma()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
   auto ev1 = gamma->add_entryvar(x);
@@ -93,8 +94,8 @@ TestGamma2()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
   gamma->add_entryvar(x);
@@ -123,9 +124,9 @@ TestTheta()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
-  auto z = graph.add_import({ vt, "z" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
@@ -166,9 +167,9 @@ TestNestedTheta()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto otheta = jlm::rvsdg::theta_node::create(graph.root());
 
@@ -210,11 +211,11 @@ TestEvolvingTheta()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto c = graph.add_import({ ct, "c" });
-  auto x1 = graph.add_import({ vt, "x1" });
-  auto x2 = graph.add_import({ vt, "x2" });
-  auto x3 = graph.add_import({ vt, "x3" });
-  auto x4 = graph.add_import({ vt, "x4" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x1 = &jlm::tests::GraphImport::Create(graph, vt, "x1");
+  auto x2 = &jlm::tests::GraphImport::Create(graph, vt, "x2");
+  auto x3 = &jlm::tests::GraphImport::Create(graph, vt, "x3");
+  auto x4 = &jlm::tests::GraphImport::Create(graph, vt, "x4");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
@@ -248,8 +249,8 @@ TestLambda()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto lambda = lambda::node::create(
       graph.root(),
@@ -284,9 +285,9 @@ TestPhi()
 
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
   auto setupF1 = [&](jlm::rvsdg::region & region, phi::rvoutput & rv2, jlm::rvsdg::argument & dx)
   {
@@ -396,9 +397,9 @@ TestDelta()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
   auto deltaNode =
       delta::node::Create(rvsdg.root(), valueType, "delta", linkage::external_linkage, "", false);

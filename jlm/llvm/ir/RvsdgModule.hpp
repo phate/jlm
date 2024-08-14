@@ -117,10 +117,7 @@ private:
 static inline bool
 is_import(const jlm::rvsdg::output * output)
 {
-  auto graph = output->region()->graph();
-
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return argument && argument->region() == graph->root();
+  return dynamic_cast<const rvsdg::GraphImport *>(output);
 }
 
 static inline bool

@@ -151,16 +151,14 @@ inline_calls(jlm::rvsdg::region * region)
       auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(traced);
       if (!so)
       {
-        auto arg = dynamic_cast<const jlm::rvsdg::argument *>(traced);
-        auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
-        if (ip)
+        if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
         {
-          if (ip->name().rfind("decouple_", 0) == 0)
+          if (graphImport->Name().rfind("decouple_", 0) == 0)
           {
             // can't inline pseudo functions used for decoupling
             continue;
           }
-          throw jlm::util::error("can not inline external function " + ip->name());
+          throw jlm::util::error("can not inline external function " + graphImport->Name());
         }
       }
       JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
@@ -454,9 +452,10 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   instrument_ref(*reference);
   for (size_t i = 0; i < reference->Rvsdg().root()->narguments(); ++i)
   {
-    auto arg = reference->Rvsdg().root()->argument(i);
-    auto imp = dynamic_cast<const llvm::impport *>(&arg->port());
-    std::cout << "impport " << imp->name() << ": " << imp->type().debug_string() << "\n";
+    auto graphImport =
+        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().root()->argument(i));
+    std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
+              << "\n";
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
