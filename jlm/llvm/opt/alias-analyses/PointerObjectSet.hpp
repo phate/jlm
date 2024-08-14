@@ -797,7 +797,9 @@ public:
     size_t NumWorkItemNewPointees{};
 
     /**
-     * The number of cycles detected by online cycle detection, if enabled.
+     * The number of cycles detected by online cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Online Cycle Detection is enabled.
      */
     std::optional<size_t> NumOnlineCyclesDetected;
 
@@ -805,6 +807,11 @@ public:
      * The number of unifications made by online cycle detection, if enabled.
      */
     std::optional<size_t> NumOnlineCycleUnifications;
+
+    /**
+     * The number of unifications performed due to hybrid cycle detection.
+     */
+    std::optional<size_t> NumHybridCycleUnifications;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -907,11 +914,13 @@ public:
    * All PointerObjects v1, ... vN where n(v1), ... n(vN) share equivalence set label, get unified.
    * The run time is linear in the amount of PointerObjects and constraints.
    *
+   * @param storeRefCycleUnificationRoot if true, ref nodes in cycles with regular nodes are stored,
+   *   to be used by hybrid cycle detection during solving.
    * @return the number PointerObject unifications made
    * @see NormalizeConstraints() call it afterwards to remove constraints made unnecessary.
    */
   size_t
-  PerformOfflineVariableSubstitution();
+  PerformOfflineVariableSubstitution(bool storeRefCycleUnificationRoot);
 
   /**
    * Traverses the list of constraints, and does the following:
@@ -931,12 +940,17 @@ public:
    *  - Hardekopf and Lin, 2007: "The Ant and the Grasshopper".
    * These papers also describe a set of techniques that potentially improve solving performance:
    *  - Online Cycle Detection (Pearce, 2003)
+   *  - Hybrid Cycle Detection (Hardekopf 2007)
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
+   * @param enableHybridCycleDetection if true, hybrid cycle detection will be performed.
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
-  SolveUsingWorklist(WorklistSolverPolicy policy, bool enableOnlineCycleDetection);
+  SolveUsingWorklist(
+      WorklistSolverPolicy policy,
+      bool enableOnlineCycleDetection,
+      bool enableHybridCycleDetection);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -979,9 +993,10 @@ private:
    * @param statistics the WorklistStatistics instance that will get information about this run.
    * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
+   * @tparam EnableHybridCycleDetection if true, hybrid cycle detection is enabled.
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist, bool EnableOnlineCycleDetection>
+  template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableHybridCycleDetection>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 
@@ -994,6 +1009,11 @@ private:
   // When true, no new constraints can be added.
   // Only offline processing is allowed to modify the constraint set.
   bool ConstraintSetFrozen_;
+
+  // Offline Variable Substitution can determine that all pointees of a node p,
+  // should be unified together, possibly with some other PointerObjects.
+  // This happens when *p is in a cycle with regular nodes
+  std::unordered_map<PointerObjectIndex, PointerObjectIndex> RefNodeUnificationRoot_;
 };
 
 } // namespace jlm::llvm::aa

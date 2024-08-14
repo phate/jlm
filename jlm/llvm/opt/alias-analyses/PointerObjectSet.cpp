@@ -11,6 +11,7 @@
 
 #include <limits>
 #include <queue>
+#include <variant>
 
 namespace jlm::llvm::aa
 {
@@ -1234,7 +1235,7 @@ AssignOvsEquivalenceSetLabels(
 }
 
 size_t
-PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
+PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycleUnificationRoot)
 {
   // Performing unification on direct nodes relies on all subset edges being known offline.
   // This is only safe if no more constraints are added to the node in the future.
@@ -1295,6 +1296,31 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution()
     }
     else
       unificationRoot[equivalenceSetLabel] = i;
+  }
+
+  // If hybrid cycle detection is enabled, it requires some information to be kept from OVS
+  if (storeRefCycleUnificationRoot)
+  {
+    // For each ref node that is in a cycle with regular node, store it for hybrid cycle detection
+    // The idea: Any pointee of p should be unified with a, if *p and a are in the same SCC
+    // NOTE: We do not use equivalence set labels here, as they represent more than just cycles
+
+    // First find one unification root representing each SCC
+    std::vector<std::optional<PointerObjectIndex>> unificationRootPerSCC(numSccs, std::nullopt);
+    for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+    {
+      if (!unificationRootPerSCC[sccIndex[i]])
+        unificationRootPerSCC[sccIndex[i]] = Set_.GetUnificationRoot(i);
+    }
+
+    // Assign unification roots to ref nodes that are in CYCLES with regular nodes
+    const size_t derefNodeOffset = Set_.NumPointerObjects();
+    for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
+    {
+      const auto optRoot = unificationRootPerSCC[sccIndex[i + derefNodeOffset]];
+      if (optRoot)
+        RefNodeUnificationRoot_[i] = *optRoot;
+    }
   }
 
   return numUnifications;
@@ -1360,7 +1386,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-template<typename Worklist, bool EnableOnlineCycleDetection>
+template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableHybridCycleDetection>
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
@@ -1458,6 +1484,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     callConstraints[root].UnionWith(callConstraints[nonRoot]);
     callConstraints[nonRoot].Clear();
 
+    if constexpr (EnableHybridCycleDetection)
+    {
+      // When unifying, keep at least one of the ref node unification roots
+      if (RefNodeUnificationRoot_.count(root) == 0)
+      {
+        const auto nonRootRefUnification = RefNodeUnificationRoot_.find(nonRoot);
+        if (nonRootRefUnification != RefNodeUnificationRoot_.end())
+          RefNodeUnificationRoot_[root] = nonRootRefUnification->second;
+      }
+    }
+
     return root;
   };
 
@@ -1473,6 +1510,9 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   OnlineCycleDetector onlineCycleDetector(Set_, GetSupersetEdgeSuccessors, UnifyPointerObjects);
   if constexpr (EnableOnlineCycleDetection)
     onlineCycleDetector.InitializeTopologicalOrdering();
+
+  if constexpr (EnableHybridCycleDetection)
+    statistics.NumHybridCycleUnifications = 0;
 
   // The worklist, initialized with every unification root
   Worklist worklist;
@@ -1570,6 +1610,41 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
     auto & nodePointees = Set_.GetPointsToSet(node);
     statistics.NumWorkItemNewPointees += nodePointees.Size();
+
+    // Perform hybrid cycle detection if all pointees of node should be unified
+    if constexpr (EnableHybridCycleDetection)
+    {
+      // If all pointees of node should be unified, do it now
+      const auto & refUnificationRootIt = RefNodeUnificationRoot_.find(node);
+      if (refUnificationRootIt != RefNodeUnificationRoot_.end())
+      {
+        auto & refUnificationRoot = refUnificationRootIt->second;
+        // The ref unification root may no longer be a root, so update it first
+        refUnificationRoot = Set_.GetUnificationRoot(refUnificationRoot);
+
+        // if any unification happens, the result must be added to the worklist
+        bool anyUnification = false;
+        for (const auto pointee : nodePointees.Items())
+        {
+          const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
+          if (pointeeRoot == refUnificationRoot)
+            continue;
+
+          (*statistics.NumHybridCycleUnifications)++;
+          anyUnification = true;
+          refUnificationRoot = UnifyPointerObjects(refUnificationRoot, pointeeRoot);
+        }
+
+        if (anyUnification)
+        {
+          JLM_ASSERT(Set_.IsUnificationRoot(refUnificationRoot));
+          worklist.PushWorkItem(refUnificationRoot);
+          // If the current node became unified due to HCD, stop the current work item visit.
+          if (Set_.GetUnificationRoot(node) == refUnificationRoot)
+            return;
+        }
+      }
+    }
 
     // If n is marked as PointeesEscaping, add the escaped flag to all pointees
     if (Set_.HasPointeesEscaping(node))
@@ -1693,20 +1768,31 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 PointerObjectConstraintSet::WorklistStatistics
 PointerObjectConstraintSet::SolveUsingWorklist(
     WorklistSolverPolicy policy,
-    bool enableOnlineCycleDetection)
+    bool enableOnlineCycleDetection,
+    bool enableHybridCycleDetection)
 {
 
   // Takes all parameters as compile time types.
   // tWorklist is a pointer to one of the Worklist implementations.
   // the rest are instances of std::bool_constant, either std::true_type or std::false_type
-  const auto Dispatch = [&](auto tWorklist, auto tOnlineCycleDetection) -> WorklistStatistics
+  const auto Dispatch = [&](auto tWorklist,
+                            auto tOnlineCycleDetection,
+                            auto tHybridCycleDetection) -> WorklistStatistics
   {
     using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
+    constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
 
-    WorklistStatistics statistics(policy);
-    RunWorklistSolver<Worklist, vOnlineCycleDetection>(statistics);
-    return statistics;
+    if constexpr (vOnlineCycleDetection && vHybridCycleDetection)
+    {
+      JLM_UNREACHABLE("Can not enable hybrid cycle detection with online cycle detection");
+    }
+    else
+    {
+      WorklistStatistics statistics(policy);
+      RunWorklistSolver<Worklist, vOnlineCycleDetection, vHybridCycleDetection>(statistics);
+      return statistics;
+    }
   };
 
   std::variant<
@@ -1733,7 +1819,17 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else
     onlineCycleDetectionVariant = std::false_type{};
 
-  return std::visit(Dispatch, policyVariant, onlineCycleDetectionVariant);
+  std::variant<std::true_type, std::false_type> hybridCycleDetectionVariant;
+  if (enableHybridCycleDetection)
+    hybridCycleDetectionVariant = std::true_type{};
+  else
+    hybridCycleDetectionVariant = std::false_type{};
+
+  return std::visit(
+      Dispatch,
+      policyVariant,
+      onlineCycleDetectionVariant,
+      hybridCycleDetectionVariant);
 }
 
 const char *
