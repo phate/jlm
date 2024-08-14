@@ -346,10 +346,13 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         if (!orig_node_output)
         {
           // handle decouple stuff
-          auto arg = dynamic_cast<const jlm::rvsdg::argument *>(ln->input(i)->origin());
-          auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
-          auto new_arg = rhls->Rvsdg().add_import(*ip);
-          smap.insert(ln->input(i)->origin(), new_arg);
+          auto oldGraphImport = dynamic_cast<llvm::GraphImport *>(ln->input(i)->origin());
+          auto & newGraphImport = llvm::GraphImport::Create(
+              rhls->Rvsdg(),
+              oldGraphImport->ValueType(),
+              oldGraphImport->Name(),
+              oldGraphImport->Linkage());
+          smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
         auto orig_node = orig_node_output->node();
@@ -366,12 +369,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           }
           std::cout << "delta node " << odn->name() << ": " << odn->type().debug_string() << "\n";
           // add import for delta to rhls
-          llvm::impport im(odn->Type(), odn->name(), llvm::linkage::external_linkage);
-          //						JLM_ASSERT(im.name()==odn->name());
-          auto arg = rhls->Rvsdg().add_import(im);
-          auto tmp = dynamic_cast<const llvm::impport *>(&arg->port());
-          JLM_ASSERT(tmp && tmp->name() == odn->name());
-          smap.insert(ln->input(i)->origin(), arg);
+          auto & graphImport = llvm::GraphImport::Create(
+              rhls->Rvsdg(),
+              odn->Type(),
+              odn->name(),
+              llvm::linkage::external_linkage);
+          smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
           rm.Rvsdg().add_export(odn->output(), { odn->output()->Type(), odn->name() });
@@ -390,12 +393,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           nullptr,
           new_ln->output()->Type());
       // add function as input to rm and remove it
-      llvm::impport im(
+      auto & graphImport = llvm::GraphImport::Create(
+          rm.Rvsdg(),
           ln->Type(),
           ln->name(),
           llvm::linkage::external_linkage); // TODO: change linkage?
-      auto arg = rm.Rvsdg().add_import(im);
-      ln->output()->divert_users(arg);
+      ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function " << new_ln->name() << " extracted for HLS\n";
       return rhls;
