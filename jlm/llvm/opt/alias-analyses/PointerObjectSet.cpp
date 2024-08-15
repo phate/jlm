@@ -1317,9 +1317,10 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
     const size_t derefNodeOffset = Set_.NumPointerObjects();
     for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
     {
-      const auto optRoot = unificationRootPerSCC[sccIndex[i + derefNodeOffset]];
-      if (optRoot)
+      if (auto optRoot = unificationRootPerSCC[sccIndex[i + derefNodeOffset]])
+      {
         RefNodeUnificationRoot_[i] = *optRoot;
+      }
     }
   }
 
