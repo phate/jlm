@@ -1301,7 +1301,7 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
   // If hybrid cycle detection is enabled, it requires some information to be kept from OVS
   if (storeRefCycleUnificationRoot)
   {
-    // For each ref node that is in a cycle with regular node, store it for hybrid cycle detection
+    // For each ref node that is in a cycle with a regular node, store it for hybrid cycle detection
     // The idea: Any pointee of p should be unified with a, if *p and a are in the same SCC
     // NOTE: We do not use equivalence set labels here, as they represent more than just cycles
 
@@ -1313,7 +1313,7 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
         unificationRootPerSCC[sccIndex[i]] = Set_.GetUnificationRoot(i);
     }
 
-    // Assign unification roots to ref nodes that are in CYCLES with regular nodes
+    // Assign unification roots to ref nodes that belong to SCCs with at least one regular node
     const size_t derefNodeOffset = Set_.NumPointerObjects();
     for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
     {
@@ -1392,6 +1392,12 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
   // Check that the provided worklist implementation inherits from Worklist
   static_assert(std::is_base_of_v<util::Worklist<PointerObjectIndex>, Worklist>);
+
+  // Online cycle detections detects all cycles immediately, so there is no point in enabling others
+  if constexpr (EnableOnlineCycleDetection)
+  {
+    static_assert(!EnableHybridCycleDetection, "OnlineCD can not be combined with HybridCD");
+  }
 
   // Create auxiliary subset graph.
   // All edges must have their tail be a unification root (non-root nodes have no successors).
@@ -1486,7 +1492,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
     if constexpr (EnableHybridCycleDetection)
     {
-      // When unifying, keep at least one of the ref node unification roots
+      // If the new root did not have a ref node unification target, check if the other node has one
       if (RefNodeUnificationRoot_.count(root) == 0)
       {
         const auto nonRootRefUnification = RefNodeUnificationRoot_.find(nonRoot);
