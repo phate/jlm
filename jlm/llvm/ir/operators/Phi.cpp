@@ -168,10 +168,23 @@ rvoutput::~rvoutput()
 rvargument::~rvargument()
 {}
 
+rvargument &
+rvargument::CopyTo(rvsdg::region & region, rvsdg::structural_input *)
+{
+  return *rvargument::create(&region, Type());
+}
+
 /* phi context variable argument class */
 
 cvargument::~cvargument()
 {}
+
+cvargument &
+cvargument::CopyTo(rvsdg::region & region, rvsdg::structural_input * input)
+{
+  auto phiInput = util::AssertedCast<cvinput>(input);
+  return *cvargument::create(&region, phiInput, Type());
+}
 
 /* phi recursion variable result class */
 

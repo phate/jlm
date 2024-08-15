@@ -66,6 +66,12 @@ argument::argument(
   }
 }
 
+argument &
+argument::CopyTo(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+{
+  return *argument::create(&region, input, Type());
+}
+
 jlm::rvsdg::argument *
 argument::create(
     jlm::rvsdg::region * region,
@@ -285,14 +291,14 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
     context[node.depth()].push_back(&node);
   }
 
-  /* copy arguments */
   if (copy_arguments)
   {
     for (size_t n = 0; n < narguments(); n++)
     {
-      auto input = smap.lookup(argument(n)->input());
-      auto narg = argument::create(target, input, argument(n)->port());
-      smap.insert(argument(n), narg);
+      auto oldArgument = argument(n);
+      auto input = smap.lookup(oldArgument->input());
+      auto & newArgument = oldArgument->CopyTo(*target, input);
+      smap.insert(oldArgument, &newArgument);
     }
   }
 

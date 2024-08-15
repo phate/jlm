@@ -135,3 +135,49 @@ test_graph(void)
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)
+
+class TestGraphArgument final : public jlm::rvsdg::argument
+{
+private:
+  TestGraphArgument(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+      : jlm::rvsdg::argument(&region, nullptr, type)
+  {}
+
+public:
+  TestGraphArgument &
+  CopyTo(jlm::rvsdg::region & region, jlm::rvsdg::structural_input *) override
+  {
+    return Create(region, Type());
+  }
+
+  static TestGraphArgument &
+  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto graphArgument = new TestGraphArgument(region, std::move(type));
+    region.append_argument(graphArgument);
+    return *graphArgument;
+  }
+};
+
+static int
+CopyArgument()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto type = jlm::tests::valuetype::Create();
+
+  jlm::rvsdg::graph graph;
+  TestGraphArgument::Create(*graph.root(), type);
+
+  // Act
+  auto newGraph = graph.copy();
+
+  // Assert
+  assert(newGraph->root()->narguments() == 1);
+  assert(is<TestGraphArgument>(newGraph->root()->argument(0)));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph-CopyArgument", CopyArgument)

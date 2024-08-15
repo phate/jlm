@@ -710,6 +710,9 @@ public:
     return output()->result();
   }
 
+  rvargument &
+  CopyTo(rvsdg::region & region, rvsdg::structural_input * input) override;
+
 private:
   rvoutput * output_;
 };
@@ -747,6 +750,9 @@ private:
 
   cvargument &
   operator=(cvargument &&) = delete;
+
+  cvargument &
+  CopyTo(rvsdg::region & region, rvsdg::structural_input * input) override;
 
   static cvargument *
   create(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)

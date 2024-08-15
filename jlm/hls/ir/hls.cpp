@@ -35,6 +35,12 @@ bundletype::ComputeHash() const noexcept
   return seed;
 }
 
+backedge_argument &
+backedge_argument::CopyTo(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+{
+  return *backedge_argument::create(&region, Type());
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
