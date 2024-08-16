@@ -353,8 +353,9 @@ private:
 
 public:
   TestGraphArgument &
-  Copy(jlm::rvsdg::region & region, jlm::rvsdg::structural_input *) override
+  Copy(jlm::rvsdg::region & region, jlm::rvsdg::structural_input * input) override
   {
+    JLM_ASSERT(input == nullptr);
     return Create(region, Type());
   }
 

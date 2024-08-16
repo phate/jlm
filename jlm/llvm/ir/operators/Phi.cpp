@@ -169,8 +169,9 @@ rvargument::~rvargument()
 {}
 
 rvargument &
-rvargument::Copy(rvsdg::region & region, rvsdg::structural_input *)
+rvargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
 {
+  JLM_ASSERT(input == nullptr);
   return *rvargument::create(&region, Type());
 }
 

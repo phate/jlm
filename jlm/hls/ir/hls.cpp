@@ -38,6 +38,7 @@ bundletype::ComputeHash() const noexcept
 backedge_argument &
 backedge_argument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
 {
+  JLM_ASSERT(input == nullptr);
   return *backedge_argument::create(&region, Type());
 }
 

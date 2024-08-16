@@ -421,6 +421,7 @@ fctargument::~fctargument() = default;
 fctargument &
 fctargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
 {
+  JLM_ASSERT(input == nullptr);
   return *fctargument::create(&region, Type());
 }
 
