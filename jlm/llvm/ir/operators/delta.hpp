@@ -424,6 +424,9 @@ class cvargument final : public rvsdg::argument
 public:
   ~cvargument() override;
 
+  cvargument &
+  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+
 private:
   cvargument(rvsdg::region * region, cvinput * input)
       : rvsdg::argument(region, input, input->port())
