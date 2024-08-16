@@ -70,6 +70,20 @@ public:
     return input_;
   }
 
+  /**
+   * Creates a copy of the argument in \p region with the structural_input \p input.
+   *
+   * @param region The region where the copy of the argument is created in.
+   * @param input  The structural_input to the argument, if any.
+   *
+   * @return A reference to the copied argument.
+   *
+   * FIXME: This method should be made abstract once we enforced that no instances of argument
+   * itself can be created any longer.
+   */
+  virtual argument &
+  Copy(rvsdg::region & region, structural_input * input);
+
   static jlm::rvsdg::argument *
   create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);
 

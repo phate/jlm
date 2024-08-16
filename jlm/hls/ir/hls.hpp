@@ -623,6 +623,9 @@ public:
     return result_;
   }
 
+  backedge_argument &
+  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+
 private:
   backedge_argument(
       jlm::rvsdg::region * region,

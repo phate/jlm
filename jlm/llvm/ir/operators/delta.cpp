@@ -172,6 +172,13 @@ output::~output()
 cvargument::~cvargument()
 {}
 
+cvargument &
+cvargument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+{
+  auto deltaInput = util::AssertedCast<delta::cvinput>(input);
+  return *cvargument::create(&region, deltaInput);
+}
+
 /* delta result class */
 
 result::~result()
