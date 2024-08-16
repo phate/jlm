@@ -136,7 +136,6 @@ test_graph(void)
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)
 
-
 static int
 Copy()
 {
