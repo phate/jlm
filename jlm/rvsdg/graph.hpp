@@ -22,7 +22,9 @@
 namespace jlm::rvsdg
 {
 
-// FIXME: add documentation
+/**
+ * Represents an import into the RVSDG of an external entity.
+ */
 class GraphImport : public argument
 {
 protected:

@@ -14,7 +14,10 @@
 namespace jlm::llvm
 {
 
-// FIXME: add documentation
+/**
+ * Represents an import into the RVSDG of an external entity.
+ * It is used to model LLVM module declarations.
+ */
 class GraphImport final : public rvsdg::GraphImport
 {
 private:

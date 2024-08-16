@@ -20,7 +20,10 @@
 namespace jlm::tests
 {
 
-// FIXME: documentation
+/**
+ * Represents an import into the RVSDG of an external entity.
+ * It can be used for testing of graph imports.
+ */
 class GraphImport final : public rvsdg::GraphImport
 {
   GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
