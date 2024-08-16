@@ -998,23 +998,23 @@ static int
 TestConfiguration()
 {
   using namespace jlm::llvm::aa;
-  auto config = Andersen::Configuration::DefaultConfiguration();
+  auto config = Andersen::Configuration::NaiveSolverConfiguration();
 
   // Arrange
+  config.EnableOfflineVariableSubstitution(false);
+  config.EnableOfflineConstraintNormalization(true);
   config.SetSolver(Andersen::Configuration::Solver::Naive);
-  config.EnableOfflineVariableSubstitution(true);
-  config.EnableOfflineConstraintNormalization(false);
 
   // Act
   auto configString = config.ToString();
 
   // Assert
+  assert(!config.IsOfflineVariableSubstitutionEnabled());
+  assert(config.IsOfflineConstraintNormalizationEnabled());
   assert(config.GetSolver() == Andersen::Configuration::Solver::Naive);
-  assert(config.IsOfflineVariableSubstitutionEnabled());
-  assert(!config.IsOfflineConstraintNormalizationEnabled());
+  assert(configString.find("OVS") == std::string::npos);
+  assert(configString.find("NORM") != std::string::npos);
   assert(configString.find("Solver=Naive") != std::string::npos);
-  assert(configString.find("OVS") != std::string::npos);
-  assert(configString.find("Norm") == std::string::npos);
 
   // Arrange some more
   auto policy = PointerObjectConstraintSet::WorklistSolverPolicy::TwoPhaseLeastRecentlyFired;
@@ -1031,6 +1031,17 @@ TestConfiguration()
   assert(configString.find("Policy=TwoPhaseLeastRecentlyFired") != std::string::npos);
   assert(configString.find("OVS") == std::string::npos);
   assert(configString.find("OnlineCD") != std::string::npos);
+
+  // Arrange some more
+  config.EnableOnlineCycleDetection(false);
+  config.EnableHybridCycleDetection(true);
+
+  // Act
+  configString = config.ToString();
+
+  // Assert
+  assert(configString.find("OnlineCD") == std::string::npos);
+  assert(configString.find("HybridCD") != std::string::npos);
 
   return 0;
 }

@@ -361,6 +361,30 @@ create_testop(
   return rvsdg::simple_node::create_normalized(region, op, { operands });
 }
 
+class TestGraphArgument final : public jlm::rvsdg::argument
+{
+private:
+  TestGraphArgument(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+      : jlm::rvsdg::argument(&region, nullptr, type)
+  {}
+
+public:
+  TestGraphArgument &
+  Copy(jlm::rvsdg::region & region, jlm::rvsdg::structural_input * input) override
+  {
+    JLM_ASSERT(input == nullptr);
+    return Create(region, Type());
+  }
+
+  static TestGraphArgument &
+  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto graphArgument = new TestGraphArgument(region, std::move(type));
+    region.append_argument(graphArgument);
+    return *graphArgument;
+  }
+};
+
 }
 
 #endif
