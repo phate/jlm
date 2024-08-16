@@ -69,7 +69,7 @@ argument::argument(
 argument &
 argument::CopyTo(rvsdg::region & region, jlm::rvsdg::structural_input * input)
 {
-  return *argument::create(&region, input, Type());
+  return *argument::create(&region, input, port());
 }
 
 jlm::rvsdg::argument *
