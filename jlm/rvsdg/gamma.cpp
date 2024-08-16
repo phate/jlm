@@ -378,7 +378,7 @@ gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & sma
 GammaArgument::~GammaArgument() noexcept = default;
 
 GammaArgument &
-GammaArgument::CopyTo(rvsdg::region & region, structural_input * input)
+GammaArgument::Copy(rvsdg::region & region, structural_input * input)
 {
   auto gammaInput = util::AssertedCast<gamma_input>(input);
   return Create(region, *gammaInput);

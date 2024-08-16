@@ -526,7 +526,7 @@ public:
   }
 
   fctargument &
-  CopyTo(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
 
 private:
   fctargument(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
@@ -603,7 +603,7 @@ public:
   ~cvargument() override;
 
   cvargument &
-  CopyTo(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
 
 private:
   cvargument(jlm::rvsdg::region * region, cvinput * input)

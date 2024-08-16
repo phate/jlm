@@ -470,7 +470,7 @@ public:
   ~GammaArgument() noexcept override;
 
   GammaArgument &
-  CopyTo(rvsdg::region & region, structural_input * input) override;
+  Copy(rvsdg::region & region, structural_input * input) override;
 
 private:
   GammaArgument(rvsdg::region & region, gamma_input & input)

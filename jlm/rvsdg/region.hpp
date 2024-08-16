@@ -82,7 +82,7 @@ public:
    * itself can be created any longer.
    */
   virtual argument &
-  CopyTo(rvsdg::region & region, structural_input * input);
+  Copy(rvsdg::region & region, structural_input * input);
 
   static jlm::rvsdg::argument *
   create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);

@@ -169,7 +169,7 @@ rvargument::~rvargument()
 {}
 
 rvargument &
-rvargument::CopyTo(rvsdg::region & region, rvsdg::structural_input *)
+rvargument::Copy(rvsdg::region & region, rvsdg::structural_input *)
 {
   return *rvargument::create(&region, Type());
 }
@@ -180,7 +180,7 @@ cvargument::~cvargument()
 {}
 
 cvargument &
-cvargument::CopyTo(rvsdg::region & region, rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
 {
   auto phiInput = util::AssertedCast<cvinput>(input);
   return *cvargument::create(&region, phiInput, Type());

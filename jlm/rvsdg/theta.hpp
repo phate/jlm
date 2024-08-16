@@ -360,7 +360,7 @@ public:
   ~ThetaArgument() noexcept override;
 
   ThetaArgument &
-  CopyTo(rvsdg::region & region, structural_input * input) override;
+  Copy(rvsdg::region & region, structural_input * input) override;
 
 private:
   ThetaArgument(rvsdg::region & region, theta_input & input)

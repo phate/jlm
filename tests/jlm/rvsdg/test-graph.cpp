@@ -136,33 +136,12 @@ test_graph(void)
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)
 
-class TestGraphArgument final : public jlm::rvsdg::argument
-{
-private:
-  TestGraphArgument(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
-      : jlm::rvsdg::argument(&region, nullptr, type)
-  {}
-
-public:
-  TestGraphArgument &
-  CopyTo(jlm::rvsdg::region & region, jlm::rvsdg::structural_input *) override
-  {
-    return Create(region, Type());
-  }
-
-  static TestGraphArgument &
-  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
-  {
-    auto graphArgument = new TestGraphArgument(region, std::move(type));
-    region.append_argument(graphArgument);
-    return *graphArgument;
-  }
-};
 
 static int
-CopyArgument()
+Copy()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   auto type = jlm::tests::valuetype::Create();
@@ -180,4 +159,4 @@ CopyArgument()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph-CopyArgument", CopyArgument)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph-Copy", Copy)

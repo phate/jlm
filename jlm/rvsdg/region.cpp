@@ -67,7 +67,7 @@ argument::argument(
 }
 
 argument &
-argument::CopyTo(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+argument::Copy(rvsdg::region & region, structural_input * input)
 {
   return *argument::create(&region, input, port());
 }
@@ -297,7 +297,7 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
     {
       auto oldArgument = argument(n);
       auto input = smap.lookup(oldArgument->input());
-      auto & newArgument = oldArgument->CopyTo(*target, input);
+      auto & newArgument = oldArgument->Copy(*target, input);
       smap.insert(oldArgument, &newArgument);
     }
   }

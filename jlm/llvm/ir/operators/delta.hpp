@@ -425,7 +425,7 @@ public:
   ~cvargument() override;
 
   cvargument &
-  CopyTo(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
 
 private:
   cvargument(rvsdg::region * region, cvinput * input)
