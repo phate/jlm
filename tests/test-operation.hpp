@@ -28,6 +28,9 @@ class GraphImport final : public rvsdg::GraphImport
   {}
 
 public:
+  GraphImport &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
   static GraphImport &
   Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
   {
