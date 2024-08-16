@@ -135,3 +135,27 @@ test_graph(void)
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)
+
+static int
+Copy()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  auto type = jlm::tests::valuetype::Create();
+
+  jlm::rvsdg::graph graph;
+  TestGraphArgument::Create(*graph.root(), type);
+
+  // Act
+  auto newGraph = graph.copy();
+
+  // Assert
+  assert(newGraph->root()->narguments() == 1);
+  assert(is<TestGraphArgument>(newGraph->root()->argument(0)));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph-Copy", Copy)

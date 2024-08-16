@@ -359,6 +359,9 @@ class ThetaArgument final : public argument
 public:
   ~ThetaArgument() noexcept override;
 
+  ThetaArgument &
+  Copy(rvsdg::region & region, structural_input * input) override;
+
 private:
   ThetaArgument(rvsdg::region & region, theta_input & input)
       : argument(&region, &input, input.Type())
