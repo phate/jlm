@@ -1499,7 +1499,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
     if constexpr (EnableHybridCycleDetection)
     {
-      // When unifying, keep at least one of the ref node unification roots
+      // If the new root did not have a ref node unification target, check if the other node has one
       if (RefNodeUnificationRoot_.count(root) == 0)
       {
         const auto nonRootRefUnification = RefNodeUnificationRoot_.find(nonRoot);
@@ -1835,9 +1835,9 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
     constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
 
-    if constexpr (vOnlineCycleDetection && (vLazyCycleDetection || vHybridCycleDetection))
+    if constexpr (vOnlineCycleDetection && (vHybridCycleDetection || vLazyCycleDetection))
     {
-      JLM_UNREACHABLE("Can not enable lazy or hybrid cycle detection with online cycle detection");
+      JLM_UNREACHABLE("Can not enable hybrid or lazy cycle detection with online cycle detection");
     }
     else
     {
