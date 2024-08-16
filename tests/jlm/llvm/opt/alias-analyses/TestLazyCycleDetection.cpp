@@ -24,7 +24,7 @@ TestUnifiesCycles()
   PointerObjectSet set;
   for (int i = 0; i < 6; i++)
   {
-    (void) set.CreateDummyRegisterPointerObject();
+    (void)set.CreateDummyRegisterPointerObject();
   }
 
   // Create a graph that looks like
@@ -41,12 +41,14 @@ TestUnifiesCycles()
   successors[0].Insert(5);
   successors[5].Insert(4);
 
-  auto GetSuccessors = [&](PointerObjectIndex i) {
+  auto GetSuccessors = [&](PointerObjectIndex i)
+  {
     assert(set.IsUnificationRoot(i));
     return successors[i].Items();
   };
 
-  auto UnifyPointerObjects = [&](PointerObjectIndex a, PointerObjectIndex b) {
+  auto UnifyPointerObjects = [&](PointerObjectIndex a, PointerObjectIndex b)
+  {
     assert(set.IsUnificationRoot(a));
     assert(set.IsUnificationRoot(b));
     assert(a != b);
@@ -106,4 +108,3 @@ TestUnifiesCycles()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestLazyCycleDetection-TestUnifiesCycles",
     TestUnifiesCycles)
-
