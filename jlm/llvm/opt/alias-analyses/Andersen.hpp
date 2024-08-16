@@ -10,12 +10,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
-
-namespace jlm::rvsdg
-{
-class gamma_node;
-class theta_node;
-}
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -148,6 +144,23 @@ public:
       return EnableOnlineCycleDetection_;
     }
 
+    /**
+     * Enables or disables hybrid cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
+     */
+    void
+    EnableHybridCycleDetection(bool enable) noexcept
+    {
+      EnableHybridCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsHybridCycleDetectionEnabled() const noexcept
+    {
+      return EnableHybridCycleDetection_;
+    }
+
     [[nodiscard]] std::string
     ToString() const;
 
@@ -165,6 +178,7 @@ public:
       config.SetWorklistSolverPolicy(
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
       config.EnableOnlineCycleDetection(false);
+      config.EnableHybridCycleDetection(true);
       return config;
     }
 
@@ -198,6 +212,7 @@ public:
     PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = false;
+    bool EnableHybridCycleDetection_ = false;
   };
 
   ~Andersen() noexcept override = default;
@@ -371,6 +386,6 @@ private:
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;
 };
 
-} // namespace
+}
 
 #endif

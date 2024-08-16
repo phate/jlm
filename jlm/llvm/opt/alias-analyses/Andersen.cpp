@@ -5,8 +5,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -45,6 +43,8 @@ Andersen::Configuration::ToString() const
 
     if (EnableOnlineCycleDetection_)
       str << "OnlineCD_";
+    if (EnableHybridCycleDetection_)
+      str << "HybridCD_";
   }
   else
   {
@@ -61,11 +61,23 @@ Andersen::Configuration::GetAllConfigurations()
 {
   std::vector<Configuration> configs;
 
+  auto PickHybridCycleDetection = [&](Configuration config)
+  {
+    config.EnableHybridCycleDetection(false);
+    configs.push_back(config);
+    // Hybrid Cycle Detection can only be enabled when OVS is enabled
+    if (config.IsOfflineVariableSubstitutionEnabled())
+    {
+      config.EnableHybridCycleDetection(true);
+      configs.push_back(config);
+    }
+  };
   auto PickOnlineCycleDetection = [&](Configuration config)
   {
     config.EnableOnlineCycleDetection(false);
-    configs.push_back(config);
+    PickHybridCycleDetection(config);
     config.EnableOnlineCycleDetection(true);
+    // OnlineCD can not be combined with HybridCD
     configs.push_back(config);
   };
   auto PickWorklistPolicy = [&](Configuration config)
@@ -146,6 +158,8 @@ class Andersen::Statistics final : public util::Statistics
   // Online technique statistics
   static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
   static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
+
+  static constexpr const char * NumHybridCycleUnifications_ = "#HybridCycleUnifications";
 
   // After solving statistics
   static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
@@ -287,6 +301,9 @@ public:
 
     if (statistics.NumOnlineCycleUnifications)
       AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
+
+    if (statistics.NumHybridCycleUnifications)
+      AddMeasurement(NumHybridCycleUnifications_, *statistics.NumHybridCycleUnifications);
   }
 
   void
@@ -1048,7 +1065,9 @@ Andersen::SolveConstraints(
   if (config.IsOfflineVariableSubstitutionEnabled())
   {
     statistics.StartOfflineVariableSubstitution();
-    auto numUnifications = constraints.PerformOfflineVariableSubstitution();
+    // If the solver uses hybrid cycle detection, tell OVS to store info about ref node cycles
+    bool hasHCD = config.IsHybridCycleDetectionEnabled();
+    auto numUnifications = constraints.PerformOfflineVariableSubstitution(hasHCD);
     statistics.StopOfflineVariableSubstitution(numUnifications);
   }
 
@@ -1070,7 +1089,8 @@ Andersen::SolveConstraints(
     statistics.StartConstraintSolvingWorklistStatistics();
     auto worklistStatistics = constraints.SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
-        config.IsOnlineCycleDetectionEnabled());
+        config.IsOnlineCycleDetectionEnabled(),
+        config.IsHybridCycleDetectionEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
@@ -1122,7 +1142,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     if (doubleCheck)
       std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
 
-    // If only double-checking, use the naive configuration
+    // If double-checking, only use the naive configuration. Otherwise try all configurations
     std::vector<Configuration> configs;
     if (testAllConfigs)
       configs = Configuration::GetAllConfigurations();
