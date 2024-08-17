@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
+#include <TestRvsdgs.hpp>
 
 #include <test-registry.hpp>
 

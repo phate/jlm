@@ -47,7 +47,7 @@ public:
   }
 
   bool
-  IsInitialized() const
+  IsInitialized() const noexcept
   {
     return NodeStates_.size() == Set_.NumPointerObjects();
   }
@@ -103,7 +103,7 @@ public:
       else if (NodeStates_[node] == NodeStateVisited)
       {
         DfsStack_.pop();
-        NodeStates_[node] = NodeStateLeft;
+        NodeStates_[node] = NodeStatePopped;
 
         // Check if any successors are unified with the subset. If so, join it!
         for (auto successor : GetSuccessors_(node))
@@ -138,7 +138,7 @@ public:
    * @return the number of DFSs performed to look for cycles
    */
   [[nodiscard]] size_t
-  NumCycleDetectionAttempts()
+  NumCycleDetectionAttempts() const noexcept
   {
     return NumCycleDetectAttempts_;
   }
@@ -147,7 +147,7 @@ public:
    * @return the number of cycles detected by Lazy cycle detection
    */
   [[nodiscard]] size_t
-  NumCyclesDetected()
+  NumCyclesDetected() const noexcept
   {
     return NumCyclesDetected_;
   }
@@ -156,7 +156,7 @@ public:
    * @return the number of unifications made while eliminating found cycles
    */
   [[nodiscard]] size_t
-  NumCycleUnifications()
+  NumCycleUnifications() const noexcept
   {
     return NumCycleUnifications_;
   }
@@ -174,7 +174,7 @@ private:
   // Possible states of nodes during the DFS
   static constexpr uint8_t NodeStateNotVisited = 0;
   static constexpr uint8_t NodeStateVisited = 1;
-  static constexpr uint8_t NodeStateLeft = 2;
+  static constexpr uint8_t NodeStatePopped = 2;
   std::vector<uint8_t> NodeStates_;
 
   size_t NumCycleDetectAttempts_ = 0;
