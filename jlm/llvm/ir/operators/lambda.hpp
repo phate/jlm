@@ -635,6 +635,9 @@ class result final : public jlm::rvsdg::result
 public:
   ~result() override;
 
+  result &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
   explicit result(jlm::rvsdg::output * origin)
       : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())

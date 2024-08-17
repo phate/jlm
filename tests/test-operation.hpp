@@ -368,6 +368,30 @@ public:
   }
 };
 
+class TestGraphResult final : public jlm::rvsdg::result
+{
+private:
+  explicit TestGraphResult(jlm::rvsdg::output & origin)
+      : jlm::rvsdg::result(origin.region(), &origin, nullptr, origin.Type())
+  {}
+
+public:
+  TestGraphResult &
+  Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
+  {
+    JLM_ASSERT(output == nullptr);
+    return Create(origin);
+  }
+
+  static TestGraphResult &
+  Create(jlm::rvsdg::output & origin)
+  {
+    auto graphResult = new TestGraphResult(origin);
+    origin.region()->append_result(graphResult);
+    return *graphResult;
+  }
+};
+
 }
 
 #endif

@@ -138,6 +138,21 @@ public:
     return output_;
   }
 
+  /**
+   * Creates a copy of the result with \p origin and structural_output \p output. The
+   * result is created with the same type as \p origin and in the same region as \p origin.
+   *
+   * @param origin The origin for the result.
+   * @param output The structural_output to the result, if any.
+   *
+   * @return A reference to the copied result.
+   *
+   * FIXME: This method should be made abstract once we enforced that no instances of result
+   * itself can be created any longer.
+   */
+  virtual result &
+  Copy(rvsdg::output & origin, structural_output * output);
+
   static jlm::rvsdg::result *
   create(
       jlm::rvsdg::region * region,

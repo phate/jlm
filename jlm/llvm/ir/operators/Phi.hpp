@@ -814,6 +814,9 @@ private:
   rvresult &
   operator=(rvresult &&) = delete;
 
+  rvresult &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
   static rvresult *
   create(
       jlm::rvsdg::region * region,

@@ -148,6 +148,12 @@ result::result(
   }
 }
 
+result &
+result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  return *result::create(origin.region(), &origin, output, port());
+}
+
 jlm::rvsdg::result *
 result::create(
     jlm::rvsdg::region * region,
@@ -283,7 +289,7 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
 {
   smap.insert(this, target);
 
-  /* order nodes top-down */
+  // order nodes top-down
   std::vector<std::vector<const jlm::rvsdg::node *>> context(nnodes());
   for (const auto & node : nodes)
   {
@@ -302,7 +308,7 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
     }
   }
 
-  /* copy nodes */
+  // copy nodes
   for (size_t n = 0; n < context.size(); n++)
   {
     for (const auto node : context[n])
@@ -312,17 +318,15 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
     }
   }
 
-  /* copy results */
   if (copy_results)
   {
     for (size_t n = 0; n < nresults(); n++)
     {
-      auto origin = smap.lookup(result(n)->origin());
-      if (!origin)
-        origin = result(n)->origin();
-
-      auto output = dynamic_cast<jlm::rvsdg::structural_output *>(smap.lookup(result(n)->output()));
-      result::create(target, origin, output, result(n)->port());
+      auto oldResult = result(n);
+      auto newOrigin = smap.lookup(oldResult->origin());
+      JLM_ASSERT(newOrigin != nullptr);
+      auto newOutput = dynamic_cast<structural_output *>(smap.lookup(oldResult->output()));
+      oldResult->Copy(*newOrigin, newOutput);
     }
   }
 }

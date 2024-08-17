@@ -457,6 +457,9 @@ class result final : public rvsdg::result
 public:
   ~result() override;
 
+  result &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
   result(rvsdg::output * origin)
       : rvsdg::result(origin->region(), origin, nullptr, origin->port())
