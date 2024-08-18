@@ -27,15 +27,15 @@ TestCopy()
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::graph rvsdg;
-  auto function1 = rvsdg.add_import({ PointerType::Create(), "function1" });
-  auto value1 = rvsdg.add_import({ valueType, "value1" });
-  auto iOState1 = rvsdg.add_import({ iOStateType, "iOState1" });
-  auto memoryState1 = rvsdg.add_import({ memoryStateType, "memoryState1" });
+  auto function1 = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "function1");
+  auto value1 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value1");
+  auto iOState1 = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "iOState1");
+  auto memoryState1 = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState1");
 
-  auto function2 = rvsdg.add_import({ PointerType::Create(), "function2" });
-  auto value2 = rvsdg.add_import({ valueType, "value2" });
-  auto iOState2 = rvsdg.add_import({ iOStateType, "iOState2" });
-  auto memoryState2 = rvsdg.add_import({ memoryStateType, "memoryState2" });
+  auto function2 = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "function2");
+  auto value2 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value2");
+  auto iOState2 = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "iOState2");
+  auto memoryState2 = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState2");
 
   auto callResults = CallNode::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
@@ -64,10 +64,10 @@ TestCallNodeAccessors()
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::graph rvsdg;
-  auto f = rvsdg.add_import({ PointerType::Create(), "function" });
-  auto v = rvsdg.add_import({ valueType, "value" });
-  auto i = rvsdg.add_import({ iOStateType, "IOState" });
-  auto m = rvsdg.add_import({ memoryStateType, "memoryState" });
+  auto f = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "function");
+  auto v = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto i = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "IOState");
+  auto m = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
 
   // Act
   auto results = CallNode::Create(f, functionType, { v, i, m });

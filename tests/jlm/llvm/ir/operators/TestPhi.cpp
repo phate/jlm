@@ -85,7 +85,7 @@ TestRemovePhiArgumentsWhere()
   auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
@@ -168,7 +168,7 @@ TestPrunePhiArguments()
   auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());

@@ -21,13 +21,13 @@ test()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   auto vt = jlm::tests::valuetype::Create();
   auto pt = PointerType::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
-  /* setup graph */
-  auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
+  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, "", linkage::external_linkage);
 
   phi::builder pb;
   pb.begin(rm.Rvsdg().root());

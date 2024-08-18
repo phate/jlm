@@ -163,7 +163,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     if (is<lambda::fctargument>(origin))
       return origin;
 
-    if (is_import(origin))
+    if (is<rvsdg::GraphImport>(origin))
       return origin;
 
     if (is<rvsdg::simple_op>(rvsdg::node_output::node(origin)))

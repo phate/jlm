@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -28,9 +29,9 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   nf->set_mutable(false);
   nf->set_load_store_reducible(false);
 
-  auto address = graph.add_import({ pointerType, "address" });
-  auto value = graph.add_import({ jlm::rvsdg::bittype::Create(32), "value" });
-  auto memoryState = graph.add_import({ memoryStateType, "memoryState" });
+  auto address = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
+  auto value = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::bittype::Create(32), "value");
+  auto memoryState = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memoryState");
 
   auto storeResults = StoreNonVolatileNode::Create(address, value, { memoryState }, 4);
   auto loadResults =
