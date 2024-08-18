@@ -988,8 +988,11 @@ ConvertFunctionNode(
    */
   if (functionNode.cfg() == nullptr)
   {
-    impport port(functionNode.GetFunctionType(), functionNode.name(), functionNode.linkage());
-    return region.graph()->add_import(port);
+    return &GraphImport::Create(
+        *region.graph(),
+        functionNode.GetFunctionType(),
+        functionNode.name(),
+        functionNode.linkage());
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
@@ -1026,8 +1029,11 @@ ConvertDataNode(
      */
     if (!dataNodeInitialization)
     {
-      impport port(dataNode.GetValueType(), dataNode.name(), dataNode.linkage());
-      return region.graph()->add_import(port);
+      return &GraphImport::Create(
+          *region.graph(),
+          dataNode.GetValueType(),
+          dataNode.name(),
+          dataNode.linkage());
     }
 
     /*

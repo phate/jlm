@@ -1129,7 +1129,7 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return rvsdg->add_import(impport(functionGType, "g", linkage::external_linkage));
+    return &GraphImport::Create(*rvsdg, functionGType, "g", linkage::external_linkage);
   };
 
   auto SetupFunctionF = [&](jlm::rvsdg::argument * functionG)
@@ -1228,10 +1228,10 @@ ExternalCallTest2::SetupRvsdg()
       });
 
   auto llvmLifetimeStart =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.start.p0", linkage::external_linkage);
   auto llvmLifetimeEnd =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.end.p0", linkage::external_linkage));
-  ExternalFArgument_ = rvsdg.add_import(impport(pointerType, "f", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.end.p0", linkage::external_linkage);
+  ExternalFArgument_ = &GraphImport::Create(rvsdg, pointerType, "f", linkage::external_linkage);
 
   // Setup function g()
   LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
@@ -1964,10 +1964,16 @@ ImportTest::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto d1 =
-      graph->add_import(impport(jlm::rvsdg::bittype::Create(32), "d1", linkage::external_linkage));
-  auto d2 =
-      graph->add_import(impport(jlm::rvsdg::bittype::Create(32), "d2", linkage::external_linkage));
+  auto d1 = &GraphImport::Create(
+      *graph,
+      jlm::rvsdg::bittype::Create(32),
+      "d1",
+      linkage::external_linkage);
+  auto d2 = &GraphImport::Create(
+      *graph,
+      jlm::rvsdg::bittype::Create(32),
+      "d2",
+      linkage::external_linkage);
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
@@ -2738,14 +2744,20 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction1Declaration = [&]()
   {
-    return rvsdg->add_import(
-        impport(externalFunction1Type, "ExternalFunction1", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunction1Type,
+        "ExternalFunction1",
+        linkage::external_linkage);
   };
 
   auto SetupExternalFunction2Declaration = [&]()
   {
-    return rvsdg->add_import(
-        impport(externalFunction2Type, "ExternalFunction2", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunction2Type,
+        "ExternalFunction2",
+        linkage::external_linkage);
   };
 
   auto SetupReturnAddressFunction = [&]()
@@ -2904,8 +2916,11 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return rvsdg->add_import(
-        impport(externalFunctionType, "externalFunction", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunctionType,
+        "externalFunction",
+        linkage::external_linkage);
   };
 
   auto SetupGlobal = [&]()
@@ -3391,8 +3406,11 @@ AllMemoryNodesTest::SetupRvsdg()
   nf->set_mutable(false);
 
   // Create imported symbol "imported"
-  Import_ = graph->add_import(
-      impport(jlm::rvsdg::bittype::Create(32), "imported", linkage::external_linkage));
+  Import_ = &GraphImport::Create(
+      *graph,
+      rvsdg::bittype::Create(32),
+      "imported",
+      linkage::external_linkage);
 
   // Create global variable "global"
   Delta_ = delta::node::Create(
@@ -3725,7 +3743,7 @@ VariadicFunctionTest1::SetupRvsdg()
       { iostatetype::Create(), MemoryStateType::Create() });
 
   // Setup h()
-  ImportH_ = rvsdg.add_import(impport(lambdaHType, "h", linkage::external_linkage));
+  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, "h", linkage::external_linkage);
 
   // Setup f()
   {
@@ -3829,12 +3847,13 @@ VariadicFunctionTest2::SetupRvsdg()
       { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
   auto llvmLifetimeStart =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.start.p0", linkage::external_linkage);
   auto llvmLifetimeEnd =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.end.p0", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.end.p0", linkage::external_linkage);
   auto llvmVaStart =
-      rvsdg.add_import(impport(pointerType, "llvm.va_start", linkage::external_linkage));
-  auto llvmVaEnd = rvsdg.add_import(impport(pointerType, "llvm.va_end", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.va_start", linkage::external_linkage);
+  auto llvmVaEnd =
+      &GraphImport::Create(rvsdg, pointerType, "llvm.va_end", linkage::external_linkage);
 
   // Setup function fst()
   {

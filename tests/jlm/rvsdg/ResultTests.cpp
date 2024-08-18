@@ -21,7 +21,7 @@ ResultNodeMismatch()
   auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ valueType, "import" });
+  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);

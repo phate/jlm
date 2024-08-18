@@ -408,12 +408,12 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   auto root = rm.Rvsdg().root();
   for (size_t i = 0; i < root->narguments(); ++i)
   {
-    if (auto ip = dynamic_cast<const llvm::impport *>(&root->argument(i)->port()))
+    if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(root->argument(i)))
     {
-      if (dynamic_cast<const jlm::llvm::PointerType *>(&ip->type()))
+      if (dynamic_cast<const jlm::llvm::PointerType *>(&graphImport->type()))
       {
-        cpp << "extern " << convert_to_c_type(&root->argument(i)->port().type()) << " "
-            << ip->name() << ";\n";
+        cpp << "extern " << convert_to_c_type(&graphImport->type()) << " " << graphImport->Name()
+            << ";\n";
       }
       else
       {
@@ -493,12 +493,9 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
     std::string name;
-    if (auto a = dynamic_cast<jlm::rvsdg::argument *>(ln->input(i)->origin()))
+    if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(ln->input(i)->origin()))
     {
-      if (auto ip = dynamic_cast<const llvm::impport *>(&a->port()))
-      {
-        name = ip->name();
-      }
+      name = graphImport->Name();
     }
     else
     {

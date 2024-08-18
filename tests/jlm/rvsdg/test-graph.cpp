@@ -33,7 +33,7 @@ test_recursive_prune()
   auto t = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto imp = graph.add_import({ t, "i" });
+  auto imp = &jlm::tests::GraphImport::Create(graph, t, "i");
 
   auto n1 = jlm::tests::test_op::create(graph.root(), { imp }, { t });
   auto n2 = jlm::tests::test_op::create(graph.root(), { imp }, { t });

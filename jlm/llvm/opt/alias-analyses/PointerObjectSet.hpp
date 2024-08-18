@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/GraphWriter.hpp>
@@ -154,7 +155,7 @@ class PointerObjectSet final
 
   util::BijectiveMap<const lambda::node *, PointerObjectIndex> FunctionMap_;
 
-  std::unordered_map<const rvsdg::argument *, PointerObjectIndex> ImportMap_;
+  std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
 
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
@@ -260,7 +261,7 @@ public:
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
-  CreateImportMemoryObject(const rvsdg::argument & importNode);
+  CreateImportMemoryObject(const GraphImport & importNode);
 
   const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
@@ -277,7 +278,7 @@ public:
   const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
+  const std::unordered_map<const GraphImport *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
   /**
