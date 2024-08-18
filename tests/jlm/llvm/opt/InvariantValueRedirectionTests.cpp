@@ -192,7 +192,7 @@ TestCall()
     auto yArgument = lambdaNode->fctargument(1);
     auto ioStateArgument = lambdaNode->fctargument(2);
     auto memoryStateArgument = lambdaNode->fctargument(3);
-    auto lambdaArgumentTest1 = lambdaNode->add_ctxvar(lambdaOutputTest1);
+    auto lambdaArgumentTest1 = lambdaNode->AddContextVar(lambdaOutputTest1).inner;
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
@@ -283,7 +283,7 @@ TestCallWithMemoryStateNodes()
     auto xArgument = lambdaNode->fctargument(0);
     auto ioStateArgument = lambdaNode->fctargument(1);
     auto memoryStateArgument = lambdaNode->fctargument(2);
-    auto lambdaArgumentTest1 = lambdaNode->add_ctxvar(lambdaOutputTest1);
+    auto lambdaArgumentTest1 = lambdaNode->AddContextVar(lambdaOutputTest1).inner;
 
     auto lambdaEntrySplitResults =
         LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);

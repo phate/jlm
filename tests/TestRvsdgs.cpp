@@ -391,7 +391,7 @@ Bits2PtrTest::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto cvbits2ptr = lambda->add_ctxvar(b2p);
+    auto cvbits2ptr = lambda->AddContextVar(b2p).inner;
 
     auto & call = CallNode::CreateNode(
         cvbits2ptr,
@@ -553,8 +553,8 @@ CallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto cvf = lambda->add_ctxvar(f->output());
-    auto cvg = lambda->add_ctxvar(g->output());
+    auto cvf = lambda->AddContextVar(f->output()).inner;
+    auto cvg = lambda->AddContextVar(g->output()).inner;
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -691,8 +691,8 @@ CallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto create_cv = lambda->add_ctxvar(lambdaCreate->output());
-    auto destroy_cv = lambda->add_ctxvar(lambdaDestroy->output());
+    auto create_cv = lambda->AddContextVar(lambdaCreate->output()).inner;
+    auto destroy_cv = lambda->AddContextVar(lambdaDestroy->output()).inner;
 
     auto six = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
     auto seven = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 7);
@@ -811,9 +811,9 @@ IndirectCallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto fctindcall_cv = lambda->add_ctxvar(fctindcall);
-    auto fctfour_cv = lambda->add_ctxvar(fctfour);
-    auto fctthree_cv = lambda->add_ctxvar(fctthree);
+    auto fctindcall_cv = lambda->AddContextVar(fctindcall).inner;
+    auto fctfour_cv = lambda->AddContextVar(fctfour).inner;
+    auto fctthree_cv = lambda->AddContextVar(fctthree).inner;
 
     auto & call_four = CallNode::CreateNode(
         fctindcall_cv,
@@ -954,8 +954,8 @@ IndirectCallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto functionICv = lambda->add_ctxvar(&functionI);
-    auto argumentFunctionCv = lambda->add_ctxvar(&argumentFunction);
+    auto functionICv = lambda->AddContextVar(&functionI).inner;
+    auto argumentFunctionCv = lambda->AddContextVar(&argumentFunction).inner;
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, n);
     auto storeNode =
@@ -985,10 +985,10 @@ IndirectCallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto functionXCv = lambda->add_ctxvar(&functionX);
-    auto functionYCv = lambda->add_ctxvar(&functionY);
-    auto globalG1Cv = lambda->add_ctxvar(&globalG1);
-    auto globalG2Cv = lambda->add_ctxvar(&globalG2);
+    auto functionXCv = lambda->AddContextVar(&functionX).inner;
+    auto functionYCv = lambda->AddContextVar(&functionY).inner;
+    auto globalG1Cv = lambda->AddContextVar(&globalG1).inner;
+    auto globalG2Cv = lambda->AddContextVar(&globalG2).inner;
 
     auto constantSize = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -1051,7 +1051,7 @@ IndirectCallTest2::SetupRvsdg()
     auto pzAlloca = alloca_op::create(jlm::rvsdg::bittype::Create(32), constantSize, 4);
     auto pzMerge = MemoryStateMergeOperation::Create({ pzAlloca[1], memoryStateArgument });
 
-    auto functionXCv = lambda->add_ctxvar(&functionX);
+    auto functionXCv = lambda->AddContextVar(&functionX).inner;
 
     auto & callX = CallNode::CreateNode(
         functionXCv,
@@ -1150,7 +1150,7 @@ ExternalCallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto functionGCv = lambda->add_ctxvar(functionG);
+    auto functionGCv = lambda->AddContextVar(functionG).inner;
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -1237,9 +1237,9 @@ ExternalCallTest2::SetupRvsdg()
   LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
   auto iOStateArgument = LambdaG_->fctargument(0);
   auto memoryStateArgument = LambdaG_->fctargument(1);
-  auto llvmLifetimeStartArgument = LambdaG_->add_ctxvar(llvmLifetimeStart);
-  auto llvmLifetimeEndArgument = LambdaG_->add_ctxvar(llvmLifetimeEnd);
-  auto lambdaFArgument = LambdaG_->add_ctxvar(ExternalFArgument_);
+  auto llvmLifetimeStartArgument = LambdaG_->AddContextVar(llvmLifetimeStart).inner;
+  auto llvmLifetimeEndArgument = LambdaG_->AddContextVar(llvmLifetimeEnd).inner;
+  auto lambdaFArgument = LambdaG_->AddContextVar(ExternalFArgument_).inner;
 
   auto twentyFour = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 24);
 
@@ -1475,7 +1475,7 @@ GammaTest2::SetupRvsdg()
         lambda::node::create(rvsdg->root(), functionType, functionName, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto lambdaFArgument = lambda->add_ctxvar(&lambdaF);
+    auto lambdaFArgument = lambda->AddContextVar(&lambdaF).inner;
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -1657,8 +1657,8 @@ DeltaTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto cvf = lambda->add_ctxvar(f);
-    auto cvg = lambda->add_ctxvar(g);
+    auto cvf = lambda->AddContextVar(f).inner;
+    auto cvg = lambda->AddContextVar(g).inner;
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto st = StoreNonVolatileNode::Create(cvf, five, { memoryStateArgument }, 4);
@@ -1742,7 +1742,7 @@ DeltaTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto cvd1 = lambda->add_ctxvar(d1);
+    auto cvd1 = lambda->AddContextVar(d1).inner;
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
     auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
 
@@ -1762,9 +1762,9 @@ DeltaTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto cvd1 = lambda->add_ctxvar(d1);
-    auto cvd2 = lambda->add_ctxvar(d2);
-    auto cvf1 = lambda->add_ctxvar(f1);
+    auto cvd1 = lambda->AddContextVar(d1).inner;
+    auto cvd2 = lambda->AddContextVar(d2).inner;
+    auto cvf1 = lambda->AddContextVar(f1).inner;
 
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto b42 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 42);
@@ -1844,8 +1844,8 @@ DeltaTest3::SetupRvsdg()
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto g1CtxVar = lambda->add_ctxvar(&g1);
-    auto g2CtxVar = lambda->add_ctxvar(&g2);
+    auto g1CtxVar = lambda->AddContextVar(&g1).inner;
+    auto g2CtxVar = lambda->AddContextVar(&g2).inner;
 
     auto loadResults =
         LoadNonVolatileNode::Create(g2CtxVar, { memoryStateArgument }, PointerType::Create(), 8);
@@ -1872,7 +1872,7 @@ DeltaTest3::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto lambdaFArgument = lambda->add_ctxvar(&lambdaF);
+    auto lambdaFArgument = lambda->AddContextVar(&lambdaF).inner;
 
     auto & call = CallNode::CreateNode(
         lambdaFArgument,
@@ -1928,7 +1928,7 @@ ImportTest::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto cvd1 = lambda->add_ctxvar(d1);
+    auto cvd1 = lambda->AddContextVar(d1).inner;
 
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto st = StoreNonVolatileNode::Create(cvd1, b5, { memoryStateArgument }, 4);
@@ -1949,9 +1949,9 @@ ImportTest::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto cvd1 = lambda->add_ctxvar(d1);
-    auto cvd2 = lambda->add_ctxvar(d2);
-    auto cvf1 = lambda->add_ctxvar(f1);
+    auto cvd1 = lambda->AddContextVar(d1).inner;
+    auto cvd2 = lambda->AddContextVar(d2).inner;
+    auto cvf1 = lambda->AddContextVar(f1).inner;
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
     auto b21 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 21);
     auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
@@ -2025,7 +2025,7 @@ PhiTest1::SetupRvsdg()
     auto pointerArgument = lambda->fctargument(1);
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
-    auto ctxVarFib = lambda->add_ctxvar(fibrv->argument());
+    auto ctxVarFib = lambda->AddContextVar(fibrv->argument()).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
@@ -2114,7 +2114,7 @@ PhiTest1::SetupRvsdg()
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto fibcv = lambda->add_ctxvar(phiNode->output(0));
+    auto fibcv = lambda->AddContextVar(phiNode->output(0)).inner;
 
     auto ten = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 10);
     auto allocaResults = alloca_op::create(at, ten, 16);
@@ -2225,8 +2225,8 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto functionBCv = lambda->add_ctxvar(&functionB);
-    auto functionDCv = lambda->add_ctxvar(&functionD);
+    auto functionBCv = lambda->AddContextVar(&functionB).inner;
+    auto functionDCv = lambda->AddContextVar(&functionD).inner;
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
     auto storeNode = StoreNonVolatileNode::Create(pointerArgument, one, { memoryStateArgument }, 4);
@@ -2269,9 +2269,9 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto functionICv = lambda->add_ctxvar(&functionI);
-    auto functionCCv = lambda->add_ctxvar(&functionC);
-    auto functionEightCv = lambda->add_ctxvar(&functionEight);
+    auto functionICv = lambda->AddContextVar(&functionI).inner;
+    auto functionCCv = lambda->AddContextVar(&functionC).inner;
+    auto functionEightCv = lambda->AddContextVar(&functionEight).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
     auto storeNode = StoreNonVolatileNode::Create(pointerArgument, two, { memoryStateArgument }, 4);
@@ -2311,7 +2311,7 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto functionACv = lambda->add_ctxvar(&functionA);
+    auto functionACv = lambda->AddContextVar(&functionA).inner;
 
     auto three = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 3);
     auto storeNode = StoreNonVolatileNode::Create(xArgument, three, { memoryStateArgument }, 4);
@@ -2350,7 +2350,7 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto functionACv = lambda->add_ctxvar(&functionA);
+    auto functionACv = lambda->AddContextVar(&functionA).inner;
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto storeNode = StoreNonVolatileNode::Create(xArgument, four, { memoryStateArgument }, 4);
@@ -2433,7 +2433,7 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto functionACv = lambda->add_ctxvar(&functionA);
+    auto functionACv = lambda->AddContextVar(&functionA).inner;
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pTestAlloca = alloca_op::create(jlm::rvsdg::bittype::Create(32), four, 4);
@@ -2674,7 +2674,7 @@ EscapedMemoryTest1::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);
 
-    auto contextVariableB = lambda->add_ctxvar(&deltaB);
+    auto contextVariableB = lambda->AddContextVar(&deltaB).inner;
 
     auto loadResults1 =
         LoadNonVolatileNode::Create(pointerArgument, { memoryStateArgument }, pointerType, 4);
@@ -2806,7 +2806,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto externalFunction1 = lambda->add_ctxvar(externalFunction1Argument);
+    auto externalFunction1 = lambda->AddContextVar(externalFunction1Argument).inner;
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
@@ -2842,7 +2842,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto externalFunction2 = lambda->add_ctxvar(externalFunction2Argument);
+    auto externalFunction2 = lambda->AddContextVar(externalFunction2Argument).inner;
 
     auto & call = CallNode::CreateNode(
         externalFunction2,
@@ -2955,7 +2955,7 @@ EscapedMemoryTest3::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto externalFunction = lambda->add_ctxvar(externalFunctionArgument);
+    auto externalFunction = lambda->AddContextVar(externalFunctionArgument).inner;
 
     auto & call = CallNode::CreateNode(
         externalFunction,
@@ -3063,7 +3063,7 @@ MemcpyTest::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto globalArrayArgument = lambda->add_ctxvar(&globalArray);
+    auto globalArrayArgument = lambda->AddContextVar(&globalArray).inner;
 
     auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
@@ -3100,9 +3100,9 @@ MemcpyTest::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto localArrayArgument = lambda->add_ctxvar(&localArray);
-    auto globalArrayArgument = lambda->add_ctxvar(&globalArray);
-    auto functionFArgument = lambda->add_ctxvar(&lambdaF);
+    auto localArrayArgument = lambda->AddContextVar(&localArray).inner;
+    auto globalArrayArgument = lambda->AddContextVar(&globalArray).inner;
+    auto functionFArgument = lambda->AddContextVar(&lambdaF).inner;
 
     auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType::Create());
     auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType::Create());
@@ -3214,7 +3214,7 @@ MemcpyTest2::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto functionFArgument = lambda->add_ctxvar(&functionF);
+    auto functionFArgument = lambda->AddContextVar(&functionF).inner;
 
     auto c0 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
 
@@ -3352,7 +3352,7 @@ LinkedListTest::SetupRvsdg()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    auto myListArgument = lambda->add_ctxvar(&myList);
+    auto myListArgument = lambda->AddContextVar(&myList).inner;
 
     auto zero = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
@@ -3427,8 +3427,8 @@ AllMemoryNodesTest::SetupRvsdg()
   // Start of function "f"
   Lambda_ = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
   auto entryMemoryState = Lambda_->fctargument(0);
-  auto deltaContextVar = Lambda_->add_ctxvar(Delta_->output());
-  auto importContextVar = Lambda_->add_ctxvar(Import_);
+  auto deltaContextVar = Lambda_->AddContextVar(Delta_->output()).inner;
+  auto importContextVar = Lambda_->AddContextVar(Import_).inner;
 
   // Create alloca node
   auto allocaSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 1);
@@ -3577,7 +3577,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
       StoreNonVolatileNode::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
 
   // Bring in deltaOuput as a context variable
-  const auto deltaOutputCtxVar = LocalFunc_->add_ctxvar(deltaOutput);
+  const auto deltaOutputCtxVar = LocalFunc_->AddContextVar(deltaOutput).inner;
 
   // Return &global
   LocalFunc_->finalize({ deltaOutputCtxVar, storeOutputs[0] });
@@ -3590,7 +3590,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
       "exportedFunc",
       linkage::external_linkage);
 
-  const auto localFuncCtxVar = ExportedFunc_->add_ctxvar(LocalFuncRegister_);
+  const auto localFuncCtxVar = ExportedFunc_->AddContextVar(LocalFuncRegister_).inner;
 
   // Return &localFunc, pass memory state directly through
   ExportedFunc_->finalize({ localFuncCtxVar, ExportedFunc_->fctargument(0) });
@@ -3679,7 +3679,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
         lambda::node::create(rvsdg.root(), functionTypeMain, "main", linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
-    auto lambdaGArgument = lambda->add_ctxvar(&lambdaG);
+    auto lambdaGArgument = lambda->AddContextVar(&lambdaG).inner;
 
     auto one = rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
     auto six = rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
@@ -3751,7 +3751,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto iArgument = LambdaF_->fctargument(0);
     auto iOStateArgument = LambdaF_->fctargument(1);
     auto memoryStateArgument = LambdaF_->fctargument(2);
-    auto lambdaHArgument = LambdaF_->add_ctxvar(ImportH_);
+    auto lambdaHArgument = LambdaF_->AddContextVar(ImportH_).inner;
 
     auto one = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 1);
     auto three = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 3);
@@ -3777,7 +3777,7 @@ VariadicFunctionTest1::SetupRvsdg()
     LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
     auto iOStateArgument = LambdaG_->fctargument(0);
     auto memoryStateArgument = LambdaG_->fctargument(1);
-    auto lambdaFArgument = LambdaG_->add_ctxvar(LambdaF_->output());
+    auto lambdaFArgument = LambdaG_->AddContextVar(LambdaF_->output()).inner;
 
     auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
     auto five = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 5);
@@ -3861,10 +3861,10 @@ VariadicFunctionTest2::SetupRvsdg()
         lambda::node::create(rvsdg.root(), lambdaFstType, "fst", linkage::internal_linkage);
     auto iOStateArgument = LambdaFst_->fctargument(2);
     auto memoryStateArgument = LambdaFst_->fctargument(3);
-    auto llvmLifetimeStartArgument = LambdaFst_->add_ctxvar(llvmLifetimeStart);
-    auto llvmLifetimeEndArgument = LambdaFst_->add_ctxvar(llvmLifetimeEnd);
-    auto llvmVaStartArgument = LambdaFst_->add_ctxvar(llvmVaStart);
-    auto llvmVaEndArgument = LambdaFst_->add_ctxvar(llvmVaEnd);
+    auto llvmLifetimeStartArgument = LambdaFst_->AddContextVar(llvmLifetimeStart).inner;
+    auto llvmLifetimeEndArgument = LambdaFst_->AddContextVar(llvmLifetimeEnd).inner;
+    auto llvmVaStartArgument = LambdaFst_->AddContextVar(llvmVaStart).inner;
+    auto llvmVaEndArgument = LambdaFst_->AddContextVar(llvmVaEnd).inner;
 
     auto one = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 32, 1);
     auto twentyFour = jlm::rvsdg::create_bitconstant(LambdaFst_->subregion(), 64, 24);
@@ -3972,7 +3972,7 @@ VariadicFunctionTest2::SetupRvsdg()
     LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
     auto iOStateArgument = LambdaG_->fctargument(0);
     auto memoryStateArgument = LambdaG_->fctargument(1);
-    auto lambdaFstArgument = LambdaG_->add_ctxvar(LambdaFst_->output());
+    auto lambdaFstArgument = LambdaG_->AddContextVar(LambdaFst_->output()).inner;
 
     auto zero = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 0);
     auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);

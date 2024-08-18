@@ -1472,14 +1472,14 @@ void
 Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    auto & origin = *cv.origin();
+    auto & origin = *cv.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.argument());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.inner);
       Context_->Join(originLocation, argumentLocation);
     }
   }

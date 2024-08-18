@@ -29,7 +29,7 @@ TestArgumentIterators()
         linkage::external_linkage);
     lambda->finalize({ lambda->fctargument(0) });
 
-    std::vector<jlm::rvsdg::RegionArgument *> functionArguments;
+    std::vector<const jlm::rvsdg::RegionArgument *> functionArguments;
     for (auto & argument : lambda->fctarguments())
       functionArguments.push_back(&argument);
 
@@ -63,11 +63,11 @@ TestArgumentIterators()
         "f",
         linkage::external_linkage);
 
-    auto cv = lambda->add_ctxvar(rvsdgImport);
+    auto cv = lambda->AddContextVar(rvsdgImport).inner;
 
     lambda->finalize({ lambda->fctargument(0), cv });
 
-    std::vector<jlm::rvsdg::RegionArgument *> functionArguments;
+    std::vector<const jlm::rvsdg::RegionArgument *> functionArguments;
     for (auto & argument : lambda->fctarguments())
       functionArguments.push_back(&argument);
 
@@ -126,13 +126,13 @@ TestRemoveLambdaInputsWhere()
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
-  auto lambdaInput0 = lambdaNode->add_ctxvar(x)->input();
-  auto lambdaInput1 = lambdaNode->add_ctxvar(x)->input();
-  lambdaNode->add_ctxvar(x)->input();
+  auto lambdaBinder0 = lambdaNode->AddContextVar(x);
+  auto lambdaBinder1 = lambdaNode->AddContextVar(x);
+  lambdaNode->AddContextVar(x);
 
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
-                    { lambdaInput1->argument() },
+                    { lambdaBinder1.inner },
                     { valueType })
                     .output(0);
 
@@ -141,38 +141,38 @@ TestRemoveLambdaInputsWhere()
   // Act & Assert
   // Try to remove lambdaInput1 even though it is used
   auto numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-      [&](const lambda::cvinput & input)
+      [&](const jlm::rvsdg::input & input)
       {
-        return input.index() == lambdaInput1->index();
+        return input.index() == lambdaBinder1.input->index();
       });
   assert(numRemovedInputs == 0);
   assert(lambdaNode->ninputs() == 3);
-  assert(lambdaNode->ncvarguments() == 3);
+  assert(lambdaNode->GetContextVars().size() == 3);
 
   // Remove lambdaInput2
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-      [&](const lambda::cvinput & input)
+      [&](const jlm::rvsdg::input & input)
       {
         return input.index() == 2;
       });
   assert(numRemovedInputs == 1);
   assert(lambdaNode->ninputs() == 2);
-  assert(lambdaNode->ncvarguments() == 2);
-  assert(lambdaNode->input(0) == lambdaInput0);
-  assert(lambdaNode->input(1) == lambdaInput1);
+  assert(lambdaNode->GetContextVars().size() == 2);
+  assert(lambdaNode->input(0) == lambdaBinder0.input);
+  assert(lambdaNode->input(1) == lambdaBinder1.input);
 
   // Remove lambdaInput0
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-      [&](const lambda::cvinput & input)
+      [&](const jlm::rvsdg::input & input)
       {
         return input.index() == 0;
       });
   assert(numRemovedInputs == 1);
   assert(lambdaNode->ninputs() == 1);
-  assert(lambdaNode->ncvarguments() == 1);
-  assert(lambdaNode->input(0) == lambdaInput1);
-  assert(lambdaInput1->index() == 0);
-  assert(lambdaInput1->argument()->index() == 0);
+  assert(lambdaNode->GetContextVars().size() == 1);
+  assert(lambdaNode->input(0) == lambdaBinder1.input);
+  assert(lambdaBinder1.input->index() == 0);
+  assert(lambdaBinder1.inner->index() == 0);
 }
 
 /**
@@ -195,13 +195,13 @@ TestPruneLambdaInputs()
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
-  lambdaNode->add_ctxvar(x)->input();
-  auto lambdaInput1 = lambdaNode->add_ctxvar(x)->input();
-  lambdaNode->add_ctxvar(x)->input();
+  lambdaNode->AddContextVar(x);
+  auto lambdaInput1 = lambdaNode->AddContextVar(x);
+  lambdaNode->AddContextVar(x);
 
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
-                    { lambdaInput1->argument() },
+                    { lambdaInput1.inner },
                     { valueType })
                     .output(0);
 
@@ -213,11 +213,11 @@ TestPruneLambdaInputs()
   // Assert
   assert(numRemovedInputs == 2);
   assert(lambdaNode->ninputs() == 1);
-  assert(lambdaNode->ncvarguments() == 1);
-  assert(lambdaNode->input(0) == lambdaInput1);
-  assert(lambdaNode->cvargument(0) == lambdaInput1->argument());
-  assert(lambdaInput1->index() == 0);
-  assert(lambdaInput1->argument()->index() == 0);
+  assert(lambdaNode->GetContextVars().size() == 1);
+  assert(lambdaNode->input(0) == lambdaInput1.input);
+  assert(lambdaNode->GetContextVars()[0].inner == lambdaInput1.inner);
+  assert(lambdaInput1.input->index() == 0);
+  assert(lambdaInput1.inner->index() == 0);
 }
 
 static void
@@ -327,7 +327,7 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
-    auto lambdaXCv = lambdaNode->add_ctxvar(&lambdaX);
+    auto lambdaXCv = lambdaNode->AddContextVar(&lambdaX).inner;
 
     auto callResults = jlm::llvm::CallNode::Create(
         lambdaXCv,
@@ -349,8 +349,8 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
-    auto lambdaXCv = lambdaNode->add_ctxvar(&lambdaX);
-    auto lambdaYCv = lambdaNode->add_ctxvar(&lambdaY);
+    auto lambdaXCv = lambdaNode->AddContextVar(&lambdaX).inner;
+    auto lambdaYCv = lambdaNode->AddContextVar(&lambdaY).inner;
 
     auto callXResults = jlm::llvm::CallNode::Create(
         lambdaXCv,
@@ -503,7 +503,7 @@ TestCallSummaryComputationLambdaResult()
 
   auto lambdaNodeF =
       lambda::node::create(rvsdg.root(), functionTypeF, "f", linkage::external_linkage);
-  auto lambdaGArgument = lambdaNodeF->add_ctxvar(lambdaOutputG);
+  auto lambdaGArgument = lambdaNodeF->AddContextVar(lambdaOutputG).inner;
   auto lambdaOutputF = lambdaNodeF->finalize({ lambdaGArgument });
 
   GraphExport::Create(*lambdaOutputF, "f");
