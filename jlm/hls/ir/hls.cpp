@@ -42,6 +42,13 @@ backedge_argument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * i
   return *backedge_argument::create(&region, Type());
 }
 
+backedge_result &
+backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return *backedge_result::create(&origin);
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {

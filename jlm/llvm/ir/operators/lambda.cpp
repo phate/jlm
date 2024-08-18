@@ -440,4 +440,11 @@ cvargument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
 
 result::~result() = default;
 
+result &
+result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return *result::create(&origin);
+}
+
 }

@@ -143,17 +143,30 @@ Copy()
   using namespace jlm::tests;
 
   // Arrange
-  auto type = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  TestGraphArgument::Create(*graph.root(), type);
+  auto & argument = TestGraphArgument::Create(*graph.root(), valueType);
+  auto node = test_op::create(graph.root(), { &argument }, { valueType });
+  TestGraphResult::Create(*node->output(0));
 
   // Act
   auto newGraph = graph.copy();
 
   // Assert
   assert(newGraph->root()->narguments() == 1);
-  assert(is<TestGraphArgument>(newGraph->root()->argument(0)));
+  auto copiedArgument = newGraph->root()->argument(0);
+  assert(is<TestGraphArgument>(copiedArgument));
+
+  assert(newGraph->root()->nnodes() == 1);
+  auto copiedNode = newGraph->root()->nodes.first();
+  assert(copiedNode->ninputs() == 1 && copiedNode->noutputs() == 1);
+  assert(copiedNode->input(0)->origin() == copiedArgument);
+
+  assert(newGraph->root()->nresults() == 1);
+  auto copiedResult = newGraph->root()->result(0);
+  assert(is<TestGraphResult>(*copiedResult));
+  assert(copiedResult->origin() == copiedNode->output(0));
 
   return 0;
 }

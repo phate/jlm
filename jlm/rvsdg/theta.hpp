@@ -388,18 +388,21 @@ class ThetaResult final : public result
 public:
   ~ThetaResult() noexcept override;
 
+  ThetaResult &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
-  ThetaResult(ThetaArgument & thetaArgument, theta_output & thetaOutput)
-      : result(thetaArgument.region(), &thetaArgument, &thetaOutput, thetaArgument.Type())
+  ThetaResult(rvsdg::output & origin, theta_output & thetaOutput)
+      : result(origin.region(), &origin, &thetaOutput, origin.Type())
   {
-    JLM_ASSERT(is<theta_op>(thetaArgument.region()->node()));
+    JLM_ASSERT(is<theta_op>(origin.region()->node()));
   }
 
   static ThetaResult &
-  Create(ThetaArgument & thetaArgument, theta_output & thetaOutput)
+  Create(rvsdg::output & origin, theta_output & thetaOutput)
   {
-    auto thetaResult = new ThetaResult(thetaArgument, thetaOutput);
-    thetaArgument.region()->append_result(thetaResult);
+    auto thetaResult = new ThetaResult(origin, thetaOutput);
+    origin.region()->append_result(thetaResult);
     return *thetaResult;
   }
 };
