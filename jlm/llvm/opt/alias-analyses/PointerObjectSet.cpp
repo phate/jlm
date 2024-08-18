@@ -6,6 +6,7 @@
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
 #include <jlm/util/Worklist.hpp>
 
@@ -1387,7 +1388,11 @@ PointerObjectConstraintSet::NormalizeConstraints()
   return reduction;
 }
 
-template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableHybridCycleDetection>
+template<
+    typename Worklist,
+    bool EnableOnlineCycleDetection,
+    bool EnableHybridCycleDetection,
+    bool EnableLazyCycleDetection>
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
@@ -1398,6 +1403,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   if constexpr (EnableOnlineCycleDetection)
   {
     static_assert(!EnableHybridCycleDetection, "OnlineCD can not be combined with HybridCD");
+    static_assert(!EnableLazyCycleDetection, "OnlineCD can not be combined with LazyCD");
   }
 
   // Create auxiliary subset graph.
@@ -1518,6 +1524,11 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   if constexpr (EnableOnlineCycleDetection)
     onlineCycleDetector.InitializeTopologicalOrdering();
 
+  // If lazy cycle detection is enabled, initialize it here
+  LazyCycleDetector lazyCycleDetector(Set_, GetSupersetEdgeSuccessors, UnifyPointerObjects);
+  if constexpr (EnableLazyCycleDetection)
+    lazyCycleDetector.Initialize();
+
   if constexpr (EnableHybridCycleDetection)
     statistics.NumHybridCycleUnifications = 0;
 
@@ -1573,8 +1584,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
 
     // A new edge was added, propagate points to-sets. If the superset changes, add to the worklist
-    if (MakePointsToSetSuperset(superset, subset))
+    bool anyPropagation = MakePointsToSetSuperset(superset, subset);
+    if (anyPropagation)
       worklist.PushWorkItem(superset);
+
+    // If nothing was propagated by adding the edge, try lazy cycle detection
+    if (EnableLazyCycleDetection && !Set_.GetPointsToSet(subset).IsEmpty() && !anyPropagation)
+    {
+      const auto optUnificationRoot = lazyCycleDetector.OnPropagatedNothing(subset, superset);
+      if (optUnificationRoot)
+        worklist.PushWorkItem(*optUnificationRoot);
+    }
   };
 
   // A temporary place to store new subset edges, to avoid modifying sets while they are iterated
@@ -1701,8 +1721,23 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       // The current it-edge should be kept as is, prepare "it" for the next iteration.
       ++it;
 
-      if (MakePointsToSetSuperset(supersetParent, node))
+      bool modified = MakePointsToSetSuperset(supersetParent, node);
+
+      if (modified)
         worklist.PushWorkItem(supersetParent);
+
+      if (EnableLazyCycleDetection && !nodePointees.IsEmpty() && !modified)
+      {
+        // If nothing was propagated along this edge, check if there is a cycle
+        // If a cycle is detected, this function eliminates it by unifying, and returns the root
+        auto optUnificationRoot = lazyCycleDetector.OnPropagatedNothing(node, supersetParent);
+        if (optUnificationRoot)
+        {
+          // The new unification root is pushed, and handling of the current work item is aborted.
+          worklist.PushWorkItem(*optUnificationRoot);
+          return;
+        }
+      }
     }
 
     // Stores on the form *n = value.
@@ -1770,13 +1805,21 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     statistics.NumOnlineCyclesDetected = onlineCycleDetector.NumOnlineCyclesDetected();
     statistics.NumOnlineCycleUnifications = onlineCycleDetector.NumOnlineCycleUnifications();
   }
+
+  if constexpr (EnableLazyCycleDetection)
+  {
+    statistics.NumLazyCyclesDetectionAttempts = lazyCycleDetector.NumCycleDetectionAttempts();
+    statistics.NumLazyCyclesDetected = lazyCycleDetector.NumCyclesDetected();
+    statistics.NumLazyCycleUnifications = lazyCycleDetector.NumCycleUnifications();
+  }
 }
 
 PointerObjectConstraintSet::WorklistStatistics
 PointerObjectConstraintSet::SolveUsingWorklist(
     WorklistSolverPolicy policy,
     bool enableOnlineCycleDetection,
-    bool enableHybridCycleDetection)
+    bool enableHybridCycleDetection,
+    bool enableLazyCycleDetection)
 {
 
   // Takes all parameters as compile time types.
@@ -1784,20 +1827,26 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   // the rest are instances of std::bool_constant, either std::true_type or std::false_type
   const auto Dispatch = [&](auto tWorklist,
                             auto tOnlineCycleDetection,
-                            auto tHybridCycleDetection) -> WorklistStatistics
+                            auto tHybridCycleDetection,
+                            auto tLazyCycleDetection) -> WorklistStatistics
   {
     using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
     constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
+    constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
 
-    if constexpr (vOnlineCycleDetection && vHybridCycleDetection)
+    if constexpr (vOnlineCycleDetection && (vHybridCycleDetection || vLazyCycleDetection))
     {
-      JLM_UNREACHABLE("Can not enable hybrid cycle detection with online cycle detection");
+      JLM_UNREACHABLE("Can not enable hybrid or lazy cycle detection with online cycle detection");
     }
     else
     {
       WorklistStatistics statistics(policy);
-      RunWorklistSolver<Worklist, vOnlineCycleDetection, vHybridCycleDetection>(statistics);
+      RunWorklistSolver<
+          Worklist,
+          vOnlineCycleDetection,
+          vHybridCycleDetection,
+          vLazyCycleDetection>(statistics);
       return statistics;
     }
   };
@@ -1832,11 +1881,18 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else
     hybridCycleDetectionVariant = std::false_type{};
 
+  std::variant<std::true_type, std::false_type> lazyCycleDetectionVariant;
+  if (enableLazyCycleDetection)
+    lazyCycleDetectionVariant = std::true_type{};
+  else
+    lazyCycleDetectionVariant = std::false_type{};
+
   return std::visit(
       Dispatch,
       policyVariant,
       onlineCycleDetectionVariant,
-      hybridCycleDetectionVariant);
+      hybridCycleDetectionVariant,
+      lazyCycleDetectionVariant);
 }
 
 const char *

@@ -890,7 +890,8 @@ TestPointerObjectSet()
     TestPointerObjectConstraintSetSolve<true>(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
-        config.IsHybridCycleDetectionEnabled());
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled());
   }
 
   TestClonePointerObjectConstraintSet();
