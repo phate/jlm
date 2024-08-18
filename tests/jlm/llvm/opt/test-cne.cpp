@@ -31,9 +31,9 @@ test_simple()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
-  auto z = graph.add_import({ vt, "z" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
   auto n1 = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
   auto n2 = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
@@ -76,10 +76,10 @@ test_gamma()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
-  auto z = graph.add_import({ vt, "z" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
   auto u1 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
   auto u2 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
@@ -140,8 +140,8 @@ test_theta()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
   auto region = theta->subregion();
@@ -193,8 +193,8 @@ test_theta2()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
   auto region = theta->subregion();
@@ -237,8 +237,8 @@ test_theta3()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto theta1 = jlm::rvsdg::theta_node::create(graph.root());
   auto r1 = theta1->subregion();
@@ -296,9 +296,9 @@ test_theta4()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
   auto region = theta->subregion();
@@ -349,9 +349,9 @@ test_theta5()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
   auto region = theta->subregion();
@@ -396,7 +396,7 @@ test_lambda()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ vt, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto lambda = lambda::node::create(graph.root(), ft, "f", linkage::external_linkage);
 
@@ -431,7 +431,7 @@ test_phi()
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ vt, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   phi::builder pb;
   pb.begin(graph.root());

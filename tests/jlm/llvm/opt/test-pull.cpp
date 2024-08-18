@@ -30,8 +30,8 @@ test_pullin_top()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto n1 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
   auto n2 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
@@ -63,8 +63,8 @@ test_pullin_bottom()
   auto ct = jlm::rvsdg::ctltype::Create(2);
 
   jlm::rvsdg::graph graph;
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
 
@@ -93,7 +93,7 @@ test_pull()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto p = graph.add_import({ jlm::rvsdg::ctltype::Create(2), "" });
+  auto p = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::ctltype::Create(2), "");
 
   auto croot = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
 

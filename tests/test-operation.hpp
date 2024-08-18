@@ -20,6 +20,29 @@
 namespace jlm::tests
 {
 
+/**
+ * Represents an import into the RVSDG of an external entity.
+ * It can be used for testing of graph imports.
+ */
+class GraphImport final : public rvsdg::GraphImport
+{
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
+      : rvsdg::GraphImport(graph, std::move(type), std::move(name))
+  {}
+
+public:
+  GraphImport &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
+  static GraphImport &
+  Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
+  {
+    auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
+    graph.root()->append_argument(graphImport);
+    return *graphImport;
+  }
+};
+
 /* unary operation */
 
 class unary_op final : public rvsdg::unary_op
@@ -365,6 +388,30 @@ public:
     auto graphArgument = new TestGraphArgument(region, std::move(type));
     region.append_argument(graphArgument);
     return *graphArgument;
+  }
+};
+
+class TestGraphResult final : public jlm::rvsdg::result
+{
+private:
+  explicit TestGraphResult(jlm::rvsdg::output & origin)
+      : jlm::rvsdg::result(origin.region(), &origin, nullptr, origin.Type())
+  {}
+
+public:
+  TestGraphResult &
+  Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
+  {
+    JLM_ASSERT(output == nullptr);
+    return Create(origin);
+  }
+
+  static TestGraphResult &
+  Create(jlm::rvsdg::output & origin)
+  {
+    auto graphResult = new TestGraphResult(origin);
+    origin.region()->append_result(graphResult);
+    return *graphResult;
   }
 };
 

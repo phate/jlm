@@ -24,7 +24,7 @@ Contains()
   auto valueType = valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ valueType, "import" });
+  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
   auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, valueType);

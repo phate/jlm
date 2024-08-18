@@ -152,7 +152,7 @@ PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateImportMemoryObject(const rvsdg::argument & importNode)
+PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
   auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject);
@@ -193,7 +193,7 @@ PointerObjectSet::GetFunctionMap() const noexcept
   return FunctionMap_;
 }
 
-const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
+const std::unordered_map<const GraphImport *, PointerObjectIndex> &
 PointerObjectSet::GetImportMap() const noexcept
 {
   return ImportMap_;
