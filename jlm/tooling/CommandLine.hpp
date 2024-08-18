@@ -76,6 +76,7 @@ public:
     NodePullIn,
     NodePushOut,
     NodeReduction,
+    RvsdgTreePrinter,
     ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -200,6 +201,7 @@ private:
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * NodeReduction_ = "NodeReduction";
+    inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
   };
 
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
