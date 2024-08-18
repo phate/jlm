@@ -51,10 +51,10 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::t
       ln->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (const auto & ctxvar : ln->GetContextVars())
   {
-    // copy over cvarguments
-    smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
+    // copy over context vars
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(ctxvar.input->origin()).inner);
   }
   for (size_t i = 0; i < ln->nfctarguments(); ++i)
   {

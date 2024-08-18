@@ -15,6 +15,7 @@
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/iterator_range.hpp>
 
+#include <optional>
 #include <utility>
 
 namespace jlm::llvm
@@ -102,7 +103,6 @@ private:
 };
 
 class cvargument;
-class cvinput;
 class fctargument;
 class output;
 class result;
@@ -134,9 +134,6 @@ public:
   class CallSummary;
 
 private:
-  class cviterator;
-  class cvconstiterator;
-
   class fctargiterator;
   class fctargconstiterator;
 
@@ -145,9 +142,6 @@ private:
 
   using fctargument_range = jlm::util::iterator_range<fctargiterator>;
   using fctargument_constrange = jlm::util::iterator_range<fctargconstiterator>;
-
-  using ctxvar_range = jlm::util::iterator_range<cviterator>;
-  using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
 
   using fctresult_range = jlm::util::iterator_range<fctresiterator>;
   using fctresult_constrange = jlm::util::iterator_range<fctresconstiterator>;
@@ -161,20 +155,29 @@ private:
   {}
 
 public:
-  [[nodiscard]] fctargument_range
-  fctarguments();
+  /**
+   * \brief Bound context variable
+   *
+   * Context variables may be bound at the point of creation of a
+   * lambda abstraction. These are represented as inputs to the
+   * lambda node itself, and made accessible to the body of the
+   * lambda in the form of an initial argument to the subregion.
+   */
+  struct ContextVar
+  {
+    /**
+     * \brief Input variable bound into lambda (input to lambda node)
+     */
+    rvsdg::input * input;
+
+    /**
+     * \brief Formal argument to access to bound object in subregion.
+     */
+    rvsdg::RegionArgument * inner;
+  };
 
   [[nodiscard]] fctargument_constrange
   fctarguments() const;
-
-  ctxvar_range
-  ctxvars();
-
-  [[nodiscard]] ctxvar_constrange
-  ctxvars() const;
-
-  fctresult_range
-  fctresults();
 
   [[nodiscard]] fctresult_constrange
   fctresults() const;
@@ -222,12 +225,6 @@ public:
   }
 
   [[nodiscard]] size_t
-  ncvarguments() const noexcept
-  {
-    return ninputs();
-  }
-
-  [[nodiscard]] size_t
   nfctarguments() const noexcept
   {
     return subregion()->narguments() - ninputs();
@@ -240,20 +237,95 @@ public:
   }
 
   /**
-   * Adds a context/free variable to the lambda node. The \p origin must be from the same region
-   * as the lambda node.
+   * \brief Adds a context/free variable to the lambda node.
    *
-   * \return The context variable argument from the lambda region.
+   * \param origin
+   *   The value to be bound into the lambda node.
+   *
+   * \pre
+   *   \p origin must be from the same region as the lambda node.
+   *
+   * \return The context variable argument of the lambda abstraction.
    */
-  lambda::cvargument *
-  add_ctxvar(jlm::rvsdg::output * origin);
+  ContextVar
+  AddContextVar(jlm::rvsdg::output * origin);
+
+  /**
+   * \brief Maps input to context variable.
+   *
+   * \param input
+   *   Input to the lambda node.
+   *
+   * \returns
+   *   The context variable description corresponding to the input.
+   *
+   * \pre
+   *   \p input must be input to this node.
+   *
+   * Returns the context variable description corresponding
+   * to this input of the lambda node. All inputs to the lambda
+   * node are by definition bound context variables that are
+   * accessible in the subregion through the corresponding
+   * argument.
+   */
+  [[nodiscard]] ContextVar
+  MapInputContextVar(const rvsdg::input & input) const noexcept;
+
+  /**
+   * \brief Maps bound variable reference to context variable
+   *
+   * \param output
+   *   Region argument to lambda subregion
+   *
+   * \returns
+   *   The context variable description corresponding to the argument
+   *
+   * \pre
+   *   \p output must be an argument to the subregion of this nodeinput must be input to this node
+   *
+   * Returns the context variable description corresponding
+   * to this bound variable reference in the lambda node region.
+   * Note that some arguments of the region are formal call arguments
+   * and do not have an associated context variable description.
+   */
+  [[nodiscard]] std::optional<ContextVar>
+  MapBinderContextVar(const rvsdg::output & output) const noexcept;
+
+  /**
+   * \brief Gets bound context variable description
+   *
+   * \param index
+   *   Index of context variable to be retrieved.
+   *
+   * \returns
+   *   The context variable description corresponding to the argument.
+   *
+   * \pre
+   *   \p index must be a valid index.
+   *
+   * Returns the context variable description corresponding
+   * to the given index.
+   */
+  [[nodiscard]] ContextVar
+  GetContextVar(size_t index) const noexcept;
+
+  /**
+   * \brief Gets all bound context variables
+   *
+   * \returns
+   *   The context variable descriptions.
+   *
+   * Returns the context variable descriptions.
+   */
+  [[nodiscard]] std::vector<ContextVar>
+  GetContextVars() const noexcept;
 
   /**
    * Remove lambda inputs and their respective arguments.
    *
    * An input must match the condition specified by \p match and its argument must be dead.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const cvinput&)
+   * @tparam F A type that supports the function call operator: bool operator(const rvsdg::input&)
    * @param match Defines the condition of the elements to remove.
    * @return The number of removed inputs.
    *
@@ -273,7 +345,7 @@ public:
   size_t
   PruneLambdaInputs()
   {
-    auto match = [](const cvinput &)
+    auto match = [](const rvsdg::input &)
     {
       return true;
     };
@@ -281,17 +353,11 @@ public:
     return RemoveLambdaInputsWhere(match);
   }
 
-  [[nodiscard]] cvinput *
-  input(size_t n) const noexcept;
-
   [[nodiscard]] lambda::output *
   output() const noexcept;
 
   [[nodiscard]] lambda::fctargument *
   fctargument(size_t n) const noexcept;
-
-  [[nodiscard]] lambda::cvargument *
-  cvargument(size_t n) const noexcept;
 
   [[nodiscard]] lambda::result *
   fctresult(size_t n) const noexcept;
@@ -401,78 +467,6 @@ public:
    */
   [[nodiscard]] static bool
   IsExported(const lambda::node & lambdaNode);
-};
-
-/** \brief Lambda context variable input
- */
-class cvinput final : public jlm::rvsdg::structural_input
-{
-  friend ::jlm::llvm::lambda::node;
-
-public:
-  ~cvinput() override;
-
-private:
-  cvinput(lambda::node * node, jlm::rvsdg::output * origin)
-      : structural_input(node, origin, origin->Type())
-  {}
-
-  static cvinput *
-  create(lambda::node * node, jlm::rvsdg::output * origin)
-  {
-    auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
-    return jlm::util::AssertedCast<cvinput>(node->append_input(std::move(input)));
-  }
-
-public:
-  [[nodiscard]] cvargument *
-  argument() const noexcept;
-
-  [[nodiscard]] lambda::node *
-  node() const noexcept
-  {
-    return jlm::util::AssertedCast<lambda::node>(structural_input::node());
-  }
-};
-
-/** \brief Lambda context variable iterator
- */
-class node::cviterator final : public jlm::rvsdg::input::iterator<cvinput>
-{
-  friend ::jlm::llvm::lambda::node;
-
-  constexpr explicit cviterator(cvinput * input)
-      : jlm::rvsdg::input::iterator<cvinput>(input)
-  {}
-
-  [[nodiscard]] cvinput *
-  next() const override
-  {
-    auto node = value()->node();
-    auto index = value()->index();
-
-    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
-  }
-};
-
-/** \brief Lambda context variable const iterator
- */
-class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvinput>
-{
-  friend ::jlm::llvm::lambda::node;
-
-  constexpr explicit cvconstiterator(const cvinput * input)
-      : jlm::rvsdg::input::constiterator<cvinput>(input)
-  {}
-
-  [[nodiscard]] const cvinput *
-  next() const override
-  {
-    auto node = value()->node();
-    auto index = value()->index();
-
-    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
-  }
 };
 
 /** \brief Lambda output
@@ -606,23 +600,16 @@ public:
   Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
 
 private:
-  cvargument(rvsdg::Region * region, cvinput * input)
+  cvargument(rvsdg::Region * region, rvsdg::structural_input * input)
       : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
-  create(rvsdg::Region * region, lambda::cvinput * input)
+  create(rvsdg::Region * region, rvsdg::structural_input * input)
   {
     auto argument = new cvargument(region, input);
     region->append_argument(argument);
     return argument;
-  }
-
-public:
-  cvinput *
-  input() const noexcept
-  {
-    return jlm::util::AssertedCast<cvinput>(rvsdg::RegionArgument::input());
   }
 };
 
@@ -882,10 +869,10 @@ lambda::node::RemoveLambdaInputsWhere(const F & match)
   // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
   for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
   {
-    auto & lambdaInput = *input(n);
-    auto & argument = *lambdaInput.argument();
+    auto lambdaInput = input(n);
+    auto & argument = *MapInputContextVar(*lambdaInput).inner;
 
-    if (argument.IsDead() && match(lambdaInput))
+    if (argument.IsDead() && match(*lambdaInput))
     {
       subregion()->RemoveArgument(argument.index());
       RemoveInput(n);

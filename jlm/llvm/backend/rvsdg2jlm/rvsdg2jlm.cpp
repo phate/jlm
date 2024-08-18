@@ -135,10 +135,10 @@ create_cfg(const lambda::node & lambda, context & ctx)
   }
 
   /* add context variables */
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    auto v = ctx.variable(cv.origin());
-    ctx.insert(cv.argument(), v);
+    auto v = ctx.variable(cv.input->origin());
+    ctx.insert(cv.inner, v);
   }
 
   convert_region(*lambda.subregion(), ctx);

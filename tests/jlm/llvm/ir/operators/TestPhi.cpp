@@ -41,7 +41,7 @@ TestPhiCreation()
   auto SetupF2 = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * f2)
   {
     auto lambda = lambda::node::create(region, f1type, "f2", linkage::external_linkage);
-    auto ctxVarF2 = lambda->add_ctxvar(f2);
+    auto ctxVarF2 = lambda->AddContextVar(f2).inner;
     auto valueArgument = lambda->fctargument(0);
     auto iOStateArgument = lambda->fctargument(1);
     auto memoryStateArgument = lambda->fctargument(2);

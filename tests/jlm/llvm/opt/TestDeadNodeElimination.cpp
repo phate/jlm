@@ -258,8 +258,8 @@ TestLambda()
       "f",
       linkage::external_linkage);
 
-  auto cv1 = lambda->add_ctxvar(x);
-  auto cv2 = lambda->add_ctxvar(y);
+  auto cv1 = lambda->AddContextVar(x).inner;
+  auto cv2 = lambda->AddContextVar(y).inner;
   jlm::tests::create_testop(lambda->subregion(), { lambda->fctargument(0), cv1 }, { vt });
 
   auto output = lambda->finalize({ lambda->fctargument(0), cv2 });
@@ -293,8 +293,8 @@ TestPhi()
       [&](jlm::rvsdg::Region & region, phi::rvoutput & rv2, jlm::rvsdg::RegionArgument & dx)
   {
     auto lambda1 = lambda::node::create(&region, functionType, "f1", linkage::external_linkage);
-    auto f2Argument = lambda1->add_ctxvar(rv2.argument());
-    auto xArgument = lambda1->add_ctxvar(&dx);
+    auto f2Argument = lambda1->AddContextVar(rv2.argument()).inner;
+    auto xArgument = lambda1->AddContextVar(&dx).inner;
 
     auto result = jlm::tests::SimpleNode::Create(
                       *lambda1->subregion(),
@@ -309,8 +309,8 @@ TestPhi()
       [&](jlm::rvsdg::Region & region, phi::rvoutput & rv1, jlm::rvsdg::RegionArgument & dy)
   {
     auto lambda2 = lambda::node::create(&region, functionType, "f2", linkage::external_linkage);
-    auto f1Argument = lambda2->add_ctxvar(rv1.argument());
-    lambda2->add_ctxvar(&dy);
+    auto f1Argument = lambda2->AddContextVar(rv1.argument()).inner;
+    lambda2->AddContextVar(&dy);
 
     auto result = jlm::tests::SimpleNode::Create(
                       *lambda2->subregion(),
@@ -324,7 +324,7 @@ TestPhi()
   auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::RegionArgument & dz)
   {
     auto lambda3 = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
-    auto zArgument = lambda3->add_ctxvar(&dz);
+    auto zArgument = lambda3->AddContextVar(&dz).inner;
 
     auto result = jlm::tests::SimpleNode::Create(
                       *lambda3->subregion(),

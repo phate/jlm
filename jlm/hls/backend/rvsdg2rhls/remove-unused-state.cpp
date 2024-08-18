@@ -205,10 +205,10 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       ln->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (const auto & ctxvar : ln->GetContextVars())
   {
-    // copy over cvarguments
-    smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
+    // copy over context vars
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(ctxvar.input->origin()).inner);
   }
 
   size_t new_i = 0;
