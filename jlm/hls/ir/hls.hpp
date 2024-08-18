@@ -659,6 +659,9 @@ public:
     return argument_;
   }
 
+  backedge_result &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
   backedge_result(jlm::rvsdg::output * origin)
       : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port()),

@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
@@ -26,10 +27,10 @@ TestSuccess()
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
-  auto a = graph.add_import({ pt, "a" });
-  auto s1 = graph.add_import({ mt, "s1" });
-  auto s2 = graph.add_import({ mt, "s2" });
-  auto s3 = graph.add_import({ mt, "s3" });
+  auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
+  auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
+  auto s3 = &jlm::tests::GraphImport::Create(graph, mt, "s3");
 
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto ld = LoadNonVolatileNode::Create(a, { mux }, vt, 4);
@@ -80,9 +81,9 @@ TestWrongNumberOfOperands()
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
-  auto a = graph.add_import({ pt, "a" });
-  auto s1 = graph.add_import({ mt, "s1" });
-  auto s2 = graph.add_import({ mt, "s2" });
+  auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
+  auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
 
   auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
   auto ld = LoadNonVolatileNode::Create(a, { merge, merge }, vt, 4);
@@ -125,7 +126,7 @@ TestLoadWithoutStates()
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
 
-  auto address = graph.add_import({ pointerType, "address" });
+  auto address = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
 
   auto loadResults = LoadNonVolatileNode::Create(address, {}, valueType, 4);
 

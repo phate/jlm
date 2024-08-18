@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/GraphWriter.hpp>
@@ -154,7 +155,7 @@ class PointerObjectSet final
 
   util::BijectiveMap<const lambda::node *, PointerObjectIndex> FunctionMap_;
 
-  std::unordered_map<const rvsdg::argument *, PointerObjectIndex> ImportMap_;
+  std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
 
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
@@ -260,7 +261,7 @@ public:
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
-  CreateImportMemoryObject(const rvsdg::argument & importNode);
+  CreateImportMemoryObject(const GraphImport & importNode);
 
   const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
@@ -277,7 +278,7 @@ public:
   const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
+  const std::unordered_map<const GraphImport *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
   /**
@@ -812,6 +813,16 @@ public:
      * The number of unifications performed due to hybrid cycle detection.
      */
     std::optional<size_t> NumHybridCycleUnifications;
+
+    /**
+     * The number of DFSs started in attempts at detecting cycles,
+     * the number of cycles detected by lazy cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Lazy Cycle Detection is enabled.
+     */
+    std::optional<size_t> NumLazyCyclesDetectionAttempts;
+    std::optional<size_t> NumLazyCyclesDetected;
+    std::optional<size_t> NumLazyCycleUnifications;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -941,16 +952,19 @@ public:
    * These papers also describe a set of techniques that potentially improve solving performance:
    *  - Online Cycle Detection (Pearce, 2003)
    *  - Hybrid Cycle Detection (Hardekopf 2007)
+   *  - Lazy Cycle Detection (Hardekopf 2007)
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
    * @param enableHybridCycleDetection if true, hybrid cycle detection will be performed.
+   * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
   SolveUsingWorklist(
       WorklistSolverPolicy policy,
       bool enableOnlineCycleDetection,
-      bool enableHybridCycleDetection);
+      bool enableHybridCycleDetection,
+      bool enableLazyCycleDetection);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -994,9 +1008,14 @@ private:
    * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
    * @tparam EnableHybridCycleDetection if true, hybrid cycle detection is enabled.
+   * @tparam EnableLazyCycleDetection if true, lazy cycle detection is enabled.
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableHybridCycleDetection>
+  template<
+      typename Worklist,
+      bool EnableOnlineCycleDetection,
+      bool EnableHybridCycleDetection,
+      bool EnableLazyCycleDetection>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 

@@ -26,9 +26,9 @@ test_mux_mux_reduction()
   mnf->set_mutable(false);
   mnf->set_mux_mux_reducible(false);
 
-  auto x = graph.add_import({ st, "x" });
-  auto y = graph.add_import({ st, "y" });
-  auto z = graph.add_import({ st, "z" });
+  auto x = &jlm::tests::GraphImport::Create(graph, st, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, st, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, st, "z");
 
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, y });
   auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
@@ -66,7 +66,7 @@ test_multiple_origin_reduction()
   mnf->set_mutable(false);
   mnf->set_multiple_origin_reducible(false);
 
-  auto x = graph.add_import({ st, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, st, "x");
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, x });
   auto ex = graph.add_export(mux1, { mux1->Type(), "m" });
 

@@ -251,10 +251,9 @@ public:
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is_import(Output_))
+    if (auto graphImport = dynamic_cast<const GraphImport *>(Output_))
     {
-      auto import = jlm::util::AssertedCast<const jlm::rvsdg::impport>(&Output_->port());
-      return jlm::util::strfmt("imp:", import->name());
+      return jlm::util::strfmt("imp:", graphImport->Name());
     }
 
     if (is<phi::rvargument>(Output_))
@@ -467,16 +466,15 @@ class ImportLocation final : public MemoryLocation
 {
   ~ImportLocation() override = default;
 
-  ImportLocation(const rvsdg::argument & argument, PointsToFlags pointsToFlags)
+  ImportLocation(const GraphImport & graphImport, PointsToFlags pointsToFlags)
       : MemoryLocation(),
-        Argument_(argument)
+        Argument_(graphImport)
   {
-    JLM_ASSERT(dynamic_cast<const llvm::impport *>(&argument.port()));
     SetPointsToFlags(pointsToFlags);
   }
 
 public:
-  [[nodiscard]] const rvsdg::argument &
+  [[nodiscard]] const GraphImport &
   GetArgument() const noexcept
   {
     return Argument_;
@@ -489,24 +487,23 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const rvsdg::argument & argument)
+  Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(argument.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
-    auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
-    bool isOrContainsPointerType = IsOrContains<PointerType>(rvsdgImport.GetValueType());
+    bool isOrContainsPointerType = IsOrContains<PointerType>(*graphImport.ValueType());
 
     return std::unique_ptr<Location>(new ImportLocation(
-        argument,
+        graphImport,
         isOrContainsPointerType
             ? PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory
             : PointsToFlags::PointsToNone));
   }
 
 private:
-  const rvsdg::argument & Argument_;
+  const GraphImport & Argument_;
 };
 
 /**
@@ -606,9 +603,9 @@ public:
   }
 
   Location &
-  InsertImportLocation(const jlm::rvsdg::argument & argument)
+  InsertImportLocation(const GraphImport & graphImport)
   {
-    Locations_.push_back(ImportLocation::Create(argument));
+    Locations_.push_back(ImportLocation::Create(graphImport));
     auto location = Locations_.back().get();
     DisjointLocationSet_.insert(location);
 
@@ -1760,12 +1757,12 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
   auto rootRegion = graph.root();
   for (size_t n = 0; n < rootRegion->narguments(); n++)
   {
-    auto & argument = *rootRegion->argument(n);
+    auto & graphImport = *util::AssertedCast<const GraphImport>(rootRegion->argument(n));
 
-    if (HasOrContainsPointerType(argument))
+    if (HasOrContainsPointerType(graphImport))
     {
-      auto & importLocation = Context_->InsertImportLocation(argument);
-      auto & registerLocation = Context_->GetOrInsertRegisterLocation(argument);
+      auto & importLocation = Context_->InsertImportLocation(graphImport);
+      auto & registerLocation = Context_->GetOrInsertRegisterLocation(graphImport);
       registerLocation.SetPointsTo(importLocation);
     }
   }

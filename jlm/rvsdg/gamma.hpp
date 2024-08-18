@@ -501,6 +501,9 @@ private:
       : result(&region, &origin, &gammaOutput, origin.Type())
   {}
 
+  GammaResult &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
   static GammaResult &
   Create(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
   {

@@ -161,6 +161,23 @@ public:
       return EnableHybridCycleDetection_;
     }
 
+    /**
+     * Enables or disables lazy cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
+     */
+    void
+    EnableLazyCycleDetection(bool enable) noexcept
+    {
+      EnableLazyCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsLazyCycleDetectionEnabled() const noexcept
+    {
+      return EnableLazyCycleDetection_;
+    }
+
     [[nodiscard]] std::string
     ToString() const;
 
@@ -179,6 +196,7 @@ public:
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
       config.EnableOnlineCycleDetection(false);
       config.EnableHybridCycleDetection(true);
+      config.EnableLazyCycleDetection(true);
       return config;
     }
 
@@ -213,6 +231,7 @@ public:
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = false;
     bool EnableHybridCycleDetection_ = false;
+    bool EnableLazyCycleDetection_ = false;
   };
 
   ~Andersen() noexcept override = default;

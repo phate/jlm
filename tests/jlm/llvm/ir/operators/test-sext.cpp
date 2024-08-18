@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
@@ -20,7 +21,7 @@ test_bitunary_reduction()
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ bt32, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
 
   auto y = jlm::rvsdg::bitnot_op::create(32, x);
   auto z = jlm::llvm::sext_op::create(64, y);
@@ -47,8 +48,8 @@ test_bitbinary_reduction()
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ bt32, "x" });
-  auto y = graph.add_import({ bt32, "y" });
+  auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bt32, "y");
 
   auto z = jlm::rvsdg::bitadd_op::create(32, x, y);
   auto w = jlm::llvm::sext_op::create(64, z);
@@ -77,7 +78,7 @@ test_inverse_reduction()
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
   nf->set_mutable(false);
 
-  auto x = graph.add_import({ bt64, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, bt64, "x");
 
   auto y = jlm::llvm::trunc_op::create(32, x);
   auto z = jlm::llvm::sext_op::create(64, y);

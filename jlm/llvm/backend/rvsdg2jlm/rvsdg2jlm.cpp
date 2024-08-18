@@ -55,16 +55,9 @@ namespace rvsdg2jlm
 {
 
 static std::shared_ptr<const FunctionType>
-is_function_import(const rvsdg::argument * argument)
+is_function_import(const llvm::GraphImport * graphImport)
 {
-  JLM_ASSERT(argument->region()->graph()->root() == argument->region());
-
-  if (auto rvsdgImport = dynamic_cast<const impport *>(&argument->port()))
-  {
-    return std::dynamic_pointer_cast<const FunctionType>(rvsdgImport->Type());
-  }
-
-  return {};
+  return std::dynamic_pointer_cast<const FunctionType>(graphImport->ValueType());
 }
 
 static std::unique_ptr<data_node_init>
@@ -556,20 +549,24 @@ convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
 
   for (size_t n = 0; n < graph.root()->narguments(); n++)
   {
-    auto argument = graph.root()->argument(n);
-    auto import = static_cast<const llvm::impport *>(&argument->port());
-    if (auto ftype = is_function_import(argument))
+    auto graphImport = util::AssertedCast<GraphImport>(graph.root()->argument(n));
+    if (auto ftype = is_function_import(graphImport))
     {
-      auto f = function_node::create(ipg, import->name(), ftype, import->linkage());
+      auto f = function_node::create(ipg, graphImport->Name(), ftype, graphImport->Linkage());
       auto v = im.create_variable(f);
-      ctx.insert(argument, v);
+      ctx.insert(graphImport, v);
     }
     else
     {
-      auto dnode =
-          data_node::Create(ipg, import->name(), import->Type(), import->linkage(), "", false);
+      auto dnode = data_node::Create(
+          ipg,
+          graphImport->Name(),
+          graphImport->ValueType(),
+          graphImport->Linkage(),
+          "",
+          false);
       auto v = im.create_global_value(dnode);
-      ctx.insert(argument, v);
+      ctx.insert(graphImport, v);
     }
   }
 }

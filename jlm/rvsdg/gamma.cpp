@@ -386,6 +386,13 @@ GammaArgument::Copy(rvsdg::region & region, structural_input * input)
 
 GammaResult::~GammaResult() noexcept = default;
 
+GammaResult &
+GammaResult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  auto gammaOutput = util::AssertedCast<gamma_output>(output);
+  return GammaResult::Create(*origin.region(), origin, *gammaOutput);
+}
+
 }
 
 jlm::rvsdg::node_normal_form *
