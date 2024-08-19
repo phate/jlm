@@ -5,7 +5,6 @@ set -eu
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
 GIT_COMMIT=3e92b3d37b654b0f14b8b13d9ff8c07cad5f3796
 
-
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR=${SCRIPT_DIR}/..

@@ -85,8 +85,8 @@ runs:
       run: |
         sudo apt-get install libmlir-${{inputs.llvm-version}}-dev mlir-${{inputs.llvm-version}}-tools
         if ! [ -f /usr/lib/x86_64-linux-gnu/libMLIR.so ]; then
-          sudo ln -s /usr/lib/llvm-${{inputs.llvm-version}}/lib/libMLIR.so.${{inputs.llvm-version}}.1 /usr/lib/x86_64-linux-gnu/
-          sudo ln -s /usr/lib/llvm-${{inputs.llvm-version}}/lib/libMLIR.so.${{inputs.llvm-version}}.1 /usr/lib/x86_64-linux-gnu/libMLIR.so
+          sudo ln -s /usr/lib/llvm-${{inputs.llvm-version}}/lib/libMLIR.so.${{inputs.llvm-version}}* /usr/lib/x86_64-linux-gnu/
+          sudo ln -s /usr/lib/llvm-${{inputs.llvm-version}}/lib/libMLIR.so.${{inputs.llvm-version}}* /usr/lib/x86_64-linux-gnu/libMLIR.so
         fi
       shell: bash
 
