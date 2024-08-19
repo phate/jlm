@@ -65,6 +65,27 @@ private:
   std::shared_ptr<const rvsdg::valuetype> ValueType_;
 };
 
+// FIXME: add documentation
+class GraphExport final : public rvsdg::GraphExport
+{
+private:
+  GraphExport(rvsdg::graph & graph, rvsdg::output & origin, std::string name)
+      : rvsdg::GraphExport(graph, origin, std::move(name))
+  {}
+
+public:
+  GraphExport &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+  static GraphExport &
+  Create(rvsdg::graph & graph, rvsdg::output & origin, std::string name)
+  {
+    auto graphExport = new GraphExport(graph, origin, std::move(name));
+    graph.root()->append_result(graphExport);
+    return *graphExport;
+  }
+};
+
 static inline bool
 is_export(const jlm::rvsdg::input * input)
 {

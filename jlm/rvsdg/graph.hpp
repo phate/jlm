@@ -41,6 +41,23 @@ private:
   std::string Name_;
 };
 
+// FIXME: add documentation
+class GraphExport : public result
+{
+protected:
+  GraphExport(rvsdg::graph & graph, rvsdg::output & origin, std::string name);
+
+public:
+  [[nodiscard]] const std::string &
+  Name() const noexcept
+  {
+    return Name_;
+  }
+
+private:
+  std::string Name_;
+};
+
 /* expport class */
 
 class expport : public port
