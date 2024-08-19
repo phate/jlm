@@ -67,7 +67,7 @@ TestPhiCreation()
   rv3->set_rvorigin(lambdaOutput2);
 
   auto phi = pb.end();
-  graph.add_export(phi->output(0), { phi->output(0)->Type(), "dummy" });
+  GraphExport::Create(*phi->output(0), "dummy");
 
   graph.normalize();
   graph.prune();

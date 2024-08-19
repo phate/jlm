@@ -43,6 +43,26 @@ public:
   }
 };
 
+// FIXME: add implementation
+class GraphExport final : public rvsdg::GraphExport
+{
+  GraphExport(rvsdg::output & origin, std::string name)
+      : rvsdg::GraphExport(origin, std::move(name))
+  {}
+
+public:
+  GraphExport &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+  static GraphExport &
+  Create(rvsdg::output & origin, std::string name)
+  {
+    auto graphExport = new GraphExport(origin, std::move(name));
+    origin.region()->graph()->root()->append_result(graphExport);
+    return *graphExport;
+  }
+};
+
 /* unary operation */
 
 class unary_op final : public rvsdg::unary_op

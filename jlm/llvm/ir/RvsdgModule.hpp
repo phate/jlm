@@ -69,8 +69,8 @@ private:
 class GraphExport final : public rvsdg::GraphExport
 {
 private:
-  GraphExport(rvsdg::graph & graph, rvsdg::output & origin, std::string name)
-      : rvsdg::GraphExport(graph, origin, std::move(name))
+  GraphExport(rvsdg::output & origin, std::string name)
+      : rvsdg::GraphExport(origin, std::move(name))
   {}
 
 public:
@@ -78,10 +78,10 @@ public:
   Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
 
   static GraphExport &
-  Create(rvsdg::graph & graph, rvsdg::output & origin, std::string name)
+  Create(rvsdg::output & origin, std::string name)
   {
-    auto graphExport = new GraphExport(graph, origin, std::move(name));
-    graph.root()->append_result(graphExport);
+    auto graphExport = new GraphExport(origin, std::move(name));
+    origin.region()->graph()->root()->append_result(graphExport);
     return *graphExport;
   }
 };

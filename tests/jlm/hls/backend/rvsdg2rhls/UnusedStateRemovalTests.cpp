@@ -51,11 +51,11 @@ TestGamma()
   auto gammaOutput5 =
       gammaNode->add_exitvar({ gammaInput6->argument(0), gammaInput7->argument(1) });
 
-  rvsdg.add_export(gammaOutput1, { valueType, "" });
-  rvsdg.add_export(gammaOutput2, { valueType, "" });
-  rvsdg.add_export(gammaOutput3, { valueType, "" });
-  rvsdg.add_export(gammaOutput4, { valueType, "" });
-  rvsdg.add_export(gammaOutput5, { valueType, "" });
+  GraphExport::Create(*gammaOutput1, "");
+  GraphExport::Create(*gammaOutput2, "");
+  GraphExport::Create(*gammaOutput3, "");
+  GraphExport::Create(*gammaOutput4, "");
+  GraphExport::Create(*gammaOutput5, "");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -106,7 +106,7 @@ TestTheta()
                     { valueType })
                     .output(0);
 
-  rvsdg.add_export(result, { valueType, "f" });
+  GraphExport::Create(*result, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -152,7 +152,7 @@ TestLambda()
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  rvsdg.add_export(lambdaOutput, { PointerType::Create(), "f" });
+  GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);

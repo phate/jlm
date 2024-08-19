@@ -22,8 +22,8 @@ GraphImport::GraphImport(
       Name_(std::move(name))
 {}
 
-GraphExport::GraphExport(rvsdg::graph & graph, rvsdg::output & origin, std::string name)
-    : result(graph.root(), &origin, nullptr, std::move(origin.Type())),
+GraphExport::GraphExport(rvsdg::output & origin, std::string name)
+    : result(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
 

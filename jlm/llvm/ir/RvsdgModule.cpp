@@ -18,7 +18,7 @@ GraphExport &
 GraphExport::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
 {
   JLM_ASSERT(output == nullptr);
-  return GraphExport::Create(*origin.region()->graph(), origin, Name());
+  return GraphExport::Create(origin, Name());
 }
 
 }

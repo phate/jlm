@@ -44,7 +44,7 @@ test_gamma()
 
   gamma->add_exitvar({ state, evs->argument(1) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "x" });
+  GraphExport::Create(*gamma->output(0), "x");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::pushout pushout;
@@ -92,7 +92,7 @@ test_theta()
 
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(0), { theta->output(0)->Type(), "c" });
+  GraphExport::Create(*theta->output(0), "c");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::pushout pushout;
@@ -130,13 +130,13 @@ test_push_theta_bottom()
   lvs->result()->divert_to(s1);
   theta->set_predicate(lvc->argument());
 
-  auto ex = graph.add_export(lvs, { lvs->Type(), "s" });
+  auto & ex = GraphExport::Create(*lvs, "s");
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::push_bottom(theta);
   jlm::rvsdg::view(graph, stdout);
 
-  auto storenode = jlm::rvsdg::node_output::node(ex->origin());
+  auto storenode = jlm::rvsdg::node_output::node(ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
   assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(

@@ -31,7 +31,7 @@ test_gamma(void)
   auto ev2 = gamma->add_entryvar(v2);
   gamma->add_exitvar({ ev0->argument(0), ev1->argument(1), ev2->argument(2) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "dummy" });
+  jlm::tests::GraphExport::Create(*gamma->output(0), "dummy");
 
   assert(gamma && gamma->operation() == jlm::rvsdg::gamma_op(3));
 
@@ -70,11 +70,11 @@ test_predicate_reduction(void)
   auto ev2 = gamma->add_entryvar(v2);
   gamma->add_exitvar({ ev0->argument(0), ev1->argument(1), ev2->argument(2) });
 
-  auto r = graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "" });
+  auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
 
   graph.normalize();
   //	jlm::rvsdg::view(graph.root(), stdout);
-  assert(r->origin() == v1);
+  assert(r.origin() == v1);
 
   graph.prune();
   assert(graph.root()->nnodes() == 0);
@@ -97,11 +97,11 @@ test_invariant_reduction(void)
   auto ev = gamma->add_entryvar(v);
   gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
-  auto r = graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "" });
+  auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
 
   graph.normalize();
   //	jlm::rvsdg::view(graph.root(), stdout);
-  assert(r->origin() == v);
+  assert(r.origin() == v);
 
   graph.prune();
   assert(graph.root()->nnodes() == 0);
@@ -130,19 +130,19 @@ test_control_constant_reduction()
   auto xv1 = gamma->add_exitvar({ t, f });
   auto xv2 = gamma->add_exitvar({ n0, n1 });
 
-  auto ex1 = graph.add_export(xv1, { xv1->Type(), "" });
-  auto ex2 = graph.add_export(xv2, { xv2->Type(), "" });
+  auto & ex1 = jlm::tests::GraphExport::Create(*xv1, "");
+  auto & ex2 = jlm::tests::GraphExport::Create(*xv2, "");
 
   jlm::rvsdg::view(graph.root(), stdout);
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex1->origin());
+  auto match = node_output::node(ex1.origin());
   assert(match && is<match_op>(match->operation()));
   auto & match_op = to_match_op(match->operation());
   assert(match_op.default_alternative() == 0);
 
-  assert(node_output::node(ex2->origin()) == gamma);
+  assert(node_output::node(ex2.origin()) == gamma);
 }
 
 static void
@@ -166,13 +166,13 @@ test_control_constant_reduction2()
 
   auto xv = gamma->add_exitvar({ t1, t2, t3, f });
 
-  auto ex = graph.add_export(xv, { xv->Type(), "" });
+  auto & ex = jlm::tests::GraphExport::Create(*xv, "");
 
   jlm::rvsdg::view(graph.root(), stdout);
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex->origin());
+  auto match = node_output::node(ex.origin());
   assert(is<match_op>(match));
 }
 
@@ -207,8 +207,8 @@ TestRemoveGammaOutputsWhere()
   auto gammaOutput3 =
       gammaNode->add_exitvar({ gammaInput3->argument(0), gammaInput3->argument(1) });
 
-  rvsdg.add_export(gammaOutput0, { gammaOutput0->Type(), "" });
-  rvsdg.add_export(gammaOutput2, { gammaOutput2->Type(), "" });
+  jlm::tests::GraphExport::Create(*gammaOutput0, "");
+  jlm::tests::GraphExport::Create(*gammaOutput2, "");
 
   // Act & Assert
   assert(gammaNode->noutputs() == 4);
@@ -267,8 +267,8 @@ TestPruneOutputs()
       gammaNode->add_exitvar({ gammaInput2->argument(0), gammaInput2->argument(1) });
   gammaNode->add_exitvar({ gammaInput3->argument(0), gammaInput3->argument(1) });
 
-  rvsdg.add_export(gammaOutput0, { gammaOutput0->Type(), "" });
-  rvsdg.add_export(gammaOutput2, { gammaOutput2->Type(), "" });
+  jlm::tests::GraphExport::Create(*gammaOutput0, "");
+  jlm::tests::GraphExport::Create(*gammaOutput2, "");
 
   // Act
   gammaNode->PruneOutputs();

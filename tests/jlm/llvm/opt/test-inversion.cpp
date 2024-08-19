@@ -61,18 +61,18 @@ test1()
 
   theta->set_predicate(predicate);
 
-  auto ex1 = graph.add_export(theta->output(0), { theta->output(0)->Type(), "x" });
-  auto ex2 = graph.add_export(theta->output(1), { theta->output(1)->Type(), "y" });
-  auto ex3 = graph.add_export(theta->output(2), { theta->output(2)->Type(), "z" });
+  auto & ex1 = GraphExport::Create(*theta->output(0), "x");
+  auto & ex2 = GraphExport::Create(*theta->output(1), "y");
+  auto & ex3 = GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3.origin())));
 }
 
 static inline void
@@ -110,14 +110,14 @@ test2()
 
   theta->set_predicate(predicate);
 
-  auto ex = graph.add_export(theta->output(0), { theta->output(0)->Type(), "x" });
+  auto & ex = GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex.origin())));
 }
 
 static int
