@@ -165,7 +165,7 @@ class PointerObjectSet final
 
   /**
    * Internal helper function for making P(superset) a superset of P(subset), with a callback.
-   * @See MakePointsToSetSuperset
+   * @see MakePointsToSetSuperset
    */
   template<typename NewPointeeFunctor>
   bool
