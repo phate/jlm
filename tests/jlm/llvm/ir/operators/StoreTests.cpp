@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 
 static int
 StoreNonVolatileOperationEquality()
@@ -228,7 +229,7 @@ TestStoreMuxReduction()
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto state = StoreNonVolatileNode::Create(a, v, { mux }, 4);
 
-  auto ex = graph.add_export(state[0], { state[0]->Type(), "s" });
+  auto & ex = GraphExport::Create(*state[0], "s");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -241,7 +242,7 @@ TestStoreMuxReduction()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto muxnode = jlm::rvsdg::node_output::node(ex->origin());
+  auto muxnode = jlm::rvsdg::node_output::node(ex.origin());
   assert(is<MemoryStateMergeOperation>(muxnode));
   assert(muxnode->ninputs() == 3);
   auto n0 = jlm::rvsdg::node_output::node(muxnode->input(0)->origin());
@@ -274,7 +275,7 @@ TestMultipleOriginReduction()
 
   auto states = StoreNonVolatileNode::Create(a, v, { s, s, s, s }, 4);
 
-  auto ex = graph.add_export(states[0], { states[0]->Type(), "s" });
+  auto & ex = GraphExport::Create(*states[0], "s");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -287,7 +288,7 @@ TestMultipleOriginReduction()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto node = jlm::rvsdg::node_output::node(ex->origin());
+  auto node = jlm::rvsdg::node_output::node(ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(node->operation()) && node->ninputs() == 3);
 }
 
@@ -316,9 +317,9 @@ TestStoreAllocaReduction()
   auto states1 = StoreNonVolatileNode::Create(alloca1[0], value, { alloca1[1], alloca2[1], s }, 4);
   auto states2 = StoreNonVolatileNode::Create(alloca2[0], value, states1, 4);
 
-  graph.add_export(states2[0], { states2[0]->Type(), "s1" });
-  graph.add_export(states2[1], { states2[1]->Type(), "s2" });
-  graph.add_export(states2[2], { states2[2]->Type(), "s3" });
+  GraphExport::Create(*states2[0], "s1");
+  GraphExport::Create(*states2[1], "s2");
+  GraphExport::Create(*states2[2], "s3");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -359,7 +360,7 @@ TestStoreStoreReduction()
   auto s1 = StoreNonVolatileNode::Create(a, v1, { s }, 4)[0];
   auto s2 = StoreNonVolatileNode::Create(a, v2, { s1 }, 4)[0];
 
-  auto ex = graph.add_export(s2, { s2->Type(), "state" });
+  auto & ex = GraphExport::Create(*s2, "state");
 
   jlm::rvsdg::view(graph.root(), stdout);
 
@@ -373,7 +374,7 @@ TestStoreStoreReduction()
 
   // Assert
   assert(graph.root()->nnodes() == 1);
-  assert(jlm::rvsdg::node_output::node(ex->origin())->input(1)->origin() == v2);
+  assert(jlm::rvsdg::node_output::node(ex.origin())->input(1)->origin() == v2);
 }
 
 static int

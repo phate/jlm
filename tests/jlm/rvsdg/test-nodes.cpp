@@ -102,7 +102,7 @@ test_node_depth()
   auto bin = jlm::tests::test_op::create(graph.root(), { null->output(0), x }, { vt });
   auto un = jlm::tests::test_op::create(graph.root(), { bin->output(0) }, { vt });
 
-  graph.add_export(un->output(0), { un->output(0)->Type(), "x" });
+  jlm::tests::GraphExport::Create(*un->output(0), "x");
 
   jlm::rvsdg::view(graph.root(), stdout);
 

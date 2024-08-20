@@ -134,7 +134,7 @@ TestCallTypeClassifierIndirectCall()
 
     lambda->finalize(callResults);
 
-    graph->add_export(lambda->output(), { PointerType::Create(), "f" });
+    GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(
         jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
@@ -235,7 +235,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-  graph->add_export(f->output(), { PointerType::Create(), "f" });
+  GraphExport::Create(*f->output(), "f");
 
   //	jlm::rvsdg::view(graph->root(), stdout);
 
@@ -349,7 +349,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-  graph->add_export(f, { PointerType::Create(), "f" });
+  GraphExport::Create(*f, "f");
 
   jlm::rvsdg::view(graph->root(), stdout);
 
@@ -464,7 +464,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     fibrv->result()->divert_to(lambdaOutput);
     pb.end();
 
-    graph->add_export(fibrv, { pt, "fib" });
+    GraphExport::Create(*fibrv, "fib");
 
     return std::make_tuple(
         lambdaOutput,

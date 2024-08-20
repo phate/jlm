@@ -65,14 +65,29 @@ private:
   std::shared_ptr<const rvsdg::valuetype> ValueType_;
 };
 
-static inline bool
-is_export(const jlm::rvsdg::input * input)
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ * It is used to model externally visible entities from LLVM modules.
+ */
+class GraphExport final : public rvsdg::GraphExport
 {
-  auto graph = input->region()->graph();
+private:
+  GraphExport(rvsdg::output & origin, std::string name)
+      : rvsdg::GraphExport(origin, std::move(name))
+  {}
 
-  auto result = dynamic_cast<const jlm::rvsdg::result *>(input);
-  return result && result->region() == graph->root();
-}
+public:
+  GraphExport &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+  static GraphExport &
+  Create(rvsdg::output & origin, std::string name)
+  {
+    auto graphExport = new GraphExport(origin, std::move(name));
+    origin.region()->graph()->root()->append_result(graphExport);
+    return *graphExport;
+  }
+};
 
 /**
  * An LLVM module utilizing the RVSDG representation.

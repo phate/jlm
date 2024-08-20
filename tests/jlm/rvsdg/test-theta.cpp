@@ -32,7 +32,7 @@ TestThetaCreation()
   lv3->result()->divert_to(lv3->argument());
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(0), { theta->output(0)->Type(), "exp" });
+  jlm::tests::GraphExport::Create(*theta->output(0), "exp");
   auto theta2 =
       static_cast<jlm::rvsdg::structural_node *>(theta)->copy(graph.root(), { imp1, imp2, imp3 });
   jlm::rvsdg::view(graph.root(), stdout);
@@ -68,7 +68,7 @@ TestRemoveThetaOutputsWhere()
   auto thetaOutput2 = thetaNode->add_loopvar(y);
   thetaNode->set_predicate(thetaOutput0->argument());
 
-  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
+  jlm::tests::GraphExport::Create(*thetaOutput0, "");
 
   // Act & Assert
   auto deadInputs = thetaNode->RemoveThetaOutputsWhere(
@@ -118,7 +118,7 @@ TestPruneThetaOutputs()
   thetaNode->add_loopvar(y);
   thetaNode->set_predicate(thetaOutput0->argument());
 
-  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
+  jlm::tests::GraphExport::Create(*thetaOutput0, "");
 
   // Act
   auto deadInputs = thetaNode->PruneThetaOutputs();
@@ -159,7 +159,7 @@ TestRemoveThetaInputsWhere()
   thetaOutput1->result()->divert_to(result);
   thetaOutput2->result()->divert_to(result);
 
-  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
+  jlm::tests::GraphExport::Create(*thetaOutput0, "");
 
   // Act & Assert
   auto deadOutputs = thetaNode->RemoveThetaInputsWhere(
@@ -215,7 +215,7 @@ TestPruneThetaInputs()
   thetaOutput1->result()->divert_to(result);
   thetaOutput2->result()->divert_to(result);
 
-  rvsdg.add_export(thetaOutput0, { ctltype::Create(2), "" });
+  jlm::tests::GraphExport::Create(*thetaOutput0, "");
 
   // Act
   auto deadOutputs = thetaNode->PruneThetaInputs();
