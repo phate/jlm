@@ -163,6 +163,17 @@ class PointerObjectSet final
   [[nodiscard]] PointerObjectIndex
   AddPointerObject(PointerObjectKind kind);
 
+  /**
+   * Internal helper function for making P(superset) a superset of P(subset), with a callback.
+   * @See MakePointsToSetSuperset
+   */
+  template<typename NewPointeeFunctor>
+  bool
+  PropagateNewPointees(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      NewPointeeFunctor & onNewPointee);
+
 public:
   [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
@@ -406,6 +417,16 @@ public:
    */
   bool
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
+
+  /**
+   * A version of MakePointsToSetSuperset that adds any new pointees of \p superset,
+   * to the set \p newPointees.
+   */
+  bool
+  MakePointsToSetSuperset(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      util::HashSet<PointerObjectIndex> & newPointees);
 
   /**
    * @param pointer the PointerObject possibly pointing to \p pointee
@@ -953,10 +974,12 @@ public:
    *  - Online Cycle Detection (Pearce, 2003)
    *  - Hybrid Cycle Detection (Hardekopf 2007)
    *  - Lazy Cycle Detection (Hardekopf 2007)
+   *  - Difference Propagation (Pearce, 2003)
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
    * @param enableHybridCycleDetection if true, hybrid cycle detection will be performed.
    * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
+   * @param enableDifferencePropagation if true, difference propagation will be enabled.
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
@@ -964,7 +987,8 @@ public:
       WorklistSolverPolicy policy,
       bool enableOnlineCycleDetection,
       bool enableHybridCycleDetection,
-      bool enableLazyCycleDetection);
+      bool enableLazyCycleDetection,
+      bool enableDifferencePropagation);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -1009,13 +1033,15 @@ private:
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
    * @tparam EnableHybridCycleDetection if true, hybrid cycle detection is enabled.
    * @tparam EnableLazyCycleDetection if true, lazy cycle detection is enabled.
+   * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
    * @see SolveUsingWorklist() for the public interface.
    */
   template<
       typename Worklist,
       bool EnableOnlineCycleDetection,
       bool EnableHybridCycleDetection,
-      bool EnableLazyCycleDetection>
+      bool EnableLazyCycleDetection,
+      bool EnableDifferencePropagation>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 

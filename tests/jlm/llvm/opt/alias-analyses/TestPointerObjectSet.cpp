@@ -891,7 +891,8 @@ TestPointerObjectSet()
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
         config.IsHybridCycleDetectionEnabled(),
-        config.IsLazyCycleDetectionEnabled());
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled());
   }
 
   TestClonePointerObjectConstraintSet();
