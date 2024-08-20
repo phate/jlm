@@ -69,7 +69,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/inlining.hpp \
 	jlm/llvm/opt/cne.hpp \
 	jlm/llvm/opt/push.hpp \
-	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp
+	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
 	jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
@@ -179,6 +179,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/ir/TestAnnotation \
 	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
 	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
+	tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
 	tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
 	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
 	tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \

@@ -250,7 +250,7 @@ public:
     bool EnableOnlineCycleDetection_ = false;
     bool EnableHybridCycleDetection_ = false;
     bool EnableLazyCycleDetection_ = false;
-    bool EnabledDifferencePropagation_ = false;
+    bool EnableDifferencePropagation_ = false;
   };
 
   ~Andersen() noexcept override = default;
