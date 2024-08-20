@@ -86,15 +86,6 @@ public:
   }
 };
 
-static inline bool
-is_export(const jlm::rvsdg::input * input)
-{
-  auto graph = input->region()->graph();
-
-  auto result = dynamic_cast<const jlm::rvsdg::result *>(input);
-  return result && result->region() == graph->root();
-}
-
 /**
  * An LLVM module utilizing the RVSDG representation.
  */
