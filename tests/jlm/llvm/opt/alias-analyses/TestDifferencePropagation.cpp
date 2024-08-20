@@ -41,7 +41,7 @@ TestTracksDifferences()
   // Assert
   assert(differencePropagation.GetNewPointees(r0) == (util::HashSet<PointerObjectIndex>{ a0, a3 }));
 
-  // Act 2 - add another pointer/pointee relations: r1 -> a1
+  // Act 2 - add another pointer/pointee relation: r1 -> a1
   differencePropagation.AddToPointsToSet(r1, a1);
 
   // Assert that a1 is a new pointee of r1
@@ -98,7 +98,7 @@ TestTracksDifferences()
 
   // Assert that all pointees that were new to either node, are also new to the root
   // a0 and a2 were still marked as new to node r1 at the time of unification.
-  // a3 was not new to 0, but 1 has never seen it, so it must be regarded as new by the union.
+  // a3 is not new to r0, but r1 has never seen it, so it must be regarded as new by the union.
   util::HashSet<PointerObjectIndex> subset{ a0, a2, a3 };
   assert(subset.IsSubsetOf(differencePropagation.GetNewPointees(root)));
 
