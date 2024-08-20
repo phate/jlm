@@ -43,7 +43,10 @@ public:
   }
 };
 
-// FIXME: add implementation
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ * It can be used for testing of graph exports.
+ */
 class GraphExport final : public rvsdg::GraphExport
 {
   GraphExport(rvsdg::output & origin, std::string name)

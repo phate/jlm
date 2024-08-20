@@ -65,7 +65,10 @@ private:
   std::shared_ptr<const rvsdg::valuetype> ValueType_;
 };
 
-// FIXME: add documentation
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ * It is used to model externally visible entities from LLVM modules.
+ */
 class GraphExport final : public rvsdg::GraphExport
 {
 private:

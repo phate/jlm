@@ -41,7 +41,9 @@ private:
   std::string Name_;
 };
 
-// FIXME: add documentation
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ */
 class GraphExport : public result
 {
 protected:
