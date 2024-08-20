@@ -275,7 +275,7 @@ TestCallSummaryComputationExport()
   auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
   auto lambdaOutput = lambdaNode->finalize({ result });
-  auto rvsdgExport = rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "f" });
+  auto & rvsdgExport = jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   auto callSummary = lambdaNode->ComputeCallSummary();
@@ -283,7 +283,7 @@ TestCallSummaryComputationExport()
   // Assert
   assert(callSummary->IsExported());
   assert(callSummary->IsOnlyExported());
-  assert(callSummary->GetRvsdgExport() == rvsdgExport);
+  assert(callSummary->GetRvsdgExport() == &rvsdgExport);
 
   assert(callSummary->IsDead() == false);
   assert(callSummary->HasOnlyDirectCalls() == false);
@@ -335,7 +335,7 @@ TestCallSummaryComputationDirectCalls()
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambdaNode->finalize(callResults);
-    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "y" });
+    jlm::llvm::GraphExport::Create(*lambdaOutput, "y");
 
     return lambdaOutput;
   };
@@ -365,7 +365,7 @@ TestCallSummaryComputationDirectCalls()
         { vt })[0];
 
     auto lambdaOutput = lambdaNode->finalize({ result, callYResults[1], callYResults[2] });
-    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType::Create(), "z" });
+    jlm::llvm::GraphExport::Create(*lambdaOutput, "z");
 
     return lambdaOutput;
   };
@@ -471,7 +471,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto argument = deltaNode->add_ctxvar(lambdaNode->output());
   deltaNode->finalize(argument);
 
-  rvsdg->add_export(deltaNode->output(), { PointerType::Create(), "fp" });
+  GraphExport::Create(*deltaNode->output(), "fp");
 
   // Act
   auto callSummary = lambdaNode->ComputeCallSummary();
@@ -506,7 +506,7 @@ TestCallSummaryComputationLambdaResult()
   auto lambdaGArgument = lambdaNodeF->add_ctxvar(lambdaOutputG);
   auto lambdaOutputF = lambdaNodeF->finalize({ lambdaGArgument });
 
-  rvsdg.add_export(lambdaOutputF, { pointerType, "f" });
+  GraphExport::Create(*lambdaOutputF, "f");
 
   // Act
   auto callSummary = lambdaNodeG->ComputeCallSummary();

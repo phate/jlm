@@ -212,7 +212,7 @@ convert_alloca(jlm::rvsdg::region * region)
         cout = jlm::rvsdg::simple_node::create_normalized(db->subregion(), cop, {})[0];
       }
       auto delta = db->finalize(cout);
-      region->graph()->add_export(delta, { delta_type, delta_name });
+      jlm::llvm::GraphExport::Create(*delta, delta_name);
       auto delta_local = route_to_region(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
@@ -375,7 +375,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          rm.Rvsdg().add_export(odn->output(), { odn->output()->Type(), odn->name() });
+          jlm::llvm::GraphExport::Create(*odn->output(), odn->name());
         }
         else
         {

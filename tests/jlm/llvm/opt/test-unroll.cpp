@@ -255,14 +255,14 @@ test_unknown_boundaries()
 
   theta->set_predicate(match);
 
-  auto ex1 = graph.add_export(lv1, { lv1->Type(), "x" });
+  auto & ex1 = GraphExport::Create(*lv1, "x");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(2);
   loopunroll.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  auto node = jlm::rvsdg::node_output::node(ex1->origin());
+  auto node = jlm::rvsdg::node_output::node(ex1.origin());
   assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
   node = jlm::rvsdg::node_output::node(node->input(1)->origin());
   assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));

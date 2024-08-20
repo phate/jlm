@@ -39,7 +39,7 @@ test()
 
   auto f = lambda->finalize({ ex });
 
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

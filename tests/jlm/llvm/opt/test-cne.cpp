@@ -45,13 +45,13 @@ test_simple()
   auto b3 = jlm::tests::create_testop(graph.root(), { n1, z }, { vt })[0];
   auto b4 = jlm::tests::create_testop(graph.root(), { n2, z }, { vt })[0];
 
-  graph.add_export(n1, { n1->Type(), "n1" });
-  graph.add_export(n2, { n2->Type(), "n2" });
-  graph.add_export(u1, { n2->Type(), "u1" });
-  graph.add_export(b1, { n2->Type(), "b1" });
-  graph.add_export(b2, { n2->Type(), "b2" });
-  graph.add_export(b3, { n2->Type(), "b3" });
-  graph.add_export(b4, { n2->Type(), "b4" });
+  GraphExport::Create(*n1, "n1");
+  GraphExport::Create(*n2, "n2");
+  GraphExport::Create(*u1, "u1");
+  GraphExport::Create(*b1, "b1");
+  GraphExport::Create(*b2, "b2");
+  GraphExport::Create(*b3, "b3");
+  GraphExport::Create(*b4, "b4");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::cne cne;
@@ -104,9 +104,9 @@ test_gamma()
   gamma->add_exitvar({ n3, ev3->argument(1) });
   gamma->add_exitvar({ ev5->argument(0), ev4->argument(1) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "x1" });
-  graph.add_export(gamma->output(1), { gamma->output(1)->Type(), "x2" });
-  graph.add_export(gamma->output(2), { gamma->output(2)->Type(), "y" });
+  GraphExport::Create(*gamma->output(0), "x1");
+  GraphExport::Create(*gamma->output(1), "x2");
+  GraphExport::Create(*gamma->output(2), "y");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::cne cne;
@@ -161,9 +161,9 @@ test_theta()
 
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(1), { theta->output(1)->Type(), "lv2" });
-  graph.add_export(theta->output(2), { theta->output(2)->Type(), "lv3" });
-  graph.add_export(theta->output(3), { theta->output(3)->Type(), "lv4" });
+  GraphExport::Create(*theta->output(1), "lv2");
+  GraphExport::Create(*theta->output(2), "lv3");
+  GraphExport::Create(*theta->output(3), "lv4");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::cne cne;
@@ -212,8 +212,8 @@ test_theta2()
 
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(1), { theta->output(1)->Type(), "lv2" });
-  graph.add_export(theta->output(2), { theta->output(2)->Type(), "lv3" });
+  GraphExport::Create(*theta->output(1), "lv2");
+  GraphExport::Create(*theta->output(2), "lv3");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
@@ -266,9 +266,9 @@ test_theta3()
 
   theta1->set_predicate(lv1->argument());
 
-  graph.add_export(theta1->output(1), { theta1->output(1)->Type(), "lv2" });
-  graph.add_export(theta1->output(2), { theta1->output(2)->Type(), "lv3" });
-  graph.add_export(theta1->output(3), { theta1->output(3)->Type(), "lv4" });
+  GraphExport::Create(*theta1->output(1), "lv2");
+  GraphExport::Create(*theta1->output(2), "lv3");
+  GraphExport::Create(*theta1->output(3), "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
@@ -321,17 +321,17 @@ test_theta4()
 
   theta->set_predicate(lv1->argument());
 
-  auto ex1 = graph.add_export(theta->output(1), { theta->output(1)->Type(), "lv2" });
-  auto ex2 = graph.add_export(theta->output(2), { theta->output(2)->Type(), "lv3" });
-  graph.add_export(theta->output(3), { theta->output(3)->Type(), "lv4" });
-  graph.add_export(theta->output(4), { theta->output(4)->Type(), "lv5" });
+  auto & ex1 = GraphExport::Create(*theta->output(1), "lv2");
+  auto & ex2 = GraphExport::Create(*theta->output(2), "lv3");
+  GraphExport::Create(*theta->output(3), "lv4");
+  GraphExport::Create(*theta->output(4), "lv5");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(ex1->origin() != ex2->origin());
+  assert(ex1.origin() != ex2.origin());
   assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
   assert(lv6->result()->origin() == lv7->result()->origin());
 }
@@ -367,18 +367,18 @@ test_theta5()
 
   theta->set_predicate(lv0->argument());
 
-  auto ex1 = graph.add_export(theta->output(1), { theta->output(1)->Type(), "lv1" });
-  auto ex2 = graph.add_export(theta->output(2), { theta->output(2)->Type(), "lv2" });
-  auto ex3 = graph.add_export(theta->output(3), { theta->output(3)->Type(), "lv3" });
-  auto ex4 = graph.add_export(theta->output(4), { theta->output(4)->Type(), "lv4" });
+  auto & ex1 = GraphExport::Create(*theta->output(1), "lv1");
+  auto & ex2 = GraphExport::Create(*theta->output(2), "lv2");
+  auto & ex3 = GraphExport::Create(*theta->output(3), "lv3");
+  auto & ex4 = GraphExport::Create(*theta->output(4), "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(ex1->origin() == ex2->origin());
-  assert(ex3->origin() == ex4->origin());
+  assert(ex1.origin() == ex2.origin());
+  assert(ex3.origin() == ex4.origin());
   assert(region->result(4)->origin() == region->result(5)->origin());
   assert(region->result(2)->origin() == region->result(3)->origin());
 }
@@ -407,7 +407,7 @@ test_lambda()
 
   auto output = lambda->finalize({ b1 });
 
-  graph.add_export(output, { output->Type(), "f" });
+  GraphExport::Create(*output, "f");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::cne cne;
@@ -456,8 +456,8 @@ test_phi()
 
   auto phi = pb.end();
 
-  graph.add_export(phi->output(0), { phi->output(0)->Type(), "f1" });
-  graph.add_export(phi->output(1), { phi->output(1)->Type(), "f2" });
+  GraphExport::Create(*phi->output(0), "f1");
+  GraphExport::Create(*phi->output(1), "f2");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::cne cne;

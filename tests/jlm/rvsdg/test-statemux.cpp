@@ -34,7 +34,7 @@ test_mux_mux_reduction()
   auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
   auto mux3 = jlm::rvsdg::create_state_merge(st, { mux1, mux2[0], mux2[1], z });
 
-  auto ex = graph.add_export(mux3, { mux3->Type(), "m" });
+  auto & ex = jlm::tests::GraphExport::Create(*mux3, "m");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -45,7 +45,7 @@ test_mux_mux_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto node = node_output::node(ex->origin());
+  auto node = node_output::node(ex.origin());
   assert(node->ninputs() == 4);
   assert(node->input(0)->origin() == x);
   assert(node->input(1)->origin() == y);
@@ -68,7 +68,7 @@ test_multiple_origin_reduction()
 
   auto x = &jlm::tests::GraphImport::Create(graph, st, "x");
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, x });
-  auto ex = graph.add_export(mux1, { mux1->Type(), "m" });
+  auto & ex = jlm::tests::GraphExport::Create(*mux1, "m");
 
   view(graph.root(), stdout);
 
@@ -79,7 +79,7 @@ test_multiple_origin_reduction()
 
   view(graph.root(), stdout);
 
-  assert(node_output::node(ex->origin())->ninputs() == 1);
+  assert(node_output::node(ex.origin())->ninputs() == 1);
 }
 
 static int
