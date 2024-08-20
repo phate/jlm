@@ -178,6 +178,23 @@ public:
       return EnableLazyCycleDetection_;
     }
 
+    /**
+     * Enables or disables difference propagation in the Worklist solver, as described by
+     *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Only used by the worklist solver.
+     */
+    void
+    EnableDifferencePropagation(bool enable) noexcept
+    {
+      EnableDifferencePropagation_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsDifferencePropagationEnabled() const noexcept
+    {
+      return EnableDifferencePropagation_;
+    }
+
     [[nodiscard]] std::string
     ToString() const;
 
@@ -197,6 +214,7 @@ public:
       config.EnableOnlineCycleDetection(false);
       config.EnableHybridCycleDetection(true);
       config.EnableLazyCycleDetection(true);
+      config.EnableDifferencePropagation(true);
       return config;
     }
 
@@ -232,6 +250,7 @@ public:
     bool EnableOnlineCycleDetection_ = false;
     bool EnableHybridCycleDetection_ = false;
     bool EnableLazyCycleDetection_ = false;
+    bool EnableDifferencePropagation_ = false;
   };
 
   ~Andersen() noexcept override = default;
