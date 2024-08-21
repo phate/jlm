@@ -195,6 +195,21 @@ public:
       return EnableDifferencePropagation_;
     }
 
+    /**
+     * Enables or disables preferring implicit pointees in the Worklist solver
+     */
+    void
+    EnablePreferImplicitPointees(bool enable) noexcept
+    {
+      EnablePreferImplicitPointees_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsPreferImplicitPointeesEnabled() const noexcept
+    {
+      return EnablePreferImplicitPointees_;
+    }
+
     [[nodiscard]] std::string
     ToString() const;
 
@@ -215,6 +230,7 @@ public:
       config.EnableHybridCycleDetection(true);
       config.EnableLazyCycleDetection(true);
       config.EnableDifferencePropagation(true);
+      config.EnablePreferImplicitPointees(true);
       return config;
     }
 
@@ -251,6 +267,7 @@ public:
     bool EnableHybridCycleDetection_ = false;
     bool EnableLazyCycleDetection_ = false;
     bool EnableDifferencePropagation_ = false;
+    bool EnablePreferImplicitPointees_ = false;
   };
 
   ~Andersen() noexcept override = default;

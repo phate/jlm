@@ -422,6 +422,13 @@ PointerObjectSet::MakePointsToSetSuperset(
   return PropagateNewPointees(superset, subset, NewPointee);
 }
 
+void
+PointerObjectSet::RemoveAllPointees(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  PointsToSets_[root].Clear();
+}
+
 bool
 PointerObjectSet::IsPointingTo(PointerObjectIndex pointer, PointerObjectIndex pointee) const
 {
@@ -1429,7 +1436,8 @@ template<
     bool EnableOnlineCycleDetection,
     bool EnableHybridCycleDetection,
     bool EnableLazyCycleDetection,
-    bool EnableDifferencePropagation>
+    bool EnableDifferencePropagation,
+    bool EnablePreferImplicitPointees>
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
@@ -1569,6 +1577,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     return root;
   };
 
+  // Removes all explicit pointees from the given PointerObject
+  const auto RemoveAllPointees = [&](PointerObjectIndex index)
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(index));
+    Set_.RemoveAllPointees(index);
+
+    // Prevent the difference propagation from keeping any pointees after the removal
+    if constexpr (EnableDifferencePropagation)
+      differencePropagation.OnRemoveAllPointees(index);
+  };
+
   // Lambda for getting all superset edge successors of a given pointer object in the subset graph.
   // If \p node is not a unification root, its set of successors will always be empty.
   const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
@@ -1589,6 +1608,9 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
   if constexpr (EnableHybridCycleDetection)
     statistics.NumHybridCycleUnifications = 0;
+
+  if constexpr (EnablePreferImplicitPointees)
+    statistics.NumExplicitPointeesRemoved = 0;
 
   // The worklist, initialized with every unification root
   Worklist worklist;
@@ -1624,6 +1646,22 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     // If this is a self-edge, ignore
     if (superset == subset)
       return;
+
+    if constexpr (EnablePreferImplicitPointees)
+    {
+      // No need to add edges when all pointees propagate implicitly either way
+      if (Set_.IsPointingToExternal(superset) && Set_.HasPointeesEscaping(subset))
+      {
+        return;
+      }
+
+      // Ignore adding simple edges to nodes that should only have implicit pointees
+      if (Set_.CanTrackPointeesImplicitly(superset))
+      {
+        MarkAsPointeesEscaping(subset);
+        return;
+      }
+    }
 
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
@@ -1741,6 +1779,21 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       }
     }
 
+    // If propagating to any node with AllPointeesEscape, we should have AllPointeesEscape
+    if (EnablePreferImplicitPointees && !Set_.HasPointeesEscaping(node))
+    {
+      for (auto superset : supersetEdges[node].Items())
+      {
+        if (Set_.HasPointeesEscaping(superset))
+        {
+          // Mark the current node.
+          // This is the beginning of the work item visit, so node does not need to be added again
+          Set_.MarkAsPointeesEscaping(node);
+          break;
+        }
+      }
+    }
+
     const auto pointeesEscaping = Set_.HasPointeesEscaping(node);
     // If difference propagation is enabled, this bool is true if this is the first time node
     // is being visited by the worklist with the PointeesEscaping flag set
@@ -1784,6 +1837,14 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       }
     }
 
+    // If this node can track all pointees implicitly, remove its explicit nodes
+    if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(node))
+    {
+      *(statistics.NumExplicitPointeesRemoved) += Set_.GetPointsToSet(node).Size();
+      // This also causes newPointees to become empty
+      RemoveAllPointees(node);
+    }
+
     // Propagate P(n) along all edges n -> superset
     auto supersets = supersetEdges[node].Items();
     for (auto it = supersets.begin(); it != supersets.end();)
@@ -1792,6 +1853,14 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
       // Remove self-edges
       if (supersetParent == node)
+      {
+        it = supersetEdges[node].Erase(it);
+        continue;
+      }
+
+      // Remove edges from nodes with "all pointees escape" to nodes with "points to all escaped"
+      if (EnablePreferImplicitPointees && pointeesEscaping
+          && Set_.IsPointingToExternal(supersetParent))
       {
         it = supersetEdges[node].Erase(it);
         continue;
@@ -1915,7 +1984,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     bool enableOnlineCycleDetection,
     bool enableHybridCycleDetection,
     bool enableLazyCycleDetection,
-    bool enableDifferencePropagation)
+    bool enableDifferencePropagation,
+    bool enablePreferImplicitPointees)
 {
 
   // Takes all parameters as compile time types.
@@ -1925,13 +1995,15 @@ PointerObjectConstraintSet::SolveUsingWorklist(
                             auto tOnlineCycleDetection,
                             auto tHybridCycleDetection,
                             auto tLazyCycleDetection,
-                            auto tDifferencePropagation) -> WorklistStatistics
+                            auto tDifferencePropagation,
+                            auto tPreferImplicitPointees) -> WorklistStatistics
   {
     using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
     constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
     constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
     constexpr bool vDifferencePropagation = decltype(tDifferencePropagation)::value;
+    constexpr bool vPreferImplicitPointees = decltype(tPreferImplicitPointees)::value;
 
     if constexpr (vOnlineCycleDetection && (vHybridCycleDetection || vLazyCycleDetection))
     {
@@ -1945,7 +2017,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
           vOnlineCycleDetection,
           vHybridCycleDetection,
           vLazyCycleDetection,
-          vDifferencePropagation>(statistics);
+          vDifferencePropagation,
+          vPreferImplicitPointees>(statistics);
       return statistics;
     }
   };
@@ -1992,13 +2065,20 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else
     differencePropagationVariant = std::false_type{};
 
+  std::variant<std::true_type, std::false_type> preferImplicitPropagationVariant;
+  if (enablePreferImplicitPointees)
+    preferImplicitPropagationVariant = std::true_type{};
+  else
+    preferImplicitPropagationVariant = std::false_type{};
+
   return std::visit(
       Dispatch,
       policyVariant,
       onlineCycleDetectionVariant,
       hybridCycleDetectionVariant,
       lazyCycleDetectionVariant,
-      differencePropagationVariant);
+      differencePropagationVariant,
+      preferImplicitPropagationVariant);
 }
 
 const char *
