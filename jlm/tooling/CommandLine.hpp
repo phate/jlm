@@ -52,6 +52,7 @@ public:
     FirstEnumValue, // must always be the first enum value, used for iteration
 
     Ascii,
+    Dot,
     Llvm,
     Mlir,
     Tree,
