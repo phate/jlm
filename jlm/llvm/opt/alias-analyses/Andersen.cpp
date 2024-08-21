@@ -47,6 +47,8 @@ Andersen::Configuration::ToString() const
       str << "HybridCD_";
     if (EnableLazyCycleDetection_)
       str << "LazyCD_";
+    if (EnableDifferencePropagation_)
+      str << "DP_";
   }
   else
   {
@@ -62,13 +64,19 @@ std::vector<Andersen::Configuration>
 Andersen::Configuration::GetAllConfigurations()
 {
   std::vector<Configuration> configs;
-
+  auto PickDifferencePropagation = [&](Configuration config)
+  {
+    config.EnableDifferencePropagation(false);
+    configs.push_back(config);
+    config.EnableDifferencePropagation(true);
+    configs.push_back(config);
+  };
   auto PickLazyCycleDetection = [&](Configuration config)
   {
     config.EnableLazyCycleDetection(false);
-    configs.push_back(config);
+    PickDifferencePropagation(config);
     config.EnableLazyCycleDetection(true);
-    configs.push_back(config);
+    PickDifferencePropagation(config);
   };
   auto PickHybridCycleDetection = [&](Configuration config)
   {
@@ -1113,7 +1121,8 @@ Andersen::SolveConstraints(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
         config.IsHybridCycleDetectionEnabled(),
-        config.IsLazyCycleDetectionEnabled());
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else

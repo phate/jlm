@@ -41,51 +41,24 @@ private:
   std::string Name_;
 };
 
-/* expport class */
-
-class expport : public port
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ */
+class GraphExport : public result
 {
+protected:
+  GraphExport(rvsdg::output & origin, std::string name);
+
 public:
-  virtual ~expport();
-
-  expport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
-      : port(std::move(type)),
-        name_(name)
-  {}
-
-  expport(const expport & other)
-      : port(other),
-        name_(other.name_)
-  {}
-
-  expport(expport && other)
-      : port(other),
-        name_(std::move(other.name_))
-  {}
-
-  expport &
-  operator=(const expport &) = delete;
-
-  expport &
-  operator=(expport &&) = delete;
-
-  const std::string &
-  name() const noexcept
+  [[nodiscard]] const std::string &
+  Name() const noexcept
   {
-    return name_;
+    return Name_;
   }
 
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
-
 private:
-  std::string name_;
+  std::string Name_;
 };
-
-/* graph */
 
 class graph
 {
@@ -118,12 +91,6 @@ public:
 
   jlm::rvsdg::node_normal_form *
   node_normal_form(const std::type_info & type) noexcept;
-
-  inline jlm::rvsdg::input *
-  add_export(jlm::rvsdg::output * operand, const expport & port)
-  {
-    return result::create(root(), operand, nullptr, port);
-  }
 
   inline void
   prune()

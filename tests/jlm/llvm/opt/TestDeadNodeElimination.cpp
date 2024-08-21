@@ -36,7 +36,7 @@ TestRoot()
 
   jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "y");
-  graph.add_export(y, { y->Type(), "z" });
+  GraphExport::Create(*y, "z");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
@@ -70,8 +70,8 @@ TestGamma()
   gamma->add_exitvar({ ev2->argument(0), t });
   gamma->add_exitvar({ ev3->argument(0), ev1->argument(1) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "z" });
-  graph.add_export(gamma->output(2), { gamma->output(2)->Type(), "w" });
+  GraphExport::Create(*gamma->output(0), "z");
+  GraphExport::Create(*gamma->output(2), "w");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
@@ -105,7 +105,7 @@ TestGamma2()
 
   gamma->add_exitvar({ n1, n2 });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->Type(), "x" });
+  GraphExport::Create(*gamma->output(0), "x");
 
   //	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
@@ -145,8 +145,8 @@ TestTheta()
   auto c = jlm::tests::create_testop(theta->subregion(), {}, { ct })[0];
   theta->set_predicate(c);
 
-  graph.add_export(theta->output(0), { theta->output(0)->Type(), "a" });
-  graph.add_export(theta->output(3), { theta->output(0)->Type(), "b" });
+  GraphExport::Create(*theta->output(0), "a");
+  GraphExport::Create(*theta->output(3), "b");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
@@ -192,7 +192,7 @@ TestNestedTheta()
 
   otheta->set_predicate(lvo1->argument());
 
-  graph.add_export(otheta->output(2), { otheta->output(2)->Type(), "y" });
+  GraphExport::Create(*otheta->output(2), "y");
 
   //	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
@@ -231,7 +231,7 @@ TestEvolvingTheta()
 
   theta->set_predicate(lv0->argument());
 
-  graph.add_export(lv1, { lv1->Type(), "x1" });
+  GraphExport::Create(*lv1, "x1");
 
   //	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
@@ -264,7 +264,7 @@ TestLambda()
 
   auto output = lambda->finalize({ lambda->fctargument(0), cv2 });
 
-  graph.add_export(output, { output->Type(), "f" });
+  GraphExport::Create(*output, "f");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   RunDeadNodeElimination(rm);
@@ -362,8 +362,8 @@ TestPhi()
   rv4->set_rvorigin(f4);
   auto phiNode = phiBuilder.end();
 
-  rvsdg.add_export(phiNode->output(0), { phiNode->output(0)->Type(), "f1" });
-  rvsdg.add_export(phiNode->output(3), { phiNode->output(3)->Type(), "f4" });
+  GraphExport::Create(*phiNode->output(0), "f1");
+  GraphExport::Create(*phiNode->output(3), "f4");
 
   // Act
   RunDeadNodeElimination(rvsdgModule);
@@ -415,7 +415,7 @@ TestDelta()
   jlm::tests::SimpleNode::Create(*deltaNode->subregion(), { zArgument }, {});
 
   auto deltaOutput = deltaNode->finalize(result);
-  rvsdg.add_export(deltaOutput, { PointerType::Create(), "" });
+  GraphExport::Create(*deltaOutput, "");
 
   // Act
   RunDeadNodeElimination(rvsdgModule);

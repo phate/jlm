@@ -59,7 +59,7 @@ test()
   r2->set_rvorigin(delta2);
 
   auto phi = pb.end();
-  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->Type(), "" });
+  GraphExport::Create(*phi->output(0), "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

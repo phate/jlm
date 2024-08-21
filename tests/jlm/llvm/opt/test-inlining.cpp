@@ -87,7 +87,7 @@ test1()
   auto f1 = SetupF1();
   auto f2 = SetupF2(f1);
 
-  graph.add_export(f2, { f2->Type(), "f2" });
+  GraphExport::Create(*f2, "f2");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -152,7 +152,7 @@ test2()
   auto f1 = SetupF1(functionType1);
   auto f2 = SetupF2(f1);
 
-  graph.add_export(f2, { f2->Type(), "f2" });
+  GraphExport::Create(*f2, "f2");
 
   jlm::rvsdg::view(graph.root(), stdout);
 
