@@ -73,10 +73,6 @@ class unary_op final : public rvsdg::unary_op
 public:
   virtual ~unary_op() noexcept;
 
-  inline unary_op(const rvsdg::port & srcport, const rvsdg::port & dstport) noexcept
-      : rvsdg::unary_op(srcport.Type(), dstport.Type())
-  {}
-
   inline unary_op(
       std::shared_ptr<const rvsdg::type> srctype,
       std::shared_ptr<const rvsdg::type> dsttype) noexcept
@@ -97,26 +93,6 @@ public:
 
   virtual std::unique_ptr<rvsdg::operation>
   copy() const override;
-
-  static inline rvsdg::node *
-  create(
-      rvsdg::region * region,
-      const rvsdg::port & srcport,
-      rvsdg::output * operand,
-      const rvsdg::port & dstport)
-  {
-    return rvsdg::simple_node::create(region, std::move(unary_op(srcport, dstport)), { operand });
-  }
-
-  static inline rvsdg::output *
-  create_normalized(
-      const rvsdg::port & srcport,
-      rvsdg::output * operand,
-      const rvsdg::port & dstport)
-  {
-    unary_op op(srcport, dstport);
-    return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
-  }
 
   static inline rvsdg::node *
   create(
@@ -191,17 +167,6 @@ public:
 
   static inline rvsdg::node *
   create(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
-      rvsdg::output * op1,
-      rvsdg::output * op2)
-  {
-    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
-    return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
-  }
-
-  static inline rvsdg::node *
-  create(
       const std::shared_ptr<const rvsdg::type> & srctype,
       std::shared_ptr<const rvsdg::type> dsttype,
       rvsdg::output * op1,
@@ -209,17 +174,6 @@ public:
   {
     binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
     return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
-  }
-
-  static inline rvsdg::output *
-  create_normalized(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
-      rvsdg::output * op1,
-      rvsdg::output * op2)
-  {
-    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
-    return rvsdg::simple_node::create_normalized(op1->region(), op, { op1, op2 })[0];
   }
 
   static inline rvsdg::output *

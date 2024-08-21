@@ -61,12 +61,11 @@ simple_node::simple_node(
 
   for (size_t n = 0; n < operation().narguments(); n++)
   {
-    node::add_input(
-        std::make_unique<simple_input>(this, operands[n], operation().argument(n).Type()));
+    node::add_input(std::make_unique<simple_input>(this, operands[n], operation().argument(n)));
   }
 
   for (size_t n = 0; n < operation().nresults(); n++)
-    node::add_output(std::make_unique<simple_output>(this, operation().result(n).Type()));
+    node::add_output(std::make_unique<simple_output>(this, operation().result(n)));
 
   on_node_create(this);
 }

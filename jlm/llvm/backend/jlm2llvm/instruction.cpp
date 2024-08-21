@@ -161,7 +161,7 @@ convert_undef(
     context & ctx)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
-  return ::llvm::UndefValue::get(convert_type(op.result(0).type(), ctx));
+  return ::llvm::UndefValue::get(convert_type(*op.result(0), ctx));
 }
 
 static ::llvm::Value *
@@ -505,7 +505,7 @@ convert(
     data.push_back(c);
   }
 
-  auto at = dynamic_cast<const arraytype *>(&op.result(0).type());
+  auto at = std::dynamic_pointer_cast<const arraytype>(op.result(0));
   auto type = convert_type(*at, ctx);
   return ::llvm::ConstantArray::get(type, data);
 }
@@ -517,7 +517,7 @@ convert(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto type = convert_type(op.result(0).type(), ctx);
+  auto type = convert_type(*op.result(0), ctx);
   return ::llvm::ConstantAggregateZero::get(type);
 }
 
@@ -840,7 +840,7 @@ convert_cast(
     context & ctx)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
-  auto dsttype = std::dynamic_pointer_cast<const rvsdg::valuetype>(op.result(0).Type());
+  auto dsttype = std::dynamic_pointer_cast<const rvsdg::valuetype>(op.result(0));
   auto operand = operands[0];
 
   if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))
@@ -895,7 +895,7 @@ convert(
 {
   auto & llvmmod = ctx.llvm_module();
 
-  auto fcttype = convert_type(FunctionType({ op.argument(0).Type() }, {}), ctx);
+  auto fcttype = convert_type(FunctionType({ op.argument(0) }, {}), ctx);
   auto function = llvmmod.getOrInsertFunction("free", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, ctx.value(args[0]));
   return builder.CreateCall(function, operands);

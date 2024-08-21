@@ -58,13 +58,13 @@ public:
   inline const jlm::rvsdg::type &
   type() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
   inline const std::shared_ptr<const jlm::rvsdg::type> &
   Type() const noexcept
   {
-    return result(0).Type();
+    return result(0);
   }
 
   inline cfg_node *
@@ -149,16 +149,16 @@ public:
   virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  const jlm::rvsdg::type &
+  [[nodiscard]] const jlm::rvsdg::type &
   type() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
-  const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::type> &
   Type() const noexcept
   {
-    return result(0).Type();
+    return result(0);
   }
 
   static std::unique_ptr<llvm::tac>
@@ -193,16 +193,16 @@ public:
   virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::type &
   type() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
-  const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
   Type() const noexcept
   {
-    return result(0).Type();
+    return result(0);
   }
 
   size_t
@@ -423,7 +423,7 @@ public:
   inline size_t
   nalternatives() const noexcept
   {
-    return static_cast<const jlm::rvsdg::ctltype *>(&argument(0).type())->nalternatives();
+    return std::static_pointer_cast<const rvsdg::ctltype>(argument(0))->nalternatives();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -459,7 +459,7 @@ public:
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *jlm::util::AssertedCast<const PointerType>(&result(0).type());
+    return *util::AssertedCast<const PointerType>(result(0).get());
   }
 
   static std::unique_ptr<llvm::tac>
@@ -533,7 +533,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const jlm::rvsdg::bittype>(argument(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -613,7 +613,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -658,13 +658,13 @@ public:
   size_t
   size() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->nelements();
+    return std::static_pointer_cast<const arraytype>(result(0))->nelements();
   }
 
   const jlm::rvsdg::valuetype &
   type() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->element_type();
+    return std::static_pointer_cast<const arraytype>(result(0))->element_type();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -822,13 +822,13 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -899,7 +899,7 @@ public:
   inline const fpsize &
   size() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -984,7 +984,7 @@ public:
   inline const fpsize &
   size() const noexcept
   {
-    return static_cast<const llvm::fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const llvm::fptype>(argument(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1032,10 +1032,10 @@ public:
   [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  [[nodiscard]] const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::type &
   GetType() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
   static jlm::rvsdg::output *
@@ -1107,9 +1107,7 @@ public:
   const jlm::rvsdg::valuetype &
   GetType() const noexcept
   {
-    auto & type = result(0).type();
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::valuetype *>(&type));
-    return *static_cast<const jlm::rvsdg::valuetype *>(&type);
+    return *util::AssertedCast<const rvsdg::valuetype>(result(0).get());
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1195,7 +1193,7 @@ public:
   inline const fpsize &
   size() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1272,13 +1270,13 @@ public:
   inline const fpsize &
   srcsize() const noexcept
   {
-    return static_cast<const fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const fptype>(argument(0))->size();
   }
 
   inline const fpsize &
   dstsize() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1331,7 +1329,7 @@ public:
   const fpsize &
   size() const noexcept
   {
-    return static_cast<const fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const fptype>(argument(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1407,13 +1405,13 @@ public:
   inline const fpsize &
   srcsize() const noexcept
   {
-    return static_cast<const fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const fptype>(argument(0))->size();
   }
 
   inline const fpsize &
   dstsize() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1592,7 +1590,7 @@ public:
   const StructType &
   type() const noexcept
   {
-    return *static_cast<const StructType *>(&result(0).type());
+    return *std::static_pointer_cast<const StructType>(result(0));
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1693,13 +1691,13 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1873,13 +1871,13 @@ public:
   size_t
   size() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->nelements();
+    return std::static_pointer_cast<const arraytype>(result(0))->nelements();
   }
 
   const jlm::rvsdg::valuetype &
   type() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->element_type();
+    return std::static_pointer_cast<const arraytype>(result(0))->element_type();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -2149,17 +2147,17 @@ public:
       : simple_op({ operand }, { result }),
         op_(op.copy())
   {
-    if (operand->type() != op.argument(0).type())
+    if (operand->type() != *op.argument(0))
     {
       auto received = operand->type().debug_string();
-      auto expected = op.argument(0).type().debug_string();
+      auto expected = op.argument(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
 
-    if (result->type() != op.result(0).type())
+    if (result->type() != *op.result(0))
     {
       auto received = result->type().debug_string();
-      auto expected = op.result(0).type().debug_string();
+      auto expected = op.result(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
@@ -2244,17 +2242,17 @@ public:
     if (*op1 != *op2)
       throw jlm::util::error("expected the same vector types.");
 
-    if (op1->type() != binop.argument(0).type())
+    if (op1->type() != *binop.argument(0))
     {
       auto received = op1->type().debug_string();
-      auto expected = binop.argument(0).type().debug_string();
+      auto expected = binop.argument(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
 
-    if (result->type() != binop.result(0).type())
+    if (result->type() != *binop.result(0))
     {
       auto received = result->type().debug_string();
-      auto expected = binop.result(0).type().debug_string();
+      auto expected = binop.result(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
@@ -2348,13 +2346,13 @@ public:
   size_t
   size() const noexcept
   {
-    return static_cast<const vectortype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const vectortype>(result(0))->size();
   }
 
   const jlm::rvsdg::valuetype &
   type() const noexcept
   {
-    return static_cast<const vectortype *>(&result(0).type())->type();
+    return std::static_pointer_cast<const vectortype>(result(0))->type();
   }
 
   static std::unique_ptr<tac>
@@ -2415,7 +2413,7 @@ public:
   const jlm::rvsdg::valuetype &
   type() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::valuetype *>(&argument(0).type());
+    return *std::static_pointer_cast<const rvsdg::valuetype>(argument(0));
   }
 
   static inline std::unique_ptr<llvm::tac>
@@ -2481,14 +2479,14 @@ public:
   const jlm::rvsdg::bittype &
   size_type() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
   }
 
   FunctionType
   fcttype() const
   {
     JLM_ASSERT(narguments() == 1 && nresults() == 2);
-    return FunctionType({ argument(0).Type() }, { result(0).Type(), result(1).Type() });
+    return FunctionType({ argument(0) }, { result(0), result(1) });
   }
 
   static std::unique_ptr<llvm::tac>

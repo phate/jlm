@@ -1198,7 +1198,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // memory
-  auto arraytype = dynamic_cast<const llvm::arraytype *>(&lmem_op->result(0).type());
+  auto arraytype = std::dynamic_pointer_cast<const llvm::arraytype>(lmem_op->result(0));
   size_t depth = arraytype->nelements();
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
@@ -3973,8 +3973,8 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
   if (auto op = dynamic_cast<const local_mem_op *>(&node->operation()))
   {
     append.append("_S");
-    append.append(
-        std::to_string(dynamic_cast<const llvm::arraytype *>(&op->result(0).type())->nelements()));
+    append.append(std::to_string(
+        std::dynamic_pointer_cast<const llvm::arraytype>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));

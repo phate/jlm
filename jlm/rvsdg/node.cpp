@@ -24,35 +24,17 @@ input::~input() noexcept
 input::input(
     jlm::rvsdg::output * origin,
     jlm::rvsdg::region * region,
-    const jlm::rvsdg::port & port)
-    : index_(0),
-      origin_(origin),
-      region_(region),
-      port_(port.copy())
-{
-  if (region != origin->region())
-    throw jlm::util::error("Invalid operand region.");
-
-  if (port.type() != origin->type())
-    throw jlm::util::type_error(port.type().debug_string(), origin->type().debug_string());
-
-  origin->add_user(this);
-}
-
-input::input(
-    jlm::rvsdg::output * origin,
-    jlm::rvsdg::region * region,
     std::shared_ptr<const rvsdg::type> type)
     : index_(0),
       origin_(origin),
       region_(region),
-      port_(std::make_unique<rvsdg::port>(std::move(type)))
+      Type_(std::move(type))
 {
   if (region != origin->region())
     throw jlm::util::error("Invalid operand region.");
 
-  if (port_->type() != origin->type())
-    throw jlm::util::type_error(port_->type().debug_string(), origin->type().debug_string());
+  if (*Type() != origin->type())
+    throw jlm::util::type_error(Type()->debug_string(), origin->type().debug_string());
 
   origin->add_user(this);
 }
@@ -101,16 +83,10 @@ output::~output() noexcept
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-    : index_(0),
-      region_(region),
-      port_(port.copy())
-{}
-
 output::output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
     : index_(0),
       region_(region),
-      port_(std::make_unique<rvsdg::port>(std::move(type)))
+      Type_(std::move(type))
 {}
 
 std::string

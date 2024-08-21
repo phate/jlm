@@ -158,7 +158,7 @@ private:
 
     for (size_t n = 0; n < operation.nresults(); n++)
     {
-      auto & type = operation.result(n).Type();
+      auto & type = operation.result(n);
       results_.push_back(tacvariable::create(this, type, names[n]));
     }
   }
