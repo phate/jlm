@@ -429,6 +429,13 @@ public:
       util::HashSet<PointerObjectIndex> & newPointees);
 
   /**
+   * Removes all pointees from the PointerObject with the given \p index.
+   * Can be used, e.g., when the PointerObject already points to all its pointees implicitly.
+   */
+  void
+  RemoveAllPointees(PointerObjectIndex index);
+
+  /**
    * @param pointer the PointerObject possibly pointing to \p pointee
    * @param pointee the PointerObject possibly being pointed at
    * @return true if \p pointer points to \p pointee, either explicitly, implicitly, or both.
@@ -844,6 +851,12 @@ public:
     std::optional<size_t> NumLazyCyclesDetectionAttempts;
     std::optional<size_t> NumLazyCyclesDetected;
     std::optional<size_t> NumLazyCycleUnifications;
+
+    /**
+     * When Prefer Implicit Pointees is enabled, and a node's pointees can be tracked fully
+     * implicitly, its set of explicit pointees is cleared.
+     */
+    std::optional<size_t> NumExplicitPointeesRemoved;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -980,6 +993,7 @@ public:
    * @param enableHybridCycleDetection if true, hybrid cycle detection will be performed.
    * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
    * @param enableDifferencePropagation if true, difference propagation will be enabled.
+   * @param enablePreferImplicitPropation if true, enables PIP, which is novel to this codebase
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
@@ -988,7 +1002,8 @@ public:
       bool enableOnlineCycleDetection,
       bool enableHybridCycleDetection,
       bool enableLazyCycleDetection,
-      bool enableDifferencePropagation);
+      bool enableDifferencePropagation,
+      bool enablePreferImplicitPropation);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -1034,6 +1049,7 @@ private:
    * @tparam EnableHybridCycleDetection if true, hybrid cycle detection is enabled.
    * @tparam EnableLazyCycleDetection if true, lazy cycle detection is enabled.
    * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
+   * @tparam EnablePreferImplicitPointees if true, prefer implicit pointees is enabled
    * @see SolveUsingWorklist() for the public interface.
    */
   template<
@@ -1041,7 +1057,8 @@ private:
       bool EnableOnlineCycleDetection,
       bool EnableHybridCycleDetection,
       bool EnableLazyCycleDetection,
-      bool EnableDifferencePropagation>
+      bool EnableDifferencePropagation,
+      bool EnablePreferImplicitPointees>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 
