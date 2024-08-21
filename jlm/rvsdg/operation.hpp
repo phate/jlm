@@ -24,55 +24,6 @@ class region;
 class simple_normal_form;
 class structural_normal_form;
 
-/* port */
-
-class port
-{
-public:
-  virtual ~port();
-
-  explicit port(std::shared_ptr<const jlm::rvsdg::type> type);
-
-  port(const port & other) = default;
-
-  port(port && other) = default;
-
-  port &
-  operator=(const port & other) = default;
-
-  port &
-  operator=(port && other) = default;
-
-  virtual bool
-  operator==(const port &) const noexcept;
-
-  inline bool
-  operator!=(const port & other) const noexcept
-  {
-    return !(*this == other);
-  }
-
-  inline const jlm::rvsdg::type &
-  type() const noexcept
-  {
-    return *type_;
-  }
-
-  inline const std::shared_ptr<const rvsdg::type> &
-  Type() const noexcept
-  {
-    return type_;
-  }
-
-  virtual std::unique_ptr<port>
-  copy() const;
-
-private:
-  std::shared_ptr<const jlm::rvsdg::type> type_;
-};
-
-/* operation */
-
 class operation
 {
 public:
@@ -115,38 +66,38 @@ class simple_op : public operation
 public:
   virtual ~simple_op();
 
-  inline simple_op(
+  simple_op(
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> results)
   {
     for (auto & op : operands)
     {
-      operands_.push_back(port(std::move(op)));
+      operands_.push_back(std::move(op));
     }
     for (auto & res : results)
     {
-      results_.push_back(port(std::move(res)));
+      results_.push_back(std::move(res));
     }
   }
 
   size_t
   narguments() const noexcept;
 
-  const jlm::rvsdg::port &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
   argument(size_t index) const noexcept;
 
   size_t
   nresults() const noexcept;
 
-  const jlm::rvsdg::port &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
   result(size_t index) const noexcept;
 
   static jlm::rvsdg::simple_normal_form *
   normal_form(jlm::rvsdg::graph * graph) noexcept;
 
 private:
-  std::vector<jlm::rvsdg::port> results_;
-  std::vector<jlm::rvsdg::port> operands_;
+  std::vector<std::shared_ptr<const rvsdg::type>> results_ = {};
+  std::vector<std::shared_ptr<const rvsdg::type>> operands_ = {};
 };
 
 /* structural operation */

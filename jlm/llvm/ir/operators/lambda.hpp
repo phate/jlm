@@ -607,7 +607,7 @@ public:
 
 private:
   cvargument(jlm::rvsdg::region * region, cvinput * input)
-      : jlm::rvsdg::argument(region, input, input->port())
+      : jlm::rvsdg::argument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -640,7 +640,7 @@ public:
 
 private:
   explicit result(jlm::rvsdg::output * origin)
-      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())
+      : rvsdg::result(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *

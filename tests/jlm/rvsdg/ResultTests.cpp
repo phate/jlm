@@ -92,7 +92,7 @@ ResultInputTypeMismatch()
         structuralNode->subregion(0),
         simpleNode->output(0),
         structuralOutput,
-        jlm::rvsdg::port(stateType));
+        stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

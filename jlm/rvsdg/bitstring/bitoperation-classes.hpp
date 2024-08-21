@@ -29,7 +29,7 @@ public:
   inline const bittype &
   type() const noexcept
   {
-    return *static_cast<const bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const bittype>(argument(0));
   }
 
   /* reduction methods */
@@ -78,7 +78,7 @@ public:
   inline const bittype &
   type() const noexcept
   {
-    return *static_cast<const bittype *>(&result(0).type());
+    return *std::static_pointer_cast<const bittype>(result(0));
   }
 };
 
@@ -117,7 +117,7 @@ public:
   inline const bittype &
   type() const noexcept
   {
-    return *static_cast<const bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const bittype>(argument(0));
   }
 };
 

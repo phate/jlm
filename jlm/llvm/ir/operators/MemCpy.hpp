@@ -53,7 +53,7 @@ public:
   [[nodiscard]] const rvsdg::bittype &
   LengthType() const noexcept
   {
-    auto type = dynamic_cast<const rvsdg::bittype *>(&argument(2).type());
+    auto type = std::dynamic_pointer_cast<const rvsdg::bittype>(argument(2));
     JLM_ASSERT(type != nullptr);
     return *type;
   }

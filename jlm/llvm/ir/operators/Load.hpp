@@ -161,7 +161,7 @@ public:
   [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
   GetLoadedType() const noexcept
   {
-    auto type = std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0).Type());
+    auto type = std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
     JLM_ASSERT(type);
     return type;
   }
