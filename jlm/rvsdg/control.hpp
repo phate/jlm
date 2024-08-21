@@ -172,7 +172,7 @@ public:
   inline uint64_t
   nalternatives() const noexcept
   {
-    return static_cast<const ctltype *>(&result(0).type())->nalternatives();
+    return std::static_pointer_cast<const ctltype>(result(0))->nalternatives();
   }
 
   inline uint64_t
@@ -194,7 +194,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return static_cast<const bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const bittype>(argument(0))->nbits();
   }
 
   inline const_iterator

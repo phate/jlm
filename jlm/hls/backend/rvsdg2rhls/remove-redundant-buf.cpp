@@ -48,7 +48,7 @@ remove_redundant_buf(jlm::rvsdg::region * region)
     {
       if (auto buf = dynamic_cast<const buffer_op *>(&node->operation()))
       {
-        if (dynamic_cast<const jlm::llvm::MemoryStateType *>(&buf->argument(0).type()))
+        if (std::dynamic_pointer_cast<const jlm::llvm::MemoryStateType>(buf->argument(0)))
         {
           if (!buf->pass_through && eliminate_buf(node->input(0)->origin()))
           {

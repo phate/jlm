@@ -301,8 +301,8 @@ TestDivOperation()
       const jlm::rvsdg::bitconstant_op * DivInput1Constant =
           dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&DivInput1Node->operation());
       assert(DivInput1Constant->value() == 5);
-      assert(dynamic_cast<const bittype *>(&DivInput1Constant->result(0).type()));
-      assert(dynamic_cast<const bittype *>(&DivInput1Constant->result(0).type())->nbits() == 32);
+      assert(is<const bittype>(DivInput1Constant->result(0)));
+      assert(std::dynamic_pointer_cast<const bittype>(DivInput1Constant->result(0))->nbits() == 32);
     }
   }
   return 0;
@@ -498,8 +498,8 @@ TestCompZeroExt()
       const jlm::rvsdg::bitconstant_op * Const2Op =
           dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&Const2Node->operation());
       assert(Const2Op->value() == 5);
-      assert(dynamic_cast<const bittype *>(&Const2Op->result(0).type()));
-      assert(dynamic_cast<const bittype *>(&Const2Op->result(0).type())->nbits() == 32);
+      assert(is<const bittype>(Const2Op->result(0)));
+      assert(std::dynamic_pointer_cast<const bittype>(Const2Op->result(0))->nbits() == 32);
 
       // Check add op
       const jlm::rvsdg::bitadd_op * AddOp =
@@ -522,8 +522,8 @@ TestCompZeroExt()
       const jlm::rvsdg::bitconstant_op * Const1Op =
           dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&Const1Node->operation());
       assert(Const1Op->value() == 20);
-      assert(dynamic_cast<const bittype *>(&Const1Op->result(0).type()));
-      assert(dynamic_cast<const bittype *>(&Const1Op->result(0).type())->nbits() == 32);
+      assert(is<const bittype>(Const1Op->result(0)));
+      assert(std::dynamic_pointer_cast<const bittype>(Const1Op->result(0))->nbits() == 32);
     }
   }
   return 0;
@@ -672,8 +672,8 @@ TestMatchOp()
 
       auto matchOp = dynamic_cast<const match_op *>(&matchNode->operation());
       assert(matchOp->narguments() == 1);
-      assert(dynamic_cast<const bittype *>(&matchOp->argument(0).type()));
-      assert(dynamic_cast<const bittype *>(&matchOp->argument(0).type())->nbits() == 32);
+      assert(is<const bittype>(matchOp->argument(0)));
+      assert(std::dynamic_pointer_cast<const bittype>(matchOp->argument(0))->nbits() == 32);
 
       // 3 alternatives + default
       assert(matchOp->nalternatives() == 4);

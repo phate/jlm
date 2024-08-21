@@ -29,7 +29,7 @@ SetupControlFlowGraph(
   std::vector<const variable *> operands;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
-    auto & operandType = operation.argument(n).Type();
+    auto & operandType = operation.argument(n);
     auto operand = cfg->entry()->append_argument(argument::create("", operandType));
     operands.emplace_back(operand);
   }
@@ -60,13 +60,13 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> operandTypes;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
-    operandTypes.emplace_back(operation.argument(n).Type());
+    operandTypes.emplace_back(operation.argument(n));
   }
 
   std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes;
   for (size_t n = 0; n < operation.nresults(); n++)
   {
-    resultTypes.emplace_back(operation.result(n).Type());
+    resultTypes.emplace_back(operation.result(n));
   }
 
   auto functionType = FunctionType::Create(operandTypes, resultTypes);

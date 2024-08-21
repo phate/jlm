@@ -119,7 +119,7 @@ create_switch(const cfg_node * node, context & ctx)
     auto sw = builder.CreateSwitch(condition, defbb);
     for (const auto & alt : *mop)
     {
-      auto & type = *static_cast<const rvsdg::bittype *>(&mop->argument(0).type());
+      auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
       auto value = ::llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
       sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
     }

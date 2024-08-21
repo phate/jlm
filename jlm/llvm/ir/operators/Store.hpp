@@ -123,7 +123,7 @@ public:
   [[nodiscard]] const rvsdg::valuetype &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(&argument(1).type());
+    return *util::AssertedCast<const rvsdg::valuetype>(argument(1).get());
   }
 
   [[nodiscard]] virtual size_t

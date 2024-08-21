@@ -48,7 +48,7 @@ public:
   inline const rvsdg::bittype &
   size_type() const noexcept
   {
-    return *static_cast<const rvsdg::bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
   }
 
   inline const rvsdg::valuetype &

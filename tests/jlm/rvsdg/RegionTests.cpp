@@ -123,12 +123,9 @@ RemoveResultsWhere()
   auto valueType = jlm::tests::valuetype::Create();
   auto node = jlm::tests::test_op::Create(&region, {}, {}, { valueType });
 
-  auto result0 =
-      jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
-  auto result1 =
-      jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
-  auto result2 =
-      jlm::rvsdg::result::create(&region, node->output(0), nullptr, jlm::rvsdg::port(valueType));
+  auto result0 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, valueType);
+  auto result1 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, valueType);
+  auto result2 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, valueType);
 
   // Act & Arrange
   assert(region.nresults() == 3);
@@ -177,9 +174,9 @@ RemoveArgumentsWhere()
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
-  auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
-  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
+  auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
+  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
 
   auto node = jlm::tests::test_op::Create(&region, { valueType }, { argument1 }, { valueType });
 
@@ -229,9 +226,9 @@ PruneArguments()
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
-  jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
-  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, jlm::rvsdg::port(valueType));
+  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
+  jlm::rvsdg::argument::create(&region, nullptr, valueType);
+  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
 
   auto node = jlm::tests::test_op::Create(
       &region,
