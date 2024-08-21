@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <unordered_map>
@@ -17,34 +18,14 @@ namespace jlm::llvm
 FunctionType::~FunctionType() noexcept = default;
 
 FunctionType::FunctionType(
-    const std::vector<const jlm::rvsdg::type *> & argumentTypes,
-    const std::vector<const jlm::rvsdg::type *> & resultTypes)
-    : jlm::rvsdg::valuetype()
-{
-  for (auto & type : argumentTypes)
-    ArgumentTypes_.emplace_back(type->copy());
-
-  for (auto & type : resultTypes)
-    ResultTypes_.emplace_back(type->copy());
-}
-
-FunctionType::FunctionType(
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> argumentTypes,
-    std::vector<std::unique_ptr<jlm::rvsdg::type>> resultTypes)
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
     : jlm::rvsdg::valuetype(),
       ResultTypes_(std::move(resultTypes)),
       ArgumentTypes_(std::move(argumentTypes))
 {}
 
-FunctionType::FunctionType(const FunctionType & rhs)
-    : jlm::rvsdg::valuetype(rhs)
-{
-  for (auto & type : rhs.ArgumentTypes_)
-    ArgumentTypes_.push_back(type->copy());
-
-  for (auto & type : rhs.ResultTypes_)
-    ResultTypes_.push_back(type->copy());
-}
+FunctionType::FunctionType(const FunctionType & rhs) = default;
 
 FunctionType::FunctionType(FunctionType && other) noexcept
     : jlm::rvsdg::valuetype(other),
@@ -52,16 +33,16 @@ FunctionType::FunctionType(FunctionType && other) noexcept
       ArgumentTypes_(std::move(other.ArgumentTypes_))
 {}
 
-FunctionType::ArgumentConstRange
-FunctionType::Arguments() const
+const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+FunctionType::Arguments() const noexcept
 {
-  return { TypeConstIterator(ArgumentTypes_.begin()), TypeConstIterator(ArgumentTypes_.end()) };
+  return ArgumentTypes_;
 }
 
-FunctionType::ResultConstRange
-FunctionType::Results() const
+const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+FunctionType::Results() const noexcept
 {
-  return { TypeConstIterator(ResultTypes_.begin()), TypeConstIterator(ResultTypes_.end()) };
+  return ResultTypes_;
 }
 
 std::string
@@ -98,26 +79,28 @@ FunctionType::operator==(const jlm::rvsdg::type & _other) const noexcept
   return true;
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-FunctionType::copy() const
+std::size_t
+FunctionType::ComputeHash() const noexcept
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new FunctionType(*this));
+  std::size_t seed = typeid(FunctionType).hash_code();
+
+  util::CombineHashesWithSeed(seed, NumArguments());
+  for (auto argumentType : ArgumentTypes_)
+  {
+    util::CombineHashesWithSeed(seed, argumentType->ComputeHash());
+  }
+
+  util::CombineHashesWithSeed(seed, NumResults());
+  for (auto resultType : ResultTypes_)
+  {
+    util::CombineHashesWithSeed(seed, resultType->ComputeHash());
+  }
+
+  return seed;
 }
 
 FunctionType &
-FunctionType::operator=(const FunctionType & rhs)
-{
-  ResultTypes_.clear();
-  ArgumentTypes_.clear();
-
-  for (auto & type : rhs.ArgumentTypes_)
-    ArgumentTypes_.push_back(type->copy());
-
-  for (auto & type : rhs.ResultTypes_)
-    ResultTypes_.push_back(type->copy());
-
-  return *this;
-}
+FunctionType::operator=(const FunctionType & rhs) = default;
 
 FunctionType &
 FunctionType::operator=(FunctionType && rhs) noexcept
@@ -125,6 +108,14 @@ FunctionType::operator=(FunctionType && rhs) noexcept
   ResultTypes_ = std::move(rhs.ResultTypes_);
   ArgumentTypes_ = std::move(rhs.ArgumentTypes_);
   return *this;
+}
+
+std::shared_ptr<const FunctionType>
+FunctionType::Create(
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
+    std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
+{
+  return std::make_shared<FunctionType>(std::move(argumentTypes), std::move(resultTypes));
 }
 
 PointerType::~PointerType() noexcept = default;
@@ -141,10 +132,17 @@ PointerType::operator==(const jlm::rvsdg::type & other) const noexcept
   return jlm::rvsdg::is<PointerType>(other);
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-PointerType::copy() const
+std::size_t
+PointerType::ComputeHash() const noexcept
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new PointerType(*this));
+  return typeid(PointerType).hash_code();
+}
+
+std::shared_ptr<const PointerType>
+PointerType::Create()
+{
+  static const PointerType instance;
+  return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
 }
 
 /* array type */
@@ -165,10 +163,12 @@ arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-arraytype::copy() const
+std::size_t
+arraytype::ComputeHash() const noexcept
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new arraytype(*this));
+  auto typeHash = typeid(arraytype).hash_code();
+  auto numElementsHash = std::hash<std::size_t>()(nelements_);
+  return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
 }
 
 /* floating point type */
@@ -195,10 +195,45 @@ fptype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->size() == size();
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-fptype::copy() const
+std::size_t
+fptype::ComputeHash() const noexcept
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new fptype(*this));
+  auto typeHash = typeid(fptype).hash_code();
+  auto sizeHash = std::hash<fpsize>()(size_);
+
+  return util::CombineHashes(typeHash, sizeHash);
+}
+
+std::shared_ptr<const fptype>
+fptype::Create(fpsize size)
+{
+  switch (size)
+  {
+  case fpsize::half:
+  {
+    static const fptype instance(fpsize::half);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::flt:
+  {
+    static const fptype instance(fpsize::flt);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::dbl:
+  {
+    static const fptype instance(fpsize::dbl);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::x86fp80:
+  {
+    static const fptype instance(fpsize::x86fp80);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  default:
+  {
+    JLM_UNREACHABLE("unknown fpsize");
+  }
+  }
 }
 
 /* vararg type */
@@ -212,16 +247,23 @@ varargtype::operator==(const jlm::rvsdg::type & other) const noexcept
   return dynamic_cast<const varargtype *>(&other) != nullptr;
 }
 
+std::size_t
+varargtype::ComputeHash() const noexcept
+{
+  return typeid(varargtype).hash_code();
+}
+
 std::string
 varargtype::debug_string() const
 {
   return "vararg";
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-varargtype::copy() const
+std::shared_ptr<const varargtype>
+varargtype::Create()
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new varargtype(*this));
+  static const varargtype instance;
+  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), &instance);
 }
 
 StructType::~StructType() = default;
@@ -234,16 +276,20 @@ StructType::operator==(const jlm::rvsdg::type & other) const noexcept
       && &type->Declaration_ == &Declaration_;
 }
 
+std::size_t
+StructType::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(StructType).hash_code();
+  auto isPackedHash = std::hash<bool>()(IsPacked_);
+  auto nameHash = std::hash<std::string>()(Name_);
+  auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
+  return util::CombineHashes(typeHash, isPackedHash, nameHash, declarationHash);
+}
+
 std::string
 StructType::debug_string() const
 {
   return "struct";
-}
-
-std::unique_ptr<jlm::rvsdg::type>
-StructType::copy() const
-{
-  return std::unique_ptr<jlm::rvsdg::type>(new StructType(*this));
 }
 
 /* vectortype */
@@ -266,16 +312,18 @@ fixedvectortype::operator==(const jlm::rvsdg::type & other) const noexcept
   return vectortype::operator==(other);
 }
 
+std::size_t
+fixedvectortype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(fixedvectortype).hash_code();
+  auto sizeHash = std::hash<size_t>()(size());
+  return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
+}
+
 std::string
 fixedvectortype::debug_string() const
 {
   return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
-}
-
-std::unique_ptr<jlm::rvsdg::type>
-fixedvectortype::copy() const
-{
-  return std::unique_ptr<jlm::rvsdg::type>(new fixedvectortype(*this));
 }
 
 /* scalablevectortype */
@@ -289,16 +337,18 @@ scalablevectortype::operator==(const jlm::rvsdg::type & other) const noexcept
   return vectortype::operator==(other);
 }
 
+std::size_t
+scalablevectortype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(scalablevectortype).hash_code();
+  auto sizeHash = std::hash<size_t>()(size());
+  return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
+}
+
 std::string
 scalablevectortype::debug_string() const
 {
   return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
-}
-
-std::unique_ptr<jlm::rvsdg::type>
-scalablevectortype::copy() const
-{
-  return std::unique_ptr<jlm::rvsdg::type>(new scalablevectortype(*this));
 }
 
 /* I/O state type */
@@ -312,16 +362,23 @@ iostatetype::operator==(const jlm::rvsdg::type & other) const noexcept
   return jlm::rvsdg::is<iostatetype>(other);
 }
 
+std::size_t
+iostatetype::ComputeHash() const noexcept
+{
+  return typeid(iostatetype).hash_code();
+}
+
 std::string
 iostatetype::debug_string() const
 {
   return "iostate";
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-iostatetype::copy() const
+std::shared_ptr<const iostatetype>
+iostatetype::Create()
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new iostatetype(*this));
+  static const iostatetype instance;
+  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), &instance);
 }
 
 /**
@@ -341,10 +398,17 @@ MemoryStateType::operator==(const jlm::rvsdg::type & other) const noexcept
   return jlm::rvsdg::is<MemoryStateType>(other);
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-MemoryStateType::copy() const
+std::size_t
+MemoryStateType::ComputeHash() const noexcept
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new MemoryStateType(*this));
+  return typeid(MemoryStateType).hash_code();
+}
+
+std::shared_ptr<const MemoryStateType>
+MemoryStateType::Create()
+{
+  static const MemoryStateType instance;
+  return std::shared_ptr<const MemoryStateType>(std::shared_ptr<void>(), &instance);
 }
 
 }

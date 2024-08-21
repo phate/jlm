@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/opt/alias-analyses/Operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
 #include <jlm/llvm/backend/jlm2llvm/instruction.hpp>
@@ -206,7 +206,7 @@ convert(
     operands.push_back(ctx.value(argument));
   }
 
-  auto ftype = convert_type(op.GetFunctionType(), ctx);
+  auto ftype = convert_type(*op.GetFunctionType(), ctx);
   return builder.CreateCall(ftype, function, operands);
 }
 
@@ -300,7 +300,7 @@ convert(
     context & ctx)
 {
   return CreateLoadInstruction(
-      operation.GetLoadedType(),
+      *operation.GetLoadedType(),
       operands[0],
       false,
       operation.GetAlignment(),
@@ -316,7 +316,7 @@ convert(
     context & ctx)
 {
   return CreateLoadInstruction(
-      operation.GetLoadedType(),
+      *operation.GetLoadedType(),
       operands[0],
       true,
       operation.GetAlignment(),
@@ -840,7 +840,7 @@ convert_cast(
     context & ctx)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
-  auto & dsttype = *static_cast<const rvsdg::valuetype *>(&op.result(0).type());
+  auto dsttype = std::dynamic_pointer_cast<const rvsdg::valuetype>(op.result(0).Type());
   auto operand = operands[0];
 
   if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))
@@ -855,7 +855,7 @@ convert_cast(
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
-  auto type = convert_type(dsttype, ctx);
+  auto type = convert_type(*dsttype, ctx);
   return builder.CreateCast(OPCODE, ctx.value(operand), type);
 }
 
@@ -895,7 +895,7 @@ convert(
 {
   auto & llvmmod = ctx.llvm_module();
 
-  auto fcttype = convert_type(FunctionType({ &op.argument(0).type() }, {}), ctx);
+  auto fcttype = convert_type(FunctionType({ op.argument(0).Type() }, {}), ctx);
   auto function = llvmmod.getOrInsertFunction("free", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, ctx.value(args[0]));
   return builder.CreateCall(function, operands);
@@ -943,7 +943,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const MemStateMergeOperator &,
+    const MemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -953,7 +953,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const MemStateSplitOperator &,
+    const MemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -963,7 +963,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::LambdaEntryMemStateOperator &,
+    const LambdaEntryMemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -973,7 +973,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::LambdaExitMemStateOperator &,
+    const LambdaExitMemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -983,7 +983,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::CallEntryMemStateOperator &,
+    const CallEntryMemoryStateMergeOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -993,7 +993,7 @@ convert(
 
 static ::llvm::Value *
 convert(
-    const aa::CallExitMemStateOperator &,
+    const CallExitMemoryStateSplitOperation &,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &,
     context &)
@@ -1085,12 +1085,16 @@ convert_operation(
             { typeid(trunc_op), convert_cast<::llvm::Instruction::Trunc> },
             { typeid(uitofp_op), convert_cast<::llvm::Instruction::UIToFP> },
             { typeid(zext_op), convert_cast<::llvm::Instruction::ZExt> },
-            { typeid(MemStateMergeOperator), convert<MemStateMergeOperator> },
-            { typeid(MemStateSplitOperator), convert<MemStateSplitOperator> },
-            { typeid(aa::LambdaEntryMemStateOperator), convert<aa::LambdaEntryMemStateOperator> },
-            { typeid(aa::LambdaExitMemStateOperator), convert<aa::LambdaExitMemStateOperator> },
-            { typeid(aa::CallEntryMemStateOperator), convert<aa::CallEntryMemStateOperator> },
-            { typeid(aa::CallExitMemStateOperator), convert<aa::CallExitMemStateOperator> } });
+            { typeid(MemoryStateMergeOperation), convert<MemoryStateMergeOperation> },
+            { typeid(MemoryStateSplitOperation), convert<MemoryStateSplitOperation> },
+            { typeid(LambdaEntryMemoryStateSplitOperation),
+              convert<LambdaEntryMemoryStateSplitOperation> },
+            { typeid(LambdaExitMemoryStateMergeOperation),
+              convert<LambdaExitMemoryStateMergeOperation> },
+            { typeid(CallEntryMemoryStateMergeOperation),
+              convert<CallEntryMemoryStateMergeOperation> },
+            { typeid(CallExitMemoryStateSplitOperation),
+              convert<CallExitMemoryStateSplitOperation> } });
   /* FIXME: AddrSpaceCast instruction is not supported */
 
   JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

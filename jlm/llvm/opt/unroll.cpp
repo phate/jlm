@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -95,7 +96,7 @@ is_idv(jlm::rvsdg::input * input)
 {
   using namespace jlm::rvsdg;
 
-  auto node = input_node(input);
+  auto node = rvsdg::input::GetNode(*input);
   JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
   auto a = dynamic_cast<jlm::rvsdg::argument *>(input->origin());

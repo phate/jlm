@@ -9,6 +9,11 @@
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/graph.hpp>
 
+namespace jlm::rvsdg
+{
+class gamma_node;
+}
+
 namespace jlm::llvm
 {
 

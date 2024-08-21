@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::tests::valuetype vt;
+static const auto vt = jlm::tests::valuetype::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -25,9 +25,9 @@ test1()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = graph.add_import({ vt, "x" });
-  auto y = graph.add_import({ vt, "y" });
-  auto z = graph.add_import({ vt, "z" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
@@ -38,7 +38,7 @@ test1()
   auto a = jlm::tests::create_testop(
       theta->subregion(),
       { lvx->argument(), lvy->argument() },
-      { &jlm::rvsdg::bit1 })[0];
+      { jlm::rvsdg::bittype::Create(1) })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
   auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
@@ -49,11 +49,11 @@ test1()
   auto b = jlm::tests::create_testop(
       gamma->subregion(0),
       { evx->argument(0), evy->argument(0) },
-      { &vt })[0];
+      { vt })[0];
   auto c = jlm::tests::create_testop(
       gamma->subregion(1),
       { evx->argument(1), evy->argument(1) },
-      { &vt })[0];
+      { vt })[0];
 
   auto xvy = gamma->add_exitvar({ b, c });
 
@@ -61,18 +61,18 @@ test1()
 
   theta->set_predicate(predicate);
 
-  auto ex1 = graph.add_export(theta->output(0), { theta->output(0)->type(), "x" });
-  auto ex2 = graph.add_export(theta->output(1), { theta->output(1)->type(), "y" });
-  auto ex3 = graph.add_export(theta->output(2), { theta->output(2)->type(), "z" });
+  auto & ex1 = GraphExport::Create(*theta->output(0), "x");
+  auto & ex2 = GraphExport::Create(*theta->output(1), "y");
+  auto & ex3 = GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex1.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex2.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex3.origin())));
 }
 
 static inline void
@@ -83,15 +83,17 @@ test2()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = graph.add_import({ vt, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
   auto lv1 = theta->add_loopvar(x);
 
-  auto n1 =
-      jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &jlm::rvsdg::bit1 })[0];
-  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { &vt })[0];
+  auto n1 = jlm::tests::create_testop(
+      theta->subregion(),
+      { lv1->argument() },
+      { jlm::rvsdg::bittype::Create(1) })[0];
+  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { vt })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
   auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
@@ -108,14 +110,14 @@ test2()
 
   theta->set_predicate(predicate);
 
-  auto ex = graph.add_export(theta->output(0), { theta->output(0)->type(), "x" });
+  auto & ex = GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(jlm::rvsdg::node_output::node(ex.origin())));
 }
 
 static int

@@ -35,14 +35,28 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
-  copy() const override;
+  std::size_t
+  ComputeHash() const noexcept override;
 
   inline size_t
   nalternatives() const noexcept
   {
     return nalternatives_;
   }
+
+  /**
+   * \brief Instantiates control type
+   *
+   * \param nalternatives Number of alternatives
+   *
+   * \returns Control type instance
+   *
+   * Creates an instance of a control type capable of representing
+   * the specified number of alternatives. The returned instance
+   * will usually be a static singleton for the type.
+   */
+  static std::shared_ptr<const ctltype>
+  Create(std::size_t nalternatives);
 
 private:
   size_t nalternatives_;
@@ -94,10 +108,10 @@ private:
 
 struct ctltype_of_value
 {
-  ctltype
+  std::shared_ptr<const ctltype>
   operator()(const ctlvalue_repr & repr) const
   {
-    return ctltype(repr.nalternatives());
+    return ctltype::Create(repr.nalternatives());
   }
 };
 
@@ -231,8 +245,6 @@ match(
     uint64_t default_alternative,
     size_t nalternatives,
     jlm::rvsdg::output * operand);
-
-extern const ctltype ctl2;
 
 // declare explicit instantiation
 extern template class domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value>;

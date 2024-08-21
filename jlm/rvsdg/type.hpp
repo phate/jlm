@@ -32,11 +32,16 @@ public:
     return !(*this == other);
   }
 
-  virtual std::unique_ptr<type>
-  copy() const = 0;
-
   virtual std::string
   debug_string() const = 0;
+
+  /**
+   * Computes a hash value for the instance of the type.
+   *
+   * @return A hash value.
+   */
+  [[nodiscard]] virtual std::size_t
+  ComputeHash() const noexcept = 0;
 };
 
 class valuetype : public jlm::rvsdg::type
@@ -70,6 +75,17 @@ is(const jlm::rvsdg::type & type) noexcept
       "Template parameter T must be derived from jlm::rvsdg::type.");
 
   return dynamic_cast<const T *>(&type) != nullptr;
+}
+
+template<class T>
+static inline bool
+is(const std::shared_ptr<const jlm::rvsdg::type> & type) noexcept
+{
+  static_assert(
+      std::is_base_of<jlm::rvsdg::type, T>::value,
+      "Template parameter T must be derived from jlm::rvsdg::type.");
+
+  return dynamic_cast<const T *>(type.get()) != nullptr;
 }
 
 }

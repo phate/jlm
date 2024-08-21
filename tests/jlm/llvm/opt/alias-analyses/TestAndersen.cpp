@@ -56,7 +56,7 @@ EscapedIsExactly(
   return ptg.GetEscapedMemoryNodes() == jlm::util::HashSet(nodes);
 }
 
-static void
+static int
 TestStore1()
 {
   jlm::tests::StoreTest1 test;
@@ -97,9 +97,12 @@ TestStore1()
   assert(TargetsExactly(plambda, { &lambda }));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStore1", TestStore1)
+
+static int
 TestStore2()
 {
   jlm::tests::StoreTest2 test;
@@ -140,9 +143,12 @@ TestStore2()
   assert(TargetsExactly(plambda, { &lambda }));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStore2", TestStore2)
+
+static int
 TestLoad1()
 {
   jlm::tests::LoadTest1 test;
@@ -163,9 +169,12 @@ TestLoad1()
   assert(TargetsExactly(lambdaArgument0, { &lambda, &ptg->GetExternalMemoryNode() }));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoad1", TestLoad1)
+
+static int
 TestLoad2()
 {
   jlm::tests::LoadTest2 test;
@@ -194,9 +203,12 @@ TestLoad2()
   assert(TargetsExactly(pload_a, { &alloca_a }));
 
   assert(EscapedIsExactly(*ptg, { &lambdaMemoryNode }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLoad2", TestLoad2)
+
+static int
 TestLoadFromUndef()
 {
   jlm::tests::LoadFromUndefTest test;
@@ -210,9 +222,14 @@ TestLoadFromUndef()
 
   assert(TargetsExactly(undefValueNode, {}));
   assert(EscapedIsExactly(*ptg, { &lambdaMemoryNode }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestLoadFromUndef",
+    TestLoadFromUndef)
+
+static int
 TestGetElementPtr()
 {
   jlm::tests::GetElementPtrTest test;
@@ -232,9 +249,14 @@ TestGetElementPtr()
   assert(TargetsExactly(gepX, { &lambda, &ptg->GetExternalMemoryNode() }));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestGetElementPtr",
+    TestGetElementPtr)
+
+static int
 TestBitCast()
 {
   jlm::tests::BitCastTest test;
@@ -253,9 +275,12 @@ TestBitCast()
   assert(TargetsExactly(bitCast, { &lambda, &ptg->GetExternalMemoryNode() }));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestBitCast", TestBitCast)
+
+static int
 TestConstantPointerNull()
 {
   jlm::tests::ConstantPointerNullTest test;
@@ -275,9 +300,14 @@ TestConstantPointerNull()
   assert(TargetsExactly(constantPointerNull, {}));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConstantPointerNull",
+    TestConstantPointerNull)
+
+static int
 TestBits2Ptr()
 {
   jlm::tests::Bits2PtrTest test;
@@ -296,9 +326,12 @@ TestBits2Ptr()
   assert(TargetsExactly(bits2ptr, { &lambdaTestMemoryNode, &externalMemoryNode }));
 
   assert(EscapedIsExactly(*ptg, { &lambdaTestMemoryNode }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestBits2Ptr", TestBits2Ptr)
+
+static int
 TestCall1()
 {
   jlm::tests::CallTest1 test;
@@ -351,9 +384,12 @@ TestCall1()
   assert(TargetsExactly(lambda_h_cv1, { &lambda_g }));
 
   assert(EscapedIsExactly(*ptg, { &lambda_h }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestCall1", TestCall1)
+
+static int
 TestCall2()
 {
   jlm::tests::CallTest2 test;
@@ -397,9 +433,12 @@ TestCall2()
   assert(TargetsExactly(malloc_out, { &malloc }));
 
   assert(EscapedIsExactly(*ptg, { &lambda_test }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestCall2", TestCall2)
+
+static int
 TestIndirectCall1()
 {
   jlm::tests::IndirectCallTest1 test;
@@ -438,9 +477,14 @@ TestIndirectCall1()
   assert(TargetsExactly(lambda_test_cv2, { &lambda_three }));
 
   assert(EscapedIsExactly(*ptg, { &lambda_test }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall1",
+    TestIndirectCall1)
+
+static int
 TestIndirectCall2()
 {
   jlm::tests::IndirectCallTest2 test;
@@ -459,9 +503,14 @@ TestIndirectCall2()
 
   assert(TargetsExactly(lambdaThreeOutput, { &lambdaThree }));
   assert(TargetsExactly(lambdaFourOutput, { &lambdaFour }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestIndirectCall2",
+    TestIndirectCall2)
+
+static int
 TestExternalCall1()
 {
   jlm::tests::ExternalCallTest1 test;
@@ -484,9 +533,14 @@ TestExternalCall1()
   assert(TargetsExactly(lambdaFArgument0, { &lambdaF, &importG, &externalMemory }));
   assert(TargetsExactly(lambdaFArgument1, { &lambdaF, &importG, &externalMemory }));
   assert(TargetsExactly(callResult, { &lambdaF, &importG, &externalMemory }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalCall1",
+    TestExternalCall1)
+
+static int
 TestGamma()
 {
   jlm::tests::GammaTest test;
@@ -519,9 +573,12 @@ TestGamma()
   }
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestGamma", TestGamma)
+
+static int
 TestTheta()
 {
   jlm::tests::ThetaTest test;
@@ -548,9 +605,12 @@ TestTheta()
   assert(TargetsExactly(thetaOutput2, { &lambda, &ptg->GetExternalMemoryNode() }));
 
   assert(EscapedIsExactly(*ptg, { &lambda }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestTheta", TestTheta)
+
+static int
 TestDelta1()
 {
   jlm::tests::DeltaTest1 test;
@@ -583,9 +643,12 @@ TestDelta1()
   assert(TargetsExactly(lambda_h_cv1, { &lambda_g }));
 
   assert(EscapedIsExactly(*ptg, { &lambda_h }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestDelta1", TestDelta1)
+
+static int
 TestDelta2()
 {
   jlm::tests::DeltaTest2 test;
@@ -623,9 +686,12 @@ TestDelta2()
   assert(&lambda_f2_cvf1 == &lambda_f1_out);
 
   assert(EscapedIsExactly(*ptg, { &lambda_f2 }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestDelta2", TestDelta2)
+
+static int
 TestImports()
 {
   jlm::tests::ImportTest test;
@@ -663,9 +729,12 @@ TestImports()
   assert(&lambda_f2_cvf1 == &lambda_f1_out);
 
   assert(EscapedIsExactly(*ptg, { &lambda_f2, &d1, &d2 }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestImports", TestImports)
+
+static int
 TestPhi1()
 {
   jlm::tests::PhiTest1 test;
@@ -705,9 +774,12 @@ TestPhi1()
   assert(TargetsExactly(alloca_out, { &alloca }));
 
   assert(EscapedIsExactly(*ptg, { &lambda_test }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestPhi1", TestPhi1)
+
+static int
 TestExternalMemory()
 {
   jlm::tests::ExternalMemoryTest test;
@@ -724,9 +796,14 @@ TestExternalMemory()
   assert(TargetsExactly(lambdaFArgument1, { &lambdaF, &ptg->GetExternalMemoryNode() }));
 
   assert(EscapedIsExactly(*ptg, { &lambdaF }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestExternalMemory",
+    TestExternalMemory)
+
+static int
 TestEscapedMemory1()
 {
   jlm::tests::EscapedMemoryTest1 test;
@@ -753,9 +830,14 @@ TestEscapedMemory1()
   assert(TargetsExactly(loadNode1Output, { deltaA, deltaX, deltaY, lambdaTest, externalMemory }));
 
   assert(EscapedIsExactly(*ptg, { lambdaTest, deltaA, deltaX, deltaY }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory1",
+    TestEscapedMemory1)
+
+static int
 TestEscapedMemory2()
 {
   jlm::tests::EscapedMemoryTest2 test;
@@ -797,9 +879,14 @@ TestEscapedMemory2()
         callExternalFunction1Malloc,
         externalFunction1Import,
         externalFunction2Import }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory2",
+    TestEscapedMemory2)
+
+static int
 TestEscapedMemory3()
 {
   jlm::tests::EscapedMemoryTest3 test;
@@ -822,9 +909,14 @@ TestEscapedMemory3()
       { lambdaTest, deltaGlobal, importExternalFunction, externalMemory }));
 
   assert(EscapedIsExactly(*ptg, { lambdaTest, deltaGlobal, importExternalFunction }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestEscapedMemory3",
+    TestEscapedMemory3)
+
+static int
 TestMemcpy()
 {
   jlm::tests::MemcpyTest test;
@@ -847,9 +939,12 @@ TestMemcpy()
   assert(TargetsExactly(memCpySrc, { localArray }));
 
   assert(EscapedIsExactly(*ptg, { globalArray, localArray, lambdaF, lambdaG }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestMemcpy", TestMemcpy)
+
+static int
 TestLinkedList()
 {
   jlm::tests::LinkedListTest test;
@@ -867,9 +962,12 @@ TestLinkedList()
   assert(TargetsExactly(allocaNode, { &deltaMyListNode, &lambdaNextNode, &externalMemoryNode }));
   assert(
       TargetsExactly(deltaMyListNode, { &deltaMyListNode, &lambdaNextNode, &externalMemoryNode }));
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestLinkedList", TestLinkedList)
+
+static int
 TestStatistics()
 {
   // Arrange
@@ -891,9 +989,67 @@ TestStatistics()
   assert(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints") == 1);
   assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphNodes") == ptg->NumNodes());
   assert(statistics.GetTimerElapsedNanoseconds("AnalysisTimer") > 0);
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen-TestStatistics", TestStatistics)
+
+static int
+TestConfiguration()
+{
+  using namespace jlm::llvm::aa;
+  auto config = Andersen::Configuration::NaiveSolverConfiguration();
+
+  // Arrange
+  config.EnableOfflineVariableSubstitution(false);
+  config.EnableOfflineConstraintNormalization(true);
+  config.SetSolver(Andersen::Configuration::Solver::Naive);
+
+  // Act
+  auto configString = config.ToString();
+
+  // Assert
+  assert(!config.IsOfflineVariableSubstitutionEnabled());
+  assert(config.IsOfflineConstraintNormalizationEnabled());
+  assert(config.GetSolver() == Andersen::Configuration::Solver::Naive);
+  assert(configString.find("OVS") == std::string::npos);
+  assert(configString.find("NORM") != std::string::npos);
+  assert(configString.find("Solver=Naive") != std::string::npos);
+
+  // Arrange some more
+  auto policy = PointerObjectConstraintSet::WorklistSolverPolicy::TwoPhaseLeastRecentlyFired;
+  config.SetSolver(Andersen::Configuration::Solver::Worklist);
+  config.SetWorklistSolverPolicy(policy);
+  config.EnableOfflineVariableSubstitution(false);
+  config.EnableOnlineCycleDetection(true);
+
+  // Act
+  configString = config.ToString();
+
+  // Assert
+  assert(configString.find("Solver=Worklist") != std::string::npos);
+  assert(configString.find("Policy=TwoPhaseLeastRecentlyFired") != std::string::npos);
+  assert(configString.find("OVS") == std::string::npos);
+  assert(configString.find("OnlineCD") != std::string::npos);
+
+  // Arrange some more
+  config.EnableOnlineCycleDetection(false);
+  config.EnableHybridCycleDetection(true);
+
+  // Act
+  configString = config.ToString();
+
+  // Assert
+  assert(configString.find("OnlineCD") == std::string::npos);
+  assert(configString.find("HybridCD") != std::string::npos);
+
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConfiguration",
+    TestConfiguration)
+
+static int
 TestConstructPointsToGraph()
 {
   using namespace jlm::llvm::aa;
@@ -976,41 +1132,9 @@ TestConstructPointsToGraph()
   assert(TargetsExactly(importNode, { &deltaNode, &importNode, &externalMemory }));
   // mallocR points to mallocNode, as well as everything that has escaped
   assert(TargetsExactly(mallocRNode, { &mallocNode, &deltaNode, &importNode, &externalMemory }));
-}
-
-static int
-TestAndersen()
-{
-  TestStore1();
-  TestStore2();
-  TestLoad1();
-  TestLoad2();
-  TestLoadFromUndef();
-  TestGetElementPtr();
-  TestBitCast();
-  TestConstantPointerNull();
-  TestBits2Ptr();
-  TestCall1();
-  TestCall2();
-  TestIndirectCall1();
-  TestIndirectCall2();
-  TestExternalCall1();
-  TestGamma();
-  TestTheta();
-  TestDelta1();
-  TestDelta2();
-  TestImports();
-  TestPhi1();
-  TestExternalMemory();
-  TestEscapedMemory1();
-  TestEscapedMemory2();
-  TestEscapedMemory3();
-  TestMemcpy();
-  TestLinkedList();
-  TestStatistics();
-  TestConstructPointsToGraph();
 
   return 0;
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAndersen", TestAndersen)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/TestAndersen-TestConstructPointsToGraph",
+    TestConstructPointsToGraph)

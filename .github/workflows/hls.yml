@@ -12,29 +12,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: '0'
-
     - name: "Build jlm"
       uses: ./.github/actions/BuildJlm
       with:
         enable-hls: true
-
-    # --------
-    # Run HLS test suite
-    # --------
-
     - name: "Install verilator"
       uses: ./.github/actions/InstallPackages
       with:
         install-verilator: true
-    - name: "Clone jlm-test-suite"
-      run: git clone https://github.com/phate/jlm-eval-suite.git
-    - name: "Checkout specific version of jlm-eval-suite"
-      run: |
-        cd jlm-eval-suite
-        git checkout 38674f5548a1158a1a628fb7a4d4a9a2572d8434
-    - name: "Link the build output directory to where it is expected by jlm-eval-suite"
-      run: ln -s ${{ github.workspace }}/build jlm-eval-suite/jlm/build
     - name: "Run hls-test-suite"
-      run: |
-        cd jlm-eval-suite
-        make CIRCT_PATH=${{ github.workspace }}/build-circt/circt hls-test-run
+      run: ./scripts/run-hls-test.sh

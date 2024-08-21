@@ -24,8 +24,8 @@ TestBasicBlockAnnotation()
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    jlm::tests::valuetype vt;
-    jlm::tests::test_op op({ &vt }, { &vt });
+    auto vt = jlm::tests::valuetype::Create();
+    jlm::tests::test_op op({ vt }, { vt });
 
     auto v0 = module.create_variable(vt, "v0");
 
@@ -71,8 +71,8 @@ TestLinearSubgraphAnnotation()
     /*
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
      */
-    jlm::tests::valuetype vt;
-    jlm::tests::test_op op({ &vt }, { &vt });
+    auto vt = jlm::tests::valuetype::Create();
+    jlm::tests::test_op op({ vt }, { vt });
 
     taclist bb1, bb2;
     bb1.append_last(tac::create(op, { &argument }));
@@ -95,7 +95,7 @@ TestLinearSubgraphAnnotation()
   };
 
   ipgraph_module module(jlm::util::filepath(""), "", "");
-  jlm::llvm::argument argument("argument", jlm::tests::valuetype());
+  jlm::llvm::argument argument("argument", jlm::tests::valuetype::Create());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
   /*
@@ -156,8 +156,8 @@ TestBranchAnnotation()
     /*
      * Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
      */
-    jlm::tests::valuetype vt;
-    jlm::tests::test_op op({ &vt }, { &vt });
+    auto vt = jlm::tests::valuetype::Create();
+    jlm::tests::test_op op({ vt }, { vt });
 
     auto argument = module.create_variable(vt, "arg");
     auto v3 = module.create_variable(vt, "v3");
@@ -187,8 +187,8 @@ TestBranchAnnotation()
     return std::make_tuple(std::move(root), argument, v1, v2, v3, v4);
   };
 
-  jlm::tests::valuetype vt;
-  jlm::tests::test_op op({ &vt }, { &vt });
+  auto vt = jlm::tests::valuetype::Create();
+  jlm::tests::test_op op({ vt }, { vt });
 
   ipgraph_module module(jlm::util::filepath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
@@ -239,8 +239,8 @@ TestLoopAnnotation()
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    jlm::tests::valuetype vt;
-    jlm::tests::test_op op({ &vt }, { &vt });
+    auto vt = jlm::tests::valuetype::Create();
+    jlm::tests::test_op op({ vt }, { vt });
 
     auto v1 = module.create_variable(vt, "v1");
     auto v4 = module.create_variable(vt, "v4");
@@ -304,8 +304,8 @@ TestBranchInLoopAnnotation()
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    jlm::tests::valuetype vt;
-    jlm::tests::test_op op({ &vt }, { &vt });
+    auto vt = jlm::tests::valuetype::Create();
+    jlm::tests::test_op op({ vt }, { vt });
 
     auto v1 = module.create_variable(vt, "v1");
     auto v3 = module.create_variable(vt, "v3");
@@ -396,7 +396,7 @@ TestAssignmentAnnotation()
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    jlm::tests::valuetype vt;
+    auto vt = jlm::tests::valuetype::Create();
 
     auto v1 = module.create_variable(vt, "v1");
     auto v2 = module.create_variable(vt, "v2");
@@ -436,8 +436,8 @@ TestBranchPassByAnnotation()
    */
   auto SetupAggregationTree = [](ipgraph_module & module)
   {
-    jlm::tests::valuetype vt;
-    jlm::tests::test_op op({}, { &vt });
+    auto vt = jlm::tests::valuetype::Create();
+    jlm::tests::test_op op({}, { vt });
 
     auto v3 = module.create_variable(vt, "v3");
 

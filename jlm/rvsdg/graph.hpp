@@ -22,95 +22,43 @@
 namespace jlm::rvsdg
 {
 
-/* impport class */
-
-class impport : public port
+/**
+ * Represents an import into the RVSDG of an external entity.
+ */
+class GraphImport : public argument
 {
+protected:
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name);
+
 public:
-  virtual ~impport();
-
-  impport(const jlm::rvsdg::type & type, const std::string & name)
-      : port(type),
-        name_(name)
-  {}
-
-  impport(const impport & other)
-      : port(other),
-        name_(other.name_)
-  {}
-
-  impport(impport && other)
-      : port(other),
-        name_(std::move(other.name_))
-  {}
-
-  impport &
-  operator=(const impport &) = delete;
-
-  impport &
-  operator=(impport &&) = delete;
-
-  const std::string &
-  name() const noexcept
+  [[nodiscard]] const std::string &
+  Name() const noexcept
   {
-    return name_;
+    return Name_;
   }
 
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
-
 private:
-  std::string name_;
+  std::string Name_;
 };
 
-/* expport class */
-
-class expport : public port
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ */
+class GraphExport : public result
 {
+protected:
+  GraphExport(rvsdg::output & origin, std::string name);
+
 public:
-  virtual ~expport();
-
-  expport(const jlm::rvsdg::type & type, const std::string & name)
-      : port(type),
-        name_(name)
-  {}
-
-  expport(const expport & other)
-      : port(other),
-        name_(other.name_)
-  {}
-
-  expport(expport && other)
-      : port(other),
-        name_(std::move(other.name_))
-  {}
-
-  expport &
-  operator=(const expport &) = delete;
-
-  expport &
-  operator=(expport &&) = delete;
-
-  const std::string &
-  name() const noexcept
+  [[nodiscard]] const std::string &
+  Name() const noexcept
   {
-    return name_;
+    return Name_;
   }
 
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
-
 private:
-  std::string name_;
+  std::string Name_;
 };
-
-/* graph */
 
 class graph
 {
@@ -143,18 +91,6 @@ public:
 
   jlm::rvsdg::node_normal_form *
   node_normal_form(const std::type_info & type) noexcept;
-
-  inline jlm::rvsdg::argument *
-  add_import(const impport & port)
-  {
-    return argument::create(root(), nullptr, port);
-  }
-
-  inline jlm::rvsdg::input *
-  add_export(jlm::rvsdg::output * operand, const expport & port)
-  {
-    return result::create(root(), operand, nullptr, port);
-  }
 
   inline void
   prune()

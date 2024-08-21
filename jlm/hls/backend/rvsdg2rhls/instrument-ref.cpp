@@ -24,7 +24,7 @@ llvm::lambda::node *
 change_function_name(llvm::lambda::node * ln, const std::string & name)
 {
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->type(), name, ln->linkage(), ln->attributes());
+      llvm::lambda::node::create(ln->region(), ln->Type(), name, ln->linkage(), ln->attributes());
 
   /* add context variables */
   jlm::rvsdg::substitution_map subregionmap;
@@ -88,51 +88,51 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
-  jlm::llvm::FunctionType loadFunctionType(
-      { jlm::llvm::PointerType::Create().get(),
-        &jlm::rvsdg::bit64,
-        llvm::iostatetype::create().get(),
-        llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::create().get(), llvm::MemoryStateType::Create().get() });
-  jlm::llvm::impport load_imp(
+  auto loadFunctionType = jlm::llvm::FunctionType::Create(
+      { jlm::llvm::PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create(),
+        llvm::MemoryStateType::Create() },
+      { llvm::iostatetype::Create(), llvm::MemoryStateType::Create() });
+  auto & reference_load = llvm::GraphImport::Create(
+      graph,
       loadFunctionType,
       "reference_load",
-      jlm::llvm::linkage::external_linkage);
-  auto reference_load = graph.add_import(load_imp);
+      llvm::linkage::external_linkage);
   // addr, data, width, memstate
-  jlm::llvm::FunctionType storeFunctionType(
-      { jlm::llvm::PointerType::Create().get(),
-        &jlm::rvsdg::bit64,
-        &jlm::rvsdg::bit64,
-        llvm::iostatetype::create().get(),
-        jlm::llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::create().get(), jlm::llvm::MemoryStateType::Create().get() });
-  jlm::llvm::impport store_imp(
+  auto storeFunctionType = jlm::llvm::FunctionType::Create(
+      { jlm::llvm::PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create(),
+        jlm::llvm::MemoryStateType::Create() },
+      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+  auto & reference_store = llvm::GraphImport::Create(
+      graph,
       storeFunctionType,
       "reference_store",
-      jlm::llvm::linkage::external_linkage);
-  auto reference_store = graph.add_import(store_imp);
+      llvm::linkage::external_linkage);
   // addr, size, memstate
-  jlm::llvm::FunctionType allocaFunctionType(
-      { jlm::llvm::PointerType::Create().get(),
-        &jlm::rvsdg::bit64,
-        llvm::iostatetype::create().get(),
-        jlm::llvm::MemoryStateType::Create().get() },
-      { llvm::iostatetype::create().get(), jlm::llvm::MemoryStateType::Create().get() });
-  jlm::llvm::impport alloca_imp(
+  auto allocaFunctionType = jlm::llvm::FunctionType::Create(
+      { jlm::llvm::PointerType::Create(),
+        jlm::rvsdg::bittype::Create(64),
+        llvm::iostatetype::Create(),
+        jlm::llvm::MemoryStateType::Create() },
+      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+  auto & reference_alloca = llvm::GraphImport::Create(
+      graph,
       allocaFunctionType,
       "reference_alloca",
-      jlm::llvm::linkage::external_linkage);
-  auto reference_alloca = graph.add_import(alloca_imp);
+      llvm::linkage::external_linkage);
 
   instrument_ref(
       root,
       newLambda->subregion()->argument(ioStateArgumentIndex),
-      reference_load,
+      &reference_load,
       loadFunctionType,
-      reference_store,
+      &reference_store,
       storeFunctionType,
-      reference_alloca,
+      &reference_alloca,
       allocaFunctionType);
 }
 
@@ -141,16 +141,16 @@ instrument_ref(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    jlm::llvm::FunctionType & loadFunctionType,
+    const std::shared_ptr<const jlm::llvm::FunctionType> & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    jlm::llvm::FunctionType & storeFunctionType,
+    const std::shared_ptr<const jlm::llvm::FunctionType> & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    jlm::llvm::FunctionType & allocaFunctionType)
+    const std::shared_ptr<const jlm::llvm::FunctionType> & allocaFunctionType)
 {
   load_func = route_to_region(load_func, region);
   store_func = route_to_region(store_func, region);
   alloca_func = route_to_region(alloca_func, region);
-  jlm::llvm::PointerType void_ptr;
+  auto void_ptr = jlm::llvm::PointerType::Create();
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
@@ -176,12 +176,12 @@ instrument_ref(
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
-      size_t bitWidth = BaseHLS::JlmSize(&loadOp->GetLoadedType());
+      size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
       int log2Bytes = log2(bitWidth / 8);
       auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != void_ptr)
+      if (addr->type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
@@ -212,7 +212,7 @@ instrument_ref(
       auto size = jlm::rvsdg::create_bitconstant(region, 64, BaseHLS::JlmSize(at) / 8);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != void_ptr)
+      if (addr->type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
@@ -240,13 +240,13 @@ instrument_ref(
       auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != void_ptr)
+      if (addr->type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
       auto data = node->input(1)->origin();
       auto dbt = dynamic_cast<const jlm::rvsdg::bittype *>(&data->type());
-      if (*dbt != jlm::rvsdg::bit64)
+      if (*dbt != *jlm::rvsdg::bittype::Create(64))
       {
         jlm::llvm::zext_op op(dbt->nbits(), 64);
         data = jlm::rvsdg::simple_node::create_normalized(data->region(), op, { data })[0];

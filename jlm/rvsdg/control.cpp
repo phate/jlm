@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/control.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::rvsdg
 {
@@ -23,10 +24,7 @@ ctltype::~ctltype() noexcept
 ctltype::ctltype(size_t nalternatives)
     : jlm::rvsdg::statetype(),
       nalternatives_(nalternatives)
-{
-  if (nalternatives == 0)
-    throw jlm::util::error("Alternatives of a control type must be non-zero.");
-}
+{}
 
 std::string
 ctltype::debug_string() const
@@ -41,13 +39,40 @@ ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
   return type && type->nalternatives_ == nalternatives_;
 }
 
-std::unique_ptr<jlm::rvsdg::type>
-ctltype::copy() const
+std::size_t
+ctltype::ComputeHash() const noexcept
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new ctltype(*this));
+  auto typeHash = typeid(ctltype).hash_code();
+  auto numAlternativesHash = std::hash<size_t>()(nalternatives_);
+  return util::CombineHashes(typeHash, numAlternativesHash);
 }
 
-const ctltype ctl2(2);
+std::shared_ptr<const ctltype>
+ctltype::Create(std::size_t nalternatives)
+{
+  static const ctltype static_instances[4] = { // ctltype(0) is not valid, but put it in here so
+                                               // the static array indexing works correctly
+                                               ctltype(0),
+                                               ctltype(1),
+                                               ctltype(2),
+                                               ctltype(3)
+  };
+
+  if (nalternatives < 4)
+  {
+    if (nalternatives == 0)
+    {
+      throw jlm::util::error("Alternatives of a control type must be non-zero.");
+    }
+    return std::shared_ptr<const jlm::rvsdg::ctltype>(
+        std::shared_ptr<void>(),
+        &static_instances[nalternatives]);
+  }
+  else
+  {
+    return std::make_shared<ctltype>(nalternatives);
+  }
+}
 
 /* control value representation */
 
@@ -69,7 +94,7 @@ match_op::match_op(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : jlm::rvsdg::unary_op(bittype(nbits), ctltype(nalternatives)),
+    : jlm::rvsdg::unary_op(bittype::Create(nbits), ctltype::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}

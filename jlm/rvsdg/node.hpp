@@ -42,6 +42,11 @@ public:
 
   input(jlm::rvsdg::output * origin, jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
 
+  input(
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::region * region,
+      std::shared_ptr<const rvsdg::type> type);
+
   input(const input &) = delete;
 
   input(input &&) = delete;
@@ -71,6 +76,12 @@ public:
   type() const noexcept
   {
     return port_->type();
+  }
+
+  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  Type() const noexcept
+  {
+    return port_->Type();
   }
 
   inline jlm::rvsdg::region *
@@ -104,8 +115,8 @@ public:
    * @return The node associated with \p input if input is derived from jlm::rvsdg::node_input,
    * otherwise nullptr.
    */
-  [[nodiscard]] static jlm::rvsdg::node *
-  GetNode(const jlm::rvsdg::input & input) noexcept;
+  [[nodiscard]] static rvsdg::node *
+  GetNode(const rvsdg::input & input) noexcept;
 
   template<class T>
   class iterator
@@ -300,6 +311,8 @@ public:
 
   output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
 
+  output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type);
+
   output(const output &) = delete;
 
   output(output &&) = delete;
@@ -363,6 +376,12 @@ public:
   type() const noexcept
   {
     return port_->type();
+  }
+
+  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  Type() const noexcept
+  {
+    return port_->Type();
   }
 
   inline jlm::rvsdg::region *
@@ -578,27 +597,15 @@ is(const jlm::rvsdg::output * output) noexcept
 class node_input : public jlm::rvsdg::input
 {
 public:
-  node_input(jlm::rvsdg::output * origin, jlm::rvsdg::node * node, const jlm::rvsdg::port & port);
+  node_input(
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::node * node,
+      std::shared_ptr<const rvsdg::type> type);
 
   jlm::rvsdg::node *
   node() const noexcept
   {
     return node_;
-  }
-
-  /**
-   * Returns the associated node if \p input is a jlm::rvsdg::node_input, otherwise null.
-   *
-   * @param input A jlm::rvsdg::input
-   * @return Returns a jlm::rvsdg::node or null.
-   *
-   * @see jlm::rvsdg::node_input::node()
-   */
-  [[nodiscard]] static jlm::rvsdg::node *
-  node(const jlm::rvsdg::input & input)
-  {
-    auto nodeInput = dynamic_cast<const node_input *>(&input);
-    return nodeInput != nullptr ? nodeInput->node() : nullptr;
   }
 
 private:
@@ -610,7 +617,7 @@ private:
 class node_output : public jlm::rvsdg::output
 {
 public:
-  node_output(jlm::rvsdg::node * node, const jlm::rvsdg::port & port);
+  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type);
 
   jlm::rvsdg::node *
   node() const noexcept

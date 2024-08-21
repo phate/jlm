@@ -1,10 +1,12 @@
 #!/bin/bash
 set -eu
 
+LLVM_VERSION=17
+
 # Default values for all tunables.
 TARGET="release"
 ENABLE_ASSERTS="no"
-LLVM_CONFIG_BIN="llvm-config-16"
+LLVM_CONFIG_BIN="llvm-config-"${LLVM_VERSION}
 ENABLE_COVERAGE="no"
 ENABLE_HLS=
 CIRCT_PATH=
@@ -110,14 +112,43 @@ CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
-	CIRCT_LDFLAGS="-L${CIRCT_PATH}/lib -lMLIR -lCIRCTAnalysisTestPasses -lCIRCTDependenceAnalysis -lCIRCTExportFIRRTL -lCIRCTFIRRTL -lCIRCTFIRRTLTransforms -lCIRCTScheduling -lCIRCTSchedulingAnalysis -lCIRCTSeq -lCIRCTSupport -lCIRCTTransforms -lCIRCTHW"
+	CIRCT_LDFLAGS_ARRAY=(
+		"-L${CIRCT_PATH}/lib"
+		"-lCIRCTAnalysisTestPasses"
+		"-lCIRCTDependenceAnalysis"
+		"-lCIRCTExportFIRRTL"
+		"-lCIRCTScheduling"
+		"-lCIRCTSchedulingAnalysis"
+		"-lCIRCTFirtool"
+		"-lCIRCTFIRRTLReductions"
+		"-lCIRCTFIRRTLToHW"
+		"-lCIRCTExportVerilog"
+		"-lCIRCTImportFIRFile"
+		"-lCIRCTFIRRTLTransforms"
+		"-lCIRCTHWTransforms"
+		"-lCIRCTSVTransforms"
+		"-lCIRCTTransforms"
+		"-lCIRCTSV"
+		"-lCIRCTComb"
+		"-lCIRCTLTL"
+		"-lCIRCTVerif"
+		"-lCIRCTFIRRTL"
+		"-lCIRCTSeq"
+		"-lCIRCTSeqTransforms"
+		"-lCIRCTHW"
+		"-lCIRCTVerifToSV"
+		"-lCIRCTExportChiselInterface"
+		"-lCIRCTOM"
+		"-lCIRCTSupport"
+		"-lMLIR"
+	)
 fi
 
 CPPFLAGS_MLIR=""
 if [ "${ENABLE_MLIR}" == "yes" ] ; then
 	CPPFLAGS_MLIR="-I${MLIR_PATH}/include -DENABLE_MLIR"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
-	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIR -lMLIRJLM -lMLIRRVSDG"
+	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIRJLM -lMLIRRVSDG -lMLIR"
 fi
 
 if [ "${ENABLE_COVERAGE}" == "yes" ] ; then
@@ -135,12 +166,14 @@ CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMEN
 CPPFLAGS=${CPPFLAGS-} ${CPPFLAGS_COMMON} ${CPPFLAGS_LLVM} ${CPPFLAGS_ASSERTS} ${CPPFLAGS_CIRCT} ${CPPFLAGS_MLIR}
 ENABLE_HLS=${ENABLE_HLS}
 CIRCT_PATH=${CIRCT_PATH}
-CIRCT_LDFLAGS=${CIRCT_LDFLAGS}
+CIRCT_LDFLAGS=${CIRCT_LDFLAGS_ARRAY[*]}
 ENABLE_MLIR=${ENABLE_MLIR}
 MLIR_PATH=${MLIR_PATH}
 MLIR_LDFLAGS=${MLIR_LDFLAGS}
 LLVMCONFIG=${LLVM_CONFIG_BIN}
+LLVM_VERSION=${LLVM_VERSION}
 ENABLE_COVERAGE=${ENABLE_COVERAGE}
+export LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
 EOF
 	if [ ! -z "${CXX-}" ] ; then
 		echo "CXX=${CXX}"

@@ -5,6 +5,8 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm
 {
@@ -98,7 +100,7 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
   if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
     return invariantInput(*thetaOutput, invariantOutputs);
 
-  if (auto thetaArgument = is_theta_argument(&output))
+  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
   {
     auto thetaInput = static_cast<const rvsdg::theta_input *>(thetaArgument->input());
     return invariantInput(*thetaInput->output(), invariantOutputs);
@@ -161,13 +163,13 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     if (is<lambda::fctargument>(origin))
       return origin;
 
-    if (is_import(origin))
+    if (is<rvsdg::GraphImport>(origin))
       return origin;
 
     if (is<rvsdg::simple_op>(rvsdg::node_output::node(origin)))
       return origin;
 
-    if (is_phi_recvar_argument(origin))
+    if (is<phi::rvargument>(origin))
     {
       return origin;
     }
@@ -179,9 +181,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto output = is_gamma_output(origin))
+    if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(origin))
     {
-      if (auto input = invariantInput(*output))
+      if (auto input = invariantInput(*gammaOutput))
       {
         origin = input->origin();
         continue;
@@ -190,15 +192,15 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto argument = is_gamma_argument(origin))
+    if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(origin))
     {
-      origin = argument->input()->origin();
+      origin = gammaArgument->input()->origin();
       continue;
     }
 
-    if (auto output = is_theta_output(origin))
+    if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(origin))
     {
-      if (auto input = invariantInput(*output))
+      if (auto input = invariantInput(*thetaOutput))
       {
         origin = input->origin();
         continue;
@@ -207,9 +209,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto argument = is_theta_argument(origin))
+    if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(origin))
     {
-      if (auto input = invariantInput(*argument))
+      if (auto input = invariantInput(*thetaArgument))
       {
         origin = input->origin();
         continue;
@@ -218,10 +220,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (is_phi_cv(origin))
+    if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(origin))
     {
-      auto argument = util::AssertedCast<const rvsdg::argument>(origin);
-      origin = argument->input()->origin();
+      origin = phiInputArgument->input()->origin();
       continue;
     }
 
@@ -247,7 +248,7 @@ CallNode::ClassifyCall(const CallNode & callNode)
 
   if (auto argument = dynamic_cast<rvsdg::argument *>(output))
   {
-    if (is_phi_recvar_argument(argument))
+    if (is<phi::rvargument>(argument))
     {
       return CallTypeClassifier::CreateRecursiveDirectCallClassifier(*argument);
     }

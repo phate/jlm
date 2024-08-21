@@ -9,6 +9,12 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/util/disjointset.hpp>
 
+namespace jlm::rvsdg
+{
+class gamma_node;
+class theta_node;
+}
+
 namespace jlm::llvm::aa
 {
 
@@ -97,10 +103,10 @@ private:
   AnalyzeMalloc(const rvsdg::simple_node & node);
 
   void
-  AnalyzeLoad(const LoadNonVolatileNode & loadNode);
+  AnalyzeLoad(const LoadNode & loadNode);
 
   void
-  AnalyzeStore(const StoreNonVolatileNode & storeNode);
+  AnalyzeStore(const StoreNode & storeNode);
 
   void
   AnalyzeCall(const CallNode & callNode);

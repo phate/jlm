@@ -21,14 +21,16 @@ simple_input::~simple_input() noexcept
 simple_input::simple_input(
     jlm::rvsdg::simple_node * node,
     jlm::rvsdg::output * origin,
-    const jlm::rvsdg::port & port)
-    : node_input(origin, node, port)
+    std::shared_ptr<const rvsdg::type> type)
+    : node_input(origin, node, std::move(type))
 {}
 
 /* outputs */
 
-simple_output::simple_output(jlm::rvsdg::simple_node * node, const jlm::rvsdg::port & port)
-    : node_output(node, port)
+simple_output::simple_output(
+    jlm::rvsdg::simple_node * node,
+    std::shared_ptr<const rvsdg::type> type)
+    : node_output(node, std::move(type))
 {}
 
 simple_output::~simple_output() noexcept
@@ -60,11 +62,11 @@ simple_node::simple_node(
   for (size_t n = 0; n < operation().narguments(); n++)
   {
     node::add_input(
-        std::unique_ptr<node_input>(new simple_input(this, operands[n], operation().argument(n))));
+        std::make_unique<simple_input>(this, operands[n], operation().argument(n).Type()));
   }
 
   for (size_t n = 0; n < operation().nresults(); n++)
-    node::add_output(std::unique_ptr<node_output>(new simple_output(this, operation().result(n))));
+    node::add_output(std::make_unique<simple_output>(this, operation().result(n).Type()));
 
   on_node_create(this);
 }

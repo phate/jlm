@@ -375,6 +375,24 @@ gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & sma
   return gamma;
 }
 
+GammaArgument::~GammaArgument() noexcept = default;
+
+GammaArgument &
+GammaArgument::Copy(rvsdg::region & region, structural_input * input)
+{
+  auto gammaInput = util::AssertedCast<gamma_input>(input);
+  return Create(region, *gammaInput);
+}
+
+GammaResult::~GammaResult() noexcept = default;
+
+GammaResult &
+GammaResult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  auto gammaOutput = util::AssertedCast<gamma_output>(output);
+  return GammaResult::Create(*origin.region(), origin, *gammaOutput);
+}
+
 }
 
 jlm::rvsdg::node_normal_form *

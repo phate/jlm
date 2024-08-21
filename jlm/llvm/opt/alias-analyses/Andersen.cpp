@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/backend/rvsdg2dot/rvsdg2dot.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -23,57 +22,119 @@ IsOrContainsPointerType(const rvsdg::type & type)
   return IsOrContains<PointerType>(type);
 }
 
-Andersen::Configuration
-Andersen::Configuration::DefaultConfiguration()
+std::string
+Andersen::Configuration::ToString() const
 {
-  Configuration config;
-
-  const auto configString = std::getenv(ENV_CONFIG_OVERRIDE);
-  if (configString == nullptr)
-    return config;
-
-  std::istringstream configStream(configString);
-  std::string option;
-  while (true)
+  std::ostringstream str;
+  if (EnableOfflineVariableSubstitution_)
+    str << "OVS_";
+  if (EnableOfflineConstraintNormalization_)
+    str << "NORM_";
+  if (Solver_ == Solver::Naive)
   {
-    configStream >> option;
-    if (configStream.fail())
-      break;
+    str << "Solver=Naive_";
+  }
+  else if (Solver_ == Solver::Worklist)
+  {
+    str << "Solver=Worklist_";
+    str << "Policy=";
+    str << PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy_);
+    str << "_";
 
-    if (option == CONFIG_OVS_ON)
-      config.EnableOfflineVariableSubstitution(true);
-    else if (option == CONFIG_OVS_OFF)
-      config.EnableOfflineVariableSubstitution(false);
-
-    else if (option == CONFIG_NORMALIZE_ON)
-      config.EnableOfflineConstraintNormalization(true);
-    else if (option == CONFIG_NORMALIZE_OFF)
-      config.EnableOfflineConstraintNormalization(false);
-
-    else if (option == CONFIG_SOLVER_NAIVE)
-      config.SetSolver(Solver::Naive);
-    else if (option == CONFIG_SOLVER_WL)
-      config.SetSolver(Solver::Worklist);
-
-    else if (option == CONFIG_WL_POLICY_LRF)
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::LRF);
-    else if (option == CONFIG_WL_POLICY_FIFO)
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::FIFO);
-    else if (option == CONFIG_WL_POLICY_LIFO)
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::LIFO);
-
-    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_ON)
-      config.EnableOnlineCycleDetection(true);
-    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
-      config.EnableOnlineCycleDetection(false);
-    else
-    {
-      std::cerr << "Unknown config option string: '" << option << "'" << std::endl;
-      JLM_UNREACHABLE("Andersen default config override string broken");
-    }
+    if (EnableOnlineCycleDetection_)
+      str << "OnlineCD_";
+    if (EnableHybridCycleDetection_)
+      str << "HybridCD_";
+    if (EnableLazyCycleDetection_)
+      str << "LazyCD_";
+    if (EnableDifferencePropagation_)
+      str << "DP_";
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unknown solver type");
   }
 
-  return config;
+  auto result = str.str();
+  result.erase(result.size() - 1, 1); // Remove trailing '_'
+  return result;
+}
+
+std::vector<Andersen::Configuration>
+Andersen::Configuration::GetAllConfigurations()
+{
+  std::vector<Configuration> configs;
+  auto PickDifferencePropagation = [&](Configuration config)
+  {
+    config.EnableDifferencePropagation(false);
+    configs.push_back(config);
+    config.EnableDifferencePropagation(true);
+    configs.push_back(config);
+  };
+  auto PickLazyCycleDetection = [&](Configuration config)
+  {
+    config.EnableLazyCycleDetection(false);
+    PickDifferencePropagation(config);
+    config.EnableLazyCycleDetection(true);
+    PickDifferencePropagation(config);
+  };
+  auto PickHybridCycleDetection = [&](Configuration config)
+  {
+    config.EnableHybridCycleDetection(false);
+    PickLazyCycleDetection(config);
+    // Hybrid Cycle Detection can only be enabled when OVS is enabled
+    if (config.IsOfflineVariableSubstitutionEnabled())
+    {
+      config.EnableHybridCycleDetection(true);
+      PickLazyCycleDetection(config);
+    }
+  };
+  auto PickOnlineCycleDetection = [&](Configuration config)
+  {
+    config.EnableOnlineCycleDetection(false);
+    PickHybridCycleDetection(config);
+    config.EnableOnlineCycleDetection(true);
+    // OnlineCD can not be combined with HybridCD or LazyCD
+    configs.push_back(config);
+  };
+  auto PickWorklistPolicy = [&](Configuration config)
+  {
+    using Policy = PointerObjectConstraintSet::WorklistSolverPolicy;
+    config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
+    PickOnlineCycleDetection(config);
+  };
+  auto PickOfflineNormalization = [&](Configuration config)
+  {
+    config.EnableOfflineConstraintNormalization(false);
+    configs.push_back(config);
+    config.EnableOfflineConstraintNormalization(true);
+    configs.push_back(config);
+  };
+  auto PickSolver = [&](Configuration config)
+  {
+    config.SetSolver(Solver::Worklist);
+    PickWorklistPolicy(config);
+    config.SetSolver(Solver::Naive);
+    PickOfflineNormalization(config);
+  };
+  auto PickOfflineVariableSubstitution = [&](Configuration config)
+  {
+    config.EnableOfflineVariableSubstitution(false);
+    PickSolver(config);
+    config.EnableOfflineVariableSubstitution(true);
+    PickSolver(config);
+  };
+
+  // Adds one configuration for all valid combinations of features
+  PickOfflineVariableSubstitution(NaiveSolverConfiguration());
+
+  return configs;
 }
 
 /**
@@ -81,30 +142,64 @@ Andersen::Configuration::DefaultConfiguration()
  */
 class Andersen::Statistics final : public util::Statistics
 {
-  inline static const char * NumPointerObjects_ = "#PointerObjects";
-  inline static const char * NumRegisterPointerObjects_ = "#RegisterPointerObjects";
-  inline static const char * NumRegistersMappedToPointerObject_ = "#RegistersMappedToPointerObject";
+  static constexpr const char * NumPointerObjects_ = "#PointerObjects";
+  static constexpr const char * NumPointerObjectsWithImplicitPointees_ =
+      "#PointerObjectsWithImplicitPointees";
+  static constexpr const char * NumRegisterPointerObjects_ = "#RegisterPointerObjects";
+  static constexpr const char * NumRegistersMappedToPointerObject_ =
+      "#RegistersMappedToPointerObject";
 
-  inline static const char * NumSupersetConstraints_ = "#SupersetConstraints";
-  inline static const char * NumStoreConstraints_ = "#StoreConstraints";
-  inline static const char * NumLoadConstraints_ = "#LoadConstraints";
-  inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
+  static constexpr const char * NumBaseConstraints_ = "#BaseConstraints";
+  static constexpr const char * NumSupersetConstraints_ = "#SupersetConstraints";
+  static constexpr const char * NumStoreConstraints_ = "#StoreConstraints";
+  static constexpr const char * NumLoadConstraints_ = "#LoadConstraints";
+  static constexpr const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
+  static constexpr const char * NumFlagConstraints_ = "#FlagConstraints";
 
-  inline static const char * NumUnificationsOvs_ = "#Unifications(OVS)";
-  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
+  static constexpr const char * Configuration_ = "Configuration";
 
-  inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
-  inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
-  inline static const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  // Offline technique statistics
+  static constexpr const char * NumUnificationsOvs_ = "#Unifications(OVS)";
+  static constexpr const char * NumConstraintsRemovedOfflineNorm_ =
+      "#ConstraintsRemoved(OfflineNorm)";
 
-  inline static const char * AnalysisTimer_ = "AnalysisTimer";
-  inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
-  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
-  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
-  inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
-  inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
-  inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
-  inline static const char * PointsToGraphConstructionExternalToEscapedTimer_ =
+  // Solver statistics
+  static constexpr const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
+
+  static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
+  static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
+      "#WorklistSolverWorkItemsPopped";
+  static constexpr const char * NumWorklistSolverWorkItemsNewPointees_ =
+      "#WorklistSolverWorkItemsNewPointees";
+
+  // Online technique statistics
+  static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
+
+  static constexpr const char * NumHybridCycleUnifications_ = "#HybridCycleUnifications";
+
+  static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
+  static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
+  static constexpr const char * NumLazyCycleUnifications_ = "#LazyCycleUnifications";
+
+  // After solving statistics
+  static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
+  static constexpr const char * NumUnificationRoots_ = "#UnificationRoots";
+  // These next measurements only count flags and pointees of unification roots
+  static constexpr const char * NumPointsToExternalFlags_ = "#PointsToExternalFlags";
+  static constexpr const char * NumPointeesEscapingFlags_ = "#PointeesEscapingFlags";
+  static constexpr const char * NumExplicitPointees_ = "#ExplicitPointees";
+  // If a pointee is both implicit (through PointsToExternal flag) and explicit
+  static constexpr const char * NumDoubledUpPointees_ = "#DoubledUpPointees";
+
+  static constexpr const char * AnalysisTimer_ = "AnalysisTimer";
+  static constexpr const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
+  static constexpr const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
+  static constexpr const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
+  static constexpr const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
+  static constexpr const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
+  static constexpr const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
+  static constexpr const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
 
 public:
@@ -136,6 +231,9 @@ public:
 
     AddMeasurement(NumPointerObjects_, set.NumPointerObjects());
     AddMeasurement(
+        NumPointerObjectsWithImplicitPointees_,
+        set.NumPointerObjectsWithImplicitPointees());
+    AddMeasurement(
         NumRegisterPointerObjects_,
         set.NumPointerObjectsOfKind(PointerObjectKind::Register));
     AddMeasurement(NumRegistersMappedToPointerObject_, set.GetRegisterMap().size());
@@ -151,10 +249,12 @@ public:
       numLoadConstraints += std::holds_alternative<LoadConstraint>(constraint);
       numFunctionCallConstraints += std::holds_alternative<FunctionCallConstraint>(constraint);
     }
+    AddMeasurement(NumBaseConstraints_, constraints.NumBaseConstraints());
     AddMeasurement(NumSupersetConstraints_, numSupersetConstraints);
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
+    AddMeasurement(NumFlagConstraints_, constraints.NumFlagConstraints());
   }
 
   void
@@ -203,16 +303,84 @@ public:
   }
 
   void
-  StopConstraintSolvingWorklistStatistics(PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
+  StopConstraintSolvingWorklistStatistics(
+      PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
+
+    // What worklist policy was used
+    AddMeasurement(
+        WorklistPolicy_,
+        PointerObjectConstraintSet::WorklistSolverPolicyToString(statistics.Policy));
+
     // How many work items were popped from the worklist in total
-    AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
+    AddMeasurement(NumWorklistSolverWorkItemsPopped_, statistics.NumWorkItemsPopped);
+    AddMeasurement(NumWorklistSolverWorkItemsNewPointees_, statistics.NumWorkItemNewPointees);
 
-    if (*statistics.NumOnlineCyclesDetected)
-    AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
+    if (statistics.NumOnlineCyclesDetected)
+      AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
 
-    // TODO: Num unifications
+    if (statistics.NumOnlineCycleUnifications)
+      AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
+
+    if (statistics.NumHybridCycleUnifications)
+      AddMeasurement(NumHybridCycleUnifications_, *statistics.NumHybridCycleUnifications);
+
+    if (statistics.NumLazyCyclesDetectionAttempts)
+      AddMeasurement(NumLazyCycleDetectionAttempts_, *statistics.NumLazyCyclesDetectionAttempts);
+
+    if (statistics.NumLazyCyclesDetected)
+      AddMeasurement(NumLazyCyclesDetected_, *statistics.NumLazyCyclesDetected);
+
+    if (statistics.NumLazyCycleUnifications)
+      AddMeasurement(NumLazyCycleUnifications_, *statistics.NumLazyCycleUnifications);
+  }
+
+  void
+  AddStatisticFromConfiguration(const Configuration & config)
+  {
+    AddMeasurement(Configuration_, config.ToString());
+  }
+
+  void
+  AddStatisticsFromSolution(const PointerObjectSet & set)
+  {
+    size_t numEscapedMemoryObjects = 0;
+    size_t numUnificationRoots = 0;
+    size_t numPointsToExternalFlags = 0;
+    size_t numPointeesEscapingFlags = 0;
+    size_t numExplicitPointees = 0;
+    size_t numDoubleUpPointees = 0;
+
+    for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
+    {
+      if (set.HasEscaped(i))
+        numEscapedMemoryObjects++;
+
+      if (!set.IsUnificationRoot(i))
+        continue;
+
+      numUnificationRoots++;
+      if (set.IsPointingToExternal(i))
+        numPointsToExternalFlags++;
+      if (set.HasPointeesEscaping(i))
+        numPointeesEscapingFlags++;
+
+      const auto & pointees = set.GetPointsToSet(i);
+      numExplicitPointees += pointees.Size();
+
+      // If the PointsToExternal flag is set, any explicit pointee that has escaped is doubled up
+      if (set.IsPointingToExternal(i))
+        for (auto pointee : pointees.Items())
+          if (set.HasEscaped(pointee))
+            numDoubleUpPointees++;
+    }
+    AddMeasurement(NumEscapedMemoryObjects_, numEscapedMemoryObjects);
+    AddMeasurement(NumUnificationRoots_, numUnificationRoots);
+    AddMeasurement(NumPointsToExternalFlags_, numPointsToExternalFlags);
+    AddMeasurement(NumPointeesEscapingFlags_, numPointeesEscapingFlags);
+    AddMeasurement(NumExplicitPointees_, numExplicitPointees);
+    AddMeasurement(NumDoubledUpPointees_, numDoubleUpPointees);
   }
 
   void
@@ -276,9 +444,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
+  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
     AnalyzeLoad(*loadNode);
-  else if (const auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
+  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
     AnalyzeStore(*storeNode);
   else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
     AnalyzeCall(*callNode);
@@ -294,7 +462,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeConstantPointerNull(node);
   else if (is<UndefValueOperation>(op))
     AnalyzeUndef(node);
-  else if (is<MemCpyNonVolatileOperation>(op))
+  else if (is<MemCpyOperation>(op))
     AnalyzeMemcpy(node);
   else if (is<ConstantArray>(op))
     AnalyzeConstantArray(node);
@@ -343,7 +511,7 @@ Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
+Andersen::AnalyzeLoad(const LoadNode & loadNode)
 {
   const auto & addressRegister = *loadNode.GetAddressInput().origin();
   const auto & outputRegister = loadNode.GetLoadedValueOutput();
@@ -362,7 +530,7 @@ Andersen::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNonVolatileNode & storeNode)
+Andersen::AnalyzeStore(const StoreNode & storeNode)
 {
   const auto & addressRegister = *storeNode.GetAddressInput().origin();
   const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
@@ -491,6 +659,8 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 {
+  JLM_ASSERT(is<MemCpyOperation>(&node));
+
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
   JLM_ASSERT(is<PointerType>(dstAddressRegister.type()));
@@ -858,7 +1028,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
   // These symbols can either be global variables or functions
   for (size_t n = 0; n < rootRegion.narguments(); n++)
   {
-    auto & argument = *rootRegion.argument(n);
+    auto & argument = *util::AssertedCast<GraphImport>(rootRegion.argument(n));
 
     // Only care about imported pointer values
     if (!IsOrContainsPointerType(argument.type()))
@@ -915,36 +1085,44 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 }
 
 void
-Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
+Andersen::SolveConstraints(
+    PointerObjectConstraintSet & constraints,
+    const Configuration & config,
+    Statistics & statistics)
 {
+  statistics.AddStatisticFromConfiguration(config);
+
   if (config.IsOfflineVariableSubstitutionEnabled())
   {
     statistics.StartOfflineVariableSubstitution();
-    auto numUnifications = Constraints_->PerformOfflineVariableSubstitution();
+    // If the solver uses hybrid cycle detection, tell OVS to store info about ref node cycles
+    bool hasHCD = config.IsHybridCycleDetectionEnabled();
+    auto numUnifications = constraints.PerformOfflineVariableSubstitution(hasHCD);
     statistics.StopOfflineVariableSubstitution(numUnifications);
   }
 
   if (config.IsOfflineConstraintNormalizationEnabled())
   {
     statistics.StartOfflineConstraintNormalization();
-    auto numConstraintsRemoved = Constraints_->NormalizeConstraints();
+    auto numConstraintsRemoved = constraints.NormalizeConstraints();
     statistics.StopOfflineConstraintNormalization(numConstraintsRemoved);
   }
 
   if (config.GetSolver() == Configuration::Solver::Naive)
   {
     statistics.StartConstraintSolvingNaiveStatistics();
-    size_t numIterations = Constraints_->SolveNaively();
+    size_t numIterations = constraints.SolveNaively();
     statistics.StopConstraintSolvingNaiveStatistics(numIterations);
   }
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    PointerObjectConstraintSet::WorklistStatistics worklistStatistics;
-    if (config.IsOnlineCycleDetectionEnabled())
-      worklistStatistics = Constraints_->SolveUsingWorklist<true>();
-    else
-      worklistStatistics = Constraints_->SolveUsingWorklist<false>();
+    auto worklistStatistics = constraints.SolveUsingWorklist(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled(),
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
@@ -958,36 +1136,30 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   statistics->StartAndersenStatistics(module.Rvsdg());
 
   // Check environment variables for debugging flags
-  const bool checkAgainstNaive =
-      std::getenv(ENV_COMPARE_SOLVE_NAIVE) && Config_ != Configuration::NaiveSolverConfiguration();
+  const bool testAllConfigs = std::getenv(ENV_TEST_ALL_CONFIGS);
+  const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
+
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
   util::GraphWriter writer;
 
-  if (dumpGraphs)
-  {
-    // Also output the RVSDG as a dot graph
-    jlm::llvm::rvsdg2dot::WriteGraphs(writer, *module.Rvsdg().root(), true);
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
-  }
-
   AnalyzeModule(module, *statistics);
 
-  // If double-checking against the naive solver, make a copy of the original constraint set
+  // If solving multiple times, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
-  if (checkAgainstNaive)
+  if (testAllConfigs || doubleCheck)
     copy = Constraints_->Clone();
 
   // Draw subset graph both before and after solving
   if (dumpGraphs)
     Constraints_->DrawSubsetGraph(writer);
 
-  SolveConstraints(Config_, *statistics);
+  SolveConstraints(*Constraints_, Config_, *statistics);
+  statistics->AddStatisticsFromSolution(*Set_);
 
   if (dumpGraphs)
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving");
-
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
@@ -997,38 +1169,45 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Solve again if double-checking against naive is enabled
-  if (checkAgainstNaive)
+  if (testAllConfigs || doubleCheck)
   {
-    std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
-    // Restore the problem to before solving started
-    Set_ = std::move(copy.first);
-    Constraints_ = std::move(copy.second);
+    if (doubleCheck)
+      std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
 
-    // Create a separate Statistics instance for naive statistics
-    auto naiveStatistics = Statistics::Create(module.SourceFileName());
-    SolveConstraints(Configuration::NaiveSolverConfiguration(), *naiveStatistics);
+    // If double-checking, only use the naive configuration. Otherwise try all configurations
+    std::vector<Configuration> configs;
+    if (testAllConfigs)
+      configs = Configuration::GetAllConfigurations();
+    else
+      configs.push_back(Configuration::NaiveSolverConfiguration());
 
-    auto naiveResult = ConstructPointsToGraphFromPointerObjectSet(*Set_, *naiveStatistics);
+    // If testing all, benchmarking is being done, so do 50 iterations of all configurations.
+    // Double-checking against Set_ only needs to be done once per configuration
+    const auto iterations = testAllConfigs ? 50 : 1;
 
-    statisticsCollector.CollectDemandedStatistics(std::move(naiveStatistics));
-
-    // Check if the PointsToGraphs are identical
-    bool error = false;
-    if (!naiveResult->IsSupergraphOf(*result))
+    for (auto i = 0; i < iterations; i++)
     {
-      std::cerr << "The naive PointsToGraph is NOT a supergraph of the PointsToGraph" << std::endl;
-      error = true;
-    }
-    if (!result->IsSupergraphOf(*naiveResult))
-    {
-      std::cerr << "The PointsToGraph is NOT a supergraph of the naive PointsToGraph" << std::endl;
-      error = true;
-    }
-    if (error)
-    {
-      std::cout << PointsToGraph::ToDot(*result) << std::endl;
-      std::cout << PointsToGraph::ToDot(*naiveResult) << std::endl;
-      JLM_UNREACHABLE("PointsToGraph double checking uncovered differences!");
+      for (const auto & config : configs)
+      {
+        // Create a clone of the unsolved pointer object set and constraint set
+        auto workingCopy = copy.second->Clone();
+        // These statistics will only contain solving data
+        auto solvingStats = Statistics::Create(module.SourceFileName());
+        SolveConstraints(*workingCopy.second, config, *solvingStats);
+        solvingStats->AddStatisticsFromSolution(*workingCopy.first);
+        statisticsCollector.CollectDemandedStatistics(std::move(solvingStats));
+
+        // Only double check on the first iteration
+        if (doubleCheck && i == 0)
+        {
+          if (workingCopy.first->HasIdenticalSolAs(*Set_))
+            continue;
+          std::cerr << "Solving with original config: " << Config_.ToString()
+                    << " did not produce the same solution as the config " << config.ToString()
+                    << std::endl;
+          JLM_UNREACHABLE("Andersen solver double checking uncovered differences!");
+        }
+      }
     }
   }
 

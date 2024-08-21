@@ -1,13 +1,16 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=898845dc1d5361c59d9ac3805ac21be8d575634b
+GIT_COMMIT=ab630d5a881a0e8fc5bdfa63a5984186fa9096c0
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-JLM_ROOT_DIR=${SCRIPT_DIR}/..
+JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 MLIR_BUILD=${JLM_ROOT_DIR}/build-mlir
 MLIR_INSTALL=${JLM_ROOT_DIR}/usr
+
+LLVM_VERSION=17
+LLVM_CONFIG_BIN=llvm-config-${LLVM_VERSION}
 
 function commit()
 {
@@ -16,8 +19,10 @@ function commit()
 
 function usage()
 {
-	echo "Usage: ./build-circt.sh [OPTION] [VAR=VALUE]"
+	echo "Usage: ./build-mlir.sh [OPTION] [VAR=VALUE]"
 	echo ""
+	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
+	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
 	echo "  --build-path PATH     The path where to build MLIR."
 	echo "                        [${MLIR_BUILD}]"
 	echo "  --install-path PATH   The path where to install MLIR."
@@ -28,19 +33,24 @@ function usage()
 
 while [[ "$#" -ge 1 ]] ; do
 	case "$1" in
+		--llvm-config)
+			shift
+			LLVM_CONFIG_BIN="$1"
+			shift
+			;;
 		--build-path)
 			shift
-			MLIR_BUILD="${PWD}/$1"
+			MLIR_BUILD=$(readlink -m "$1")
 			shift
 			;;
 		--install-path)
 			shift
-			MLIR_INSTALL="${PWD}/$1"
+			MLIR_INSTALL=$(readlink -m "$1")
 			shift
 			;;
 		--get-commit-hash)
-			commit >&2
-			exit 1
+			commit >&1
+			exit 0
 			;;
 		--help)
 			usage >&2
@@ -49,6 +59,9 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
+LLVM_BINDIR=$(${LLVM_CONFIG_BIN} --bindir)
+LLVM_CMAKEDIR=$(${LLVM_CONFIG_BIN} --cmakedir)
+
 MLIR_GIT_DIR=${MLIR_BUILD}/mlir_rvsdg.git
 MLIR_BUILD_DIR=${MLIR_BUILD}/build
 
@@ -56,16 +69,16 @@ if [ ! -d "$MLIR_GIT_DIR" ] ;
 then
 	git clone https://github.com/EECS-NTNU/mlir_rvsdg.git ${MLIR_GIT_DIR}
 fi
-cd ${MLIR_GIT_DIR}
-git checkout ${GIT_COMMIT}
+
+git -C ${MLIR_GIT_DIR} checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${MLIR_GIT_DIR} \
 	-B ${MLIR_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=clang-16 \
-	-DCMAKE_CXX_COMPILER=clang++-16 \
-	-DLLVM_DIR=/usr/lib/llvm-16/cmake/ \
-	-DMLIR_DIR=/usr/lib/llvm-16/lib/cmake/mlir \
+	-DCMAKE_C_COMPILER=${LLVM_BINDIR}/clang \
+	-DCMAKE_CXX_COMPILER=${LLVM_BINDIR}/clang++ \
+	-DLLVM_DIR=${LLVM_CMAKEDIR} \
+	-DMLIR_DIR=${LLVM_CMAKEDIR}/../mlir \
 	-DCMAKE_INSTALL_PREFIX=${MLIR_INSTALL} \
 	-Wno-dev
-cmake --build ${MLIR_BUILD_DIR}
+ninja -C ${MLIR_BUILD_DIR}
 ninja -C ${MLIR_BUILD_DIR} install

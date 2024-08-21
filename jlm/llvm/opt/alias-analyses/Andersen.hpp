@@ -10,6 +10,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -26,34 +28,22 @@ class Andersen final : public AliasAnalysis
 
 public:
   /**
-   * Environment variable that will trigger double checking of the analysis,
-   * by running analysis again with the naive solver and no extra processing.
-   * Any differences in the produced PointsToGraph result in an error.
+   * Environment variable that when set, triggers analyzing the program with every single
+   * valid combination of Configuration flags.
    */
-  static inline const char * const ENV_COMPARE_SOLVE_NAIVE = "JLM_ANDERSEN_COMPARE_SOLVE_NAIVE";
+  static inline const char * const ENV_TEST_ALL_CONFIGS = "JLM_ANDERSEN_TEST_ALL_CONFIGS";
+
+  /**
+   * Environment variable that will trigger double checking of the analysis.
+   * If ENV_TEST_ALL_CONFIGS is set, the output is double checked against them all.
+   * Otherwise, the output is double checked only against the default naive solver.
+   */
+  static inline const char * const ENV_DOUBLE_CHECK = "JLM_ANDERSEN_DOUBLE_CHECK";
 
   /**
    * Environment variable that will trigger dumping the subset graph before and after solving.
    */
   static inline const char * const ENV_DUMP_SUBSET_GRAPH = "JLM_ANDERSEN_DUMP_SUBSET_GRAPH";
-
-  /**
-   * Environment variable for overriding the default configuration.
-   * The variable should something look like
-   * "+OVS +Normalize -OnlineCD Solver=Worklist WLPolicy=LRF"
-   */
-  static inline const char * const ENV_CONFIG_OVERRIDE = "JLM_ANDERSEN_CONFIG_OVERRIDE";
-  static inline const char * const CONFIG_OVS_ON = "+OVS";
-  static inline const char * const CONFIG_OVS_OFF = "-OVS";
-  static inline const char * const CONFIG_NORMALIZE_ON = "+Normalize";
-  static inline const char * const CONFIG_NORMALIZE_OFF = "-Normalize";
-  static inline const char * const CONFIG_SOLVER_WL = "Solver=Worklist";
-  static inline const char * const CONFIG_SOLVER_NAIVE = "Solver=Naive";
-  static inline const char * const CONFIG_WL_POLICY_LRF = "WLPolicy=LRF";
-  static inline const char * const CONFIG_WL_POLICY_FIFO = "WLPolicy=FIFO";
-  static inline const char * const CONFIG_WL_POLICY_LIFO = "WLPolicy=LIFO";
-  static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_ON = "+OnlineCD";
-  static inline const char * const CONFIG_ONLINE_CYCLE_DETECTION_OFF = "-OnlineCD";
 
   /**
    * class for configuring the Andersen pass, such as what solver to use.
@@ -70,35 +60,12 @@ public:
       Worklist
     };
 
-    enum class WorklistSolverPolicy
-    {
-      LRF,
-      FIFO,
-      LIFO,
-      None // Using the worklist solver without a policy is an error
-    };
-
-    [[nodiscard]] bool
-    operator==(const Configuration & other) const
-    {
-      return EnableOfflineVariableSubstitution_ == other.EnableOfflineVariableSubstitution_
-          && EnableOfflineConstraintNormalization_ == other.EnableOfflineConstraintNormalization_
-          && Solver_ == other.Solver_
-          && WorklistSolverPolicy_ == other.WorklistSolverPolicy_;
-    }
-
-    [[nodiscard]] bool
-    operator!=(const Configuration & other) const
-    {
-      return !operator==(other);
-    }
-
     /**
      * Sets which solver algorithm to use.
      * Not all solvers are compatible with all online techniques.
      */
     void
-    SetSolver(Solver solver)
+    SetSolver(Solver solver) noexcept
     {
       Solver_ = solver;
     }
@@ -109,13 +76,17 @@ public:
       return Solver_;
     }
 
+    /**
+     * Sets which policy to be used by the worklist.
+     * Only applies to the worklist solver.
+     */
     void
-    SetWorklistSolverPolicy(WorklistSolverPolicy policy)
+    SetWorklistSolverPolicy(PointerObjectConstraintSet::WorklistSolverPolicy policy) noexcept
     {
       WorklistSolverPolicy_ = policy;
     }
 
-    [[nodiscard]] WorklistSolverPolicy
+    [[nodiscard]] PointerObjectConstraintSet::WorklistSolverPolicy
     GetWorklistSoliverPolicy() const noexcept
     {
       return WorklistSolverPolicy_;
@@ -128,7 +99,7 @@ public:
      * which may create opportunities for constraint normalization.
      */
     void
-    EnableOfflineVariableSubstitution(bool enable)
+    EnableOfflineVariableSubstitution(bool enable) noexcept
     {
       EnableOfflineVariableSubstitution_ = enable;
     }
@@ -145,7 +116,7 @@ public:
      * @see PointerObjectConstraintSet::NormalizeConstraints()
      */
     void
-    EnableOfflineConstraintNormalization(bool enable)
+    EnableOfflineConstraintNormalization(bool enable) noexcept
     {
       EnableOfflineConstraintNormalization_ = enable;
     }
@@ -157,12 +128,12 @@ public:
     }
 
     /**
-     * Enables or disables online cycle detection in the Worklist solver, as described by.
-     * Ignored by all other solvers, and by the topological worklist policy.
-     * Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Enables or disables online cycle detection in the Worklist solver, as described by
+     *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * It detects all cycles, so it can not be combined with other cycle detection techniques.
      */
     void
-    EnableOnlineCycleDetection(bool enable)
+    EnableOnlineCycleDetection(bool enable) noexcept
     {
       EnableOnlineCycleDetection_ = enable;
     }
@@ -174,11 +145,78 @@ public:
     }
 
     /**
-     * Creates the default Andersen constraint set solver configuration
-     * @return the solver configuration
+     * Enables or disables hybrid cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
      */
-    [[nodiscard]] static Configuration
-    DefaultConfiguration();
+    void
+    EnableHybridCycleDetection(bool enable) noexcept
+    {
+      EnableHybridCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsHybridCycleDetectionEnabled() const noexcept
+    {
+      return EnableHybridCycleDetection_;
+    }
+
+    /**
+     * Enables or disables lazy cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
+     */
+    void
+    EnableLazyCycleDetection(bool enable) noexcept
+    {
+      EnableLazyCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsLazyCycleDetectionEnabled() const noexcept
+    {
+      return EnableLazyCycleDetection_;
+    }
+
+    /**
+     * Enables or disables difference propagation in the Worklist solver, as described by
+     *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Only used by the worklist solver.
+     */
+    void
+    EnableDifferencePropagation(bool enable) noexcept
+    {
+      EnableDifferencePropagation_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsDifferencePropagationEnabled() const noexcept
+    {
+      return EnableDifferencePropagation_;
+    }
+
+    [[nodiscard]] std::string
+    ToString() const;
+
+    /**
+     * @return the default configuration
+     */
+    static Configuration
+    DefaultConfiguration()
+    {
+      Configuration config;
+      config.EnableOfflineVariableSubstitution(true);
+      // Constraints are normalized inside the Worklist's representation either way
+      config.EnableOfflineConstraintNormalization(false);
+      config.SetSolver(Solver::Worklist);
+      config.SetWorklistSolverPolicy(
+          PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
+      config.EnableOnlineCycleDetection(false);
+      config.EnableHybridCycleDetection(true);
+      config.EnableLazyCycleDetection(true);
+      config.EnableDifferencePropagation(true);
+      return config;
+    }
 
     /**
      * Creates a solver configuration using the naive solver,
@@ -186,23 +224,33 @@ public:
      * @return the solver configuration
      */
     [[nodiscard]] static Configuration
-    NaiveSolverConfiguration()
+    NaiveSolverConfiguration() noexcept
     {
-      auto config = Configuration();
+      Configuration config;
       config.EnableOfflineVariableSubstitution(false);
       config.EnableOfflineConstraintNormalization(false);
       config.SetSolver(Solver::Naive);
-      config.SetWorklistSolverPolicy(WorklistSolverPolicy::None);
-      config.EnableOnlineCycleDetection(false);
       return config;
     }
 
+    /**
+     * @return a list containing all possible Configurations,
+     * avoiding useless combinations of techniques.
+     */
+    [[nodiscard]] static std::vector<Configuration>
+    GetAllConfigurations();
+
   private:
-    bool EnableOfflineVariableSubstitution_ = true;
-    bool EnableOfflineConstraintNormalization_ = true;
-    Solver Solver_ = Solver::Worklist;
-    WorklistSolverPolicy WorklistSolverPolicy_ = WorklistSolverPolicy::LRF;
-    bool EnableOnlineCycleDetection_ = true;
+    // All techniques are turned off by default
+    bool EnableOfflineVariableSubstitution_ = false;
+    bool EnableOfflineConstraintNormalization_ = false;
+    Solver Solver_ = Solver::Naive;
+    PointerObjectConstraintSet::WorklistSolverPolicy WorklistSolverPolicy_ =
+        PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
+    bool EnableOnlineCycleDetection_ = false;
+    bool EnableHybridCycleDetection_ = false;
+    bool EnableLazyCycleDetection_ = false;
+    bool EnableDifferencePropagation_ = false;
   };
 
   ~Andersen() noexcept override = default;
@@ -284,10 +332,10 @@ private:
   AnalyzeMalloc(const rvsdg::simple_node & node);
 
   void
-  AnalyzeLoad(const LoadNonVolatileNode & loadNode);
+  AnalyzeLoad(const LoadNode & loadNode);
 
   void
-  AnalyzeStore(const StoreNonVolatileNode & storeNode);
+  AnalyzeStore(const StoreNode & storeNode);
 
   void
   AnalyzeCall(const CallNode & callNode);
@@ -359,13 +407,16 @@ private:
   AnalyzeModule(const RvsdgModule & module, Statistics & statistics);
 
   /**
-   * Works with the members Set_ and Constraints_, and solves the constraint problem
-   * using the techniques and solver specified in the given configuration
+   * Solves the constraint problem using the techniques and solver specified in the given config.
+   * @param constraints the instance of PointerObjectConstraintSet being operated on
    * @param config settings for the solving
    * @param statistics the Statistics instance used to track info about the analysis
    */
-  void
-  SolveConstraints(const Configuration & config, Statistics & statistics);
+  static void
+  SolveConstraints(
+      PointerObjectConstraintSet & constraints,
+      const Configuration & config,
+      Statistics & statistics);
 
   Configuration Config_ = Configuration::DefaultConfiguration();
 
@@ -373,6 +424,6 @@ private:
   std::unique_ptr<PointerObjectConstraintSet> Constraints_;
 };
 
-} // namespace
+}
 
 #endif

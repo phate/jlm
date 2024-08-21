@@ -369,6 +369,13 @@ public:
     return CommandLineOptions_;
   }
 
+  static void
+  PrintRvsdgModule(
+      llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+      util::StatisticsCollector & statisticsCollector);
+
 private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseInputFile(
@@ -383,13 +390,6 @@ private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseMlirIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
-
-  static void
-  PrintRvsdgModule(
-      llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
-      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
-      util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsAscii(
@@ -411,6 +411,12 @@ private:
 
   static void
   PrintAsMlir(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsRvsdgTree(
       const llvm::RvsdgModule & rvsdgModule,
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
@@ -575,10 +581,9 @@ class JlmHlsCommand final : public Command
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder, bool useCirct)
+  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder)
       : InputFile_(std::move(inputFile)),
-        OutputFolder_(std::move(outputFolder)),
-        UseCirct_(useCirct)
+        OutputFolder_(std::move(outputFolder))
   {}
 
   [[nodiscard]] std::string
@@ -621,17 +626,15 @@ public:
   Create(
       CommandGraph & commandGraph,
       const util::filepath & inputFile,
-      const util::filepath & outputFolder,
-      bool useCirct)
+      const util::filepath & outputFolder)
   {
-    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder, useCirct));
+    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
   util::filepath InputFile_;
   util::filepath OutputFolder_;
-  bool UseCirct_;
 };
 
 /**

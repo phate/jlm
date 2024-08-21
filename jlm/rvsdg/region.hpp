@@ -13,6 +13,12 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 
+namespace jlm::util
+{
+class Annotation;
+class AnnotationMap;
+}
+
 namespace jlm::rvsdg
 {
 
@@ -42,6 +48,11 @@ protected:
       jlm::rvsdg::structural_input * input,
       const jlm::rvsdg::port & port);
 
+  argument(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::structural_input * input,
+      std::shared_ptr<const rvsdg::type> type);
+
   argument(const argument &) = delete;
 
   argument(argument &&) = delete;
@@ -59,8 +70,28 @@ public:
     return input_;
   }
 
+  /**
+   * Creates a copy of the argument in \p region with the structural_input \p input.
+   *
+   * @param region The region where the copy of the argument is created in.
+   * @param input  The structural_input to the argument, if any.
+   *
+   * @return A reference to the copied argument.
+   *
+   * FIXME: This method should be made abstract once we enforced that no instances of argument
+   * itself can be created any longer.
+   */
+  virtual argument &
+  Copy(rvsdg::region & region, structural_input * input);
+
   static jlm::rvsdg::argument *
   create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);
+
+  static jlm::rvsdg::argument *
+  create(
+      jlm::rvsdg::region * region,
+      structural_input * input,
+      std::shared_ptr<const jlm::rvsdg::type> type);
 
 private:
   jlm::rvsdg::structural_input * input_;
@@ -84,6 +115,12 @@ protected:
       jlm::rvsdg::structural_output * output,
       const jlm::rvsdg::port & port);
 
+  result(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::structural_output * output,
+      std::shared_ptr<const rvsdg::type> type);
+
   result(const result &) = delete;
 
   result(result &&) = delete;
@@ -101,12 +138,34 @@ public:
     return output_;
   }
 
+  /**
+   * Creates a copy of the result with \p origin and structural_output \p output. The
+   * result is created with the same type as \p origin and in the same region as \p origin.
+   *
+   * @param origin The origin for the result.
+   * @param output The structural_output to the result, if any.
+   *
+   * @return A reference to the copied result.
+   *
+   * FIXME: This method should be made abstract once we enforced that no instances of result
+   * itself can be created any longer.
+   */
+  virtual result &
+  Copy(rvsdg::output & origin, structural_output * output);
+
   static jlm::rvsdg::result *
   create(
       jlm::rvsdg::region * region,
       jlm::rvsdg::output * origin,
       jlm::rvsdg::structural_output * output,
       const jlm::rvsdg::port & port);
+
+  static jlm::rvsdg::result *
+  create(
+      jlm::rvsdg::region * region,
+      jlm::rvsdg::output * origin,
+      jlm::rvsdg::structural_output * output,
+      std::shared_ptr<const jlm::rvsdg::type> type);
 
 private:
   jlm::rvsdg::structural_output * output_;
@@ -366,6 +425,56 @@ public:
   [[nodiscard]] static size_t
   NumRegions(const jlm::rvsdg::region & region) noexcept;
 
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a tree in
+   * ASCII format of the following form:
+   *
+   * RootRegion                              \n
+   * -STRUCTURAL_TEST_NODE                   \n
+   * --Region[0]                             \n
+   * --Region[1]                             \n
+   * ---STRUCTURAL_TEST_NODE                 \n
+   * ----Region[0]                           \n
+   * ----Region[1]                           \n
+   * ----Region[2] NumNodes:0 NumArguments:0 \n
+   *
+   *
+   * The above tree has a single structural node in the RVSDG's root region. This node has two
+   * subregions, where the second subregion contains another structural node with three subregions.
+   * For the third subregion, two annotations with label NumNodes and NumArguments was provided in
+   * \p annotationMap.
+   *
+   * @param region The top-level region that is converted
+   * @param annotationMap A map with annotations for instances of \ref region%s or
+   * structural_node%s.
+   * @return A string containing the ASCII tree of \p region.
+   */
+  [[nodiscard]] static std::string
+  ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept;
+
+  /**
+   * Converts \p region and all of its contained structural nodes with subregions to a tree in
+   * ASCII format of the following form:
+   *
+   * RootRegion              \n
+   * -STRUCTURAL_TEST_NODE   \n
+   * --Region[0]             \n
+   * --Region[1]             \n
+   * ---STRUCTURAL_TEST_NODE \n
+   * ----Region[0]           \n
+   * ----Region[1]           \n
+   * ----Region[2]           \n
+   *
+   *
+   * The above tree has a single structural node in the RVSDG's root region. This node has two
+   * subregions, where the second subregion contains another structural node with three subregions.
+   *
+   * @param region The top-level region that is converted
+   * @return A string containing the ASCII tree of \p region
+   */
+  [[nodiscard]] static std::string
+  ToTree(const rvsdg::region & region) noexcept;
+
   region_nodes_list nodes;
 
   region_top_node_list top_nodes;
@@ -373,6 +482,29 @@ public:
   region_bottom_node_list bottom_nodes;
 
 private:
+  static void
+  ToTree(
+      const rvsdg::region & region,
+      const util::AnnotationMap & annotationMap,
+      size_t indentationDepth,
+      std::stringstream & stream) noexcept;
+
+  [[nodiscard]] static std::string
+  GetAnnotationString(
+      const void * key,
+      const util::AnnotationMap & annotationMap,
+      char annotationSeparator,
+      char labelValueSeparator);
+
+  [[nodiscard]] static std::string
+  ToString(
+      const std::vector<util::Annotation> & annotations,
+      char annotationSeparator,
+      char labelValueSeparator);
+
+  [[nodiscard]] static std::string
+  ToString(const util::Annotation & annotation, char labelValueSeparator);
+
   size_t index_;
   jlm::rvsdg::graph * graph_;
   jlm::rvsdg::structural_node * node_;

@@ -753,32 +753,30 @@ public:
   ~ImportNode() noexcept override;
 
 private:
-  ImportNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::argument & argument)
+  ImportNode(PointsToGraph & pointsToGraph, const GraphImport & graphImport)
       : MemoryNode(pointsToGraph),
-        Argument_(&argument)
-  {
-    JLM_ASSERT(dynamic_cast<const impport *>(&argument.port()));
-  }
+        GraphImport_(&graphImport)
+  {}
 
 public:
-  const jlm::rvsdg::argument &
+  const GraphImport &
   GetArgument() const noexcept
   {
-    return *Argument_;
+    return *GraphImport_;
   }
 
   std::string
   DebugString() const override;
 
   static PointsToGraph::ImportNode &
-  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::argument & argument)
+  Create(PointsToGraph & pointsToGraph, const GraphImport & argument)
   {
     auto n = std::unique_ptr<PointsToGraph::ImportNode>(new ImportNode(pointsToGraph, argument));
     return pointsToGraph.AddImportNode(std::move(n));
   }
 
 private:
-  const jlm::rvsdg::argument * Argument_;
+  const GraphImport * GraphImport_;
 };
 
 /** \brief PointsTo graph unknown node

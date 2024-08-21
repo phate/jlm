@@ -16,11 +16,11 @@ TestArgumentIterators()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
+  auto vt = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   {
-    FunctionType functionType({ &vt }, { &vt });
+    auto functionType = FunctionType::Create({ vt }, { vt });
 
     auto lambda = lambda::node::create(
         rvsdgModule.Rvsdg().root(),
@@ -37,7 +37,7 @@ TestArgumentIterators()
   }
 
   {
-    FunctionType functionType({}, { &vt });
+    auto functionType = FunctionType::Create({}, { vt });
 
     auto lambda = lambda::node::create(
         rvsdgModule.Rvsdg().root(),
@@ -45,7 +45,7 @@ TestArgumentIterators()
         "f",
         linkage::external_linkage);
 
-    auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, { &vt });
+    auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, { vt });
 
     lambda->finalize({ nullaryNode });
 
@@ -53,9 +53,9 @@ TestArgumentIterators()
   }
 
   {
-    auto rvsdgImport = rvsdgModule.Rvsdg().add_import({ vt, "" });
+    auto rvsdgImport = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), vt, "");
 
-    FunctionType functionType({ &vt, &vt, &vt }, { &vt, &vt });
+    auto functionType = FunctionType::Create({ vt, vt, vt }, { vt, vt });
 
     auto lambda = lambda::node::create(
         rvsdgModule.Rvsdg().root(),
@@ -83,15 +83,15 @@ TestInvalidOperandRegion()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype vt;
-  FunctionType functionType({}, { &vt });
+  auto vt = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create({}, { vt });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto lambdaNode =
       lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
-  auto result = jlm::tests::create_testop(rvsdg->root(), {}, { &vt })[0];
+  auto result = jlm::tests::create_testop(rvsdg->root(), {}, { vt })[0];
 
   bool invalidRegionErrorCaught = false;
   try
@@ -115,13 +115,13 @@ TestRemoveLambdaInputsWhere()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType({}, { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ valueType, "x" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -133,7 +133,7 @@ TestRemoveLambdaInputsWhere()
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
                     { lambdaInput1->argument() },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   lambdaNode->finalize({ result });
@@ -184,13 +184,13 @@ TestPruneLambdaInputs()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType({}, { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ valueType, "x" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -202,7 +202,7 @@ TestPruneLambdaInputs()
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
                     { lambdaInput1->argument() },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   lambdaNode->finalize({ result });
@@ -226,8 +226,8 @@ TestCallSummaryComputationDead()
   using namespace jlm;
 
   // Arrange
-  tests::valuetype vt;
-  jlm::llvm::FunctionType functionType({}, { &vt });
+  auto vt = tests::valuetype::Create();
+  auto functionType = jlm::llvm::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -238,7 +238,7 @@ TestCallSummaryComputationDead()
       "f",
       jlm::llvm::linkage::external_linkage);
 
-  auto result = tests::create_testop(lambdaNode->subregion(), {}, { &vt })[0];
+  auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
   lambdaNode->finalize({ result });
 
@@ -260,8 +260,8 @@ TestCallSummaryComputationExport()
   using namespace jlm;
 
   // Arrange
-  tests::valuetype vt;
-  jlm::llvm::FunctionType functionType({}, { &vt });
+  auto vt = tests::valuetype::Create();
+  auto functionType = jlm::llvm::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -272,10 +272,10 @@ TestCallSummaryComputationExport()
       "f",
       jlm::llvm::linkage::external_linkage);
 
-  auto result = tests::create_testop(lambdaNode->subregion(), {}, { &vt })[0];
+  auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
   auto lambdaOutput = lambdaNode->finalize({ result });
-  auto rvsdgExport = rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "f" });
+  auto & rvsdgExport = jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   auto callSummary = lambdaNode->ComputeCallSummary();
@@ -283,7 +283,7 @@ TestCallSummaryComputationExport()
   // Assert
   assert(callSummary->IsExported());
   assert(callSummary->IsOnlyExported());
-  assert(callSummary->GetRvsdgExport() == rvsdgExport);
+  assert(callSummary->GetRvsdgExport() == &rvsdgExport);
 
   assert(callSummary->IsDead() == false);
   assert(callSummary->HasOnlyDirectCalls() == false);
@@ -295,12 +295,10 @@ TestCallSummaryComputationDirectCalls()
   using namespace jlm;
 
   // Arrange
-  tests::valuetype vt;
-  jlm::llvm::iostatetype iOStateType;
-  jlm::llvm::MemoryStateType memoryStateType;
-  jlm::llvm::FunctionType functionType(
-      { &iOStateType, &memoryStateType },
-      { &vt, &iOStateType, &memoryStateType });
+  auto vt = tests::valuetype::Create();
+  auto functionType = jlm::llvm::FunctionType::Create(
+      { jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() },
+      { vt, jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -315,7 +313,7 @@ TestCallSummaryComputationDirectCalls()
     auto iOStateArgument = lambdaNode->fctargument(0);
     auto memoryStateArgument = lambdaNode->fctargument(1);
 
-    auto result = tests::create_testop(lambdaNode->subregion(), {}, { &vt })[0];
+    auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
     return lambdaNode->finalize({ result, iOStateArgument, memoryStateArgument });
   };
@@ -337,7 +335,7 @@ TestCallSummaryComputationDirectCalls()
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambdaNode->finalize(callResults);
-    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "y" });
+    jlm::llvm::GraphExport::Create(*lambdaOutput, "y");
 
     return lambdaOutput;
   };
@@ -364,10 +362,10 @@ TestCallSummaryComputationDirectCalls()
     auto result = tests::create_testop(
         lambdaNode->subregion(),
         { callXResults[0], callYResults[0] },
-        { &vt })[0];
+        { vt })[0];
 
     auto lambdaOutput = lambdaNode->finalize({ result, callYResults[1], callYResults[2] });
-    rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "z" });
+    jlm::llvm::GraphExport::Create(*lambdaOutput, "z");
 
     return lambdaOutput;
   };
@@ -456,19 +454,24 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  jlm::tests::valuetype valueType;
-  FunctionType functionType({ &valueType }, { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   auto lambdaNode =
       lambda::node::create(rvsdg->root(), functionType, "f", linkage::external_linkage);
   lambdaNode->finalize({ lambdaNode->fctargument(0) });
 
-  auto deltaNode =
-      delta::node::Create(rvsdg->root(), PointerType(), "fp", linkage::external_linkage, "", false);
+  auto deltaNode = delta::node::Create(
+      rvsdg->root(),
+      PointerType::Create(),
+      "fp",
+      linkage::external_linkage,
+      "",
+      false);
   auto argument = deltaNode->add_ctxvar(lambdaNode->output());
   deltaNode->finalize(argument);
 
-  rvsdg->add_export(deltaNode->output(), { PointerType(), "fp" });
+  GraphExport::Create(*deltaNode->output(), "fp");
 
   // Act
   auto callSummary = lambdaNode->ComputeCallSummary();
@@ -489,10 +492,10 @@ TestCallSummaryComputationLambdaResult()
   auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  PointerType pointerType;
-  jlm::tests::valuetype valueType;
-  FunctionType functionTypeG({ &valueType }, { &valueType });
-  FunctionType functionTypeF({ &valueType }, { &pointerType });
+  auto pointerType = PointerType::Create();
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionTypeG = FunctionType::Create({ valueType }, { valueType });
+  auto functionTypeF = FunctionType::Create({ valueType }, { PointerType::Create() });
 
   auto lambdaNodeG =
       lambda::node::create(rvsdg.root(), functionTypeG, "g", linkage::external_linkage);
@@ -503,7 +506,7 @@ TestCallSummaryComputationLambdaResult()
   auto lambdaGArgument = lambdaNodeF->add_ctxvar(lambdaOutputG);
   auto lambdaOutputF = lambdaNodeF->finalize({ lambdaGArgument });
 
-  rvsdg.add_export(lambdaOutputF, { pointerType, "f" });
+  GraphExport::Create(*lambdaOutputF, "f");
 
   // Act
   auto callSummary = lambdaNodeG->ComputeCallSummary();

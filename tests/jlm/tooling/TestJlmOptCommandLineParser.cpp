@@ -7,6 +7,23 @@
 
 #include <jlm/tooling/CommandLine.hpp>
 
+#include <cstring>
+
+static const jlm::tooling::JlmOptCommandLineOptions &
+ParseCommandLineArguments(const std::vector<std::string> & commandLineArguments)
+{
+  std::vector<const char *> cStrings;
+  for (const auto & commandLineArgument : commandLineArguments)
+  {
+    cStrings.push_back(commandLineArgument.c_str());
+  }
+
+  static jlm::tooling::JlmOptCommandLineParser commandLineParser;
+  return commandLineParser.ParseCommandLineArguments(
+      static_cast<int>(cStrings.size()),
+      cStrings.data());
+}
+
 static void
 TestOptimizationCommandLineArgumentConversion()
 {
@@ -97,3 +114,45 @@ Test()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommandLineParser", Test)
+
+static int
+OutputFormatParsing()
+{
+  using namespace jlm::tooling;
+
+  auto testOutputFormatParsing =
+      [](const char * outputFormatString,
+         jlm::tooling::JlmOptCommandLineOptions::OutputFormat outputFormat)
+  {
+    // Arrange
+    std::vector<std::string> commandLineArguments(
+        { "jlm-opt", "--output-format", outputFormatString, "foo.c" });
+
+    // Act
+    auto & commandLineOptions = ParseCommandLineArguments(commandLineArguments);
+
+    // Assert
+    assert(commandLineOptions.GetOutputFormat() == outputFormat);
+  };
+
+  auto start = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::FirstEnumValue) + 1;
+  auto end = static_cast<std::size_t>(JlmOptCommandLineOptions::OutputFormat::LastEnumValue);
+
+  for (size_t n = start; n != end; n++)
+  {
+    auto outputFormat = static_cast<JlmOptCommandLineOptions::OutputFormat>(n);
+#ifndef ENABLE_MLIR
+    if (outputFormat == JlmOptCommandLineOptions::OutputFormat::Mlir)
+      continue;
+#endif
+
+    auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
+    testOutputFormatParsing(outputFormatString, outputFormat);
+  }
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/tooling/TestJlmOptCommandLineParser-OutputFormatParsing",
+    OutputFormatParsing)

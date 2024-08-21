@@ -95,7 +95,7 @@ private:
       : structural_node(jlm::rvsdg::theta_op(), parent, 1)
   {
     auto predicate = jlm::rvsdg::control_false(subregion());
-    result::create(subregion(), predicate, nullptr, ctltype(2));
+    result::create(subregion(), predicate, nullptr, ctltype::Create(2));
   }
 
 public:
@@ -265,13 +265,14 @@ class theta_input final : public structural_input
 public:
   virtual ~theta_input() noexcept;
 
-private:
-  inline theta_input(theta_node * node, jlm::rvsdg::output * origin, const jlm::rvsdg::port & port)
-      : structural_input(node, origin, port),
+  inline theta_input(
+      theta_node * node,
+      jlm::rvsdg::output * origin,
+      std::shared_ptr<const rvsdg::type> type)
+      : structural_input(node, origin, std::move(type)),
         output_(nullptr)
   {}
 
-public:
   theta_node *
   node() const noexcept
   {
@@ -299,12 +300,6 @@ private:
 };
 
 static inline bool
-is_theta_input(const jlm::rvsdg::input * input) noexcept
-{
-  return dynamic_cast<const jlm::rvsdg::theta_input *>(input) != nullptr;
-}
-
-static inline bool
 is_invariant(const jlm::rvsdg::theta_input * input) noexcept
 {
   return input->result()->origin() == input->argument();
@@ -320,13 +315,11 @@ class theta_output final : public structural_output
 public:
   virtual ~theta_output() noexcept;
 
-private:
-  inline theta_output(theta_node * node, const jlm::rvsdg::port & port)
-      : structural_output(node, port),
+  inline theta_output(theta_node * node, const std::shared_ptr<const rvsdg::type> type)
+      : structural_output(node, std::move(type)),
         input_(nullptr)
   {}
 
-public:
   theta_node *
   node() const noexcept
   {
@@ -356,11 +349,63 @@ private:
   jlm::rvsdg::theta_input * input_;
 };
 
-static inline bool
-is_theta_output(const jlm::rvsdg::theta_output * output) noexcept
+/**
+ * Represents a region argument in a theta subregion.
+ */
+class ThetaArgument final : public argument
 {
-  return dynamic_cast<const jlm::rvsdg::theta_output *>(output) != nullptr;
-}
+  friend theta_node;
+
+public:
+  ~ThetaArgument() noexcept override;
+
+  ThetaArgument &
+  Copy(rvsdg::region & region, structural_input * input) override;
+
+private:
+  ThetaArgument(rvsdg::region & region, theta_input & input)
+      : argument(&region, &input, input.Type())
+  {
+    JLM_ASSERT(is<theta_op>(region.node()));
+  }
+
+  static ThetaArgument &
+  Create(rvsdg::region & region, theta_input & input)
+  {
+    auto thetaArgument = new ThetaArgument(region, input);
+    region.append_argument(thetaArgument);
+    return *thetaArgument;
+  }
+};
+
+/**
+ * Represents a region result in a theta subregion.
+ */
+class ThetaResult final : public result
+{
+  friend theta_node;
+
+public:
+  ~ThetaResult() noexcept override;
+
+  ThetaResult &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
+private:
+  ThetaResult(rvsdg::output & origin, theta_output & thetaOutput)
+      : result(origin.region(), &origin, &thetaOutput, origin.Type())
+  {
+    JLM_ASSERT(is<theta_op>(origin.region()->node()));
+  }
+
+  static ThetaResult &
+  Create(rvsdg::output & origin, theta_output & thetaOutput)
+  {
+    auto thetaResult = new ThetaResult(origin, thetaOutput);
+    origin.region()->append_result(thetaResult);
+    return *thetaResult;
+  }
+};
 
 static inline bool
 is_invariant(const jlm::rvsdg::theta_output * output) noexcept

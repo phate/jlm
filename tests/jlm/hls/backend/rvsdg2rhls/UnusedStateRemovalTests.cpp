@@ -20,15 +20,15 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ctltype::Create(2), "p");
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
   auto gammaNode = jlm::rvsdg::gamma_node::create(p, 2);
 
@@ -51,11 +51,11 @@ TestGamma()
   auto gammaOutput5 =
       gammaNode->add_exitvar({ gammaInput6->argument(0), gammaInput7->argument(1) });
 
-  rvsdg.add_export(gammaOutput1, { valueType, "" });
-  rvsdg.add_export(gammaOutput2, { valueType, "" });
-  rvsdg.add_export(gammaOutput3, { valueType, "" });
-  rvsdg.add_export(gammaOutput4, { valueType, "" });
-  rvsdg.add_export(gammaOutput5, { valueType, "" });
+  GraphExport::Create(*gammaOutput1, "");
+  GraphExport::Create(*gammaOutput2, "");
+  GraphExport::Create(*gammaOutput3, "");
+  GraphExport::Create(*gammaOutput4, "");
+  GraphExport::Create(*gammaOutput5, "");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -77,17 +77,17 @@ TestTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType(
-      { &jlm::rvsdg::ctl2, &valueType, &valueType, &valueType },
-      { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create(
+      { jlm::rvsdg::ctltype::Create(2), valueType, valueType, valueType },
+      { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctl2, "p" });
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ctltype::Create(2), "p");
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
   auto thetaNode = jlm::rvsdg::theta_node::create(rvsdg.root());
 
@@ -103,10 +103,10 @@ TestTheta()
   auto result = jlm::tests::SimpleNode::Create(
                     *rvsdg.root(),
                     { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
-  rvsdg.add_export(result, { valueType, "f" });
+  GraphExport::Create(*result, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -126,15 +126,15 @@ TestLambda()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  FunctionType functionType(
-      { &valueType, &valueType },
-      { &valueType, &valueType, &valueType, &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = FunctionType::Create(
+      { valueType, valueType },
+      { valueType, valueType, valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ valueType, "x" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -144,15 +144,15 @@ TestLambda()
   auto argument3 = lambdaNode->add_ctxvar(x);
 
   auto result1 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { &valueType })
+      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { valueType })
           .output(0);
   auto result3 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { &valueType })
+      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { valueType })
           .output(0);
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  rvsdg.add_export(lambdaOutput, { PointerType(), "f" });
+  GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);

@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/pull.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -62,7 +63,7 @@ single_successor(const jlm::rvsdg::node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *node->output(n))
-      successors.insert(input_node(user));
+      successors.insert(rvsdg::input::GetNode(*user));
   }
 
   return successors.size() == 1;
@@ -157,7 +158,7 @@ pullin_bottom(jlm::rvsdg::gamma_node * gamma)
     auto output = gamma->output(n);
     for (const auto & user : *output)
     {
-      auto node = input_node(user);
+      auto node = rvsdg::input::GetNode(*user);
       if (node && node->depth() == gamma->depth() + 1)
         workset.insert(node);
     }
@@ -200,7 +201,7 @@ pullin_bottom(jlm::rvsdg::gamma_node * gamma)
       auto output = node->output(n);
       for (const auto & user : *output)
       {
-        auto tmp = input_node(user);
+        auto tmp = rvsdg::input::GetNode(*user);
         if (tmp && tmp->depth() == node->depth() + 1)
           workset.insert(tmp);
       }
@@ -222,7 +223,7 @@ is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::n
   {
     for (const auto & user : *(node->output(n)))
     {
-      JLM_ASSERT(is_gamma_input(user));
+      JLM_ASSERT(is<rvsdg::gamma_input>(*user));
       inputs.insert(static_cast<const jlm::rvsdg::gamma_input *>(user));
     }
   }

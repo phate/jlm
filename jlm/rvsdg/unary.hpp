@@ -59,8 +59,10 @@ class unary_op : public simple_op
 public:
   virtual ~unary_op() noexcept;
 
-  inline unary_op(const jlm::rvsdg::port & operand, const jlm::rvsdg::port & result)
-      : simple_op({ operand }, { result })
+  inline unary_op(
+      std::shared_ptr<const jlm::rvsdg::type> operand,
+      std::shared_ptr<const jlm::rvsdg::type> result)
+      : simple_op({ std::move(operand) }, { std::move(result) })
   {}
 
   virtual unop_reduction_path_t

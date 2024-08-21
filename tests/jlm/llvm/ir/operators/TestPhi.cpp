@@ -19,15 +19,15 @@ TestPhiCreation()
 
   jlm::rvsdg::graph graph;
 
-  jlm::tests::valuetype vtype;
-  iostatetype iOStateType;
-  MemoryStateType memoryStateType;
-  FunctionType f0type(
-      { &vtype, &iOStateType, &memoryStateType },
-      { &iOStateType, &memoryStateType });
-  FunctionType f1type(
-      { &vtype, &iOStateType, &memoryStateType },
-      { &vtype, &iOStateType, &memoryStateType });
+  auto vtype = jlm::tests::valuetype::Create();
+  auto iOStateType = iostatetype::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto f0type = FunctionType::Create(
+      { vtype, iostatetype::Create(), MemoryStateType::Create() },
+      { iostatetype::Create(), MemoryStateType::Create() });
+  auto f1type = FunctionType::Create(
+      { vtype, iostatetype::Create(), MemoryStateType::Create() },
+      { vtype, iostatetype::Create(), MemoryStateType::Create() });
 
   auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
   {
@@ -54,9 +54,9 @@ TestPhiCreation()
 
   phi::builder pb;
   pb.begin(graph.root());
-  auto rv1 = pb.add_recvar(PointerType());
-  auto rv2 = pb.add_recvar(PointerType());
-  auto rv3 = pb.add_recvar(PointerType());
+  auto rv1 = pb.add_recvar(PointerType::Create());
+  auto rv2 = pb.add_recvar(PointerType::Create());
+  auto rv3 = pb.add_recvar(PointerType::Create());
 
   auto lambdaOutput0 = SetupEmptyLambda(pb.subregion(), "f0");
   auto lambdaOutput1 = SetupEmptyLambda(pb.subregion(), "f1");
@@ -67,7 +67,7 @@ TestPhiCreation()
   rv3->set_rvorigin(lambdaOutput2);
 
   auto phi = pb.end();
-  graph.add_export(phi->output(0), { phi->output(0)->type(), "dummy" });
+  GraphExport::Create(*phi->output(0), "dummy");
 
   graph.normalize();
   graph.prune();
@@ -82,10 +82,10 @@ TestRemovePhiArgumentsWhere()
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
@@ -99,7 +99,7 @@ TestRemovePhiArgumentsWhere()
   auto result = jlm::tests::SimpleNode::Create(
                     *phiBuilder.subregion(),
                     { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);
@@ -165,10 +165,10 @@ TestPrunePhiArguments()
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
   phiBuilder.begin(rvsdgModule.Rvsdg().root());
@@ -182,7 +182,7 @@ TestPrunePhiArguments()
   auto result = jlm::tests::SimpleNode::Create(
                     *phiBuilder.subregion(),
                     { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);
@@ -211,7 +211,7 @@ TestRemovePhiOutputsWhere()
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
@@ -224,7 +224,7 @@ TestRemovePhiOutputsWhere()
   auto result = jlm::tests::SimpleNode::Create(
                     *phiBuilder.subregion(),
                     { phiOutput0->argument(), phiOutput2->argument() },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);
@@ -260,7 +260,7 @@ TestPrunePhiOutputs()
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
-  jlm::tests::valuetype valueType;
+  auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
@@ -273,7 +273,7 @@ TestPrunePhiOutputs()
   auto result = jlm::tests::SimpleNode::Create(
                     *phiBuilder.subregion(),
                     { phiOutput0->argument(), phiOutput2->argument() },
-                    { &valueType })
+                    { valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);

@@ -63,7 +63,7 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     }
 
     auto phi_tac = static_cast<const tacvariable *>(ctx.lookup_value(phi))->tac();
-    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->type()), operands);
+    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
   }
 }
 
@@ -170,6 +170,7 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::AllocSize, attribute::kind::AllocSize },
         { ak::Dereferenceable, attribute::kind::Dereferenceable },
         { ak::DereferenceableOrNull, attribute::kind::DereferenceableOrNull },
+        { ak::NoFPClass, attribute::kind::NoFPClass },
         { ak::StackAlignment, attribute::kind::StackAlignment },
         { ak::UWTable, attribute::kind::UWTable },
         { ak::VScaleRange, attribute::kind::VScaleRange },
@@ -180,75 +181,78 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
   return map[kind];
 }
 
-static std::unique_ptr<llvm::attribute>
-convert_attribute(const ::llvm::Attribute & attribute, context & ctx)
+static enum_attribute
+ConvertEnumAttribute(const ::llvm::Attribute & attribute)
 {
-  auto convert_type_attribute = [](const ::llvm::Attribute & attribute, context & ctx)
+  JLM_ASSERT(attribute.isEnumAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return enum_attribute(kind);
+}
+
+static int_attribute
+ConvertIntAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isIntAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return { kind, attribute.getValueAsInt() };
+}
+
+static type_attribute
+ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
+{
+  JLM_ASSERT(attribute.isTypeAttribute());
+
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
   {
-    JLM_ASSERT(attribute.isTypeAttribute());
+    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    return { attribute::kind::ByVal, std::move(type) };
+  }
 
-    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
-    {
-      auto type = ConvertType(attribute.getValueAsType(), ctx);
-      return type_attribute::create_byval(std::move(type));
-    }
-
-    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
-    {
-      auto type = ConvertType(attribute.getValueAsType(), ctx);
-      return type_attribute::CreateStructRetAttribute(std::move(type));
-    }
-
-    JLM_UNREACHABLE("Unhandled attribute");
-  };
-
-  auto convert_string_attribute = [](const ::llvm::Attribute & attribute)
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
   {
-    JLM_ASSERT(attribute.isStringAttribute());
-    return string_attribute::create(
-        attribute.getKindAsString().str(),
-        attribute.getValueAsString().str());
-  };
-
-  auto convert_enum_attribute = [](const ::llvm::Attribute & attribute)
-  {
-    JLM_ASSERT(attribute.isEnumAttribute());
-
-    auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-    return enum_attribute::create(kind);
-  };
-
-  auto convert_int_attribute = [](const ::llvm::Attribute & attribute)
-  {
-    JLM_ASSERT(attribute.isIntAttribute());
-
-    auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-    return int_attribute::create(kind, attribute.getValueAsInt());
-  };
-
-  if (attribute.isTypeAttribute())
-    return convert_type_attribute(attribute, ctx);
-
-  if (attribute.isStringAttribute())
-    return convert_string_attribute(attribute);
-
-  if (attribute.isEnumAttribute())
-    return convert_enum_attribute(attribute);
-
-  if (attribute.isIntAttribute())
-    return convert_int_attribute(attribute);
+    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    return { attribute::kind::StructRet, std::move(type) };
+  }
 
   JLM_UNREACHABLE("Unhandled attribute");
+}
+
+static string_attribute
+ConvertStringAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isStringAttribute());
+  return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
 static attributeset
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributes;
+  attributeset attributeSet;
   for (auto & attribute : as)
-    attributes.insert(convert_attribute(attribute, ctx));
+  {
+    if (attribute.isEnumAttribute())
+    {
+      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute));
+    }
+    else if (attribute.isIntAttribute())
+    {
+      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute));
+    }
+    else if (attribute.isTypeAttribute())
+    {
+      attributeSet.InsertTypeAttribute(ConvertTypeAttribute(attribute, ctx));
+    }
+    else if (attribute.isStringAttribute())
+    {
+      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled attribute");
+    }
+  }
 
-  return attributes;
+  return attributeSet;
 }
 
 static std::unique_ptr<llvm::argument>
@@ -260,7 +264,7 @@ convert_argument(const ::llvm::Argument & argument, context & ctx)
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
-  return llvm::argument::create(name, *type, attributes);
+  return llvm::argument::create(name, type, attributes);
 }
 
 static void
@@ -346,15 +350,15 @@ create_cfg(::llvm::Function & f, context & ctx)
     if (f.isVarArg())
     {
       JLM_ASSERT(n < node->fcttype().NumArguments());
-      auto & type = node->fcttype().ArgumentType(n++);
+      auto & type = node->fcttype().Arguments()[n++];
       cfg.entry()->append_argument(argument::create("_varg_", type));
     }
     JLM_ASSERT(n < node->fcttype().NumArguments());
 
-    auto & iotype = node->fcttype().ArgumentType(n++);
+    auto & iotype = node->fcttype().Arguments()[n++];
     auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
 
-    auto & memtype = node->fcttype().ArgumentType(n++);
+    auto & memtype = node->fcttype().Arguments()[n++];
     auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
 
     JLM_ASSERT(n == node->fcttype().NumArguments());
@@ -377,7 +381,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   if (!f.getReturnType()->isVoidTy())
   {
     auto type = ConvertType(f.getReturnType(), ctx);
-    entry_block->append_last(UndefValueOperation::Create(*type, "_r_"));
+    entry_block->append_last(UndefValueOperation::Create(type, "_r_"));
     result = entry_block->last()->result(0);
 
     JLM_ASSERT(node->fcttype().NumResults() == 3);
@@ -448,7 +452,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     return data_node::Create(
         ctx.module().ipgraph(),
         name,
-        *type,
+        type,
         linkage,
         std::move(section),
         constant);
@@ -461,10 +465,10 @@ declare_globals(::llvm::Module & lm, context & ctx)
     auto type = ConvertFunctionType(f.getFunctionType(), ctx);
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
 
-    return function_node::create(ctx.module().ipgraph(), name, *type, linkage, attributes);
+    return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
   };
 
-  for (auto & gv : lm.getGlobalList())
+  for (auto & gv : lm.globals())
   {
     auto node = create_data_node(gv, ctx);
     ctx.insert_value(&gv, ctx.module().create_global_value(node));
@@ -504,7 +508,7 @@ convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 static void
 convert_globals(::llvm::Module & lm, context & ctx)
 {
-  for (auto & gv : lm.getGlobalList())
+  for (auto & gv : lm.globals())
     convert_global_value(gv, ctx);
 
   for (auto & f : lm.getFunctionList())

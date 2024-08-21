@@ -7,6 +7,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/llvm/opt/pull.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -62,10 +64,10 @@ is_applicable(const jlm::rvsdg::theta_node * theta)
     if (user == theta->predicate())
       continue;
 
-    if (!jlm::rvsdg::is<jlm::rvsdg::gamma_op>(input_node(user)))
+    if (!rvsdg::is<rvsdg::gamma_op>(rvsdg::input::GetNode(*user)))
       return nullptr;
 
-    gnode = dynamic_cast<jlm::rvsdg::gamma_node *>(input_node(user));
+    gnode = dynamic_cast<rvsdg::gamma_node *>(rvsdg::input::GetNode(*user));
   }
 
   return gnode;

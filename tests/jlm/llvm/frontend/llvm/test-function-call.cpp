@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
@@ -113,7 +114,7 @@ test_malloc_call()
     }
 
     auto bb = dynamic_cast<const basic_block *>(cfg->entry()->outedge(0)->sink());
-    assert(is<MemStateMergeOperator>(*std::next(bb->rbegin())));
+    assert(is<MemoryStateMergeOperation>(*std::next(bb->rbegin())));
     assert(is<malloc_op>((*std::next(bb->rbegin(), 2))));
   };
 

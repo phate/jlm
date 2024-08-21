@@ -21,6 +21,7 @@ JsonHLS::get_text(llvm::RvsdgModule & rm)
   auto reg_args = get_reg_args(ln);
   auto reg_results = get_reg_results(ln);
 
+  json << "\"addr_width\": " << GetPointerSizeInBits() << ",\n";
   json << "\"arguments\": [";
   for (size_t i = 0; i < reg_args.size(); ++i)
   {
@@ -53,7 +54,7 @@ JsonHLS::get_text(llvm::RvsdgModule & rm)
     }
     auto req_bt = dynamic_cast<const bundletype *>(&mem_reqs[i]->type());
     auto resp_bt = dynamic_cast<const bundletype *>(&mem_resps[i]->type());
-    auto size = JlmSize(resp_bt->get_element_type("data"));
+    auto size = JlmSize(&*resp_bt->get_element_type("data"));
     auto has_write = req_bt->get_element_type("write") != nullptr;
     json << "{ \"size\": " << size << ", \"has_write\": " << has_write << "}";
   }

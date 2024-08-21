@@ -7,6 +7,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -225,34 +227,33 @@ public:
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
-    if (is_gamma_argument(Output_))
+    if (is<rvsdg::GammaArgument>(Output_))
     {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is_theta_argument(Output_))
+    if (is<rvsdg::ThetaArgument>(Output_))
     {
       auto dbgstr = Output_->region()->node()->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is_theta_output(Output_))
+    if (is<rvsdg::theta_output>(Output_))
     {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is_gamma_output(Output_))
+    if (is<rvsdg::gamma_output>(Output_))
     {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is_import(Output_))
+    if (auto graphImport = dynamic_cast<const GraphImport *>(Output_))
     {
-      auto import = jlm::util::AssertedCast<const jlm::rvsdg::impport>(&Output_->port());
-      return jlm::util::strfmt("imp:", import->name());
+      return jlm::util::strfmt("imp:", graphImport->Name());
     }
 
     if (is<phi::rvargument>(Output_))
@@ -465,16 +466,15 @@ class ImportLocation final : public MemoryLocation
 {
   ~ImportLocation() override = default;
 
-  ImportLocation(const rvsdg::argument & argument, PointsToFlags pointsToFlags)
+  ImportLocation(const GraphImport & graphImport, PointsToFlags pointsToFlags)
       : MemoryLocation(),
-        Argument_(argument)
+        Argument_(graphImport)
   {
-    JLM_ASSERT(dynamic_cast<const llvm::impport *>(&argument.port()));
     SetPointsToFlags(pointsToFlags);
   }
 
 public:
-  [[nodiscard]] const rvsdg::argument &
+  [[nodiscard]] const GraphImport &
   GetArgument() const noexcept
   {
     return Argument_;
@@ -487,24 +487,23 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const rvsdg::argument & argument)
+  Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(argument.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
-    auto & rvsdgImport = *util::AssertedCast<const impport>(&argument.port());
-    bool isOrContainsPointerType = IsOrContains<PointerType>(rvsdgImport.GetValueType());
+    bool isOrContainsPointerType = IsOrContains<PointerType>(*graphImport.ValueType());
 
     return std::unique_ptr<Location>(new ImportLocation(
-        argument,
+        graphImport,
         isOrContainsPointerType
             ? PointsToFlags::PointsToExternalMemory | PointsToFlags::PointsToEscapedMemory
             : PointsToFlags::PointsToNone));
   }
 
 private:
-  const rvsdg::argument & Argument_;
+  const GraphImport & Argument_;
 };
 
 /**
@@ -604,9 +603,9 @@ public:
   }
 
   Location &
-  InsertImportLocation(const jlm::rvsdg::argument & argument)
+  InsertImportLocation(const GraphImport & graphImport)
   {
-    Locations_.push_back(ImportLocation::Create(argument));
+    Locations_.push_back(ImportLocation::Create(graphImport));
     auto location = Locations_.back().get();
     DisjointLocationSet_.insert(location);
 
@@ -998,11 +997,11 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeMalloc(node);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
+  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
   {
     AnalyzeLoad(*loadNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
+  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
   {
     AnalyzeStore(*storeNode);
   }
@@ -1034,7 +1033,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
   {
     AnalyzeUndef(node);
   }
-  else if (is<MemCpyNonVolatileOperation>(&node))
+  else if (is<MemCpyOperation>(&node))
   {
     AnalyzeMemcpy(node);
   }
@@ -1090,7 +1089,7 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
+Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 {
   auto & result = loadNode.GetLoadedValueOutput();
   auto & address = *loadNode.GetAddressInput().origin();
@@ -1114,7 +1113,7 @@ Steensgaard::AnalyzeLoad(const LoadNonVolatileNode & loadNode)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNonVolatileNode & storeNode)
+Steensgaard::AnalyzeStore(const StoreNode & storeNode)
 {
   auto & address = *storeNode.GetAddressInput().origin();
   auto & value = *storeNode.GetStoredValueInput().origin();
@@ -1160,7 +1159,7 @@ void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
   auto & lambdaFunctionType = lambdaNode.operation().type();
-  auto & callFunctionType = callNode.GetOperation().GetFunctionType();
+  auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to
@@ -1411,7 +1410,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 void
 Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 {
-  JLM_ASSERT(is<MemCpyNonVolatileOperation>(&node));
+  JLM_ASSERT(is<MemCpyOperation>(&node));
 
   auto & dstAddress = Context_->GetLocation(*node.input(0)->origin());
   auto & srcAddress = Context_->GetLocation(*node.input(1)->origin());
@@ -1758,12 +1757,12 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
   auto rootRegion = graph.root();
   for (size_t n = 0; n < rootRegion->narguments(); n++)
   {
-    auto & argument = *rootRegion->argument(n);
+    auto & graphImport = *util::AssertedCast<const GraphImport>(rootRegion->argument(n));
 
-    if (HasOrContainsPointerType(argument))
+    if (HasOrContainsPointerType(graphImport))
     {
-      auto & importLocation = Context_->InsertImportLocation(argument);
-      auto & registerLocation = Context_->GetOrInsertRegisterLocation(argument);
+      auto & importLocation = Context_->InsertImportLocation(graphImport);
+      auto & registerLocation = Context_->GetOrInsertRegisterLocation(graphImport);
       registerLocation.SetPointsTo(importLocation);
     }
   }

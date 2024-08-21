@@ -23,12 +23,7 @@ class variable
 public:
   virtual ~variable() noexcept;
 
-  inline variable(const jlm::rvsdg::type & type, const std::string & name)
-      : name_(name),
-        type_(type.copy())
-  {}
-
-  variable(std::unique_ptr<jlm::rvsdg::type> type, const std::string & name)
+  variable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
       : name_(name),
         type_(std::move(type))
   {}
@@ -65,9 +60,15 @@ public:
     return *type_;
   }
 
+  inline const std::shared_ptr<const jlm::rvsdg::type>
+  Type() const noexcept
+  {
+    return type_;
+  }
+
 private:
   std::string name_;
-  std::unique_ptr<jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::type> type_;
 };
 
 template<class T>
@@ -88,8 +89,8 @@ class gblvariable : public variable
 public:
   virtual ~gblvariable();
 
-  inline gblvariable(const jlm::rvsdg::type & type, const std::string & name)
-      : variable(type, name)
+  inline gblvariable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+      : variable(std::move(type), name)
   {}
 };
 

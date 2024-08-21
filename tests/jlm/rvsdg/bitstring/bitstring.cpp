@@ -5,6 +5,7 @@
  */
 
 #include "test-registry.hpp"
+#include <test-operation.hpp>
 
 #include <assert.h>
 #include <stdio.h>
@@ -20,8 +21,8 @@ types_bitstring_arithmetic_test_bitand(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 3);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
@@ -29,8 +30,8 @@ types_bitstring_arithmetic_test_bitand(void)
   auto and0 = bitand_op::create(32, s0, s1);
   auto and1 = bitand_op::create(32, c0, c1);
 
-  graph.add_export(and0, { and0->type(), "dummy" });
-  graph.add_export(and1, { and1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*and0, "dummy");
+  jlm::tests::GraphExport::Create(*and1, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -48,8 +49,8 @@ types_bitstring_arithmetic_test_bitashr(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 16);
   auto c1 = create_bitconstant(graph.root(), 32, -16);
@@ -62,11 +63,11 @@ types_bitstring_arithmetic_test_bitashr(void)
   auto ashr3 = bitashr_op::create(32, c1, c2);
   auto ashr4 = bitashr_op::create(32, c1, c3);
 
-  graph.add_export(ashr0, { ashr0->type(), "dummy" });
-  graph.add_export(ashr1, { ashr1->type(), "dummy" });
-  graph.add_export(ashr2, { ashr2->type(), "dummy" });
-  graph.add_export(ashr3, { ashr3->type(), "dummy" });
-  graph.add_export(ashr4, { ashr4->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*ashr0, "dummy");
+  jlm::tests::GraphExport::Create(*ashr1, "dummy");
+  jlm::tests::GraphExport::Create(*ashr2, "dummy");
+  jlm::tests::GraphExport::Create(*ashr3, "dummy");
+  jlm::tests::GraphExport::Create(*ashr4, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -87,12 +88,12 @@ types_bitstring_arithmetic_test_bitdifference(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto diff = bitsub_op::create(32, s0, s1);
 
-  graph.add_export(diff, { diff->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*diff, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -110,16 +111,16 @@ types_bitstring_arithmetic_test_bitnegate(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto c0 = create_bitconstant(graph.root(), 32, 3);
 
   auto neg0 = bitneg_op::create(32, s0);
   auto neg1 = bitneg_op::create(32, c0);
   auto neg2 = bitneg_op::create(32, neg1);
 
-  graph.add_export(neg0, { neg0->type(), "dummy" });
-  graph.add_export(neg1, { neg1->type(), "dummy" });
-  graph.add_export(neg2, { neg2->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*neg0, "dummy");
+  jlm::tests::GraphExport::Create(*neg1, "dummy");
+  jlm::tests::GraphExport::Create(*neg2, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -138,16 +139,16 @@ types_bitstring_arithmetic_test_bitnot(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto c0 = create_bitconstant(graph.root(), 32, 3);
 
   auto not0 = bitnot_op::create(32, s0);
   auto not1 = bitnot_op::create(32, c0);
   auto not2 = bitnot_op::create(32, not1);
 
-  graph.add_export(not0, { not0->type(), "dummy" });
-  graph.add_export(not1, { not1->type(), "dummy" });
-  graph.add_export(not2, { not2->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*not0, "dummy");
+  jlm::tests::GraphExport::Create(*not1, "dummy");
+  jlm::tests::GraphExport::Create(*not2, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -166,8 +167,8 @@ types_bitstring_arithmetic_test_bitor(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 3);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
@@ -175,8 +176,8 @@ types_bitstring_arithmetic_test_bitor(void)
   auto or0 = bitor_op::create(32, s0, s1);
   auto or1 = bitor_op::create(32, c0, c1);
 
-  graph.add_export(or0, { or0->type(), "dummy" });
-  graph.add_export(or1, { or1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*or0, "dummy");
+  jlm::tests::GraphExport::Create(*or1, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -194,8 +195,8 @@ types_bitstring_arithmetic_test_bitproduct(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 3);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
@@ -203,8 +204,8 @@ types_bitstring_arithmetic_test_bitproduct(void)
   auto product0 = bitmul_op::create(32, s0, s1);
   auto product1 = bitmul_op::create(32, c0, c1);
 
-  graph.add_export(product0, { product0->type(), "dummy" });
-  graph.add_export(product1, { product1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*product0, "dummy");
+  jlm::tests::GraphExport::Create(*product1, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -223,12 +224,12 @@ types_bitstring_arithmetic_test_bitshiproduct(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto shiproduct = bitsmulh_op::create(32, s0, s1);
 
-  graph.add_export(shiproduct, { shiproduct->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*shiproduct, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -246,8 +247,8 @@ types_bitstring_arithmetic_test_bitshl(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 16);
   auto c1 = create_bitconstant(graph.root(), 32, 2);
@@ -257,9 +258,9 @@ types_bitstring_arithmetic_test_bitshl(void)
   auto shl1 = bitshl_op::create(32, c0, c1);
   auto shl2 = bitshl_op::create(32, c0, c2);
 
-  graph.add_export(shl0, { shl0->type(), "dummy" });
-  graph.add_export(shl1, { shl1->type(), "dummy" });
-  graph.add_export(shl2, { shl2->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*shl0, "dummy");
+  jlm::tests::GraphExport::Create(*shl1, "dummy");
+  jlm::tests::GraphExport::Create(*shl2, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -278,8 +279,8 @@ types_bitstring_arithmetic_test_bitshr(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 16);
   auto c1 = create_bitconstant(graph.root(), 32, 2);
@@ -289,9 +290,9 @@ types_bitstring_arithmetic_test_bitshr(void)
   auto shr1 = bitshr_op::create(32, c0, c1);
   auto shr2 = bitshr_op::create(32, c0, c2);
 
-  graph.add_export(shr0, { shr0->type(), "dummy" });
-  graph.add_export(shr1, { shr1->type(), "dummy" });
-  graph.add_export(shr2, { shr2->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*shr0, "dummy");
+  jlm::tests::GraphExport::Create(*shr1, "dummy");
+  jlm::tests::GraphExport::Create(*shr2, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -310,8 +311,8 @@ types_bitstring_arithmetic_test_bitsmod(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, -7);
   auto c1 = create_bitconstant(graph.root(), 32, 3);
@@ -319,8 +320,8 @@ types_bitstring_arithmetic_test_bitsmod(void)
   auto smod0 = bitsmod_op::create(32, s0, s1);
   auto smod1 = bitsmod_op::create(32, c0, c1);
 
-  graph.add_export(smod0, { smod0->type(), "dummy" });
-  graph.add_export(smod1, { smod1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*smod0, "dummy");
+  jlm::tests::GraphExport::Create(*smod1, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -339,8 +340,8 @@ types_bitstring_arithmetic_test_bitsquotient(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 7);
   auto c1 = create_bitconstant(graph.root(), 32, -3);
@@ -348,8 +349,8 @@ types_bitstring_arithmetic_test_bitsquotient(void)
   auto squot0 = bitsdiv_op::create(32, s0, s1);
   auto squot1 = bitsdiv_op::create(32, c0, c1);
 
-  graph.add_export(squot0, { squot0->type(), "dummy" });
-  graph.add_export(squot1, { squot1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*squot0, "dummy");
+  jlm::tests::GraphExport::Create(*squot1, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -368,8 +369,8 @@ types_bitstring_arithmetic_test_bitsum(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 3);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
@@ -377,8 +378,8 @@ types_bitstring_arithmetic_test_bitsum(void)
   auto sum0 = bitadd_op::create(32, s0, s1);
   auto sum1 = bitadd_op::create(32, c0, c1);
 
-  graph.add_export(sum0, { sum0->type(), "dummy" });
-  graph.add_export(sum1, { sum1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*sum0, "dummy");
+  jlm::tests::GraphExport::Create(*sum1, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -397,12 +398,12 @@ types_bitstring_arithmetic_test_bituhiproduct(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto uhiproduct = bitumulh_op::create(32, s0, s1);
 
-  graph.add_export(uhiproduct, { uhiproduct->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*uhiproduct, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -420,8 +421,8 @@ types_bitstring_arithmetic_test_bitumod(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 7);
   auto c1 = create_bitconstant(graph.root(), 32, 3);
@@ -429,8 +430,8 @@ types_bitstring_arithmetic_test_bitumod(void)
   auto umod0 = bitumod_op::create(32, s0, s1);
   auto umod1 = bitumod_op::create(32, c0, c1);
 
-  graph.add_export(umod0, { umod0->type(), "dummy" });
-  graph.add_export(umod1, { umod1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*umod0, "dummy");
+  jlm::tests::GraphExport::Create(*umod1, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -449,8 +450,8 @@ types_bitstring_arithmetic_test_bituquotient(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 7);
   auto c1 = create_bitconstant(graph.root(), 32, 3);
@@ -458,8 +459,8 @@ types_bitstring_arithmetic_test_bituquotient(void)
   auto uquot0 = bitudiv_op::create(32, s0, s1);
   auto uquot1 = bitudiv_op::create(32, c0, c1);
 
-  graph.add_export(uquot0, { uquot0->type(), "dummy" });
-  graph.add_export(uquot1, { uquot1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*uquot0, "dummy");
+  jlm::tests::GraphExport::Create(*uquot1, "dummy");
 
   graph.normalize();
   graph.prune();
@@ -478,8 +479,8 @@ types_bitstring_arithmetic_test_bitxor(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
   auto c0 = create_bitconstant(graph.root(), 32, 3);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
@@ -487,8 +488,8 @@ types_bitstring_arithmetic_test_bitxor(void)
   auto xor0 = bitxor_op::create(32, s0, s1);
   auto xor1 = bitxor_op::create(32, c0, c1);
 
-  graph.add_export(xor0, { xor0->type(), "dummy" });
-  graph.add_export(xor1, { xor1->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*xor0, "dummy");
+  jlm::tests::GraphExport::Create(*xor1, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -522,8 +523,8 @@ types_bitstring_comparison_test_bitequal(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant_undefined(graph.root(), 32);
@@ -533,10 +534,10 @@ types_bitstring_comparison_test_bitequal(void)
   auto equal2 = biteq_op::create(32, c0, c1);
   auto equal3 = biteq_op::create(32, c0, c2);
 
-  graph.add_export(equal0, { equal0->type(), "dummy" });
-  graph.add_export(equal1, { equal1->type(), "dummy" });
-  graph.add_export(equal2, { equal2->type(), "dummy" });
-  graph.add_export(equal3, { equal3->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*equal0, "dummy");
+  jlm::tests::GraphExport::Create(*equal1, "dummy");
+  jlm::tests::GraphExport::Create(*equal2, "dummy");
+  jlm::tests::GraphExport::Create(*equal3, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -556,8 +557,8 @@ types_bitstring_comparison_test_bitnotequal(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant_undefined(graph.root(), 32);
@@ -567,10 +568,10 @@ types_bitstring_comparison_test_bitnotequal(void)
   auto nequal2 = bitne_op::create(32, c0, c1);
   auto nequal3 = bitne_op::create(32, c0, c2);
 
-  graph.add_export(nequal0, { nequal0->type(), "dummy" });
-  graph.add_export(nequal1, { nequal1->type(), "dummy" });
-  graph.add_export(nequal2, { nequal2->type(), "dummy" });
-  graph.add_export(nequal3, { nequal3->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*nequal0, "dummy");
+  jlm::tests::GraphExport::Create(*nequal1, "dummy");
+  jlm::tests::GraphExport::Create(*nequal2, "dummy");
+  jlm::tests::GraphExport::Create(*nequal3, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -590,8 +591,8 @@ types_bitstring_comparison_test_bitsgreater(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, 0x7fffffffL);
@@ -603,11 +604,11 @@ types_bitstring_comparison_test_bitsgreater(void)
   auto sgreater3 = bitsgt_op::create(32, s0, c2);
   auto sgreater4 = bitsgt_op::create(32, c3, s1);
 
-  graph.add_export(sgreater0, { sgreater0->type(), "dummy" });
-  graph.add_export(sgreater1, { sgreater1->type(), "dummy" });
-  graph.add_export(sgreater2, { sgreater2->type(), "dummy" });
-  graph.add_export(sgreater3, { sgreater3->type(), "dummy" });
-  graph.add_export(sgreater4, { sgreater4->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*sgreater0, "dummy");
+  jlm::tests::GraphExport::Create(*sgreater1, "dummy");
+  jlm::tests::GraphExport::Create(*sgreater2, "dummy");
+  jlm::tests::GraphExport::Create(*sgreater3, "dummy");
+  jlm::tests::GraphExport::Create(*sgreater4, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -628,8 +629,8 @@ types_bitstring_comparison_test_bitsgreatereq(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, 0x7fffffffL);
@@ -642,12 +643,12 @@ types_bitstring_comparison_test_bitsgreatereq(void)
   auto sgreatereq4 = bitsge_op::create(32, c2, s0);
   auto sgreatereq5 = bitsge_op::create(32, s1, c3);
 
-  graph.add_export(sgreatereq0, { sgreatereq0->type(), "dummy" });
-  graph.add_export(sgreatereq1, { sgreatereq1->type(), "dummy" });
-  graph.add_export(sgreatereq2, { sgreatereq2->type(), "dummy" });
-  graph.add_export(sgreatereq3, { sgreatereq3->type(), "dummy" });
-  graph.add_export(sgreatereq4, { sgreatereq4->type(), "dummy" });
-  graph.add_export(sgreatereq5, { sgreatereq5->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*sgreatereq0, "dummy");
+  jlm::tests::GraphExport::Create(*sgreatereq1, "dummy");
+  jlm::tests::GraphExport::Create(*sgreatereq2, "dummy");
+  jlm::tests::GraphExport::Create(*sgreatereq3, "dummy");
+  jlm::tests::GraphExport::Create(*sgreatereq4, "dummy");
+  jlm::tests::GraphExport::Create(*sgreatereq5, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -669,8 +670,8 @@ types_bitstring_comparison_test_bitsless(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, 0x7fffffffL);
@@ -682,11 +683,11 @@ types_bitstring_comparison_test_bitsless(void)
   auto sless3 = bitslt_op::create(32, c2, s0);
   auto sless4 = bitslt_op::create(32, s1, c3);
 
-  graph.add_export(sless0, { sless0->type(), "dummy" });
-  graph.add_export(sless1, { sless1->type(), "dummy" });
-  graph.add_export(sless2, { sless2->type(), "dummy" });
-  graph.add_export(sless3, { sless3->type(), "dummy" });
-  graph.add_export(sless4, { sless4->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*sless0, "dummy");
+  jlm::tests::GraphExport::Create(*sless1, "dummy");
+  jlm::tests::GraphExport::Create(*sless2, "dummy");
+  jlm::tests::GraphExport::Create(*sless3, "dummy");
+  jlm::tests::GraphExport::Create(*sless4, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -707,8 +708,8 @@ types_bitstring_comparison_test_bitslesseq(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, 0x7fffffffL);
@@ -721,12 +722,12 @@ types_bitstring_comparison_test_bitslesseq(void)
   auto slesseq4 = bitsle_op::create(32, s0, c2);
   auto slesseq5 = bitsle_op::create(32, c3, s1);
 
-  graph.add_export(slesseq0, { slesseq0->type(), "dummy" });
-  graph.add_export(slesseq1, { slesseq1->type(), "dummy" });
-  graph.add_export(slesseq2, { slesseq2->type(), "dummy" });
-  graph.add_export(slesseq3, { slesseq3->type(), "dummy" });
-  graph.add_export(slesseq4, { slesseq4->type(), "dummy" });
-  graph.add_export(slesseq5, { slesseq5->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*slesseq0, "dummy");
+  jlm::tests::GraphExport::Create(*slesseq1, "dummy");
+  jlm::tests::GraphExport::Create(*slesseq2, "dummy");
+  jlm::tests::GraphExport::Create(*slesseq3, "dummy");
+  jlm::tests::GraphExport::Create(*slesseq4, "dummy");
+  jlm::tests::GraphExport::Create(*slesseq5, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -748,8 +749,8 @@ types_bitstring_comparison_test_bitugreater(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, (0xffffffffUL));
@@ -761,11 +762,11 @@ types_bitstring_comparison_test_bitugreater(void)
   auto ugreater3 = bitugt_op::create(32, s0, c2);
   auto ugreater4 = bitugt_op::create(32, c3, s1);
 
-  graph.add_export(ugreater0, { ugreater0->type(), "dummy" });
-  graph.add_export(ugreater1, { ugreater1->type(), "dummy" });
-  graph.add_export(ugreater2, { ugreater2->type(), "dummy" });
-  graph.add_export(ugreater3, { ugreater3->type(), "dummy" });
-  graph.add_export(ugreater4, { ugreater4->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*ugreater0, "dummy");
+  jlm::tests::GraphExport::Create(*ugreater1, "dummy");
+  jlm::tests::GraphExport::Create(*ugreater2, "dummy");
+  jlm::tests::GraphExport::Create(*ugreater3, "dummy");
+  jlm::tests::GraphExport::Create(*ugreater4, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -786,8 +787,8 @@ types_bitstring_comparison_test_bitugreatereq(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, (0xffffffffUL));
@@ -800,12 +801,12 @@ types_bitstring_comparison_test_bitugreatereq(void)
   auto ugreatereq4 = bituge_op::create(32, c2, s0);
   auto ugreatereq5 = bituge_op::create(32, s1, c3);
 
-  graph.add_export(ugreatereq0, { ugreatereq0->type(), "dummy" });
-  graph.add_export(ugreatereq1, { ugreatereq1->type(), "dummy" });
-  graph.add_export(ugreatereq2, { ugreatereq2->type(), "dummy" });
-  graph.add_export(ugreatereq3, { ugreatereq3->type(), "dummy" });
-  graph.add_export(ugreatereq4, { ugreatereq4->type(), "dummy" });
-  graph.add_export(ugreatereq5, { ugreatereq5->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*ugreatereq0, "dummy");
+  jlm::tests::GraphExport::Create(*ugreatereq1, "dummy");
+  jlm::tests::GraphExport::Create(*ugreatereq2, "dummy");
+  jlm::tests::GraphExport::Create(*ugreatereq3, "dummy");
+  jlm::tests::GraphExport::Create(*ugreatereq4, "dummy");
+  jlm::tests::GraphExport::Create(*ugreatereq5, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -827,8 +828,8 @@ types_bitstring_comparison_test_bituless(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, (0xffffffffUL));
@@ -840,11 +841,11 @@ types_bitstring_comparison_test_bituless(void)
   auto uless3 = bitult_op::create(32, c2, s0);
   auto uless4 = bitult_op::create(32, s1, c3);
 
-  graph.add_export(uless0, { uless0->type(), "dummy" });
-  graph.add_export(uless1, { uless1->type(), "dummy" });
-  graph.add_export(uless2, { uless2->type(), "dummy" });
-  graph.add_export(uless3, { uless3->type(), "dummy" });
-  graph.add_export(uless4, { uless4->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*uless0, "dummy");
+  jlm::tests::GraphExport::Create(*uless1, "dummy");
+  jlm::tests::GraphExport::Create(*uless2, "dummy");
+  jlm::tests::GraphExport::Create(*uless3, "dummy");
+  jlm::tests::GraphExport::Create(*uless4, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -865,8 +866,8 @@ types_bitstring_comparison_test_bitulesseq(void)
 
   jlm::rvsdg::graph graph;
 
-  auto s0 = graph.add_import({ bittype(32), "s0" });
-  auto s1 = graph.add_import({ bittype(32), "s1" });
+  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(graph.root(), 32, 4);
   auto c1 = create_bitconstant(graph.root(), 32, 5);
   auto c2 = create_bitconstant(graph.root(), 32, (0xffffffffUL));
@@ -879,12 +880,12 @@ types_bitstring_comparison_test_bitulesseq(void)
   auto ulesseq4 = bitule_op::create(32, s0, c2);
   auto ulesseq5 = bitule_op::create(32, c3, s1);
 
-  graph.add_export(ulesseq0, { ulesseq0->type(), "dummy" });
-  graph.add_export(ulesseq1, { ulesseq1->type(), "dummy" });
-  graph.add_export(ulesseq2, { ulesseq2->type(), "dummy" });
-  graph.add_export(ulesseq3, { ulesseq3->type(), "dummy" });
-  graph.add_export(ulesseq4, { ulesseq4->type(), "dummy" });
-  graph.add_export(ulesseq5, { ulesseq5->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*ulesseq0, "dummy");
+  jlm::tests::GraphExport::Create(*ulesseq1, "dummy");
+  jlm::tests::GraphExport::Create(*ulesseq2, "dummy");
+  jlm::tests::GraphExport::Create(*ulesseq3, "dummy");
+  jlm::tests::GraphExport::Create(*ulesseq4, "dummy");
+  jlm::tests::GraphExport::Create(*ulesseq5, "dummy");
 
   graph.prune();
   jlm::rvsdg::view(graph.root(), stdout);
@@ -971,7 +972,7 @@ types_bitstring_test_normalize(void)
   jlm::rvsdg::graph graph;
 
   bittype bits32(32);
-  auto imp = graph.add_import({ bits32, "imp" });
+  auto imp = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "imp");
 
   auto c0 = create_bitconstant(graph.root(), 32, 3);
   auto c1 = create_bitconstant(graph.root(), 32, 4);
@@ -988,13 +989,13 @@ types_bitstring_test_normalize(void)
   assert(sum1->operation() == bitadd_op(32));
   assert(sum1->ninputs() == 2);
 
-  auto exp = graph.add_export(sum1->output(0), { sum1->output(0)->type(), "dummy" });
+  auto & exp = jlm::tests::GraphExport::Create(*sum1->output(0), "dummy");
 
   sum_nf->set_mutable(true);
   graph.normalize();
   graph.prune();
 
-  auto origin = dynamic_cast<node_output *>(exp->origin());
+  auto origin = dynamic_cast<node_output *>(exp.origin());
   assert(origin->node()->operation() == bitadd_op(32));
   assert(origin->node()->ninputs() == 2);
   auto op1 = origin->node()->input(0)->origin();
@@ -1043,8 +1044,8 @@ types_bitstring_test_reduction(void)
 
   graph.prune();
 
-  auto x = graph.add_import({ bittype(16), "x" });
-  auto y = graph.add_import({ bittype(16), "y" });
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(16), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(16), "y");
 
   {
     auto concat = jlm::rvsdg::bitconcat({ x, y });
@@ -1086,9 +1087,9 @@ types_bitstring_test_slice_concat(void)
   auto base_const1 = create_bitconstant(graph.root(), "00110111");
   auto base_const2 = create_bitconstant(graph.root(), "11001000");
 
-  auto base_x = graph.add_import({ bittype(8), "x" });
-  auto base_y = graph.add_import({ bittype(8), "y" });
-  auto base_z = graph.add_import({ bittype(8), "z" });
+  auto base_x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto base_y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
+  auto base_z = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "z");
 
   {
     /* slice of constant */

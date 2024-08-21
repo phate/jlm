@@ -12,18 +12,18 @@
 static void
 test_initialization()
 {
-  jlm::tests::valuetype vtype;
+  auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto i = graph.add_import({ vtype, "i" });
+  auto i = &jlm::tests::GraphImport::Create(graph, vtype, "i");
 
-  auto constant = jlm::tests::test_op::create(graph.root(), {}, { &vtype });
-  auto unary = jlm::tests::test_op::create(graph.root(), { i }, { &vtype });
-  auto binary = jlm::tests::test_op::create(graph.root(), { i, unary->output(0) }, { &vtype });
+  auto constant = jlm::tests::test_op::create(graph.root(), {}, { vtype });
+  auto unary = jlm::tests::test_op::create(graph.root(), { i }, { vtype });
+  auto binary = jlm::tests::test_op::create(graph.root(), { i, unary->output(0) }, { vtype });
 
-  graph.add_export(constant->output(0), { constant->output(0)->type(), "c" });
-  graph.add_export(unary->output(0), { unary->output(0)->type(), "u" });
-  graph.add_export(binary->output(0), { binary->output(0)->type(), "b" });
+  jlm::tests::GraphExport::Create(*constant->output(0), "c");
+  jlm::tests::GraphExport::Create(*unary->output(0), "u");
+  jlm::tests::GraphExport::Create(*binary->output(0), "b");
 
   bool unary_visited = false;
   bool binary_visited = false;
@@ -47,12 +47,12 @@ static void
 test_basic_traversal()
 {
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype type;
+  auto type = jlm::tests::valuetype::Create();
 
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type, &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { &type });
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
     jlm::rvsdg::node * tmp;
@@ -73,11 +73,11 @@ static void
 test_order_enforcement_traversal()
 {
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype type;
+  auto type = jlm::tests::valuetype::Create();
 
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type, &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { &type });
-  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { &type });
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
+  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { type });
 
   {
     jlm::rvsdg::node * tmp;
@@ -100,12 +100,12 @@ static void
 test_traversal_insertion()
 {
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype type;
+  auto type = jlm::tests::valuetype::Create();
 
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type, &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { &type });
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->type(), "dummy" });
+  jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
     jlm::rvsdg::node * node;
@@ -116,7 +116,7 @@ test_traversal_insertion()
 
     /* At this point, n1 has been visited, now create some nodes */
 
-    auto n3 = jlm::tests::test_op::create(graph.root(), {}, { &type });
+    auto n3 = jlm::tests::test_op::create(graph.root(), {}, { type });
     auto n4 = jlm::tests::test_op::create(graph.root(), { n3->output(0) }, {});
     auto n5 = jlm::tests::test_op::create(graph.root(), { n2->output(0) }, {});
 
@@ -180,9 +180,9 @@ test_mutable_traverse()
   };
 
   jlm::rvsdg::graph graph;
-  jlm::tests::valuetype type;
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { &type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), {}, { &type });
+  auto type = jlm::tests::valuetype::Create();
+  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
+  auto n2 = jlm::tests::test_op::create(graph.root(), {}, { type });
   auto n3 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, {});
 
   test(&graph, n1, n2, n3);

@@ -15,8 +15,9 @@ TestDeadLoopNode()
   using namespace jlm::hls;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  jlm::llvm::FunctionType functionType({ &jlm::rvsdg::ctl2, &valueType }, { &valueType });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType =
+      jlm::llvm::FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -44,8 +45,10 @@ TestDeadLoopNodeOutput()
   using namespace jlm::hls;
 
   // Arrange
-  jlm::tests::valuetype valueType;
-  jlm::llvm::FunctionType functionType({ &jlm::rvsdg::ctl2, &valueType }, { &jlm::rvsdg::ctl2 });
+  auto valueType = jlm::tests::valuetype::Create();
+  auto functionType = jlm::llvm::FunctionType::Create(
+      { jlm::rvsdg::ctltype::Create(2), valueType },
+      { jlm::rvsdg::ctltype::Create(2) });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -68,7 +71,7 @@ TestDeadLoopNodeOutput()
 
   auto lambdaOutput = lambdaNode->finalize({ output0 });
 
-  rvsdg.add_export(lambdaOutput, { jlm::llvm::PointerType(), "f" });
+  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   EliminateDeadNodes(rvsdgModule);

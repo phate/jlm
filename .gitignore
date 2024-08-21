@@ -1,5 +1,7 @@
 Makefile.config
+Makefile.custom
 .idea
 docs/html
 build
 build-*
+usr

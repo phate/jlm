@@ -7,6 +7,7 @@
 
 #include <test-registry.hpp>
 
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
 #include <cassert>
@@ -690,8 +691,9 @@ TestDrawSubsetGraph()
 }
 
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
+template<bool useWorklist, typename... Args>
 static void
-TestPointerObjectConstraintSetSolve(bool useWorklist)
+TestPointerObjectConstraintSetSolve(Args... args)
 {
   using namespace jlm::llvm::aa;
 
@@ -757,10 +759,15 @@ TestPointerObjectConstraintSetSolve(bool useWorklist)
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  if (useWorklist)
-    constraints.SolveUsingWorklist();
+  if constexpr (useWorklist)
+  {
+    constraints.SolveUsingWorklist(args...);
+  }
   else
+  {
+    static_assert(sizeof...(args) == 0, "The naive solver takes no arguments");
     constraints.SolveNaively();
+  }
 
   // alloca1 should point to alloca2, etc
   assert(set.GetPointsToSet(alloca1).Size() == 1);
@@ -867,8 +874,27 @@ TestPointerObjectSet()
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
-  TestPointerObjectConstraintSetSolve(false);
-  TestPointerObjectConstraintSetSolve(true);
+  TestPointerObjectConstraintSetSolve<false>();
+
+  auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
+  for (const auto & config : allConfigs)
+  {
+    // Ignore all configs that enable features that do not affect SolveUsingWorklist()
+    if (config.GetSolver() != jlm::llvm::aa::Andersen::Configuration::Solver::Worklist)
+      continue;
+    if (config.IsOfflineVariableSubstitutionEnabled())
+      continue;
+    if (config.IsOfflineConstraintNormalizationEnabled())
+      continue;
+
+    TestPointerObjectConstraintSetSolve<true>(
+        config.GetWorklistSoliverPolicy(),
+        config.IsOnlineCycleDetectionEnabled(),
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled());
+  }
+
   TestClonePointerObjectConstraintSet();
   return 0;
 }

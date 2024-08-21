@@ -31,39 +31,17 @@ class port
 public:
   virtual ~port();
 
-  port(const jlm::rvsdg::type & type);
+  explicit port(std::shared_ptr<const jlm::rvsdg::type> type);
 
-  port(std::unique_ptr<jlm::rvsdg::type> type);
+  port(const port & other) = default;
 
-  inline port(const port & other)
-      : type_(other.type_->copy())
-  {}
+  port(port && other) = default;
 
-  inline port(port && other)
-      : type_(std::move(other.type_))
-  {}
+  port &
+  operator=(const port & other) = default;
 
-  inline port &
-  operator=(const port & other)
-  {
-    if (&other == this)
-      return *this;
-
-    type_ = other.type_->copy();
-
-    return *this;
-  }
-
-  inline port &
-  operator=(port && other)
-  {
-    if (&other == this)
-      return *this;
-
-    type_ = std::move(other.type_);
-
-    return *this;
-  }
+  port &
+  operator=(port && other) = default;
 
   virtual bool
   operator==(const port &) const noexcept;
@@ -80,11 +58,17 @@ public:
     return *type_;
   }
 
+  inline const std::shared_ptr<const rvsdg::type> &
+  Type() const noexcept
+  {
+    return type_;
+  }
+
   virtual std::unique_ptr<port>
   copy() const;
 
 private:
-  std::unique_ptr<jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::type> type_;
 };
 
 /* operation */
@@ -132,11 +116,18 @@ public:
   virtual ~simple_op();
 
   inline simple_op(
-      const std::vector<jlm::rvsdg::port> & operands,
-      const std::vector<jlm::rvsdg::port> & results)
-      : results_(results),
-        operands_(operands)
-  {}
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
+      std::vector<std::shared_ptr<const jlm::rvsdg::type>> results)
+  {
+    for (auto & op : operands)
+    {
+      operands_.push_back(port(std::move(op)));
+    }
+    for (auto & res : results)
+    {
+      results_.push_back(port(std::move(res)));
+    }
+  }
 
   size_t
   narguments() const noexcept;

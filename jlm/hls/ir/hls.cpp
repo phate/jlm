@@ -4,18 +4,59 @@
  */
 
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::hls
 {
 
+std::size_t
+triggertype::ComputeHash() const noexcept
+{
+  return typeid(triggertype).hash_code();
+}
+
+std::shared_ptr<const triggertype>
+triggertype::Create()
+{
+  static const triggertype instance;
+  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), &instance);
+}
+
+std::size_t
+bundletype::ComputeHash() const noexcept
+{
+  std::size_t seed = typeid(bundletype).hash_code();
+  for (auto & element : elements_)
+  {
+    auto firstHash = std::hash<std::string>()(element.first);
+    util::CombineHashesWithSeed(seed, firstHash, element.second->ComputeHash());
+  }
+
+  return seed;
+}
+
+backedge_argument &
+backedge_argument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+{
+  JLM_ASSERT(input == nullptr);
+  return *backedge_argument::create(&region, Type());
+}
+
+backedge_result &
+backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return *backedge_result::create(&origin);
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->type());
-  auto output = jlm::rvsdg::structural_output::create(this, origin->type());
+  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
+  auto output = jlm::rvsdg::structural_output::create(this, origin->Type());
 
-  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->type());
-  auto argument_loop = add_backedge(origin->type());
+  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->Type());
+  auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
       hls::mux_op::create(*predicate_buffer(), { argument_in, argument_loop }, false, true)[0];
@@ -24,7 +65,7 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
   {
     *buffer = mux;
   }
-  jlm::rvsdg::result::create(subregion(), branch[0], output, origin->type());
+  jlm::rvsdg::result::create(subregion(), branch[0], output, origin->Type());
   auto result_loop = argument_loop->result();
   auto buf = hls::buffer_op::create(*branch[1], 2)[0];
   result_loop->divert_to(buf);
@@ -34,9 +75,9 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
 jlm::rvsdg::output *
 loop_node::add_loopconst(jlm::rvsdg::output * origin)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->type());
+  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
 
-  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->type());
+  auto argument_in = jlm::rvsdg::argument::create(subregion(), input, origin->Type());
   auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), *argument_in)[0];
   return buffer;
 }
@@ -52,7 +93,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
-    auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->type());
+    auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->Type());
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto narg = jlm::rvsdg::argument::create(loop->subregion(), inp, oarg->port());
@@ -60,7 +101,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
-    auto out = jlm::rvsdg::structural_output::create(loop, output(i)->type());
+    auto out = jlm::rvsdg::structural_output::create(loop, output(i)->Type());
     smap.insert(output(i), out);
     smap.insert(output(i), out);
   }
@@ -69,7 +110,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
     auto arg = subregion()->argument(i);
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
-      auto na = loop->add_backedge(arg->type());
+      auto na = loop->add_backedge(arg->Type());
       smap.insert(ba, na);
     }
   }
@@ -98,9 +139,9 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
 }
 
 backedge_argument *
-loop_node::add_backedge(const jlm::rvsdg::type & type)
+loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::type> type)
 {
-  auto argument_loop = backedge_argument::create(subregion(), type);
+  auto argument_loop = backedge_argument::create(subregion(), std::move(type));
   auto result_loop = backedge_result::create(argument_loop);
   argument_loop->result_ = result_loop;
   result_loop->argument_ = argument_loop;
@@ -114,7 +155,7 @@ loop_node::create(jlm::rvsdg::region * parent, bool init)
   if (init)
   {
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
-    auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype(2));
+    auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype::Create(2));
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
@@ -134,27 +175,27 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
     remove(node);
 }
 
-std::unique_ptr<bundletype>
-get_mem_req_type(const rvsdg::valuetype & elementType, bool write)
+std::shared_ptr<const bundletype>
+get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write)
 {
-  auto elements = new std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>>();
-  elements->emplace_back("addr", llvm::PointerType::Create());
-  elements->emplace_back("size", std::make_unique<jlm::rvsdg::bittype>(4));
-  elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
+  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> elements;
+  elements.emplace_back("addr", llvm::PointerType::Create());
+  elements.emplace_back("size", jlm::rvsdg::bittype::Create(4));
+  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
   if (write)
   {
-    elements->emplace_back("data", elementType.copy());
-    elements->emplace_back("write", std::make_unique<jlm::rvsdg::bittype>(1));
+    elements.emplace_back("data", std::move(elementType));
+    elements.emplace_back("write", jlm::rvsdg::bittype::Create(1));
   }
-  return std::make_unique<bundletype>(elements);
+  return std::make_shared<bundletype>(std::move(elements));
 }
 
-std::unique_ptr<bundletype>
-get_mem_res_type(const jlm::rvsdg::valuetype & dataType)
+std::shared_ptr<const bundletype>
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::valuetype> dataType)
 {
-  auto elements = new std::vector<std::pair<std::string, std::unique_ptr<jlm::rvsdg::type>>>();
-  elements->emplace_back("data", dataType.copy());
-  elements->emplace_back("id", std::make_unique<jlm::rvsdg::bittype>(8));
-  return std::make_unique<bundletype>(elements);
+  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> elements;
+  elements.emplace_back("data", std::move(dataType));
+  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
+  return std::make_shared<bundletype>(std::move(elements));
 }
 }

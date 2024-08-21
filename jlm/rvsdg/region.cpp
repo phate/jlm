@@ -9,6 +9,7 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/AnnotationMap.hpp>
 
 namespace jlm::rvsdg
 {
@@ -35,8 +36,40 @@ argument::argument(
     if (input->node() != region->node())
       throw jlm::util::error("Argument cannot be added to input.");
 
+    if (input->type() != *Type())
+    {
+      throw util::type_error(Type()->debug_string(), input->type().debug_string());
+    }
+
     input->arguments.push_back(this);
   }
+}
+
+argument::argument(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::structural_input * input,
+    std::shared_ptr<const rvsdg::type> type)
+    : output(region, std::move(type)),
+      input_(input)
+{
+  if (input)
+  {
+    if (input->node() != region->node())
+      throw jlm::util::error("Argument cannot be added to input.");
+
+    if (input->type() != *Type())
+    {
+      throw util::type_error(Type()->debug_string(), input->type().debug_string());
+    }
+
+    input->arguments.push_back(this);
+  }
+}
+
+argument &
+argument::Copy(rvsdg::region & region, structural_input * input)
+{
+  return *argument::create(&region, input, port());
 }
 
 jlm::rvsdg::argument *
@@ -46,6 +79,17 @@ argument::create(
     const jlm::rvsdg::port & port)
 {
   auto argument = new jlm::rvsdg::argument(region, input, port);
+  region->append_argument(argument);
+  return argument;
+}
+
+jlm::rvsdg::argument *
+argument::create(
+    jlm::rvsdg::region * region,
+    structural_input * input,
+    std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  auto argument = new jlm::rvsdg::argument(region, input, std::move(type));
   region->append_argument(argument);
   return argument;
 }
@@ -73,8 +117,41 @@ result::result(
     if (output->node() != region->node())
       throw jlm::util::error("Result cannot be added to output.");
 
+    if (*Type() != *output->Type())
+    {
+      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+    }
+
     output->results.push_back(this);
   }
+}
+
+result::result(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::structural_output * output,
+    std::shared_ptr<const rvsdg::type> type)
+    : input(origin, region, std::move(type)),
+      output_(output)
+{
+  if (output)
+  {
+    if (output->node() != region->node())
+      throw jlm::util::error("Result cannot be added to output.");
+
+    if (*Type() != *output->Type())
+    {
+      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+    }
+
+    output->results.push_back(this);
+  }
+}
+
+result &
+result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  return *result::create(origin.region(), &origin, output, port());
 }
 
 jlm::rvsdg::result *
@@ -85,6 +162,18 @@ result::create(
     const jlm::rvsdg::port & port)
 {
   auto result = new jlm::rvsdg::result(region, origin, output, port);
+  region->append_result(result);
+  return result;
+}
+
+jlm::rvsdg::result *
+result::create(
+    jlm::rvsdg::region * region,
+    jlm::rvsdg::output * origin,
+    jlm::rvsdg::structural_output * output,
+    std::shared_ptr<const jlm::rvsdg::type> type)
+{
+  auto result = new jlm::rvsdg::result(region, origin, output, std::move(type));
   region->append_result(result);
   return result;
 }
@@ -200,7 +289,7 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
 {
   smap.insert(this, target);
 
-  /* order nodes top-down */
+  // order nodes top-down
   std::vector<std::vector<const jlm::rvsdg::node *>> context(nnodes());
   for (const auto & node : nodes)
   {
@@ -208,18 +297,18 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
     context[node.depth()].push_back(&node);
   }
 
-  /* copy arguments */
   if (copy_arguments)
   {
     for (size_t n = 0; n < narguments(); n++)
     {
-      auto input = smap.lookup(argument(n)->input());
-      auto narg = argument::create(target, input, argument(n)->port());
-      smap.insert(argument(n), narg);
+      auto oldArgument = argument(n);
+      auto input = smap.lookup(oldArgument->input());
+      auto & newArgument = oldArgument->Copy(*target, input);
+      smap.insert(oldArgument, &newArgument);
     }
   }
 
-  /* copy nodes */
+  // copy nodes
   for (size_t n = 0; n < context.size(); n++)
   {
     for (const auto node : context[n])
@@ -229,17 +318,15 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
     }
   }
 
-  /* copy results */
   if (copy_results)
   {
     for (size_t n = 0; n < nresults(); n++)
     {
-      auto origin = smap.lookup(result(n)->origin());
-      if (!origin)
-        origin = result(n)->origin();
-
-      auto output = dynamic_cast<jlm::rvsdg::structural_output *>(smap.lookup(result(n)->output()));
-      result::create(target, origin, output, result(n)->port());
+      auto oldResult = result(n);
+      auto newOrigin = smap.lookup(oldResult->origin());
+      JLM_ASSERT(newOrigin != nullptr);
+      auto newOutput = dynamic_cast<structural_output *>(smap.lookup(oldResult->output()));
+      oldResult->Copy(*newOrigin, newOutput);
     }
   }
 }
@@ -301,6 +388,124 @@ region::NumRegions(const jlm::rvsdg::region & region) noexcept
   }
 
   return numRegions;
+}
+
+std::string
+region::ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept
+{
+  std::stringstream stream;
+  ToTree(region, annotationMap, 0, stream);
+  return stream.str();
+}
+
+std::string
+region::ToTree(const rvsdg::region & region) noexcept
+{
+  std::stringstream stream;
+  util::AnnotationMap annotationMap;
+  ToTree(region, annotationMap, 0, stream);
+  return stream.str();
+}
+
+void
+region::ToTree(
+    const rvsdg::region & region,
+    const util::AnnotationMap & annotationMap,
+    size_t indentationDepth,
+    std::stringstream & stream) noexcept
+{
+  static const char indentationChar = '-';
+  static const char annotationSeparator = ' ';
+  static const char labelValueSeparator = ':';
+
+  // Convert current region to a string
+  auto indentationString = std::string(indentationDepth, indentationChar);
+  auto regionString =
+      region.IsRootRegion() ? "RootRegion" : util::strfmt("Region[", region.index(), "]");
+  auto regionAnnotationString =
+      GetAnnotationString(&region, annotationMap, annotationSeparator, labelValueSeparator);
+
+  stream << indentationString << regionString << regionAnnotationString << '\n';
+
+  // Convert the region's structural nodes with their subregions to a string
+  indentationDepth++;
+  indentationString = std::string(indentationDepth, indentationChar);
+  for (auto & node : region.nodes)
+  {
+    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+    {
+      auto nodeString = structuralNode->operation().debug_string();
+      auto annotationString = GetAnnotationString(
+          structuralNode,
+          annotationMap,
+          annotationSeparator,
+          labelValueSeparator);
+      stream << indentationString << nodeString << annotationString << '\n';
+
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        ToTree(*structuralNode->subregion(n), annotationMap, indentationDepth + 1, stream);
+      }
+    }
+  }
+}
+
+std::string
+region::GetAnnotationString(
+    const void * key,
+    const util::AnnotationMap & annotationMap,
+    char annotationSeparator,
+    char labelValueSeparator)
+{
+  if (!annotationMap.HasAnnotations(key))
+    return "";
+
+  auto & annotations = annotationMap.GetAnnotations(key);
+  return ToString(annotations, annotationSeparator, labelValueSeparator);
+}
+
+std::string
+region::ToString(
+    const std::vector<util::Annotation> & annotations,
+    char annotationSeparator,
+    char labelValueSeparator)
+{
+  std::stringstream stream;
+  for (auto & annotation : annotations)
+  {
+    auto annotationString = ToString(annotation, labelValueSeparator);
+    stream << annotationSeparator << annotationString;
+  }
+
+  return stream.str();
+}
+
+std::string
+region::ToString(const util::Annotation & annotation, char labelValueSeparator)
+{
+  std::string value;
+  if (annotation.HasValueType<std::string>())
+  {
+    value = annotation.Value<std::string>();
+  }
+  else if (annotation.HasValueType<int64_t>())
+  {
+    value = util::strfmt(annotation.Value<int64_t>());
+  }
+  else if (annotation.HasValueType<uint64_t>())
+  {
+    value = util::strfmt(annotation.Value<uint64_t>());
+  }
+  else if (annotation.HasValueType<double>())
+  {
+    value = util::strfmt(annotation.Value<double>());
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled annotation type.");
+  }
+
+  return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
 
 size_t

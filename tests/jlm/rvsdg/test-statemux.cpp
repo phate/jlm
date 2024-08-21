@@ -18,7 +18,7 @@ test_mux_mux_reduction()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::statetype st;
+  auto st = jlm::tests::statetype::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
@@ -26,15 +26,15 @@ test_mux_mux_reduction()
   mnf->set_mutable(false);
   mnf->set_mux_mux_reducible(false);
 
-  auto x = graph.add_import({ st, "x" });
-  auto y = graph.add_import({ st, "y" });
-  auto z = graph.add_import({ st, "z" });
+  auto x = &jlm::tests::GraphImport::Create(graph, st, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, st, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, st, "z");
 
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, y });
   auto mux2 = jlm::rvsdg::create_state_split(st, z, 2);
   auto mux3 = jlm::rvsdg::create_state_merge(st, { mux1, mux2[0], mux2[1], z });
 
-  auto ex = graph.add_export(mux3, { mux3->type(), "m" });
+  auto & ex = jlm::tests::GraphExport::Create(*mux3, "m");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
@@ -45,7 +45,7 @@ test_mux_mux_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto node = node_output::node(ex->origin());
+  auto node = node_output::node(ex.origin());
   assert(node->ninputs() == 4);
   assert(node->input(0)->origin() == x);
   assert(node->input(1)->origin() == y);
@@ -58,7 +58,7 @@ test_multiple_origin_reduction()
 {
   using namespace jlm::rvsdg;
 
-  jlm::tests::statetype st;
+  auto st = jlm::tests::statetype::Create();
 
   jlm::rvsdg::graph graph;
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
@@ -66,9 +66,9 @@ test_multiple_origin_reduction()
   mnf->set_mutable(false);
   mnf->set_multiple_origin_reducible(false);
 
-  auto x = graph.add_import({ st, "x" });
+  auto x = &jlm::tests::GraphImport::Create(graph, st, "x");
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, x });
-  auto ex = graph.add_export(mux1, { mux1->type(), "m" });
+  auto & ex = jlm::tests::GraphExport::Create(*mux1, "m");
 
   view(graph.root(), stdout);
 
@@ -79,7 +79,7 @@ test_multiple_origin_reduction()
 
   view(graph.root(), stdout);
 
-  assert(node_output::node(ex->origin())->ninputs() == 1);
+  assert(node_output::node(ex.origin())->ninputs() == 1);
 }
 
 static int

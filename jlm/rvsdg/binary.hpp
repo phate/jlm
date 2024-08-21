@@ -134,8 +134,10 @@ public:
 
   virtual ~binary_op() noexcept;
 
-  inline binary_op(const std::vector<jlm::rvsdg::port> & operands, const jlm::rvsdg::port & result)
-      : simple_op(operands, { result })
+  inline binary_op(
+      const std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
+      std::shared_ptr<const jlm::rvsdg::type> result)
+      : simple_op(std::move(operands), { std::move(result) })
   {}
 
   virtual binop_reduction_path_t
@@ -177,14 +179,14 @@ public:
   virtual ~flattened_binary_op() noexcept;
 
   inline flattened_binary_op(std::unique_ptr<binary_op> op, size_t narguments) noexcept
-      : simple_op(std::vector<jlm::rvsdg::port>(narguments, op->argument(0)), { op->result(0) }),
+      : simple_op({ narguments, op->argument(0).Type() }, { op->result(0).Type() }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
   inline flattened_binary_op(const binary_op & op, size_t narguments)
-      : simple_op(std::vector<jlm::rvsdg::port>(narguments, op.argument(0)), { op.result(0) }),
+      : simple_op({ narguments, op.argument(0).Type() }, { op.result(0).Type() }),
         op_(std::unique_ptr<binary_op>(static_cast<binary_op *>(op.copy().release())))
   {
     JLM_ASSERT(op_->is_associative());

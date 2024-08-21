@@ -21,9 +21,6 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   auto mem_resps = get_mem_resps(ln);
   JLM_ASSERT(mem_reqs.size() == mem_resps.size());
   cpp << "#define TRACE_CHUNK_SIZE 100000\n"
-#ifndef HLS_USE_VCD
-         "#define FST 1\n"
-#endif
          //		"#define HLS_MEM_DEBUG 1\n"
          "\n"
          "#include <verilated.h>\n"
@@ -42,9 +39,11 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "#else\n"
          "#include \"verilated_vcd_c.h\"\n"
          "#endif\n"
+         // Include the Verilator generated header, which provides access to Verilog signals
+         // The name of the header is based on the Verilog filename used as input to Verilator
          "#include \"V"
-      << file_name << ".h\"\n"
-      << "#define V_NAME V" << file_name << "\n"
+      << GetVerilogFileName().base() << ".h\"\n"
+      << "#define V_NAME V" << GetVerilogFileName().base() << "\n"
       << "#define TIMEOUT 10000000\n"
          "#define xstr(s) str(s)\n"
          "#define str(s) #s\n"
@@ -409,12 +408,12 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   auto root = rm.Rvsdg().root();
   for (size_t i = 0; i < root->narguments(); ++i)
   {
-    if (auto ip = dynamic_cast<const llvm::impport *>(&root->argument(i)->port()))
+    if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(root->argument(i)))
     {
-      if (dynamic_cast<const jlm::llvm::PointerType *>(&ip->type()))
+      if (dynamic_cast<const jlm::llvm::PointerType *>(&graphImport->type()))
       {
-        cpp << "extern " << convert_to_c_type(&root->argument(i)->port().type()) << " "
-            << ip->name() << ";\n";
+        cpp << "extern " << convert_to_c_type(&graphImport->type()) << " " << graphImport->Name()
+            << ";\n";
       }
       else
       {
@@ -494,12 +493,9 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
     std::string name;
-    if (auto a = dynamic_cast<jlm::rvsdg::argument *>(ln->input(i)->origin()))
+    if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(ln->input(i)->origin()))
     {
-      if (auto ip = dynamic_cast<const llvm::impport *>(&a->port()))
-      {
-        name = ip->name();
-      }
+      name = graphImport->Name();
     }
     else
     {

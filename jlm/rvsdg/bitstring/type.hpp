@@ -22,10 +22,7 @@ public:
 
   inline constexpr bittype(size_t nbits)
       : nbits_(nbits)
-  {
-    if (nbits == 0)
-      throw jlm::util::error("Number of bits must be greater than zero.");
-  }
+  {}
 
   inline size_t
   nbits() const noexcept
@@ -39,18 +36,28 @@ public:
   virtual bool
   operator==(const jlm::rvsdg::type & other) const noexcept override;
 
-  virtual std::unique_ptr<jlm::rvsdg::type>
-  copy() const override;
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
+  /**
+   * \brief Creates bit type of specified width
+   *
+   * \param nbits
+   *    Width of type
+   *
+   * \returns
+   *    Type representing bitstring of specified width.
+   *
+   * Returns an instance of a bitstring type with specified
+   * width. Usually this returns a singleton object instance
+   * for the type
+   */
+  static std::shared_ptr<const bittype>
+  Create(std::size_t nbits);
 
 private:
   size_t nbits_;
 };
-
-extern const bittype bit1;
-extern const bittype bit8;
-extern const bittype bit16;
-extern const bittype bit32;
-extern const bittype bit64;
 
 }
 

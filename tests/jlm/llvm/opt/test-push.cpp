@@ -16,8 +16,8 @@
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const jlm::tests::statetype st;
-static const jlm::tests::valuetype vt;
+static const auto st = jlm::tests::statetype::Create();
+static const auto vt = jlm::tests::valuetype::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -25,27 +25,26 @@ test_gamma()
 {
   using namespace jlm::llvm;
 
-  jlm::rvsdg::ctltype ct(2);
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto s = graph.add_import({ st, "s" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
   auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
   auto evx = gamma->add_entryvar(x);
   auto evs = gamma->add_entryvar(s);
 
-  auto null = jlm::tests::create_testop(gamma->subregion(0), {}, { &vt })[0];
-  auto bin = jlm::tests::create_testop(gamma->subregion(0), { null, evx->argument(0) }, { &vt })[0];
-  auto state =
-      jlm::tests::create_testop(gamma->subregion(0), { bin, evs->argument(0) }, { &st })[0];
+  auto null = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
+  auto bin = jlm::tests::create_testop(gamma->subregion(0), { null, evx->argument(0) }, { vt })[0];
+  auto state = jlm::tests::create_testop(gamma->subregion(0), { bin, evs->argument(0) }, { st })[0];
 
   gamma->add_exitvar({ state, evs->argument(1) });
 
-  graph.add_export(gamma->output(0), { gamma->output(0)->type(), "x" });
+  GraphExport::Create(*gamma->output(0), "x");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::pushout pushout;
@@ -60,18 +59,18 @@ test_theta()
 {
   using namespace jlm::llvm;
 
-  jlm::rvsdg::ctltype ct(2);
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
-  jlm::tests::test_op nop({}, { &vt });
-  jlm::tests::test_op bop({ &vt, &vt }, { &vt });
-  jlm::tests::test_op sop({ &vt, &st }, { &st });
+  jlm::tests::test_op nop({}, { vt });
+  jlm::tests::test_op bop({ vt, vt }, { vt });
+  jlm::tests::test_op sop({ vt, st }, { st });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = graph.add_import({ ct, "c" });
-  auto x = graph.add_import({ vt, "x" });
-  auto s = graph.add_import({ st, "s" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
@@ -80,20 +79,20 @@ test_theta()
   auto lv3 = theta->add_loopvar(x);
   auto lv4 = theta->add_loopvar(s);
 
-  auto o1 = jlm::tests::create_testop(theta->subregion(), {}, { &vt })[0];
-  auto o2 = jlm::tests::create_testop(theta->subregion(), { o1, lv3->argument() }, { &vt })[0];
-  auto o3 = jlm::tests::create_testop(theta->subregion(), { lv2->argument(), o2 }, { &vt })[0];
+  auto o1 = jlm::tests::create_testop(theta->subregion(), {}, { vt })[0];
+  auto o2 = jlm::tests::create_testop(theta->subregion(), { o1, lv3->argument() }, { vt })[0];
+  auto o3 = jlm::tests::create_testop(theta->subregion(), { lv2->argument(), o2 }, { vt })[0];
   auto o4 = jlm::tests::create_testop(
       theta->subregion(),
       { lv3->argument(), lv4->argument() },
-      { &st })[0];
+      { st })[0];
 
   lv2->result()->divert_to(o3);
   lv4->result()->divert_to(o4);
 
   theta->set_predicate(lv1->argument());
 
-  graph.add_export(theta->output(0), { theta->output(0)->type(), "c" });
+  GraphExport::Create(*theta->output(0), "c");
 
   //	jlm::rvsdg::view(graph.root(), stdout);
   jlm::llvm::pushout pushout;
@@ -108,15 +107,15 @@ test_push_theta_bottom()
 {
   using namespace jlm::llvm;
 
-  MemoryStateType mt;
-  PointerType pt;
-  jlm::rvsdg::ctltype ct(2);
+  auto mt = MemoryStateType::Create();
+  auto pt = PointerType::Create();
+  auto ct = jlm::rvsdg::ctltype::Create(2);
 
   jlm::rvsdg::graph graph;
-  auto c = graph.add_import({ ct, "c" });
-  auto a = graph.add_import({ pt, "a" });
-  auto v = graph.add_import({ vt, "v" });
-  auto s = graph.add_import({ mt, "s" });
+  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
+  auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
+  auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
+  auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
 
   auto theta = jlm::rvsdg::theta_node::create(graph.root());
 
@@ -131,13 +130,13 @@ test_push_theta_bottom()
   lvs->result()->divert_to(s1);
   theta->set_predicate(lvc->argument());
 
-  auto ex = graph.add_export(lvs, { lvs->type(), "s" });
+  auto & ex = GraphExport::Create(*lvs, "s");
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::push_bottom(theta);
   jlm::rvsdg::view(graph, stdout);
 
-  auto storenode = jlm::rvsdg::node_output::node(ex->origin());
+  auto storenode = jlm::rvsdg::node_output::node(ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
   assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(

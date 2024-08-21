@@ -17,57 +17,57 @@ TestIsOrContains()
 {
   using namespace jlm::llvm;
 
-  jlm::tests::valuetype valueType;
-  PointerType pointerType;
-  MemoryStateType memoryStateType;
-  iostatetype ioStateType;
+  auto valueType = jlm::tests::valuetype::Create();
+  auto pointerType = PointerType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto ioStateType = iostatetype::Create();
 
   // Direct checks
-  assert(IsOrContains<PointerType>(pointerType));
-  assert(!IsOrContains<PointerType>(memoryStateType));
-  assert(!IsOrContains<PointerType>(ioStateType));
+  assert(IsOrContains<PointerType>(*pointerType));
+  assert(!IsOrContains<PointerType>(*memoryStateType));
+  assert(!IsOrContains<PointerType>(*ioStateType));
 
   // Checking supertypes should work
-  assert(IsOrContains<jlm::rvsdg::valuetype>(pointerType));
-  assert(!IsOrContains<jlm::rvsdg::valuetype>(memoryStateType));
-  assert(!IsOrContains<jlm::rvsdg::valuetype>(ioStateType));
-  assert(!IsOrContains<jlm::rvsdg::statetype>(pointerType));
-  assert(IsOrContains<jlm::rvsdg::statetype>(memoryStateType));
-  assert(IsOrContains<jlm::rvsdg::statetype>(ioStateType));
+  assert(IsOrContains<jlm::rvsdg::valuetype>(*pointerType));
+  assert(!IsOrContains<jlm::rvsdg::valuetype>(*memoryStateType));
+  assert(!IsOrContains<jlm::rvsdg::valuetype>(*ioStateType));
+  assert(!IsOrContains<jlm::rvsdg::statetype>(*pointerType));
+  assert(IsOrContains<jlm::rvsdg::statetype>(*memoryStateType));
+  assert(IsOrContains<jlm::rvsdg::statetype>(*ioStateType));
 
   // Function types are not aggregate types
-  FunctionType functionType(
-      { &pointerType, &memoryStateType, &ioStateType },
-      { &pointerType, &memoryStateType, &ioStateType });
-  assert(!IsAggregateType(functionType));
-  assert(IsOrContains<FunctionType>(functionType));
-  assert(!IsOrContains<PointerType>(functionType));
-  assert(!IsOrContains<jlm::rvsdg::statetype>(functionType));
+  auto functionType = FunctionType::Create(
+      { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() },
+      { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() });
+  assert(!IsAggregateType(*functionType));
+  assert(IsOrContains<FunctionType>(*functionType));
+  assert(!IsOrContains<PointerType>(*functionType));
+  assert(!IsOrContains<jlm::rvsdg::statetype>(*functionType));
 
   // Struct types are aggregates that can contain other types
-  auto declaration = StructType::Declaration::Create({ &valueType, &pointerType });
-  StructType structType(false, *declaration);
-  assert(IsAggregateType(structType));
-  assert(IsOrContains<StructType>(structType));
-  assert(IsOrContains<PointerType>(structType));
-  assert(!IsOrContains<jlm::rvsdg::statetype>(structType));
+  auto declaration = StructType::Declaration::Create({ valueType, pointerType });
+  auto structType = StructType::Create(false, *declaration);
+  assert(IsAggregateType(*structType));
+  assert(IsOrContains<StructType>(*structType));
+  assert(IsOrContains<PointerType>(*structType));
+  assert(!IsOrContains<jlm::rvsdg::statetype>(*structType));
 
   // Create an array containing the atruct type
-  arraytype arrayType(structType, 20);
-  assert(IsAggregateType(arrayType));
-  assert(IsOrContains<arraytype>(arrayType));
-  assert(IsOrContains<StructType>(arrayType));
-  assert(IsOrContains<PointerType>(arrayType));
-  assert(!IsOrContains<jlm::rvsdg::statetype>(arrayType));
+  auto arrayType = arraytype::Create(structType, 20);
+  assert(IsAggregateType(*arrayType));
+  assert(IsOrContains<arraytype>(*arrayType));
+  assert(IsOrContains<StructType>(*arrayType));
+  assert(IsOrContains<PointerType>(*arrayType));
+  assert(!IsOrContains<jlm::rvsdg::statetype>(*arrayType));
 
   // Vector types are weird, as LLVM does not consider them to be aggregate types,
   // but they still contain other types
-  fixedvectortype vectorType(structType, 20);
-  assert(!IsAggregateType(vectorType));
-  assert(IsOrContains<vectortype>(vectorType));
-  assert(IsOrContains<StructType>(vectorType));
-  assert(IsOrContains<PointerType>(vectorType));
-  assert(!IsOrContains<jlm::rvsdg::statetype>(vectorType));
+  auto vectorType = fixedvectortype::Create(structType, 20);
+  assert(!IsAggregateType(*vectorType));
+  assert(IsOrContains<vectortype>(*vectorType));
+  assert(IsOrContains<StructType>(*vectorType));
+  assert(IsOrContains<PointerType>(*vectorType));
+  assert(!IsOrContains<jlm::rvsdg::statetype>(*vectorType));
 
   return 0;
 }

@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 
 namespace jlm::llvm
@@ -67,6 +67,17 @@ LoadNonVolatileNode::MemoryStateOutputs() const noexcept
   }
 
   return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
+}
+
+LoadNonVolatileNode &
+LoadNonVolatileNode::CopyWithNewMemoryStates(
+    const std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      *GetAddressInput().origin(),
+      memoryStates,
+      GetOperation().GetLoadedType(),
+      GetAlignment());
 }
 
 rvsdg::node *
@@ -134,6 +145,17 @@ LoadVolatileNode::MemoryStateOutputs() const noexcept
   return { MemoryStateOutputIterator(output(2)), MemoryStateOutputIterator(nullptr) };
 }
 
+LoadVolatileNode &
+LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const
+{
+  return CreateNode(
+      *GetAddressInput().origin(),
+      *GetIoStateInput().origin(),
+      memoryStates,
+      GetOperation().GetLoadedType(),
+      GetAlignment());
+}
+
 rvsdg::node *
 LoadVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
 {
@@ -164,7 +186,7 @@ is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
     return false;
 
   auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
-  if (!is<MemStateMergeOperator>(memStateMergeNode))
+  if (!is<MemoryStateMergeOperation>(memStateMergeNode))
     return false;
 
   return true;
@@ -315,9 +337,9 @@ is_load_store_reducible(
   // FIXME: This is too restrictive and can be improved upon by inserting truncation or narrowing
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
-  auto & loadedValueType = loadOperation.GetLoadedType();
+  auto loadedValueType = loadOperation.GetLoadedType();
   auto & storedValueType = storeNode->GetStoredValueInput().type();
-  if (loadedValueType != storedValueType)
+  if (*loadedValueType != storedValueType)
   {
     return false;
   }
@@ -353,7 +375,7 @@ perform_load_mux_reduction(
       op.GetAlignment());
 
   std::vector<rvsdg::output *> states = { std::next(ld.begin()), ld.end() };
-  auto mx = MemStateMergeOperator::Create(states);
+  auto mx = MemoryStateMergeOperation::Create(states);
 
   return { ld[0], mx };
 }
@@ -529,7 +551,7 @@ perform_load_load_state_reduction(
     if (!states.empty())
     {
       states.push_back(ld[n + 1]);
-      ld[n + 1] = MemStateMergeOperator::Create(states);
+      ld[n + 1] = MemoryStateMergeOperation::Create(states);
     }
   }
 
