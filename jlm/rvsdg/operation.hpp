@@ -69,16 +69,9 @@ public:
   simple_op(
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
       std::vector<std::shared_ptr<const jlm::rvsdg::type>> results)
-  {
-    for (auto & op : operands)
-    {
-      operands_.push_back(std::move(op));
-    }
-    for (auto & res : results)
-    {
-      results_.push_back(std::move(res));
-    }
-  }
+      : operands_(std::move(operands)),
+        results_(std::move(results))
+  {}
 
   size_t
   narguments() const noexcept;
@@ -96,8 +89,8 @@ public:
   normal_form(jlm::rvsdg::graph * graph) noexcept;
 
 private:
-  std::vector<std::shared_ptr<const rvsdg::type>> results_ = {};
-  std::vector<std::shared_ptr<const rvsdg::type>> operands_ = {};
+  std::vector<std::shared_ptr<const rvsdg::type>> operands_;
+  std::vector<std::shared_ptr<const rvsdg::type>> results_;
 };
 
 /* structural operation */
