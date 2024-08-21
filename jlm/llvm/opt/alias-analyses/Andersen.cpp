@@ -49,6 +49,8 @@ Andersen::Configuration::ToString() const
       str << "LazyCD_";
     if (EnableDifferencePropagation_)
       str << "DP_";
+    if (EnablePreferImplicitPointees_)
+      str << "PIP_";
   }
   else
   {
@@ -64,12 +66,19 @@ std::vector<Andersen::Configuration>
 Andersen::Configuration::GetAllConfigurations()
 {
   std::vector<Configuration> configs;
+  auto PickPreferImplicitPointees = [&](Configuration config)
+  {
+    config.EnablePreferImplicitPointees(false);
+    configs.push_back(config);
+    config.EnablePreferImplicitPointees(true);
+    configs.push_back(config);
+  };
   auto PickDifferencePropagation = [&](Configuration config)
   {
     config.EnableDifferencePropagation(false);
-    configs.push_back(config);
+    PickPreferImplicitPointees(config);
     config.EnableDifferencePropagation(true);
-    configs.push_back(config);
+    PickPreferImplicitPointees(config);
   };
   auto PickLazyCycleDetection = [&](Configuration config)
   {
@@ -181,6 +190,8 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
   static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
   static constexpr const char * NumLazyCycleUnifications_ = "#LazyCycleUnifications";
+
+  static constexpr const char * NumPIPExplicitPointeesRemoved_ = "#PIPExplicitPointeesRemoved";
 
   // After solving statistics
   static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
@@ -334,6 +345,9 @@ public:
 
     if (statistics.NumLazyCycleUnifications)
       AddMeasurement(NumLazyCycleUnifications_, *statistics.NumLazyCycleUnifications);
+
+    if (statistics.NumExplicitPointeesRemoved)
+      AddMeasurement(NumPIPExplicitPointeesRemoved_, *statistics.NumExplicitPointeesRemoved);
   }
 
   void
@@ -1122,7 +1136,8 @@ Andersen::SolveConstraints(
         config.IsOnlineCycleDetectionEnabled(),
         config.IsHybridCycleDetectionEnabled(),
         config.IsLazyCycleDetectionEnabled(),
-        config.IsDifferencePropagationEnabled());
+        config.IsDifferencePropagationEnabled(),
+        config.IsPreferImplicitPointeesEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
