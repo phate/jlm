@@ -194,9 +194,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
-          CreateOperandTypes(numMemoryStates),
-          CreateResultTypes(std::move(loadedType), numMemoryStates),
-          alignment)
+            CreateOperandTypes(numMemoryStates),
+            CreateResultTypes(std::move(loadedType), numMemoryStates),
+            alignment)
   {}
 
   bool
@@ -444,9 +444,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
-          CreateOperandTypes(numMemoryStates),
-          CreateResultTypes(std::move(loadedType), numMemoryStates),
-          alignment)
+            CreateOperandTypes(numMemoryStates),
+            CreateResultTypes(std::move(loadedType), numMemoryStates),
+            alignment)
   {}
 
   bool

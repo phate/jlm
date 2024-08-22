@@ -133,7 +133,8 @@ node_get_default_normal_form_(
   return new jlm::rvsdg::node_normal_form(operator_class, parent, graph);
 }
 
-static void __attribute__((constructor)) register_node_normal_form(void)
+static void __attribute__((constructor))
+register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::operation),

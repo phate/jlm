@@ -148,9 +148,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-          CreateOperandTypes(std::move(storedType), numMemoryStates),
-          { numMemoryStates, MemoryStateType::Create() },
-          alignment)
+            CreateOperandTypes(std::move(storedType), numMemoryStates),
+            { numMemoryStates, MemoryStateType::Create() },
+            alignment)
   {}
 
   bool
@@ -414,9 +414,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-          CreateOperandTypes(std::move(storedType), numMemoryStates),
-          CreateResultTypes(numMemoryStates),
-          alignment)
+            CreateOperandTypes(std::move(storedType), numMemoryStates),
+            CreateResultTypes(numMemoryStates),
+            alignment)
   {}
 
   bool
