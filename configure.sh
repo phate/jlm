@@ -110,6 +110,13 @@ fi
 CPPFLAGS_CIRCT=""
 CXXFLAGS_NO_COMMENT=""
 if [ "${ENABLE_HLS}" == "yes" ] ; then
+
+	# If HLS is enabled, ensure that CIRCT_PATH is not empty, and a real directory
+	if [ -z "$CIRCT_PATH" ] || [ ! -d "$CIRCT_PATH" ]; then
+		echo "error: the specified CIRCT_PATH does not exist: $CIRCT_PATH"
+	  exit 1
+	fi
+
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 	CIRCT_LDFLAGS_ARRAY=(
@@ -152,6 +159,13 @@ fi
 
 CPPFLAGS_MLIR=""
 if [ "${ENABLE_MLIR}" == "yes" ] ; then
+
+	# If MLIR is enabled, ensure that MLIR_PATH is not empty, and a real directory
+	if [ -z "$MLIR_PATH" ] || [ ! -d "$MLIR_PATH" ]; then
+		echo "error: the specified MLIR_PATH does not exist: $MLIR_PATH"
+		exit 1
+	fi
+
 	CPPFLAGS_MLIR="-I${MLIR_PATH}/include -DENABLE_MLIR"
 	CXXFLAGS_NO_COMMENT="-Wno-error=comment"
 	MLIR_LDFLAGS="-L${MLIR_PATH}/lib -lMLIRJLM -lMLIRRVSDG -lMLIR"
