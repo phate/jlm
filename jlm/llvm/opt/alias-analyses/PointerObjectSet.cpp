@@ -1961,8 +1961,61 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     FlushNewSupersetEdges();
   };
 
-  while (worklist.HasMoreWorkItems())
-    HandleWorkItem(worklist.PopWorkItem());
+  // The dummy worklist only contains one bit of state: "has anything been pushed since last reset?"
+  // It does not provide an iteration order, so if any work item need to be revisited,
+  // we do a topological traversal over all work items instead, called a "sweep".
+  // Performing topological sorting also detects all cycles, which are unified away.
+  constexpr bool useTopologicalTraversal =
+      std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>;
+
+  if constexpr (useTopologicalTraversal)
+  {
+    std::vector<PointerObjectIndex> sccIndex;
+    std::vector<PointerObjectIndex> topologicalOrder;
+
+    statistics.NumTopologicalWorklistSweeps = 0;
+
+    while (worklist.HasPushBeenMade())
+    {
+      (*statistics.NumTopologicalWorklistSweeps)++;
+      worklist.ResetPush();
+
+      // First perform a topological sort of the entire subset graph, with respect to simple edges
+      util::FindStronglyConnectedComponents<PointerObjectIndex>(
+          Set_.NumPointerObjects(),
+          GetSupersetEdgeSuccessors,
+          sccIndex,
+          topologicalOrder);
+
+      // Visit all nodes in topological order
+      // cycles will result in neighbouring nodes in the topologicalOrder sharing sccIndex
+      for (size_t i = 0; i < topologicalOrder.size(); i++)
+      {
+        const auto node = topologicalOrder[i];
+        const auto nextNodeIndex = i + 1;
+        if (nextNodeIndex < topologicalOrder.size())
+        {
+          auto & nextNode = topologicalOrder[nextNodeIndex];
+          if (sccIndex[node] == sccIndex[nextNode])
+          {
+            // This node is in a cycle with the next node, unify them
+            nextNode = UnifyPointerObjects(node, nextNode);
+            continue;
+          }
+        }
+
+        // Otherwise handle the work item (only unification roots)
+        if (Set_.IsUnificationRoot(node))
+          HandleWorkItem(node);
+      }
+    }
+  }
+  else
+  {
+    // The worklist is a normal worklist
+    while (worklist.HasMoreWorkItems())
+      HandleWorkItem(worklist.PopWorkItem());
+  }
 
   if constexpr (EnableOnlineCycleDetection)
   {
@@ -2005,6 +2058,12 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     constexpr bool vDifferencePropagation = decltype(tDifferencePropagation)::value;
     constexpr bool vPreferImplicitPointees = decltype(tPreferImplicitPointees)::value;
 
+    if constexpr (
+        std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>
+        && (vOnlineCycleDetection || vHybridCycleDetection || vLazyCycleDetection))
+    {
+      JLM_UNREACHABLE("Can not enable online, hybrid or lazy cycle detection with the topo policy");
+    }
     if constexpr (vOnlineCycleDetection && (vHybridCycleDetection || vLazyCycleDetection))
     {
       JLM_UNREACHABLE("Can not enable hybrid or lazy cycle detection with online cycle detection");
@@ -2026,6 +2085,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   std::variant<
       typename util::LrfWorklist<PointerObjectIndex> *,
       typename util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
+      typename util::DummyWorklist<PointerObjectIndex> *,
       typename util::LifoWorklist<PointerObjectIndex> *,
       typename util::FifoWorklist<PointerObjectIndex> *>
       policyVariant;
@@ -2034,6 +2094,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     policyVariant = (util::LrfWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
     policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
+  else if (policy == WorklistSolverPolicy::TopologicalSort)
+    policyVariant = (util::DummyWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
     policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)
@@ -2090,6 +2152,8 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
     return "LeastRecentlyFired";
   case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
     return "TwoPhaseLeastRecentlyFired";
+  case WorklistSolverPolicy::TopologicalSort:
+    return "TopologicalSort";
   case WorklistSolverPolicy::FirstInFirstOut:
     return "FirstInFirstOut";
   case WorklistSolverPolicy::LastInFirstOut:
