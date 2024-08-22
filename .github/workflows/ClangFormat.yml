@@ -15,6 +15,6 @@ jobs:
           install-llvm: true # Needed to configure jlm
           install-clang-format: true
       - name: "Configure jlm with HLS and MLIR enabled"
-        run: ./configure.sh --enable-mlir usr --enable-hls usr
+        run: ./configure.sh --enable-mlir /usr --enable-hls /usr
       - name: "Check format"
         run: make format-dry-run
