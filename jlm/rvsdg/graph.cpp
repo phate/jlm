@@ -14,43 +14,18 @@
 namespace jlm::rvsdg
 {
 
-/* impport */
-
-impport::~impport()
+GraphImport::GraphImport(
+    rvsdg::graph & graph,
+    std::shared_ptr<const rvsdg::type> type,
+    std::string name)
+    : argument(graph.root(), nullptr, std::move(type)),
+      Name_(std::move(name))
 {}
 
-bool
-impport::operator==(const port & other) const noexcept
-{
-  auto p = dynamic_cast<const impport *>(&other);
-  return p && p->type() == type() && p->name() == name();
-}
-
-std::unique_ptr<port>
-impport::copy() const
-{
-  return std::unique_ptr<port>(new impport(*this));
-}
-
-/* expport */
-
-expport::~expport()
+GraphExport::GraphExport(rvsdg::output & origin, std::string name)
+    : result(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
+      Name_(std::move(name))
 {}
-
-bool
-expport::operator==(const port & other) const noexcept
-{
-  auto p = dynamic_cast<const expport *>(&other);
-  return p && p->type() == type() && p->name() == name();
-}
-
-std::unique_ptr<port>
-expport::copy() const
-{
-  return std::unique_ptr<port>(new expport(*this));
-}
-
-/* graph */
 
 graph::~graph()
 {

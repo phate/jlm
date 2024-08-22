@@ -660,11 +660,6 @@ public:
   ~rvargument() override;
 
 private:
-  rvargument(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-      : argument(region, nullptr, port),
-        output_(nullptr)
-  {}
-
   rvargument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
       : argument(region, nullptr, std::move(type)),
         output_(nullptr)
@@ -679,14 +674,6 @@ private:
 
   rvargument &
   operator=(rvargument &&) = delete;
-
-  static rvargument *
-  create(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-  {
-    auto argument = new rvargument(region, port);
-    region->append_argument(argument);
-    return argument;
-  }
 
   static rvargument *
   create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
@@ -710,6 +697,9 @@ public:
     return output()->result();
   }
 
+  rvargument &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
 private:
   rvoutput * output_;
 };
@@ -725,10 +715,6 @@ class cvargument final : public jlm::rvsdg::argument
 
 public:
   ~cvargument() override;
-
-  cvargument(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
-      : jlm::rvsdg::argument(region, input, port)
-  {}
 
   cvargument(
       jlm::rvsdg::region * region,
@@ -748,13 +734,8 @@ private:
   cvargument &
   operator=(cvargument &&) = delete;
 
-  static cvargument *
-  create(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
-  {
-    auto argument = new cvargument(region, input, port);
-    region->append_argument(argument);
-    return argument;
-  }
+  cvargument &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
 
   static cvargument *
   create(jlm::rvsdg::region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
@@ -786,14 +767,6 @@ private:
       jlm::rvsdg::region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
-      const jlm::rvsdg::port & port)
-      : jlm::rvsdg::result(region, origin, output, port)
-  {}
-
-  rvresult(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      rvoutput * output,
       std::shared_ptr<const rvsdg::type> type)
       : jlm::rvsdg::result(region, origin, output, std::move(type))
   {}
@@ -808,17 +781,8 @@ private:
   rvresult &
   operator=(rvresult &&) = delete;
 
-  static rvresult *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      rvoutput * output,
-      const jlm::rvsdg::port & port)
-  {
-    auto result = new rvresult(region, origin, output, port);
-    region->append_result(result);
-    return result;
-  }
+  rvresult &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
 
   static rvresult *
   create(

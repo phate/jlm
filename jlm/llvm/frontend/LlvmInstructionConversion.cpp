@@ -752,7 +752,7 @@ static bool
 IsVolatile(const ::llvm::Value & value)
 {
   auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
-  JLM_ASSERT(constant != nullptr && constant->getType()->getBitWidth() == 1);
+  JLM_ASSERT(constant != nullptr && constant->getType()->getIntegerBitWidth() == 1);
 
   auto apInt = constant->getValue();
   JLM_ASSERT(apInt.isZero() || apInt.isOne());

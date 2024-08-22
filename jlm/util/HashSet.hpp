@@ -300,6 +300,17 @@ public:
   }
 
   /**
+   * Removes the element pointed to by the given iterator
+   * @param iterator the element to remove
+   * @return an iterator to the element after the removed element
+   */
+  ItemConstIterator
+  Erase(ItemConstIterator iterator)
+  {
+    return ItemConstIterator(Set_.erase(iterator.It_));
+  }
+
+  /**
    * Compares the items of this HashSet object with the items of \p other for equality.
    *
    * @param other HashSet object the items are compared with.

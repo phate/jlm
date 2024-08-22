@@ -168,15 +168,36 @@ rvoutput::~rvoutput()
 rvargument::~rvargument()
 {}
 
+rvargument &
+rvargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+{
+  JLM_ASSERT(input == nullptr);
+  return *rvargument::create(&region, Type());
+}
+
 /* phi context variable argument class */
 
 cvargument::~cvargument()
 {}
 
+cvargument &
+cvargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+{
+  auto phiInput = util::AssertedCast<cvinput>(input);
+  return *cvargument::create(&region, phiInput, Type());
+}
+
 /* phi recursion variable result class */
 
 rvresult::~rvresult()
 {}
+
+rvresult &
+rvresult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  auto phiOutput = util::AssertedCast<rvoutput>(output);
+  return *rvresult::create(origin.region(), &origin, phiOutput, origin.Type());
+}
 
 }
 }

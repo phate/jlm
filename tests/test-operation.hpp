@@ -20,16 +20,58 @@
 namespace jlm::tests
 {
 
+/**
+ * Represents an import into the RVSDG of an external entity.
+ * It can be used for testing of graph imports.
+ */
+class GraphImport final : public rvsdg::GraphImport
+{
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
+      : rvsdg::GraphImport(graph, std::move(type), std::move(name))
+  {}
+
+public:
+  GraphImport &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
+  static GraphImport &
+  Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
+  {
+    auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
+    graph.root()->append_argument(graphImport);
+    return *graphImport;
+  }
+};
+
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ * It can be used for testing of graph exports.
+ */
+class GraphExport final : public rvsdg::GraphExport
+{
+  GraphExport(rvsdg::output & origin, std::string name)
+      : rvsdg::GraphExport(origin, std::move(name))
+  {}
+
+public:
+  GraphExport &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+  static GraphExport &
+  Create(rvsdg::output & origin, std::string name)
+  {
+    auto graphExport = new GraphExport(origin, std::move(name));
+    origin.region()->graph()->root()->append_result(graphExport);
+    return *graphExport;
+  }
+};
+
 /* unary operation */
 
 class unary_op final : public rvsdg::unary_op
 {
 public:
   virtual ~unary_op() noexcept;
-
-  inline unary_op(const rvsdg::port & srcport, const rvsdg::port & dstport) noexcept
-      : rvsdg::unary_op(srcport.Type(), dstport.Type())
-  {}
 
   inline unary_op(
       std::shared_ptr<const rvsdg::type> srctype,
@@ -51,26 +93,6 @@ public:
 
   virtual std::unique_ptr<rvsdg::operation>
   copy() const override;
-
-  static inline rvsdg::node *
-  create(
-      rvsdg::region * region,
-      const rvsdg::port & srcport,
-      rvsdg::output * operand,
-      const rvsdg::port & dstport)
-  {
-    return rvsdg::simple_node::create(region, std::move(unary_op(srcport, dstport)), { operand });
-  }
-
-  static inline rvsdg::output *
-  create_normalized(
-      const rvsdg::port & srcport,
-      rvsdg::output * operand,
-      const rvsdg::port & dstport)
-  {
-    unary_op op(srcport, dstport);
-    return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
-  }
 
   static inline rvsdg::node *
   create(
@@ -145,17 +167,6 @@ public:
 
   static inline rvsdg::node *
   create(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
-      rvsdg::output * op1,
-      rvsdg::output * op2)
-  {
-    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
-    return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
-  }
-
-  static inline rvsdg::node *
-  create(
       const std::shared_ptr<const rvsdg::type> & srctype,
       std::shared_ptr<const rvsdg::type> dsttype,
       rvsdg::output * op1,
@@ -163,17 +174,6 @@ public:
   {
     binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
     return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
-  }
-
-  static inline rvsdg::output *
-  create_normalized(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
-      rvsdg::output * op1,
-      rvsdg::output * op2)
-  {
-    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
-    return rvsdg::simple_node::create_normalized(op1->region(), op, { op1, op2 })[0];
   }
 
   static inline rvsdg::output *
@@ -343,6 +343,54 @@ create_testop(
   test_op op(std::move(operand_types), std::move(result_types));
   return rvsdg::simple_node::create_normalized(region, op, { operands });
 }
+
+class TestGraphArgument final : public jlm::rvsdg::argument
+{
+private:
+  TestGraphArgument(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+      : jlm::rvsdg::argument(&region, nullptr, type)
+  {}
+
+public:
+  TestGraphArgument &
+  Copy(jlm::rvsdg::region & region, jlm::rvsdg::structural_input * input) override
+  {
+    JLM_ASSERT(input == nullptr);
+    return Create(region, Type());
+  }
+
+  static TestGraphArgument &
+  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  {
+    auto graphArgument = new TestGraphArgument(region, std::move(type));
+    region.append_argument(graphArgument);
+    return *graphArgument;
+  }
+};
+
+class TestGraphResult final : public jlm::rvsdg::result
+{
+private:
+  explicit TestGraphResult(jlm::rvsdg::output & origin)
+      : jlm::rvsdg::result(origin.region(), &origin, nullptr, origin.Type())
+  {}
+
+public:
+  TestGraphResult &
+  Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
+  {
+    JLM_ASSERT(output == nullptr);
+    return Create(origin);
+  }
+
+  static TestGraphResult &
+  Create(jlm::rvsdg::output & origin)
+  {
+    auto graphResult = new TestGraphResult(origin);
+    origin.region()->append_result(graphResult);
+    return *graphResult;
+  }
+};
 
 }
 

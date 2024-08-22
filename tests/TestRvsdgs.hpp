@@ -2108,7 +2108,7 @@ public:
     return *Delta_->output();
   }
 
-  [[nodiscard]] const jlm::rvsdg::argument &
+  [[nodiscard]] const llvm::GraphImport &
   GetImportOutput() const noexcept
   {
     JLM_ASSERT(Import_);
@@ -2163,7 +2163,7 @@ private:
 
   jlm::llvm::delta::node * Delta_ = {};
 
-  jlm::rvsdg::argument * Import_ = {};
+  jlm::llvm::GraphImport * Import_ = {};
 
   jlm::llvm::lambda::node * Lambda_ = {};
 

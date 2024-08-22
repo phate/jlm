@@ -94,11 +94,11 @@ instrument_ref(llvm::RvsdgModule & rm)
         llvm::iostatetype::Create(),
         llvm::MemoryStateType::Create() },
       { llvm::iostatetype::Create(), llvm::MemoryStateType::Create() });
-  jlm::llvm::impport load_imp(
+  auto & reference_load = llvm::GraphImport::Create(
+      graph,
       loadFunctionType,
       "reference_load",
-      jlm::llvm::linkage::external_linkage);
-  auto reference_load = graph.add_import(load_imp);
+      llvm::linkage::external_linkage);
   // addr, data, width, memstate
   auto storeFunctionType = jlm::llvm::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -107,11 +107,11 @@ instrument_ref(llvm::RvsdgModule & rm)
         llvm::iostatetype::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
-  jlm::llvm::impport store_imp(
+  auto & reference_store = llvm::GraphImport::Create(
+      graph,
       storeFunctionType,
       "reference_store",
-      jlm::llvm::linkage::external_linkage);
-  auto reference_store = graph.add_import(store_imp);
+      llvm::linkage::external_linkage);
   // addr, size, memstate
   auto allocaFunctionType = jlm::llvm::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -119,20 +119,20 @@ instrument_ref(llvm::RvsdgModule & rm)
         llvm::iostatetype::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
-  jlm::llvm::impport alloca_imp(
+  auto & reference_alloca = llvm::GraphImport::Create(
+      graph,
       allocaFunctionType,
       "reference_alloca",
-      jlm::llvm::linkage::external_linkage);
-  auto reference_alloca = graph.add_import(alloca_imp);
+      llvm::linkage::external_linkage);
 
   instrument_ref(
       root,
       newLambda->subregion()->argument(ioStateArgumentIndex),
-      reference_load,
+      &reference_load,
       loadFunctionType,
-      reference_store,
+      &reference_store,
       storeFunctionType,
-      reference_alloca,
+      &reference_alloca,
       allocaFunctionType);
 }
 

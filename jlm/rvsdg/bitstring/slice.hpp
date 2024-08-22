@@ -48,7 +48,7 @@ public:
   inline size_t
   high() const noexcept
   {
-    return low_ + static_cast<const bittype *>(&result(0).type())->nbits();
+    return low_ + std::static_pointer_cast<const bittype>(result(0))->nbits();
   }
 
   virtual std::unique_ptr<jlm::rvsdg::operation>
@@ -57,7 +57,7 @@ public:
   inline const type &
   argument_type() const noexcept
   {
-    return *static_cast<const bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const bittype>(argument(0));
   }
 
 private:

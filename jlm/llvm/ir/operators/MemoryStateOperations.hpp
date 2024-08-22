@@ -21,8 +21,8 @@ class MemoryStateOperation : public rvsdg::simple_op
 protected:
   MemoryStateOperation(size_t numOperands, size_t numResults)
       : simple_op(
-          { numOperands, MemoryStateType::Create() },
-          { numResults, MemoryStateType::Create() })
+            { numOperands, MemoryStateType::Create() },
+            { numResults, MemoryStateType::Create() })
   {}
 };
 

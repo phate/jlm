@@ -21,13 +21,13 @@ test()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   auto vt = jlm::tests::valuetype::Create();
   auto pt = PointerType::Create();
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
-  /* setup graph */
-  auto imp = rm.Rvsdg().add_import(impport(vt, "", linkage::external_linkage));
+  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, "", linkage::external_linkage);
 
   phi::builder pb;
   pb.begin(rm.Rvsdg().root());
@@ -59,7 +59,7 @@ test()
   r2->set_rvorigin(delta2);
 
   auto phi = pb.end();
-  rm.Rvsdg().add_export(phi->output(0), { phi->output(0)->Type(), "" });
+  GraphExport::Create(*phi->output(0), "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

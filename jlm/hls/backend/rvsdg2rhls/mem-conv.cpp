@@ -170,11 +170,8 @@ get_impport_function_name(jlm::rvsdg::input * input)
 {
   auto traced = trace_call(input);
   JLM_ASSERT(traced);
-  auto arg = dynamic_cast<const jlm::rvsdg::argument *>(traced);
-  JLM_ASSERT(arg);
-  auto ip = dynamic_cast<const jlm::llvm::impport *>(&arg->port());
-  JLM_ASSERT(ip);
-  return ip->name();
+  auto arg = jlm::util::AssertedCast<const jlm::llvm::GraphImport>(traced);
+  return arg->Name();
 }
 
 // trace function ptr to its call
@@ -725,15 +722,11 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
       {
         JLM_ASSERT(cvarg->nusers() == 0);
         auto cvip = cvarg->input();
-        auto imp = cvip->origin();
         newLambda->subregion()->RemoveArgument(cvarg->index());
         // TODO: work around const
         newLambda->RemoveInput(cvip->index());
-        auto imparg = dynamic_cast<jlm::rvsdg::argument *>(imp);
-        JLM_ASSERT(imparg);
-        auto impprt = dynamic_cast<const jlm::llvm::impport *>(&imparg->port());
-        JLM_ASSERT(impprt);
-        root->RemoveArgument(imparg->index());
+        auto graphImport = util::AssertedCast<const llvm::GraphImport>(cvip->origin());
+        root->RemoveArgument(graphImport->index());
       }
     }
   }

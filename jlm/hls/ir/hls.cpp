@@ -35,6 +35,20 @@ bundletype::ComputeHash() const noexcept
   return seed;
 }
 
+backedge_argument &
+backedge_argument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+{
+  JLM_ASSERT(input == nullptr);
+  return *backedge_argument::create(&region, Type());
+}
+
+backedge_result &
+backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return *backedge_result::create(&origin);
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
@@ -82,7 +96,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
     auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->Type());
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
-    auto narg = jlm::rvsdg::argument::create(loop->subregion(), inp, oarg->port());
+    auto narg = jlm::rvsdg::argument::create(loop->subregion(), inp, oarg->Type());
     smap.insert(oarg, narg);
   }
   for (size_t i = 0; i < noutputs(); ++i)
@@ -118,7 +132,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
     auto outp = output(i);
     auto res = outp->results.begin().ptr();
     auto origin = smap.lookup(res->origin());
-    jlm::rvsdg::result::create(loop->subregion(), origin, loop->output(i), res->port());
+    jlm::rvsdg::result::create(loop->subregion(), origin, loop->output(i), res->Type());
   }
   nf->set_mutable(true);
   return loop;

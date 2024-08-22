@@ -384,22 +384,11 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-  output(delta::node * node, const rvsdg::port & port)
-      : structural_output(node, port.Type())
-  {}
-
   output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
       : structural_output(node, std::move(type))
   {}
 
 private:
-  static output *
-  create(delta::node * node, const rvsdg::port & port)
-  {
-    auto output = std::make_unique<delta::output>(node, port);
-    return static_cast<delta::output *>(node->append_output(std::move(output)));
-  }
-
   static output *
   create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
   {
@@ -424,9 +413,12 @@ class cvargument final : public rvsdg::argument
 public:
   ~cvargument() override;
 
+  cvargument &
+  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+
 private:
   cvargument(rvsdg::region * region, cvinput * input)
-      : rvsdg::argument(region, input, input->port())
+      : rvsdg::argument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -454,9 +446,12 @@ class result final : public rvsdg::result
 public:
   ~result() override;
 
+  result &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
-  result(rvsdg::output * origin)
-      : rvsdg::result(origin->region(), origin, nullptr, origin->port())
+  explicit result(rvsdg::output * origin)
+      : rvsdg::result(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *

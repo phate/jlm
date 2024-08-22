@@ -179,14 +179,14 @@ public:
   virtual ~flattened_binary_op() noexcept;
 
   inline flattened_binary_op(std::unique_ptr<binary_op> op, size_t narguments) noexcept
-      : simple_op({ narguments, op->argument(0).Type() }, { op->result(0).Type() }),
+      : simple_op({ narguments, op->argument(0) }, { op->result(0) }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
   inline flattened_binary_op(const binary_op & op, size_t narguments)
-      : simple_op({ narguments, op.argument(0).Type() }, { op.result(0).Type() }),
+      : simple_op({ narguments, op.argument(0) }, { op.result(0) }),
         op_(std::unique_ptr<binary_op>(static_cast<binary_op *>(op.copy().release())))
   {
     JLM_ASSERT(op_->is_associative());

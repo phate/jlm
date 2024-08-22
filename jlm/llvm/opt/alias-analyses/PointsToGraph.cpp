@@ -490,10 +490,9 @@ PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
   if (node != nullptr)
     return util::strfmt(node->operation().debug_string(), ":a", output.index());
 
-  if (is_import(&output))
+  if (auto graphImport = dynamic_cast<const GraphImport *>(&output))
   {
-    auto port = util::AssertedCast<const impport>(&output.port());
-    return util::strfmt("import:", port->name());
+    return util::strfmt("import:", graphImport->Name());
   }
 
   return "RegisterNode";
@@ -555,8 +554,7 @@ PointsToGraph::ImportNode::~ImportNode() noexcept = default;
 std::string
 PointsToGraph::ImportNode::DebugString() const
 {
-  auto port = util::AssertedCast<const impport>(&GetArgument().port());
-  return port->name();
+  return GetArgument().Name();
 }
 
 PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;

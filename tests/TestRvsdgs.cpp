@@ -45,7 +45,7 @@ StoreTest1::SetupRvsdg()
 
   fct->finalize({ c_amp_d[0] });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /* extract nodes */
 
@@ -102,7 +102,7 @@ StoreTest2::SetupRvsdg()
 
   fct->finalize({ p_amp_y[0] });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /* extract nodes */
 
@@ -144,7 +144,7 @@ LoadTest1::SetupRvsdg()
 
   fct->finalize(ld2);
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /* extract nodes */
 
@@ -201,7 +201,7 @@ LoadTest2::SetupRvsdg()
 
   fct->finalize({ y_star_p[0] });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /* extract nodes */
 
@@ -248,7 +248,7 @@ LoadFromUndefTest::SetupRvsdg()
       4);
 
   Lambda_->finalize(loadResults);
-  rvsdg.add_export(Lambda_->output(), { pointerType, "f" });
+  GraphExport::Create(*Lambda_->output(), "f");
 
   /*
    * Extract nodes
@@ -300,7 +300,7 @@ GetElementPtrTest::SetupRvsdg()
 
   fct->finalize({ sum, ldy[1] });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /*
    * Assign nodes
@@ -333,7 +333,7 @@ BitCastTest::SetupRvsdg()
 
   fct->finalize({ cast });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /*
    * Assign nodes
@@ -399,7 +399,7 @@ Bits2PtrTest::SetupRvsdg()
         { valueArgument, iOStateArgument, memoryStateArgument });
 
     lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
-    graph->add_export(lambda->output(), { PointerType::Create(), "testfct" });
+    GraphExport::Create(*lambda->output(), "testfct");
 
     return std::make_tuple(lambda, &call);
   };
@@ -447,7 +447,7 @@ ConstantPointerNullTest::SetupRvsdg()
 
   fct->finalize({ st[0] });
 
-  graph->add_export(fct->output(), { pointerType, "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /*
    * Assign nodes
@@ -584,7 +584,7 @@ CallTest1::SetupRvsdg()
     auto sum = jlm::rvsdg::bitadd_op::create(32, callF.Result(0), callG.Result(0));
 
     lambda->finalize({ sum, callG.GetIoStateOutput(), callG.GetMemoryStateOutput() });
-    graph->add_export(lambda->output(), { PointerType::Create(), "h" });
+    GraphExport::Create(*lambda->output(), "h");
 
     auto allocaX = jlm::rvsdg::node_output::node(x[0]);
     auto allocaY = jlm::rvsdg::node_output::node(y[0]);
@@ -716,7 +716,7 @@ CallTest2::SetupRvsdg()
         { create2.Result(0), destroy1.GetIoStateOutput(), destroy1.GetMemoryStateOutput() });
 
     lambda->finalize({ destroy2.GetIoStateOutput(), destroy2.GetMemoryStateOutput() });
-    graph->add_export(lambda->output(), { PointerType::Create(), "test" });
+    GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambda, &create1, &create2, &destroy1, &destroy2);
   };
@@ -828,7 +828,7 @@ IndirectCallTest1::SetupRvsdg()
 
     auto lambdaOutput =
         lambda->finalize({ add, call_three.GetIoStateOutput(), call_three.GetMemoryStateOutput() });
-    graph->add_export(lambda->output(), { pointerType, "test" });
+    GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambdaOutput, &call_three, &call_four);
   };
@@ -1023,7 +1023,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto lambdaOutput =
         lambda->finalize({ sum, callY.GetIoStateOutput(), callY.GetMemoryStateOutput() });
-    graph->add_export(lambdaOutput, { PointerType::Create(), "test" });
+    GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
         lambdaOutput,
@@ -1059,7 +1059,7 @@ IndirectCallTest2::SetupRvsdg()
         { pzAlloca[0], iOStateArgument, pzMerge });
 
     auto lambdaOutput = lambda->finalize(callX.Results());
-    graph->add_export(lambdaOutput, { PointerType::Create(), "test2" });
+    GraphExport::Create(*lambdaOutput, "test2");
 
     return std::make_tuple(
         lambdaOutput,
@@ -1129,7 +1129,7 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return rvsdg->add_import(impport(functionGType, "g", linkage::external_linkage));
+    return &GraphImport::Create(*rvsdg, functionGType, "g", linkage::external_linkage);
   };
 
   auto SetupFunctionF = [&](jlm::rvsdg::argument * functionG)
@@ -1173,7 +1173,7 @@ ExternalCallTest1::SetupRvsdg()
         { loadPath[0], loadMode[0], iOStateArgument, loadMode[1] });
 
     lambda->finalize(callG.Results());
-    rvsdg->add_export(lambda->output(), { pointerType, "f" });
+    GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(lambda, &callG);
   };
@@ -1228,10 +1228,10 @@ ExternalCallTest2::SetupRvsdg()
       });
 
   auto llvmLifetimeStart =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.start.p0", linkage::external_linkage);
   auto llvmLifetimeEnd =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.end.p0", linkage::external_linkage));
-  ExternalFArgument_ = rvsdg.add_import(impport(pointerType, "f", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.end.p0", linkage::external_linkage);
+  ExternalFArgument_ = &GraphImport::Create(rvsdg, pointerType, "f", linkage::external_linkage);
 
   // Setup function g()
   LambdaG_ = lambda::node::create(rvsdg.root(), lambdaGType, "g", linkage::external_linkage);
@@ -1339,7 +1339,7 @@ GammaTest::SetupRvsdg()
 
   fct->finalize({ sum, ld2[1] });
 
-  graph->add_export(fct->output(), { PointerType::Create(), "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /*
    * Assign nodes
@@ -1503,7 +1503,7 @@ GammaTest2::SetupRvsdg()
         { predicate, allocaXResults[0], allocaYResults[0], iOStateArgument, storeYResults[0] });
 
     lambda->finalize(call.Results());
-    rvsdg->add_export(lambda->output(), { PointerType::Create(), functionName });
+    GraphExport::Create(*lambda->output(), functionName);
 
     return std::make_tuple(
         lambda->output(),
@@ -1584,7 +1584,7 @@ ThetaTest::SetupRvsdg()
   thetanode->set_predicate(predicate);
 
   fct->finalize({ s });
-  graph->add_export(fct->output(), { PointerType::Create(), "f" });
+  GraphExport::Create(*fct->output(), "f");
 
   /*
    * Assign nodes
@@ -1665,7 +1665,7 @@ DeltaTest1::SetupRvsdg()
     auto & callG = CallNode::CreateNode(cvg, g->node()->Type(), { cvf, iOStateArgument, st[0] });
 
     auto lambdaOutput = lambda->finalize(callG.Results());
-    graph->add_export(lambda->output(), { PointerType::Create(), "h" });
+    GraphExport::Create(*lambda->output(), "h");
 
     return std::make_tuple(lambdaOutput, &callG, jlm::rvsdg::node_output::node(five));
   };
@@ -1773,7 +1773,7 @@ DeltaTest2::SetupRvsdg()
     st = StoreNonVolatileNode::Create(cvd2, b42, { call.GetMemoryStateOutput() }, 4);
 
     auto lambdaOutput = lambda->finalize(call.Results());
-    graph->add_export(lambdaOutput, { PointerType::Create(), "f2" });
+    GraphExport::Create(*lambdaOutput, "f2");
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -1880,7 +1880,7 @@ DeltaTest3::SetupRvsdg()
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
-    graph->add_export(lambdaOutput, { PointerType::Create(), "test" });
+    GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -1959,15 +1959,21 @@ ImportTest::SetupRvsdg()
     st = StoreNonVolatileNode::Create(cvd2, b21, { call.GetMemoryStateOutput() }, 4);
 
     auto lambdaOutput = lambda->finalize(call.Results());
-    graph->add_export(lambda->output(), { PointerType::Create(), "f2" });
+    GraphExport::Create(*lambda->output(), "f2");
 
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto d1 =
-      graph->add_import(impport(jlm::rvsdg::bittype::Create(32), "d1", linkage::external_linkage));
-  auto d2 =
-      graph->add_import(impport(jlm::rvsdg::bittype::Create(32), "d2", linkage::external_linkage));
+  auto d1 = &GraphImport::Create(
+      *graph,
+      jlm::rvsdg::bittype::Create(32),
+      "d1",
+      linkage::external_linkage);
+  auto d2 = &GraphImport::Create(
+      *graph,
+      jlm::rvsdg::bittype::Create(32),
+      "d2",
+      linkage::external_linkage);
 
   auto f1 = SetupF1(d1);
   auto [f2, callF1] = SetupF2(f1, d1, d2);
@@ -2121,7 +2127,7 @@ PhiTest1::SetupRvsdg()
         CallNode::CreateNode(fibcv, fibFunctionType, { ten, gep, iOStateArgument, state });
 
     auto lambdaOutput = lambda->finalize(call.Results());
-    graph->add_export(lambdaOutput, { PointerType::Create(), "test" });
+    GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(allocaResults[0]));
   };
@@ -2440,7 +2446,7 @@ PhiTest2::SetupRvsdg()
         { pTestAlloca[0], iOStateArgument, pTestMerge });
 
     auto lambdaOutput = lambda->finalize(callA.Results());
-    graph->add_export(lambdaOutput, { PointerType::Create(), "test" });
+    GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
         lambdaOutput,
@@ -2543,7 +2549,7 @@ PhiWithDeltaTest::SetupRvsdg()
   myArrayRecVar->result()->divert_to(deltaOutput);
 
   auto phiNode = pb.end();
-  rvsdg.add_export(phiNode->output(0), { PointerType::Create(), "myArray" });
+  GraphExport::Create(*phiNode->output(0), "myArray");
 
   return rvsdgModule;
 }
@@ -2580,7 +2586,7 @@ ExternalMemoryTest::SetupRvsdg()
   auto storeTwo = StoreNonVolatileNode::Create(y, two, { storeOne[0] }, 4);
 
   LambdaF->finalize(storeTwo);
-  graph->add_export(LambdaF->output(), { pointerType, "f" });
+  GraphExport::Create(*LambdaF->output(), "f");
 
   return module;
 }
@@ -2648,7 +2654,7 @@ EscapedMemoryTest1::SetupRvsdg()
     auto contextVariableX = deltaNode->add_ctxvar(&deltaX);
 
     auto deltaOutput = deltaNode->finalize(contextVariableX);
-    rvsdg->add_export(deltaOutput, { pointerType, "y" });
+    GraphExport::Create(*deltaOutput, "y");
 
     return deltaOutput;
   };
@@ -2684,7 +2690,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize({ loadResults2[0], iOStateArgument, storeResults[0] });
 
-    rvsdg->add_export(lambdaOutput, { pointerType, "test" });
+    GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
         lambdaOutput,
@@ -2738,14 +2744,20 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction1Declaration = [&]()
   {
-    return rvsdg->add_import(
-        impport(externalFunction1Type, "ExternalFunction1", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunction1Type,
+        "ExternalFunction1",
+        linkage::external_linkage);
   };
 
   auto SetupExternalFunction2Declaration = [&]()
   {
-    return rvsdg->add_import(
-        impport(externalFunction2Type, "ExternalFunction2", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunction2Type,
+        "ExternalFunction2",
+        linkage::external_linkage);
   };
 
   auto SetupReturnAddressFunction = [&]()
@@ -2773,7 +2785,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize({ mallocResults[0], iOStateArgument, mergeResults });
 
-    rvsdg->add_export(lambdaOutput, { pointerType, "ReturnAddress" });
+    GraphExport::Create(*lambdaOutput, "ReturnAddress");
 
     return std::make_tuple(lambdaOutput, jlm::rvsdg::node_output::node(mallocResults[0]));
   };
@@ -2809,7 +2821,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize(call.Results());
 
-    rvsdg->add_export(lambdaOutput, { pointerType, "CallExternalFunction1" });
+    GraphExport::Create(*lambdaOutput, "CallExternalFunction1");
 
     return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(mallocResults[0]));
   };
@@ -2846,7 +2858,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto lambdaOutput =
         lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
 
-    rvsdg->add_export(lambdaOutput, { pointerType, "CallExternalFunction2" });
+    GraphExport::Create(*lambdaOutput, "CallExternalFunction2");
 
     return std::make_tuple(
         lambdaOutput,
@@ -2904,8 +2916,11 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return rvsdg->add_import(
-        impport(externalFunctionType, "externalFunction", linkage::external_linkage));
+    return &GraphImport::Create(
+        *rvsdg,
+        externalFunctionType,
+        "externalFunction",
+        linkage::external_linkage);
   };
 
   auto SetupGlobal = [&]()
@@ -2922,7 +2937,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
     auto deltaOutput = delta->finalize(constant);
 
-    rvsdg->add_export(deltaOutput, { pointerType, "global" });
+    GraphExport::Create(*deltaOutput, "global");
 
     return deltaOutput;
   };
@@ -2956,7 +2971,7 @@ EscapedMemoryTest3::SetupRvsdg()
     auto lambdaOutput =
         lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
 
-    rvsdg->add_export(lambdaOutput, { pointerType, "test" });
+    GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
         lambdaOutput,
@@ -3012,7 +3027,7 @@ MemcpyTest::SetupRvsdg()
 
     auto deltaOutput = delta->finalize(constantDataArray);
 
-    rvsdg->add_export(deltaOutput, { PointerType::Create(), "localArray" });
+    GraphExport::Create(*deltaOutput, "localArray");
 
     return deltaOutput;
   };
@@ -3031,7 +3046,7 @@ MemcpyTest::SetupRvsdg()
 
     auto deltaOutput = delta->finalize(constantAggregateZero);
 
-    rvsdg->add_export(deltaOutput, { PointerType::Create(), "globalArray" });
+    GraphExport::Create(*deltaOutput, "globalArray");
 
     return deltaOutput;
   };
@@ -3067,7 +3082,7 @@ MemcpyTest::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize({ loadResults[0], iOStateArgument, loadResults[1] });
 
-    rvsdg->add_export(lambdaOutput, { PointerType::Create(), "f" });
+    GraphExport::Create(*lambdaOutput, "f");
 
     return lambdaOutput;
   };
@@ -3107,7 +3122,7 @@ MemcpyTest::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize(call.Results());
 
-    rvsdg->add_export(lambdaOutput, { PointerType::Create(), "g" });
+    GraphExport::Create(*lambdaOutput, "g");
 
     return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(memcpyResults[0]));
   };
@@ -3216,7 +3231,7 @@ MemcpyTest2::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize(call.Results());
 
-    rvsdg->add_export(lambdaOutput, { PointerType::Create(), "f" });
+    GraphExport::Create(*lambdaOutput, "f");
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -3281,7 +3296,7 @@ MemcpyTest3::SetupRvsdg()
 
   auto lambdaOutput = Lambda_->finalize({ iOStateArgument, memcpyResults[0] });
 
-  rvsdg->add_export(lambdaOutput, { PointerType::Create(), "f" });
+  GraphExport::Create(*lambdaOutput, "f");
 
   Alloca_ = rvsdg::node_output::node(allocaResults[0]);
   Memcpy_ = rvsdg::node_output::node(memcpyResults[0]);
@@ -3319,7 +3334,7 @@ LinkedListTest::SetupRvsdg()
         ConstantPointerNullOperation::Create(delta->subregion(), pointerType);
 
     auto deltaOutput = delta->finalize(constantPointerNullResult);
-    rvsdg.add_export(deltaOutput, { PointerType::Create(), "myList" });
+    GraphExport::Create(*deltaOutput, "myList");
 
     return deltaOutput;
   };
@@ -3357,7 +3372,7 @@ LinkedListTest::SetupRvsdg()
     auto load4 = LoadNonVolatileNode::Create(alloca[0], { store2[0] }, pointerType, 4);
 
     auto lambdaOutput = lambda->finalize({ load4[0], iOStateArgument, load4[1] });
-    rvsdg.add_export(lambdaOutput, { pointerType, "next" });
+    GraphExport::Create(*lambdaOutput, "next");
 
     return std::make_tuple(jlm::rvsdg::node_output::node(alloca[0]), lambdaOutput);
   };
@@ -3391,8 +3406,11 @@ AllMemoryNodesTest::SetupRvsdg()
   nf->set_mutable(false);
 
   // Create imported symbol "imported"
-  Import_ = graph->add_import(
-      impport(jlm::rvsdg::bittype::Create(32), "imported", linkage::external_linkage));
+  Import_ = &GraphImport::Create(
+      *graph,
+      rvsdg::bittype::Create(32),
+      "imported",
+      linkage::external_linkage);
 
   // Create global variable "global"
   Delta_ = delta::node::Create(
@@ -3463,8 +3481,8 @@ AllMemoryNodesTest::SetupRvsdg()
 
   Lambda_->finalize({ storeOutputs[0] });
 
-  graph->add_export(Delta_->output(), { pointerType, "global" });
-  graph->add_export(Lambda_->output(), { pointerType, "f" });
+  GraphExport::Create(*Delta_->output(), "global");
+  GraphExport::Create(*Lambda_->output(), "f");
 
   return module;
 }
@@ -3504,7 +3522,7 @@ NAllocaNodesTest::SetupRvsdg()
 
   Function_->finalize({ latestMemoryState });
 
-  graph->add_export(Function_->output(), { pointerType, "f" });
+  GraphExport::Create(*Function_->output(), "f");
 
   return module;
 }
@@ -3577,7 +3595,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
   // Return &localFunc, pass memory state directly through
   ExportedFunc_->finalize({ localFuncCtxVar, ExportedFunc_->fctargument(0) });
 
-  graph->add_export(ExportedFunc_->output(), { pointerType, "exportedFunc" });
+  GraphExport::Create(*ExportedFunc_->output(), "exportedFunc");
 
   return module;
 }
@@ -3610,7 +3628,7 @@ FreeNullTest::SetupRvsdg()
 
   LambdaMain_->finalize({ FreeResults[1], FreeResults[0] });
 
-  graph->add_export(LambdaMain_->output(), { PointerType::Create(), "main" });
+  GraphExport::Create(*LambdaMain_->output(), "main");
 
   return module;
 }
@@ -3685,7 +3703,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize(call.Results());
 
-    rvsdg.add_export(lambdaOutput, { PointerType::Create(), "main" });
+    GraphExport::Create(*lambdaOutput, "main");
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -3725,7 +3743,7 @@ VariadicFunctionTest1::SetupRvsdg()
       { iostatetype::Create(), MemoryStateType::Create() });
 
   // Setup h()
-  ImportH_ = rvsdg.add_import(impport(lambdaHType, "h", linkage::external_linkage));
+  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, "h", linkage::external_linkage);
 
   // Setup f()
   {
@@ -3829,12 +3847,13 @@ VariadicFunctionTest2::SetupRvsdg()
       { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
   auto llvmLifetimeStart =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.start.p0", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.start.p0", linkage::external_linkage);
   auto llvmLifetimeEnd =
-      rvsdg.add_import(impport(pointerType, "llvm.lifetime.end.p0", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.end.p0", linkage::external_linkage);
   auto llvmVaStart =
-      rvsdg.add_import(impport(pointerType, "llvm.va_start", linkage::external_linkage));
-  auto llvmVaEnd = rvsdg.add_import(impport(pointerType, "llvm.va_end", linkage::external_linkage));
+      &GraphImport::Create(rvsdg, pointerType, "llvm.va_start", linkage::external_linkage);
+  auto llvmVaEnd =
+      &GraphImport::Create(rvsdg, pointerType, "llvm.va_end", linkage::external_linkage);
 
   // Setup function fst()
   {

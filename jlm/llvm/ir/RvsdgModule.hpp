@@ -14,78 +14,80 @@
 namespace jlm::llvm
 {
 
-/* impport class */
-
-class impport final : public jlm::rvsdg::impport
+/**
+ * Represents an import into the RVSDG of an external entity.
+ * It is used to model LLVM module declarations.
+ */
+class GraphImport final : public rvsdg::GraphImport
 {
-public:
-  virtual ~impport();
-
-  impport(
-      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
-      const std::string & name,
-      const linkage & lnk)
-      : jlm::rvsdg::impport(PointerType::Create(), name),
-        linkage_(lnk),
+private:
+  GraphImport(
+      rvsdg::graph & graph,
+      std::shared_ptr<const rvsdg::valuetype> valueType,
+      std::string name,
+      llvm::linkage linkage)
+      : rvsdg::GraphImport(graph, PointerType::Create(), std::move(name)),
+        Linkage_(std::move(linkage)),
         ValueType_(std::move(valueType))
   {}
 
-  impport(const impport & other) = default;
-
-  impport(impport && other) = default;
-
-  impport &
-  operator=(const impport &) = delete;
-
-  impport &
-  operator=(impport &&) = delete;
-
-  const jlm::llvm::linkage &
-  linkage() const noexcept
+public:
+  [[nodiscard]] const linkage &
+  Linkage() const noexcept
   {
-    return linkage_;
+    return Linkage_;
   }
 
   [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
-  Type() const noexcept
+  ValueType() const noexcept
   {
     return ValueType_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::valuetype &
-  GetValueType() const noexcept
+  GraphImport &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
+  static GraphImport &
+  Create(
+      rvsdg::graph & graph,
+      std::shared_ptr<const rvsdg::valuetype> valueType,
+      std::string name,
+      llvm::linkage linkage)
   {
-    return *ValueType_;
+    auto graphImport =
+        new GraphImport(graph, std::move(valueType), std::move(name), std::move(linkage));
+    graph.root()->append_argument(graphImport);
+    return *graphImport;
   }
 
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
-
 private:
-  jlm::llvm::linkage linkage_;
-  std::shared_ptr<const jlm::rvsdg::valuetype> ValueType_;
+  llvm::linkage Linkage_;
+  std::shared_ptr<const rvsdg::valuetype> ValueType_;
 };
 
-static inline bool
-is_import(const jlm::rvsdg::output * output)
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ * It is used to model externally visible entities from LLVM modules.
+ */
+class GraphExport final : public rvsdg::GraphExport
 {
-  auto graph = output->region()->graph();
+private:
+  GraphExport(rvsdg::output & origin, std::string name)
+      : rvsdg::GraphExport(origin, std::move(name))
+  {}
 
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return argument && argument->region() == graph->root();
-}
+public:
+  GraphExport &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
 
-static inline bool
-is_export(const jlm::rvsdg::input * input)
-{
-  auto graph = input->region()->graph();
-
-  auto result = dynamic_cast<const jlm::rvsdg::result *>(input);
-  return result && result->region() == graph->root();
-}
+  static GraphExport &
+  Create(rvsdg::output & origin, std::string name)
+  {
+    auto graphExport = new GraphExport(origin, std::move(name));
+    origin.region()->graph()->root()->append_result(graphExport);
+    return *graphExport;
+  }
+};
 
 /**
  * An LLVM module utilizing the RVSDG representation.

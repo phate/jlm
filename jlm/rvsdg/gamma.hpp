@@ -469,6 +469,9 @@ class GammaArgument final : public argument
 public:
   ~GammaArgument() noexcept override;
 
+  GammaArgument &
+  Copy(rvsdg::region & region, structural_input * input) override;
+
 private:
   GammaArgument(rvsdg::region & region, gamma_input & input)
       : argument(&region, &input, input.Type())
@@ -497,6 +500,9 @@ private:
   GammaResult(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
       : result(&region, &origin, &gammaOutput, origin.Type())
   {}
+
+  GammaResult &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
 
   static GammaResult &
   Create(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)

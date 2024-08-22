@@ -781,9 +781,9 @@ bitcast_op::debug_string() const
 {
   return util::strfmt(
       "BITCAST[",
-      argument(0).type().debug_string(),
+      argument(0)->debug_string(),
       " -> ",
-      result(0).type().debug_string(),
+      result(0)->debug_string(),
       "]");
 }
 

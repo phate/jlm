@@ -35,7 +35,7 @@ check_operands(
 
   for (size_t n = 0; n < operands.size(); n++)
   {
-    if (operands[n]->type() != operation.argument(n).type())
+    if (operands[n]->type() != *operation.argument(n))
       throw util::error("invalid type.");
   }
 }
@@ -50,7 +50,7 @@ check_results(
 
   for (size_t n = 0; n < results.size(); n++)
   {
-    if (results[n]->type() != operation.result(n).type())
+    if (results[n]->type() != *operation.result(n))
       throw util::error("invalid type.");
   }
 }

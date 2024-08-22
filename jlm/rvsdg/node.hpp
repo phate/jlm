@@ -40,8 +40,6 @@ class input
 public:
   virtual ~input() noexcept;
 
-  input(jlm::rvsdg::output * origin, jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
-
   input(
       jlm::rvsdg::output * origin,
       jlm::rvsdg::region * region,
@@ -72,16 +70,16 @@ public:
   void
   divert_to(jlm::rvsdg::output * new_origin);
 
-  inline const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::type &
   type() const noexcept
   {
-    return port_->type();
+    return *Type();
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
   Type() const noexcept
   {
-    return port_->Type();
+    return Type_;
   }
 
   inline jlm::rvsdg::region *
@@ -90,23 +88,8 @@ public:
     return region_;
   }
 
-  inline const jlm::rvsdg::port &
-  port() const noexcept
-  {
-    return *port_;
-  }
-
   virtual std::string
   debug_string() const;
-
-  inline void
-  replace(const jlm::rvsdg::port & port)
-  {
-    if (port_->type() != port.type())
-      throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
-
-    port_ = port.copy();
-  }
 
   /**
    * Retrieve the associated node from \p input if \p input is derived from jlm::rvsdg::node_input.
@@ -282,7 +265,7 @@ private:
   size_t index_;
   jlm::rvsdg::output * origin_;
   jlm::rvsdg::region * region_;
-  std::unique_ptr<jlm::rvsdg::port> port_;
+  std::shared_ptr<const rvsdg::type> Type_;
 };
 
 template<class T>
@@ -308,8 +291,6 @@ class output
 
 public:
   virtual ~output() noexcept;
-
-  output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
 
   output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type);
 
@@ -372,16 +353,16 @@ public:
     return users_.end();
   }
 
-  inline const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::type &
   type() const noexcept
   {
-    return port_->type();
+    return *Type();
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
   Type() const noexcept
   {
-    return port_->Type();
+    return Type_;
   }
 
   inline jlm::rvsdg::region *
@@ -390,23 +371,8 @@ public:
     return region_;
   }
 
-  inline const jlm::rvsdg::port &
-  port() const noexcept
-  {
-    return *port_;
-  }
-
   virtual std::string
   debug_string() const;
-
-  inline void
-  replace(const jlm::rvsdg::port & port)
-  {
-    if (port_->type() != port.type())
-      throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
-
-    port_ = port.copy();
-  }
 
   template<class T>
   class iterator
@@ -577,7 +543,7 @@ private:
 
   size_t index_;
   jlm::rvsdg::region * region_;
-  std::unique_ptr<jlm::rvsdg::port> port_;
+  std::shared_ptr<const rvsdg::type> Type_;
   std::unordered_set<jlm::rvsdg::input *> users_;
 };
 

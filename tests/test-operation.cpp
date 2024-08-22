@@ -8,6 +8,19 @@
 namespace jlm::tests
 {
 
+GraphImport &
+GraphImport::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+{
+  return GraphImport::Create(*region.graph(), Type(), Name());
+}
+
+GraphExport &
+GraphExport::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return GraphExport::Create(origin, Name());
+}
+
 /* unary operation */
 
 unary_op::~unary_op() noexcept

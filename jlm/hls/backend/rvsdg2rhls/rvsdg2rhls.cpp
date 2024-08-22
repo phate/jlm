@@ -151,16 +151,14 @@ inline_calls(jlm::rvsdg::region * region)
       auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(traced);
       if (!so)
       {
-        auto arg = dynamic_cast<const jlm::rvsdg::argument *>(traced);
-        auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
-        if (ip)
+        if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
         {
-          if (ip->name().rfind("decouple_", 0) == 0)
+          if (graphImport->Name().rfind("decouple_", 0) == 0)
           {
             // can't inline pseudo functions used for decoupling
             continue;
           }
-          throw jlm::util::error("can not inline external function " + ip->name());
+          throw jlm::util::error("can not inline external function " + graphImport->Name());
         }
       }
       JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
@@ -214,7 +212,7 @@ convert_alloca(jlm::rvsdg::region * region)
         cout = jlm::rvsdg::simple_node::create_normalized(db->subregion(), cop, {})[0];
       }
       auto delta = db->finalize(cout);
-      region->graph()->add_export(delta, { delta_type, delta_name });
+      jlm::llvm::GraphExport::Create(*delta, delta_name);
       auto delta_local = route_to_region(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
@@ -346,10 +344,13 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         if (!orig_node_output)
         {
           // handle decouple stuff
-          auto arg = dynamic_cast<const jlm::rvsdg::argument *>(ln->input(i)->origin());
-          auto ip = dynamic_cast<const llvm::impport *>(&arg->port());
-          auto new_arg = rhls->Rvsdg().add_import(*ip);
-          smap.insert(ln->input(i)->origin(), new_arg);
+          auto oldGraphImport = dynamic_cast<llvm::GraphImport *>(ln->input(i)->origin());
+          auto & newGraphImport = llvm::GraphImport::Create(
+              rhls->Rvsdg(),
+              oldGraphImport->ValueType(),
+              oldGraphImport->Name(),
+              oldGraphImport->Linkage());
+          smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
         auto orig_node = orig_node_output->node();
@@ -366,15 +367,15 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           }
           std::cout << "delta node " << odn->name() << ": " << odn->type().debug_string() << "\n";
           // add import for delta to rhls
-          llvm::impport im(odn->Type(), odn->name(), llvm::linkage::external_linkage);
-          //						JLM_ASSERT(im.name()==odn->name());
-          auto arg = rhls->Rvsdg().add_import(im);
-          auto tmp = dynamic_cast<const llvm::impport *>(&arg->port());
-          JLM_ASSERT(tmp && tmp->name() == odn->name());
-          smap.insert(ln->input(i)->origin(), arg);
+          auto & graphImport = llvm::GraphImport::Create(
+              rhls->Rvsdg(),
+              odn->Type(),
+              odn->name(),
+              llvm::linkage::external_linkage);
+          smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          rm.Rvsdg().add_export(odn->output(), { odn->output()->Type(), odn->name() });
+          jlm::llvm::GraphExport::Create(*odn->output(), odn->name());
         }
         else
         {
@@ -390,12 +391,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           nullptr,
           new_ln->output()->Type());
       // add function as input to rm and remove it
-      llvm::impport im(
+      auto & graphImport = llvm::GraphImport::Create(
+          rm.Rvsdg(),
           ln->Type(),
           ln->name(),
           llvm::linkage::external_linkage); // TODO: change linkage?
-      auto arg = rm.Rvsdg().add_import(im);
-      ln->output()->divert_users(arg);
+      ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function " << new_ln->name() << " extracted for HLS\n";
       return rhls;
@@ -453,9 +454,10 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   instrument_ref(*reference);
   for (size_t i = 0; i < reference->Rvsdg().root()->narguments(); ++i)
   {
-    auto arg = reference->Rvsdg().root()->argument(i);
-    auto imp = dynamic_cast<const llvm::impport *>(&arg->port());
-    std::cout << "impport " << imp->name() << ": " << imp->type().debug_string() << "\n";
+    auto graphImport =
+        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().root()->argument(i));
+    std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
+              << "\n";
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
