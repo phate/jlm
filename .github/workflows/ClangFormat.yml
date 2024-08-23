@@ -14,7 +14,10 @@ jobs:
         with:
           install-llvm: true # Needed to configure jlm
           install-clang-format: true
+      - name: "Create fake installation dir for MLIR and HLS"
+        # Formatting does not use this installation dir, but it must still exist
+        run: mkdir -p usr
       - name: "Configure jlm with HLS and MLIR enabled"
-        run: ./configure.sh --enable-mlir /usr --enable-hls /usr
+        run: ./configure.sh --enable-mlir usr --enable-hls usr
       - name: "Check format"
         run: make format-dry-run

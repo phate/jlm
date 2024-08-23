@@ -114,7 +114,7 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 	# If HLS is enabled, ensure that CIRCT_PATH is not empty, and a real directory
 	if [ -z "$CIRCT_PATH" ] || [ ! -d "$CIRCT_PATH" ]; then
 		echo "error: the specified CIRCT_PATH does not exist: $CIRCT_PATH"
-	  exit 1
+		exit 1
 	fi
 
 	CPPFLAGS_CIRCT="-I${CIRCT_PATH}/include"
