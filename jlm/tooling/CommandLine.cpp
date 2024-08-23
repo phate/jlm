@@ -246,7 +246,7 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
   static llvm::tginversion thetaGammaInversion;
   static llvm::loopunroll loopUnrolling(4);
   static llvm::nodereduction nodeReduction;
-  static llvm::RvsdgTreePrinter rvsdgTreePrinter;
+  static llvm::RvsdgTreePrinter rvsdgTreePrinter(RvsdgTreePrinterConfiguration_);
 
   static std::unordered_map<OptimizationId, llvm::optimization *> map(
       { { OptimizationId::AAAndersenAgnostic, &andersenAgnostic },

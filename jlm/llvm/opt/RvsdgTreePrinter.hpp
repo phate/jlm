@@ -57,7 +57,9 @@ public:
 
   ~RvsdgTreePrinter() noexcept override;
 
-  RvsdgTreePrinter() = default;
+  explicit RvsdgTreePrinter(Configuration configuration)
+      : Configuration_(std::move(configuration))
+  {}
 
   RvsdgTreePrinter(const RvsdgTreePrinter &) = delete;
 
@@ -74,10 +76,6 @@ public:
 
   void
   run(RvsdgModule & rvsdgModule);
-
-  // FIXME: add documentation
-  void
-  SetConfiguration(Configuration configuration);
 
 private:
   void

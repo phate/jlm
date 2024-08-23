@@ -43,12 +43,6 @@ public:
 RvsdgTreePrinter::~RvsdgTreePrinter() noexcept = default;
 
 void
-RvsdgTreePrinter::SetConfiguration(Configuration configuration)
-{
-  Configuration_ = std::move(configuration);
-}
-
-void
 RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());

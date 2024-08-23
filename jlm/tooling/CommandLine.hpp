@@ -88,13 +88,15 @@ public:
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
+      llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations)
       : InputFile_(std::move(inputFile)),
         InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
         OutputFormat_(outputFormat),
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
-        OptimizationIds_(std::move(optimizations))
+        OptimizationIds_(std::move(optimizations)),
+        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration))
   {}
 
   void
@@ -167,6 +169,7 @@ public:
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
+      llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
@@ -175,6 +178,7 @@ public:
         std::move(outputFile),
         outputFormat,
         std::move(statisticsCollectorSettings),
+        std::move(rvsdgTreePrinterConfiguration),
         std::move(optimizations));
   }
 
@@ -185,6 +189,7 @@ private:
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
+  llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
 
   struct OptimizationCommandLineArgument
   {
