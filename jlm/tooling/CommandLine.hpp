@@ -135,7 +135,7 @@ public:
     return OptimizationIds_;
   }
 
-  [[nodiscard]] std::vector<llvm::optimization *>
+  [[nodiscard]] std::vector<std::unique_ptr<llvm::optimization>>
   GetOptimizations() const noexcept;
 
   static OptimizationId
@@ -156,7 +156,7 @@ public:
   static const char *
   ToCommandLineArgument(OutputFormat outputFormat);
 
-  static llvm::optimization *
+  static std::unique_ptr<llvm::optimization>
   GetOptimization(enum OptimizationId optimizationId);
 
   static std::unique_ptr<JlmOptCommandLineOptions>
