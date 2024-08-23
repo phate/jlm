@@ -31,8 +31,8 @@ jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * respo
     auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
     JLM_ASSERT(ln);
     auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
-    auto argument = jlm::rvsdg::argument::create(target, input, response->Type());
-    return argument;
+    auto & argument = EntryArgument::Create(*target, *input, response->Type());
+    return &argument;
   }
 }
 
