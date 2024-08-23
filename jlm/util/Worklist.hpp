@@ -45,7 +45,7 @@ public:
    * @return true if there are work items left to be visited
    */
   [[nodiscard]] virtual bool
-  HasMoreWorkItems() = 0;
+  HasMoreWorkItems() const noexcept = 0;
 
   /**
    * Removes one work item from the worklist.
@@ -78,8 +78,8 @@ public:
 
   LifoWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -123,8 +123,8 @@ public:
 
   FifoWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -173,8 +173,8 @@ public:
 
   LrfWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -240,8 +240,8 @@ public:
 
   TwoPhaseLrfWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !Current_.empty() || !Next_.empty();
   }
@@ -302,15 +302,15 @@ private:
  * @see Worklist
  */
 template<typename T>
-class DummyWorklist final : public Worklist<T>
+class ObserverWorklist final : public Worklist<T>
 {
 public:
-  ~DummyWorklist() override = default;
+  ~ObserverWorklist() override = default;
 
-  DummyWorklist() = default;
+  ObserverWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     JLM_UNREACHABLE("Dummy worklist");
   }
@@ -332,7 +332,7 @@ public:
    * ResetPush() was called.
    */
   [[nodiscard]] bool
-  HasPushBeenMade()
+  HasPushBeenMade() const noexcept
   {
     return PushMade_;
   }

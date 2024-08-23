@@ -135,9 +135,9 @@ JLM_UNIT_TEST_REGISTER(
     TestTwoPhaseLrfWorklist)
 
 static int
-TestDummyWorklist()
+TestObserverWorklist()
 {
-  jlm::util::DummyWorklist<size_t> wl;
+  jlm::util::ObserverWorklist<size_t> wl;
   assert(!wl.HasPushBeenMade());
   wl.PushWorkItem(7);
   assert(wl.HasPushBeenMade());
@@ -152,5 +152,5 @@ TestDummyWorklist()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestWorklist-TestDummyWorklist",
-    TestDummyWorklist)
+    "jlm/llvm/opt/alias-analyses/TestWorklist-TestObserverWorklist",
+    TestObserverWorklist)

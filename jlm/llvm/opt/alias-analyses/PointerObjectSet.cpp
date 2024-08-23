@@ -1961,12 +1961,13 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     FlushNewSupersetEdges();
   };
 
-  // The dummy worklist only contains one bit of state: "has anything been pushed since last reset?"
+  // The observer worklist only contains one bit of state:
+  //   "has anything been pushed since last reset?"
   // It does not provide an iteration order, so if any work item need to be revisited,
   // we do a topological traversal over all work items instead, called a "sweep".
   // Performing topological sorting also detects all cycles, which are unified away.
   constexpr bool useTopologicalTraversal =
-      std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>;
+      std::is_same_v<Worklist, util::ObserverWorklist<PointerObjectIndex>>;
 
   if constexpr (useTopologicalTraversal)
   {
@@ -2059,7 +2060,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     constexpr bool vPreferImplicitPointees = decltype(tPreferImplicitPointees)::value;
 
     if constexpr (
-        std::is_same_v<Worklist, util::DummyWorklist<PointerObjectIndex>>
+        std::is_same_v<Worklist, util::ObserverWorklist<PointerObjectIndex>>
         && (vOnlineCycleDetection || vHybridCycleDetection || vLazyCycleDetection))
     {
       JLM_UNREACHABLE("Can not enable online, hybrid or lazy cycle detection with the topo policy");
@@ -2085,7 +2086,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   std::variant<
       typename util::LrfWorklist<PointerObjectIndex> *,
       typename util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
-      typename util::DummyWorklist<PointerObjectIndex> *,
+      typename util::ObserverWorklist<PointerObjectIndex> *,
       typename util::LifoWorklist<PointerObjectIndex> *,
       typename util::FifoWorklist<PointerObjectIndex> *>
       policyVariant;
@@ -2095,7 +2096,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
     policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::TopologicalSort)
-    policyVariant = (util::DummyWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = (util::ObserverWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
     policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)
