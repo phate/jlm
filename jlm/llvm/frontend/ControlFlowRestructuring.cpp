@@ -496,8 +496,7 @@ RestructureControlFlow(llvm::cfg * cfg)
 
   for (const auto & l : tcloops)
     reinsert_tcloop(l);
-
-  // TODO: SLOW
+  
   JLM_ASSERT(is_proper_structured(*cfg));
 }
 
