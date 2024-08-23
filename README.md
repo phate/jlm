@@ -78,7 +78,7 @@ CIRCT and the HLS backend can be setup with the following commands:
 ```
 ./scripts/build-circt.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
 
-./configure --enable-hls <path-to-CIRCT>
+./configure --enable-hls=<path-to-CIRCT>
 ```
 
 ## Publications

@@ -30,8 +30,9 @@ public:
    * /param verilogFile The filename to the Verilog file that is to be used together with the
    * generated harness as input to Verilator.
    */
-  VerilatorHarnessHLS(const util::filepath verilogFile)
-      : VerilogFile_(std::move(verilogFile)){};
+  explicit VerilatorHarnessHLS(util::filepath verilogFile)
+      : VerilogFile_(std::move(verilogFile))
+  {}
 
 private:
   const util::filepath VerilogFile_;
