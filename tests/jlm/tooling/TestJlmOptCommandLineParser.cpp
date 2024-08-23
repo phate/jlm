@@ -74,7 +74,7 @@ TestOptimizationIdToOptimizationTranslation()
   {
     auto optimizationId = static_cast<JlmOptCommandLineOptions::OptimizationId>(n);
 
-    // throws exception on failure
+    // terminates on unhandled optimization id
     JlmOptCommandLineOptions::GetOptimization(optimizationId);
   }
 }
