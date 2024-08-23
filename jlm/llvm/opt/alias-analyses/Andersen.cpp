@@ -117,6 +117,8 @@ Andersen::Configuration::GetAllConfigurations()
     PickOnlineCycleDetection(config);
     config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
     PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::TopologicalSort);
+    PickDifferencePropagation(config); // With topo, skip all cycle detection
   };
   auto PickOfflineNormalization = [&](Configuration config)
   {
@@ -180,6 +182,7 @@ class Andersen::Statistics final : public util::Statistics
       "#WorklistSolverWorkItemsPopped";
   static constexpr const char * NumWorklistSolverWorkItemsNewPointees_ =
       "#WorklistSolverWorkItemsNewPointees";
+  static constexpr const char * NumTopologicalWorklistSweeps_ = "#TopologicalWorklistSweeps";
 
   // Online technique statistics
   static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
@@ -327,6 +330,9 @@ public:
     // How many work items were popped from the worklist in total
     AddMeasurement(NumWorklistSolverWorkItemsPopped_, statistics.NumWorkItemsPopped);
     AddMeasurement(NumWorklistSolverWorkItemsNewPointees_, statistics.NumWorkItemNewPointees);
+
+    if (statistics.NumTopologicalWorklistSweeps)
+      AddMeasurement(NumTopologicalWorklistSweeps_, *statistics.NumTopologicalWorklistSweeps);
 
     if (statistics.NumOnlineCyclesDetected)
       AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
