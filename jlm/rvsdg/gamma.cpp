@@ -386,6 +386,13 @@ GammaArgument::Copy(rvsdg::region & region, structural_input * input)
 
 GammaResult::~GammaResult() noexcept = default;
 
+GammaResult &
+GammaResult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+{
+  auto gammaOutput = util::AssertedCast<gamma_output>(output);
+  return GammaResult::Create(*origin.region(), origin, *gammaOutput);
+}
+
 }
 
 jlm::rvsdg::node_normal_form *
@@ -397,7 +404,8 @@ gamma_node_get_default_normal_form_(
   return new jlm::rvsdg::gamma_normal_form(operator_class, parent, graph);
 }
 
-static void __attribute__((constructor)) register_node_normal_form(void)
+static void __attribute__((constructor))
+register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::gamma_op),

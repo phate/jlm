@@ -11,31 +11,6 @@
 namespace jlm::rvsdg
 {
 
-/* port */
-
-port::~port()
-{}
-
-port::port(std::shared_ptr<const jlm::rvsdg::type> type)
-    : type_(std::move(type))
-{}
-
-bool
-port::operator==(const port & other) const noexcept
-{
-  // If both types are identical (same pointer), no need
-  // to semantically check for equality.
-  return type_ == other.type_ || *type_ == *other.type_;
-}
-
-std::unique_ptr<port>
-port::copy() const
-{
-  return std::make_unique<port>(*this);
-}
-
-/* operation */
-
 operation::~operation() noexcept
 {}
 
@@ -56,7 +31,7 @@ simple_op::narguments() const noexcept
   return operands_.size();
 }
 
-const jlm::rvsdg::port &
+const std::shared_ptr<const rvsdg::type> &
 simple_op::argument(size_t index) const noexcept
 {
   JLM_ASSERT(index < narguments());
@@ -69,7 +44,7 @@ simple_op::nresults() const noexcept
   return results_.size();
 }
 
-const jlm::rvsdg::port &
+const std::shared_ptr<const rvsdg::type> &
 simple_op::result(size_t index) const noexcept
 {
   JLM_ASSERT(index < nresults());

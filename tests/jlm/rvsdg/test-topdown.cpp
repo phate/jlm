@@ -15,15 +15,15 @@ test_initialization()
   auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto i = graph.add_import({ vtype, "i" });
+  auto i = &jlm::tests::GraphImport::Create(graph, vtype, "i");
 
   auto constant = jlm::tests::test_op::create(graph.root(), {}, { vtype });
   auto unary = jlm::tests::test_op::create(graph.root(), { i }, { vtype });
   auto binary = jlm::tests::test_op::create(graph.root(), { i, unary->output(0) }, { vtype });
 
-  graph.add_export(constant->output(0), { constant->output(0)->Type(), "c" });
-  graph.add_export(unary->output(0), { unary->output(0)->Type(), "u" });
-  graph.add_export(binary->output(0), { binary->output(0)->Type(), "b" });
+  jlm::tests::GraphExport::Create(*constant->output(0), "c");
+  jlm::tests::GraphExport::Create(*unary->output(0), "u");
+  jlm::tests::GraphExport::Create(*binary->output(0), "b");
 
   bool unary_visited = false;
   bool binary_visited = false;
@@ -52,7 +52,7 @@ test_basic_traversal()
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->Type(), "dummy" });
+  jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
     jlm::rvsdg::node * tmp;
@@ -105,7 +105,7 @@ test_traversal_insertion()
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
 
-  graph.add_export(n2->output(0), { n2->output(0)->Type(), "dummy" });
+  jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
     jlm::rvsdg::node * node;

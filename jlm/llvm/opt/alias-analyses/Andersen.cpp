@@ -45,6 +45,12 @@ Andersen::Configuration::ToString() const
       str << "OnlineCD_";
     if (EnableHybridCycleDetection_)
       str << "HybridCD_";
+    if (EnableLazyCycleDetection_)
+      str << "LazyCD_";
+    if (EnableDifferencePropagation_)
+      str << "DP_";
+    if (EnablePreferImplicitPointees_)
+      str << "PIP_";
   }
   else
   {
@@ -60,16 +66,36 @@ std::vector<Andersen::Configuration>
 Andersen::Configuration::GetAllConfigurations()
 {
   std::vector<Configuration> configs;
-
+  auto PickPreferImplicitPointees = [&](Configuration config)
+  {
+    config.EnablePreferImplicitPointees(false);
+    configs.push_back(config);
+    config.EnablePreferImplicitPointees(true);
+    configs.push_back(config);
+  };
+  auto PickDifferencePropagation = [&](Configuration config)
+  {
+    config.EnableDifferencePropagation(false);
+    PickPreferImplicitPointees(config);
+    config.EnableDifferencePropagation(true);
+    PickPreferImplicitPointees(config);
+  };
+  auto PickLazyCycleDetection = [&](Configuration config)
+  {
+    config.EnableLazyCycleDetection(false);
+    PickDifferencePropagation(config);
+    config.EnableLazyCycleDetection(true);
+    PickDifferencePropagation(config);
+  };
   auto PickHybridCycleDetection = [&](Configuration config)
   {
     config.EnableHybridCycleDetection(false);
-    configs.push_back(config);
+    PickLazyCycleDetection(config);
     // Hybrid Cycle Detection can only be enabled when OVS is enabled
     if (config.IsOfflineVariableSubstitutionEnabled())
     {
       config.EnableHybridCycleDetection(true);
-      configs.push_back(config);
+      PickLazyCycleDetection(config);
     }
   };
   auto PickOnlineCycleDetection = [&](Configuration config)
@@ -77,7 +103,7 @@ Andersen::Configuration::GetAllConfigurations()
     config.EnableOnlineCycleDetection(false);
     PickHybridCycleDetection(config);
     config.EnableOnlineCycleDetection(true);
-    // OnlineCD can not be combined with HybridCD
+    // OnlineCD can not be combined with HybridCD or LazyCD
     configs.push_back(config);
   };
   auto PickWorklistPolicy = [&](Configuration config)
@@ -160,6 +186,12 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
 
   static constexpr const char * NumHybridCycleUnifications_ = "#HybridCycleUnifications";
+
+  static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
+  static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
+  static constexpr const char * NumLazyCycleUnifications_ = "#LazyCycleUnifications";
+
+  static constexpr const char * NumPIPExplicitPointeesRemoved_ = "#PIPExplicitPointeesRemoved";
 
   // After solving statistics
   static constexpr const char * NumEscapedMemoryObjects_ = "#EscapedMemoryObjects";
@@ -304,6 +336,18 @@ public:
 
     if (statistics.NumHybridCycleUnifications)
       AddMeasurement(NumHybridCycleUnifications_, *statistics.NumHybridCycleUnifications);
+
+    if (statistics.NumLazyCyclesDetectionAttempts)
+      AddMeasurement(NumLazyCycleDetectionAttempts_, *statistics.NumLazyCyclesDetectionAttempts);
+
+    if (statistics.NumLazyCyclesDetected)
+      AddMeasurement(NumLazyCyclesDetected_, *statistics.NumLazyCyclesDetected);
+
+    if (statistics.NumLazyCycleUnifications)
+      AddMeasurement(NumLazyCycleUnifications_, *statistics.NumLazyCycleUnifications);
+
+    if (statistics.NumExplicitPointeesRemoved)
+      AddMeasurement(NumPIPExplicitPointeesRemoved_, *statistics.NumExplicitPointeesRemoved);
   }
 
   void
@@ -998,7 +1042,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
   // These symbols can either be global variables or functions
   for (size_t n = 0; n < rootRegion.narguments(); n++)
   {
-    auto & argument = *rootRegion.argument(n);
+    auto & argument = *util::AssertedCast<GraphImport>(rootRegion.argument(n));
 
     // Only care about imported pointer values
     if (!IsOrContainsPointerType(argument.type()))
@@ -1090,7 +1134,10 @@ Andersen::SolveConstraints(
     auto worklistStatistics = constraints.SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
-        config.IsHybridCycleDetectionEnabled());
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled(),
+        config.IsPreferImplicitPointeesEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else

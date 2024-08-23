@@ -21,7 +21,7 @@ ArgumentNodeMismatch()
   auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ valueType, "import" });
+  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
@@ -58,7 +58,7 @@ ArgumentInputTypeMismatch()
   auto stateType = jlm::tests::statetype::Create();
 
   jlm::rvsdg::graph rvsdg;
-  auto x = rvsdg.add_import({ valueType, "import" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "import");
 
   auto structuralNode = structural_node::create(rvsdg.root(), 1);
   auto structuralInput = jlm::rvsdg::structural_input::create(structuralNode, x, valueType);
@@ -80,10 +80,7 @@ ArgumentInputTypeMismatch()
   exceptionWasCaught = false;
   try
   {
-    jlm::rvsdg::argument::create(
-        structuralNode->subregion(0),
-        structuralInput,
-        jlm::rvsdg::port(stateType));
+    jlm::rvsdg::argument::create(structuralNode->subregion(0), structuralInput, stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

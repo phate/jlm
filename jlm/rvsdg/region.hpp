@@ -46,11 +46,6 @@ protected:
   argument(
       jlm::rvsdg::region * region,
       jlm::rvsdg::structural_input * input,
-      const jlm::rvsdg::port & port);
-
-  argument(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::structural_input * input,
       std::shared_ptr<const rvsdg::type> type);
 
   argument(const argument &) = delete;
@@ -85,9 +80,6 @@ public:
   Copy(rvsdg::region & region, structural_input * input);
 
   static jlm::rvsdg::argument *
-  create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);
-
-  static jlm::rvsdg::argument *
   create(
       jlm::rvsdg::region * region,
       structural_input * input,
@@ -113,12 +105,6 @@ protected:
       jlm::rvsdg::region * region,
       jlm::rvsdg::output * origin,
       jlm::rvsdg::structural_output * output,
-      const jlm::rvsdg::port & port);
-
-  result(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
       std::shared_ptr<const rvsdg::type> type);
 
   result(const result &) = delete;
@@ -138,12 +124,20 @@ public:
     return output_;
   }
 
-  static jlm::rvsdg::result *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
-      const jlm::rvsdg::port & port);
+  /**
+   * Creates a copy of the result with \p origin and structural_output \p output. The
+   * result is created with the same type as \p origin and in the same region as \p origin.
+   *
+   * @param origin The origin for the result.
+   * @param output The structural_output to the result, if any.
+   *
+   * @return A reference to the copied result.
+   *
+   * FIXME: This method should be made abstract once we enforced that no instances of result
+   * itself can be created any longer.
+   */
+  virtual result &
+  Copy(rvsdg::output & origin, structural_output * output);
 
   static jlm::rvsdg::result *
   create(

@@ -25,8 +25,8 @@ class branch_op final : public jlm::rvsdg::simple_op
 private:
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::type> & type, bool loop)
       : jlm::rvsdg::simple_op(
-          { jlm::rvsdg::ctltype::Create(nalternatives), type },
-          { nalternatives, type }),
+            { jlm::rvsdg::ctltype::Create(nalternatives), type },
+            { nalternatives, type }),
         loop(loop)
   {}
 
@@ -39,8 +39,8 @@ public:
   {
     auto ot = dynamic_cast<const branch_op *>(&other);
     // check predicate and value
-    return ot && ot->loop == loop && ot->argument(0).type() == argument(0).type()
-        && ot->result(0).type() == result(0).type();
+    return ot && ot->loop == loop && *ot->argument(0) == *argument(0)
+        && *ot->result(0) == *result(0);
   }
 
   std::string
@@ -118,8 +118,8 @@ public:
   {
     auto forkOp = dynamic_cast<const fork_op *>(&other);
     // check predicate and value
-    return forkOp && forkOp->argument(0).type() == argument(0).type()
-        && forkOp->nresults() == nresults() && forkOp->IsConstant() == IsConstant_;
+    return forkOp && *forkOp->argument(0) == *argument(0) && forkOp->nresults() == nresults()
+        && forkOp->IsConstant() == IsConstant_;
   }
 
   /**
@@ -186,7 +186,7 @@ public:
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const merge_op *>(&other);
-    return ot && ot->narguments() == narguments() && ot->argument(0).type() == argument(0).type();
+    return ot && ot->narguments() == narguments() && *ot->argument(0) == *argument(0);
   }
 
   std::string
@@ -234,8 +234,8 @@ public:
   {
     auto ot = dynamic_cast<const mux_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(0).type() == argument(0).type()
-        && ot->result(0).type() == result(0).type() && ot->discarding == discarding;
+    return ot && *ot->argument(0) == *argument(0) && *ot->result(0) == *result(0)
+        && ot->discarding == discarding;
   }
 
   std::string
@@ -300,7 +300,7 @@ public:
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const sink_op *>(&other);
-    return ot && ot->argument(0).type() == argument(0).type();
+    return ot && *ot->argument(0) == *argument(0);
   }
 
   std::string
@@ -338,7 +338,7 @@ public:
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const predicate_buffer_op *>(&other);
-    return ot && ot->result(0).type() == result(0).type();
+    return ot && *ot->result(0) == *result(0);
   }
 
   std::string
@@ -381,8 +381,7 @@ public:
   operator==(const jlm::rvsdg::operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const loop_constant_buffer_op *>(&other);
-    return ot && ot->result(0).type() == result(0).type()
-        && ot->argument(0).type() == argument(0).type();
+    return ot && *ot->result(0) == *result(0) && *ot->argument(0) == *argument(0);
   }
 
   std::string
@@ -429,7 +428,7 @@ public:
   {
     auto ot = dynamic_cast<const buffer_op *>(&other);
     return ot && ot->capacity == capacity && ot->pass_through == pass_through
-        && ot->result(0).type() == result(0).type();
+        && *ot->result(0) == *result(0);
   }
 
   std::string
@@ -503,8 +502,7 @@ public:
   {
     auto ot = dynamic_cast<const trigger_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type()
-        && ot->result(0).type() == result(0).type();
+    return ot && *ot->argument(1) == *argument(1) && *ot->result(0) == *result(0);
   }
 
   std::string
@@ -659,9 +657,12 @@ public:
     return argument_;
   }
 
+  backedge_result &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
   backedge_result(jlm::rvsdg::output * origin)
-      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port()),
+      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->Type()),
         argument_(nullptr)
   {}
 
@@ -821,7 +822,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const load_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -853,7 +854,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_LOAD_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -882,13 +883,13 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(&argument(0).type());
+    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
   GetLoadedType() const noexcept
   {
-    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0).Type());
+    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
   }
 };
 
@@ -913,7 +914,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const addr_queue_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -936,9 +937,9 @@ public:
   {
     if (combinatorial)
     {
-      return "HLS_ADDR_QUEUE_COMB_" + argument(narguments() - 1).type().debug_string();
+      return "HLS_ADDR_QUEUE_COMB_" + argument(narguments() - 1)->debug_string();
     }
-    return "HLS_ADDR_QUEUE_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_ADDR_QUEUE_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -980,7 +981,7 @@ public:
   {
     auto ot = dynamic_cast<const state_gate_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -997,7 +998,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_STATE_GATE_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_STATE_GATE_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -1033,7 +1034,7 @@ public:
   {
     auto ot = dynamic_cast<const decoupled_load_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -1055,7 +1056,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_DEC_LOAD_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_DEC_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -1077,13 +1078,13 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(&argument(0).type());
+    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
   GetLoadedType() const noexcept
   {
-    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0).Type());
+    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
   }
 };
 
@@ -1103,7 +1104,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const mem_resp_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -1189,7 +1190,7 @@ public:
     auto ot = dynamic_cast<const mem_req_op *>(&other);
     // check predicate and value
     return ot && ot->narguments() == narguments()
-        && (ot->narguments() == 0 || (ot->argument(1).type() == argument(1).type()))
+        && (ot->narguments() == 0 || (*ot->argument(1) == *argument(1)))
         && ot->narguments() == narguments();
   }
 
@@ -1306,7 +1307,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const store_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -1335,7 +1336,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_STORE_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_STORE_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -1361,13 +1362,13 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(&argument(0).type());
+    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] const rvsdg::valuetype &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(&argument(1).type());
+    return *util::AssertedCast<const rvsdg::valuetype>(argument(1).get());
   }
 };
 
@@ -1400,7 +1401,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_LOCAL_MEM_" + result(0).type().debug_string();
+    return "HLS_LOCAL_MEM_" + result(0)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -1433,7 +1434,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const local_mem_resp_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -1481,7 +1482,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const local_load_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -1511,7 +1512,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_LOCAL_LOAD_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_LOCAL_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -1539,7 +1540,7 @@ public:
   [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
   GetLoadedType() const noexcept
   {
-    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0).Type());
+    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
   }
 };
 
@@ -1559,7 +1560,7 @@ public:
     // TODO:
     auto ot = dynamic_cast<const local_store_op *>(&other);
     // check predicate and value
-    return ot && ot->argument(1).type() == argument(1).type() && ot->narguments() == narguments();
+    return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::type>>
@@ -1588,7 +1589,7 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_LOCAL_STORE_" + argument(narguments() - 1).type().debug_string();
+    return "HLS_LOCAL_STORE_" + argument(narguments() - 1)->debug_string();
   }
 
   std::unique_ptr<jlm::rvsdg::operation>
@@ -1616,7 +1617,7 @@ public:
   [[nodiscard]] const jlm::rvsdg::valuetype &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const jlm::rvsdg::valuetype>(&argument(1).type());
+    return *util::AssertedCast<const jlm::rvsdg::valuetype>(argument(1).get());
   }
 };
 
@@ -1640,7 +1641,7 @@ public:
     auto ot = dynamic_cast<const local_mem_req_op *>(&other);
     // check predicate and value
     return ot && ot->narguments() == narguments()
-        && (ot->narguments() == 0 || (ot->argument(1).type() == argument(1).type()))
+        && (ot->narguments() == 0 || (*ot->argument(1) == *argument(1)))
         && ot->narguments() == narguments();
   }
 

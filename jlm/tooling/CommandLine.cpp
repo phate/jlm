@@ -99,10 +99,10 @@ JlmOptCommandLineOptions::Reset() noexcept
   OptimizationIds_.clear();
 }
 
-std::vector<llvm::optimization *>
+std::vector<std::unique_ptr<llvm::optimization>>
 JlmOptCommandLineOptions::GetOptimizations() const noexcept
 {
-  std::vector<llvm::optimization *> optimizations;
+  std::vector<std::unique_ptr<llvm::optimization>> optimizations;
   optimizations.reserve(OptimizationIds_.size());
 
   for (auto & optimizationId : OptimizationIds_)
@@ -226,48 +226,45 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
   return mapping.at(outputFormat).data();
 }
 
-llvm::optimization *
-JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
+std::unique_ptr<llvm::optimization>
+JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId)
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
-  using AgnosticMNP = llvm::aa::AgnosticMemoryNodeProvider;
-  using RegionAwareMNP = llvm::aa::RegionAwareMemoryNodeProvider;
-  static llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMNP> andersenAgnostic;
-  static llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMNP> andersenRegionAware;
-  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMNP> steensgaardAgnostic;
-  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
-  static llvm::cne commonNodeElimination;
-  static llvm::DeadNodeElimination deadNodeElimination;
-  static llvm::fctinline functionInlining;
-  static llvm::InvariantValueRedirection invariantValueRedirection;
-  static llvm::pullin nodePullIn;
-  static llvm::pushout nodePushOut;
-  static llvm::tginversion thetaGammaInversion;
-  static llvm::loopunroll loopUnrolling(4);
-  static llvm::nodereduction nodeReduction;
-  static llvm::RvsdgTreePrinter rvsdgTreePrinter(RvsdgTreePrinterConfiguration_);
+  using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
+  using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
 
-  static std::unordered_map<OptimizationId, llvm::optimization *> map(
-      { { OptimizationId::AAAndersenAgnostic, &andersenAgnostic },
-        { OptimizationId::AAAndersenRegionAware, &andersenRegionAware },
-        { OptimizationId::AASteensgaardAgnostic, &steensgaardAgnostic },
-        { OptimizationId::AASteensgaardRegionAware, &steensgaardRegionAware },
-        { OptimizationId::CommonNodeElimination, &commonNodeElimination },
-        { OptimizationId::DeadNodeElimination, &deadNodeElimination },
-        { OptimizationId::FunctionInlining, &functionInlining },
-        { OptimizationId::InvariantValueRedirection, &invariantValueRedirection },
-        { OptimizationId::LoopUnrolling, &loopUnrolling },
-        { OptimizationId::NodePullIn, &nodePullIn },
-        { OptimizationId::NodePushOut, &nodePushOut },
-        { OptimizationId::NodeReduction, &nodeReduction },
-        { OptimizationId::RvsdgTreePrinter, &rvsdgTreePrinter },
-        { OptimizationId::ThetaGammaInversion, &thetaGammaInversion } });
-
-  if (map.find(id) != map.end())
-    return map[id];
-
-  throw util::error("Unknown optimization identifier");
+  switch (optimizationId)
+  {
+  case OptimizationId::AAAndersenAgnostic:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
+  case OptimizationId::AAAndersenRegionAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+  case OptimizationId::AASteensgaardAgnostic:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
+  case OptimizationId::AASteensgaardRegionAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
+  case OptimizationId::CommonNodeElimination:
+    return std::make_unique<llvm::cne>();
+  case OptimizationId::DeadNodeElimination:
+    return std::make_unique<llvm::DeadNodeElimination>();
+  case OptimizationId::FunctionInlining:
+    return std::make_unique<llvm::fctinline>();
+  case OptimizationId::InvariantValueRedirection:
+    return std::make_unique<llvm::InvariantValueRedirection>();
+  case OptimizationId::LoopUnrolling:
+    return std::make_unique<llvm::loopunroll>(4);
+  case OptimizationId::NodePullIn:
+    return std::make_unique<llvm::pullin>();
+  case OptimizationId::NodePushOut:
+    return std::make_unique<llvm::pushout>();
+  case OptimizationId::NodeReduction:
+    return std::make_unique<llvm::nodereduction>();
+  case OptimizationId::ThetaGammaInversion:
+    return std::make_unique<llvm::tginversion>();
+  default:
+    JLM_UNREACHABLE("Unhandled optimization id.");
+  }
 }
 
 const util::BijectiveMap<util::Statistics::Id, std::string_view> &

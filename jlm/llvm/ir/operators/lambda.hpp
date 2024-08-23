@@ -607,7 +607,7 @@ public:
 
 private:
   cvargument(jlm::rvsdg::region * region, cvinput * input)
-      : jlm::rvsdg::argument(region, input, input->port())
+      : jlm::rvsdg::argument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -635,9 +635,12 @@ class result final : public jlm::rvsdg::result
 public:
   ~result() override;
 
+  result &
+  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+
 private:
   explicit result(jlm::rvsdg::output * origin)
-      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())
+      : rvsdg::result(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *

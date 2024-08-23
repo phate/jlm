@@ -770,38 +770,38 @@ TestPointerObjectConstraintSetSolve(Args... args)
   }
 
   // alloca1 should point to alloca2, etc
-  assert(set.GetPointsToSet(alloca1).Size() == 1);
-  assert(set.GetPointsToSet(alloca1).Contains(alloca2));
-  assert(set.GetPointsToSet(alloca2).Size() == 1);
-  assert(set.GetPointsToSet(alloca2).Contains(alloca3));
-  assert(set.GetPointsToSet(alloca3).Size() == 1);
-  assert(set.GetPointsToSet(alloca3).Contains(alloca4));
+  assert(set.GetPointsToSet(alloca1).Size() <= 1);
+  assert(set.IsPointingTo(alloca1, alloca2));
+  assert(set.GetPointsToSet(alloca2).Size() <= 1);
+  assert(set.IsPointingTo(alloca2, alloca3));
+  assert(set.GetPointsToSet(alloca3).Size() <= 1);
+  assert(set.IsPointingTo(alloca3, alloca4));
 
   // %5 is a load of alloca1, and should only be a pointer to alloca2
-  assert(set.GetPointsToSet(reg[5]).Size() == 1);
-  assert(set.GetPointsToSet(reg[5]).Contains(alloca2));
+  assert(set.GetPointsToSet(reg[5]).Size() <= 1);
+  assert(set.IsPointingTo(reg[5], alloca2));
 
   // %6 is a load of alloca3, and should only be a pointer to alloca4
-  assert(set.GetPointsToSet(reg[6]).Size() == 1);
-  assert(set.GetPointsToSet(reg[6]).Contains(alloca4));
+  assert(set.GetPointsToSet(reg[6]).Size() <= 1);
+  assert(set.IsPointingTo(reg[6], alloca4));
 
   // %7 can point to either alloca2 or alloca4
-  assert(set.GetPointsToSet(reg[7]).Size() == 2);
-  assert(set.GetPointsToSet(reg[7]).Contains(alloca2));
-  assert(set.GetPointsToSet(reg[7]).Contains(alloca4));
+  assert(set.GetPointsToSet(reg[7]).Size() <= 2);
+  assert(set.IsPointingTo(reg[7], alloca2));
+  assert(set.IsPointingTo(reg[7], alloca4));
 
   // %8 should point to external, since it points to the superset of %0 and %1
   assert(set.IsPointingToExternal(reg[8]));
   // %8 may also point to alloca4
-  assert(set.GetPointsToSet(reg[8]).Size() == 1);
-  assert(set.GetPointsToSet(reg[8]).Contains(alloca4));
+  assert(set.GetPointsToSet(reg[8]).Size() <= 1);
+  assert(set.IsPointingTo(reg[8], alloca4));
 
   // %9 may point to v3
-  assert(set.GetPointsToSet(reg[9]).Contains(alloca3));
+  assert(set.IsPointingTo(reg[9], alloca3));
 
   // Due to the store of %9 into [%8], alloca4 may now point back to alloca3
-  assert(set.GetPointsToSet(alloca4).Size() == 1);
-  assert(set.GetPointsToSet(alloca4).Contains(alloca3));
+  assert(set.GetPointsToSet(alloca4).Size() <= 1);
+  assert(set.IsPointingTo(alloca4, alloca3));
 
   // Also due to the same store, alloca3 might have escaped
   assert(set.HasEscaped(alloca3));
@@ -890,7 +890,10 @@ TestPointerObjectSet()
     TestPointerObjectConstraintSetSolve<true>(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
-        config.IsHybridCycleDetectionEnabled());
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled(),
+        config.IsPreferImplicitPointeesEnabled());
   }
 
   TestClonePointerObjectConstraintSet();

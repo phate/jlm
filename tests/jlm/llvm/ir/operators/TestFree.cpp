@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -69,9 +70,9 @@ TestRvsdgCreator()
   // Arrange
   jlm::rvsdg::graph rvsdg;
 
-  auto address = rvsdg.add_import({ PointerType::Create(), "p" });
-  auto memoryState = rvsdg.add_import({ MemoryStateType::Create(), "m" });
-  auto iOState = rvsdg.add_import({ iostatetype::Create(), "io" });
+  auto address = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "p");
+  auto memoryState = &jlm::tests::GraphImport::Create(rvsdg, MemoryStateType::Create(), "m");
+  auto iOState = &jlm::tests::GraphImport::Create(rvsdg, iostatetype::Create(), "io");
 
   // Act
   auto freeResults0 = FreeOperation::Create(address, {}, iOState);

@@ -161,6 +161,55 @@ public:
       return EnableHybridCycleDetection_;
     }
 
+    /**
+     * Enables or disables lazy cycle detection in the Worklist solver, as described by
+     *   Hardekopf and Lin, 2007: "The Ant & the Grasshopper"
+     * It detects some cycles, so it can not be combined with techniques that find all cycles.
+     */
+    void
+    EnableLazyCycleDetection(bool enable) noexcept
+    {
+      EnableLazyCycleDetection_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsLazyCycleDetectionEnabled() const noexcept
+    {
+      return EnableLazyCycleDetection_;
+    }
+
+    /**
+     * Enables or disables difference propagation in the Worklist solver, as described by
+     *   Pearce, 2003: "Online cycle detection and difference propagation for pointer analysis"
+     * Only used by the worklist solver.
+     */
+    void
+    EnableDifferencePropagation(bool enable) noexcept
+    {
+      EnableDifferencePropagation_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsDifferencePropagationEnabled() const noexcept
+    {
+      return EnableDifferencePropagation_;
+    }
+
+    /**
+     * Enables or disables preferring implicit pointees in the Worklist solver
+     */
+    void
+    EnablePreferImplicitPointees(bool enable) noexcept
+    {
+      EnablePreferImplicitPointees_ = enable;
+    }
+
+    [[nodiscard]] bool
+    IsPreferImplicitPointeesEnabled() const noexcept
+    {
+      return EnablePreferImplicitPointees_;
+    }
+
     [[nodiscard]] std::string
     ToString() const;
 
@@ -179,6 +228,9 @@ public:
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
       config.EnableOnlineCycleDetection(false);
       config.EnableHybridCycleDetection(true);
+      config.EnableLazyCycleDetection(true);
+      config.EnableDifferencePropagation(true);
+      config.EnablePreferImplicitPointees(true);
       return config;
     }
 
@@ -213,6 +265,9 @@ public:
         PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired;
     bool EnableOnlineCycleDetection_ = false;
     bool EnableHybridCycleDetection_ = false;
+    bool EnableLazyCycleDetection_ = false;
+    bool EnableDifferencePropagation_ = false;
+    bool EnablePreferImplicitPointees_ = false;
   };
 
   ~Andersen() noexcept override = default;

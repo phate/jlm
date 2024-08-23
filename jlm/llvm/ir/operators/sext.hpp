@@ -64,13 +64,13 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return static_cast<const rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return static_cast<const rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>

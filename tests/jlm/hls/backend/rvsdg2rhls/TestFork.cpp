@@ -46,7 +46,7 @@ TestFork()
   loop->set_predicate(match);
 
   auto f = lambda->finalize({ loop->output(0), loop->output(1), loop->output(2) });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -112,7 +112,7 @@ TestConstantFork()
   loop->set_predicate(match);
 
   auto f = lambda->finalize({ loop->output(0) });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   rvsdg::view(rm.Rvsdg(), stdout);
 

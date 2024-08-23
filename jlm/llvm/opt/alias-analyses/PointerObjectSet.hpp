@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/GraphWriter.hpp>
@@ -154,13 +155,24 @@ class PointerObjectSet final
 
   util::BijectiveMap<const lambda::node *, PointerObjectIndex> FunctionMap_;
 
-  std::unordered_map<const rvsdg::argument *, PointerObjectIndex> ImportMap_;
+  std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
 
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
   [[nodiscard]] PointerObjectIndex
   AddPointerObject(PointerObjectKind kind);
+
+  /**
+   * Internal helper function for making P(superset) a superset of P(subset), with a callback.
+   * @see MakePointsToSetSuperset
+   */
+  template<typename NewPointeeFunctor>
+  bool
+  PropagateNewPointees(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      NewPointeeFunctor & onNewPointee);
 
 public:
   [[nodiscard]] size_t
@@ -260,7 +272,7 @@ public:
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
-  CreateImportMemoryObject(const rvsdg::argument & importNode);
+  CreateImportMemoryObject(const GraphImport & importNode);
 
   const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
@@ -277,7 +289,7 @@ public:
   const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
+  const std::unordered_map<const GraphImport *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
   /**
@@ -405,6 +417,23 @@ public:
    */
   bool
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
+
+  /**
+   * A version of MakePointsToSetSuperset that adds any new pointees of \p superset,
+   * to the set \p newPointees.
+   */
+  bool
+  MakePointsToSetSuperset(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      util::HashSet<PointerObjectIndex> & newPointees);
+
+  /**
+   * Removes all pointees from the PointerObject with the given \p index.
+   * Can be used, e.g., when the PointerObject already points to all its pointees implicitly.
+   */
+  void
+  RemoveAllPointees(PointerObjectIndex index);
 
   /**
    * @param pointer the PointerObject possibly pointing to \p pointee
@@ -812,6 +841,22 @@ public:
      * The number of unifications performed due to hybrid cycle detection.
      */
     std::optional<size_t> NumHybridCycleUnifications;
+
+    /**
+     * The number of DFSs started in attempts at detecting cycles,
+     * the number of cycles detected by lazy cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Lazy Cycle Detection is enabled.
+     */
+    std::optional<size_t> NumLazyCyclesDetectionAttempts;
+    std::optional<size_t> NumLazyCyclesDetected;
+    std::optional<size_t> NumLazyCycleUnifications;
+
+    /**
+     * When Prefer Implicit Pointees is enabled, and a node's pointees can be tracked fully
+     * implicitly, its set of explicit pointees is cleared.
+     */
+    std::optional<size_t> NumExplicitPointeesRemoved;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -941,16 +986,24 @@ public:
    * These papers also describe a set of techniques that potentially improve solving performance:
    *  - Online Cycle Detection (Pearce, 2003)
    *  - Hybrid Cycle Detection (Hardekopf 2007)
+   *  - Lazy Cycle Detection (Hardekopf 2007)
+   *  - Difference Propagation (Pearce, 2003)
    * @param policy the worklist iteration order policy to use
    * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
    * @param enableHybridCycleDetection if true, hybrid cycle detection will be performed.
+   * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
+   * @param enableDifferencePropagation if true, difference propagation will be enabled.
+   * @param enablePreferImplicitPropation if true, enables PIP, which is novel to this codebase
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
   SolveUsingWorklist(
       WorklistSolverPolicy policy,
       bool enableOnlineCycleDetection,
-      bool enableHybridCycleDetection);
+      bool enableHybridCycleDetection,
+      bool enableLazyCycleDetection,
+      bool enableDifferencePropagation,
+      bool enablePreferImplicitPropation);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -994,9 +1047,18 @@ private:
    * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
    * @tparam EnableHybridCycleDetection if true, hybrid cycle detection is enabled.
+   * @tparam EnableLazyCycleDetection if true, lazy cycle detection is enabled.
+   * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
+   * @tparam EnablePreferImplicitPointees if true, prefer implicit pointees is enabled
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist, bool EnableOnlineCycleDetection, bool EnableHybridCycleDetection>
+  template<
+      typename Worklist,
+      bool EnableOnlineCycleDetection,
+      bool EnableHybridCycleDetection,
+      bool EnableLazyCycleDetection,
+      bool EnableDifferencePropagation,
+      bool EnablePreferImplicitPointees>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 

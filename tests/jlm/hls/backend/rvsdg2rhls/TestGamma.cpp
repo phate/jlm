@@ -35,7 +35,7 @@ TestWithMatch()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -71,7 +71,7 @@ TestWithoutMatch()
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

@@ -21,7 +21,7 @@ ResultNodeMismatch()
   auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto import = graph.add_import({ valueType, "import" });
+  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
@@ -92,7 +92,7 @@ ResultInputTypeMismatch()
         structuralNode->subregion(0),
         simpleNode->output(0),
         structuralOutput,
-        jlm::rvsdg::port(stateType));
+        stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
