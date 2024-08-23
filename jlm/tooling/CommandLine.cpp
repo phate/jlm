@@ -227,7 +227,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 }
 
 std::unique_ptr<llvm::optimization>
-JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId)
+JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
@@ -260,6 +260,8 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId)
     return std::make_unique<llvm::pushout>();
   case OptimizationId::NodeReduction:
     return std::make_unique<llvm::nodereduction>();
+  case OptimizationId::RvsdgTreePrinter:
+    return std::make_unique<llvm::RvsdgTreePrinter>(RvsdgTreePrinterConfiguration_);
   case OptimizationId::ThetaGammaInversion:
     return std::make_unique<llvm::tginversion>();
   default:
@@ -741,7 +743,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path();
   const auto statisticDirectoryDescription =
-      "Write statistics to file in <dir>. Default is " + statisticsDirectoryDefault + ".";
+      "Write statistics and debug output to files in <dir>. Default is "
+      + statisticsDirectoryDefault + ".";
   cl::opt<std::string> statisticDirectory(
       "s",
       cl::init(statisticsDirectoryDefault),
@@ -964,6 +967,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
+      llvm::RvsdgTreePrinter::Configuration(statisticsDirectoryFilePath),
       std::move(optimizationIds));
 
   return *CommandLineOptions_;

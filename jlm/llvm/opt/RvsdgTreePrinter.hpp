@@ -19,13 +19,18 @@ namespace jlm::llvm
 
 class RvsdgModule;
 
-// FIXME: add documentation
+/** \brief RVSDG tree printer debug pass
+ *
+ * Prints an RVSDG tree to a file.
+ */
 class RvsdgTreePrinter final : public optimization
 {
   class Statistics;
 
 public:
-  // FIXME: add documentation
+  /**
+   * Configuration for the \ref RvsdgTreePrinter.
+   */
   class Configuration final
   {
   public:
@@ -36,19 +41,13 @@ public:
       JLM_ASSERT(outputDirectory.Exists());
     }
 
-    // FIXME: add documentation
+    /**
+     * The output directory for the RVSDG tree files.
+     */
     [[nodiscard]] const util::filepath &
     OutputDirectory() const noexcept
     {
       return OutputDirectory_;
-    }
-
-    // FIXME: add documentation
-    static Configuration
-    DefaultConfiguration()
-    {
-      util::filepath outputDirectory("/tmp");
-      return Configuration(std::move(outputDirectory));
     }
 
   private:
@@ -87,7 +86,7 @@ private:
   static uint64_t
   GetOutputFileNameCounter(const RvsdgModule & rvsdgModule);
 
-  Configuration Configuration_ = Configuration::DefaultConfiguration();
+  Configuration Configuration_;
 };
 
 }
