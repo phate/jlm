@@ -4,7 +4,7 @@ Jlm is an experimental compiler/optimizer that consumes and produces LLVM IR. It
 Regionalized Value State Dependence Graph (RVSDG) as intermediate representation for optimizations.
 
 ## Dependencies
-* Clang/LLVM 17
+* Clang/LLVM 18
 * Doxygen 1.9.1
 
 ### HLS dependencies
@@ -78,7 +78,7 @@ CIRCT and the HLS backend can be setup with the following commands:
 ```
 ./scripts/build-circt.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
 
-./configure --enable-hls <path-to-CIRCT>
+./configure --enable-hls=<path-to-CIRCT>
 ```
 
 ## Publications
