@@ -157,7 +157,7 @@ public:
   }
 
   /**
-   * Cechk if a fork is a constant fork (CFORK).
+   * Check if a fork is a constant fork (CFORK).
    *
    * /return True if the fork is a constant fork, i.e., the input of the fork is a constant, else
    * false.

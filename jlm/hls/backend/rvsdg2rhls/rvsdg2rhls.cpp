@@ -416,16 +416,18 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
 {
   pre_opt(rhls);
   merge_gamma(rhls);
+  util::StatisticsCollector statisticsCollector;
+  llvm::DeadNodeElimination llvmDne;
+  llvmDne.run(rhls, statisticsCollector);
 
-  //    mem_sep(rhls);
   mem_sep_argument(rhls);
-  // run conversion on copy
   remove_unused_state(rhls);
   // main conversion steps
-  //	add_triggers(rhls); // TODO: is this needed?
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
+  hls::cne hlsCne;
+  hlsCne.run(rhls, statisticsCollector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
