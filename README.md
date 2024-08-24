@@ -24,7 +24,7 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 make all
 ```
 
-This presumes that llvm-config-17 can be found in $PATH. If that is not the case,
+This presumes that llvm-config-18 can be found in $PATH. If that is not the case,
 you may need to explicitly configure it:
 
 ```
@@ -80,9 +80,9 @@ and the build has to be configured accordingly. A change of build configuration 
 stale intermediate files first, i.e., run 'make clean'.
 CIRCT and the HLS backend can be setup with the following commands:
 ```
-./scripts/build-circt.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
+./scripts/build-circt.sh
 
-./configure --enable-hls=<path-to-CIRCT>
+./configure --enable-hls
 ```
 
 ## MLIR backend
@@ -93,9 +93,9 @@ enabled, and the build has to be configured accordingly. A change of build confi
 cleaning stale intermediate files first, i.e., run 'make clean'.
 The MLIR RVSDG dialect and the MLIR backend can be setup with the following commands:
 ```
-./scripts/build-mlir.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
+./scripts/build-mlir.sh
 
-./configure --enable-mlir=<path-to-CIRCT>
+./configure --enable-mlir
 ```
 
 ## Publications
