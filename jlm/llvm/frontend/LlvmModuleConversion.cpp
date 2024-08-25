@@ -55,8 +55,14 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
-      tacsvector_t tacs;
+      // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
+      // These are not visited during convert_basic_blocks, and thus do not have corresponding
+      // jlm::llvm::basic_blocks. The phi_tac operation can safely ignore these, as they are dead.
+      if (!ctx.has(phi->getIncomingBlock(n)))
+        continue;
+
       auto bb = ctx.get(phi->getIncomingBlock(n));
+      tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       bb->insert_before_branch(tacs);
       nodes.push_back(bb);
