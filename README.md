@@ -8,8 +8,12 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 * Doxygen 1.9.1
 
 ### HLS dependencies
-* CIRCT that is built with LLVM/MLIR 17
+* MLIR 18
+* CIRCT that is built with LLVM/MLIR 18
 * Verilator 4.038
+
+### MLIR backend and frontend dependencies
+* MLIR 18
 
 ### Optional dependencies
 * gcovr, for computing code coverage summary
@@ -20,8 +24,8 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 make all
 ```
 
-This presumes that llvm-config-17 can be found in $PATH. If that is not the case,
-you may need to explicitly configure it:
+This presumes that the reight version of llvm-config can be found in $PATH.
+If that is not the case, you may need to explicitly configure it:
 
 ```
 ./configure.sh --llvm-config /path/to/llvm-config
@@ -76,9 +80,22 @@ and the build has to be configured accordingly. A change of build configuration 
 stale intermediate files first, i.e., run 'make clean'.
 CIRCT and the HLS backend can be setup with the following commands:
 ```
-./scripts/build-circt.sh --build-path <CIRCT-build-path> --install-path <path-to-CIRCT>
+./scripts/build-circt.sh
 
-./configure --enable-hls=<path-to-CIRCT>
+./configure --enable-hls
+```
+
+## MLIR backend
+The MLIR backend uses the MLIR RVSDG dialect.
+
+A compatible installation of the MLIR RVSDG dialect is needed to compile jlm with the MLIR backend
+enabled, and the build has to be configured accordingly. A change of build configuration may require
+cleaning stale intermediate files first, i.e., run 'make clean'.
+The MLIR RVSDG dialect and the MLIR backend can be setup with the following commands:
+```
+./scripts/build-mlir.sh
+
+./configure --enable-mlir
 ```
 
 ## Publications
