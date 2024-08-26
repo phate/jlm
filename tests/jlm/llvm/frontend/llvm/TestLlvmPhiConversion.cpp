@@ -184,7 +184,8 @@ TestPhiOperandElision()
 {
   static const std::string PHI_OPERAND_ELISION =
       "source_filename = \"phi_elide.c\"\n"
-      "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128\"\n"
+      "target datalayout = "
+      "\"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128\"\n"
       "target triple = \"x86_64-pc-linux-gnu\"\n"
       "\n"
       "; Function Attrs: noinline nounwind sspstrong uwtable\n"
@@ -217,7 +218,10 @@ TestPhiOperandElision()
       "  ret i64 %8\n"
       "}\n"
       "\n"
-      "attributes #0 = { noinline nounwind sspstrong uwtable \"frame-pointer\"=\"all\" \"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" \"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" \"target-features\"=\"+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n"
+      "attributes #0 = { noinline nounwind sspstrong uwtable \"frame-pointer\"=\"all\" "
+      "\"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" "
+      "\"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" "
+      "\"target-features\"=\"+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n"
       "\n"
       "!llvm.module.flags = !{!0, !1, !2, !3, !4}\n"
       "!llvm.ident = !{!5}\n"
@@ -256,7 +260,8 @@ TestPhiOperandElision()
   // Traverse the cfg and save every phi node
   size_t numBasicBlocks = 0;
   std::vector<jlm::llvm::tac *> phiTacs;
-  for (auto & bb : *phi_elide->cfg()) {
+  for (auto & bb : *phi_elide->cfg())
+  {
     numBasicBlocks++;
     for (auto tac : bb)
     {

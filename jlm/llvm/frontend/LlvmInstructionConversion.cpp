@@ -685,7 +685,8 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
  * @param ctx the context for the current LLVM to tac conversion
  * @return the index of the single reachable predecessor basic block, or std::nullopt if it has many
  */
-static inline std::optional<size_t> getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
+static inline std::optional<size_t>
+getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
 {
   std::optional<size_t> predecessor = std::nullopt;
   for (size_t n = 0; n < phi->getNumOperands(); n++)
@@ -709,7 +710,8 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
 
   // If this phi instruction only has one predecessor basic block that is reachable,
   // the phi operation can be removed.
-  if (auto singlePredecessor = getSinglePredecessor(phi, ctx)) {
+  if (auto singlePredecessor = getSinglePredecessor(phi, ctx))
+  {
     // The incoming value is either a constant,
     // or a value from the predecessor basic block that has already been converted
     return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
