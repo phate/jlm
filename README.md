@@ -24,8 +24,8 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 make all
 ```
 
-This presumes that llvm-config-18 can be found in $PATH. If that is not the case,
-you may need to explicitly configure it:
+This presumes that the reight version of llvm-config can be found in $PATH.
+If that is not the case, you may need to explicitly configure it:
 
 ```
 ./configure.sh --llvm-config /path/to/llvm-config
