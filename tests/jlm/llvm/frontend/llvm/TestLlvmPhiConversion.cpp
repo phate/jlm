@@ -22,7 +22,7 @@
 /**
  * Tests converting instances of ::llvm::PHINode.
  * Some of the operands have constant values, and some are results from the predecessors.
- * One of the phi node has its own result as one its operands.
+ * One of the phi node has its own result as one of its operands.
  *
  * The function corresponds to the C code
  * uint64_t popcount(uint64_t x) {
@@ -50,65 +50,48 @@
 static int
 TestPhiConversion()
 {
-  static const std::string POPCOUNT_PROGRAM =
-      "source_filename = \"popcount.c\"\n"
-      "target datalayout = "
-      "\"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128\"\n"
-      "target triple = \"x86_64-pc-linux-gnu\"\n"
-      "\n"
-      "define dso_local i64 @popcount(i64 noundef %0) #0 {\n"
-      "  br label %bb2\n"
-      "\n"
-      "bb2:\n"
-      "  ; The current value of x\n"
-      "  %3 = phi i64 [%0, %1], [%8, %bb4], [%8, %bb5]\n"
-      "  ; The current value of popcnt (1 bits seen)\n"
-      "  ; Note that this phi is self-referential!\n"
-      "  %4 = phi i64 [0, %1], [%9, %bb4], [%4, %bb5]\n"
-      "\n"
-      "  ; First check if x is 0, and if so jump to the exit\n"
-      "  %5 = icmp eq i64 %3, 0\n"
-      "  br i1 %5, label %bb6, label %bb3\n"
-      "\n"
-      "bb3:\n"
-      "  ; Check if x % 2 is 1\n"
-      "  %6 = urem i64 %3, 2\n"
-      "  %7 = icmp eq i64 %6, 1\n"
-      "\n"
-      "  ; Also calculate x>>1 now\n"
-      "  %8 = lshr i64 %3, 1\n"
-      "\n"
-      "  br i1 %7, label %bb4, label %bb5\n"
-      "\n"
-      "bb4:\n"
-      "  ; Here x was odd, calculate popcnt+1\n"
-      "  %9 = add i64 %4, 1\n"
-      "  br label %bb2\n"
-      "\n"
-      "bb5:\n"
-      "  ; Here x was even, no need to calculate anything\n"
-      "  br label %bb2\n"
-      "\n"
-      "bb6:\n"
-      "  ret i64 %4\n"
-      "}\n"
-      "\n"
-      "attributes #0 = { noinline nounwind sspstrong uwtable \"frame-pointer\"=\"all\" "
-      "\"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" "
-      "\"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" "
-      "\"target-features\"=\"+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n"
-      "\n"
-      "!llvm.module.flags = !{!0, !1, !2, !3, !4}\n"
-      "!llvm.ident = !{!5}\n"
-      "\n"
-      "!0 = !{i32 1, !\"wchar_size\", i32 4}\n"
-      "!1 = !{i32 8, !\"PIC Level\", i32 2}\n"
-      "!2 = !{i32 7, !\"PIE Level\", i32 2}\n"
-      "!3 = !{i32 7, !\"uwtable\", i32 2}\n"
-      "!4 = !{i32 7, !\"frame-pointer\", i32 2}\n"
-      "!5 = !{!\"clang version 18.1.8\"}\n"
-      "!6 = distinct !{!6, !7}\n"
-      "!7 = !{!\"llvm.loop.mustprogress\"}";
+  static const std::string POPCOUNT_PROGRAM = R""""(
+source_filename = "popcount.c"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+
+define dso_local i64 @popcount(i64 noundef %0) {
+br label %bb2
+
+bb2:
+; The current value of x
+%3 = phi i64 [%0, %1], [%8, %bb4], [%8, %bb5]
+; The current value of popcount (1 bits seen)
+; Note that this phi is self-referential!
+%4 = phi i64 [0, %1], [%9, %bb4], [%4, %bb5]
+
+; First check if x is 0, and if so jump to the exit
+%5 = icmp eq i64 %3, 0
+br i1 %5, label %bb6, label %bb3
+
+bb3:
+; Check if x % 2 is 1
+%6 = urem i64 %3, 2
+%7 = icmp eq i64 %6, 1
+
+; Also calculate x>>1 now
+%8 = lshr i64 %3, 1
+
+br i1 %7, label %bb4, label %bb5
+
+bb4:
+; Here x was odd, calculate popcount+1
+%9 = add i64 %4, 1
+br label %bb2
+
+bb5:
+; Here x was even, no need to calculate anything
+br label %bb2
+
+bb6:
+ret i64 %4
+}
+)"""";
 
   // Arrange
   llvm::LLVMContext ctx;
@@ -182,58 +165,40 @@ JLM_UNIT_TEST_REGISTER(
 static int
 TestPhiOperandElision()
 {
-  static const std::string PHI_OPERAND_ELISION =
-      "source_filename = \"phi_elide.c\"\n"
-      "target datalayout = "
-      "\"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128\"\n"
-      "target triple = \"x86_64-pc-linux-gnu\"\n"
-      "\n"
-      "; Function Attrs: noinline nounwind sspstrong uwtable\n"
-      "define dso_local i64 @phi_elide(i64 noundef %0) #0 {\n"
-      "  %2 = icmp eq i64 %0, 0\n"
-      "  br i1 %2, label %bb4, label %bb5\n"
-      "\n"
-      "bb2: ; No predecessors (dead)\n"
-      "  %3 = add i64 %0, 1\n"
-      "  %4 = icmp eq i64 %0, 1\n"
-      "  br i1 %4, label %bb3, label %bb5\n"
-      "\n"
-      "bb3: ; predecessor = bb2 (dead)\n"
-      "  br label %bb5\n"
-      "\n"
-      "bb4: ; predecessor = entry-bb (%1)\n"
-      "  %5 = add i64 %0, 2\n"
-      "  br label %bb5\n"
-      "\n"
-      "bb5: ; predecessors = entry-bb, bb2 (dead), bb3 (dead), bb4\n"
-      "  %6 = phi i64 [0, %1], [%3, %bb2], [%0, %bb3], [%5, %bb4]\n"
-      "  br label %bb7\n"
-      "\n"
-      "bb6: ; No predecessors\n"
-      "  br label %bb7\n"
-      "\n"
-      "bb7:\n"
-      "  %7 = phi i64 [%6, %bb5], [poison, %bb6]\n"
-      "  %8 = mul i64 %7, 10\n"
-      "  ret i64 %8\n"
-      "}\n"
-      "\n"
-      "attributes #0 = { noinline nounwind sspstrong uwtable \"frame-pointer\"=\"all\" "
-      "\"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" "
-      "\"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" "
-      "\"target-features\"=\"+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n"
-      "\n"
-      "!llvm.module.flags = !{!0, !1, !2, !3, !4}\n"
-      "!llvm.ident = !{!5}\n"
-      "\n"
-      "!0 = !{i32 1, !\"wchar_size\", i32 4}\n"
-      "!1 = !{i32 8, !\"PIC Level\", i32 2}\n"
-      "!2 = !{i32 7, !\"PIE Level\", i32 2}\n"
-      "!3 = !{i32 7, !\"uwtable\", i32 2}\n"
-      "!4 = !{i32 7, !\"frame-pointer\", i32 2}\n"
-      "!5 = !{!\"clang version 18.1.8\"}\n"
-      "!6 = distinct !{!6, !7}\n"
-      "!7 = !{!\"llvm.loop.mustprogress\"}";
+  static const std::string PHI_OPERAND_ELISION = R""""(
+source_filename = "phi_elide.c"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-pc-linux-gnu"
+
+define dso_local i64 @phi_elide(i64 noundef %0) {
+  %2 = icmp eq i64 %0, 0
+  br i1 %2, label %bb4, label %bb5
+
+bb2: ; No predecessors (dead)
+  %3 = add i64 %0, 1
+  %4 = icmp eq i64 %0, 1
+  br i1 %4, label %bb3, label %bb5
+
+bb3: ; predecessor = bb2 (dead)
+  br label %bb5
+
+bb4: ; predecessor = entry-bb (%1)
+  %5 = add i64 %0, 2
+  br label %bb5
+
+bb5: ; predecessors = entry-bb, bb2 (dead), bb3 (dead), bb4
+  %6 = phi i64 [0, %1], [%3, %bb2], [%0, %bb3], [%5, %bb4]
+  br label %bb7
+
+bb6: ; No predecessors
+  br label %bb7
+
+bb7:
+  %7 = phi i64 [%6, %bb5], [poison, %bb6]
+  %8 = mul i64 %7, 10
+  ret i64 %8
+}
+)"""";
 
   // Arrange
   llvm::LLVMContext ctx;
