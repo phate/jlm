@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=3e92b3d37b654b0f14b8b13d9ff8c07cad5f3796
+GIT_COMMIT=51d327e20c42eebe3578d4b1ad0950e4ab389c2d
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
