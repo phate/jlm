@@ -130,7 +130,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
       util::filepath tempDirectory(std::filesystem::temp_directory_path());
       auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
       auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          util::filepath(tempDirectory),
+          tempDirectory,
           compilation.InputFile());
       util::StatisticsCollectorSettings statisticsCollectorSettings(
           statisticsFilePath,

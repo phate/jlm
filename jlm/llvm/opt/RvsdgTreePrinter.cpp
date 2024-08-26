@@ -88,14 +88,7 @@ RvsdgTreePrinter::GetOutputFileNameCounter(const RvsdgModule & rvsdgModule)
 {
   static std::unordered_map<const RvsdgModule *, uint64_t> RvsdgModuleCounterMap_;
 
-  if (RvsdgModuleCounterMap_.find(&rvsdgModule) == RvsdgModuleCounterMap_.end())
-  {
-    RvsdgModuleCounterMap_[&rvsdgModule] = 0;
-  }
-
-  auto counter = RvsdgModuleCounterMap_[&rvsdgModule];
-  RvsdgModuleCounterMap_[&rvsdgModule]++;
-  return counter;
+  return RvsdgModuleCounterMap_[&rvsdgModule]++;
 }
 
 }
