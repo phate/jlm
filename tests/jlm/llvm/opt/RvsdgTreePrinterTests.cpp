@@ -46,7 +46,7 @@ PrintRvsdgTree()
   std::ifstream file(outputFilePath);
   std::stringstream buffer;
   buffer << file.rdbuf();
-  
+
   assert(buffer.str() == "RootRegion\n-LAMBDA[f]\n--Region[0]\n\n");
 
   return 0;
