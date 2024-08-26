@@ -31,15 +31,15 @@ convert_instructions(::llvm::Function & function, context & ctx)
       if (auto result = ConvertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
-      if (auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction))
+      // phi_ops can take operands from basic blocks that have not been visited yet.
+      // Maintain a list of all phi operations, and hydrate them after visiting all basic blocks.
+      if (!tacs.empty() && is<jlm::llvm::phi_op>(tacs.back()->operation()))
       {
+        auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);
         phis.push_back(phi);
-        ctx.get(bb)->append_first(tacs);
       }
-      else
-      {
-        ctx.get(bb)->append_last(tacs);
-      }
+
+      ctx.get(bb)->append_last(tacs);
     }
   }
 
@@ -57,7 +57,7 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     {
       // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
       // These are not visited during convert_basic_blocks, and thus do not have corresponding
-      // jlm::llvm::basic_blocks. The phi_tac operation can safely ignore these, as they are dead.
+      // jlm::llvm::basic_blocks. The phi_op can safely ignore these, as they are dead.
       if (!ctx.has(phi->getIncomingBlock(n)))
         continue;
 
@@ -68,7 +68,10 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
       nodes.push_back(bb);
     }
 
-    auto phi_tac = static_cast<const tacvariable *>(ctx.lookup_value(phi))->tac();
+    // Phi instructions with a single reachable predecessor should have already been elided
+    JLM_ASSERT(operands.size() >= 2);
+
+    auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
   }
 }

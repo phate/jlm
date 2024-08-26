@@ -677,11 +677,47 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   return nullptr;
 }
 
+/**
+ * Given an LLVM phi instruction, checks if the instruction has only one predecessor basic block
+ * that is reachable (i.e. there exists a path from the entry point to the basic block).
+ *
+ * @param phi the phi instruction
+ * @param ctx the context for the current LLVM to tac conversion
+ * @return the index of the single reachable predecessor basic block, or std::nullopt if it has many
+ */
+static inline std::optional<size_t> getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
+{
+  std::optional<size_t> predecessor = std::nullopt;
+  for (size_t n = 0; n < phi->getNumOperands(); n++)
+  {
+    if (!ctx.has(phi->getIncomingBlock(n)))
+      continue; // This predecessor was unreachable
+    if (predecessor.has_value())
+      return std::nullopt; // This is the second reachable predecessor. Abort!
+    predecessor = n;
+  }
+  // Any visited phi should have at least one predecessor
+  JLM_ASSERT(predecessor);
+  return predecessor;
+}
+
 static inline const variable *
 convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::PHI);
+  auto phi = ::llvm::dyn_cast<::llvm::PHINode>(i);
 
+  // If this phi instruction only has one predecessor basic block that is reachable,
+  // the phi operation can be removed.
+  if (auto singlePredecessor = getSinglePredecessor(phi, ctx)) {
+    // The incoming value is either a constant,
+    // or a value from the predecessor basic block that has already been converted
+    return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
+  }
+
+  // This phi operation can be reached from multiple basic blocks.
+  // As some of these blocks might not be converted yet, an empty phi_op is created,
+  // to be replaced later once all basic blocks have been converted
   auto type = ConvertType(i->getType(), ctx);
   tacs.push_back(phi_op::create({}, type));
   return tacs.back()->result(0);
