@@ -29,6 +29,7 @@ static int
 test_recursive_prune()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   auto t = jlm::tests::valuetype::Create();
 
@@ -40,9 +41,9 @@ test_recursive_prune()
 
   auto n3 = jlm::tests::structural_node::create(graph.root(), 1);
   structural_input::create(n3, imp, t);
-  auto a1 = argument::create(n3->subregion(0), nullptr, t);
-  auto n4 = jlm::tests::test_op::create(n3->subregion(0), { a1 }, { t });
-  auto n5 = jlm::tests::test_op::create(n3->subregion(0), { a1 }, { t });
+  auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
+  auto n4 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
+  auto n5 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
   result::create(n3->subregion(0), n4->output(0), nullptr, t);
   auto o1 = structural_output::create(n3, t);
 
@@ -146,7 +147,7 @@ Copy()
   auto valueType = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  auto & argument = TestGraphArgument::Create(*graph.root(), valueType);
+  auto & argument = TestGraphArgument::Create(*graph.root(), nullptr, valueType);
   auto node = test_op::create(graph.root(), { &argument }, { valueType });
   TestGraphResult::Create(*node->output(0));
 

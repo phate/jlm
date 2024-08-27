@@ -28,15 +28,15 @@ Contains()
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
   auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, valueType);
-  auto regionArgument1 =
-      jlm::rvsdg::argument::create(structuralNode1->subregion(0), structuralInput1, valueType);
-  unary_op::create(structuralNode1->subregion(0), valueType, regionArgument1, valueType);
+  auto & regionArgument1 =
+      TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput1, valueType);
+  unary_op::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
 
   auto structuralNode2 = structural_node::create(graph.root(), 1);
   auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, valueType);
-  auto regionArgument2 =
-      jlm::rvsdg::argument::create(structuralNode2->subregion(0), structuralInput2, valueType);
-  binary_op::create(valueType, valueType, regionArgument2, regionArgument2);
+  auto & regionArgument2 =
+      TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput2, valueType);
+  binary_op::create(valueType, valueType, &regionArgument2, &regionArgument2);
 
   // Act & Assert
   assert(jlm::rvsdg::region::Contains<structural_op>(*graph.root(), false));
@@ -169,22 +169,24 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResultsWhere", RemoveResults
 static int
 RemoveArgumentsWhere()
 {
+  using namespace jlm::tests;
+
   // Arrange
   jlm::rvsdg::graph rvsdg;
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
-  auto argument1 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
-  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
+  auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
+  auto & argument1 = TestGraphArgument::Create(region, nullptr, valueType);
+  auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = jlm::tests::test_op::Create(&region, { valueType }, { argument1 }, { valueType });
+  auto node = jlm::tests::test_op::Create(&region, { valueType }, { &argument1 }, { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);
-  assert(argument0->index() == 0);
-  assert(argument1->index() == 1);
-  assert(argument2->index() == 2);
+  assert(argument0.index() == 0);
+  assert(argument1.index() == 1);
+  assert(argument2.index() == 2);
 
   region.RemoveArgumentsWhere(
       [](const jlm::rvsdg::argument & argument)
@@ -192,7 +194,7 @@ RemoveArgumentsWhere()
         return true;
       });
   assert(region.narguments() == 1);
-  assert(argument1->index() == 0);
+  assert(argument1.index() == 0);
 
   region.remove_node(node);
   region.RemoveArgumentsWhere(
@@ -201,7 +203,7 @@ RemoveArgumentsWhere()
         return false;
       });
   assert(region.narguments() == 1);
-  assert(argument1->index() == 0);
+  assert(argument1.index() == 0);
 
   region.RemoveArgumentsWhere(
       [](const jlm::rvsdg::argument & argument)
@@ -221,19 +223,21 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveArgumentsWhere", RemoveArgum
 static int
 PruneArguments()
 {
+  using namespace jlm::tests;
+
   // Arrange
   jlm::rvsdg::graph rvsdg;
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto argument0 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
-  jlm::rvsdg::argument::create(&region, nullptr, valueType);
-  auto argument2 = jlm::rvsdg::argument::create(&region, nullptr, valueType);
+  auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
+  TestGraphArgument::Create(region, nullptr, valueType);
+  auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
   auto node = jlm::tests::test_op::Create(
       &region,
       { valueType, valueType },
-      { argument0, argument2 },
+      { &argument0, &argument2 },
       { valueType });
 
   // Act & Arrange
@@ -241,8 +245,8 @@ PruneArguments()
 
   region.PruneArguments();
   assert(region.narguments() == 2);
-  assert(argument0->index() == 0);
-  assert(argument2->index() == 1);
+  assert(argument0.index() == 0);
+  assert(argument2.index() == 1);
 
   region.remove_node(node);
   region.PruneArguments();
