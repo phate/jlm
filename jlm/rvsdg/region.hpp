@@ -31,23 +31,31 @@ class structural_op;
 class structural_output;
 class substitution_map;
 
+/**
+ * \brief Represents the argument of a region.
+ *
+ * Region arguments represent the initial values of the region's acyclic graph. These values
+ * are mapped to the arguments throughout the execution, and the concrete semantics of this mapping
+ * depends on the structural node the region is part of. A region argument is either linked
+ * with a \ref structural_input or is a standalone argument.
+ */
 class argument : public output
 {
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::argument> structural_input_anchor_;
+  util::intrusive_list_anchor<argument> structural_input_anchor_;
 
 public:
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::argument, &jlm::rvsdg::argument::structural_input_anchor_>
-          structural_input_accessor;
+  typedef util::intrusive_list_accessor<argument, &argument::structural_input_anchor_>
+      structural_input_accessor;
 
-  virtual ~argument() noexcept;
+  ~argument() noexcept override;
 
 protected:
   argument(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::structural_input * input,
+      rvsdg::region * region,
+      structural_input * input,
       std::shared_ptr<const rvsdg::type> type);
 
+public:
   argument(const argument &) = delete;
 
   argument(argument &&) = delete;
@@ -58,8 +66,7 @@ protected:
   argument &
   operator=(argument &&) = delete;
 
-public:
-  inline jlm::rvsdg::structural_input *
+  [[nodiscard]] structural_input *
   input() const noexcept
   {
     return input_;
@@ -72,21 +79,12 @@ public:
    * @param input  The structural_input to the argument, if any.
    *
    * @return A reference to the copied argument.
-   *
-   * FIXME: This method should be made abstract once we enforced that no instances of argument
-   * itself can be created any longer.
    */
   virtual argument &
-  Copy(rvsdg::region & region, structural_input * input);
-
-  static jlm::rvsdg::argument *
-  create(
-      jlm::rvsdg::region * region,
-      structural_input * input,
-      std::shared_ptr<const jlm::rvsdg::type> type);
+  Copy(rvsdg::region & region, structural_input * input) = 0;
 
 private:
-  jlm::rvsdg::structural_input * input_;
+  structural_input * input_;
 };
 
 class result : public input
