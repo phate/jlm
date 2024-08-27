@@ -91,18 +91,13 @@ public:
   virtual ~theta_node();
 
 private:
-  inline theta_node(jlm::rvsdg::region * parent)
-      : structural_node(jlm::rvsdg::theta_op(), parent, 1)
-  {
-    auto predicate = jlm::rvsdg::control_false(subregion());
-    result::create(subregion(), predicate, nullptr, ctltype::Create(2));
-  }
+  explicit theta_node(rvsdg::region & parent);
 
 public:
   static jlm::rvsdg::theta_node *
   create(jlm::rvsdg::region * parent)
   {
-    return new jlm::rvsdg::theta_node(parent);
+    return new theta_node(*parent);
   }
 
   inline jlm::rvsdg::region *
@@ -402,6 +397,35 @@ private:
   Create(rvsdg::output & origin, theta_output & thetaOutput)
   {
     auto thetaResult = new ThetaResult(origin, thetaOutput);
+    origin.region()->append_result(thetaResult);
+    return *thetaResult;
+  }
+};
+
+/**
+ * Represents the predicate result of a theta subregion.
+ */
+class ThetaPredicateResult final : public result
+{
+  friend theta_node;
+
+public:
+  ~ThetaPredicateResult() noexcept override;
+
+  ThetaPredicateResult &
+  Copy(rvsdg::output & origin, structural_output * output) override;
+
+private:
+  explicit ThetaPredicateResult(rvsdg::output & origin)
+      : result(origin.region(), &origin, nullptr, ctltype::Create(2))
+  {
+    JLM_ASSERT(is<theta_op>(origin.region()->node()));
+  }
+
+  static ThetaPredicateResult &
+  Create(rvsdg::output & origin)
+  {
+    auto thetaResult = new ThetaPredicateResult(origin);
     origin.region()->append_result(thetaResult);
     return *thetaResult;
   }
