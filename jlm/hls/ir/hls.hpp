@@ -157,7 +157,7 @@ public:
   }
 
   /**
-   * Cechk if a fork is a constant fork (CFORK).
+   * Check if a fork is a constant fork (CFORK).
    *
    * /return True if the fork is a constant fork, i.e., the input of the fork is a constant, else
    * false.
@@ -606,6 +606,42 @@ public:
 class backedge_argument;
 class backedge_result;
 class loop_node;
+
+/**
+ * Represents the entry argument for the HLS loop.
+ */
+class EntryArgument : public rvsdg::argument
+{
+  friend loop_node;
+
+public:
+  ~EntryArgument() noexcept override;
+
+private:
+  EntryArgument(
+      rvsdg::region & region,
+      rvsdg::structural_input & input,
+      const std::shared_ptr<const rvsdg::type> type)
+      : rvsdg::argument(&region, &input, std::move(type))
+  {}
+
+public:
+  EntryArgument &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
+  // FIXME: This should not be public, but we currently still have some transformations that use
+  // this one. Make it eventually private.
+  static EntryArgument &
+  Create(
+      rvsdg::region & region,
+      rvsdg::structural_input & input,
+      const std::shared_ptr<const rvsdg::type> type)
+  {
+    auto argument = new EntryArgument(region, input, std::move(type));
+    region.append_argument(argument);
+    return *argument;
+  }
+};
 
 class backedge_argument : public jlm::rvsdg::argument
 {

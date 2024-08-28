@@ -785,6 +785,16 @@ public:
     TwoPhaseLeastRecentlyFired,
 
     /**
+     * Not a real worklist policy.
+     * For each "sweep", all nodes are visited in topological order.
+     * Any cycles found during topological sorting are eliminated.
+     * This continues until a full sweep has been done with no attempts at pushing to the worklist.
+     * Described by:
+     *   Pearce 2007: "Efficient field-sensitive pointer analysis of C"
+     */
+    TopologicalSort,
+
+    /**
      * A worklist policy based on a queue.
      * @see jlm::util::FifoWorklist
      */
@@ -824,6 +834,12 @@ public:
      * If Difference Propagation is not enabled, all pointees are always regarded as new.
      */
     size_t NumWorkItemNewPointees{};
+
+    /**
+     * The number of times the topological worklist orders the whole set of work items
+     * and visits them all in topological order.
+     */
+    std::optional<size_t> NumTopologicalWorklistSweeps;
 
     /**
      * The number of cycles detected by online cycle detection,

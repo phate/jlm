@@ -248,7 +248,7 @@ decouple_load(
             auto new_in =
                 jlm::rvsdg::structural_input::create(new_loop, arg->input()->origin(), arg->Type());
             smap.insert(arg->input(), new_in);
-            new_arg = jlm::rvsdg::argument::create(new_loop->subregion(), new_in, arg->Type());
+            new_arg = &EntryArgument::Create(*new_loop->subregion(), *new_in, arg->Type());
           }
           smap.insert(arg, new_arg);
           continue;
@@ -364,9 +364,9 @@ decouple_load(
   auto buf = buffer_op::create(*dload_out[0], 2, true)[0];
   // replace data output of loadNode
   auto old_data_in = jlm::rvsdg::structural_input::create(loopNode, buf, dload_out[0]->Type());
-  auto old_data_arg =
-      jlm::rvsdg::argument::create(loopNode->subregion(), old_data_in, dload_out[0]->Type());
-  loadNode->output(0)->divert_users(old_data_arg);
+  auto & old_data_arg =
+      EntryArgument::Create(*loopNode->subregion(), *old_data_in, dload_out[0]->Type());
+  loadNode->output(0)->divert_users(&old_data_arg);
   remove(loadNode);
 }
 
