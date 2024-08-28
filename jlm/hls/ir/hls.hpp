@@ -714,7 +714,7 @@ private:
 };
 
 /**
- * Represents the exit argument for the HLS loop.
+ * Represents the exit result of the HLS loop.
  */
 class ExitResult final : public rvsdg::result
 {
