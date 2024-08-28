@@ -723,9 +723,6 @@ class ExitResult final : public rvsdg::result
 public:
   ~ExitResult() noexcept override;
 
-  ExitResult &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
-
 private:
   ExitResult(rvsdg::output & origin, rvsdg::structural_output & output)
       : rvsdg::result(origin.region(), &origin, &output, origin.Type())
@@ -733,6 +730,12 @@ private:
     JLM_ASSERT(rvsdg::is<loop_op>(origin.region()->node()));
   }
 
+public:
+  ExitResult &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+  // FIXME: This should not be public, but we currently still have some transformations that use
+  // this one. Make it eventually private.
   static ExitResult &
   Create(rvsdg::output & origin, rvsdg::structural_output & output)
   {
