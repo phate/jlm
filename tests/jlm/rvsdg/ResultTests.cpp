@@ -16,6 +16,7 @@ static int
 ResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -28,14 +29,15 @@ ResultNodeMismatch()
 
   auto structuralInput = structural_input::create(structuralNode1, import, valueType);
 
-  auto argument = argument::create(structuralNode1->subregion(0), structuralInput, valueType);
+  auto & argument =
+      TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);
   auto structuralOutput = structural_output::create(structuralNode1, valueType);
 
   // Act
   bool outputErrorHandlerCalled = false;
   try
   {
-    result::create(structuralNode2->subregion(0), argument, structuralOutput, valueType);
+    result::create(structuralNode2->subregion(0), &argument, structuralOutput, valueType);
   }
   catch (jlm::util::error & e)
   {
