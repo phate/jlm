@@ -66,7 +66,19 @@ static void
 TestOptimizationIdToOptimizationTranslation()
 {
   using namespace jlm::tooling;
+  using namespace jlm::util;
 
+  // Arrange
+  JlmOptCommandLineOptions options(
+      filepath(""),
+      JlmOptCommandLineOptions::InputFormat::Llvm,
+      filepath(""),
+      JlmOptCommandLineOptions::OutputFormat::Llvm,
+      StatisticsCollectorSettings(),
+      jlm::llvm::RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path())),
+      std::vector<JlmOptCommandLineOptions::OptimizationId>());
+
+  // Act & Assert
   for (size_t n =
            static_cast<std::size_t>(JlmOptCommandLineOptions::OptimizationId::FirstEnumValue) + 1;
        n != static_cast<std::size_t>(JlmOptCommandLineOptions::OptimizationId::LastEnumValue);
@@ -75,7 +87,7 @@ TestOptimizationIdToOptimizationTranslation()
     auto optimizationId = static_cast<JlmOptCommandLineOptions::OptimizationId>(n);
 
     // terminates on unhandled optimization id
-    JlmOptCommandLineOptions::GetOptimization(optimizationId);
+    static_cast<void>(options.GetOptimization(optimizationId));
   }
 }
 

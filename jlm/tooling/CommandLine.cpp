@@ -16,6 +16,7 @@
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
@@ -135,6 +136,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
+        { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
           OptimizationId::ThetaGammaInversion },
         { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
@@ -168,6 +170,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
+        { OptimizationId::RvsdgTreePrinter, OptimizationCommandLineArgument::RvsdgTreePrinter_ },
         { OptimizationId::ThetaGammaInversion,
           OptimizationCommandLineArgument::ThetaGammaInversion_ } });
 
@@ -224,7 +227,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 }
 
 std::unique_ptr<llvm::optimization>
-JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId)
+JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
@@ -257,6 +260,8 @@ JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId)
     return std::make_unique<llvm::pushout>();
   case OptimizationId::NodeReduction:
     return std::make_unique<llvm::nodereduction>();
+  case OptimizationId::RvsdgTreePrinter:
+    return std::make_unique<llvm::RvsdgTreePrinter>(RvsdgTreePrinterConfiguration_);
   case OptimizationId::ThetaGammaInversion:
     return std::make_unique<llvm::tginversion>();
   default:
@@ -289,6 +294,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgConstruction, "print-rvsdg-construction" },
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
+    { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
     { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
     { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
@@ -587,6 +593,9 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::RvsdgOptimization,
               "Collect RVSDG optimization pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::RvsdgTreePrinter,
+              "Collect RVSDG tree printer pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
           CreateStatisticsOption(
@@ -734,7 +743,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path();
   const auto statisticDirectoryDescription =
-      "Write statistics to file in <dir>. Default is " + statisticsDirectoryDefault + ".";
+      "Write statistics and debug output to files in <dir>. Default is "
+      + statisticsDirectoryDefault + ".";
   cl::opt<std::string> statisticDirectory(
       "s",
       cl::init(statisticsDirectoryDefault),
@@ -804,6 +814,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::RvsdgOptimization,
               "Write RVSDG optimization statistics to file."),
           CreateStatisticsOption(
+              util::Statistics::Id::RvsdgTreePrinter,
+              "Write RVSDG tree printer pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Write Steensgaard analysis statistics to file."),
           CreateStatisticsOption(
@@ -862,6 +875,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
+  auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
 
@@ -912,6 +926,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(nodeReduction),
               "Node Reduction"),
           ::clEnumValN(
+              rvsdgTreePrinter,
+              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgTreePrinter),
+              "Rvsdg Tree Printer"),
+          ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
               "Theta-Gamma Inversion"),
@@ -949,6 +967,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
+      llvm::RvsdgTreePrinter::Configuration(statisticsDirectoryFilePath),
       std::move(optimizationIds));
 
   return *CommandLineOptions_;
