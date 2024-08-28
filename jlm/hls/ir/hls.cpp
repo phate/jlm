@@ -57,6 +57,14 @@ backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * ou
   return *backedge_result::create(&origin);
 }
 
+ExitResult::~ExitResult() noexcept = default;
+
+ExitResult &
+ExitResult::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+{
+  return Create(origin, *output);
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
