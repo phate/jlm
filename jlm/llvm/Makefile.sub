@@ -61,6 +61,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
+    jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
@@ -85,6 +86,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/reduction.hpp \
 	jlm/llvm/opt/InvariantValueRedirection.hpp \
 	jlm/llvm/opt/inversion.hpp \
+	jlm/llvm/opt/RvsdgTreePrinter.hpp \
 	jlm/llvm/frontend/LlvmModuleConversion.hpp \
 	jlm/llvm/frontend/LlvmTypeConversion.hpp \
 	jlm/llvm/frontend/ControlFlowRestructuring.hpp \
@@ -188,6 +190,7 @@ libllvm_TESTS += \
 	tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
 	tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
 	tests/jlm/llvm/opt/InvariantValueRedirectionTests \
+	tests/jlm/llvm/opt/RvsdgTreePrinterTests \
 	tests/jlm/llvm/opt/test-cne \
 	tests/jlm/llvm/opt/TestDeadNodeElimination \
 	tests/jlm/llvm/opt/test-inlining \

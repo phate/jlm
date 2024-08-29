@@ -27,6 +27,13 @@ theta_op::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new theta_op(*this));
 }
 
+theta_node::theta_node(rvsdg::region & parent)
+    : structural_node(rvsdg::theta_op(), &parent, 1)
+{
+  auto predicate = control_false(subregion());
+  ThetaPredicateResult::Create(*predicate);
+}
+
 /* theta input */
 
 theta_input::~theta_input() noexcept
@@ -59,6 +66,15 @@ ThetaResult::Copy(rvsdg::output & origin, structural_output * output)
 {
   auto thetaOutput = util::AssertedCast<theta_output>(output);
   return ThetaResult::Create(origin, *thetaOutput);
+}
+
+ThetaPredicateResult::~ThetaPredicateResult() noexcept = default;
+
+ThetaPredicateResult &
+ThetaPredicateResult::Copy(rvsdg::output & origin, structural_output * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return ThetaPredicateResult::Create(origin);
 }
 
 /* theta node */

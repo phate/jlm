@@ -43,23 +43,6 @@ argument::argument(
   }
 }
 
-argument &
-argument::Copy(rvsdg::region & region, structural_input * input)
-{
-  return *argument::create(&region, input, Type());
-}
-
-jlm::rvsdg::argument *
-argument::create(
-    jlm::rvsdg::region * region,
-    structural_input * input,
-    std::shared_ptr<const jlm::rvsdg::type> type)
-{
-  auto argument = new jlm::rvsdg::argument(region, input, std::move(type));
-  region->append_argument(argument);
-  return argument;
-}
-
 result::~result() noexcept
 {
   on_input_destroy(this);
