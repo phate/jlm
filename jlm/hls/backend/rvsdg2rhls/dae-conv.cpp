@@ -297,11 +297,7 @@ decouple_load(
       auto new_res_origin = smap.lookup(res->origin());
       auto new_state_output =
           jlm::rvsdg::structural_output::create(new_loop, new_res_origin->Type());
-      jlm::rvsdg::result::create(
-          new_loop->subregion(),
-          new_res_origin,
-          new_state_output,
-          new_res_origin->Type());
+      ExitResult::Create(*new_res_origin, *new_state_output);
       res->output()->divert_users(new_state_output);
     }
   }
@@ -333,7 +329,7 @@ decouple_load(
   // create output for address
   auto load_addr = gate_out[0];
   auto addr_output = jlm::rvsdg::structural_output::create(new_loop, load_addr->Type());
-  jlm::rvsdg::result::create(new_loop->subregion(), load_addr, addr_output, load_addr->Type());
+  ExitResult::Create(*load_addr, *addr_output);
   // trace and remove loop input for mem data reponse
   auto mem_data_loop_out = new_load->input(new_load->ninputs() - 1)->origin();
   auto mem_data_loop_arg = dynamic_cast<jlm::rvsdg::argument *>(mem_data_loop_out);

@@ -48,7 +48,7 @@ jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * reques
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
     auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
-    jlm::rvsdg::result::create(request->region(), request, output, request->Type());
+    ExitResult::Create(*request, *output);
     return route_request(target, output);
   }
 }
