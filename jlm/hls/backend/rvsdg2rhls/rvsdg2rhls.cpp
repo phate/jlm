@@ -385,11 +385,9 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       // copy function into rhls
       auto new_ln = ln->copy(rhls->Rvsdg().root(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
-      jlm::rvsdg::result::create(
-          rhls->Rvsdg().root(),
-          new_ln->output(),
-          nullptr,
-          new_ln->output()->Type());
+      jlm::llvm::GraphExport::Create(
+          *new_ln->output(),
+          ln->ComputeCallSummary()->GetRvsdgExport()->Name());
       // add function as input to rm and remove it
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
