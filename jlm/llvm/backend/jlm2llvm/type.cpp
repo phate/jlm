@@ -85,7 +85,8 @@ convert(const fptype & type, context & ctx)
       { { fpsize::half, ::llvm::Type::getHalfTy },
         { fpsize::flt, ::llvm::Type::getFloatTy },
         { fpsize::dbl, ::llvm::Type::getDoubleTy },
-        { fpsize::x86fp80, ::llvm::Type::getX86_FP80Ty } });
+        { fpsize::x86fp80, ::llvm::Type::getX86_FP80Ty },
+        { fpsize::fp128, ::llvm::Type::getFP128Ty }});
 
   JLM_ASSERT(map.find(type.size()) != map.end());
   return map[type.size()](ctx.llvm_module().getContext());

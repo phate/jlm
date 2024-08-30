@@ -182,7 +182,8 @@ fptype::debug_string() const
   static std::unordered_map<fpsize, std::string> map({ { fpsize::half, "half" },
                                                        { fpsize::flt, "float" },
                                                        { fpsize::dbl, "double" },
-                                                       { fpsize::x86fp80, "x86fp80" } });
+                                                       { fpsize::x86fp80, "x86fp80" },
+                                                       { fpsize::fp128, "fp128" } });
 
   JLM_ASSERT(map.find(size()) != map.end());
   return map[size()];
@@ -227,6 +228,11 @@ fptype::Create(fpsize size)
   case fpsize::x86fp80:
   {
     static const fptype instance(fpsize::x86fp80);
+    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+  }
+  case fpsize::fp128:
+  {
+    static const fptype instance(fpsize::fp128);
     return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
   }
   default:

@@ -181,7 +181,8 @@ enum class fpsize
   half,
   flt,
   dbl,
-  x86fp80
+  x86fp80,
+  fp128
 };
 
 class fptype final : public jlm::rvsdg::valuetype
