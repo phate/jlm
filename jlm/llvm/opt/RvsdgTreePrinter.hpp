@@ -115,9 +115,25 @@ public:
   run(RvsdgModule & rvsdgModule);
 
 private:
+  /**
+   * Computes a map with annotations based on the required \ref Annotation%s in the \ref
+   * Configuration for the individual regions and structural nodes of the region tree.
+   *
+   * @param rvsdg The RVSDG for which to compute the annotations.
+   * @return An instance of \ref AnnotationMap.
+   */
   [[nodiscard]] util::AnnotationMap
   ComputeAnnotationMap(const rvsdg::graph & rvsdg) const;
 
+  /**
+   * Adds an annotation to \p annotationMap that indicates the number of RVSDG nodes for regions
+   * and structural nodes.
+   *
+   * @param rvsdg The RVSDG for which to compute the annotation.
+   * @param annotationMap The annotation map in which the annotation is inserted.
+   *
+   * @see NumRvsdgNodes
+   */
   static void
   AnnotateNumRvsdgNodes(const rvsdg::graph & rvsdg, util::AnnotationMap & annotationMap);
 
