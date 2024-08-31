@@ -693,7 +693,8 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  llvm::GraphExport::Create(*newOut, lambda->ComputeCallSummary()->GetRvsdgExport()->Name());
+  auto oldExport = lambda->ComputeCallSummary()->GetRvsdgExport();
+  llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
   lambda->region()->RemoveResult((*lambda->output()->begin())->index());

@@ -241,7 +241,8 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   //	ln->output()->divert_users(new_out); // can't divert since the type changed
   JLM_ASSERT(ln->output()->nusers() == 1);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
-  jlm::llvm::GraphExport::Create(*new_out, ln->ComputeCallSummary()->GetRvsdgExport()->Name());
+  auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+  jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
   return new_lambda;
 }
