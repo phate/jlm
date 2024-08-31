@@ -50,6 +50,7 @@ public:
     RvsdgConstruction,
     RvsdgDestruction,
     RvsdgOptimization,
+    RvsdgTreePrinter,
     SteensgaardAnalysis,
     ThetaGammaInversion,
     TopDownMemoryNodeEliminator,

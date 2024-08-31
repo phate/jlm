@@ -713,6 +713,38 @@ private:
   backedge_argument * argument_;
 };
 
+/**
+ * Represents the exit result of the HLS loop.
+ */
+class ExitResult final : public rvsdg::result
+{
+  friend loop_node;
+
+public:
+  ~ExitResult() noexcept override;
+
+private:
+  ExitResult(rvsdg::output & origin, rvsdg::structural_output & output)
+      : rvsdg::result(origin.region(), &origin, &output, origin.Type())
+  {
+    JLM_ASSERT(rvsdg::is<loop_op>(origin.region()->node()));
+  }
+
+public:
+  ExitResult &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+  // FIXME: This should not be public, but we currently still have some transformations that use
+  // this one. Make it eventually private.
+  static ExitResult &
+  Create(rvsdg::output & origin, rvsdg::structural_output & output)
+  {
+    auto result = new ExitResult(origin, output);
+    origin.region()->append_result(result);
+    return *result;
+  }
+};
+
 class loop_node final : public jlm::rvsdg::structural_node
 {
 public:

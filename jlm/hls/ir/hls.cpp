@@ -57,6 +57,14 @@ backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * ou
   return *backedge_result::create(&origin);
 }
 
+ExitResult::~ExitResult() noexcept = default;
+
+ExitResult &
+ExitResult::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+{
+  return Create(origin, *output);
+}
+
 jlm::rvsdg::structural_output *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
@@ -73,7 +81,7 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
   {
     *buffer = mux;
   }
-  jlm::rvsdg::result::create(subregion(), branch[0], output, origin->Type());
+  ExitResult::Create(*branch[0], *output);
   auto result_loop = argument_loop->result();
   auto buf = hls::buffer_op::create(*branch[1], 2)[0];
   result_loop->divert_to(buf);
@@ -140,7 +148,7 @@ loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap
     auto outp = output(i);
     auto res = outp->results.begin().ptr();
     auto origin = smap.lookup(res->origin());
-    jlm::rvsdg::result::create(loop->subregion(), origin, loop->output(i), res->Type());
+    ExitResult::Create(*origin, *loop->output(i));
   }
   nf->set_mutable(true);
   return loop;

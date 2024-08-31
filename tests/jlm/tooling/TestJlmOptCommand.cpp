@@ -6,6 +6,7 @@
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/util/strfmt.hpp>
 
@@ -14,7 +15,9 @@
 static void
 TestStatistics()
 {
+  using namespace jlm::llvm;
   using namespace jlm::tooling;
+  using namespace jlm::util;
 
   // Arrange
   std::string expectedStatisticsDir = "/myStatisticsDir/";
@@ -29,6 +32,7 @@ TestStatistics()
       jlm::util::filepath("outputFile.ll"),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       statisticsCollectorSettings,
+      RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path())),
       { JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
         JlmOptCommandLineOptions::OptimizationId::LoopUnrolling });
 
