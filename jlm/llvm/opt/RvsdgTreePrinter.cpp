@@ -140,9 +140,10 @@ RvsdgTreePrinter::CreateOutputFile(const RvsdgModule & rvsdgModule) const
 uint64_t
 RvsdgTreePrinter::GetOutputFileNameCounter(const RvsdgModule & rvsdgModule)
 {
-  static std::unordered_map<const RvsdgModule *, uint64_t> RvsdgModuleCounterMap_;
+  static std::unordered_map<std::string_view, uint64_t> RvsdgModuleCounterMap_;
 
-  return RvsdgModuleCounterMap_[&rvsdgModule]++;
+  auto key = util::strfmt(&rvsdgModule, rvsdgModule.SourceFileName().to_str());
+  return RvsdgModuleCounterMap_[key]++;
 }
 
 }
