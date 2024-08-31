@@ -116,7 +116,7 @@ public:
 
 private:
   /**
-   * Computes a map with annotations based on the required \ref Annotation%s in the \ref
+   * Computes a map with annotations based on the required \ref jlm::util::Annotation%s in the \ref
    * Configuration for the individual regions and structural nodes of the region tree.
    *
    * @param rvsdg The RVSDG for which to compute the annotations.
