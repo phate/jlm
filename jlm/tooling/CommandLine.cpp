@@ -99,10 +99,10 @@ JlmOptCommandLineOptions::Reset() noexcept
   OptimizationIds_.clear();
 }
 
-std::vector<std::unique_ptr<llvm::optimization>>
+std::vector<llvm::optimization *>
 JlmOptCommandLineOptions::GetOptimizations() const noexcept
 {
-  std::vector<std::unique_ptr<llvm::optimization>> optimizations;
+  std::vector<llvm::optimization *> optimizations;
   optimizations.reserve(OptimizationIds_.size());
 
   for (auto & optimizationId : OptimizationIds_)
@@ -226,8 +226,23 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
   return mapping.at(outputFormat).data();
 }
 
-std::unique_ptr<llvm::optimization>
+llvm::optimization *
 JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId) const
+{
+  static std::unordered_map<OptimizationId, std::unique_ptr<llvm::optimization>> map;
+
+  if (auto it = map.find(optimizationId); it != map.end())
+  {
+    return it->second.get();
+  }
+
+  map[optimizationId] = CreateOptimization(optimizationId);
+
+  return map[optimizationId].get();
+}
+
+std::unique_ptr<llvm::optimization>
+JlmOptCommandLineOptions::CreateOptimization(enum OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
