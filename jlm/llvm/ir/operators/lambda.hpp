@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/linkage.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -714,7 +715,7 @@ class node::CallSummary final
 
 public:
   CallSummary(
-      rvsdg::result * rvsdgExport,
+      GraphExport * rvsdgExport,
       std::vector<CallNode *> directCalls,
       std::vector<rvsdg::input *> otherUsers)
       : RvsdgExport_(rvsdgExport),
@@ -816,7 +817,7 @@ public:
    *
    * @return The export of the lambda from the RVSDG root region.
    */
-  [[nodiscard]] rvsdg::result *
+  [[nodiscard]] GraphExport *
   GetRvsdgExport() const noexcept
   {
     return RvsdgExport_;
@@ -857,7 +858,7 @@ public:
    */
   static std::unique_ptr<CallSummary>
   Create(
-      rvsdg::result * rvsdgExport,
+      GraphExport * rvsdgExport,
       std::vector<CallNode *> directCalls,
       std::vector<rvsdg::input *> otherUsers)
   {
@@ -868,7 +869,7 @@ public:
   }
 
 private:
-  rvsdg::result * RvsdgExport_;
+  GraphExport * RvsdgExport_;
   std::vector<CallNode *> DirectCalls_;
   std::vector<rvsdg::input *> OtherUsers_;
 };

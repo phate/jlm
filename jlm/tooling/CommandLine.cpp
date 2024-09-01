@@ -939,6 +939,15 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               "Loop Unrolling")),
       cl::desc("Perform optimization"));
 
+  cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
+      "annotations",
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
+          "NumRvsdgNodes",
+          "Annotate number of RVSDG nodes")),
+      cl::CommaSeparated,
+      cl::desc("Comma separated list of RVSDG tree printer annotations"));
+
   cl::ParseCommandLineOptions(argc, argv);
 
   jlm::util::filepath statisticsDirectoryFilePath(statisticDirectory);
@@ -961,13 +970,18 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       statisticsFilePath,
       demandedStatistics);
 
+  util::HashSet<llvm::RvsdgTreePrinter::Configuration::Annotation> demandedAnnotations(
+      { rvsdgTreePrinterAnnotations.begin(), rvsdgTreePrinterAnnotations.end() });
+
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
       inputFormat,
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
-      llvm::RvsdgTreePrinter::Configuration(statisticsDirectoryFilePath),
+      llvm::RvsdgTreePrinter::Configuration(
+          statisticsDirectoryFilePath,
+          std::move(demandedAnnotations)),
       std::move(optimizationIds));
 
   return *CommandLineOptions_;

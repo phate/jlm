@@ -109,12 +109,9 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
   lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
+  auto oldExport = lambdaNode.ComputeCallSummary()->GetRvsdgExport();
+  jlm::llvm::GraphExport::Create(*newLambdaOutput, oldExport ? oldExport->Name() : "");
   remove(&lambdaNode);
-  jlm::rvsdg::result::create(
-      newLambda->region(),
-      newLambdaOutput,
-      nullptr,
-      newLambdaOutput->Type());
 }
 
 static void

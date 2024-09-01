@@ -75,7 +75,7 @@ TestOptimizationIdToOptimizationTranslation()
       filepath(""),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       StatisticsCollectorSettings(),
-      jlm::llvm::RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path())),
+      jlm::llvm::RvsdgTreePrinter::Configuration({ std::filesystem::temp_directory_path() }, {}),
       std::vector<JlmOptCommandLineOptions::OptimizationId>());
 
   // Act & Assert
