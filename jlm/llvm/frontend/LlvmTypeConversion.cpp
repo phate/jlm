@@ -23,7 +23,8 @@ ExtractFloatingPointSize(const ::llvm::Type * type)
       { { ::llvm::Type::HalfTyID, fpsize::half },
         { ::llvm::Type::FloatTyID, fpsize::flt },
         { ::llvm::Type::DoubleTyID, fpsize::dbl },
-        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 } });
+        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
+        { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
   auto i = map.find(type->getTypeID());
   JLM_ASSERT(i != map.end());
@@ -79,7 +80,7 @@ convert_fp_type(const ::llvm::Type * t, context & ctx)
         { ::llvm::Type::FloatTyID, fpsize::flt },
         { ::llvm::Type::DoubleTyID, fpsize::dbl },
         { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
-        { ::llvm::Type::FP128TyID, fpsize::fp128 }});
+        { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
   auto i = map.find(t->getTypeID());
   JLM_ASSERT(i != map.end());

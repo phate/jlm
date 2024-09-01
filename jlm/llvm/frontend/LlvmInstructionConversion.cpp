@@ -983,7 +983,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
         { ::llvm::Type::FloatTyID, fpsize::flt },
         { ::llvm::Type::DoubleTyID, fpsize::dbl },
         { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
-        { ::llvm::Type::FP128TyID, fpsize::fp128 }});
+        { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
   std::unique_ptr<rvsdg::operation> operation;
   auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
