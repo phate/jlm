@@ -287,7 +287,7 @@ node::ComputeCallSummary() const
   worklist.insert(worklist.end(), output()->begin(), output()->end());
 
   std::vector<CallNode *> directCalls;
-  rvsdg::result * rvsdgExport = nullptr;
+  GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::input *> otherUsers;
 
   while (!worklist.empty())
@@ -373,10 +373,9 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    auto result = dynamic_cast<rvsdg::result *>(input);
-    if (result != nullptr && input->region() == graph()->root())
+    if (auto graphExport = dynamic_cast<GraphExport *>(input))
     {
-      rvsdgExport = result;
+      rvsdgExport = graphExport;
       continue;
     }
 

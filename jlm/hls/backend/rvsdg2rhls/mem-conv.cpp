@@ -48,7 +48,7 @@ jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * reques
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
     auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
-    jlm::rvsdg::result::create(request->region(), request, output, request->Type());
+    ExitResult::Create(*request, *output);
     return route_request(target, output);
   }
 }
@@ -693,7 +693,8 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  jlm::rvsdg::result::create(newLambda->region(), newOut, nullptr, newOut->Type());
+  auto oldExport = lambda->ComputeCallSummary()->GetRvsdgExport();
+  llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
   lambda->region()->RemoveResult((*lambda->output()->begin())->index());
