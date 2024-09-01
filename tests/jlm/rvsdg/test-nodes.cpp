@@ -34,8 +34,8 @@ test_node_copy(void)
   auto n2 = jlm::tests::test_op::create(n1->subregion(0), { &a1 }, { stype });
   auto n3 = jlm::tests::test_op::create(n1->subregion(0), { &a2 }, { vtype });
 
-  result::create(n1->subregion(0), n2->output(0), o1, stype);
-  result::create(n1->subregion(0), n3->output(0), o2, vtype);
+  TestGraphResult::Create(*n2->output(0), o1);
+  TestGraphResult::Create(*n3->output(0), o2);
 
   jlm::rvsdg::view(graph.root(), stdout);
 

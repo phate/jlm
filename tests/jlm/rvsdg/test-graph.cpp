@@ -44,7 +44,7 @@ test_recursive_prune()
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
   auto n4 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
   auto n5 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
-  result::create(n3->subregion(0), n4->output(0), nullptr, t);
+  TestGraphResult::Create(*n4->output(0), nullptr);
   auto o1 = structural_output::create(n3, t);
 
   auto n6 = jlm::tests::structural_node::create(n3->subregion(0), 1);
@@ -149,7 +149,7 @@ Copy()
   jlm::rvsdg::graph graph;
   auto & argument = TestGraphArgument::Create(*graph.root(), nullptr, valueType);
   auto node = test_op::create(graph.root(), { &argument }, { valueType });
-  TestGraphResult::Create(*node->output(0));
+  TestGraphResult::Create(*node->output(0), nullptr);
 
   // Act
   auto newGraph = graph.copy();
