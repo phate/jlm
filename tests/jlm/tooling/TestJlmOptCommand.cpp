@@ -32,7 +32,7 @@ TestStatistics()
       jlm::util::filepath("outputFile.ll"),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       statisticsCollectorSettings,
-      RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path())),
+      RvsdgTreePrinter::Configuration({ std::filesystem::temp_directory_path() }, {}),
       { JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
         JlmOptCommandLineOptions::OptimizationId::LoopUnrolling });
 

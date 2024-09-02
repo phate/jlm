@@ -87,24 +87,33 @@ private:
   structural_input * input_;
 };
 
+/**
+ * \brief Represents the result of a region.
+ *
+ * Region results represent the final values of the region's acyclic graph. The result values
+ * can be mapped back to the region arguments or the corresponding structural outputs
+ * throughout the execution, but the concrete semantics of this mapping
+ * depends on the structural node the region is part of. A region result is either linked
+ * with a \ref structural_output or is a standalone result.
+ */
 class result : public input
 {
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::result> structural_output_anchor_;
+  util::intrusive_list_anchor<result> structural_output_anchor_;
 
 public:
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::result, &jlm::rvsdg::result::structural_output_anchor_>
-          structural_output_accessor;
+  typedef util::intrusive_list_accessor<result, &result::structural_output_anchor_>
+      structural_output_accessor;
 
-  virtual ~result() noexcept;
+  ~result() noexcept override;
 
 protected:
   result(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
+      rvsdg::region * region,
+      rvsdg::output * origin,
+      structural_output * output,
       std::shared_ptr<const rvsdg::type> type);
 
+public:
   result(const result &) = delete;
 
   result(result &&) = delete;
@@ -115,8 +124,7 @@ protected:
   result &
   operator=(result &&) = delete;
 
-public:
-  inline jlm::rvsdg::structural_output *
+  [[nodiscard]] structural_output *
   output() const noexcept
   {
     return output_;
@@ -130,22 +138,12 @@ public:
    * @param output The structural_output to the result, if any.
    *
    * @return A reference to the copied result.
-   *
-   * FIXME: This method should be made abstract once we enforced that no instances of result
-   * itself can be created any longer.
    */
   virtual result &
-  Copy(rvsdg::output & origin, structural_output * output);
-
-  static jlm::rvsdg::result *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
-      std::shared_ptr<const jlm::rvsdg::type> type);
+  Copy(rvsdg::output & origin, structural_output * output) = 0;
 
 private:
-  jlm::rvsdg::structural_output * output_;
+  structural_output * output_;
 };
 
 class region

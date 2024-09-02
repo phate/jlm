@@ -7,7 +7,14 @@
 #define JLM_LLVM_OPT_RVSDGTREEPRINTER_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/util/AnnotationMap.hpp>
 #include <jlm/util/file.hpp>
+#include <jlm/util/HashSet.hpp>
+
+namespace jlm::rvsdg
+{
+class graph;
+}
 
 namespace jlm::util
 {
@@ -34,8 +41,29 @@ public:
   class Configuration final
   {
   public:
-    explicit Configuration(const util::filepath & outputDirectory)
-        : OutputDirectory_(std::move(outputDirectory))
+    enum class Annotation
+    {
+      /**
+       * Must always be the first enum value. Used for iteration.
+       */
+      FirstEnumValue,
+
+      /**
+       * Annotate regions and structural nodes with the number of RVSDG nodes.
+       */
+      NumRvsdgNodes,
+
+      /**
+       * Must always be the last enum value. Used for iteration.
+       */
+      LastEnumValue
+    };
+
+    Configuration(
+        const util::filepath & outputDirectory,
+        util::HashSet<Annotation> requiredAnnotations)
+        : OutputDirectory_(std::move(outputDirectory)),
+          RequiredAnnotations_(std::move(requiredAnnotations))
     {
       JLM_ASSERT(outputDirectory.IsDirectory());
       JLM_ASSERT(outputDirectory.Exists());
@@ -50,8 +78,18 @@ public:
       return OutputDirectory_;
     }
 
+    /**
+     * The required annotations for the RVSDG tree.
+     */
+    [[nodiscard]] const util::HashSet<Annotation> &
+    RequiredAnnotations() const noexcept
+    {
+      return RequiredAnnotations_;
+    }
+
   private:
     util::filepath OutputDirectory_;
+    util::HashSet<Annotation> RequiredAnnotations_ = {};
   };
 
   ~RvsdgTreePrinter() noexcept override;
@@ -77,6 +115,28 @@ public:
   run(RvsdgModule & rvsdgModule);
 
 private:
+  /**
+   * Computes a map with annotations based on the required \ref jlm::util::Annotation%s in the \ref
+   * Configuration for the individual regions and structural nodes of the region tree.
+   *
+   * @param rvsdg The RVSDG for which to compute the annotations.
+   * @return An instance of \ref AnnotationMap.
+   */
+  [[nodiscard]] util::AnnotationMap
+  ComputeAnnotationMap(const rvsdg::graph & rvsdg) const;
+
+  /**
+   * Adds an annotation to \p annotationMap that indicates the number of RVSDG nodes for regions
+   * and structural nodes.
+   *
+   * @param rvsdg The RVSDG for which to compute the annotation.
+   * @param annotationMap The annotation map in which the annotation is inserted.
+   *
+   * @see NumRvsdgNodes
+   */
+  static void
+  AnnotateNumRvsdgNodes(const rvsdg::graph & rvsdg, util::AnnotationMap & annotationMap);
+
   void
   WriteTreeToFile(const RvsdgModule & rvsdgModule, const std::string & tree) const;
 
