@@ -91,8 +91,7 @@ OptimizationIdToOptimizationTranslation()
       optimizationIds);
 
   // Act & Assert
-
-  // terminates on handled optimization id
+  // terminates on unhandled optimization id
   JlmOptCommand command("jlm-opt", options);
 
   return 0;
