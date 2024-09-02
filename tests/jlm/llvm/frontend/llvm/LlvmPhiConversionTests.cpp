@@ -218,7 +218,7 @@ TestPhiOperandElision()
     builder.CreateRet(mul);
 
     bb5phi->addIncoming(llvm::ConstantInt::get(i64, 0), bb1);
-    bb5phi->addIncoming(xPlus1, bb2); // Dead
+    bb5phi->addIncoming(xPlus1, bb2);              // Dead
     bb5phi->addIncoming(function->getArg(0), bb3); // Dead
     bb5phi->addIncoming(xPlus2, bb4);
 
