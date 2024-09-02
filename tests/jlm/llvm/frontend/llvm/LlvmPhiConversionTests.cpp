@@ -50,63 +50,66 @@
 static int
 TestPhiConversion()
 {
-  static const std::string POPCOUNT_PROGRAM = R""""(
-source_filename = "popcount.c"
-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-pc-linux-gnu"
-
-define dso_local i64 @popcount(i64 noundef %0) {
-br label %bb2
-
-bb2:
-; The current value of x
-%3 = phi i64 [%0, %1], [%8, %bb4], [%8, %bb5]
-; The current value of popcount (1 bits seen)
-; Note that this phi is self-referential!
-%4 = phi i64 [0, %1], [%9, %bb4], [%4, %bb5]
-
-; First check if x is 0, and if so jump to the exit
-%5 = icmp eq i64 %3, 0
-br i1 %5, label %bb6, label %bb3
-
-bb3:
-; Check if x % 2 is 1
-%6 = urem i64 %3, 2
-%7 = icmp eq i64 %6, 1
-
-; Also calculate x>>1 now
-%8 = lshr i64 %3, 1
-
-br i1 %7, label %bb4, label %bb5
-
-bb4:
-; Here x was odd, calculate popcount+1
-%9 = add i64 %4, 1
-br label %bb2
-
-bb5:
-; Here x was even, no need to calculate anything
-br label %bb2
-
-bb6:
-ret i64 %4
-}
-)"""";
-
   // Arrange
   llvm::LLVMContext ctx;
-  llvm::MemoryBufferRef program(POPCOUNT_PROGRAM, "popcount.ll");
-  llvm::SMDiagnostic diagnostic;
-  auto module = llvm::parseIR(program, diagnostic, ctx);
+  llvm::Module module("popcount.c", ctx);
 
-  // diagnostic.print("", llvm::outs());
-  // llvm::outs().flush();
-  assert(module);
+  // Build LLVM module
+  {
+    llvm::IRBuilder builder(ctx);
 
-  jlm::tests::print(*module);
+    auto i64 = builder.getInt64Ty();
+    auto prototype = llvm::FunctionType::get(i64, { i64 }, false);
+    llvm::Function * function =
+        llvm::Function::Create(prototype, llvm::Function::ExternalLinkage, "popcount", module);
+
+    auto bb1 = llvm::BasicBlock::Create(ctx, "bb1", function);
+    auto bb2 = llvm::BasicBlock::Create(ctx, "bb2", function);
+    auto bb3 = llvm::BasicBlock::Create(ctx, "bb3", function);
+    auto bb4 = llvm::BasicBlock::Create(ctx, "bb4", function);
+    auto bb5 = llvm::BasicBlock::Create(ctx, "bb5", function);
+    auto bb6 = llvm::BasicBlock::Create(ctx, "bb6", function);
+
+    builder.SetInsertPoint(bb1); // Entry block
+    builder.CreateBr(bb2);
+
+    builder.SetInsertPoint(bb2); // Predecessors: bb1, bb4, bb5
+    auto phiX = builder.CreatePHI(i64, 3);
+    auto phiPopcount = builder.CreatePHI(i64, 3);
+
+    auto xIs0 = builder.CreateICmpEQ(phiX, llvm::ConstantInt::get(i64, 0, false));
+    builder.CreateCondBr(xIs0, bb6, bb3);
+
+    builder.SetInsertPoint(bb3); // Predecessors: bb2
+    auto rem = builder.CreateURem(phiX, llvm::ConstantInt::get(i64, 2, false));
+    auto remEq1 = builder.CreateICmpEQ(rem, llvm::ConstantInt::get(i64, 1, false));
+    auto halfX = builder.CreateLShr(phiX, llvm::ConstantInt::get(i64, 1, false));
+    builder.CreateCondBr(remEq1, bb4, bb5);
+
+    builder.SetInsertPoint(bb4); // Predecessor: bb3
+    auto popcountPlus1 = builder.CreateAdd(phiPopcount, llvm::ConstantInt::get(i64, 1, false));
+    builder.CreateBr(bb2);
+
+    builder.SetInsertPoint(bb5); // Predecessor: bb3
+    builder.CreateBr(bb2);
+
+    builder.SetInsertPoint(bb6); // Predecessor: bb2
+    builder.CreateRet(phiPopcount);
+
+    // Finally give the phi nodes their operands
+    phiX->addIncoming(function->getArg(0), bb1);
+    phiX->addIncoming(halfX, bb4);
+    phiX->addIncoming(halfX, bb5);
+
+    phiPopcount->addIncoming(llvm::ConstantInt::get(i64, 0, false), bb1);
+    phiPopcount->addIncoming(popcountPlus1, bb4);
+    phiPopcount->addIncoming(phiPopcount, bb5);
+  }
+
+  // jlm::tests::print(module);
 
   // Act
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*module);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(module);
 
   // print(*ipgmod, stdout);
 
@@ -165,57 +168,70 @@ JLM_UNIT_TEST_REGISTER(
 static int
 TestPhiOperandElision()
 {
-  static const std::string PHI_OPERAND_ELISION = R""""(
-source_filename = "phi_elide.c"
-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-pc-linux-gnu"
-
-define dso_local i64 @phi_elide(i64 noundef %0) {
-  %2 = icmp eq i64 %0, 0
-  br i1 %2, label %bb4, label %bb5
-
-bb2: ; No predecessors (dead)
-  %3 = add i64 %0, 1
-  %4 = icmp eq i64 %0, 1
-  br i1 %4, label %bb3, label %bb5
-
-bb3: ; predecessor = bb2 (dead)
-  br label %bb5
-
-bb4: ; predecessor = entry-bb (%1)
-  %5 = add i64 %0, 2
-  br label %bb5
-
-bb5: ; predecessors = entry-bb, bb2 (dead), bb3 (dead), bb4
-  %6 = phi i64 [0, %1], [%3, %bb2], [%0, %bb3], [%5, %bb4]
-  br label %bb7
-
-bb6: ; No predecessors
-  br label %bb7
-
-bb7:
-  %7 = phi i64 [%6, %bb5], [poison, %bb6]
-  %8 = mul i64 %7, 10
-  ret i64 %8
-}
-)"""";
-
   // Arrange
   llvm::LLVMContext ctx;
-  llvm::MemoryBufferRef program(PHI_OPERAND_ELISION, "phi-elide.ll");
-  llvm::SMDiagnostic diagnostic;
-  auto module = llvm::parseIR(program, diagnostic, ctx);
+  llvm::Module module("phi-elide.c", ctx);
 
-  // diagnostic.print("", llvm::outs());
-  // llvm::outs().flush();
-  assert(module);
+  // Build LLVM module
+  {
+    llvm::IRBuilder builder(ctx);
 
-  // jlm::tests::print(*module);
+    auto i64 = builder.getInt64Ty();
+    auto prototype = llvm::FunctionType::get(i64, { i64 }, false);
+    llvm::Function * function =
+        llvm::Function::Create(prototype, llvm::Function::ExternalLinkage, "phi_elide", module);
+
+    auto bb1 = llvm::BasicBlock::Create(ctx, "bb1", function);
+    auto bb2 = llvm::BasicBlock::Create(ctx, "bb2", function);
+    auto bb3 = llvm::BasicBlock::Create(ctx, "bb3", function);
+    auto bb4 = llvm::BasicBlock::Create(ctx, "bb4", function);
+    auto bb5 = llvm::BasicBlock::Create(ctx, "bb5", function);
+    auto bb6 = llvm::BasicBlock::Create(ctx, "bb6", function);
+    auto bb7 = llvm::BasicBlock::Create(ctx, "bb7", function);
+
+    builder.SetInsertPoint(bb1); // entry block
+    auto xIs0 = builder.CreateICmpEQ(function->getArg(0), llvm::ConstantInt::get(i64, 0));
+    builder.CreateCondBr(xIs0, bb4, bb5);
+
+    builder.SetInsertPoint(bb2); // No predecessors (dead)
+    auto xPlus1 = builder.CreateAdd(function->getArg(0), llvm::ConstantInt::get(i64, 1));
+    auto xIs1 = builder.CreateICmpEQ(function->getArg(0), llvm::ConstantInt::get(i64, 1));
+    builder.CreateCondBr(xIs1, bb3, bb5);
+
+    builder.SetInsertPoint(bb3); // Predecessors: bb2 (dead)
+    builder.CreateBr(bb5);
+
+    builder.SetInsertPoint(bb4); // Predecessors: bb1
+    auto xPlus2 = builder.CreateAdd(function->getArg(0), llvm::ConstantInt::get(i64, 2));
+    builder.CreateBr(bb5);
+
+    builder.SetInsertPoint(bb5); // Predecessors: bb1, bb2 (dead), bb3 (dead), bb4
+    auto bb5phi = builder.CreatePHI(i64, 4);
+    builder.CreateBr(bb7);
+
+    builder.SetInsertPoint(bb6); // No predecessors
+    builder.CreateBr(bb7);
+
+    builder.SetInsertPoint(bb7); // Predecessors: bb5, bb6 (dead)
+    auto bb7phi = builder.CreatePHI(i64, 2);
+    auto mul = builder.CreateMul(bb7phi, llvm::ConstantInt::get(i64, 10));
+    builder.CreateRet(mul);
+
+    bb5phi->addIncoming(llvm::ConstantInt::get(i64, 0), bb1);
+    bb5phi->addIncoming(xPlus1, bb2); // Dead
+    bb5phi->addIncoming(function->getArg(0), bb3); // Dead
+    bb5phi->addIncoming(xPlus2, bb4);
+
+    bb7phi->addIncoming(bb5phi, bb5);
+    bb7phi->addIncoming(llvm::PoisonValue::get(i64), bb6); // Dead
+  }
+
+  jlm::tests::print(module);
 
   // Act
-  auto ipgmod = jlm::llvm::ConvertLlvmModule(*module);
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(module);
 
-  // print(*ipgmod, stdout);
+  print(*ipgmod, stdout);
 
   // Assert
   // Get the CFG of the function
