@@ -31,9 +31,10 @@ convert_instructions(::llvm::Function & function, context & ctx)
       if (auto result = ConvertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
-      // phi_ops can take operands from basic blocks that have not been visited yet.
-      // Maintain a list of all phi operations, and hydrate them after visiting all basic blocks.
-      if (!tacs.empty() && is<jlm::llvm::phi_op>(tacs.back()->operation()))
+      // When an LLVM PhiNode is converted to a jlm phi_op, some of its operands may not be ready.
+      // The created phi_op therefore has no operands, but is instead added to a list.
+      // Once all basic blocks have been converted, all phi_ops are revisited and given operands.
+      if (!tacs.empty() && is<phi_op>(tacs.back()->operation()))
       {
         auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);
         phis.push_back(phi);
