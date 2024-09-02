@@ -67,6 +67,7 @@ JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand", TestJlmOptCommand)
 static int
 OptimizationIdToOptimizationTranslation()
 {
+  using namespace jlm::llvm;
   using namespace jlm::tooling;
   using namespace jlm::util;
 
@@ -87,7 +88,7 @@ OptimizationIdToOptimizationTranslation()
       filepath(""),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       StatisticsCollectorSettings(),
-      jlm::llvm::RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path())),
+      RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path()), {}),
       optimizationIds);
 
   // Act & Assert
