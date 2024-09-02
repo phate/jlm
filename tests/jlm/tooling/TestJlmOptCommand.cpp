@@ -65,6 +65,44 @@ TestJlmOptCommand()
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand", TestJlmOptCommand)
 
 static int
+OptimizationIdToOptimizationTranslation()
+{
+  using namespace jlm::tooling;
+  using namespace jlm::util;
+
+  // Arrange
+  std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
+  for (size_t n =
+           static_cast<std::size_t>(JlmOptCommandLineOptions::OptimizationId::FirstEnumValue) + 1;
+       n != static_cast<std::size_t>(JlmOptCommandLineOptions::OptimizationId::LastEnumValue);
+       n++)
+  {
+    auto optimizationId = static_cast<JlmOptCommandLineOptions::OptimizationId>(n);
+    optimizationIds.emplace_back(optimizationId);
+  }
+
+  JlmOptCommandLineOptions options(
+      filepath(""),
+      JlmOptCommandLineOptions::InputFormat::Llvm,
+      filepath(""),
+      JlmOptCommandLineOptions::OutputFormat::Llvm,
+      StatisticsCollectorSettings(),
+      jlm::llvm::RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path())),
+      optimizationIds);
+
+  // Act & Assert
+
+  // terminates on handled optimization id
+  JlmOptCommand command("jlm-opt", options);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/tooling/TestJlmOptCommand-OptimizationIdToOptimizationTranslation",
+    OptimizationIdToOptimizationTranslation)
+
+static int
 PrintRvsdgTreeToFile()
 {
   using namespace jlm;
