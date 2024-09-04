@@ -344,14 +344,14 @@ create_testop(
   return rvsdg::simple_node::create_normalized(region, op, { operands });
 }
 
-class TestGraphArgument final : public jlm::rvsdg::argument
+class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 {
 private:
   TestGraphArgument(
       jlm::rvsdg::region & region,
       jlm::rvsdg::structural_input * input,
       std::shared_ptr<const jlm::rvsdg::type> type)
-      : jlm::rvsdg::argument(&region, input, type)
+      : jlm::rvsdg::RegionArgument(&region, input, type)
   {}
 
 public:

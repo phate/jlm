@@ -403,7 +403,7 @@ public:
    * outputs might refer to arguments that have been removed by the application of this method. It
    * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
-   * \see argument#IsDead()
+   * \see RegionArgument#IsDead()
    * \see PrunePhiArguments()
    * \see RemovePhiOutputsWhere()
    * \see PrunePhiOutputs()
@@ -426,7 +426,7 @@ public:
   size_t
   PrunePhiArguments()
   {
-    auto match = [](const jlm::rvsdg::argument &)
+    auto match = [](const rvsdg::RegionArgument &)
     {
       return true;
     };
@@ -651,7 +651,7 @@ private:
 
 class rvresult;
 
-class rvargument final : public jlm::rvsdg::argument
+class rvargument final : public rvsdg::RegionArgument
 {
   friend class phi::builder;
   friend class phi::rvoutput;
@@ -661,7 +661,7 @@ public:
 
 private:
   rvargument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
-      : argument(region, nullptr, std::move(type)),
+      : RegionArgument(region, nullptr, std::move(type)),
         output_(nullptr)
   {}
 
@@ -709,7 +709,7 @@ private:
 class cvinput;
 class node;
 
-class cvargument final : public jlm::rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend class phi::node;
 
@@ -720,7 +720,7 @@ public:
       jlm::rvsdg::region * region,
       phi::cvinput * input,
       std::shared_ptr<const rvsdg::type> type)
-      : jlm::rvsdg::argument(region, input, std::move(type))
+      : rvsdg::RegionArgument(region, input, std::move(type))
   {}
 
 private:
@@ -749,7 +749,7 @@ public:
   cvinput *
   input() const noexcept
   {
-    return static_cast<cvinput *>(argument::input());
+    return static_cast<cvinput *>(RegionArgument::input());
   }
 };
 

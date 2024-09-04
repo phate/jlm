@@ -28,7 +28,7 @@ create_port_name(
     const jlm::rvsdg::output * port,
     std::unordered_map<const output *, std::string> & map)
 {
-  std::string name = dynamic_cast<const jlm::rvsdg::argument *>(port) ? "a" : "o";
+  std::string name = dynamic_cast<const rvsdg::RegionArgument *>(port) ? "a" : "o";
   name += jlm::util::strfmt(map.size());
   return name;
 }

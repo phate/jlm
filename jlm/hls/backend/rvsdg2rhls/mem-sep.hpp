@@ -23,7 +23,7 @@ mem_sep_argument(jlm::rvsdg::region * region);
 void
 mem_sep_argument(llvm::RvsdgModule & rm);
 
-jlm::rvsdg::argument *
+rvsdg::RegionArgument *
 GetMemoryStateArgument(const llvm::lambda::node & lambda);
 
 jlm::rvsdg::result *

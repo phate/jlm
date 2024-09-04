@@ -186,8 +186,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (is<rvsdg::ThetaArgument>(o1) && is<rvsdg::ThetaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
-    auto a1 = static_cast<jlm::rvsdg::argument *>(o1);
-    auto a2 = static_cast<jlm::rvsdg::argument *>(o2);
+    auto a1 = static_cast<rvsdg::RegionArgument *>(o1);
+    auto a2 = static_cast<rvsdg::RegionArgument *>(o2);
     vs.insert(a1, a2);
     auto i1 = a1->input(), i2 = a2->input();
     if (!congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx))
@@ -211,8 +211,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return congruent(r1->origin(), r2->origin(), vs, ctx);
   }
 
-  auto a1 = dynamic_cast<rvsdg::argument *>(o1);
-  auto a2 = dynamic_cast<rvsdg::argument *>(o2);
+  auto a1 = dynamic_cast<rvsdg::RegionArgument *>(o1);
+  auto a2 = dynamic_cast<rvsdg::RegionArgument *>(o2);
   if (a1 && is<hls::loop_op>(a1->region()->node()) && a2 && is<hls::loop_op>(a2->region()->node()))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
@@ -242,8 +242,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (is<rvsdg::GammaArgument>(o1) && is<rvsdg::GammaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
-    auto a1 = static_cast<jlm::rvsdg::argument *>(o1);
-    auto a2 = static_cast<jlm::rvsdg::argument *>(o2);
+    auto a1 = static_cast<rvsdg::RegionArgument *>(o1);
+    auto a2 = static_cast<rvsdg::RegionArgument *>(o2);
     return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
   }
 

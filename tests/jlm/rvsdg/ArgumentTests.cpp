@@ -10,7 +10,7 @@
 #include <cassert>
 
 /**
- * Test check for adding argument to input of wrong structural node.
+ * Test check for adding a region argument to input of wrong structural node.
  */
 static int
 ArgumentNodeMismatch()

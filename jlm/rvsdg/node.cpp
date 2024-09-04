@@ -305,8 +305,8 @@ producer(const jlm::rvsdg::output * output) noexcept
   if (auto node = node_output::node(output))
     return node;
 
-  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument *>(output));
-  auto argument = static_cast<const jlm::rvsdg::argument *>(output);
+  JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
+  auto argument = static_cast<const RegionArgument *>(output);
 
   if (!argument->input())
     return nullptr;

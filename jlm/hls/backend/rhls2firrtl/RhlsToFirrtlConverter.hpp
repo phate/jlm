@@ -247,7 +247,7 @@ private:
   DropMSBs(mlir::Block * body, mlir::Value value, int amount);
 
   jlm::rvsdg::output *
-  TraceArgument(jlm::rvsdg::argument * arg);
+  TraceArgument(rvsdg::RegionArgument * arg);
   jlm::rvsdg::simple_output *
   TraceStructuralOutput(jlm::rvsdg::structural_output * out);
 

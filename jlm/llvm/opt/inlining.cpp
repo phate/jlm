@@ -50,7 +50,7 @@ find_producer(jlm::rvsdg::input * input)
 {
   auto graph = input->region()->graph();
 
-  auto argument = dynamic_cast<jlm::rvsdg::argument *>(input->origin());
+  auto argument = dynamic_cast<rvsdg::RegionArgument *>(input->origin());
   if (argument == nullptr)
     return input->origin();
 

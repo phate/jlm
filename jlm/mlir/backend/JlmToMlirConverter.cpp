@@ -90,7 +90,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
     {
       results.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
     }
-    else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(region.result(i)->origin()))
+    else if (auto arg = dynamic_cast<rvsdg::RegionArgument *>(region.result(i)->origin()))
     {
       results.push_back(block.getArgument(arg->index()));
     }
@@ -125,7 +125,7 @@ JlmToMlirConverter::GetConvertedInputs(
     {
       inputs.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
     }
-    else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(node.input(i)->origin()))
+    else if (auto arg = dynamic_cast<rvsdg::RegionArgument *>(node.input(i)->origin()))
     {
       inputs.push_back(block.getArgument(arg->index()));
     }
