@@ -21,7 +21,7 @@ public:
 
   ~OptimizationSequence() noexcept override;
 
-  explicit OptimizationSequence(std::vector<std::unique_ptr<optimization>> optimizations)
+  explicit OptimizationSequence(std::vector<optimization *> optimizations)
       : Optimizations_(std::move(optimizations))
   {}
 
@@ -32,14 +32,14 @@ public:
   CreateAndRun(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector,
-      std::vector<std::unique_ptr<optimization>> optimizations)
+      std::vector<optimization *> optimizations)
   {
     OptimizationSequence sequentialApplication(std::move(optimizations));
     sequentialApplication.run(rvsdgModule, statisticsCollector);
   }
 
 private:
-  std::vector<std::unique_ptr<optimization>> Optimizations_;
+  std::vector<optimization *> Optimizations_;
 };
 
 }

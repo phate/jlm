@@ -116,6 +116,8 @@ JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-NumRegions_NonEmptyRvsdg", NumRegi
 static int
 RemoveResultsWhere()
 {
+  using namespace jlm::tests;
+
   // Arrange
   jlm::rvsdg::graph rvsdg;
   jlm::rvsdg::region region(rvsdg.root(), &rvsdg);
@@ -123,15 +125,15 @@ RemoveResultsWhere()
   auto valueType = jlm::tests::valuetype::Create();
   auto node = jlm::tests::test_op::Create(&region, {}, {}, { valueType });
 
-  auto result0 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, valueType);
-  auto result1 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, valueType);
-  auto result2 = jlm::rvsdg::result::create(&region, node->output(0), nullptr, valueType);
+  auto & result0 = TestGraphResult::Create(*node->output(0), nullptr);
+  auto & result1 = TestGraphResult::Create(*node->output(0), nullptr);
+  auto & result2 = TestGraphResult::Create(*node->output(0), nullptr);
 
   // Act & Arrange
   assert(region.nresults() == 3);
-  assert(result0->index() == 0);
-  assert(result1->index() == 1);
-  assert(result2->index() == 2);
+  assert(result0.index() == 0);
+  assert(result1.index() == 1);
+  assert(result2.index() == 2);
 
   region.RemoveResultsWhere(
       [](const jlm::rvsdg::result & result)
@@ -139,8 +141,8 @@ RemoveResultsWhere()
         return result.index() == 1;
       });
   assert(region.nresults() == 2);
-  assert(result0->index() == 0);
-  assert(result2->index() == 1);
+  assert(result0.index() == 0);
+  assert(result2.index() == 1);
 
   region.RemoveResultsWhere(
       [](const jlm::rvsdg::result & result)
@@ -148,8 +150,8 @@ RemoveResultsWhere()
         return false;
       });
   assert(region.nresults() == 2);
-  assert(result0->index() == 0);
-  assert(result2->index() == 1);
+  assert(result0.index() == 0);
+  assert(result2.index() == 1);
 
   region.RemoveResultsWhere(
       [](const jlm::rvsdg::result & result)

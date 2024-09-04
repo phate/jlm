@@ -99,20 +99,6 @@ JlmOptCommandLineOptions::Reset() noexcept
   OptimizationIds_.clear();
 }
 
-std::vector<std::unique_ptr<llvm::optimization>>
-JlmOptCommandLineOptions::GetOptimizations() const noexcept
-{
-  std::vector<std::unique_ptr<llvm::optimization>> optimizations;
-  optimizations.reserve(OptimizationIds_.size());
-
-  for (auto & optimizationId : OptimizationIds_)
-  {
-    optimizations.emplace_back(GetOptimization(optimizationId));
-  }
-
-  return optimizations;
-}
-
 JlmOptCommandLineOptions::OptimizationId
 JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
     const std::string & commandLineArgument)
@@ -224,49 +210,6 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
 {
   auto & mapping = GetOutputFormatCommandLineArguments();
   return mapping.at(outputFormat).data();
-}
-
-std::unique_ptr<llvm::optimization>
-JlmOptCommandLineOptions::GetOptimization(enum OptimizationId optimizationId) const
-{
-  using Andersen = llvm::aa::Andersen;
-  using Steensgaard = llvm::aa::Steensgaard;
-  using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
-  using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
-
-  switch (optimizationId)
-  {
-  case OptimizationId::AAAndersenAgnostic:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
-  case OptimizationId::AAAndersenRegionAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
-  case OptimizationId::AASteensgaardAgnostic:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
-  case OptimizationId::AASteensgaardRegionAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
-  case OptimizationId::CommonNodeElimination:
-    return std::make_unique<llvm::cne>();
-  case OptimizationId::DeadNodeElimination:
-    return std::make_unique<llvm::DeadNodeElimination>();
-  case OptimizationId::FunctionInlining:
-    return std::make_unique<llvm::fctinline>();
-  case OptimizationId::InvariantValueRedirection:
-    return std::make_unique<llvm::InvariantValueRedirection>();
-  case OptimizationId::LoopUnrolling:
-    return std::make_unique<llvm::loopunroll>(4);
-  case OptimizationId::NodePullIn:
-    return std::make_unique<llvm::pullin>();
-  case OptimizationId::NodePushOut:
-    return std::make_unique<llvm::pushout>();
-  case OptimizationId::NodeReduction:
-    return std::make_unique<llvm::nodereduction>();
-  case OptimizationId::RvsdgTreePrinter:
-    return std::make_unique<llvm::RvsdgTreePrinter>(RvsdgTreePrinterConfiguration_);
-  case OptimizationId::ThetaGammaInversion:
-    return std::make_unique<llvm::tginversion>();
-  default:
-    JLM_UNREACHABLE("Unhandled optimization id.");
-  }
 }
 
 const util::BijectiveMap<util::Statistics::Id, std::string_view> &
@@ -939,6 +882,15 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               "Loop Unrolling")),
       cl::desc("Perform optimization"));
 
+  cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
+      "annotations",
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
+          "NumRvsdgNodes",
+          "Annotate number of RVSDG nodes")),
+      cl::CommaSeparated,
+      cl::desc("Comma separated list of RVSDG tree printer annotations"));
+
   cl::ParseCommandLineOptions(argc, argv);
 
   jlm::util::filepath statisticsDirectoryFilePath(statisticDirectory);
@@ -961,13 +913,18 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       statisticsFilePath,
       demandedStatistics);
 
+  util::HashSet<llvm::RvsdgTreePrinter::Configuration::Annotation> demandedAnnotations(
+      { rvsdgTreePrinterAnnotations.begin(), rvsdgTreePrinterAnnotations.end() });
+
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
       inputFormat,
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
-      llvm::RvsdgTreePrinter::Configuration(statisticsDirectoryFilePath),
+      llvm::RvsdgTreePrinter::Configuration(
+          statisticsDirectoryFilePath,
+          std::move(demandedAnnotations)),
       std::move(optimizationIds));
 
   return *CommandLineOptions_;

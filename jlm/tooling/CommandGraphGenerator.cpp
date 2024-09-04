@@ -142,7 +142,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           statisticsCollectorSettings,
-          jlm::llvm::RvsdgTreePrinter::Configuration(tempDirectory),
+          jlm::llvm::RvsdgTreePrinter::Configuration(tempDirectory, {}),
           commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode =

@@ -376,24 +376,39 @@ public:
 class TestGraphResult final : public jlm::rvsdg::result
 {
 private:
-  explicit TestGraphResult(jlm::rvsdg::output & origin)
-      : jlm::rvsdg::result(origin.region(), &origin, nullptr, origin.Type())
+  TestGraphResult(
+      jlm::rvsdg::region & region,
+      jlm::rvsdg::output & origin,
+      jlm::rvsdg::structural_output * output)
+      : jlm::rvsdg::result(&region, &origin, output, origin.Type())
+  {}
+
+  TestGraphResult(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+      : TestGraphResult(*origin.region(), origin, output)
   {}
 
 public:
   TestGraphResult &
   Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
   {
-    JLM_ASSERT(output == nullptr);
-    return Create(origin);
+    return Create(origin, output);
   }
 
   static TestGraphResult &
-  Create(jlm::rvsdg::output & origin)
+  Create(
+      jlm::rvsdg::region & region,
+      jlm::rvsdg::output & origin,
+      jlm::rvsdg::structural_output * output)
   {
-    auto graphResult = new TestGraphResult(origin);
+    auto graphResult = new TestGraphResult(region, origin, output);
     origin.region()->append_result(graphResult);
     return *graphResult;
+  }
+
+  static TestGraphResult &
+  Create(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+  {
+    return Create(*origin.region(), origin, output);
   }
 };
 

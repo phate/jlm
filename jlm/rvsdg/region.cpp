@@ -73,26 +73,6 @@ result::result(
   }
 }
 
-result &
-result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
-{
-  return *result::create(origin.region(), &origin, output, Type());
-}
-
-jlm::rvsdg::result *
-result::create(
-    jlm::rvsdg::region * region,
-    jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
-    std::shared_ptr<const jlm::rvsdg::type> type)
-{
-  auto result = new jlm::rvsdg::result(region, origin, output, std::move(type));
-  region->append_result(result);
-  return result;
-}
-
-/* region */
-
 region::~region()
 {
   on_region_destroy(this);
