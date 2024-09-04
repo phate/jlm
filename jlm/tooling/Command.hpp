@@ -341,10 +341,7 @@ class JlmOptCommand final : public Command
 public:
   ~JlmOptCommand() override;
 
-  JlmOptCommand(std::string programName, JlmOptCommandLineOptions commandLineOptions)
-      : ProgramName_(std::move(programName)),
-        CommandLineOptions_(std::move(commandLineOptions))
-  {}
+  JlmOptCommand(std::string programName, const JlmOptCommandLineOptions & commandLineOptions);
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -356,7 +353,7 @@ public:
   Create(
       CommandGraph & commandGraph,
       std::string programName,
-      JlmOptCommandLineOptions commandLineOptions)
+      const JlmOptCommandLineOptions & commandLineOptions)
   {
     auto command =
         std::make_unique<JlmOptCommand>(std::move(programName), std::move(commandLineOptions));
@@ -421,8 +418,16 @@ private:
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
+  [[nodiscard]] std::vector<llvm::optimization *>
+  GetOptimizations() const;
+
+  [[nodiscard]] std::unique_ptr<llvm::optimization>
+  CreateOptimization(enum JlmOptCommandLineOptions::OptimizationId optimizationId) const;
+
   std::string ProgramName_;
   JlmOptCommandLineOptions CommandLineOptions_;
+  std::unordered_map<JlmOptCommandLineOptions::OptimizationId, std::unique_ptr<llvm::optimization>>
+      Optimizations_ = {};
 };
 
 /**

@@ -139,8 +139,11 @@ public:
     return OptimizationIds_;
   }
 
-  [[nodiscard]] std::vector<std::unique_ptr<llvm::optimization>>
-  GetOptimizations() const noexcept;
+  [[nodiscard]] const llvm::RvsdgTreePrinter::Configuration &
+  GetRvsdgTreePrinterConfiguration() const noexcept
+  {
+    return RvsdgTreePrinterConfiguration_;
+  }
 
   static OptimizationId
   FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
@@ -159,9 +162,6 @@ public:
 
   static const char *
   ToCommandLineArgument(OutputFormat outputFormat);
-
-  [[nodiscard]] std::unique_ptr<llvm::optimization>
-  GetOptimization(enum OptimizationId optimizationId) const;
 
   static std::unique_ptr<JlmOptCommandLineOptions>
   Create(
