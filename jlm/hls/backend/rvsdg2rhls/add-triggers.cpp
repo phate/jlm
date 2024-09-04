@@ -77,8 +77,9 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::t
 
   //            ln->output()->divert_users(new_out);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
+  auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+  jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
-  jlm::rvsdg::result::create(new_lambda->region(), new_out, nullptr, new_out->Type());
   return new_lambda;
 }
 

@@ -9,7 +9,22 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/cne.hpp>
+#include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/inlining.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/llvm/opt/OptimizationSequence.hpp>
+#include <jlm/llvm/opt/pull.hpp>
+#include <jlm/llvm/opt/push.hpp>
+#include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
@@ -270,6 +285,19 @@ LlcCommand::ToString(const RelocationModel & relocationModel)
 
 JlmOptCommand::~JlmOptCommand() = default;
 
+JlmOptCommand::JlmOptCommand(
+    std::string programName,
+    const jlm::tooling::JlmOptCommandLineOptions & commandLineOptions)
+    : ProgramName_(std::move(programName)),
+      CommandLineOptions_(std::move(commandLineOptions))
+{
+  for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
+  {
+    if (auto it = Optimizations_.find(optimizationId); it == Optimizations_.end())
+      Optimizations_[optimizationId] = CreateOptimization(optimizationId);
+  }
+}
+
 std::string
 JlmOptCommand::ToString() const
 {
@@ -320,10 +348,7 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
-  llvm::OptimizationSequence::CreateAndRun(
-      *rvsdgModule,
-      statisticsCollector,
-      CommandLineOptions_.GetOptimizations());
+  llvm::OptimizationSequence::CreateAndRun(*rvsdgModule, statisticsCollector, GetOptimizations());
 
   PrintRvsdgModule(
       *rvsdgModule,
@@ -332,6 +357,65 @@ JlmOptCommand::Run() const
       statisticsCollector);
 
   statisticsCollector.PrintStatistics();
+}
+
+std::vector<llvm::optimization *>
+JlmOptCommand::GetOptimizations() const
+{
+  std::vector<llvm::optimization *> optimizations;
+  for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
+  {
+    auto it = Optimizations_.find(optimizationId);
+    JLM_ASSERT(it != Optimizations_.end());
+    optimizations.emplace_back(it->second.get());
+  }
+
+  return optimizations;
+}
+
+std::unique_ptr<llvm::optimization>
+JlmOptCommand::CreateOptimization(
+    enum JlmOptCommandLineOptions::OptimizationId optimizationId) const
+{
+  using Andersen = llvm::aa::Andersen;
+  using Steensgaard = llvm::aa::Steensgaard;
+  using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
+  using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
+
+  switch (optimizationId)
+  {
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
+    return std::make_unique<llvm::cne>();
+  case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
+    return std::make_unique<llvm::DeadNodeElimination>();
+  case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
+    return std::make_unique<llvm::fctinline>();
+  case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
+    return std::make_unique<llvm::InvariantValueRedirection>();
+  case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
+    return std::make_unique<llvm::loopunroll>(4);
+  case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
+    return std::make_unique<llvm::pullin>();
+  case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
+    return std::make_unique<llvm::pushout>();
+  case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
+    return std::make_unique<llvm::nodereduction>();
+  case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
+    return std::make_unique<llvm::RvsdgTreePrinter>(
+        CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
+  case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
+    return std::make_unique<llvm::tginversion>();
+  default:
+    JLM_UNREACHABLE("Unhandled optimization id.");
+  }
 }
 
 std::unique_ptr<llvm::RvsdgModule>
