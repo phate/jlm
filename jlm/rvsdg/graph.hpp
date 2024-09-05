@@ -44,7 +44,7 @@ private:
 /**
  * Represents an export from the RVSDG of an internal entity.
  */
-class GraphExport : public result
+class GraphExport : public RegionResult
 {
 protected:
   GraphExport(rvsdg::output & origin, std::string name);

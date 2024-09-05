@@ -18,7 +18,7 @@ bool
 is_passthrough(const rvsdg::RegionArgument * arg);
 
 bool
-is_passthrough(const jlm::rvsdg::result * res);
+is_passthrough(const rvsdg::RegionResult * res);
 
 llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln);

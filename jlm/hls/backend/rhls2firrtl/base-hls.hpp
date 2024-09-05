@@ -87,10 +87,10 @@ protected:
     return mem_resps;
   }
 
-  std::vector<jlm::rvsdg::result *>
+  std::vector<rvsdg::RegionResult *>
   get_mem_reqs(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::result *> mem_resps;
+    std::vector<rvsdg::RegionResult *> mem_resps;
     for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
     {
       if (dynamic_cast<const jlm::hls::bundletype *>(&lambda->subregion()->result(i)->type()))
@@ -117,10 +117,10 @@ protected:
     return args;
   }
 
-  std::vector<jlm::rvsdg::result *>
+  std::vector<rvsdg::RegionResult *>
   get_reg_results(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::result *> results;
+    std::vector<rvsdg::RegionResult *> results;
     for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
     {
       auto argtype = &lambda->subregion()->result(i)->type();

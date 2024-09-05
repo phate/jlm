@@ -21,11 +21,11 @@ IsPassthroughArgument(const rvsdg::RegionArgument & argument)
     return false;
   }
 
-  return rvsdg::is<rvsdg::result>(**argument.begin());
+  return rvsdg::is<rvsdg::RegionResult>(**argument.begin());
 }
 
 static bool
-IsPassthroughResult(const rvsdg::result & result)
+IsPassthroughResult(const rvsdg::RegionResult & result)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(result.origin());
   return argument != nullptr;
@@ -118,7 +118,7 @@ static void
 RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
 {
   auto origin = argument.input()->origin();
-  auto result = dynamic_cast<rvsdg::result *>(*argument.begin());
+  auto result = dynamic_cast<rvsdg::RegionResult *>(*argument.begin());
   argument.region()->node()->output(result->output()->index())->divert_users(origin);
 
   auto inputIndex = argument.input()->index();
@@ -139,7 +139,7 @@ RemoveUnusedStatesFromGammaNode(rvsdg::gamma_node & gammaNode)
     auto argument = gammaNode.subregion(0)->argument(i);
     if (argument->nusers() == 1)
     {
-      auto result = dynamic_cast<rvsdg::result *>(*argument->begin());
+      auto result = dynamic_cast<rvsdg::RegionResult *>(*argument->begin());
       resultIndex = result ? result->index() : resultIndex;
     }
 
@@ -147,9 +147,10 @@ RemoveUnusedStatesFromGammaNode(rvsdg::gamma_node & gammaNode)
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
       auto subregion = gammaNode.subregion(n);
-      shouldRemove &= IsPassthroughArgument(*subregion->argument(i))
-                   && dynamic_cast<jlm::rvsdg::result *>(*subregion->argument(i)->begin())->index()
-                          == resultIndex;
+      shouldRemove &=
+          IsPassthroughArgument(*subregion->argument(i))
+          && dynamic_cast<jlm::rvsdg::RegionResult *>(*subregion->argument(i)->begin())->index()
+                 == resultIndex;
     }
 
     if (shouldRemove)

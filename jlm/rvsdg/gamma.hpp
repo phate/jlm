@@ -427,7 +427,7 @@ public:
     return results.size();
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   result(size_t n) const noexcept
   {
     JLM_ASSERT(n < nresults());
@@ -489,7 +489,7 @@ private:
 /**
  * Represents a region result in a gamma subregion.
  */
-class GammaResult final : public result
+class GammaResult final : public RegionResult
 {
   friend gamma_node;
 
@@ -498,7 +498,7 @@ public:
 
 private:
   GammaResult(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
-      : result(&region, &origin, &gammaOutput, origin.Type())
+      : RegionResult(&region, &origin, &gammaOutput, origin.Type())
   {}
 
   GammaResult &

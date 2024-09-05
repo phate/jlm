@@ -62,7 +62,7 @@ BaseHLS::get_port_name(jlm::rvsdg::input * port)
   {
     result += "i";
   }
-  else if (dynamic_cast<const jlm::rvsdg::result *>(port))
+  else if (dynamic_cast<const rvsdg::RegionResult *>(port))
   {
     result += "r";
   }

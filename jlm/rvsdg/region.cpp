@@ -43,7 +43,7 @@ RegionArgument::RegionArgument(
   }
 }
 
-result::~result() noexcept
+RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
 
@@ -51,7 +51,7 @@ result::~result() noexcept
     output()->results.erase(this);
 }
 
-result::result(
+RegionResult::RegionResult(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * origin,
     jlm::rvsdg::structural_output * output,
@@ -137,7 +137,7 @@ region::RemoveArgument(size_t index)
 }
 
 void
-region::append_result(jlm::rvsdg::result * result)
+region::append_result(RegionResult * result)
 {
   if (result->region() != this)
     throw jlm::util::error("Appending result to wrong region.");
@@ -160,7 +160,7 @@ void
 region::RemoveResult(size_t index)
 {
   JLM_ASSERT(index < results_.size());
-  jlm::rvsdg::result * result = results_[index];
+  RegionResult * result = results_[index];
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)

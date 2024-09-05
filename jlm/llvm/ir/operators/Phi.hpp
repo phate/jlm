@@ -755,7 +755,7 @@ public:
 
 /* phi recursion variable result class */
 
-class rvresult final : public jlm::rvsdg::result
+class rvresult final : public rvsdg::RegionResult
 {
   friend class phi::builder;
 
@@ -768,7 +768,7 @@ private:
       jlm::rvsdg::output * origin,
       rvoutput * output,
       std::shared_ptr<const rvsdg::type> type)
-      : jlm::rvsdg::result(region, origin, output, std::move(type))
+      : RegionResult(region, origin, output, std::move(type))
   {}
 
   rvresult(const rvresult &) = delete;
@@ -800,7 +800,7 @@ public:
   rvoutput *
   output() const noexcept
   {
-    return static_cast<rvoutput *>(result::output());
+    return static_cast<rvoutput *>(RegionResult::output());
   }
 
   rvargument *

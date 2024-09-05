@@ -312,7 +312,7 @@ public:
   /**
    * @return The memory state result of the lambda subregion.
    */
-  [[nodiscard]] rvsdg::result &
+  [[nodiscard]] rvsdg::RegionResult &
   GetMemoryStateRegionResult() const noexcept;
 
   /**
@@ -629,7 +629,7 @@ public:
 
 /** \brief Lambda result
  */
-class result final : public jlm::rvsdg::result
+class result final : public rvsdg::RegionResult
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -641,7 +641,7 @@ public:
 
 private:
   explicit result(jlm::rvsdg::output * origin)
-      : rvsdg::result(origin->region(), origin, nullptr, origin->Type())
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *
@@ -656,7 +656,7 @@ public:
   lambda::output *
   output() const noexcept
   {
-    return jlm::util::AssertedCast<lambda::output>(jlm::rvsdg::result::output());
+    return jlm::util::AssertedCast<lambda::output>(rvsdg::RegionResult::output());
   }
 };
 

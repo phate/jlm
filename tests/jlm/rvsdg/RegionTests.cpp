@@ -136,7 +136,7 @@ RemoveResultsWhere()
   assert(result2.index() == 2);
 
   region.RemoveResultsWhere(
-      [](const jlm::rvsdg::result & result)
+      [](const jlm::rvsdg::RegionResult & result)
       {
         return result.index() == 1;
       });
@@ -145,7 +145,7 @@ RemoveResultsWhere()
   assert(result2.index() == 1);
 
   region.RemoveResultsWhere(
-      [](const jlm::rvsdg::result & result)
+      [](const jlm::rvsdg::RegionResult & result)
       {
         return false;
       });
@@ -154,7 +154,7 @@ RemoveResultsWhere()
   assert(result2.index() == 1);
 
   region.RemoveResultsWhere(
-      [](const jlm::rvsdg::result & result)
+      [](const jlm::rvsdg::RegionResult & result)
       {
         return true;
       });

@@ -324,7 +324,7 @@ is_movable_store(jlm::rvsdg::node * node)
     if (output->nusers() != 1)
       return false;
 
-    if (!dynamic_cast<jlm::rvsdg::result *>(*output->begin()))
+    if (!dynamic_cast<rvsdg::RegionResult *>(*output->begin()))
       return false;
   }
 
@@ -351,7 +351,7 @@ pushout_store(jlm::rvsdg::node * storenode)
   for (size_t n = 0; n < storenode->noutputs(); n++)
   {
     JLM_ASSERT(storenode->output(n)->nusers() == 1);
-    auto result = static_cast<jlm::rvsdg::result *>(*storenode->output(n)->begin());
+    auto result = static_cast<rvsdg::RegionResult *>(*storenode->output(n)->begin());
     result->divert_to(storenode->input(n + 2)->origin());
     states.push_back(result->output());
   }

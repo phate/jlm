@@ -171,7 +171,7 @@ eliminate_gamma_eol(rvsdg::gamma_node * gamma)
       continue;
     }
     auto user = *o->begin();
-    if (auto res = dynamic_cast<rvsdg::result *>(user))
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       if (res->output() && res->output()->nusers() == 0)
       {

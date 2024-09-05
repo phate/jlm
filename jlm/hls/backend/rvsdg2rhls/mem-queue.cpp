@@ -77,7 +77,7 @@ find_load_store(
         find_load_store(&arg, load_nodes, store_nodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -121,7 +121,8 @@ find_loop_output(jlm::rvsdg::structural_input * sti)
       for (size_t j = 0; j < 2; ++j)
       {
         JLM_ASSERT(branch_out->node()->output(j)->nusers() == 1);
-        auto result = dynamic_cast<jlm::rvsdg::result *>(*branch_out->node()->output(j)->begin());
+        auto result =
+            dynamic_cast<jlm::rvsdg::RegionResult *>(*branch_out->node()->output(j)->begin());
         if (result)
         {
           return result->output();
@@ -201,7 +202,7 @@ separate_load_edge(
     JLM_ASSERT(mem_edge->region() == addr_edge->region());
     auto user = *mem_edge->begin();
     auto addr_edge_user = *addr_edge->begin();
-    if (dynamic_cast<jlm::rvsdg::result *>(user))
+    if (dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
       // end of region reached
@@ -412,7 +413,7 @@ process_loops(jlm::rvsdg::output * state_edge)
     // each iteration should update state_edge
     JLM_ASSERT(state_edge->nusers() == 1);
     auto user = *state_edge->begin();
-    if (dynamic_cast<jlm::rvsdg::result *>(user))
+    if (dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       // end of region reached
       JLM_UNREACHABLE("This should never happen");
