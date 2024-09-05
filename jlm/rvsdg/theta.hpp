@@ -287,7 +287,7 @@ public:
     return arguments.first();
   }
 
-  RegionResult *
+  [[nodiscard]] inline RegionResult *
   result() const noexcept;
 
 private:
@@ -499,7 +499,7 @@ theta_node::RemoveThetaInputsWhere(const F & match)
 
 /* theta input method definitions */
 
-RegionResult *
+[[nodiscard]] inline RegionResult *
 theta_input::result() const noexcept
 {
   return output_->result();
