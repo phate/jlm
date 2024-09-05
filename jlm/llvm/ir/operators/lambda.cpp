@@ -150,7 +150,7 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
   return cvargument::create(subregion(), input);
 }
 
-rvsdg::argument &
+rvsdg::RegionArgument &
 node::GetMemoryStateRegionArgument() const noexcept
 {
   auto argument = fctargument(nfctarguments() - 1);

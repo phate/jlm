@@ -66,9 +66,8 @@ private:
 
 /* structural input class */
 
-typedef jlm::util::
-    intrusive_list<jlm::rvsdg::argument, jlm::rvsdg::argument::structural_input_accessor>
-        argument_list;
+typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
+    argument_list;
 
 class structural_input : public node_input
 {

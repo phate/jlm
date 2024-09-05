@@ -1132,7 +1132,7 @@ ExternalCallTest1::SetupRvsdg()
     return &GraphImport::Create(*rvsdg, functionGType, "g", linkage::external_linkage);
   };
 
-  auto SetupFunctionF = [&](jlm::rvsdg::argument * functionG)
+  auto SetupFunctionF = [&](jlm::rvsdg::RegionArgument * functionG)
   {
     auto pointerType = PointerType::Create();
     auto iOStateType = iostatetype::Create();
@@ -2790,7 +2790,7 @@ EscapedMemoryTest2::SetupRvsdg()
     return std::make_tuple(lambdaOutput, jlm::rvsdg::node_output::node(mallocResults[0]));
   };
 
-  auto SetupCallExternalFunction1 = [&](jlm::rvsdg::argument * externalFunction1Argument)
+  auto SetupCallExternalFunction1 = [&](jlm::rvsdg::RegionArgument * externalFunction1Argument)
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -2826,7 +2826,7 @@ EscapedMemoryTest2::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::node_output::node(mallocResults[0]));
   };
 
-  auto SetupCallExternalFunction2 = [&](jlm::rvsdg::argument * externalFunction2Argument)
+  auto SetupCallExternalFunction2 = [&](jlm::rvsdg::RegionArgument * externalFunction2Argument)
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -2942,7 +2942,7 @@ EscapedMemoryTest3::SetupRvsdg()
     return deltaOutput;
   };
 
-  auto SetupTestFunction = [&](jlm::rvsdg::argument * externalFunctionArgument)
+  auto SetupTestFunction = [&](jlm::rvsdg::RegionArgument * externalFunctionArgument)
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();

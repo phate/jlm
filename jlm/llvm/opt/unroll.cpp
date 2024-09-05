@@ -65,17 +65,17 @@ is_theta_invariant(const jlm::rvsdg::output * output)
   if (jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(jlm::rvsdg::node_output::node(output)))
     return true;
 
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output);
+  auto argument = dynamic_cast<const rvsdg::RegionArgument *>(output);
   if (!argument)
     return false;
 
   return is_invariant(static_cast<const jlm::rvsdg::theta_input *>(argument->input()));
 }
 
-static jlm::rvsdg::argument *
+static rvsdg::RegionArgument *
 push_from_theta(jlm::rvsdg::output * output)
 {
-  auto argument = dynamic_cast<jlm::rvsdg::argument *>(output);
+  auto argument = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (argument)
     return argument;
 
@@ -99,7 +99,7 @@ is_idv(jlm::rvsdg::input * input)
   auto node = rvsdg::input::GetNode(*input);
   JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
-  auto a = dynamic_cast<jlm::rvsdg::argument *>(input->origin());
+  auto a = dynamic_cast<rvsdg::RegionArgument *>(input->origin());
   if (!a)
     return false;
 
@@ -160,7 +160,7 @@ unrollinfo::create(jlm::rvsdg::theta_node * theta)
   if (!is_idv(i0) && !is_idv(i1))
     return nullptr;
 
-  auto idv = static_cast<jlm::rvsdg::argument *>(is_idv(i0) ? i0->origin() : i1->origin());
+  auto idv = static_cast<rvsdg::RegionArgument *>(is_idv(i0) ? i0->origin() : i1->origin());
 
   auto step = idv == i0->origin() ? i1->origin() : i0->origin();
   if (!is_theta_invariant(step))

@@ -39,7 +39,7 @@ mem_sep_argument(llvm::RvsdgModule & rm)
 }
 
 // from MemoryStateEncoder.cpp
-jlm::rvsdg::argument *
+rvsdg::RegionArgument *
 GetMemoryStateArgument(const llvm::lambda::node & lambda)
 {
   auto subregion = lambda.subregion();

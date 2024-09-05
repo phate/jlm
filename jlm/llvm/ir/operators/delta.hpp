@@ -406,7 +406,7 @@ public:
 
 /** \brief Delta context variable argument
  */
-class cvargument final : public rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::delta::node;
 
@@ -418,7 +418,7 @@ public:
 
 private:
   cvargument(rvsdg::region * region, cvinput * input)
-      : rvsdg::argument(region, input, input->Type())
+      : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -433,7 +433,7 @@ public:
   cvinput *
   input() const noexcept
   {
-    return static_cast<cvinput *>(rvsdg::argument::input());
+    return static_cast<cvinput *>(rvsdg::RegionArgument::input());
   }
 };
 

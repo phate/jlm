@@ -72,10 +72,10 @@ protected:
   static std::string
   get_base_file_name(const llvm::RvsdgModule & rm);
 
-  std::vector<jlm::rvsdg::argument *>
+  std::vector<jlm::rvsdg::RegionArgument *>
   get_mem_resps(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::argument *> mem_resps;
+    std::vector<jlm::rvsdg::RegionArgument *> mem_resps;
     for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
     {
       auto arg = lambda->subregion()->argument(i);
@@ -101,10 +101,10 @@ protected:
     return mem_resps;
   }
 
-  std::vector<jlm::rvsdg::argument *>
+  std::vector<jlm::rvsdg::RegionArgument *>
   get_reg_args(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::argument *> args;
+    std::vector<jlm::rvsdg::RegionArgument *> args;
     for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
     {
       auto argtype = &lambda->subregion()->argument(i)->type();
