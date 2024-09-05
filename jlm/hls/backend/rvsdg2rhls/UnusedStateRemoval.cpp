@@ -147,7 +147,8 @@ RemoveUnusedStatesFromGammaNode(rvsdg::gamma_node & gammaNode)
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
       auto subregion = gammaNode.subregion(n);
-      shouldRemove &= IsPassthroughArgument(*subregion->argument(i))
+      shouldRemove &=
+          IsPassthroughArgument(*subregion->argument(i))
           && dynamic_cast<jlm::rvsdg::RegionResult *>(*subregion->argument(i)->begin())->index()
                  == resultIndex;
     }
