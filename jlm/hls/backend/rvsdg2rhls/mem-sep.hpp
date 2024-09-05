@@ -26,7 +26,7 @@ mem_sep_argument(llvm::RvsdgModule & rm);
 jlm::rvsdg::argument *
 GetMemoryStateArgument(const llvm::lambda::node & lambda);
 
-jlm::rvsdg::result *
+rvsdg::RegionResult *
 GetMemoryStateResult(const llvm::lambda::node & lambda);
 
 } // namespace jlm::hls

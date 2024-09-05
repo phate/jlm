@@ -106,7 +106,7 @@ public:
     return structural_node::subregion(0);
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
@@ -287,7 +287,7 @@ public:
     return arguments.first();
   }
 
-  jlm::rvsdg::result *
+  RegionResult *
   result() const noexcept;
 
 private:
@@ -333,7 +333,7 @@ public:
     return input_->argument();
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   result() const noexcept
   {
     JLM_ASSERT(results.size() == 1);
@@ -376,7 +376,7 @@ private:
 /**
  * Represents a region result in a theta subregion.
  */
-class ThetaResult final : public result
+class ThetaResult final : public RegionResult
 {
   friend theta_node;
 
@@ -388,7 +388,7 @@ public:
 
 private:
   ThetaResult(rvsdg::output & origin, theta_output & thetaOutput)
-      : result(origin.region(), &origin, &thetaOutput, origin.Type())
+      : RegionResult(origin.region(), &origin, &thetaOutput, origin.Type())
   {
     JLM_ASSERT(is<theta_op>(origin.region()->node()));
   }
@@ -405,7 +405,7 @@ private:
 /**
  * Represents the predicate result of a theta subregion.
  */
-class ThetaPredicateResult final : public result
+class ThetaPredicateResult final : public RegionResult
 {
   friend theta_node;
 
@@ -417,7 +417,7 @@ public:
 
 private:
   explicit ThetaPredicateResult(rvsdg::output & origin)
-      : result(origin.region(), &origin, nullptr, ctltype::Create(2))
+      : RegionResult(origin.region(), &origin, nullptr, ctltype::Create(2))
   {
     JLM_ASSERT(is<theta_op>(origin.region()->node()));
   }
@@ -499,7 +499,7 @@ theta_node::RemoveThetaInputsWhere(const F & match)
 
 /* theta input method definitions */
 
-inline jlm::rvsdg::result *
+RegionResult *
 theta_input::result() const noexcept
 {
   return output_->result();

@@ -112,7 +112,7 @@ is_slice_exclusive_input_(
       return false;
     }
   }
-  else if (dynamic_cast<jlm::rvsdg::result *>(source))
+  else if (dynamic_cast<rvsdg::RegionResult *>(source))
   {
     if (auto be = dynamic_cast<backedge_result *>(source))
     {
@@ -138,11 +138,11 @@ is_slice_exclusive_input_(
 }
 
 void
-trace_to_loop_results(jlm::rvsdg::output * out, std::vector<jlm::rvsdg::result *> & results)
+trace_to_loop_results(jlm::rvsdg::output * out, std::vector<rvsdg::RegionResult *> & results)
 {
   for (auto user : *out)
   {
-    if (auto res = dynamic_cast<jlm::rvsdg::result *>(user))
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       results.push_back(res);
     }
@@ -284,7 +284,7 @@ decouple_load(
   // redirect state edges to new loop outputs
   for (size_t i = 1; i < loadNode->noutputs() - 1; ++i)
   {
-    std::vector<jlm::rvsdg::result *> results;
+    std::vector<rvsdg::RegionResult *> results;
     trace_to_loop_results(loadNode->output(i), results);
     JLM_ASSERT(results.size() <= 2);
     for (auto res : results)
@@ -345,7 +345,7 @@ decouple_load(
 
   // redirect mem_req_addr to dload_out[1]
   auto old_mem_req_res =
-      dynamic_cast<jlm::rvsdg::result *>(*loadNode->output(loadNode->noutputs() - 1)->begin());
+      dynamic_cast<rvsdg::RegionResult *>(*loadNode->output(loadNode->noutputs() - 1)->begin());
   auto old_mem_req_out = old_mem_req_res->output();
   auto mem_req_in = *old_mem_req_out->begin();
   mem_req_in->divert_to(dload_out[1]);

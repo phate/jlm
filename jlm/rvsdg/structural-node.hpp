@@ -103,9 +103,8 @@ public:
 
 /* structural output class */
 
-typedef jlm::util::
-    intrusive_list<jlm::rvsdg::result, jlm::rvsdg::result::structural_output_accessor>
-        result_list;
+typedef jlm::util::intrusive_list<RegionResult, RegionResult::structural_output_accessor>
+    result_list;
 
 class structural_output : public node_output
 {

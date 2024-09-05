@@ -158,7 +158,7 @@ node::GetMemoryStateRegionArgument() const noexcept
   return *argument;
 }
 
-rvsdg::result &
+rvsdg::RegionResult &
 node::GetMemoryStateRegionResult() const noexcept
 {
   auto result = fctresult(nfctresults() - 1);

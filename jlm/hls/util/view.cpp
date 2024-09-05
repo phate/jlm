@@ -54,7 +54,7 @@ get_dot_name(jlm::rvsdg::output * output)
 std::string
 get_dot_name(jlm::rvsdg::input * input)
 {
-  if (dynamic_cast<jlm::rvsdg::result *>(input))
+  if (dynamic_cast<rvsdg::RegionResult *>(input))
   {
     return jlm::util::strfmt("r", hex((intptr_t)input), ":", "default");
   }
@@ -97,7 +97,7 @@ argument_to_dot(jlm::rvsdg::argument * argument)
 }
 
 std::string
-result_to_dot(jlm::rvsdg::result * result)
+result_to_dot(rvsdg::RegionResult * result)
 {
   auto display_name = jlm::util::strfmt("r", result->index());
   auto dot_name = jlm::util::strfmt("r", hex((intptr_t)result));

@@ -373,14 +373,14 @@ public:
   }
 };
 
-class TestGraphResult final : public jlm::rvsdg::result
+class TestGraphResult final : public jlm::rvsdg::RegionResult
 {
 private:
   TestGraphResult(
       jlm::rvsdg::region & region,
       jlm::rvsdg::output & origin,
       jlm::rvsdg::structural_output * output)
-      : jlm::rvsdg::result(&region, &origin, output, origin.Type())
+      : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
   {}
 
   TestGraphResult(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)

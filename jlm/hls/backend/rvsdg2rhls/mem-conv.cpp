@@ -212,7 +212,7 @@ trace_function_calls(
         trace_function_calls(&arg, calls, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -423,7 +423,7 @@ trace_pointer_argument(
         trace_pointer_argument(&arg, load_nodes, store_nodes, decouple_nodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -496,7 +496,7 @@ IsDecoupledFunctionPointer(
         isDecoupled |= IsDecoupledFunctionPointer(&arg, visited);
       }
     }
-    else if (auto result = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto result = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto backedgeResult = dynamic_cast<jlm::hls::backedge_result *>(result))
       {

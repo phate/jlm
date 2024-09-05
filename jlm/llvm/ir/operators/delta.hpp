@@ -439,7 +439,7 @@ public:
 
 /** \brief Delta result
  */
-class result final : public rvsdg::result
+class result final : public rvsdg::RegionResult
 {
   friend ::jlm::llvm::delta::node;
 
@@ -451,7 +451,7 @@ public:
 
 private:
   explicit result(rvsdg::output * origin)
-      : rvsdg::result(origin->region(), origin, nullptr, origin->Type())
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *
@@ -466,7 +466,7 @@ public:
   delta::output *
   output() const noexcept
   {
-    return static_cast<delta::output *>(rvsdg::result::output());
+    return static_cast<delta::output *>(rvsdg::RegionResult::output());
   }
 };
 
