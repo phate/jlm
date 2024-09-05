@@ -248,7 +248,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
 }
 
 void
-remove_region_passthrough(const jlm::rvsdg::argument * arg)
+remove_region_passthrough(const rvsdg::RegionArgument * arg)
 {
   auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
   auto origin = arg->input()->origin();
@@ -264,7 +264,7 @@ remove_region_passthrough(const jlm::rvsdg::argument * arg)
 bool
 is_passthrough(const rvsdg::RegionResult * res)
 {
-  auto arg = dynamic_cast<jlm::rvsdg::argument *>(res->origin());
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
   if (arg)
   {
     return true;
@@ -273,7 +273,7 @@ is_passthrough(const rvsdg::RegionResult * res)
 }
 
 bool
-is_passthrough(const jlm::rvsdg::argument * arg)
+is_passthrough(const rvsdg::RegionArgument * arg)
 {
   if (arg->nusers() == 1)
   {

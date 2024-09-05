@@ -176,7 +176,8 @@ eliminate_gamma_eol(rvsdg::gamma_node * gamma)
       if (res->output() && res->output()->nusers() == 0)
       {
         // continue loop subregion
-        if (auto arg = dynamic_cast<rvsdg::argument *>(gamma->subregion(1)->result(i)->origin()))
+        if (auto arg =
+                dynamic_cast<rvsdg::RegionArgument *>(gamma->subregion(1)->result(i)->origin()))
         {
           // value is just passed through
           if (o->nusers())
@@ -228,7 +229,7 @@ is_output_of(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
 bool
 depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
 {
-  auto arg = dynamic_cast<jlm::rvsdg::argument *>(output);
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (arg)
   {
     return false;

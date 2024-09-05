@@ -26,7 +26,7 @@ DotHLS::get_text(llvm::RvsdgModule & rm)
 }
 
 std::string
-DotHLS::argument_to_dot(jlm::rvsdg::argument * port)
+DotHLS::argument_to_dot(rvsdg::RegionArgument * port)
 {
   auto name = get_port_name(port);
 

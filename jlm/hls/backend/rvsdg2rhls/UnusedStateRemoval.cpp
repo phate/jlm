@@ -14,7 +14,7 @@ namespace jlm::hls
 {
 
 static bool
-IsPassthroughArgument(const jlm::rvsdg::argument & argument)
+IsPassthroughArgument(const rvsdg::RegionArgument & argument)
 {
   if (argument.nusers() != 1)
   {
@@ -27,7 +27,7 @@ IsPassthroughArgument(const jlm::rvsdg::argument & argument)
 static bool
 IsPassthroughResult(const rvsdg::RegionResult & result)
 {
-  auto argument = dynamic_cast<rvsdg::argument *>(result.origin());
+  auto argument = dynamic_cast<rvsdg::RegionArgument *>(result.origin());
   return argument != nullptr;
 }
 
@@ -115,7 +115,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 }
 
 static void
-RemovePassthroughArgument(const jlm::rvsdg::argument & argument)
+RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
 {
   auto origin = argument.input()->origin();
   auto result = dynamic_cast<rvsdg::RegionResult *>(*argument.begin());

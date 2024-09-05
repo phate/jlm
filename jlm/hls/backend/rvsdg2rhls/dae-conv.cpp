@@ -43,7 +43,7 @@ find_slice_output(jlm::rvsdg::output * output, std::unordered_set<jlm::rvsdg::no
     JLM_ASSERT(slice.count(no->node()));
     find_slice_node(no->node(), slice);
   }
-  else if (dynamic_cast<jlm::rvsdg::argument *>(output))
+  else if (dynamic_cast<rvsdg::RegionArgument *>(output))
   {
     if (auto be = dynamic_cast<backedge_argument *>(output))
     {
@@ -237,7 +237,7 @@ decouple_load(
       {
         if (loop_slice.count(ni->node()))
         {
-          jlm::rvsdg::argument * new_arg;
+          rvsdg::RegionArgument * new_arg;
           if (auto be = dynamic_cast<backedge_argument *>(arg))
           {
             new_arg = new_loop->add_backedge(arg->Type());
@@ -332,7 +332,7 @@ decouple_load(
   ExitResult::Create(*load_addr, *addr_output);
   // trace and remove loop input for mem data reponse
   auto mem_data_loop_out = new_load->input(new_load->ninputs() - 1)->origin();
-  auto mem_data_loop_arg = dynamic_cast<jlm::rvsdg::argument *>(mem_data_loop_out);
+  auto mem_data_loop_arg = dynamic_cast<rvsdg::RegionArgument *>(mem_data_loop_out);
   auto mem_data_loop_in = mem_data_loop_arg->input();
   auto mem_data_resp = mem_data_loop_in->origin();
   dump_xml(new_loop->subregion(), "new_loop_before_remove.rvsdg");

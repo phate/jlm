@@ -610,7 +610,7 @@ class loop_node;
 /**
  * Represents the entry argument for the HLS loop.
  */
-class EntryArgument : public rvsdg::argument
+class EntryArgument : public rvsdg::RegionArgument
 {
   friend loop_node;
 
@@ -622,7 +622,7 @@ private:
       rvsdg::region & region,
       rvsdg::structural_input & input,
       const std::shared_ptr<const rvsdg::type> type)
-      : rvsdg::argument(&region, &input, std::move(type))
+      : rvsdg::RegionArgument(&region, &input, std::move(type))
   {}
 
 public:
@@ -643,7 +643,7 @@ public:
   }
 };
 
-class backedge_argument : public jlm::rvsdg::argument
+class backedge_argument : public rvsdg::RegionArgument
 {
   friend loop_node;
   friend backedge_result;
@@ -664,7 +664,7 @@ private:
   backedge_argument(
       jlm::rvsdg::region * region,
       const std::shared_ptr<const jlm::rvsdg::type> & type)
-      : jlm::rvsdg::argument(region, nullptr, type),
+      : rvsdg::RegionArgument(region, nullptr, type),
         result_(nullptr)
   {}
 

@@ -368,7 +368,7 @@ public:
     return arguments.size();
   }
 
-  inline jlm::rvsdg::argument *
+  [[nodiscard]] RegionArgument *
   argument(size_t n) const noexcept
   {
     JLM_ASSERT(n < narguments());
@@ -462,7 +462,7 @@ inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternativ
 /**
  * Represents a region argument in a gamma subregion.
  */
-class GammaArgument final : public argument
+class GammaArgument final : public RegionArgument
 {
   friend gamma_node;
 
@@ -474,7 +474,7 @@ public:
 
 private:
   GammaArgument(rvsdg::region & region, gamma_input & input)
-      : argument(&region, &input, input.Type())
+      : RegionArgument(&region, &input, input.Type())
   {}
 
   static GammaArgument &

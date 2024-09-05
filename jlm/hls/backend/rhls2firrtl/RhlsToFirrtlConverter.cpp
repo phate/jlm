@@ -2455,7 +2455,7 @@ RhlsToFirrtlConverter::DropMSBs(mlir::Block * body, mlir::Value value, int amoun
 // Returns the output of a node or the argument of a region that has
 // been instantiated as a module
 jlm::rvsdg::output *
-RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
+RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 {
   // Check if the argument is part of a hls::loop_node
   auto region = arg->region();
@@ -2474,7 +2474,7 @@ RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
       // Check if we are in a nested region and directly
       // connected to the outer regions argument
       auto origin = arg->input()->origin();
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // Need to find the source of the outer regions argument
         return TraceArgument(o);
@@ -2554,7 +2554,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       // Get the RVSDG node that's the origin of this input
       jlm::rvsdg::simple_input * input = rvsdgNode->input(i);
       auto origin = input->origin();
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         origin = TraceArgument(o);
       }
@@ -2564,7 +2564,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
         origin = TraceStructuralOutput(o);
       }
       // now origin is either a simple_output or a top-level argument
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // The port of the instance is connected to an argument
         // of the region
@@ -2619,7 +2619,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
         // Get the RVSDG node that's the origin of this input
         auto * input = dynamic_cast<jlm::rvsdg::simple_input *>(requestNode->input(i));
         auto origin = input->origin();
-        if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+        if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
           origin = TraceArgument(o);
         }
@@ -2765,7 +2765,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
     // Found the source node
     return o;
   }
-  else if (dynamic_cast<jlm::rvsdg::argument *>(origin))
+  else if (dynamic_cast<rvsdg::RegionArgument *>(origin))
   {
     throw std::logic_error("Encountered pass through argument - should be eliminated");
   }

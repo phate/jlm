@@ -124,10 +124,10 @@ copy_condition_nodes(
   }
 }
 
-static jlm::rvsdg::argument *
+static rvsdg::RegionArgument *
 to_argument(jlm::rvsdg::output * output)
 {
-  return dynamic_cast<jlm::rvsdg::argument *>(output);
+  return dynamic_cast<rvsdg::RegionArgument *>(output);
 }
 
 static jlm::rvsdg::structural_output *

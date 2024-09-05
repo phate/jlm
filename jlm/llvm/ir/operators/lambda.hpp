@@ -306,7 +306,7 @@ public:
   /**
    * @return The memory state argument of the lambda subregion.
    */
-  [[nodiscard]] rvsdg::argument &
+  [[nodiscard]] rvsdg::RegionArgument &
   GetMemoryStateRegionArgument() const noexcept;
 
   /**
@@ -507,7 +507,7 @@ public:
 
 /** \brief Lambda function argument
  */
-class fctargument final : public jlm::rvsdg::argument
+class fctargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -531,7 +531,7 @@ public:
 
 private:
   fctargument(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
-      : jlm::rvsdg::argument(region, nullptr, std::move(type))
+      : rvsdg::RegionArgument(region, nullptr, std::move(type))
   {}
 
   static fctargument *
@@ -596,7 +596,7 @@ class node::fctargconstiterator final
 
 /** \brief Lambda context variable argument
  */
-class cvargument final : public jlm::rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -608,7 +608,7 @@ public:
 
 private:
   cvargument(jlm::rvsdg::region * region, cvinput * input)
-      : jlm::rvsdg::argument(region, input, input->Type())
+      : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -623,7 +623,7 @@ public:
   cvinput *
   input() const noexcept
   {
-    return jlm::util::AssertedCast<cvinput>(jlm::rvsdg::argument::input());
+    return jlm::util::AssertedCast<cvinput>(rvsdg::RegionArgument::input());
   }
 };
 

@@ -14,7 +14,7 @@
 namespace jlm::rvsdg
 {
 
-argument::~argument() noexcept
+RegionArgument::~RegionArgument() noexcept
 {
   on_output_destroy(this);
 
@@ -22,7 +22,7 @@ argument::~argument() noexcept
     input()->arguments.erase(this);
 }
 
-argument::argument(
+RegionArgument::RegionArgument(
     jlm::rvsdg::region * region,
     jlm::rvsdg::structural_input * input,
     std::shared_ptr<const rvsdg::type> type)
@@ -106,7 +106,7 @@ region::region(jlm::rvsdg::structural_node * node, size_t index)
 }
 
 void
-region::append_argument(jlm::rvsdg::argument * argument)
+region::append_argument(RegionArgument * argument)
 {
   if (argument->region() != this)
     throw jlm::util::error("Appending argument to wrong region.");
@@ -125,7 +125,7 @@ void
 region::RemoveArgument(size_t index)
 {
   JLM_ASSERT(index < narguments());
-  jlm::rvsdg::argument * argument = arguments_[index];
+  RegionArgument * argument = arguments_[index];
 
   delete argument;
   for (size_t n = index; n < arguments_.size() - 1; n++)

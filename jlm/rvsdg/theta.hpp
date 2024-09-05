@@ -207,7 +207,7 @@ public:
    * again.
    *
    * \see RemoveThetaOutputsWhere()
-   * \see argument#IsDead()
+   * \see RegionArgument#IsDead()
    */
   template<typename F>
   util::HashSet<const theta_output *>
@@ -224,7 +224,7 @@ public:
    * again.
    *
    * \see RemoveThetaInputsWhere()
-   * \see argument#IsDead()
+   * \see RegionArgument#IsDead()
    */
   util::HashSet<const theta_output *>
   PruneThetaInputs()
@@ -280,7 +280,7 @@ public:
     return output_;
   }
 
-  inline jlm::rvsdg::argument *
+  inline RegionArgument *
   argument() const noexcept
   {
     JLM_ASSERT(arguments.size() == 1);
@@ -327,7 +327,7 @@ public:
     return input_;
   }
 
-  inline jlm::rvsdg::argument *
+  inline RegionArgument *
   argument() const noexcept
   {
     return input_->argument();
@@ -347,7 +347,7 @@ private:
 /**
  * Represents a region argument in a theta subregion.
  */
-class ThetaArgument final : public argument
+class ThetaArgument final : public RegionArgument
 {
   friend theta_node;
 
@@ -359,7 +359,7 @@ public:
 
 private:
   ThetaArgument(rvsdg::region & region, theta_input & input)
-      : argument(&region, &input, input.Type())
+      : RegionArgument(&region, &input, input.Type())
   {
     JLM_ASSERT(is<theta_op>(region.node()));
   }

@@ -190,8 +190,8 @@ convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
   {
     auto output = gamma->output(n);
 
-    auto a0 = static_cast<const rvsdg::argument *>(gamma->subregion(0)->result(n)->origin());
-    auto a1 = static_cast<const rvsdg::argument *>(gamma->subregion(1)->result(n)->origin());
+    auto a0 = static_cast<const rvsdg::RegionArgument *>(gamma->subregion(0)->result(n)->origin());
+    auto a1 = static_cast<const rvsdg::RegionArgument *>(gamma->subregion(1)->result(n)->origin());
     auto o0 = a0->input()->origin();
     auto o1 = a1->input()->origin();
 
