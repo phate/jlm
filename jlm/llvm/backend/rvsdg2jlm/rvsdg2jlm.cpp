@@ -229,7 +229,7 @@ convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
 static inline void
 convert_gamma_node(const rvsdg::node & node, context & ctx)
 {
-  JLM_ASSERT(is<rvsdg::gamma_op>(&node));
+  JLM_ASSERT(is<rvsdg::GammaOperation>(&node));
   auto gamma = static_cast<const rvsdg::gamma_node *>(&node);
   auto nalternatives = gamma->nsubregions();
   auto predicate = gamma->predicate()->origin();
@@ -519,7 +519,7 @@ convert_node(const rvsdg::node & node, context & ctx)
   static std::
       unordered_map<std::type_index, std::function<void(const rvsdg::node & node, context & ctx)>>
           map({ { typeid(lambda::operation), convert_lambda_node },
-                { std::type_index(typeid(rvsdg::gamma_op)), convert_gamma_node },
+                { std::type_index(typeid(rvsdg::GammaOperation)), convert_gamma_node },
                 { std::type_index(typeid(rvsdg::theta_op)), convert_theta_node },
                 { typeid(phi::operation), convert_phi_node },
                 { typeid(delta::operation), convert_delta_node } });

@@ -266,7 +266,7 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 static inline std::string
 type(const jlm::rvsdg::node * n)
 {
-  if (dynamic_cast<const jlm::rvsdg::gamma_op *>(&n->operation()))
+  if (dynamic_cast<const GammaOperation *>(&n->operation()))
     return "gamma";
 
   if (dynamic_cast<const jlm::rvsdg::theta_op *>(&n->operation()))

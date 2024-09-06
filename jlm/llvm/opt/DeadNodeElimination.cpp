@@ -366,7 +366,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
   static std::unordered_map<
       std::type_index,
       std::function<void(const DeadNodeElimination &, jlm::rvsdg::structural_node &)>>
-      map({ { typeid(jlm::rvsdg::gamma_op), sweepGamma },
+      map({ { typeid(rvsdg::GammaOperation), sweepGamma },
             { typeid(jlm::rvsdg::theta_op), sweepTheta },
             { typeid(lambda::operation), sweepLambda },
             { typeid(phi::operation), sweepPhi },

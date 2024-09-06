@@ -244,25 +244,25 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
 
 /* gamma operation */
 
-gamma_op::~gamma_op() noexcept
+GammaOperation::~GammaOperation() noexcept
 {}
 
 std::string
-gamma_op::debug_string() const
+GammaOperation::debug_string() const
 {
   return "GAMMA";
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
-gamma_op::copy() const
+GammaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new gamma_op(*this));
+  return std::unique_ptr<operation>(new GammaOperation(*this));
 }
 
 bool
-gamma_op::operator==(const operation & other) const noexcept
+GammaOperation::operator==(const operation & other) const noexcept
 {
-  auto op = dynamic_cast<const gamma_op *>(&other);
+  auto op = dynamic_cast<const GammaOperation *>(&other);
   return op && op->nalternatives_ == nalternatives_;
 }
 
@@ -408,6 +408,6 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::gamma_op),
+      typeid(jlm::rvsdg::GammaOperation),
       gamma_node_get_default_normal_form_);
 }

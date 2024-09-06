@@ -33,13 +33,13 @@ test_gamma(void)
 
   jlm::tests::GraphExport::Create(*gamma->output(0), "dummy");
 
-  assert(gamma && gamma->operation() == jlm::rvsdg::gamma_op(3));
+  assert(gamma && gamma->operation() == GammaOperation(3));
 
   /* test gamma copy */
 
   auto gamma2 = static_cast<structural_node *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
   view(graph.root(), stdout);
-  assert(is<gamma_op>(gamma2));
+  assert(is<GammaOperation>(gamma2));
 
   /* test entry and exit variable iterators */
 
@@ -54,7 +54,7 @@ test_predicate_reduction(void)
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_predicate_reduction(true);
+  GammaOperation::normal_form(&graph)->set_predicate_reduction(true);
 
   bittype bits2(2);
 
@@ -88,7 +88,7 @@ test_invariant_reduction(void)
   auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_invariant_reduction(true);
+  GammaOperation::normal_form(&graph)->set_invariant_reduction(true);
 
   auto pred = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
@@ -113,7 +113,7 @@ test_control_constant_reduction()
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
+  GammaOperation::normal_form(&graph)->set_control_constant_reduction(true);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(1), "x");
 
@@ -151,7 +151,7 @@ test_control_constant_reduction2()
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
+  GammaOperation::normal_form(&graph)->set_control_constant_reduction(true);
 
   auto import = &jlm::tests::GraphImport::Create(graph, bittype::Create(2), "import");
 
