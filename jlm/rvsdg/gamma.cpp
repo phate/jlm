@@ -46,7 +46,7 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
   bool was_normalized = true;
   for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++)
   {
-    auto argument = dynamic_cast<const jlm::rvsdg::argument *>(it->result(0)->origin());
+    auto argument = dynamic_cast<const rvsdg::RegionArgument *>(it->result(0)->origin());
     if (!argument)
       continue;
 
@@ -54,7 +54,7 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
     auto input = argument->input();
     for (n = 1; n < it->nresults(); n++)
     {
-      auto argument = dynamic_cast<const jlm::rvsdg::argument *>(it->result(n)->origin());
+      auto argument = dynamic_cast<const rvsdg::RegionArgument *>(it->result(n)->origin());
       if (!argument && argument->input() != input)
         break;
     }
@@ -279,7 +279,7 @@ gamma_output::~gamma_output() noexcept
 bool
 gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 {
-  auto argument = dynamic_cast<const rvsdg::argument *>(result(0)->origin());
+  auto argument = dynamic_cast<const rvsdg::RegionArgument *>(result(0)->origin());
   if (!argument)
   {
     return false;
@@ -289,7 +289,7 @@ gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
   auto origin = argument->input()->origin();
   for (n = 1; n < nresults(); n++)
   {
-    argument = dynamic_cast<const rvsdg::argument *>(result(n)->origin());
+    argument = dynamic_cast<const rvsdg::RegionArgument *>(result(n)->origin());
     if (argument == nullptr || argument->input()->origin() != origin)
       break;
   }

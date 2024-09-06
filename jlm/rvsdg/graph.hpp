@@ -25,7 +25,7 @@ namespace jlm::rvsdg
 /**
  * Represents an import into the RVSDG of an external entity.
  */
-class GraphImport : public argument
+class GraphImport : public RegionArgument
 {
 protected:
   GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name);
@@ -44,7 +44,7 @@ private:
 /**
  * Represents an export from the RVSDG of an internal entity.
  */
-class GraphExport : public result
+class GraphExport : public RegionResult
 {
 protected:
   GraphExport(rvsdg::output & origin, std::string name);

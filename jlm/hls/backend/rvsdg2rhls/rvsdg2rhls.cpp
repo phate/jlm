@@ -111,7 +111,7 @@ trace_call(jlm::rvsdg::input * input)
 {
   auto graph = input->region()->graph();
 
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(input->origin());
+  auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
   const jlm::rvsdg::output * result;
   if (auto to = dynamic_cast<const jlm::rvsdg::theta_output *>(input->origin()))
   {

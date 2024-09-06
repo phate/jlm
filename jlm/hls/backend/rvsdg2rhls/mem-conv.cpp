@@ -84,7 +84,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
 const jlm::rvsdg::bitconstant_op *
 trace_channel(const jlm::rvsdg::output * dst)
 {
-  if (auto arg = dynamic_cast<const jlm::rvsdg::argument *>(dst))
+  if (auto arg = dynamic_cast<const jlm::rvsdg::RegionArgument *>(dst))
   {
     return trace_channel(arg->input()->origin());
   }
@@ -120,7 +120,7 @@ const jlm::rvsdg::output *
 trace_call(const jlm::rvsdg::output * output)
 {
   // version of trace call for rhls
-  if (auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output))
+  if (auto argument = dynamic_cast<const jlm::rvsdg::RegionArgument *>(output))
   {
     auto graph = output->region()->graph();
     if (argument->region() == graph->root())
@@ -212,7 +212,7 @@ trace_function_calls(
         trace_function_calls(&arg, calls, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -235,7 +235,7 @@ find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
-  jlm::rvsdg::argument * response_function = nullptr;
+  jlm::rvsdg::RegionArgument * response_function = nullptr;
   for (size_t i = 0; i < lambda->ncvarguments(); ++i)
   {
     auto ip = lambda->cvargument(i)->input();
@@ -423,7 +423,7 @@ trace_pointer_argument(
         trace_pointer_argument(&arg, load_nodes, store_nodes, decouple_nodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -496,7 +496,7 @@ IsDecoupledFunctionPointer(
         isDecoupled |= IsDecoupledFunctionPointer(&arg, visited);
       }
     }
-    else if (auto result = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto result = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto backedgeResult = dynamic_cast<jlm::hls::backedge_result *>(result))
       {

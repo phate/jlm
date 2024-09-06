@@ -610,7 +610,7 @@ class loop_node;
 /**
  * Represents the entry argument for the HLS loop.
  */
-class EntryArgument : public rvsdg::argument
+class EntryArgument : public rvsdg::RegionArgument
 {
   friend loop_node;
 
@@ -622,7 +622,7 @@ private:
       rvsdg::region & region,
       rvsdg::structural_input & input,
       const std::shared_ptr<const rvsdg::type> type)
-      : rvsdg::argument(&region, &input, std::move(type))
+      : rvsdg::RegionArgument(&region, &input, std::move(type))
   {}
 
 public:
@@ -643,7 +643,7 @@ public:
   }
 };
 
-class backedge_argument : public jlm::rvsdg::argument
+class backedge_argument : public rvsdg::RegionArgument
 {
   friend loop_node;
   friend backedge_result;
@@ -664,7 +664,7 @@ private:
   backedge_argument(
       jlm::rvsdg::region * region,
       const std::shared_ptr<const jlm::rvsdg::type> & type)
-      : jlm::rvsdg::argument(region, nullptr, type),
+      : rvsdg::RegionArgument(region, nullptr, type),
         result_(nullptr)
   {}
 
@@ -679,7 +679,7 @@ private:
   backedge_result * result_;
 };
 
-class backedge_result : public jlm::rvsdg::result
+class backedge_result : public rvsdg::RegionResult
 {
   friend loop_node;
   friend backedge_argument;
@@ -698,7 +698,7 @@ public:
 
 private:
   backedge_result(jlm::rvsdg::output * origin)
-      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->Type()),
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
         argument_(nullptr)
   {}
 
@@ -716,7 +716,7 @@ private:
 /**
  * Represents the exit result of the HLS loop.
  */
-class ExitResult final : public rvsdg::result
+class ExitResult final : public rvsdg::RegionResult
 {
   friend loop_node;
 
@@ -725,7 +725,7 @@ public:
 
 private:
   ExitResult(rvsdg::output & origin, rvsdg::structural_output & output)
-      : rvsdg::result(origin.region(), &origin, &output, origin.Type())
+      : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
   {
     JLM_ASSERT(rvsdg::is<loop_op>(origin.region()->node()));
   }
@@ -768,7 +768,7 @@ public:
     return structural_node::subregion(0);
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] rvsdg::RegionResult *
   predicate() const noexcept
   {
     auto result = subregion()->result(0);

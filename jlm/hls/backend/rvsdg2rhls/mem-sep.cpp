@@ -39,7 +39,7 @@ mem_sep_argument(llvm::RvsdgModule & rm)
 }
 
 // from MemoryStateEncoder.cpp
-jlm::rvsdg::argument *
+rvsdg::RegionArgument *
 GetMemoryStateArgument(const llvm::lambda::node & lambda)
 {
   auto subregion = lambda.subregion();
@@ -52,7 +52,7 @@ GetMemoryStateArgument(const llvm::lambda::node & lambda)
   return nullptr;
 }
 
-jlm::rvsdg::result *
+rvsdg::RegionResult *
 GetMemoryStateResult(const llvm::lambda::node & lambda)
 {
   auto subregion = lambda.subregion();
@@ -170,7 +170,7 @@ mem_sep_independent(jlm::rvsdg::region * region)
   }
 }
 
-jlm::rvsdg::result *
+rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::output * common_edge,
     jlm::rvsdg::output * new_edge,
@@ -188,7 +188,7 @@ trace_edge(
     JLM_ASSERT(new_edge->nusers() == 1);
     auto user = *common_edge->begin();
     auto new_next = *new_edge->begin();
-    if (auto res = dynamic_cast<jlm::rvsdg::result *>(user))
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       // end of region reached
       return res;

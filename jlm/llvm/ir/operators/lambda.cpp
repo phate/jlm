@@ -150,7 +150,7 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
   return cvargument::create(subregion(), input);
 }
 
-rvsdg::argument &
+rvsdg::RegionArgument &
 node::GetMemoryStateRegionArgument() const noexcept
 {
   auto argument = fctargument(nfctarguments() - 1);
@@ -158,7 +158,7 @@ node::GetMemoryStateRegionArgument() const noexcept
   return *argument;
 }
 
-rvsdg::result &
+rvsdg::RegionResult &
 node::GetMemoryStateRegionResult() const noexcept
 {
   auto result = fctresult(nfctresults() - 1);

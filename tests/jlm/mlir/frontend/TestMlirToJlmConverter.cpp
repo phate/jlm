@@ -284,10 +284,10 @@ TestDivOperation()
       assert(lambdaResultOriginNode->ninputs() == 2);
 
       // Check first input
-      jlm::rvsdg::argument * DivInput0;
+      jlm::rvsdg::RegionArgument * DivInput0;
       assert(
-          DivInput0 =
-              dynamic_cast<jlm::rvsdg::argument *>(lambdaResultOriginNode->input(0)->origin()));
+          DivInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(
+              lambdaResultOriginNode->input(0)->origin()));
       assert(dynamic_cast<const bittype *>(&DivInput0->type()));
       assert(dynamic_cast<const bittype *>(&DivInput0->type())->nbits() == 32);
 
@@ -507,8 +507,8 @@ TestCompZeroExt()
       assert(AddOp->type().nbits() == 32);
 
       // Check add input0
-      jlm::rvsdg::argument * AddInput0;
-      assert(AddInput0 = dynamic_cast<jlm::rvsdg::argument *>(AddNode->input(0)->origin()));
+      jlm::rvsdg::RegionArgument * AddInput0;
+      assert(AddInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin()));
       assert(dynamic_cast<const bittype *>(&AddInput0->type()));
       assert(dynamic_cast<const bittype *>(&AddInput0->type())->nbits() == 32);
 

@@ -39,32 +39,32 @@ class substitution_map;
  * depends on the structural node the region is part of. A region argument is either linked
  * with a \ref structural_input or is a standalone argument.
  */
-class argument : public output
+class RegionArgument : public output
 {
-  util::intrusive_list_anchor<argument> structural_input_anchor_;
+  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_;
 
 public:
-  typedef util::intrusive_list_accessor<argument, &argument::structural_input_anchor_>
+  typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
       structural_input_accessor;
 
-  ~argument() noexcept override;
+  ~RegionArgument() noexcept override;
 
 protected:
-  argument(
+  RegionArgument(
       rvsdg::region * region,
       structural_input * input,
       std::shared_ptr<const rvsdg::type> type);
 
 public:
-  argument(const argument &) = delete;
+  RegionArgument(const RegionArgument &) = delete;
 
-  argument(argument &&) = delete;
+  RegionArgument(RegionArgument &&) = delete;
 
-  argument &
-  operator=(const argument &) = delete;
+  RegionArgument &
+  operator=(const RegionArgument &) = delete;
 
-  argument &
-  operator=(argument &&) = delete;
+  RegionArgument &
+  operator=(RegionArgument &&) = delete;
 
   [[nodiscard]] structural_input *
   input() const noexcept
@@ -80,7 +80,7 @@ public:
    *
    * @return A reference to the copied argument.
    */
-  virtual argument &
+  virtual RegionArgument &
   Copy(rvsdg::region & region, structural_input * input) = 0;
 
 private:
@@ -96,33 +96,33 @@ private:
  * depends on the structural node the region is part of. A region result is either linked
  * with a \ref structural_output or is a standalone result.
  */
-class result : public input
+class RegionResult : public input
 {
-  util::intrusive_list_anchor<result> structural_output_anchor_;
+  util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
 
 public:
-  typedef util::intrusive_list_accessor<result, &result::structural_output_anchor_>
+  typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>
       structural_output_accessor;
 
-  ~result() noexcept override;
+  ~RegionResult() noexcept override;
 
 protected:
-  result(
+  RegionResult(
       rvsdg::region * region,
       rvsdg::output * origin,
       structural_output * output,
       std::shared_ptr<const rvsdg::type> type);
 
 public:
-  result(const result &) = delete;
+  RegionResult(const RegionResult &) = delete;
 
-  result(result &&) = delete;
+  RegionResult(RegionResult &&) = delete;
 
-  result &
-  operator=(const result &) = delete;
+  RegionResult &
+  operator=(const RegionResult &) = delete;
 
-  result &
-  operator=(result &&) = delete;
+  RegionResult &
+  operator=(RegionResult &&) = delete;
 
   [[nodiscard]] structural_output *
   output() const noexcept
@@ -139,7 +139,7 @@ public:
    *
    * @return A reference to the copied result.
    */
-  virtual result &
+  virtual RegionResult &
   Copy(rvsdg::output & origin, structural_output * output) = 0;
 
 private:
@@ -221,7 +221,7 @@ public:
    * Multiple invocations of append_argument for the same argument are undefined.
    */
   void
-  append_argument(jlm::rvsdg::argument * argument);
+  append_argument(RegionArgument * argument);
 
   /**
    * Removes an argument from the region given an arguments' index.
@@ -235,8 +235,8 @@ public:
    * runtime is therefore O(n), where n is the region's number of arguments.
    *
    * \see narguments()
-   * \see argument#index()
-   * \see argument::nusers()
+   * \see RegionArgument#index()
+   * \see RegionArgument::nusers()
    */
   void
   RemoveArgument(size_t index);
@@ -268,7 +268,7 @@ public:
     return arguments_.size();
   }
 
-  inline jlm::rvsdg::argument *
+  inline RegionArgument *
   argument(size_t index) const noexcept
   {
     JLM_ASSERT(index < narguments());
@@ -280,7 +280,7 @@ public:
    * Multiple invocations of append_result for the same result are undefined.
    */
   void
-  append_result(jlm::rvsdg::result * result);
+  append_result(RegionResult * result);
 
   /**
    * Removes a result from the region given a results' index.
@@ -293,7 +293,7 @@ public:
    * runtime is therefore O(n), where n is the region's number of results.
    *
    * \see nresults()
-   * \see result#index()
+   * \see RegionResult#index()
    */
   void
   RemoveResult(size_t index);
@@ -301,7 +301,7 @@ public:
   /**
    * Remove all results that match the condition specified by \p match.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const result&)
+   * @tparam F A type that supports the function call operator: bool operator(const RegionResult&)
    * @param match Defines the condition for the results to remove.
    */
   template<typename F>
@@ -325,7 +325,7 @@ public:
   void
   PruneArguments()
   {
-    auto match = [](const rvsdg::argument &)
+    auto match = [](const RegionArgument &)
     {
       return true;
     };
@@ -339,7 +339,7 @@ public:
     return results_.size();
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < nresults());
@@ -483,8 +483,8 @@ private:
   size_t index_;
   jlm::rvsdg::graph * graph_;
   jlm::rvsdg::structural_node * node_;
-  std::vector<jlm::rvsdg::result *> results_;
-  std::vector<jlm::rvsdg::argument *> arguments_;
+  std::vector<RegionResult *> results_;
+  std::vector<RegionArgument *> arguments_;
 };
 
 static inline void

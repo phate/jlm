@@ -136,7 +136,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
     auto arg = gn->subregion(0)->argument(i);
     if (arg->nusers() == 1)
     {
-      auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
+      auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
       res_index = res ? res->index() : res_index;
     }
     for (size_t n = 0; n < gn->nsubregions(); n++)
@@ -145,7 +145,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
       can_remove &=
           is_passthrough(sr->argument(i)) &&
           // check that all subregions pass through to the same result
-          dynamic_cast<jlm::rvsdg::result *>(*sr->argument(i)->begin())->index() == res_index;
+          dynamic_cast<rvsdg::RegionResult *>(*sr->argument(i)->begin())->index() == res_index;
     }
     if (can_remove)
     {
@@ -248,9 +248,9 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
 }
 
 void
-remove_region_passthrough(const jlm::rvsdg::argument * arg)
+remove_region_passthrough(const rvsdg::RegionArgument * arg)
 {
-  auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
+  auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
   auto origin = arg->input()->origin();
   // divert users of output to origin of input
   arg->region()->node()->output(res->output()->index())->divert_users(origin);
@@ -262,9 +262,9 @@ remove_region_passthrough(const jlm::rvsdg::argument * arg)
 }
 
 bool
-is_passthrough(const jlm::rvsdg::result * res)
+is_passthrough(const rvsdg::RegionResult * res)
 {
-  auto arg = dynamic_cast<jlm::rvsdg::argument *>(res->origin());
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
   if (arg)
   {
     return true;
@@ -273,11 +273,11 @@ is_passthrough(const jlm::rvsdg::result * res)
 }
 
 bool
-is_passthrough(const jlm::rvsdg::argument * arg)
+is_passthrough(const rvsdg::RegionArgument * arg)
 {
   if (arg->nusers() == 1)
   {
-    auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
+    auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
     // used only by a result
     if (res)
     {

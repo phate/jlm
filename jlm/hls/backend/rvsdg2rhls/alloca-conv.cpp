@@ -80,7 +80,7 @@ private:
           trace(&arg);
         }
       }
-      else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+      else if (auto r = dynamic_cast<rvsdg::RegionResult *>(user))
       {
         if (auto ber = dynamic_cast<backedge_result *>(r))
         {

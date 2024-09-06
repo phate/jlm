@@ -181,7 +181,7 @@ public:
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
-    auto argument = jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    auto argument = jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(Output_);
     /*
      * FIXME: This assumes that all recursion variables where added before the dependencies. It
      * would be better if we did not use the index for retrieving the result, but instead
@@ -197,11 +197,11 @@ public:
    *
    * @return The imported function.
    */
-  [[nodiscard]] jlm::rvsdg::argument &
+  [[nodiscard]] rvsdg::RegionArgument &
   GetImport() const noexcept
   {
     JLM_ASSERT(GetCallType() == CallType::ExternalCall);
-    return *jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    return *jlm::util::AssertedCast<rvsdg::RegionArgument>(Output_);
   }
 
   /** \brief Return origin of a call node's function input.
@@ -225,14 +225,14 @@ public:
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(jlm::rvsdg::argument & output)
+  CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
   {
     JLM_ASSERT(is<phi::rvargument>(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateExternalCallClassifier(jlm::rvsdg::argument & argument)
+  CreateExternalCallClassifier(rvsdg::RegionArgument & argument)
   {
     JLM_ASSERT(argument.region() == argument.region()->graph()->root());
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);

@@ -66,9 +66,8 @@ private:
 
 /* structural input class */
 
-typedef jlm::util::
-    intrusive_list<jlm::rvsdg::argument, jlm::rvsdg::argument::structural_input_accessor>
-        argument_list;
+typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
+    argument_list;
 
 class structural_input : public node_input
 {
@@ -103,9 +102,8 @@ public:
 
 /* structural output class */
 
-typedef jlm::util::
-    intrusive_list<jlm::rvsdg::result, jlm::rvsdg::result::structural_output_accessor>
-        result_list;
+typedef jlm::util::intrusive_list<RegionResult, RegionResult::structural_output_accessor>
+    result_list;
 
 class structural_output : public node_output
 {

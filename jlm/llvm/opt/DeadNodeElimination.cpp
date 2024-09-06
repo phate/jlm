@@ -460,7 +460,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 void
 DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
-  util::HashSet<const rvsdg::argument *> deadRecursionArguments;
+  util::HashSet<const rvsdg::RegionArgument *> deadRecursionArguments;
 
   auto isDeadOutput = [&](const phi::rvoutput & output)
   {
@@ -479,7 +479,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 
   SweepRegion(*phiNode.subregion());
 
-  auto isDeadArgument = [&](const rvsdg::argument & argument)
+  auto isDeadArgument = [&](const rvsdg::RegionArgument & argument)
   {
     if (argument.input())
     {

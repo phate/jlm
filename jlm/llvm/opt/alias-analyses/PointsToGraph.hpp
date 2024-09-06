@@ -54,7 +54,7 @@ public:
   using DeltaNodeMap =
       std::unordered_map<const delta::node *, std::unique_ptr<PointsToGraph::DeltaNode>>;
   using ImportNodeMap =
-      std::unordered_map<const jlm::rvsdg::argument *, std::unique_ptr<PointsToGraph::ImportNode>>;
+      std::unordered_map<const rvsdg::RegionArgument *, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap =
       std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap =
@@ -289,7 +289,7 @@ public:
   }
 
   const PointsToGraph::ImportNode &
-  GetImportNode(const jlm::rvsdg::argument & argument) const
+  GetImportNode(const rvsdg::RegionArgument & argument) const
   {
     auto it = ImportNodes_.find(&argument);
     if (it == ImportNodes_.end())

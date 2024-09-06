@@ -18,12 +18,12 @@ GraphImport::GraphImport(
     rvsdg::graph & graph,
     std::shared_ptr<const rvsdg::type> type,
     std::string name)
-    : argument(graph.root(), nullptr, std::move(type)),
+    : RegionArgument(graph.root(), nullptr, std::move(type)),
       Name_(std::move(name))
 {}
 
 GraphExport::GraphExport(rvsdg::output & origin, std::string name)
-    : result(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
+    : RegionResult(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
 
