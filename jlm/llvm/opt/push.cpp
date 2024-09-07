@@ -97,7 +97,7 @@ has_side_effects(const jlm::rvsdg::node * node)
 static std::vector<rvsdg::RegionArgument *>
 copy_from_gamma(jlm::rvsdg::node * node, size_t r)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node->region()->node()));
+  JLM_ASSERT(jlm::rvsdg::is<rvsdg::GammaOperation>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   auto target = node->region()->node()->region();

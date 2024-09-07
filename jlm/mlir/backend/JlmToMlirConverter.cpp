@@ -431,7 +431,7 @@ JlmToMlirConverter::ConvertGamma(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto & gammaOp = *util::AssertedCast<const rvsdg::gamma_op>(&gammaNode.operation());
+  auto & gammaOp = *util::AssertedCast<const rvsdg::GammaOperation>(&gammaNode.operation());
 
   ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)

@@ -263,9 +263,9 @@ test_unknown_boundaries()
   //	jlm::rvsdg::view(graph, stdout);
 
   auto node = jlm::rvsdg::node_output::node(ex1.origin());
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
+  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
   node = jlm::rvsdg::node_output::node(node->input(1)->origin());
-  assert(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
+  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
 
   /* Create cleaner output */
   DeadNodeElimination dne;

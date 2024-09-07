@@ -844,10 +844,10 @@ TestGammaOp()
       assert(
           gammaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
       jlm::rvsdg::node * gammaNode = gammaOutput->node();
-      assert(is<gamma_op>(gammaNode->operation()));
+      assert(is<GammaOperation>(gammaNode->operation()));
 
       std::cout << "Checking gamma operation" << std::endl;
-      auto gammaOp = dynamic_cast<const gamma_op *>(&gammaNode->operation());
+      auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->operation());
       assert(gammaNode->ninputs() == 3);
       assert(gammaOp->nalternatives() == 3);
       assert(gammaNode->noutputs() == 2);

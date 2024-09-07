@@ -68,12 +68,12 @@ private:
 class output;
 class type;
 
-class gamma_op final : public structural_op
+class GammaOperation final : public structural_op
 {
 public:
-  virtual ~gamma_op() noexcept;
+  ~GammaOperation() noexcept override;
 
-  inline constexpr gamma_op(size_t nalternatives) noexcept
+  explicit constexpr GammaOperation(size_t nalternatives) noexcept
       : structural_op(),
         nalternatives_(nalternatives)
   {}
@@ -96,7 +96,8 @@ public:
   static jlm::rvsdg::gamma_normal_form *
   normal_form(jlm::rvsdg::graph * graph) noexcept
   {
-    return static_cast<jlm::rvsdg::gamma_normal_form *>(graph->node_normal_form(typeid(gamma_op)));
+    return static_cast<jlm::rvsdg::gamma_normal_form *>(
+        graph->node_normal_form(typeid(GammaOperation)));
   }
 
 private:
@@ -453,7 +454,7 @@ public:
 /* gamma node method definitions */
 
 inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives)
-    : structural_node(jlm::rvsdg::gamma_op(nalternatives), predicate->region(), nalternatives)
+    : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
   node::add_input(std::unique_ptr<node_input>(
       new gamma_input(this, predicate, ctltype::Create(nalternatives))));

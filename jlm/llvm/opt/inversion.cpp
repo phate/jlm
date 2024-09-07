@@ -64,7 +64,7 @@ is_applicable(const jlm::rvsdg::theta_node * theta)
     if (user == theta->predicate())
       continue;
 
-    if (!rvsdg::is<rvsdg::gamma_op>(rvsdg::input::GetNode(*user)))
+    if (!rvsdg::is<rvsdg::GammaOperation>(rvsdg::input::GetNode(*user)))
       return nullptr;
 
     gnode = dynamic_cast<rvsdg::gamma_node *>(rvsdg::input::GetNode(*user));
@@ -94,7 +94,7 @@ static std::vector<std::vector<jlm::rvsdg::node *>>
 collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structural_node * gnode)
 {
   JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(tnode));
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(gnode));
+  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
   JLM_ASSERT(gnode->region()->node() == tnode);
 
   std::vector<std::vector<jlm::rvsdg::node *>> nodes;

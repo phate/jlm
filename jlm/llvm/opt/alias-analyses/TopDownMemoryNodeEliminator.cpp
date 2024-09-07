@@ -502,7 +502,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::region & region)
 {
   auto isLambdaSubregion = rvsdg::is<lambda::operation>(region.node());
   auto isThetaSubregion = rvsdg::is<rvsdg::theta_op>(region.node());
-  auto isGammaSubregion = rvsdg::is<rvsdg::gamma_op>(region.node());
+  auto isGammaSubregion = rvsdg::is<rvsdg::GammaOperation>(region.node());
   JLM_ASSERT(isLambdaSubregion || isThetaSubregion || isGammaSubregion);
 
   // Process the intra-procedural nodes top-down.
