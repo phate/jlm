@@ -103,7 +103,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
   // it is irrelevant in which order we handle the nodes.
   for (auto & node : region.nodes)
   {
-    if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&node))
+    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&node))
     {
       // Ensure we redirect invariant values of all nodes in the gamma subregions first, otherwise
       // we might not be able to redirect some of the gamma outputs.
@@ -138,7 +138,7 @@ InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structu
 }
 
 void
-InvariantValueRedirection::RedirectGammaOutputs(rvsdg::gamma_node & gammaNode)
+InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 {
   for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
   {

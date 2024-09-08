@@ -173,7 +173,7 @@ convert_simple_node(const rvsdg::node & node, context & ctx)
 }
 
 static void
-convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
+convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
 {
   JLM_ASSERT(gamma->nsubregions() == 2);
   JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
@@ -230,7 +230,7 @@ static inline void
 convert_gamma_node(const rvsdg::node & node, context & ctx)
 {
   JLM_ASSERT(is<rvsdg::GammaOperation>(&node));
-  auto gamma = static_cast<const rvsdg::gamma_node *>(&node);
+  auto gamma = static_cast<const rvsdg::GammaNode *>(&node);
   auto nalternatives = gamma->nsubregions();
   auto predicate = gamma->predicate()->origin();
   auto cfg = ctx.cfg();

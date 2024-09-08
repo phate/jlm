@@ -1612,7 +1612,7 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
 }
 
 void
-Steensgaard::AnalyzeGamma(const jlm::rvsdg::gamma_node & node)
+Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
 {
   // Handle entry variables
   for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++)
@@ -1692,7 +1692,7 @@ Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
   {
     AnalyzeDelta(*deltaNode);
   }
-  else if (auto gammaNode = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  else if (auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
     AnalyzeGamma(*gammaNode);
   }

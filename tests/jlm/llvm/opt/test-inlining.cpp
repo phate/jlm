@@ -62,7 +62,7 @@ test1()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto gamma = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gamma = jlm::rvsdg::GammaNode::create(controlArgument, 2);
     auto gammaInputF1 = gamma->add_entryvar(d);
     auto gammaInputValue = gamma->add_entryvar(valueArgument);
     auto gammaInputIoState = gamma->add_entryvar(iOStateArgument);

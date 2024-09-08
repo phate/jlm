@@ -160,7 +160,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertLambda(*lambda, block);
   }
-  else if (auto gamma = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  else if (auto gamma = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
     return ConvertGamma(*gamma, block, inputs);
   }
@@ -427,7 +427,7 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertGamma(
-    const rvsdg::gamma_node & gammaNode,
+    const rvsdg::GammaNode & gammaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {

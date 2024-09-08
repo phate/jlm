@@ -48,7 +48,7 @@ public:
   }
 };
 
-static jlm::rvsdg::gamma_node *
+static rvsdg::GammaNode *
 is_applicable(const jlm::rvsdg::theta_node * theta)
 {
   auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
@@ -58,7 +58,7 @@ is_applicable(const jlm::rvsdg::theta_node * theta)
   if (matchnode->output(0)->nusers() != 2)
     return nullptr;
 
-  jlm::rvsdg::gamma_node * gnode = nullptr;
+  rvsdg::GammaNode * gnode = nullptr;
   for (const auto & user : *matchnode->output(0))
   {
     if (user == theta->predicate())
@@ -67,14 +67,14 @@ is_applicable(const jlm::rvsdg::theta_node * theta)
     if (!rvsdg::is<rvsdg::GammaOperation>(rvsdg::input::GetNode(*user)))
       return nullptr;
 
-    gnode = dynamic_cast<rvsdg::gamma_node *>(rvsdg::input::GetNode(*user));
+    gnode = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
   }
 
   return gnode;
 }
 
 static void
-pullin(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::theta_node * theta)
+pullin(rvsdg::GammaNode * gamma, jlm::rvsdg::theta_node * theta)
 {
   pullin_bottom(gamma);
   for (const auto & lv : *theta)
@@ -152,8 +152,8 @@ invert(jlm::rvsdg::theta_node * otheta)
     smap.insert(olv->argument(), olv->input()->origin());
   copy_condition_nodes(otheta->region(), smap, cnodes);
 
-  auto ngamma = jlm::rvsdg::gamma_node::create(
-      smap.lookup(ogamma->predicate()->origin()),
+  auto ngamma =
+      rvsdg::GammaNode::create(smap.lookup(ogamma->predicate()->origin()),
       ogamma->nsubregions());
 
   /* handle subregion 0 */

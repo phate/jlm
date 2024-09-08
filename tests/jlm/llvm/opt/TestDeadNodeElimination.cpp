@@ -59,7 +59,7 @@ TestGamma()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto ev1 = gamma->add_entryvar(x);
   auto ev2 = gamma->add_entryvar(y);
   auto ev3 = gamma->add_entryvar(x);
@@ -97,7 +97,7 @@ TestGamma2()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   gamma->add_entryvar(x);
 
   auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];

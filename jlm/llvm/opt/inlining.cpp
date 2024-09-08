@@ -71,7 +71,7 @@ route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
 
   output = route_to_region(output, region->node()->region());
 
-  if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(region->node()))
+  if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
     gamma->add_entryvar(output);
     output = region->argument(region->narguments() - 1);

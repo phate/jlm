@@ -950,7 +950,7 @@ private:
 public:
   jlm::llvm::lambda::node * lambda;
 
-  jlm::rvsdg::gamma_node * gamma;
+  rvsdg::GammaNode * gamma;
 };
 
 /** \brief GammaTest2 class
@@ -1020,7 +1020,7 @@ public:
     return *LambdaH_;
   }
 
-  [[nodiscard]] rvsdg::gamma_node &
+  [[nodiscard]] rvsdg::GammaNode &
   GetGamma() const noexcept
   {
     return *Gamma_;
@@ -1076,7 +1076,7 @@ private:
   llvm::lambda::node * LambdaG_;
   llvm::lambda::node * LambdaH_;
 
-  rvsdg::gamma_node * Gamma_;
+  rvsdg::GammaNode * Gamma_;
 
   llvm::CallNode * CallFromG_;
   llvm::CallNode * CallFromH_;
@@ -1386,7 +1386,7 @@ public:
   jlm::llvm::lambda::node * lambda_fib;
   jlm::llvm::lambda::node * lambda_test;
 
-  jlm::rvsdg::gamma_node * gamma;
+  rvsdg::GammaNode * gamma;
 
   jlm::llvm::phi::node * phi;
 

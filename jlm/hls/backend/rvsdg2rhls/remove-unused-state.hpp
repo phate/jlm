@@ -27,7 +27,7 @@ void
 remove_region_passthrough(const rvsdg::RegionArgument * arg);
 
 void
-remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn);
+remove_gamma_passthrough(rvsdg::GammaNode * gn);
 
 void
 remove_unused_state(llvm::RvsdgModule & rm);

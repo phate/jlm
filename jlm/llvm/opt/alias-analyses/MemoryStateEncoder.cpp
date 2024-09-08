@@ -522,7 +522,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::structural_node & structuralNode
   {
     EncodePhi(*phiNode);
   }
-  else if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&structuralNode))
+  else if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
   {
     EncodeGamma(*gammaNode);
   }
@@ -832,7 +832,7 @@ MemoryStateEncoder::EncodeDelta(const delta::node &)
 }
 
 void
-MemoryStateEncoder::EncodeGamma(rvsdg::gamma_node & gammaNode)
+MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode)
 {
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     Context_->GetRegionalizedStateMap().PushRegion(*gammaNode.subregion(n));
@@ -849,7 +849,7 @@ MemoryStateEncoder::EncodeGamma(rvsdg::gamma_node & gammaNode)
 }
 
 void
-MemoryStateEncoder::EncodeGammaEntry(rvsdg::gamma_node & gammaNode)
+MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
 {
   auto region = gammaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -865,7 +865,7 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::gamma_node & gammaNode)
 }
 
 void
-MemoryStateEncoder::EncodeGammaExit(rvsdg::gamma_node & gammaNode)
+MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto memoryNodes = Context_->GetMemoryNodeProvisioning().GetGammaExitNodes(gammaNode);

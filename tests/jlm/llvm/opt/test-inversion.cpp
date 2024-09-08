@@ -41,7 +41,7 @@ test1()
       { jlm::rvsdg::bittype::Create(1) })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
-  auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
   auto evx = gamma->add_entryvar(lvx->argument());
   auto evy = gamma->add_entryvar(lvy->argument());
@@ -96,7 +96,7 @@ test2()
   auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { vt })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
-  auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
   auto ev1 = gamma->add_entryvar(n1);
   auto ev2 = gamma->add_entryvar(lv1->argument());

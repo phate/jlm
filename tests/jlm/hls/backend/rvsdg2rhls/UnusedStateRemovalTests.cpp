@@ -30,7 +30,7 @@ TestGamma()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto gammaNode = jlm::rvsdg::gamma_node::create(p, 2);
+  auto gammaNode = jlm::rvsdg::GammaNode::create(p, 2);
 
   auto gammaInput1 = gammaNode->add_entryvar(x);
   auto gammaInput2 = gammaNode->add_entryvar(y);

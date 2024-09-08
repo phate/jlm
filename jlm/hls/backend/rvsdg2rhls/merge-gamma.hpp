@@ -19,7 +19,7 @@ void
 merge_gamma(llvm::RvsdgModule & rm);
 
 bool
-merge_gamma(jlm::rvsdg::gamma_node * gamma);
+merge_gamma(rvsdg::GammaNode * gamma);
 
 }
 

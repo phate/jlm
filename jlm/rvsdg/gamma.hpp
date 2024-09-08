@@ -109,13 +109,13 @@ private:
 class gamma_input;
 class gamma_output;
 
-class gamma_node : public jlm::rvsdg::structural_node
+class GammaNode : public structural_node
 {
 public:
-  virtual ~gamma_node();
+  ~GammaNode() noexcept override;
 
 private:
-  gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives);
+  GammaNode(rvsdg::output * predicate, size_t nalternatives);
 
   class entryvar_iterator
   {
@@ -222,10 +222,10 @@ private:
   };
 
 public:
-  static jlm::rvsdg::gamma_node *
+  static GammaNode *
   create(jlm::rvsdg::output * predicate, size_t nalternatives)
   {
-    return new jlm::rvsdg::gamma_node(predicate, nalternatives);
+    return new GammaNode(predicate, nalternatives);
   }
 
   jlm::rvsdg::gamma_input *
@@ -250,7 +250,7 @@ public:
   jlm::rvsdg::gamma_output *
   exitvar(size_t index) const noexcept;
 
-  inline gamma_node::entryvar_iterator
+  inline GammaNode::entryvar_iterator
   begin_entryvar() const
   {
     if (nentryvars() == 0)
@@ -259,13 +259,13 @@ public:
     return entryvar_iterator(entryvar(0));
   }
 
-  inline gamma_node::entryvar_iterator
+  inline GammaNode::entryvar_iterator
   end_entryvar() const
   {
     return entryvar_iterator(nullptr);
   }
 
-  inline gamma_node::exitvar_iterator
+  inline GammaNode::exitvar_iterator
   begin_exitvar() const
   {
     if (nexitvars() == 0)
@@ -274,7 +274,7 @@ public:
     return exitvar_iterator(exitvar(0));
   }
 
-  inline gamma_node::exitvar_iterator
+  inline GammaNode::exitvar_iterator
   end_exitvar() const
   {
     return exitvar_iterator(nullptr);
@@ -311,7 +311,7 @@ public:
     RemoveGammaOutputsWhere(match);
   }
 
-  virtual jlm::rvsdg::gamma_node *
+  virtual GammaNode *
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
@@ -319,24 +319,24 @@ public:
 
 class gamma_input final : public structural_input
 {
-  friend gamma_node;
+  friend GammaNode;
 
 public:
   virtual ~gamma_input() noexcept;
 
 private:
   inline gamma_input(
-      gamma_node * node,
+      GammaNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const rvsdg::type> type)
       : structural_input(node, origin, std::move(type))
   {}
 
 public:
-  gamma_node *
+  GammaNode *
   node() const noexcept
   {
-    return static_cast<gamma_node *>(structural_input::node());
+    return static_cast<GammaNode *>(structural_input::node());
   }
 
   inline argument_list::iterator
@@ -383,19 +383,19 @@ public:
 
 class gamma_output final : public structural_output
 {
-  friend gamma_node;
+  friend GammaNode;
 
 public:
   virtual ~gamma_output() noexcept;
 
-  inline gamma_output(gamma_node * node, std::shared_ptr<const rvsdg::type> type)
+  inline gamma_output(GammaNode * node, std::shared_ptr<const rvsdg::type> type)
       : structural_output(node, std::move(type))
   {}
 
-  gamma_node *
+  GammaNode *
   node() const noexcept
   {
-    return static_cast<gamma_node *>(structural_output::node());
+    return static_cast<GammaNode *>(structural_output::node());
   }
 
   inline result_list::iterator
@@ -453,7 +453,7 @@ public:
 
 /* gamma node method definitions */
 
-inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives)
+inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
     : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
   node::add_input(std::unique_ptr<node_input>(
@@ -465,7 +465,7 @@ inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternativ
  */
 class GammaArgument final : public RegionArgument
 {
-  friend gamma_node;
+  friend GammaNode;
 
 public:
   ~GammaArgument() noexcept override;
@@ -492,7 +492,7 @@ private:
  */
 class GammaResult final : public RegionResult
 {
-  friend gamma_node;
+  friend GammaNode;
 
 public:
   ~GammaResult() noexcept override;
@@ -515,25 +515,25 @@ private:
 };
 
 inline jlm::rvsdg::gamma_input *
-gamma_node::predicate() const noexcept
+GammaNode::predicate() const noexcept
 {
   return static_cast<jlm::rvsdg::gamma_input *>(structural_node::input(0));
 }
 
 inline jlm::rvsdg::gamma_input *
-gamma_node::entryvar(size_t index) const noexcept
+GammaNode::entryvar(size_t index) const noexcept
 {
   return static_cast<gamma_input *>(node::input(index + 1));
 }
 
 inline jlm::rvsdg::gamma_output *
-gamma_node::exitvar(size_t index) const noexcept
+GammaNode::exitvar(size_t index) const noexcept
 {
   return static_cast<gamma_output *>(node::output(index));
 }
 
 inline jlm::rvsdg::gamma_input *
-gamma_node::add_entryvar(jlm::rvsdg::output * origin)
+GammaNode::add_entryvar(jlm::rvsdg::output * origin)
 {
   auto input =
       node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
@@ -548,7 +548,7 @@ gamma_node::add_entryvar(jlm::rvsdg::output * origin)
 }
 
 inline jlm::rvsdg::gamma_output *
-gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
+GammaNode::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
 {
   if (values.size() != nsubregions())
     throw jlm::util::error("Incorrect number of values.");
@@ -567,7 +567,7 @@ gamma_node::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
 
 template<typename F>
 void
-gamma_node::RemoveGammaOutputsWhere(const F & match)
+GammaNode::RemoveGammaOutputsWhere(const F & match)
 {
   // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
   for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)

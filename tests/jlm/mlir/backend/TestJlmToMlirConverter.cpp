@@ -503,7 +503,7 @@ TestGamma()
     auto CtrlConstant = jlm::rvsdg::control_constant(graph->root(), 3, 1);
     auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
     auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
-    jlm::rvsdg::gamma_node * rvsdgGammaNode = jlm::rvsdg::gamma_node::create(
+    auto rvsdgGammaNode = jlm::rvsdg::GammaNode::create(
         CtrlConstant, // predicate
         3             // nalternatives
     );
