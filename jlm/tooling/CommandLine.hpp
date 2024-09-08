@@ -7,6 +7,7 @@
 #define JLM_TOOLING_COMMANDLINE_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/file.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -77,6 +78,7 @@ public:
     NodePullIn,
     NodePushOut,
     NodeReduction,
+    RvsdgTreePrinter,
     ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -88,13 +90,15 @@ public:
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
+      llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations)
       : InputFile_(std::move(inputFile)),
         InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
         OutputFormat_(outputFormat),
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
-        OptimizationIds_(std::move(optimizations))
+        OptimizationIds_(std::move(optimizations)),
+        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration))
   {}
 
   void
@@ -136,8 +140,11 @@ public:
     return OptimizationIds_;
   }
 
-  [[nodiscard]] std::vector<llvm::optimization *>
-  GetOptimizations() const noexcept;
+  [[nodiscard]] const llvm::RvsdgTreePrinter::Configuration &
+  GetRvsdgTreePrinterConfiguration() const noexcept
+  {
+    return RvsdgTreePrinterConfiguration_;
+  }
 
   static OptimizationId
   FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
@@ -157,9 +164,6 @@ public:
   static const char *
   ToCommandLineArgument(OutputFormat outputFormat);
 
-  static llvm::optimization *
-  GetOptimization(enum OptimizationId optimizationId);
-
   static std::unique_ptr<JlmOptCommandLineOptions>
   Create(
       util::filepath inputFile,
@@ -167,6 +171,7 @@ public:
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
+      llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
@@ -175,6 +180,7 @@ public:
         std::move(outputFile),
         outputFormat,
         std::move(statisticsCollectorSettings),
+        std::move(rvsdgTreePrinterConfiguration),
         std::move(optimizations));
   }
 
@@ -185,6 +191,7 @@ private:
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
+  llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
 
   struct OptimizationCommandLineArgument
   {
@@ -201,6 +208,7 @@ private:
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * NodeReduction_ = "NodeReduction";
+    inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
   };
 
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &

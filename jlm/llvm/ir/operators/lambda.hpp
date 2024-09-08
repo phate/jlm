@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/ir/attribute.hpp>
 #include <jlm/llvm/ir/linkage.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -305,13 +306,13 @@ public:
   /**
    * @return The memory state argument of the lambda subregion.
    */
-  [[nodiscard]] rvsdg::argument &
+  [[nodiscard]] rvsdg::RegionArgument &
   GetMemoryStateRegionArgument() const noexcept;
 
   /**
    * @return The memory state result of the lambda subregion.
    */
-  [[nodiscard]] rvsdg::result &
+  [[nodiscard]] rvsdg::RegionResult &
   GetMemoryStateRegionResult() const noexcept;
 
   /**
@@ -506,7 +507,7 @@ public:
 
 /** \brief Lambda function argument
  */
-class fctargument final : public jlm::rvsdg::argument
+class fctargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -530,7 +531,7 @@ public:
 
 private:
   fctargument(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
-      : jlm::rvsdg::argument(region, nullptr, std::move(type))
+      : rvsdg::RegionArgument(region, nullptr, std::move(type))
   {}
 
   static fctargument *
@@ -595,7 +596,7 @@ class node::fctargconstiterator final
 
 /** \brief Lambda context variable argument
  */
-class cvargument final : public jlm::rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -607,7 +608,7 @@ public:
 
 private:
   cvargument(jlm::rvsdg::region * region, cvinput * input)
-      : jlm::rvsdg::argument(region, input, input->port())
+      : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -622,13 +623,13 @@ public:
   cvinput *
   input() const noexcept
   {
-    return jlm::util::AssertedCast<cvinput>(jlm::rvsdg::argument::input());
+    return jlm::util::AssertedCast<cvinput>(rvsdg::RegionArgument::input());
   }
 };
 
 /** \brief Lambda result
  */
-class result final : public jlm::rvsdg::result
+class result final : public rvsdg::RegionResult
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -640,7 +641,7 @@ public:
 
 private:
   explicit result(jlm::rvsdg::output * origin)
-      : jlm::rvsdg::result(origin->region(), origin, nullptr, origin->port())
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *
@@ -655,7 +656,7 @@ public:
   lambda::output *
   output() const noexcept
   {
-    return jlm::util::AssertedCast<lambda::output>(jlm::rvsdg::result::output());
+    return jlm::util::AssertedCast<lambda::output>(rvsdg::RegionResult::output());
   }
 };
 
@@ -714,7 +715,7 @@ class node::CallSummary final
 
 public:
   CallSummary(
-      rvsdg::result * rvsdgExport,
+      GraphExport * rvsdgExport,
       std::vector<CallNode *> directCalls,
       std::vector<rvsdg::input *> otherUsers)
       : RvsdgExport_(rvsdgExport),
@@ -816,7 +817,7 @@ public:
    *
    * @return The export of the lambda from the RVSDG root region.
    */
-  [[nodiscard]] rvsdg::result *
+  [[nodiscard]] GraphExport *
   GetRvsdgExport() const noexcept
   {
     return RvsdgExport_;
@@ -857,7 +858,7 @@ public:
    */
   static std::unique_ptr<CallSummary>
   Create(
-      rvsdg::result * rvsdgExport,
+      GraphExport * rvsdgExport,
       std::vector<CallNode *> directCalls,
       std::vector<rvsdg::input *> otherUsers)
   {
@@ -868,7 +869,7 @@ public:
   }
 
 private:
-  rvsdg::result * RvsdgExport_;
+  GraphExport * RvsdgExport_;
   std::vector<CallNode *> DirectCalls_;
   std::vector<rvsdg::input *> OtherUsers_;
 };

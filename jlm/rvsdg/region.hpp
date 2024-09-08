@@ -31,40 +31,42 @@ class structural_op;
 class structural_output;
 class substitution_map;
 
-class argument : public output
+/**
+ * \brief Represents the argument of a region.
+ *
+ * Region arguments represent the initial values of the region's acyclic graph. These values
+ * are mapped to the arguments throughout the execution, and the concrete semantics of this mapping
+ * depends on the structural node the region is part of. A region argument is either linked
+ * with a \ref structural_input or is a standalone argument.
+ */
+class RegionArgument : public output
 {
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::argument> structural_input_anchor_;
+  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_;
 
 public:
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::argument, &jlm::rvsdg::argument::structural_input_anchor_>
-          structural_input_accessor;
+  typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
+      structural_input_accessor;
 
-  virtual ~argument() noexcept;
+  ~RegionArgument() noexcept override;
 
 protected:
-  argument(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::structural_input * input,
-      const jlm::rvsdg::port & port);
-
-  argument(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::structural_input * input,
+  RegionArgument(
+      rvsdg::region * region,
+      structural_input * input,
       std::shared_ptr<const rvsdg::type> type);
 
-  argument(const argument &) = delete;
-
-  argument(argument &&) = delete;
-
-  argument &
-  operator=(const argument &) = delete;
-
-  argument &
-  operator=(argument &&) = delete;
-
 public:
-  inline jlm::rvsdg::structural_input *
+  RegionArgument(const RegionArgument &) = delete;
+
+  RegionArgument(RegionArgument &&) = delete;
+
+  RegionArgument &
+  operator=(const RegionArgument &) = delete;
+
+  RegionArgument &
+  operator=(RegionArgument &&) = delete;
+
+  [[nodiscard]] structural_input *
   input() const noexcept
   {
     return input_;
@@ -77,62 +79,52 @@ public:
    * @param input  The structural_input to the argument, if any.
    *
    * @return A reference to the copied argument.
-   *
-   * FIXME: This method should be made abstract once we enforced that no instances of argument
-   * itself can be created any longer.
    */
-  virtual argument &
-  Copy(rvsdg::region & region, structural_input * input);
-
-  static jlm::rvsdg::argument *
-  create(jlm::rvsdg::region * region, structural_input * input, const jlm::rvsdg::port & port);
-
-  static jlm::rvsdg::argument *
-  create(
-      jlm::rvsdg::region * region,
-      structural_input * input,
-      std::shared_ptr<const jlm::rvsdg::type> type);
+  virtual RegionArgument &
+  Copy(rvsdg::region & region, structural_input * input) = 0;
 
 private:
-  jlm::rvsdg::structural_input * input_;
+  structural_input * input_;
 };
 
-class result : public input
+/**
+ * \brief Represents the result of a region.
+ *
+ * Region results represent the final values of the region's acyclic graph. The result values
+ * can be mapped back to the region arguments or the corresponding structural outputs
+ * throughout the execution, but the concrete semantics of this mapping
+ * depends on the structural node the region is part of. A region result is either linked
+ * with a \ref structural_output or is a standalone result.
+ */
+class RegionResult : public input
 {
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::result> structural_output_anchor_;
+  util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
 
 public:
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::result, &jlm::rvsdg::result::structural_output_anchor_>
-          structural_output_accessor;
+  typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>
+      structural_output_accessor;
 
-  virtual ~result() noexcept;
+  ~RegionResult() noexcept override;
 
 protected:
-  result(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
-      const jlm::rvsdg::port & port);
-
-  result(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
+  RegionResult(
+      rvsdg::region * region,
+      rvsdg::output * origin,
+      structural_output * output,
       std::shared_ptr<const rvsdg::type> type);
 
-  result(const result &) = delete;
-
-  result(result &&) = delete;
-
-  result &
-  operator=(const result &) = delete;
-
-  result &
-  operator=(result &&) = delete;
-
 public:
-  inline jlm::rvsdg::structural_output *
+  RegionResult(const RegionResult &) = delete;
+
+  RegionResult(RegionResult &&) = delete;
+
+  RegionResult &
+  operator=(const RegionResult &) = delete;
+
+  RegionResult &
+  operator=(RegionResult &&) = delete;
+
+  [[nodiscard]] structural_output *
   output() const noexcept
   {
     return output_;
@@ -146,29 +138,12 @@ public:
    * @param output The structural_output to the result, if any.
    *
    * @return A reference to the copied result.
-   *
-   * FIXME: This method should be made abstract once we enforced that no instances of result
-   * itself can be created any longer.
    */
-  virtual result &
-  Copy(rvsdg::output & origin, structural_output * output);
-
-  static jlm::rvsdg::result *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
-      const jlm::rvsdg::port & port);
-
-  static jlm::rvsdg::result *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::structural_output * output,
-      std::shared_ptr<const jlm::rvsdg::type> type);
+  virtual RegionResult &
+  Copy(rvsdg::output & origin, structural_output * output) = 0;
 
 private:
-  jlm::rvsdg::structural_output * output_;
+  structural_output * output_;
 };
 
 class region
@@ -246,7 +221,7 @@ public:
    * Multiple invocations of append_argument for the same argument are undefined.
    */
   void
-  append_argument(jlm::rvsdg::argument * argument);
+  append_argument(RegionArgument * argument);
 
   /**
    * Removes an argument from the region given an arguments' index.
@@ -260,8 +235,8 @@ public:
    * runtime is therefore O(n), where n is the region's number of arguments.
    *
    * \see narguments()
-   * \see argument#index()
-   * \see argument::nusers()
+   * \see RegionArgument#index()
+   * \see RegionArgument::nusers()
    */
   void
   RemoveArgument(size_t index);
@@ -293,7 +268,7 @@ public:
     return arguments_.size();
   }
 
-  inline jlm::rvsdg::argument *
+  inline RegionArgument *
   argument(size_t index) const noexcept
   {
     JLM_ASSERT(index < narguments());
@@ -305,7 +280,7 @@ public:
    * Multiple invocations of append_result for the same result are undefined.
    */
   void
-  append_result(jlm::rvsdg::result * result);
+  append_result(RegionResult * result);
 
   /**
    * Removes a result from the region given a results' index.
@@ -318,7 +293,7 @@ public:
    * runtime is therefore O(n), where n is the region's number of results.
    *
    * \see nresults()
-   * \see result#index()
+   * \see RegionResult#index()
    */
   void
   RemoveResult(size_t index);
@@ -326,7 +301,7 @@ public:
   /**
    * Remove all results that match the condition specified by \p match.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const result&)
+   * @tparam F A type that supports the function call operator: bool operator(const RegionResult&)
    * @param match Defines the condition for the results to remove.
    */
   template<typename F>
@@ -350,7 +325,7 @@ public:
   void
   PruneArguments()
   {
-    auto match = [](const rvsdg::argument &)
+    auto match = [](const RegionArgument &)
     {
       return true;
     };
@@ -364,7 +339,7 @@ public:
     return results_.size();
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < nresults());
@@ -508,8 +483,8 @@ private:
   size_t index_;
   jlm::rvsdg::graph * graph_;
   jlm::rvsdg::structural_node * node_;
-  std::vector<jlm::rvsdg::result *> results_;
-  std::vector<jlm::rvsdg::argument *> arguments_;
+  std::vector<RegionResult *> results_;
+  std::vector<RegionArgument *> arguments_;
 };
 
 static inline void

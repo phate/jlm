@@ -53,9 +53,9 @@ private:
   inline unrollinfo(
       jlm::rvsdg::node * cmpnode,
       jlm::rvsdg::node * armnode,
-      jlm::rvsdg::argument * idv,
-      jlm::rvsdg::argument * step,
-      jlm::rvsdg::argument * end)
+      rvsdg::RegionArgument * idv,
+      rvsdg::RegionArgument * step,
+      rvsdg::RegionArgument * end)
       : end_(end),
         step_(step),
         cmpnode_(cmpnode),
@@ -133,7 +133,7 @@ public:
     return *static_cast<const jlm::rvsdg::simple_op *>(&armnode()->operation());
   }
 
-  inline jlm::rvsdg::argument *
+  inline rvsdg::RegionArgument *
   idv() const noexcept
   {
     return idv_;
@@ -151,7 +151,7 @@ public:
     return value(init());
   }
 
-  inline jlm::rvsdg::argument *
+  inline rvsdg::RegionArgument *
   step() const noexcept
   {
     return step_;
@@ -163,7 +163,7 @@ public:
     return value(step());
   }
 
-  inline jlm::rvsdg::argument *
+  inline rvsdg::RegionArgument *
   end() const noexcept
   {
     return end_;
@@ -225,11 +225,11 @@ private:
     return &static_cast<const jlm::rvsdg::bitconstant_op *>(&p->operation())->value();
   }
 
-  jlm::rvsdg::argument * end_;
-  jlm::rvsdg::argument * step_;
+  rvsdg::RegionArgument * end_;
+  rvsdg::RegionArgument * step_;
   jlm::rvsdg::node * cmpnode_;
   jlm::rvsdg::node * armnode_;
-  jlm::rvsdg::argument * idv_;
+  rvsdg::RegionArgument * idv_;
 };
 
 /**

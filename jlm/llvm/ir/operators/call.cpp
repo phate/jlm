@@ -32,7 +32,7 @@ invariantInput(const rvsdg::gamma_output & output, InvariantOutputMap & invarian
     bool resultIsInvariant = false;
     while (true)
     {
-      if (auto argument = dynamic_cast<const rvsdg::argument *>(origin))
+      if (auto argument = dynamic_cast<const rvsdg::RegionArgument *>(origin))
       {
         resultIsInvariant = true;
         input = argument->input();
@@ -176,7 +176,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 
     if (is<lambda::cvargument>(origin))
     {
-      auto argument = util::AssertedCast<const rvsdg::argument>(origin);
+      auto argument = util::AssertedCast<const rvsdg::RegionArgument>(origin);
       origin = argument->input()->origin();
       continue;
     }
@@ -246,7 +246,7 @@ CallNode::ClassifyCall(const CallNode & callNode)
     return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*lambdaOutput);
   }
 
-  if (auto argument = dynamic_cast<rvsdg::argument *>(output))
+  if (auto argument = dynamic_cast<rvsdg::RegionArgument *>(output))
   {
     if (is<phi::rvargument>(argument))
     {

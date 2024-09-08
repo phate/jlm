@@ -28,7 +28,7 @@ create_port_name(
     const jlm::rvsdg::output * port,
     std::unordered_map<const output *, std::string> & map)
 {
-  std::string name = dynamic_cast<const jlm::rvsdg::argument *>(port) ? "a" : "o";
+  std::string name = dynamic_cast<const rvsdg::RegionArgument *>(port) ? "a" : "o";
   name += jlm::util::strfmt(map.size());
   return name;
 }
@@ -266,7 +266,7 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 static inline std::string
 type(const jlm::rvsdg::node * n)
 {
-  if (dynamic_cast<const jlm::rvsdg::gamma_op *>(&n->operation()))
+  if (dynamic_cast<const GammaOperation *>(&n->operation()))
     return "gamma";
 
   if (dynamic_cast<const jlm::rvsdg::theta_op *>(&n->operation()))

@@ -384,22 +384,11 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-  output(delta::node * node, const rvsdg::port & port)
-      : structural_output(node, port.Type())
-  {}
-
   output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
       : structural_output(node, std::move(type))
   {}
 
 private:
-  static output *
-  create(delta::node * node, const rvsdg::port & port)
-  {
-    auto output = std::make_unique<delta::output>(node, port);
-    return static_cast<delta::output *>(node->append_output(std::move(output)));
-  }
-
   static output *
   create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
   {
@@ -417,7 +406,7 @@ public:
 
 /** \brief Delta context variable argument
  */
-class cvargument final : public rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::delta::node;
 
@@ -429,7 +418,7 @@ public:
 
 private:
   cvargument(rvsdg::region * region, cvinput * input)
-      : rvsdg::argument(region, input, input->port())
+      : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
@@ -444,13 +433,13 @@ public:
   cvinput *
   input() const noexcept
   {
-    return static_cast<cvinput *>(rvsdg::argument::input());
+    return static_cast<cvinput *>(rvsdg::RegionArgument::input());
   }
 };
 
 /** \brief Delta result
  */
-class result final : public rvsdg::result
+class result final : public rvsdg::RegionResult
 {
   friend ::jlm::llvm::delta::node;
 
@@ -461,8 +450,8 @@ public:
   Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
 
 private:
-  result(rvsdg::output * origin)
-      : rvsdg::result(origin->region(), origin, nullptr, origin->port())
+  explicit result(rvsdg::output * origin)
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *
@@ -477,7 +466,7 @@ public:
   delta::output *
   output() const noexcept
   {
-    return static_cast<delta::output *>(rvsdg::result::output());
+    return static_cast<delta::output *>(rvsdg::RegionResult::output());
   }
 };
 

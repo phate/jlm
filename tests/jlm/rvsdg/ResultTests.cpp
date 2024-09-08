@@ -16,6 +16,7 @@ static int
 ResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -28,14 +29,16 @@ ResultNodeMismatch()
 
   auto structuralInput = structural_input::create(structuralNode1, import, valueType);
 
-  auto argument = argument::create(structuralNode1->subregion(0), structuralInput, valueType);
+  auto & argument =
+      TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);
   auto structuralOutput = structural_output::create(structuralNode1, valueType);
 
   // Act
   bool outputErrorHandlerCalled = false;
   try
   {
-    result::create(structuralNode2->subregion(0), argument, structuralOutput, valueType);
+    // Region mismatch
+    TestGraphResult::Create(*structuralNode2->subregion(0), argument, structuralOutput);
   }
   catch (jlm::util::error & e)
   {
@@ -70,29 +73,9 @@ ResultInputTypeMismatch()
   try
   {
     auto simpleNode = test_op::create(structuralNode->subregion(0), {}, { stateType });
-    jlm::rvsdg::result::create(
-        structuralNode->subregion(0),
-        simpleNode->output(0),
-        structuralOutput,
-        stateType);
-    // The line below should not be executed as the line above is expected to throw an exception.
-    assert(false);
-  }
-  catch (type_error &)
-  {
-    exceptionWasCaught = true;
-  }
-  assert(exceptionWasCaught);
 
-  exceptionWasCaught = false;
-  try
-  {
-    auto simpleNode = test_op::create(structuralNode->subregion(0), {}, { stateType });
-    jlm::rvsdg::result::create(
-        structuralNode->subregion(0),
-        simpleNode->output(0),
-        structuralOutput,
-        jlm::rvsdg::port(stateType));
+    // Type mismatch between simple node output and structural output
+    TestGraphResult::Create(*simpleNode->output(0), structuralOutput);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

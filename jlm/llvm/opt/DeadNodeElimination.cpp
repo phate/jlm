@@ -366,7 +366,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
   static std::unordered_map<
       std::type_index,
       std::function<void(const DeadNodeElimination &, jlm::rvsdg::structural_node &)>>
-      map({ { typeid(jlm::rvsdg::gamma_op), sweepGamma },
+      map({ { typeid(rvsdg::GammaOperation), sweepGamma },
             { typeid(jlm::rvsdg::theta_op), sweepTheta },
             { typeid(lambda::operation), sweepLambda },
             { typeid(phi::operation), sweepPhi },
@@ -460,7 +460,7 @@ DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
 void
 DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 {
-  util::HashSet<const rvsdg::argument *> deadRecursionArguments;
+  util::HashSet<const rvsdg::RegionArgument *> deadRecursionArguments;
 
   auto isDeadOutput = [&](const phi::rvoutput & output)
   {
@@ -479,7 +479,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
 
   SweepRegion(*phiNode.subregion());
 
-  auto isDeadArgument = [&](const rvsdg::argument & argument)
+  auto isDeadArgument = [&](const rvsdg::RegionArgument & argument)
   {
     if (argument.input())
     {

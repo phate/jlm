@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandGraph.hpp>
 #include <jlm/tooling/CommandGraphGenerator.hpp>
@@ -126,9 +127,10 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
+      util::filepath tempDirectory(std::filesystem::temp_directory_path());
       auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
       auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          util::filepath(std::filesystem::temp_directory_path()),
+          tempDirectory,
           compilation.InputFile());
       util::StatisticsCollectorSettings statisticsCollectorSettings(
           statisticsFilePath,
@@ -140,6 +142,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           statisticsCollectorSettings,
+          jlm::llvm::RvsdgTreePrinter::Configuration(tempDirectory, {}),
           commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode =

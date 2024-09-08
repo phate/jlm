@@ -150,7 +150,7 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
   return cvargument::create(subregion(), input);
 }
 
-rvsdg::argument &
+rvsdg::RegionArgument &
 node::GetMemoryStateRegionArgument() const noexcept
 {
   auto argument = fctargument(nfctarguments() - 1);
@@ -158,7 +158,7 @@ node::GetMemoryStateRegionArgument() const noexcept
   return *argument;
 }
 
-rvsdg::result &
+rvsdg::RegionResult &
 node::GetMemoryStateRegionResult() const noexcept
 {
   auto result = fctresult(nfctresults() - 1);
@@ -287,7 +287,7 @@ node::ComputeCallSummary() const
   worklist.insert(worklist.end(), output()->begin(), output()->end());
 
   std::vector<CallNode *> directCalls;
-  rvsdg::result * rvsdgExport = nullptr;
+  GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::input *> otherUsers;
 
   while (!worklist.empty())
@@ -373,10 +373,9 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    auto result = dynamic_cast<rvsdg::result *>(input);
-    if (result != nullptr && input->region() == graph()->root())
+    if (auto graphExport = dynamic_cast<GraphExport *>(input))
     {
-      rvsdgExport = result;
+      rvsdgExport = graphExport;
       continue;
     }
 

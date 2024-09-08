@@ -45,7 +45,7 @@ public:
    * @return true if there are work items left to be visited
    */
   [[nodiscard]] virtual bool
-  HasMoreWorkItems() = 0;
+  HasMoreWorkItems() const noexcept = 0;
 
   /**
    * Removes one work item from the worklist.
@@ -78,8 +78,8 @@ public:
 
   LifoWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -123,8 +123,8 @@ public:
 
   FifoWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -173,8 +173,8 @@ public:
 
   LrfWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -240,8 +240,8 @@ public:
 
   TwoPhaseLrfWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !Current_.empty() || !Next_.empty();
   }
@@ -292,6 +292,62 @@ private:
   // For each work item, when the item was last fired.
   // If the work item is currently in the queue, InQueueSentinelValue is used instead
   std::unordered_map<T, size_t> LastFire_;
+};
+
+/**
+ * A fake worklist that only holds a single bit of information:
+ *  "Has any item been pushed since the last reset?"
+ * Used to implement the Topological worklist policy, which is not technically a worklist policy
+ * @tparam T the type of the work items.
+ * @see Worklist
+ */
+template<typename T>
+class ObserverWorklist final : public Worklist<T>
+{
+public:
+  ~ObserverWorklist() override = default;
+
+  ObserverWorklist() = default;
+
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
+  {
+    JLM_UNREACHABLE("Dummy worklist");
+  }
+
+  T
+  PopWorkItem() override
+  {
+    JLM_UNREACHABLE("Dummy worklist");
+  }
+
+  void
+  PushWorkItem(T item [[maybe_unused]]) override
+  {
+    PushMade_ = true;
+  }
+
+  /**
+   * @return true if the PushWorkItem method has been called since the last time
+   * ResetPush() was called.
+   */
+  [[nodiscard]] bool
+  HasPushBeenMade() const noexcept
+  {
+    return PushMade_;
+  }
+
+  /**
+   * Makes the dummy worklist forget about being pushed to.
+   */
+  void
+  ResetPush()
+  {
+    PushMade_ = false;
+  }
+
+private:
+  bool PushMade_ = false;
 };
 
 }

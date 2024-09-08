@@ -46,7 +46,7 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
   bool was_normalized = true;
   for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++)
   {
-    auto argument = dynamic_cast<const jlm::rvsdg::argument *>(it->result(0)->origin());
+    auto argument = dynamic_cast<const rvsdg::RegionArgument *>(it->result(0)->origin());
     if (!argument)
       continue;
 
@@ -54,7 +54,7 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
     auto input = argument->input();
     for (n = 1; n < it->nresults(); n++)
     {
-      auto argument = dynamic_cast<const jlm::rvsdg::argument *>(it->result(n)->origin());
+      auto argument = dynamic_cast<const rvsdg::RegionArgument *>(it->result(n)->origin());
       if (!argument && argument->input() != input)
         break;
     }
@@ -244,25 +244,25 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
 
 /* gamma operation */
 
-gamma_op::~gamma_op() noexcept
+GammaOperation::~GammaOperation() noexcept
 {}
 
 std::string
-gamma_op::debug_string() const
+GammaOperation::debug_string() const
 {
   return "GAMMA";
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
-gamma_op::copy() const
+GammaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new gamma_op(*this));
+  return std::unique_ptr<operation>(new GammaOperation(*this));
 }
 
 bool
-gamma_op::operator==(const operation & other) const noexcept
+GammaOperation::operator==(const operation & other) const noexcept
 {
-  auto op = dynamic_cast<const gamma_op *>(&other);
+  auto op = dynamic_cast<const GammaOperation *>(&other);
   return op && op->nalternatives_ == nalternatives_;
 }
 
@@ -279,7 +279,7 @@ gamma_output::~gamma_output() noexcept
 bool
 gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 {
-  auto argument = dynamic_cast<const rvsdg::argument *>(result(0)->origin());
+  auto argument = dynamic_cast<const rvsdg::RegionArgument *>(result(0)->origin());
   if (!argument)
   {
     return false;
@@ -289,7 +289,7 @@ gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
   auto origin = argument->input()->origin();
   for (n = 1; n < nresults(); n++)
   {
-    argument = dynamic_cast<const rvsdg::argument *>(result(n)->origin());
+    argument = dynamic_cast<const rvsdg::RegionArgument *>(result(n)->origin());
     if (argument == nullptr || argument->input()->origin() != origin)
       break;
   }
@@ -404,9 +404,10 @@ gamma_node_get_default_normal_form_(
   return new jlm::rvsdg::gamma_normal_form(operator_class, parent, graph);
 }
 
-static void __attribute__((constructor)) register_node_normal_form(void)
+static void __attribute__((constructor))
+register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::gamma_op),
+      typeid(jlm::rvsdg::GammaOperation),
       gamma_node_get_default_normal_form_);
 }

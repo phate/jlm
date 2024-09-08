@@ -13,6 +13,7 @@ static void
 test_node_copy(void)
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   auto stype = jlm::tests::statetype::Create();
   auto vtype = jlm::tests::valuetype::Create();
@@ -27,14 +28,14 @@ test_node_copy(void)
   auto o1 = structural_output::create(n1, stype);
   auto o2 = structural_output::create(n1, vtype);
 
-  auto a1 = argument::create(n1->subregion(0), i1, stype);
-  auto a2 = argument::create(n1->subregion(0), i2, vtype);
+  auto & a1 = TestGraphArgument::Create(*n1->subregion(0), i1, stype);
+  auto & a2 = TestGraphArgument::Create(*n1->subregion(0), i2, vtype);
 
-  auto n2 = jlm::tests::test_op::create(n1->subregion(0), { a1 }, { stype });
-  auto n3 = jlm::tests::test_op::create(n1->subregion(0), { a2 }, { vtype });
+  auto n2 = jlm::tests::test_op::create(n1->subregion(0), { &a1 }, { stype });
+  auto n3 = jlm::tests::test_op::create(n1->subregion(0), { &a2 }, { vtype });
 
-  result::create(n1->subregion(0), n2->output(0), o1, stype);
-  result::create(n1->subregion(0), n3->output(0), o2, vtype);
+  TestGraphResult::Create(*n2->output(0), o1);
+  TestGraphResult::Create(*n3->output(0), o2);
 
   jlm::rvsdg::view(graph.root(), stdout);
 
@@ -61,10 +62,10 @@ test_node_copy(void)
 
   /* copy second into third region only with arguments */
   jlm::rvsdg::substitution_map smap2;
-  auto a3 = argument::create(n1->subregion(2), i1, stype);
-  auto a4 = argument::create(n1->subregion(2), i2, vtype);
-  smap2.insert(r2->argument(0), a3);
-  smap2.insert(r2->argument(1), a4);
+  auto & a3 = TestGraphArgument::Create(*n1->subregion(2), i1, stype);
+  auto & a4 = TestGraphArgument::Create(*n1->subregion(2), i2, vtype);
+  smap2.insert(r2->argument(0), &a3);
+  smap2.insert(r2->argument(1), &a4);
 
   smap2.insert(o1, o1);
   smap2.insert(o2, o2);

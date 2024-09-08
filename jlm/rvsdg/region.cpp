@@ -14,9 +14,7 @@
 namespace jlm::rvsdg
 {
 
-/* argument */
-
-argument::~argument() noexcept
+RegionArgument::~RegionArgument() noexcept
 {
   on_output_destroy(this);
 
@@ -24,28 +22,7 @@ argument::~argument() noexcept
     input()->arguments.erase(this);
 }
 
-argument::argument(
-    jlm::rvsdg::region * region,
-    jlm::rvsdg::structural_input * input,
-    const jlm::rvsdg::port & port)
-    : output(region, port),
-      input_(input)
-{
-  if (input)
-  {
-    if (input->node() != region->node())
-      throw jlm::util::error("Argument cannot be added to input.");
-
-    if (input->type() != *Type())
-    {
-      throw util::type_error(Type()->debug_string(), input->type().debug_string());
-    }
-
-    input->arguments.push_back(this);
-  }
-}
-
-argument::argument(
+RegionArgument::RegionArgument(
     jlm::rvsdg::region * region,
     jlm::rvsdg::structural_input * input,
     std::shared_ptr<const rvsdg::type> type)
@@ -66,37 +43,7 @@ argument::argument(
   }
 }
 
-argument &
-argument::Copy(rvsdg::region & region, structural_input * input)
-{
-  return *argument::create(&region, input, port());
-}
-
-jlm::rvsdg::argument *
-argument::create(
-    jlm::rvsdg::region * region,
-    structural_input * input,
-    const jlm::rvsdg::port & port)
-{
-  auto argument = new jlm::rvsdg::argument(region, input, port);
-  region->append_argument(argument);
-  return argument;
-}
-
-jlm::rvsdg::argument *
-argument::create(
-    jlm::rvsdg::region * region,
-    structural_input * input,
-    std::shared_ptr<const jlm::rvsdg::type> type)
-{
-  auto argument = new jlm::rvsdg::argument(region, input, std::move(type));
-  region->append_argument(argument);
-  return argument;
-}
-
-/* result */
-
-result::~result() noexcept
+RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
 
@@ -104,29 +51,7 @@ result::~result() noexcept
     output()->results.erase(this);
 }
 
-result::result(
-    jlm::rvsdg::region * region,
-    jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
-    const jlm::rvsdg::port & port)
-    : input(origin, region, port),
-      output_(output)
-{
-  if (output)
-  {
-    if (output->node() != region->node())
-      throw jlm::util::error("Result cannot be added to output.");
-
-    if (*Type() != *output->Type())
-    {
-      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
-    }
-
-    output->results.push_back(this);
-  }
-}
-
-result::result(
+RegionResult::RegionResult(
     jlm::rvsdg::region * region,
     jlm::rvsdg::output * origin,
     jlm::rvsdg::structural_output * output,
@@ -147,38 +72,6 @@ result::result(
     output->results.push_back(this);
   }
 }
-
-result &
-result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
-{
-  return *result::create(origin.region(), &origin, output, port());
-}
-
-jlm::rvsdg::result *
-result::create(
-    jlm::rvsdg::region * region,
-    jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
-    const jlm::rvsdg::port & port)
-{
-  auto result = new jlm::rvsdg::result(region, origin, output, port);
-  region->append_result(result);
-  return result;
-}
-
-jlm::rvsdg::result *
-result::create(
-    jlm::rvsdg::region * region,
-    jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
-    std::shared_ptr<const jlm::rvsdg::type> type)
-{
-  auto result = new jlm::rvsdg::result(region, origin, output, std::move(type));
-  region->append_result(result);
-  return result;
-}
-
-/* region */
 
 region::~region()
 {
@@ -213,7 +106,7 @@ region::region(jlm::rvsdg::structural_node * node, size_t index)
 }
 
 void
-region::append_argument(jlm::rvsdg::argument * argument)
+region::append_argument(RegionArgument * argument)
 {
   if (argument->region() != this)
     throw jlm::util::error("Appending argument to wrong region.");
@@ -232,7 +125,7 @@ void
 region::RemoveArgument(size_t index)
 {
   JLM_ASSERT(index < narguments());
-  jlm::rvsdg::argument * argument = arguments_[index];
+  RegionArgument * argument = arguments_[index];
 
   delete argument;
   for (size_t n = index; n < arguments_.size() - 1; n++)
@@ -244,7 +137,7 @@ region::RemoveArgument(size_t index)
 }
 
 void
-region::append_result(jlm::rvsdg::result * result)
+region::append_result(RegionResult * result)
 {
   if (result->region() != this)
     throw jlm::util::error("Appending result to wrong region.");
@@ -267,7 +160,7 @@ void
 region::RemoveResult(size_t index)
 {
   JLM_ASSERT(index < results_.size());
-  jlm::rvsdg::result * result = results_[index];
+  RegionResult * result = results_[index];
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)

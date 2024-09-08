@@ -31,15 +31,16 @@ convert_instructions(::llvm::Function & function, context & ctx)
       if (auto result = ConvertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
-      if (auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction))
+      // When an LLVM PhiNode is converted to a jlm phi_op, some of its operands may not be ready.
+      // The created phi_op therefore has no operands, but is instead added to a list.
+      // Once all basic blocks have been converted, all phi_ops are revisited and given operands.
+      if (!tacs.empty() && is<phi_op>(tacs.back()->operation()))
       {
+        auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);
         phis.push_back(phi);
-        ctx.get(bb)->append_first(tacs);
       }
-      else
-      {
-        ctx.get(bb)->append_last(tacs);
-      }
+
+      ctx.get(bb)->append_last(tacs);
     }
   }
 
@@ -55,14 +56,23 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
-      tacsvector_t tacs;
+      // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
+      // These are not visited during convert_basic_blocks, and thus do not have corresponding
+      // jlm::llvm::basic_blocks. The phi_op can safely ignore these, as they are dead.
+      if (!ctx.has(phi->getIncomingBlock(n)))
+        continue;
+
       auto bb = ctx.get(phi->getIncomingBlock(n));
+      tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       bb->insert_before_branch(tacs);
       nodes.push_back(bb);
     }
 
-    auto phi_tac = static_cast<const tacvariable *>(ctx.lookup_value(phi))->tac();
+    // Phi instructions with a single reachable predecessor should have already been elided
+    JLM_ASSERT(operands.size() >= 2);
+
+    auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
   }
 }
@@ -92,6 +102,8 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::Builtin, attribute::kind::Builtin },
         { ak::Cold, attribute::kind::Cold },
         { ak::Convergent, attribute::kind::Convergent },
+        { ak::CoroDestroyOnlyWhenComplete, attribute::kind::CoroDestroyOnlyWhenComplete },
+        { ak::DeadOnUnwind, attribute::kind::DeadOnUnwind },
         { ak::DisableSanitizerInstrumentation, attribute::kind::DisableSanitizerInstrumentation },
         { ak::FnRetThunkExtern, attribute::kind::FnRetThunkExtern },
         { ak::Hot, attribute::kind::Hot },
@@ -127,6 +139,7 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::NonNull, attribute::kind::NonNull },
         { ak::NullPointerIsValid, attribute::kind::NullPointerIsValid },
         { ak::OptForFuzzing, attribute::kind::OptForFuzzing },
+        { ak::OptimizeForDebugging, attribute::kind::OptimizeForDebugging },
         { ak::OptimizeForSize, attribute::kind::OptimizeForSize },
         { ak::OptimizeNone, attribute::kind::OptimizeNone },
         { ak::PresplitCoroutine, attribute::kind::PresplitCoroutine },
@@ -153,6 +166,7 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::SwiftError, attribute::kind::SwiftError },
         { ak::SwiftSelf, attribute::kind::SwiftSelf },
         { ak::WillReturn, attribute::kind::WillReturn },
+        { ak::Writable, attribute::kind::Writable },
         { ak::WriteOnly, attribute::kind::WriteOnly },
         { ak::ZExt, attribute::kind::ZExt },
         { ak::LastEnumAttr, attribute::kind::LastEnumAttr },

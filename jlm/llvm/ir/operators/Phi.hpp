@@ -403,7 +403,7 @@ public:
    * outputs might refer to arguments that have been removed by the application of this method. It
    * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
-   * \see argument#IsDead()
+   * \see RegionArgument#IsDead()
    * \see PrunePhiArguments()
    * \see RemovePhiOutputsWhere()
    * \see PrunePhiOutputs()
@@ -426,7 +426,7 @@ public:
   size_t
   PrunePhiArguments()
   {
-    auto match = [](const jlm::rvsdg::argument &)
+    auto match = [](const rvsdg::RegionArgument &)
     {
       return true;
     };
@@ -651,7 +651,7 @@ private:
 
 class rvresult;
 
-class rvargument final : public jlm::rvsdg::argument
+class rvargument final : public rvsdg::RegionArgument
 {
   friend class phi::builder;
   friend class phi::rvoutput;
@@ -660,13 +660,8 @@ public:
   ~rvargument() override;
 
 private:
-  rvargument(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-      : argument(region, nullptr, port),
-        output_(nullptr)
-  {}
-
   rvargument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
-      : argument(region, nullptr, std::move(type)),
+      : RegionArgument(region, nullptr, std::move(type)),
         output_(nullptr)
   {}
 
@@ -679,14 +674,6 @@ private:
 
   rvargument &
   operator=(rvargument &&) = delete;
-
-  static rvargument *
-  create(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-  {
-    auto argument = new rvargument(region, port);
-    region->append_argument(argument);
-    return argument;
-  }
 
   static rvargument *
   create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
@@ -722,22 +709,18 @@ private:
 class cvinput;
 class node;
 
-class cvargument final : public jlm::rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend class phi::node;
 
 public:
   ~cvargument() override;
 
-  cvargument(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
-      : jlm::rvsdg::argument(region, input, port)
-  {}
-
   cvargument(
       jlm::rvsdg::region * region,
       phi::cvinput * input,
       std::shared_ptr<const rvsdg::type> type)
-      : jlm::rvsdg::argument(region, input, std::move(type))
+      : rvsdg::RegionArgument(region, input, std::move(type))
   {}
 
 private:
@@ -755,14 +738,6 @@ private:
   Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
 
   static cvargument *
-  create(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
-  {
-    auto argument = new cvargument(region, input, port);
-    region->append_argument(argument);
-    return argument;
-  }
-
-  static cvargument *
   create(jlm::rvsdg::region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
   {
     auto argument = new cvargument(region, input, std::move(type));
@@ -774,13 +749,13 @@ public:
   cvinput *
   input() const noexcept
   {
-    return static_cast<cvinput *>(argument::input());
+    return static_cast<cvinput *>(RegionArgument::input());
   }
 };
 
 /* phi recursion variable result class */
 
-class rvresult final : public jlm::rvsdg::result
+class rvresult final : public rvsdg::RegionResult
 {
   friend class phi::builder;
 
@@ -792,16 +767,8 @@ private:
       jlm::rvsdg::region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
-      const jlm::rvsdg::port & port)
-      : jlm::rvsdg::result(region, origin, output, port)
-  {}
-
-  rvresult(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      rvoutput * output,
       std::shared_ptr<const rvsdg::type> type)
-      : jlm::rvsdg::result(region, origin, output, std::move(type))
+      : RegionResult(region, origin, output, std::move(type))
   {}
 
   rvresult(const rvresult &) = delete;
@@ -822,18 +789,6 @@ private:
       jlm::rvsdg::region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
-      const jlm::rvsdg::port & port)
-  {
-    auto result = new rvresult(region, origin, output, port);
-    region->append_result(result);
-    return result;
-  }
-
-  static rvresult *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      rvoutput * output,
       std::shared_ptr<const rvsdg::type> type)
   {
     auto result = new rvresult(region, origin, output, type);
@@ -845,7 +800,7 @@ public:
   rvoutput *
   output() const noexcept
   {
-    return static_cast<rvoutput *>(result::output());
+    return static_cast<rvoutput *>(RegionResult::output());
   }
 
   rvargument *

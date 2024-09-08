@@ -22,10 +22,10 @@ class DotHLS : public BaseHLS
 
 private:
   std::string
-  argument_to_dot(jlm::rvsdg::argument * port);
+  argument_to_dot(rvsdg::RegionArgument * port);
 
   std::string
-  result_to_dot(jlm::rvsdg::result * port);
+  result_to_dot(rvsdg::RegionResult * port);
 
   std::string
   node_to_dot(const jlm::rvsdg::node * node);

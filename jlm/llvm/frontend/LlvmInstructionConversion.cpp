@@ -677,17 +677,56 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   return nullptr;
 }
 
-static inline const variable *
+/**
+ * Given an LLVM phi instruction, checks if the instruction has only one predecessor basic block
+ * that is reachable (i.e., there exists a path from the entry point to the predecessor).
+ *
+ * @param phi the phi instruction
+ * @param ctx the context for the current LLVM to tac conversion
+ * @return the index of the single reachable predecessor basic block, or std::nullopt if it has many
+ */
+static std::optional<size_t>
+getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
+{
+  std::optional<size_t> predecessor = std::nullopt;
+  for (size_t n = 0; n < phi->getNumOperands(); n++)
+  {
+    if (!ctx.has(phi->getIncomingBlock(n)))
+      continue; // This predecessor was unreachable
+    if (predecessor.has_value())
+      return std::nullopt; // This is the second reachable predecessor. Abort!
+    predecessor = n;
+  }
+  // Any visited phi should have at least one predecessor
+  JLM_ASSERT(predecessor);
+  return predecessor;
+}
+
+static const variable *
 convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-  JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::PHI);
+  auto phi = ::llvm::dyn_cast<::llvm::PHINode>(i);
 
+  // If this phi instruction only has one predecessor basic block that is reachable,
+  // the phi operation can be removed.
+  if (auto singlePredecessor = getSinglePredecessor(phi, ctx))
+  {
+    // The incoming value is either a constant,
+    // or a value from the predecessor basic block that has already been converted
+    return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
+  }
+
+  // This phi instruction can be reached from multiple basic blocks.
+  // As some of these blocks might not be converted yet, some of the phi's operands may reference
+  // instructions that have not yet been converted.
+  // For now, a phi_op with no operands is created.
+  // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
   auto type = ConvertType(i->getType(), ctx);
   tacs.push_back(phi_op::create({}, type));
   return tacs.back()->result(0);
 }
 
-static inline const variable *
+static const variable *
 convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::GetElementPtrInst>(inst));
@@ -752,7 +791,7 @@ static bool
 IsVolatile(const ::llvm::Value & value)
 {
   auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
-  JLM_ASSERT(constant != nullptr && constant->getType()->getBitWidth() == 1);
+  JLM_ASSERT(constant != nullptr && constant->getType()->getIntegerBitWidth() == 1);
 
   auto apInt = constant->getValue();
   JLM_ASSERT(apInt.isZero() || apInt.isOne());
@@ -982,7 +1021,8 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
       { { ::llvm::Type::HalfTyID, fpsize::half },
         { ::llvm::Type::FloatTyID, fpsize::flt },
         { ::llvm::Type::DoubleTyID, fpsize::dbl },
-        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 } });
+        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
+        { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
   std::unique_ptr<rvsdg::operation> operation;
   auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();

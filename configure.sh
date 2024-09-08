@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-LLVM_VERSION=17
+LLVM_VERSION=18
 
 # Default values for all tunables.
 TARGET="release"
@@ -9,10 +9,10 @@ ENABLE_ASSERTS="no"
 LLVM_CONFIG_BIN="llvm-config-"${LLVM_VERSION}
 ENABLE_COVERAGE="no"
 ENABLE_HLS=
-CIRCT_PATH=
+CIRCT_PATH="./usr"
 CIRCT_LDFLAGS=
 ENABLE_MLIR=
-MLIR_PATH=
+MLIR_PATH="./usr"
 MLIR_LDFLAGS=
 
 function usage()
@@ -23,12 +23,12 @@ function usage()
 	echo "  --target MODE         Sets the build mode. Supported build modes are"
 	echo "                        'debug' and 'release'. [${TARGET}]"
 	echo "  --enable-asserts      Enables asserts."
-	echo "  --enable-hls PATH     Enable the HLS backend, and sets the path to"
-	echo "                        CIRCT, which the backend depends on."
+	echo "  --enable-hls[=PATH]   Enable the HLS backend, and optionally sets a custom"
+	echo "                        path to the CIRCT installation. [${CIRCT_PATH}]"
 	echo "  --llvm-config PATH    The llvm-config script used to determine up llvm"
 	echo "                        build dependencies. [${LLVM_CONFIG_BIN}]"
-	echo "  --enable-mlir PATH    Sets the path to the MLIR RVSDG Dialect and enables"
-	echo "                        building the MLIR backend and frontend. [${MLIR_PATH}]"
+	echo "  --enable-mlir[=PATH]  Enables the MLIR Dialect, and optionally sets a custom"
+	echo "                        path to the MLIR dialect installation. [${MLIR_PATH}]"
 	echo "  --enable-coverage     Enable test coverage computation target."
 	echo "  --help                Prints this message and stops."
 	echo
@@ -47,7 +47,10 @@ while [[ "$#" -ge 1 ]] ; do
 		--enable-hls)
 			ENABLE_HLS="yes"
 			shift
-			CIRCT_PATH="$1"
+			;;
+		--enable-hls=*)
+			ENABLE_HLS="yes"
+			CIRCT_PATH="${1#*=}"
 			shift
 			;;
 		--enable-asserts)
@@ -60,16 +63,19 @@ while [[ "$#" -ge 1 ]] ; do
 			shift
 			;;
 		--enable-mlir)
-			shift
-			MLIR_PATH="$1"
 			ENABLE_MLIR="yes"
+			shift
+			;;
+		--enable-mlir=*)
+			ENABLE_MLIR="yes"
+			MLIR_PATH="${1#*=}"
 			shift
 			;;
 		--enable-coverage)
 			ENABLE_COVERAGE="yes"
 			shift
 			;;
-		--help)
+		-*) # Any unknown option triggers the usage text. This includes --help and -h
 			usage >&2
 			exit 1
 			;;
@@ -126,20 +132,26 @@ if [ "${ENABLE_HLS}" == "yes" ] ; then
 		"-lCIRCTImportFIRFile"
 		"-lCIRCTFIRRTLTransforms"
 		"-lCIRCTHWTransforms"
+		"-lCIRCTOMTransforms"
+		"-lCIRCTSim"
 		"-lCIRCTSVTransforms"
 		"-lCIRCTTransforms"
+		"-lCIRCTTargetDebugInfo"
 		"-lCIRCTSV"
 		"-lCIRCTComb"
+		"-lCIRCTSupport"
+		"-lCIRCTDebug"
 		"-lCIRCTLTL"
 		"-lCIRCTVerif"
 		"-lCIRCTFIRRTL"
 		"-lCIRCTSeq"
+		"-lCIRCTSeqToSV"
 		"-lCIRCTSeqTransforms"
 		"-lCIRCTHW"
 		"-lCIRCTVerifToSV"
+		"-lCIRCTSimToSV"
 		"-lCIRCTExportChiselInterface"
 		"-lCIRCTOM"
-		"-lCIRCTSupport"
 		"-lMLIR"
 	)
 fi

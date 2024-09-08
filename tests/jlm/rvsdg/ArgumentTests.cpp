@@ -10,12 +10,13 @@
 #include <cassert>
 
 /**
- * Test check for adding argument to input of wrong structural node.
+ * Test check for adding a region argument to input of wrong structural node.
  */
 static int
 ArgumentNodeMismatch()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -32,7 +33,7 @@ ArgumentNodeMismatch()
   bool inputErrorHandlerCalled = false;
   try
   {
-    argument::create(structuralNode2->subregion(0), structuralInput, valueType);
+    TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput, valueType);
   }
   catch (jlm::util::error & e)
   {
@@ -67,7 +68,7 @@ ArgumentInputTypeMismatch()
   bool exceptionWasCaught = false;
   try
   {
-    jlm::rvsdg::argument::create(structuralNode->subregion(0), structuralInput, stateType);
+    TestGraphArgument::Create(*structuralNode->subregion(0), structuralInput, stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
@@ -80,10 +81,7 @@ ArgumentInputTypeMismatch()
   exceptionWasCaught = false;
   try
   {
-    jlm::rvsdg::argument::create(
-        structuralNode->subregion(0),
-        structuralInput,
-        jlm::rvsdg::port(stateType));
+    TestGraphArgument::Create(*structuralNode->subregion(0), structuralInput, stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

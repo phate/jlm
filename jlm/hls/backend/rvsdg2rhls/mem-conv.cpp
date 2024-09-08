@@ -31,8 +31,8 @@ jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * respo
     auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
     JLM_ASSERT(ln);
     auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
-    auto argument = jlm::rvsdg::argument::create(target, input, response->Type());
-    return argument;
+    auto & argument = EntryArgument::Create(*target, *input, response->Type());
+    return &argument;
   }
 }
 
@@ -48,7 +48,7 @@ jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * reques
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
     auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
-    jlm::rvsdg::result::create(request->region(), request, output, request->Type());
+    ExitResult::Create(*request, *output);
     return route_request(target, output);
   }
 }
@@ -84,7 +84,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
 const jlm::rvsdg::bitconstant_op *
 trace_channel(const jlm::rvsdg::output * dst)
 {
-  if (auto arg = dynamic_cast<const jlm::rvsdg::argument *>(dst))
+  if (auto arg = dynamic_cast<const jlm::rvsdg::RegionArgument *>(dst))
   {
     return trace_channel(arg->input()->origin());
   }
@@ -120,7 +120,7 @@ const jlm::rvsdg::output *
 trace_call(const jlm::rvsdg::output * output)
 {
   // version of trace call for rhls
-  if (auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output))
+  if (auto argument = dynamic_cast<const jlm::rvsdg::RegionArgument *>(output))
   {
     auto graph = output->region()->graph();
     if (argument->region() == graph->root())
@@ -212,7 +212,7 @@ trace_function_calls(
         trace_function_calls(&arg, calls, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -235,7 +235,7 @@ find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
-  jlm::rvsdg::argument * response_function = nullptr;
+  jlm::rvsdg::RegionArgument * response_function = nullptr;
   for (size_t i = 0; i < lambda->ncvarguments(); ++i)
   {
     auto ip = lambda->cvargument(i)->input();
@@ -423,7 +423,7 @@ trace_pointer_argument(
         trace_pointer_argument(&arg, load_nodes, store_nodes, decouple_nodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -496,7 +496,7 @@ IsDecoupledFunctionPointer(
         isDecoupled |= IsDecoupledFunctionPointer(&arg, visited);
       }
     }
-    else if (auto result = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto result = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto backedgeResult = dynamic_cast<jlm::hls::backedge_result *>(result))
       {
@@ -693,7 +693,8 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  jlm::rvsdg::result::create(newLambda->region(), newOut, nullptr, newOut->Type());
+  auto oldExport = lambda->ComputeCallSummary()->GetRvsdgExport();
+  llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
   lambda->region()->RemoveResult((*lambda->output()->begin())->index());

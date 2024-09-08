@@ -8,7 +8,6 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <circt/Dialect/FIRRTL/FIRParser.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
 namespace jlm::hls
@@ -1135,7 +1134,9 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       name,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
 
   auto body = module.getBodyBlock();
@@ -1198,7 +1199,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // memory
-  auto arraytype = dynamic_cast<const llvm::arraytype *>(&lmem_op->result(0).type());
+  auto arraytype = std::dynamic_pointer_cast<const llvm::arraytype>(lmem_op->result(0));
   size_t depth = arraytype->nelements();
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
@@ -1218,7 +1219,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
       2,
       1,
       depth,
-      RUWAttr::New,
+      circt::firrtl::RUWAttr::New,
       memNames,
       "mem");
   body->push_back(memory);
@@ -2454,7 +2455,7 @@ RhlsToFirrtlConverter::DropMSBs(mlir::Block * body, mlir::Value value, int amoun
 // Returns the output of a node or the argument of a region that has
 // been instantiated as a module
 jlm::rvsdg::output *
-RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
+RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 {
   // Check if the argument is part of a hls::loop_node
   auto region = arg->region();
@@ -2473,7 +2474,7 @@ RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
       // Check if we are in a nested region and directly
       // connected to the outer regions argument
       auto origin = arg->input()->origin();
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // Need to find the source of the outer regions argument
         return TraceArgument(o);
@@ -2526,7 +2527,9 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       moduleName,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
@@ -2551,7 +2554,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       // Get the RVSDG node that's the origin of this input
       jlm::rvsdg::simple_input * input = rvsdgNode->input(i);
       auto origin = input->origin();
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         origin = TraceArgument(o);
       }
@@ -2561,7 +2564,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
         origin = TraceStructuralOutput(o);
       }
       // now origin is either a simple_output or a top-level argument
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // The port of the instance is connected to an argument
         // of the region
@@ -2616,7 +2619,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
         // Get the RVSDG node that's the origin of this input
         auto * input = dynamic_cast<jlm::rvsdg::simple_input *>(requestNode->input(i));
         auto origin = input->origin();
-        if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+        if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
           origin = TraceArgument(o);
         }
@@ -2762,7 +2765,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
     // Found the source node
     return o;
   }
-  else if (dynamic_cast<jlm::rvsdg::argument *>(origin))
+  else if (dynamic_cast<rvsdg::RegionArgument *>(origin))
   {
     throw std::logic_error("Encountered pass through argument - should be eliminated");
   }
@@ -2884,7 +2887,9 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       moduleName,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
@@ -3567,7 +3572,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
   {
     auto portName = module.getPortName(i);
     auto port = module.getArgument(i);
-    if (portName.startswith("o"))
+    if (portName.starts_with("o"))
     {
       // out port
       for (auto & use : port.getUses())
@@ -3861,7 +3866,9 @@ RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::simple_node * node, bool m
   return Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       name,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
 }
 
@@ -3973,8 +3980,8 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
   if (auto op = dynamic_cast<const local_mem_op *>(&node->operation()))
   {
     append.append("_S");
-    append.append(
-        std::to_string(dynamic_cast<const llvm::arraytype *>(&op->result(0).type())->nelements()));
+    append.append(std::to_string(
+        std::dynamic_pointer_cast<const llvm::arraytype>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));
@@ -4043,11 +4050,7 @@ RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
   std::error_code EC;
   ::llvm::raw_fd_ostream output(fileName, EC);
   size_t targetLineLength = 100;
-  auto status = circt::firrtl::exportFIRFile(
-      module,
-      output,
-      targetLineLength,
-      circt::firrtl::FIRVersion::defaultFIRVersion());
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, DefaultFIRVersion_);
 
   if (status.failed())
   {
@@ -4078,11 +4081,7 @@ RhlsToFirrtlConverter::toString(const circt::firrtl::CircuitOp circuit)
   ::llvm::raw_string_ostream output(outputString);
 
   size_t targetLineLength = 100;
-  auto status = circt::firrtl::exportFIRFile(
-      module,
-      output,
-      targetLineLength,
-      circt::firrtl::FIRVersion::defaultFIRVersion());
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, DefaultFIRVersion_);
   if (status.failed())
     throw std::logic_error("Exporting of firrtl failed");
 

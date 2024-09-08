@@ -123,7 +123,7 @@ public:
   [[nodiscard]] const rvsdg::valuetype &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(&argument(1).type());
+    return *util::AssertedCast<const rvsdg::valuetype>(argument(1).get());
   }
 
   [[nodiscard]] virtual size_t
@@ -148,9 +148,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-          CreateOperandTypes(std::move(storedType), numMemoryStates),
-          { numMemoryStates, MemoryStateType::Create() },
-          alignment)
+            CreateOperandTypes(std::move(storedType), numMemoryStates),
+            { numMemoryStates, MemoryStateType::Create() },
+            alignment)
   {}
 
   bool
@@ -414,9 +414,9 @@ public:
       size_t numMemoryStates,
       size_t alignment)
       : StoreOperation(
-          CreateOperandTypes(std::move(storedType), numMemoryStates),
-          CreateResultTypes(numMemoryStates),
-          alignment)
+            CreateOperandTypes(std::move(storedType), numMemoryStates),
+            CreateResultTypes(numMemoryStates),
+            alignment)
   {}
 
   bool

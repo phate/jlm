@@ -37,8 +37,8 @@ public:
       const RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
       : util::Statistics(
-          Statistics::Id::RegionAwareMemoryNodeProvisioning,
-          rvsdgModule.SourceFileName()),
+            Statistics::Id::RegionAwareMemoryNodeProvisioning,
+            rvsdgModule.SourceFileName()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())
@@ -444,7 +444,7 @@ public:
   }
 
   bool
-  ContainsExternalFunctionNodes(const rvsdg::argument & import) const
+  ContainsExternalFunctionNodes(const rvsdg::RegionArgument & import) const
   {
     return ExternalFunctionNodes_.find(&import) != ExternalFunctionNodes_.end();
   }
@@ -463,7 +463,7 @@ public:
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetExternalFunctionNodes(const rvsdg::argument & import) const
+  GetExternalFunctionNodes(const rvsdg::RegionArgument & import) const
   {
     JLM_ASSERT(ContainsExternalFunctionNodes(import));
 
@@ -483,7 +483,7 @@ public:
 
   void
   AddExternalFunctionNodes(
-      const rvsdg::argument & import,
+      const rvsdg::RegionArgument & import,
       util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
   {
     JLM_ASSERT(!ContainsExternalFunctionNodes(import));
@@ -609,8 +609,9 @@ private:
 
   RegionSummaryMap RegionSummaries_;
   const PointsToGraph & PointsToGraph_;
-  std::unordered_map<const rvsdg::argument *, util::HashSet<const PointsToGraph::MemoryNode *>>
-      ExternalFunctionNodes_;
+  std::
+      unordered_map<const rvsdg::RegionArgument *, util::HashSet<const PointsToGraph::MemoryNode *>>
+          ExternalFunctionNodes_;
 };
 
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept = default;

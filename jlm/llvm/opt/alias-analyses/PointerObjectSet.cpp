@@ -422,6 +422,13 @@ PointerObjectSet::MakePointsToSetSuperset(
   return PropagateNewPointees(superset, subset, NewPointee);
 }
 
+void
+PointerObjectSet::RemoveAllPointees(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  PointsToSets_[root].Clear();
+}
+
 bool
 PointerObjectSet::IsPointingTo(PointerObjectIndex pointer, PointerObjectIndex pointee) const
 {
@@ -1429,7 +1436,8 @@ template<
     bool EnableOnlineCycleDetection,
     bool EnableHybridCycleDetection,
     bool EnableLazyCycleDetection,
-    bool EnableDifferencePropagation>
+    bool EnableDifferencePropagation,
+    bool EnablePreferImplicitPointees>
 void
 PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 {
@@ -1569,6 +1577,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     return root;
   };
 
+  // Removes all explicit pointees from the given PointerObject
+  const auto RemoveAllPointees = [&](PointerObjectIndex index)
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(index));
+    Set_.RemoveAllPointees(index);
+
+    // Prevent the difference propagation from keeping any pointees after the removal
+    if constexpr (EnableDifferencePropagation)
+      differencePropagation.OnRemoveAllPointees(index);
+  };
+
   // Lambda for getting all superset edge successors of a given pointer object in the subset graph.
   // If \p node is not a unification root, its set of successors will always be empty.
   const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
@@ -1589,6 +1608,9 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
   if constexpr (EnableHybridCycleDetection)
     statistics.NumHybridCycleUnifications = 0;
+
+  if constexpr (EnablePreferImplicitPointees)
+    statistics.NumExplicitPointeesRemoved = 0;
 
   // The worklist, initialized with every unification root
   Worklist worklist;
@@ -1624,6 +1646,22 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     // If this is a self-edge, ignore
     if (superset == subset)
       return;
+
+    if constexpr (EnablePreferImplicitPointees)
+    {
+      // No need to add edges when all pointees propagate implicitly either way
+      if (Set_.IsPointingToExternal(superset) && Set_.HasPointeesEscaping(subset))
+      {
+        return;
+      }
+
+      // Ignore adding simple edges to nodes that should only have implicit pointees
+      if (Set_.CanTrackPointeesImplicitly(superset))
+      {
+        MarkAsPointeesEscaping(subset);
+        return;
+      }
+    }
 
     // If the edge already exists, ignore
     if (!supersetEdges[subset].Insert(superset))
@@ -1741,6 +1779,21 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       }
     }
 
+    // If propagating to any node with AllPointeesEscape, we should have AllPointeesEscape
+    if (EnablePreferImplicitPointees && !Set_.HasPointeesEscaping(node))
+    {
+      for (auto superset : supersetEdges[node].Items())
+      {
+        if (Set_.HasPointeesEscaping(superset))
+        {
+          // Mark the current node.
+          // This is the beginning of the work item visit, so node does not need to be added again
+          Set_.MarkAsPointeesEscaping(node);
+          break;
+        }
+      }
+    }
+
     const auto pointeesEscaping = Set_.HasPointeesEscaping(node);
     // If difference propagation is enabled, this bool is true if this is the first time node
     // is being visited by the worklist with the PointeesEscaping flag set
@@ -1784,6 +1837,14 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       }
     }
 
+    // If this node can track all pointees implicitly, remove its explicit nodes
+    if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(node))
+    {
+      *(statistics.NumExplicitPointeesRemoved) += Set_.GetPointsToSet(node).Size();
+      // This also causes newPointees to become empty
+      RemoveAllPointees(node);
+    }
+
     // Propagate P(n) along all edges n -> superset
     auto supersets = supersetEdges[node].Items();
     for (auto it = supersets.begin(); it != supersets.end();)
@@ -1792,6 +1853,14 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
       // Remove self-edges
       if (supersetParent == node)
+      {
+        it = supersetEdges[node].Erase(it);
+        continue;
+      }
+
+      // Remove edges from nodes with "all pointees escape" to nodes with "points to all escaped"
+      if (EnablePreferImplicitPointees && pointeesEscaping
+          && Set_.IsPointingToExternal(supersetParent))
       {
         it = supersetEdges[node].Erase(it);
         continue;
@@ -1892,8 +1961,62 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     FlushNewSupersetEdges();
   };
 
-  while (worklist.HasMoreWorkItems())
-    HandleWorkItem(worklist.PopWorkItem());
+  // The observer worklist only contains one bit of state:
+  //   "has anything been pushed since last reset?"
+  // It does not provide an iteration order, so if any work item need to be revisited,
+  // we do a topological traversal over all work items instead, called a "sweep".
+  // Performing topological sorting also detects all cycles, which are unified away.
+  constexpr bool useTopologicalTraversal =
+      std::is_same_v<Worklist, util::ObserverWorklist<PointerObjectIndex>>;
+
+  if constexpr (useTopologicalTraversal)
+  {
+    std::vector<PointerObjectIndex> sccIndex;
+    std::vector<PointerObjectIndex> topologicalOrder;
+
+    statistics.NumTopologicalWorklistSweeps = 0;
+
+    while (worklist.HasPushBeenMade())
+    {
+      (*statistics.NumTopologicalWorklistSweeps)++;
+      worklist.ResetPush();
+
+      // First perform a topological sort of the entire subset graph, with respect to simple edges
+      util::FindStronglyConnectedComponents<PointerObjectIndex>(
+          Set_.NumPointerObjects(),
+          GetSupersetEdgeSuccessors,
+          sccIndex,
+          topologicalOrder);
+
+      // Visit all nodes in topological order
+      // cycles will result in neighbouring nodes in the topologicalOrder sharing sccIndex
+      for (size_t i = 0; i < topologicalOrder.size(); i++)
+      {
+        const auto node = topologicalOrder[i];
+        const auto nextNodeIndex = i + 1;
+        if (nextNodeIndex < topologicalOrder.size())
+        {
+          auto & nextNode = topologicalOrder[nextNodeIndex];
+          if (sccIndex[node] == sccIndex[nextNode])
+          {
+            // This node is in a cycle with the next node, unify them
+            nextNode = UnifyPointerObjects(node, nextNode);
+            continue;
+          }
+        }
+
+        // Otherwise handle the work item (only unification roots)
+        if (Set_.IsUnificationRoot(node))
+          HandleWorkItem(node);
+      }
+    }
+  }
+  else
+  {
+    // The worklist is a normal worklist
+    while (worklist.HasMoreWorkItems())
+      HandleWorkItem(worklist.PopWorkItem());
+  }
 
   if constexpr (EnableOnlineCycleDetection)
   {
@@ -1915,7 +2038,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     bool enableOnlineCycleDetection,
     bool enableHybridCycleDetection,
     bool enableLazyCycleDetection,
-    bool enableDifferencePropagation)
+    bool enableDifferencePropagation,
+    bool enablePreferImplicitPointees)
 {
 
   // Takes all parameters as compile time types.
@@ -1925,14 +2049,22 @@ PointerObjectConstraintSet::SolveUsingWorklist(
                             auto tOnlineCycleDetection,
                             auto tHybridCycleDetection,
                             auto tLazyCycleDetection,
-                            auto tDifferencePropagation) -> WorklistStatistics
+                            auto tDifferencePropagation,
+                            auto tPreferImplicitPointees) -> WorklistStatistics
   {
     using Worklist = std::remove_pointer_t<decltype(tWorklist)>;
     constexpr bool vOnlineCycleDetection = decltype(tOnlineCycleDetection)::value;
     constexpr bool vHybridCycleDetection = decltype(tHybridCycleDetection)::value;
     constexpr bool vLazyCycleDetection = decltype(tLazyCycleDetection)::value;
     constexpr bool vDifferencePropagation = decltype(tDifferencePropagation)::value;
+    constexpr bool vPreferImplicitPointees = decltype(tPreferImplicitPointees)::value;
 
+    if constexpr (
+        std::is_same_v<Worklist, util::ObserverWorklist<PointerObjectIndex>>
+        && (vOnlineCycleDetection || vHybridCycleDetection || vLazyCycleDetection))
+    {
+      JLM_UNREACHABLE("Can not enable online, hybrid or lazy cycle detection with the topo policy");
+    }
     if constexpr (vOnlineCycleDetection && (vHybridCycleDetection || vLazyCycleDetection))
     {
       JLM_UNREACHABLE("Can not enable hybrid or lazy cycle detection with online cycle detection");
@@ -1945,7 +2077,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
           vOnlineCycleDetection,
           vHybridCycleDetection,
           vLazyCycleDetection,
-          vDifferencePropagation>(statistics);
+          vDifferencePropagation,
+          vPreferImplicitPointees>(statistics);
       return statistics;
     }
   };
@@ -1953,6 +2086,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   std::variant<
       typename util::LrfWorklist<PointerObjectIndex> *,
       typename util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
+      typename util::ObserverWorklist<PointerObjectIndex> *,
       typename util::LifoWorklist<PointerObjectIndex> *,
       typename util::FifoWorklist<PointerObjectIndex> *>
       policyVariant;
@@ -1961,6 +2095,8 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     policyVariant = (util::LrfWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
     policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
+  else if (policy == WorklistSolverPolicy::TopologicalSort)
+    policyVariant = (util::ObserverWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
     policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)
@@ -1992,13 +2128,20 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else
     differencePropagationVariant = std::false_type{};
 
+  std::variant<std::true_type, std::false_type> preferImplicitPropagationVariant;
+  if (enablePreferImplicitPointees)
+    preferImplicitPropagationVariant = std::true_type{};
+  else
+    preferImplicitPropagationVariant = std::false_type{};
+
   return std::visit(
       Dispatch,
       policyVariant,
       onlineCycleDetectionVariant,
       hybridCycleDetectionVariant,
       lazyCycleDetectionVariant,
-      differencePropagationVariant);
+      differencePropagationVariant,
+      preferImplicitPropagationVariant);
 }
 
 const char *
@@ -2010,6 +2153,8 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
     return "LeastRecentlyFired";
   case WorklistSolverPolicy::TwoPhaseLeastRecentlyFired:
     return "TwoPhaseLeastRecentlyFired";
+  case WorklistSolverPolicy::TopologicalSort:
+    return "TopologicalSort";
   case WorklistSolverPolicy::FirstInFirstOut:
     return "FirstInFirstOut";
   case WorklistSolverPolicy::LastInFirstOut:

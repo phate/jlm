@@ -73,10 +73,6 @@ class unary_op final : public rvsdg::unary_op
 public:
   virtual ~unary_op() noexcept;
 
-  inline unary_op(const rvsdg::port & srcport, const rvsdg::port & dstport) noexcept
-      : rvsdg::unary_op(srcport.Type(), dstport.Type())
-  {}
-
   inline unary_op(
       std::shared_ptr<const rvsdg::type> srctype,
       std::shared_ptr<const rvsdg::type> dsttype) noexcept
@@ -97,26 +93,6 @@ public:
 
   virtual std::unique_ptr<rvsdg::operation>
   copy() const override;
-
-  static inline rvsdg::node *
-  create(
-      rvsdg::region * region,
-      const rvsdg::port & srcport,
-      rvsdg::output * operand,
-      const rvsdg::port & dstport)
-  {
-    return rvsdg::simple_node::create(region, std::move(unary_op(srcport, dstport)), { operand });
-  }
-
-  static inline rvsdg::output *
-  create_normalized(
-      const rvsdg::port & srcport,
-      rvsdg::output * operand,
-      const rvsdg::port & dstport)
-  {
-    unary_op op(srcport, dstport);
-    return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
-  }
 
   static inline rvsdg::node *
   create(
@@ -191,17 +167,6 @@ public:
 
   static inline rvsdg::node *
   create(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
-      rvsdg::output * op1,
-      rvsdg::output * op2)
-  {
-    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
-    return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
-  }
-
-  static inline rvsdg::node *
-  create(
       const std::shared_ptr<const rvsdg::type> & srctype,
       std::shared_ptr<const rvsdg::type> dsttype,
       rvsdg::output * op1,
@@ -209,17 +174,6 @@ public:
   {
     binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
     return rvsdg::simple_node::create(op1->region(), op, { op1, op2 });
-  }
-
-  static inline rvsdg::output *
-  create_normalized(
-      const rvsdg::port & srcport,
-      const rvsdg::port & dstport,
-      rvsdg::output * op1,
-      rvsdg::output * op2)
-  {
-    binary_op op(srcport.Type(), dstport.Type(), rvsdg::binary_op::flags::none);
-    return rvsdg::simple_node::create_normalized(op1->region(), op, { op1, op2 })[0];
   }
 
   static inline rvsdg::output *
@@ -390,51 +344,71 @@ create_testop(
   return rvsdg::simple_node::create_normalized(region, op, { operands });
 }
 
-class TestGraphArgument final : public jlm::rvsdg::argument
+class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 {
 private:
-  TestGraphArgument(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
-      : jlm::rvsdg::argument(&region, nullptr, type)
+  TestGraphArgument(
+      jlm::rvsdg::region & region,
+      jlm::rvsdg::structural_input * input,
+      std::shared_ptr<const jlm::rvsdg::type> type)
+      : jlm::rvsdg::RegionArgument(&region, input, type)
   {}
 
 public:
   TestGraphArgument &
   Copy(jlm::rvsdg::region & region, jlm::rvsdg::structural_input * input) override
   {
-    JLM_ASSERT(input == nullptr);
-    return Create(region, Type());
+    return Create(region, input, Type());
   }
 
   static TestGraphArgument &
-  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  Create(
+      jlm::rvsdg::region & region,
+      jlm::rvsdg::structural_input * input,
+      std::shared_ptr<const jlm::rvsdg::type> type)
   {
-    auto graphArgument = new TestGraphArgument(region, std::move(type));
+    auto graphArgument = new TestGraphArgument(region, input, std::move(type));
     region.append_argument(graphArgument);
     return *graphArgument;
   }
 };
 
-class TestGraphResult final : public jlm::rvsdg::result
+class TestGraphResult final : public jlm::rvsdg::RegionResult
 {
 private:
-  explicit TestGraphResult(jlm::rvsdg::output & origin)
-      : jlm::rvsdg::result(origin.region(), &origin, nullptr, origin.Type())
+  TestGraphResult(
+      jlm::rvsdg::region & region,
+      jlm::rvsdg::output & origin,
+      jlm::rvsdg::structural_output * output)
+      : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
+  {}
+
+  TestGraphResult(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+      : TestGraphResult(*origin.region(), origin, output)
   {}
 
 public:
   TestGraphResult &
   Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
   {
-    JLM_ASSERT(output == nullptr);
-    return Create(origin);
+    return Create(origin, output);
   }
 
   static TestGraphResult &
-  Create(jlm::rvsdg::output & origin)
+  Create(
+      jlm::rvsdg::region & region,
+      jlm::rvsdg::output & origin,
+      jlm::rvsdg::structural_output * output)
   {
-    auto graphResult = new TestGraphResult(origin);
+    auto graphResult = new TestGraphResult(region, origin, output);
     origin.region()->append_result(graphResult);
     return *graphResult;
+  }
+
+  static TestGraphResult &
+  Create(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+  {
+    return Create(*origin.region(), origin, output);
   }
 };
 

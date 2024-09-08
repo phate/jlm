@@ -111,7 +111,7 @@ trace_call(jlm::rvsdg::input * input)
 {
   auto graph = input->region()->graph();
 
-  auto argument = dynamic_cast<const jlm::rvsdg::argument *>(input->origin());
+  auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
   const jlm::rvsdg::output * result;
   if (auto to = dynamic_cast<const jlm::rvsdg::theta_output *>(input->origin()))
   {
@@ -385,11 +385,8 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       // copy function into rhls
       auto new_ln = ln->copy(rhls->Rvsdg().root(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
-      jlm::rvsdg::result::create(
-          rhls->Rvsdg().root(),
-          new_ln->output(),
-          nullptr,
-          new_ln->output()->Type());
+      auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+      jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
@@ -416,16 +413,18 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
 {
   pre_opt(rhls);
   merge_gamma(rhls);
+  util::StatisticsCollector statisticsCollector;
+  llvm::DeadNodeElimination llvmDne;
+  llvmDne.run(rhls, statisticsCollector);
 
-  //    mem_sep(rhls);
   mem_sep_argument(rhls);
-  // run conversion on copy
   remove_unused_state(rhls);
   // main conversion steps
-  //	add_triggers(rhls); // TODO: is this needed?
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
+  hls::cne hlsCne;
+  hlsCne.run(rhls, statisticsCollector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);

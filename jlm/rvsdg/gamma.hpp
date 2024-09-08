@@ -68,12 +68,12 @@ private:
 class output;
 class type;
 
-class gamma_op final : public structural_op
+class GammaOperation final : public structural_op
 {
 public:
-  virtual ~gamma_op() noexcept;
+  ~GammaOperation() noexcept override;
 
-  inline constexpr gamma_op(size_t nalternatives) noexcept
+  explicit constexpr GammaOperation(size_t nalternatives) noexcept
       : structural_op(),
         nalternatives_(nalternatives)
   {}
@@ -96,7 +96,8 @@ public:
   static jlm::rvsdg::gamma_normal_form *
   normal_form(jlm::rvsdg::graph * graph) noexcept
   {
-    return static_cast<jlm::rvsdg::gamma_normal_form *>(graph->node_normal_form(typeid(gamma_op)));
+    return static_cast<jlm::rvsdg::gamma_normal_form *>(
+        graph->node_normal_form(typeid(GammaOperation)));
   }
 
 private:
@@ -368,7 +369,7 @@ public:
     return arguments.size();
   }
 
-  inline jlm::rvsdg::argument *
+  [[nodiscard]] RegionArgument *
   argument(size_t n) const noexcept
   {
     JLM_ASSERT(n < narguments());
@@ -427,7 +428,7 @@ public:
     return results.size();
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   result(size_t n) const noexcept
   {
     JLM_ASSERT(n < nresults());
@@ -453,7 +454,7 @@ public:
 /* gamma node method definitions */
 
 inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternatives)
-    : structural_node(jlm::rvsdg::gamma_op(nalternatives), predicate->region(), nalternatives)
+    : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
   node::add_input(std::unique_ptr<node_input>(
       new gamma_input(this, predicate, ctltype::Create(nalternatives))));
@@ -462,7 +463,7 @@ inline gamma_node::gamma_node(jlm::rvsdg::output * predicate, size_t nalternativ
 /**
  * Represents a region argument in a gamma subregion.
  */
-class GammaArgument final : public argument
+class GammaArgument final : public RegionArgument
 {
   friend gamma_node;
 
@@ -474,7 +475,7 @@ public:
 
 private:
   GammaArgument(rvsdg::region & region, gamma_input & input)
-      : argument(&region, &input, input.Type())
+      : RegionArgument(&region, &input, input.Type())
   {}
 
   static GammaArgument &
@@ -489,7 +490,7 @@ private:
 /**
  * Represents a region result in a gamma subregion.
  */
-class GammaResult final : public result
+class GammaResult final : public RegionResult
 {
   friend gamma_node;
 
@@ -498,7 +499,7 @@ public:
 
 private:
   GammaResult(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
-      : result(&region, &origin, &gammaOutput, origin.Type())
+      : RegionResult(&region, &origin, &gammaOutput, origin.Type())
   {}
 
   GammaResult &
