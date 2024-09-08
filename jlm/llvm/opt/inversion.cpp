@@ -153,8 +153,7 @@ invert(jlm::rvsdg::theta_node * otheta)
   copy_condition_nodes(otheta->region(), smap, cnodes);
 
   auto ngamma =
-      rvsdg::GammaNode::create(smap.lookup(ogamma->predicate()->origin()),
-      ogamma->nsubregions());
+      rvsdg::GammaNode::create(smap.lookup(ogamma->predicate()->origin()), ogamma->nsubregions());
 
   /* handle subregion 0 */
   jlm::rvsdg::substitution_map r0map;
