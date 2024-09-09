@@ -267,8 +267,7 @@ GammaOperation::operator==(const operation & other) const noexcept
 
 /* gamma input */
 
-gamma_input::~gamma_input() noexcept
-{}
+GammaInput::~GammaInput() noexcept = default;
 
 /* gamma output */
 
@@ -320,7 +319,7 @@ GammaNode::entryvar_iterator::operator++() noexcept
     return *this;
   }
 
-  input_ = static_cast<jlm::rvsdg::gamma_input *>(node->input(++index));
+  input_ = static_cast<GammaInput *>(node->input(++index));
   return *this;
 }
 
@@ -378,7 +377,7 @@ GammaArgument::~GammaArgument() noexcept = default;
 GammaArgument &
 GammaArgument::Copy(rvsdg::region & region, structural_input * input)
 {
-  auto gammaInput = util::AssertedCast<gamma_input>(input);
+  auto gammaInput = util::AssertedCast<GammaInput>(input);
   return Create(region, *gammaInput);
 }
 

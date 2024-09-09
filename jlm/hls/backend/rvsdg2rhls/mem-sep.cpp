@@ -193,7 +193,7 @@ trace_edge(
       // end of region reached
       return res;
     }
-    else if (auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user))
+    else if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
     {
       auto gn = gi->node();
       auto ip = gn->add_entryvar(new_edge);

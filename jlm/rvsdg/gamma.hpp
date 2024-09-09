@@ -106,7 +106,7 @@ private:
 
 /* gamma node */
 
-class gamma_input;
+class GammaInput;
 class gamma_output;
 
 class GammaNode : public structural_node
@@ -120,11 +120,11 @@ private:
   class entryvar_iterator
   {
   public:
-    inline constexpr entryvar_iterator(jlm::rvsdg::gamma_input * input) noexcept
+    constexpr entryvar_iterator(GammaInput * input) noexcept
         : input_(input)
     {}
 
-    inline jlm::rvsdg::gamma_input *
+    GammaInput *
     input() const noexcept
     {
       return input_;
@@ -153,20 +153,20 @@ private:
       return !(*this == other);
     }
 
-    inline jlm::rvsdg::gamma_input &
+    GammaInput &
     operator*() noexcept
     {
       return *input_;
     }
 
-    inline jlm::rvsdg::gamma_input *
+    GammaInput *
     operator->() noexcept
     {
       return input_;
     }
 
   private:
-    jlm::rvsdg::gamma_input * input_;
+    GammaInput * input_;
   };
 
   class exitvar_iterator
@@ -228,7 +228,7 @@ public:
     return new GammaNode(predicate, nalternatives);
   }
 
-  jlm::rvsdg::gamma_input *
+  inline GammaInput *
   predicate() const noexcept;
 
   inline size_t
@@ -244,7 +244,7 @@ public:
     return node::noutputs();
   }
 
-  jlm::rvsdg::gamma_input *
+  inline GammaInput *
   entryvar(size_t index) const noexcept;
 
   jlm::rvsdg::gamma_output *
@@ -280,7 +280,7 @@ public:
     return exitvar_iterator(nullptr);
   }
 
-  jlm::rvsdg::gamma_input *
+  inline GammaInput *
   add_entryvar(jlm::rvsdg::output * origin);
 
   jlm::rvsdg::gamma_output *
@@ -317,18 +317,15 @@ public:
 
 /* gamma input */
 
-class gamma_input final : public structural_input
+class GammaInput final : public structural_input
 {
   friend GammaNode;
 
 public:
-  virtual ~gamma_input() noexcept;
+  ~GammaInput() noexcept override;
 
 private:
-  inline gamma_input(
-      GammaNode * node,
-      jlm::rvsdg::output * origin,
-      std::shared_ptr<const rvsdg::type> type)
+  GammaInput(GammaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::type> type)
       : structural_input(node, origin, std::move(type))
   {}
 
@@ -456,8 +453,8 @@ public:
 inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
     : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(std::unique_ptr<node_input>(
-      new gamma_input(this, predicate, ctltype::Create(nalternatives))));
+  node::add_input(
+      std::unique_ptr<node_input>(new GammaInput(this, predicate, ctltype::Create(nalternatives))));
 }
 
 /**
@@ -474,12 +471,12 @@ public:
   Copy(rvsdg::region & region, structural_input * input) override;
 
 private:
-  GammaArgument(rvsdg::region & region, gamma_input & input)
+  GammaArgument(rvsdg::region & region, GammaInput & input)
       : RegionArgument(&region, &input, input.Type())
   {}
 
   static GammaArgument &
-  Create(rvsdg::region & region, gamma_input & input)
+  Create(rvsdg::region & region, GammaInput & input)
   {
     auto gammaArgument = new GammaArgument(region, input);
     region.append_argument(gammaArgument);
@@ -514,16 +511,16 @@ private:
   }
 };
 
-inline jlm::rvsdg::gamma_input *
+inline GammaInput *
 GammaNode::predicate() const noexcept
 {
-  return static_cast<jlm::rvsdg::gamma_input *>(structural_node::input(0));
+  return util::AssertedCast<GammaInput>(structural_node::input(0));
 }
 
-inline jlm::rvsdg::gamma_input *
+inline GammaInput *
 GammaNode::entryvar(size_t index) const noexcept
 {
-  return static_cast<gamma_input *>(node::input(index + 1));
+  return util::AssertedCast<GammaInput>(node::input(index + 1));
 }
 
 inline jlm::rvsdg::gamma_output *
@@ -532,12 +529,12 @@ GammaNode::exitvar(size_t index) const noexcept
   return static_cast<gamma_output *>(node::output(index));
 }
 
-inline jlm::rvsdg::gamma_input *
+inline GammaInput *
 GammaNode::add_entryvar(jlm::rvsdg::output * origin)
 {
   auto input =
-      node::add_input(std::unique_ptr<node_input>(new gamma_input(this, origin, origin->Type())));
-  auto gammaInput = static_cast<jlm::rvsdg::gamma_input *>(input);
+      node::add_input(std::unique_ptr<node_input>(new GammaInput(this, origin, origin->Type())));
+  auto gammaInput = util::AssertedCast<GammaInput>(input);
 
   for (size_t n = 0; n < nsubregions(); n++)
   {
