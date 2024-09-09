@@ -250,12 +250,12 @@ depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
   return false;
 }
 
-jlm::rvsdg::gamma_input *
+rvsdg::GammaInput *
 get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
 {
   for (auto user : *origin)
   {
-    auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user);
+    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
     if (gi && gi->node() == gamma)
     {
       return gi;
@@ -269,7 +269,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user);
+    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
     if (gi && gi != gamma->predicate())
     {
       // other gamma depending on same predicate

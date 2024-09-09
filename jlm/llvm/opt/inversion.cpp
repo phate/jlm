@@ -205,7 +205,7 @@ invert(jlm::rvsdg::theta_node * otheta)
     }
     for (size_t n = 1; n < ogamma->ninputs(); n++)
     {
-      auto oev = static_cast<jlm::rvsdg::gamma_input *>(ogamma->input(n));
+      auto oev = util::AssertedCast<rvsdg::GammaInput>(ogamma->input(n));
       if (auto argument = to_argument(oev->origin()))
       {
         r1map.insert(oev->argument(1), nlvs[argument->input()]->argument());
@@ -244,7 +244,7 @@ invert(jlm::rvsdg::theta_node * otheta)
     }
     for (size_t n = 1; n < ogamma->ninputs(); n++)
     {
-      auto oev = static_cast<jlm::rvsdg::gamma_input *>(ogamma->input(n));
+      auto oev = util::AssertedCast<rvsdg::GammaInput>(ogamma->input(n));
       if (auto argument = to_argument(oev->origin()))
       {
         r1map.insert(oev->argument(0), nlvs[argument->input()]);
