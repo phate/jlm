@@ -508,7 +508,7 @@ static void
 divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node));
-  auto gamma = static_cast<jlm::rvsdg::gamma_node *>(node);
+  auto gamma = static_cast<GammaNode *>(node);
 
   for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++)
   {

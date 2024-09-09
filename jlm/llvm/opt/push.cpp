@@ -101,7 +101,7 @@ copy_from_gamma(jlm::rvsdg::node * node, size_t r)
   JLM_ASSERT(node->depth() == 0);
 
   auto target = node->region()->node()->region();
-  auto gamma = static_cast<jlm::rvsdg::gamma_node *>(node->region()->node());
+  auto gamma = static_cast<rvsdg::GammaNode *>(node->region()->node());
 
   std::vector<jlm::rvsdg::output *> operands;
   for (size_t n = 0; n < node->ninputs(); n++)
@@ -167,7 +167,7 @@ is_gamma_top_pushable(const jlm::rvsdg::node * node)
 }
 
 void
-push(jlm::rvsdg::gamma_node * gamma)
+push(rvsdg::GammaNode * gamma)
 {
   for (size_t r = 0; r < gamma->nsubregions(); r++)
   {
@@ -413,10 +413,10 @@ push(jlm::rvsdg::region * region)
         push(strnode->subregion(n));
     }
 
-    if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+    if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
       push(gamma);
 
-    if (auto theta = dynamic_cast<jlm::rvsdg::theta_node *>(node))
+    if (auto theta = dynamic_cast<rvsdg::theta_node *>(node))
       push(theta);
   }
 }

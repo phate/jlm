@@ -14,14 +14,14 @@ namespace jlm::rvsdg
 /* gamma normal form */
 
 static bool
-is_predicate_reducible(const jlm::rvsdg::gamma_node * gamma)
+is_predicate_reducible(const GammaNode * gamma)
 {
   auto constant = node_output::node(gamma->predicate()->origin());
   return constant && is_ctlconstant_op(constant->operation());
 }
 
 static void
-perform_predicate_reduction(jlm::rvsdg::gamma_node * gamma)
+perform_predicate_reduction(GammaNode * gamma)
 {
   auto origin = gamma->predicate()->origin();
   auto constant = static_cast<node_output *>(origin)->node();
@@ -41,7 +41,7 @@ perform_predicate_reduction(jlm::rvsdg::gamma_node * gamma)
 }
 
 static bool
-perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
+perform_invariant_reduction(GammaNode * gamma)
 {
   bool was_normalized = true;
   for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++)
@@ -70,7 +70,7 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
 }
 
 static std::unordered_set<jlm::rvsdg::structural_output *>
-is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
+is_control_constant_reducible(GammaNode * gamma)
 {
   /* check gamma predicate */
   auto match = node_output::node(gamma->predicate()->origin());
@@ -114,7 +114,7 @@ is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
 static void
 perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::structural_output *> & outputs)
 {
-  auto gamma = static_cast<jlm::rvsdg::gamma_node *>((*outputs.begin())->node());
+  auto gamma = static_cast<GammaNode *>((*outputs.begin())->node());
   auto origin = static_cast<node_output *>(gamma->predicate()->origin());
   auto match = origin->node();
   auto & match_op = to_match_op(match->operation());
@@ -171,8 +171,7 @@ gamma_normal_form::gamma_normal_form(
 bool
 gamma_normal_form::normalize_node(jlm::rvsdg::node * node_) const
 {
-  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::gamma_node *>(node_));
-  auto node = static_cast<jlm::rvsdg::gamma_node *>(node_);
+  auto node = util::AssertedCast<GammaNode>(node_);
 
   if (!get_mutable())
     return true;
@@ -305,11 +304,10 @@ gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 
 /* gamma node */
 
-gamma_node::~gamma_node()
-{}
+GammaNode::~GammaNode() noexcept = default;
 
-const gamma_node::entryvar_iterator &
-gamma_node::entryvar_iterator::operator++() noexcept
+const GammaNode::entryvar_iterator &
+GammaNode::entryvar_iterator::operator++() noexcept
 {
   if (input_ == nullptr)
     return *this;
@@ -326,8 +324,8 @@ gamma_node::entryvar_iterator::operator++() noexcept
   return *this;
 }
 
-const gamma_node::exitvar_iterator &
-gamma_node::exitvar_iterator::operator++() noexcept
+const GammaNode::exitvar_iterator &
+GammaNode::exitvar_iterator::operator++() noexcept
 {
   if (output_ == nullptr)
     return *this;
@@ -344,8 +342,8 @@ gamma_node::exitvar_iterator::operator++() noexcept
   return *this;
 }
 
-jlm::rvsdg::gamma_node *
-gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+GammaNode *
+GammaNode::copy(rvsdg::region * region, substitution_map & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 

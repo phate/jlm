@@ -27,7 +27,7 @@ class node;
 
 namespace jlm::rvsdg
 {
-class gamma_node;
+class GammaNode;
 class node;
 class region;
 class simple_node;
@@ -149,7 +149,7 @@ private:
   EliminateTopDownPhi(const phi::node & phiNode);
 
   void
-  EliminateTopDownGamma(const rvsdg::gamma_node & gammaNode);
+  EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode);
 
   void
   EliminateTopDownTheta(const rvsdg::theta_node & thetaNode);

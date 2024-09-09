@@ -319,7 +319,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto mlirGammaNode = ::mlir::dyn_cast<::mlir::rvsdg::GammaNode>(&mlirOperation))
   {
-    auto rvsdgGammaNode = rvsdg::gamma_node::create(
+    auto rvsdgGammaNode = rvsdg::GammaNode::create(
         inputs[0],                    // predicate
         mlirGammaNode.getNumRegions() // nalternatives
     );

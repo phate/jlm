@@ -84,7 +84,7 @@ test_gamma()
   auto u1 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
   auto u2 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
   auto ev1 = gamma->add_entryvar(u1);
   auto ev2 = gamma->add_entryvar(u2);

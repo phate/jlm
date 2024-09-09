@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 static void
-ConvertGammaNodeWithoutSpeculation(rvsdg::gamma_node & gammaNode)
+ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 {
   rvsdg::substitution_map substitutionMap;
 
@@ -53,7 +53,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::gamma_node & gammaNode)
 }
 
 static void
-ConvertGammaNodeWithSpeculation(rvsdg::gamma_node & gammaNode)
+ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
 {
   rvsdg::substitution_map substitutionMap;
 
@@ -91,7 +91,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::gamma_node & gammaNode)
 }
 
 static bool
-CanGammaNodeBeSpeculative(const rvsdg::gamma_node & gammaNode)
+CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
 {
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
   {
@@ -112,7 +112,7 @@ CanGammaNodeBeSpeculative(const rvsdg::gamma_node & gammaNode)
         // don't allow thetas or loops since they could potentially block forever
         return false;
       }
-      else if (auto innerGammaNode = dynamic_cast<rvsdg::gamma_node *>(&node))
+      else if (auto innerGammaNode = dynamic_cast<rvsdg::GammaNode *>(&node))
       {
         if (!CanGammaNodeBeSpeculative(*innerGammaNode))
         {
@@ -141,7 +141,7 @@ ConvertGammaNodesInStructuralNode(rvsdg::structural_node & structuralNode)
     ConvertGammaNodesInRegion(*structuralNode.subregion(n));
   }
 
-  if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&structuralNode))
+  if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
   {
     if (CanGammaNodeBeSpeculative(*gammaNode))
     {

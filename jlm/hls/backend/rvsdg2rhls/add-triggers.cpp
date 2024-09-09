@@ -107,7 +107,7 @@ add_triggers(jlm::rvsdg::region * region)
         t->add_loopvar(trigger);
         add_triggers(t->subregion());
       }
-      else if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      else if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
       {
         JLM_ASSERT(trigger != nullptr);
         JLM_ASSERT(get_trigger(gn->subregion(0)) == nullptr);

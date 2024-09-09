@@ -134,13 +134,13 @@ private:
   EncodeDelta(const delta::node & deltaNode);
 
   void
-  EncodeGamma(rvsdg::gamma_node & gammaNode);
+  EncodeGamma(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaEntry(rvsdg::gamma_node & gammaNode);
+  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaExit(rvsdg::gamma_node & gammaNode);
+  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
 
   void
   EncodeTheta(rvsdg::theta_node & thetaNode);

@@ -160,7 +160,7 @@ private:
    */
   ::mlir::Operation *
   ConvertGamma(
-      const rvsdg::gamma_node & gammaNode,
+      const rvsdg::GammaNode & gammaNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

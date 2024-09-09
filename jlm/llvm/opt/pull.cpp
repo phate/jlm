@@ -45,7 +45,7 @@ public:
 };
 
 static bool
-empty(const jlm::rvsdg::gamma_node * gamma)
+empty(const rvsdg::GammaNode * gamma)
 {
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
@@ -80,7 +80,7 @@ remove(jlm::rvsdg::gamma_input * input)
 }
 
 static void
-pullin_node(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
+pullin_node(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
 {
   /* collect operands */
   std::vector<std::vector<jlm::rvsdg::output *>> operands(gamma->nsubregions());
@@ -111,7 +111,7 @@ pullin_node(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
 }
 
 static void
-cleanup(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
+cleanup(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
 {
   JLM_ASSERT(single_successor(node));
 
@@ -125,7 +125,7 @@ cleanup(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
 }
 
 void
-pullin_top(jlm::rvsdg::gamma_node * gamma)
+pullin_top(rvsdg::GammaNode * gamma)
 {
   /* FIXME: This is inefficient. We can do better. */
   auto ev = gamma->begin_entryvar();
@@ -149,7 +149,7 @@ pullin_top(jlm::rvsdg::gamma_node * gamma)
 }
 
 void
-pullin_bottom(jlm::rvsdg::gamma_node * gamma)
+pullin_bottom(rvsdg::GammaNode * gamma)
 {
   /* collect immediate successors of the gamma node */
   std::unordered_set<jlm::rvsdg::node *> workset;
@@ -213,7 +213,7 @@ pullin_bottom(jlm::rvsdg::gamma_node * gamma)
 }
 
 static size_t
-is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::node * node)
+is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const jlm::rvsdg::node * node)
 {
   JLM_ASSERT(single_successor(node));
 
@@ -243,7 +243,7 @@ is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::n
 }
 
 void
-pull(jlm::rvsdg::gamma_node * gamma)
+pull(rvsdg::GammaNode * gamma)
 {
   /*
     We don't want to pull anything into empty gammas with two subregions,
@@ -289,7 +289,7 @@ pull(jlm::rvsdg::region * region)
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
     {
-      if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         pull(gamma);
 
       for (size_t n = 0; n < structnode->nsubregions(); n++)
