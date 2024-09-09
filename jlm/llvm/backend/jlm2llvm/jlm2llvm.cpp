@@ -361,6 +361,7 @@ ConvertBasicBlocks(
 {
   auto nodes = breadth_first(controlFlowGraph);
 
+  uint64_t basicBlockCounter = 0;
   for (const auto & node : nodes)
   {
     if (node == controlFlowGraph.entry())
@@ -368,7 +369,7 @@ ConvertBasicBlocks(
     if (node == controlFlowGraph.exit())
       continue;
 
-    auto name = util::strfmt("bb", &node);
+    auto name = util::strfmt("bb", basicBlockCounter++);
     auto * basicBlock = ::llvm::BasicBlock::Create(function.getContext(), name, &function);
     context.insert(node, basicBlock);
   }
