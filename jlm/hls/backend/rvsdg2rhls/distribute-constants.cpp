@@ -45,7 +45,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
           break;
         }
       }
-      if (auto gi = dynamic_cast<rvsdg::gamma_input *>(user))
+      if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
       {
         if (gi->node()->predicate() == gi)
         {
@@ -87,7 +87,7 @@ hls::distribute_constants(rvsdg::region * region)
       {
         distribute_constants(t->subregion());
       }
-      else if (auto gn = dynamic_cast<rvsdg::gamma_node *>(node))
+      else if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
       {
         for (size_t i = 0; i < gn->nsubregions(); ++i)
         {

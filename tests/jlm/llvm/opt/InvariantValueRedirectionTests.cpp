@@ -50,12 +50,12 @@ TestGamma()
   auto x = lambdaNode->fctargument(1);
   auto y = lambdaNode->fctargument(2);
 
-  auto gammaNode1 = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gammaNode1 = jlm::rvsdg::GammaNode::create(c, 2);
   auto gammaInput1 = gammaNode1->add_entryvar(c);
   auto gammaInput2 = gammaNode1->add_entryvar(x);
   auto gammaInput3 = gammaNode1->add_entryvar(y);
 
-  auto gammaNode2 = jlm::rvsdg::gamma_node::create(gammaInput1->argument(0), 2);
+  auto gammaNode2 = jlm::rvsdg::GammaNode::create(gammaInput1->argument(0), 2);
   auto gammaInput4 = gammaNode2->add_entryvar(gammaInput2->argument(0));
   auto gammaInput5 = gammaNode2->add_entryvar(gammaInput3->argument(0));
   gammaNode2->add_exitvar({ gammaInput4->argument(0), gammaInput4->argument(1) });
@@ -162,7 +162,7 @@ TestCall()
     auto ioStateArgument = lambdaNode->fctargument(3);
     auto memoryStateArgument = lambdaNode->fctargument(4);
 
-    auto gammaNode = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
     auto gammaInputX = gammaNode->add_entryvar(xArgument);
     auto gammaInputY = gammaNode->add_entryvar(yArgument);
     auto gammaInputIOState = gammaNode->add_entryvar(ioStateArgument);
@@ -251,7 +251,7 @@ TestCallWithMemoryStateNodes()
     auto lambdaEntrySplitResults =
         LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
 
-    auto gammaNode = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
 
     auto gammaInputX = gammaNode->add_entryvar(xArgument);
     auto gammaInputMemoryState1 = gammaNode->add_entryvar(lambdaEntrySplitResults[0]);

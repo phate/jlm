@@ -484,7 +484,7 @@ ConvertSelect(
   auto p = variableMap.lookup(threeAddressCode.operand(0));
   auto predicate = rvsdg::simple_node::create_normalized(&region, op, { p })[0];
 
-  auto gamma = rvsdg::gamma_node::create(predicate, 2);
+  auto gamma = rvsdg::GammaNode::create(predicate, 2);
   auto ev1 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(2)));
   auto ev2 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(1)));
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
@@ -701,13 +701,13 @@ Convert(
   JLM_ASSERT(is<branch_op>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
-  auto gamma = rvsdg::gamma_node::create(predicate, branchAggregationNode.nchildren());
+  auto gamma = rvsdg::GammaNode::create(predicate, branchAggregationNode.nchildren());
 
   /*
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::gamma_input *> gammaInputMap;
+  std::unordered_map<const variable *, rvsdg::GammaInput *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
     gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
 

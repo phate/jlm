@@ -12,7 +12,7 @@
 
 namespace jlm::rvsdg
 {
-class gamma_node;
+class GammaNode;
 class theta_node;
 }
 
@@ -94,7 +94,7 @@ private:
   SweepStructuralNode(jlm::rvsdg::structural_node & node) const;
 
   void
-  SweepGamma(rvsdg::gamma_node & gammaNode) const;
+  SweepGamma(rvsdg::GammaNode & gammaNode) const;
 
   void
   SweepTheta(rvsdg::theta_node & thetaNode) const;

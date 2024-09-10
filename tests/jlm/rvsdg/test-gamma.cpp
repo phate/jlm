@@ -25,7 +25,7 @@ test_gamma(void)
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
 
-  auto gamma = gamma_node::create(pred, 3);
+  auto gamma = GammaNode::create(pred, 3);
   auto ev0 = gamma->add_entryvar(v0);
   auto ev1 = gamma->add_entryvar(v1);
   auto ev2 = gamma->add_entryvar(v2);
@@ -43,7 +43,7 @@ test_gamma(void)
 
   /* test entry and exit variable iterators */
 
-  auto gamma3 = gamma_node::create(v3, 2);
+  auto gamma3 = GammaNode::create(v3, 2);
   assert(gamma3->begin_entryvar() == gamma3->end_entryvar());
   assert(gamma3->begin_exitvar() == gamma3->end_exitvar());
 }
@@ -64,7 +64,7 @@ test_predicate_reduction(void)
 
   auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
 
-  auto gamma = gamma_node::create(pred, 3);
+  auto gamma = GammaNode::create(pred, 3);
   auto ev0 = gamma->add_entryvar(v0);
   auto ev1 = gamma->add_entryvar(v1);
   auto ev2 = gamma->add_entryvar(v2);
@@ -93,7 +93,7 @@ test_invariant_reduction(void)
   auto pred = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(pred, 2);
+  auto gamma = GammaNode::create(pred, 2);
   auto ev = gamma->add_entryvar(v);
   gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
@@ -119,7 +119,7 @@ test_control_constant_reduction()
 
   auto c = match(1, { { 0, 0 } }, 1, 2, x);
 
-  auto gamma = gamma_node::create(c, 2);
+  auto gamma = GammaNode::create(c, 2);
 
   auto t = jlm::rvsdg::control_true(gamma->subregion(0));
   auto f = jlm::rvsdg::control_false(gamma->subregion(1));
@@ -157,7 +157,7 @@ test_control_constant_reduction2()
 
   auto c = match(2, { { 3, 2 }, { 2, 1 }, { 1, 0 } }, 3, 4, import);
 
-  auto gamma = gamma_node::create(c, 4);
+  auto gamma = GammaNode::create(c, 4);
 
   auto t1 = jlm::rvsdg::control_true(gamma->subregion(0));
   auto t2 = jlm::rvsdg::control_true(gamma->subregion(1));
@@ -192,7 +192,7 @@ TestRemoveGammaOutputsWhere()
   auto v2 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v3 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
-  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
   auto gammaInput0 = gammaNode->add_entryvar(v0);
   auto gammaInput1 = gammaNode->add_entryvar(v1);
   auto gammaInput2 = gammaNode->add_entryvar(v2);
@@ -215,7 +215,7 @@ TestRemoveGammaOutputsWhere()
 
   // Remove gammaOutput1
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const gamma_output & output)
+      [&](const GammaOutput & output)
       {
         return output.index() == gammaOutput1->index();
       });
@@ -227,7 +227,7 @@ TestRemoveGammaOutputsWhere()
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const gamma_output & output)
+      [&](const GammaOutput & output)
       {
         return output.index() == gammaOutput2->index();
       });
@@ -254,7 +254,7 @@ TestPruneOutputs()
   auto v2 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v3 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
-  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
   auto gammaInput0 = gammaNode->add_entryvar(v0);
   auto gammaInput1 = gammaNode->add_entryvar(v1);
   auto gammaInput2 = gammaNode->add_entryvar(v2);
@@ -301,7 +301,7 @@ TestIsInvariant()
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
-  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
   auto gammaInput0 = gammaNode->add_entryvar(v0);
   auto gammaInput1 = gammaNode->add_entryvar(v1);
   auto gammaInput2 = gammaNode->add_entryvar(v1);

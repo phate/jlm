@@ -198,7 +198,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(&output))
+  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
   {
     MarkOutput(*gammaOutput->node()->predicate()->origin());
     for (const auto & result : gammaOutput->results)
@@ -344,7 +344,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
 {
   auto sweepGamma = [](auto & d, auto & n)
   {
-    d.SweepGamma(*util::AssertedCast<jlm::rvsdg::gamma_node>(&n));
+    d.SweepGamma(*util::AssertedCast<rvsdg::GammaNode>(&n));
   };
   auto sweepTheta = [](auto & d, auto & n)
   {
@@ -378,7 +378,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
 }
 
 void
-DeadNodeElimination::SweepGamma(jlm::rvsdg::gamma_node & gammaNode) const
+DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 {
   // Remove dead outputs and results
   for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)

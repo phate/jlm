@@ -34,7 +34,7 @@ test_gamma()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto evx = gamma->add_entryvar(x);
   auto evs = gamma->add_entryvar(s);
 

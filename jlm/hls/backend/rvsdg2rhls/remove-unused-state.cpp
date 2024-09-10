@@ -20,7 +20,7 @@ remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
     {
-      if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
       {
         // process subnodes first
         for (size_t n = 0; n < gn->nsubregions(); n++)
@@ -127,7 +127,7 @@ remove_unused_state(llvm::RvsdgModule & rm)
 }
 
 void
-remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
+remove_gamma_passthrough(rvsdg::GammaNode * gn)
 { // remove inputs in reverse
   for (int i = gn->nentryvars() - 1; i >= 0; --i)
   {

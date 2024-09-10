@@ -802,7 +802,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
     AnalyzeDelta(*deltaNode);
   else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
     AnalyzePhi(*phiNode);
-  else if (const auto gammaNode = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
     AnalyzeGamma(*gammaNode);
   else if (const auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
     AnalyzeTheta(*thetaNode);
@@ -926,7 +926,7 @@ Andersen::AnalyzePhi(const phi::node & phi)
 }
 
 void
-Andersen::AnalyzeGamma(const rvsdg::gamma_node & gamma)
+Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 {
   // Handle input variables
   for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)

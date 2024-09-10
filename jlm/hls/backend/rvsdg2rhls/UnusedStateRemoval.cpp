@@ -131,7 +131,7 @@ RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
 }
 
 static void
-RemoveUnusedStatesFromGammaNode(rvsdg::gamma_node & gammaNode)
+RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 {
   for (int i = gammaNode.nentryvars() - 1; i >= 0; --i)
   {
@@ -199,7 +199,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
     RemoveUnusedStatesInRegion(*structuralNode.subregion(n));
   }
 
-  if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&structuralNode))
+  if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
   {
     RemoveUnusedStatesFromGammaNode(*gammaNode);
   }

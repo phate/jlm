@@ -406,7 +406,7 @@ private:
   AnalyzePhi(const phi::node & node);
 
   void
-  AnalyzeGamma(const rvsdg::gamma_node & node);
+  AnalyzeGamma(const rvsdg::GammaNode & node);
 
   void
   AnalyzeTheta(const rvsdg::theta_node & node);

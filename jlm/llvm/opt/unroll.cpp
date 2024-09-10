@@ -399,7 +399,7 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
   jlm::rvsdg::substitution_map smap;
   {
     auto pred = create_unrolled_gamma_predicate(ui, factor);
-    auto ngamma = jlm::rvsdg::gamma_node::create(pred, 2);
+    auto ngamma = rvsdg::GammaNode::create(pred, 2);
     auto ntheta = jlm::rvsdg::theta_node::create(ngamma->subregion(1));
 
     jlm::rvsdg::substitution_map rmap[2];
@@ -432,7 +432,7 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
   /* handle gamma for residual iterations */
   {
     auto pred = create_residual_gamma_predicate(smap, ui);
-    auto ngamma = jlm::rvsdg::gamma_node::create(pred, 2);
+    auto ngamma = rvsdg::GammaNode::create(pred, 2);
     auto ntheta = jlm::rvsdg::theta_node::create(ngamma->subregion(1));
 
     jlm::rvsdg::substitution_map rmap[2];

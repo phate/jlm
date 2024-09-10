@@ -35,7 +35,7 @@ test_with_match()
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->fctargument(0));
-  auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
   auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
   auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
@@ -77,7 +77,7 @@ test_without_match()
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-  auto gamma = jlm::rvsdg::gamma_node::create(lambda->fctargument(0), 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(lambda->fctargument(0), 2);
   auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
   auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
@@ -122,7 +122,7 @@ test_gamma3()
 
   auto match = jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambda->fctargument(0));
 
-  auto gamma = jlm::rvsdg::gamma_node::create(match, 3);
+  auto gamma = jlm::rvsdg::GammaNode::create(match, 3);
   auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
   auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev1->argument(1), ev2->argument(2) });

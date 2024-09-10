@@ -101,7 +101,7 @@ route_through(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
   {
     auto parent_response = route_through(target->node()->region(), response);
     auto parrent_user = *parent_response->begin();
-    if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(target->node()))
+    if (auto gn = dynamic_cast<rvsdg::GammaNode *>(target->node()))
     {
       auto ip = gn->add_entryvar(parent_response);
       std::vector<jlm::rvsdg::output *> vec;
@@ -193,7 +193,7 @@ trace_edge(
       // end of region reached
       return res;
     }
-    else if (auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user))
+    else if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
     {
       auto gn = gi->node();
       auto ip = gn->add_entryvar(new_edge);
