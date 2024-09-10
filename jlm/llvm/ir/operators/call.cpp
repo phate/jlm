@@ -21,7 +21,7 @@ static rvsdg::input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
 
 static rvsdg::structural_input *
-invariantInput(const rvsdg::gamma_output & output, InvariantOutputMap & invariantOutputs)
+invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariantOutputs)
 {
   size_t n;
   rvsdg::structural_input * input = nullptr;
@@ -106,7 +106,7 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
     return invariantInput(*thetaInput->output(), invariantOutputs);
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(&output))
+  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
     return invariantInput(*gammaOutput, invariantOutputs);
 
   return nullptr;
@@ -181,7 +181,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(origin))
+    if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(origin))
     {
       if (auto input = invariantInput(*gammaOutput))
       {

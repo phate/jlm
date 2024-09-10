@@ -215,7 +215,7 @@ TestRemoveGammaOutputsWhere()
 
   // Remove gammaOutput1
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const gamma_output & output)
+      [&](const GammaOutput & output)
       {
         return output.index() == gammaOutput1->index();
       });
@@ -227,7 +227,7 @@ TestRemoveGammaOutputsWhere()
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const gamma_output & output)
+      [&](const GammaOutput & output)
       {
         return output.index() == gammaOutput2->index();
       });

@@ -299,7 +299,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
           auto ev = gamma->entryvar(i);
           if (is_output_of(ev->origin(), other_gamma))
           {
-            auto go = dynamic_cast<jlm::rvsdg::gamma_output *>(ev->origin());
+            auto go = dynamic_cast<rvsdg::GammaOutput *>(ev->origin());
             for (size_t j = 0; j < gamma->nsubregions(); ++j)
             {
               rmap[j].insert(ev->argument(j), go->result(j)->origin());

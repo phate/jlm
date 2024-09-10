@@ -107,7 +107,7 @@ private:
 /* gamma node */
 
 class GammaInput;
-class gamma_output;
+class GammaOutput;
 
 class GammaNode : public structural_node
 {
@@ -172,11 +172,11 @@ private:
   class exitvar_iterator
   {
   public:
-    inline constexpr exitvar_iterator(jlm::rvsdg::gamma_output * output) noexcept
+    constexpr explicit exitvar_iterator(GammaOutput * output) noexcept
         : output_(output)
     {}
 
-    inline jlm::rvsdg::gamma_output *
+    [[nodiscard]] GammaOutput *
     output() const noexcept
     {
       return output_;
@@ -205,20 +205,20 @@ private:
       return !(*this == other);
     }
 
-    inline gamma_output &
+    GammaOutput &
     operator*() noexcept
     {
       return *output_;
     }
 
-    inline gamma_output *
+    GammaOutput *
     operator->() noexcept
     {
       return output_;
     }
 
   private:
-    jlm::rvsdg::gamma_output * output_;
+    GammaOutput * output_;
   };
 
 public:
@@ -247,7 +247,7 @@ public:
   inline GammaInput *
   entryvar(size_t index) const noexcept;
 
-  jlm::rvsdg::gamma_output *
+  [[nodiscard]] inline GammaOutput *
   exitvar(size_t index) const noexcept;
 
   inline GammaNode::entryvar_iterator
@@ -283,14 +283,14 @@ public:
   inline GammaInput *
   add_entryvar(jlm::rvsdg::output * origin);
 
-  jlm::rvsdg::gamma_output *
+  inline GammaOutput *
   add_exitvar(const std::vector<jlm::rvsdg::output *> & values);
 
   /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and
    * match the condition specified by \p match.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const gamma_output&)
+   * @tparam F A type that supports the function call operator: bool operator(const GammaOutput&)
    * @param match Defines the condition of the elements to remove.
    */
   template<typename F>
@@ -303,7 +303,7 @@ public:
   void
   PruneOutputs()
   {
-    auto match = [](const gamma_output &)
+    auto match = [](const GammaOutput &)
     {
       return true;
     };
@@ -378,14 +378,14 @@ public:
 
 /* gamma output */
 
-class gamma_output final : public structural_output
+class GammaOutput final : public structural_output
 {
   friend GammaNode;
 
 public:
-  virtual ~gamma_output() noexcept;
+  ~GammaOutput() noexcept override;
 
-  inline gamma_output(GammaNode * node, std::shared_ptr<const rvsdg::type> type)
+  GammaOutput(GammaNode * node, std::shared_ptr<const rvsdg::type> type)
       : structural_output(node, std::move(type))
   {}
 
@@ -495,7 +495,7 @@ public:
   ~GammaResult() noexcept override;
 
 private:
-  GammaResult(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
+  GammaResult(rvsdg::region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
       : RegionResult(&region, &origin, &gammaOutput, origin.Type())
   {}
 
@@ -503,7 +503,7 @@ private:
   Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
 
   static GammaResult &
-  Create(rvsdg::region & region, rvsdg::output & origin, gamma_output & gammaOutput)
+  Create(rvsdg::region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
   {
     auto gammaResult = new GammaResult(region, origin, gammaOutput);
     origin.region()->append_result(gammaResult);
@@ -523,10 +523,10 @@ GammaNode::entryvar(size_t index) const noexcept
   return util::AssertedCast<GammaInput>(node::input(index + 1));
 }
 
-inline jlm::rvsdg::gamma_output *
+inline GammaOutput *
 GammaNode::exitvar(size_t index) const noexcept
 {
-  return static_cast<gamma_output *>(node::output(index));
+  return static_cast<GammaOutput *>(node::output(index));
 }
 
 inline GammaInput *
@@ -544,14 +544,14 @@ GammaNode::add_entryvar(jlm::rvsdg::output * origin)
   return gammaInput;
 }
 
-inline jlm::rvsdg::gamma_output *
+inline GammaOutput *
 GammaNode::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
 {
   if (values.size() != nsubregions())
     throw jlm::util::error("Incorrect number of values.");
 
   const auto & type = values[0]->Type();
-  node::add_output(std::make_unique<gamma_output>(this, type));
+  node::add_output(std::make_unique<GammaOutput>(this, type));
 
   auto output = exitvar(nexitvars() - 1);
   for (size_t n = 0; n < nsubregions(); n++)
@@ -569,7 +569,7 @@ GammaNode::RemoveGammaOutputsWhere(const F & match)
   // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
   for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
   {
-    auto & gammaOutput = *util::AssertedCast<const gamma_output>(output(n));
+    auto & gammaOutput = *util::AssertedCast<const GammaOutput>(output(n));
     if (gammaOutput.nusers() == 0 && match(gammaOutput))
     {
       for (size_t r = 0; r < nsubregions(); r++)

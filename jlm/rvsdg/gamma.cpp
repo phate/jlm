@@ -271,11 +271,10 @@ GammaInput::~GammaInput() noexcept = default;
 
 /* gamma output */
 
-gamma_output::~gamma_output() noexcept
-{}
+GammaOutput::~GammaOutput() noexcept = default;
 
 bool
-gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
+GammaOutput::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 {
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(result(0)->origin());
   if (!argument)
@@ -386,7 +385,7 @@ GammaResult::~GammaResult() noexcept = default;
 GammaResult &
 GammaResult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
 {
-  auto gammaOutput = util::AssertedCast<gamma_output>(output);
+  auto gammaOutput = util::AssertedCast<GammaOutput>(output);
   return GammaResult::Create(*origin.region(), origin, *gammaOutput);
 }
 
