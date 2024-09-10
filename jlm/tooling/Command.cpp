@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/backend/dot/DotWriter.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2dot/rvsdg2dot.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
@@ -586,7 +586,7 @@ JlmOptCommand::PrintAsDot(
   auto & rootRegion = *rvsdgModule.Rvsdg().root();
 
   util::GraphWriter writer;
-  jlm::llvm::rvsdg2dot::WriteGraphs(writer, rootRegion, true);
+  jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")
   {
