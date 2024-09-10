@@ -353,6 +353,30 @@ convert_attributes(const function_node & f, context & ctx)
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
 }
 
+static std::vector<cfg_node *>
+ConvertBasicBlocks(
+    const llvm::cfg & controlFlowGraph,
+    ::llvm::Function & function,
+    jlm2llvm::context & context)
+{
+  auto nodes = breadth_first(controlFlowGraph);
+
+  uint64_t basicBlockCounter = 0;
+  for (const auto & node : nodes)
+  {
+    if (node == controlFlowGraph.entry())
+      continue;
+    if (node == controlFlowGraph.exit())
+      continue;
+
+    auto name = util::strfmt("bb", basicBlockCounter++);
+    auto * basicBlock = ::llvm::BasicBlock::Create(function.getContext(), name, &function);
+    context.insert(node, basicBlock);
+  }
+
+  return nodes;
+}
+
 static inline void
 convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
 {
@@ -369,17 +393,8 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
   };
 
   straighten(cfg);
-  auto nodes = breadth_first(cfg);
 
-  /* create basic blocks */
-  for (const auto & node : nodes)
-  {
-    if (node == cfg.entry() || node == cfg.exit())
-      continue;
-
-    auto bb = ::llvm::BasicBlock::Create(f.getContext(), util::strfmt("bb", &node), &f);
-    ctx.insert(node, bb);
-  }
+  auto nodes = ConvertBasicBlocks(cfg, f, ctx);
 
   add_arguments(cfg, f, ctx);
 
