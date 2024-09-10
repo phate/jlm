@@ -70,7 +70,7 @@ single_successor(const jlm::rvsdg::node * node)
 }
 
 static void
-remove(jlm::rvsdg::gamma_input * input)
+remove(rvsdg::GammaInput * input)
 {
   auto gamma = input->node();
 
@@ -119,7 +119,7 @@ cleanup(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     while (node->output(n)->nusers() != 0)
-      remove(static_cast<jlm::rvsdg::gamma_input *>(*node->output(n)->begin()));
+      remove(util::AssertedCast<rvsdg::GammaInput>(*node->output(n)->begin()));
   }
   remove(node);
 }
@@ -218,13 +218,12 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const jlm::rvsdg::node * 
   JLM_ASSERT(single_successor(node));
 
   /* collect all gamma inputs */
-  std::unordered_set<const jlm::rvsdg::gamma_input *> inputs;
+  std::unordered_set<const rvsdg::GammaInput *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *(node->output(n)))
     {
-      JLM_ASSERT(is<rvsdg::gamma_input>(*user));
-      inputs.insert(static_cast<const jlm::rvsdg::gamma_input *>(user));
+      inputs.insert(util::AssertedCast<const rvsdg::GammaInput>(user));
     }
   }
 
