@@ -25,7 +25,7 @@ TestWriteGraphs()
   GraphWriter writer;
   dot::WriteGraphs(writer, *gammaTest.graph().root(), false);
 
-  // writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
+  writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
@@ -84,7 +84,7 @@ TestTypeGraph()
   dot::WriteGraphs(writer, *gammaTest.graph().root(), true);
 
   writer.Finalize();
-  // writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
+  writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
 
   // Assert
   auto & typeGraph = writer.GetGraph(0);

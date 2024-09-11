@@ -36,9 +36,8 @@ GetOrCreateTypeGraphNode(const rvsdg::type & type, util::Graph & typeGraph)
   node.SetLabel(type.debug_string());
 
   // Some types get special handling, such as adding incoming edges from aggregate types
-  if (jlm::rvsdg::is<rvsdg::statetype>(type) || jlm::rvsdg::is<rvsdg::bittype>(type)
-      || jlm::rvsdg::is<PointerType>(type) || jlm::rvsdg::is<fptype>(type)
-      || jlm::rvsdg::is<varargtype>(type))
+  if (rvsdg::is<rvsdg::statetype>(type) || rvsdg::is<rvsdg::bittype>(type)
+      || rvsdg::is<PointerType>(type) || rvsdg::is<fptype>(type) || rvsdg::is<varargtype>(type))
   {
     // No need to provide any information beyond the debug string
   }
@@ -150,7 +149,8 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
       node.SetAttributeObject("input", *argument.input());
   }
 
-  // Create a node for each node in the region
+  // Create a node for each node in the region in topological order.
+  // Inputs expect the node representing their origin to exist before being visited.
   rvsdg::topdown_traverser traverser(&region);
   for (const auto rvsdgNode : traverser)
   {
