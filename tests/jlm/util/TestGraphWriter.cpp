@@ -49,7 +49,16 @@ TestGraphElement()
   graph.SetAttributeGraphElement("graph", graph);
   graph.SetAttributeObject("another graph", myInt);
 
+  // Check getting attributes
   assert(graph.HasAttribute("taste"));
+  assert(graph.GetAttributeString("taste") == "sweet");
+  assert(!graph.GetAttributeString("not-an-attribute"));
+  assert(graph.GetAttributeGraphElement("graph") == &graph);
+  assert(graph.GetAttributeObject("another graph") == reinterpret_cast<uintptr_t>(&myInt));
+  // Also check that one can get GraphElements based on the program object they represent
+  assert(graph.GetAttributeGraphElement("another graph") == &graph);
+
+  // Test removing attributes
   assert(graph.RemoveAttribute("taste"));
   assert(!graph.HasAttribute("taste"));
   // Removing the attribute again returns false

@@ -661,21 +661,21 @@ TestDrawSubsetGraph()
   auto * supersetEdge = graph.GetEdgeBetween(graph.GetNode(allocaReg0), graph.GetNode(import0));
   assert(supersetEdge);
   assert(supersetEdge->IsDirected());
-  assert(supersetEdge->GetAttributeOr("style", "solid") == "solid");
+  assert(supersetEdge->GetAttributeString("style").value_or("solid") == "solid");
 
   // Check that a store edge connects storeValue to storePointer
   auto * storeEdge = graph.GetEdgeBetween(graph.GetNode(storeValue), graph.GetNode(storePointer));
   assert(storeEdge);
   assert(storeEdge->IsDirected());
-  assert(storeEdge->GetAttributeOr("style", Edge::Style::Dashed) == Edge::Style::Dashed);
-  assert(StringContains(storeEdge->GetAttribute("arrowhead"), "dot"));
+  assert(storeEdge->GetAttributeString("style") == Edge::Style::Dashed);
+  assert(StringContains(storeEdge->GetAttributeString("arrowhead").value(), "dot"));
 
   // Check that a load edge connects loadPointer to loadValue
   auto * loadEdge = graph.GetEdgeBetween(graph.GetNode(loadPointer), graph.GetNode(loadValue));
   assert(loadEdge);
   assert(loadEdge->IsDirected());
-  assert(loadEdge->GetAttributeOr("style", Edge::Style::Dashed) == Edge::Style::Dashed);
-  assert(StringContains(loadEdge->GetAttribute("arrowtail"), "dot"));
+  assert(loadEdge->GetAttributeString("style") == Edge::Style::Dashed);
+  assert(StringContains(loadEdge->GetAttributeString("arrowtail").value(), "dot"));
 
   // Check that the function contains the word "function0"
   auto & functionNode = graph.GetNode(function0);
