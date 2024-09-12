@@ -7,6 +7,10 @@ libjlmtest_SOURCES = \
 
 libjlmtest_HEADERS = \
 	tests/test-operation.hpp \
+	tests/test-registry.hpp \
+	tests/test-types.hpp \
+	tests/test-util.hpp \
+	tests/TestRvsdgs.hpp \
 
 $(eval $(call common_library,libjlmtest))
 
