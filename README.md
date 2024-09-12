@@ -72,6 +72,13 @@ make coverage
 ```
 The report will be available in build/coverage/coverage.html.
 
+To ensure that all build information in the makefiles are correct, it is also
+advisable to check that all headers used are declared (this is quite easy
+to forget). To do this, you can run:
+```
+make check-headers
+```
+
 ## High-level synthesis (HLS) backend
 The HLS backend uses the MLIR FIRRTL dialect from CIRCT to convert llvm IR to FIRRTL code.
 
