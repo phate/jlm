@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: "Install clang format"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-llvm: true # Needed to configure jlm
       - name: "Configure jlm with HLS and MLIR enabled"
         run: ./configure.sh --enable-mlir --enable-hls
       - name: "Check headers"
