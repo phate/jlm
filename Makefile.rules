@@ -113,6 +113,9 @@ endif
 echo-depends:
 	echo $(DEPEND)
 
+check-headers: depend
+	@scripts/check_headers.sh $(DEPEND) -h $(HEADERS) -s $(SOURCES)
+
 ################################################################################
 # Unit testing rules
 

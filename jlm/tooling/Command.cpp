@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/backend/dot/DotWriter.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
@@ -577,6 +578,30 @@ JlmOptCommand::PrintAsRvsdgTree(
 }
 
 void
+JlmOptCommand::PrintAsDot(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector &)
+{
+  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+
+  util::GraphWriter writer;
+  jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);
+
+  if (outputFile == "")
+  {
+    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+  }
+  else
+  {
+    std::ofstream fs;
+    fs.open(outputFile.to_str());
+    writer.OutputAllGraphs(fs, util::GraphOutputFormat::Dot);
+    fs.close();
+  }
+}
+
+void
 JlmOptCommand::PrintRvsdgModule(
     llvm::RvsdgModule & rvsdgModule,
     const util::filepath & outputFile,
@@ -602,6 +627,10 @@ JlmOptCommand::PrintRvsdgModule(
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Tree)
   {
     PrintAsRvsdgTree(rvsdgModule, outputFile, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Dot)
+  {
+    PrintAsDot(rvsdgModule, outputFile, statisticsCollector);
   }
   else
   {

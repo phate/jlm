@@ -65,6 +65,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-sep.hpp \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
+	jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
