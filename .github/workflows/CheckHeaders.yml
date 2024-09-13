@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: "Install clang format"
+      - name: "Install LLVM"
         uses: ./.github/actions/InstallPackages
         with:
           install-llvm: true # Needed to configure jlm
