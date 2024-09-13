@@ -91,6 +91,8 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/pull.hpp \
 	jlm/llvm/opt/optimization.hpp \
 	jlm/llvm/opt/reduction.hpp \
+	jlm/llvm/opt/InvariantValueRedirection.hpp \
+	jlm/llvm/opt/inversion.hpp \
 	jlm/llvm/opt/OptimizationSequence.hpp \
 	jlm/llvm/opt/RvsdgTreePrinter.hpp \
 	jlm/llvm/frontend/LlvmModuleConversion.hpp \
