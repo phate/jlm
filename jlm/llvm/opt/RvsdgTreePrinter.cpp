@@ -123,10 +123,10 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
     const rvsdg::graph & rvsdg,
     util::AnnotationMap & annotationMap)
 {
-  static std::string_view argumentLabel("NumMemoryStateTypeArguments");
-  static std::string_view resultLabel("NumMemoryStateTypeResults");
-  static std::string_view inputLabel("NumMemoryStateTypeInputs");
-  static std::string_view outputLabel("NumMemoryStateTypeOutputs");
+  std::string_view argumentLabel("NumMemoryStateTypeArguments");
+  std::string_view resultLabel("NumMemoryStateTypeResults");
+  std::string_view inputLabel("NumMemoryStateTypeInputs");
+  std::string_view outputLabel("NumMemoryStateTypeOutputs");
 
   std::function<void(const rvsdg::region &)> annotateRegion = [&](const rvsdg::region & region)
   {
