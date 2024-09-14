@@ -311,7 +311,7 @@ producer(const jlm::rvsdg::output * output) noexcept
   if (!argument->input())
     return nullptr;
 
-  if (is<theta_op>(argument->region()->node())
+  if (is<ThetaOperation>(argument->region()->node())
       && (argument->region()->result(argument->index() + 1)->origin() != argument))
     return nullptr;
 

@@ -269,7 +269,7 @@ type(const jlm::rvsdg::node * n)
   if (dynamic_cast<const GammaOperation *>(&n->operation()))
     return "gamma";
 
-  if (dynamic_cast<const jlm::rvsdg::theta_op *>(&n->operation()))
+  if (dynamic_cast<const ThetaOperation *>(&n->operation()))
     return "theta";
 
   return "";

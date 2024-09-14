@@ -12,23 +12,22 @@ namespace jlm::rvsdg
 
 /* theta operation */
 
-theta_op::~theta_op() noexcept
-{}
+ThetaOperation::~ThetaOperation() noexcept = default;
 
 std::string
-theta_op::debug_string() const
+ThetaOperation::debug_string() const
 {
   return "THETA";
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
-theta_op::copy() const
+ThetaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new theta_op(*this));
+  return std::unique_ptr<jlm::rvsdg::operation>(new ThetaOperation(*this));
 }
 
 theta_node::theta_node(rvsdg::region & parent)
-    : structural_node(rvsdg::theta_op(), &parent, 1)
+    : structural_node(ThetaOperation(), &parent, 1)
 {
   auto predicate = control_false(subregion());
   ThetaPredicateResult::Create(*predicate);

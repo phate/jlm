@@ -15,12 +15,11 @@
 namespace jlm::rvsdg
 {
 
-/* theta operation */
-
-class theta_op final : public structural_op
+class ThetaOperation final : public structural_op
 {
 public:
-  virtual ~theta_op() noexcept;
+  ~ThetaOperation() noexcept override;
+
   virtual std::string
   debug_string() const override;
 
@@ -361,7 +360,7 @@ private:
   ThetaArgument(rvsdg::region & region, theta_input & input)
       : RegionArgument(&region, &input, input.Type())
   {
-    JLM_ASSERT(is<theta_op>(region.node()));
+    JLM_ASSERT(is<ThetaOperation>(region.node()));
   }
 
   static ThetaArgument &
@@ -390,7 +389,7 @@ private:
   ThetaResult(rvsdg::output & origin, theta_output & thetaOutput)
       : RegionResult(origin.region(), &origin, &thetaOutput, origin.Type())
   {
-    JLM_ASSERT(is<theta_op>(origin.region()->node()));
+    JLM_ASSERT(is<ThetaOperation>(origin.region()->node()));
   }
 
   static ThetaResult &
@@ -419,7 +418,7 @@ private:
   explicit ThetaPredicateResult(rvsdg::output & origin)
       : RegionResult(origin.region(), &origin, nullptr, ctltype::Create(2))
   {
-    JLM_ASSERT(is<theta_op>(origin.region()->node()));
+    JLM_ASSERT(is<ThetaOperation>(origin.region()->node()));
   }
 
   static ThetaPredicateResult &

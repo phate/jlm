@@ -78,7 +78,7 @@ public:
   theta() const noexcept
   {
     auto node = idv()->region()->node();
-    JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
+    JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
     return static_cast<jlm::rvsdg::theta_node *>(node);
   }
 
