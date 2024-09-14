@@ -83,7 +83,7 @@ hls::distribute_constants(rvsdg::region * region)
       {
         distribute_constants(ln->subregion());
       }
-      else if (auto t = dynamic_cast<rvsdg::theta_node *>(node))
+      else if (auto t = dynamic_cast<rvsdg::ThetaNode *>(node))
       {
         distribute_constants(t->subregion());
       }

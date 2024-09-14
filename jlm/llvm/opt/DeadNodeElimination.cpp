@@ -348,7 +348,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
   };
   auto sweepTheta = [](auto & d, auto & n)
   {
-    d.SweepTheta(*util::AssertedCast<jlm::rvsdg::theta_node>(&n));
+    d.SweepTheta(*util::AssertedCast<rvsdg::ThetaNode>(&n));
   };
   auto sweepLambda = [](auto & d, auto & n)
   {
@@ -427,7 +427,7 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 }
 
 void
-DeadNodeElimination::SweepTheta(jlm::rvsdg::theta_node & thetaNode) const
+DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
   auto & thetaSubregion = *thetaNode.subregion();
 

@@ -526,7 +526,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::structural_node & structuralNode
   {
     EncodeGamma(*gammaNode);
   }
-  else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&structuralNode))
+  else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&structuralNode))
   {
     EncodeTheta(*thetaNode);
   }
@@ -888,7 +888,7 @@ MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 }
 
 void
-MemoryStateEncoder::EncodeTheta(rvsdg::theta_node & thetaNode)
+MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
 {
   Context_->GetRegionalizedStateMap().PushRegion(*thetaNode.subregion());
 
@@ -900,7 +900,7 @@ MemoryStateEncoder::EncodeTheta(rvsdg::theta_node & thetaNode)
 }
 
 std::vector<rvsdg::theta_output *>
-MemoryStateEncoder::EncodeThetaEntry(rvsdg::theta_node & thetaNode)
+MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -920,7 +920,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::theta_node & thetaNode)
 
 void
 MemoryStateEncoder::EncodeThetaExit(
-    rvsdg::theta_node & thetaNode,
+    rvsdg::ThetaNode & thetaNode,
     const std::vector<rvsdg::theta_output *> & thetaStateOutputs)
 {
   auto subregion = thetaNode.subregion();

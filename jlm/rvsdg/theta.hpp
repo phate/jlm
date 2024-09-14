@@ -27,12 +27,10 @@ public:
   copy() const override;
 };
 
-/* theta node */
-
 class theta_input;
 class theta_output;
 
-class theta_node final : public structural_node
+class ThetaNode final : public structural_node
 {
 public:
   class loopvar_iterator
@@ -87,16 +85,16 @@ public:
     jlm::rvsdg::theta_output * output_;
   };
 
-  virtual ~theta_node();
+  ~ThetaNode() noexcept override;
 
 private:
-  explicit theta_node(rvsdg::region & parent);
+  explicit ThetaNode(rvsdg::region & parent);
 
 public:
-  static jlm::rvsdg::theta_node *
+  static ThetaNode *
   create(jlm::rvsdg::region * parent)
   {
-    return new theta_node(*parent);
+    return new ThetaNode(*parent);
   }
 
   inline jlm::rvsdg::region *
@@ -130,7 +128,7 @@ public:
     return ninputs();
   }
 
-  inline theta_node::loopvar_iterator
+  inline ThetaNode::loopvar_iterator
   begin() const
   {
     if (ninputs() == 0)
@@ -139,7 +137,7 @@ public:
     return loopvar_iterator(output(0));
   }
 
-  inline theta_node::loopvar_iterator
+  inline ThetaNode::loopvar_iterator
   end() const
   {
     return loopvar_iterator(nullptr);
@@ -245,7 +243,7 @@ public:
   jlm::rvsdg::theta_output *
   add_loopvar(jlm::rvsdg::output * origin);
 
-  virtual jlm::rvsdg::theta_node *
+  virtual ThetaNode *
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
@@ -253,24 +251,24 @@ public:
 
 class theta_input final : public structural_input
 {
-  friend theta_node;
+  friend ThetaNode;
   friend theta_output;
 
 public:
   virtual ~theta_input() noexcept;
 
   inline theta_input(
-      theta_node * node,
+      ThetaNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const rvsdg::type> type)
       : structural_input(node, origin, std::move(type)),
         output_(nullptr)
   {}
 
-  theta_node *
+  ThetaNode *
   node() const noexcept
   {
-    return static_cast<theta_node *>(structural_input::node());
+    return static_cast<ThetaNode *>(structural_input::node());
   }
 
   inline jlm::rvsdg::theta_output *
@@ -303,21 +301,21 @@ is_invariant(const jlm::rvsdg::theta_input * input) noexcept
 
 class theta_output final : public structural_output
 {
-  friend theta_node;
+  friend ThetaNode;
   friend theta_input;
 
 public:
   virtual ~theta_output() noexcept;
 
-  inline theta_output(theta_node * node, const std::shared_ptr<const rvsdg::type> type)
+  inline theta_output(ThetaNode * node, const std::shared_ptr<const rvsdg::type> type)
       : structural_output(node, std::move(type)),
         input_(nullptr)
   {}
 
-  theta_node *
+  ThetaNode *
   node() const noexcept
   {
-    return static_cast<theta_node *>(structural_output::node());
+    return static_cast<ThetaNode *>(structural_output::node());
   }
 
   inline jlm::rvsdg::theta_input *
@@ -348,7 +346,7 @@ private:
  */
 class ThetaArgument final : public RegionArgument
 {
-  friend theta_node;
+  friend ThetaNode;
 
 public:
   ~ThetaArgument() noexcept override;
@@ -377,7 +375,7 @@ private:
  */
 class ThetaResult final : public RegionResult
 {
-  friend theta_node;
+  friend ThetaNode;
 
 public:
   ~ThetaResult() noexcept override;
@@ -406,7 +404,7 @@ private:
  */
 class ThetaPredicateResult final : public RegionResult
 {
-  friend theta_node;
+  friend ThetaNode;
 
 public:
   ~ThetaPredicateResult() noexcept override;
@@ -439,20 +437,20 @@ is_invariant(const jlm::rvsdg::theta_output * output) noexcept
 /* theta node method definitions */
 
 inline jlm::rvsdg::theta_input *
-theta_node::input(size_t index) const noexcept
+ThetaNode::input(size_t index) const noexcept
 {
   return static_cast<theta_input *>(node::input(index));
 }
 
 inline jlm::rvsdg::theta_output *
-theta_node::output(size_t index) const noexcept
+ThetaNode::output(size_t index) const noexcept
 {
   return static_cast<theta_output *>(node::output(index));
 }
 
 template<typename F>
 util::HashSet<const theta_input *>
-theta_node::RemoveThetaOutputsWhere(const F & match)
+ThetaNode::RemoveThetaOutputsWhere(const F & match)
 {
   util::HashSet<const theta_input *> deadInputs;
 
@@ -475,7 +473,7 @@ theta_node::RemoveThetaOutputsWhere(const F & match)
 
 template<typename F>
 util::HashSet<const theta_output *>
-theta_node::RemoveThetaInputsWhere(const F & match)
+ThetaNode::RemoveThetaInputsWhere(const F & match)
 {
   util::HashSet<const theta_output *> deadOutputs;
 

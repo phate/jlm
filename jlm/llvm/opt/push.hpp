@@ -11,7 +11,7 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
-class theta_node;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -32,13 +32,13 @@ public:
 };
 
 void
-push_top(jlm::rvsdg::theta_node * theta);
+push_top(rvsdg::ThetaNode * theta);
 
 void
-push_bottom(jlm::rvsdg::theta_node * theta);
+push_bottom(rvsdg::ThetaNode * theta);
 
 void
-push(jlm::rvsdg::theta_node * theta);
+push(rvsdg::ThetaNode * theta);
 
 void
 push(rvsdg::GammaNode * gamma);

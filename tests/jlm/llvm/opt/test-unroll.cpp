@@ -33,7 +33,7 @@ nthetas(jlm::rvsdg::region * region)
   return n;
 }
 
-static jlm::rvsdg::theta_node *
+static jlm::rvsdg::ThetaNode *
 create_theta(
     const jlm::rvsdg::bitcompare_op & cop,
     const jlm::rvsdg::bitbinary_op & aop,
@@ -45,7 +45,7 @@ create_theta(
 
   auto graph = init->region()->graph();
 
-  auto theta = theta_node::create(graph->root());
+  auto theta = ThetaNode::create(graph->root());
   auto subregion = theta->subregion();
   auto idv = theta->add_loopvar(init);
   auto lvs = theta->add_loopvar(step);
@@ -242,7 +242,7 @@ test_unknown_boundaries()
   auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bt, "y");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto lv1 = theta->add_loopvar(x);
   auto lv2 = theta->add_loopvar(y);
 
@@ -273,13 +273,13 @@ test_unknown_boundaries()
   //	jlm::rvsdg::view(graph, stdout);
 }
 
-static std::vector<jlm::rvsdg::theta_node *>
+static std::vector<jlm::rvsdg::ThetaNode *>
 find_thetas(jlm::rvsdg::region * region)
 {
-  std::vector<jlm::rvsdg::theta_node *> thetas;
+  std::vector<jlm::rvsdg::ThetaNode *> thetas;
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto theta = dynamic_cast<jlm::rvsdg::theta_node *>(node))
+    if (auto theta = dynamic_cast<jlm::rvsdg::ThetaNode *>(node))
       thetas.push_back(theta);
   }
 
@@ -300,7 +300,7 @@ test_nested_theta()
   auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 97);
 
   /* Outer loop */
-  auto otheta = jlm::rvsdg::theta_node::create(graph.root());
+  auto otheta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lvo_init = otheta->add_loopvar(init);
   auto lvo_step = otheta->add_loopvar(step);
@@ -313,7 +313,7 @@ test_nested_theta()
   lvo_init->result()->divert_to(add);
 
   /* First inner loop in the original loop */
-  auto inner_theta = jlm::rvsdg::theta_node::create(otheta->subregion());
+  auto inner_theta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
   auto inner_init = jlm::rvsdg::create_bitconstant(otheta->subregion(), 32, 0);
   auto lvi_init = inner_theta->add_loopvar(inner_init);
@@ -327,7 +327,7 @@ test_nested_theta()
   lvi_init->result()->divert_to(inner_add);
 
   /* Nested inner loop */
-  auto inner_nested_theta = jlm::rvsdg::theta_node::create(inner_theta->subregion());
+  auto inner_nested_theta = jlm::rvsdg::ThetaNode::create(inner_theta->subregion());
 
   auto inner_nested_init = jlm::rvsdg::create_bitconstant(inner_theta->subregion(), 32, 0);
   auto lvi_nested_init = inner_nested_theta->add_loopvar(inner_nested_init);
@@ -343,7 +343,7 @@ test_nested_theta()
   lvi_nested_init->result()->divert_to(inner_nested_add);
 
   /* Second inner loop in the original loop */
-  auto inner2_theta = jlm::rvsdg::theta_node::create(otheta->subregion());
+  auto inner2_theta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
   auto inner2_init = jlm::rvsdg::create_bitconstant(otheta->subregion(), 32, 0);
   auto lvi2_init = inner2_theta->add_loopvar(inner2_init);

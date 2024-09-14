@@ -11,7 +11,7 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
-class theta_node;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -70,7 +70,7 @@ private:
   RedirectGammaOutputs(rvsdg::GammaNode & gammaNode);
 
   static void
-  RedirectThetaOutputs(rvsdg::theta_node & thetaNode);
+  RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
 
   static void
   RedirectCallOutputs(CallNode & callNode);

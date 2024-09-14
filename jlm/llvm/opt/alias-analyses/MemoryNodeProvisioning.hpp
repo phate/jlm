@@ -57,7 +57,7 @@ public:
   }
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetThetaEntryExitNodes(const jlm::rvsdg::theta_node & thetaNode) const
+  GetThetaEntryExitNodes(const rvsdg::ThetaNode & thetaNode) const
   {
     auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
     auto & exitNodes = GetRegionExitNodes(*thetaNode.subregion());

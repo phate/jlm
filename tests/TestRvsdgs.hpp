@@ -1113,7 +1113,7 @@ private:
 
 public:
   jlm::llvm::lambda::node * lambda;
-  jlm::rvsdg::theta_node * theta;
+  jlm::rvsdg::ThetaNode * theta;
   jlm::rvsdg::node * gep;
 };
 

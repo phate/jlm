@@ -1559,7 +1559,7 @@ ThetaTest::SetupRvsdg()
 
   auto zero = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 0);
 
-  auto thetanode = jlm::rvsdg::theta_node::create(fct->subregion());
+  auto thetanode = jlm::rvsdg::ThetaNode::create(fct->subregion());
 
   auto n = thetanode->add_loopvar(zero);
   auto l = thetanode->add_loopvar(fct->fctargument(0));

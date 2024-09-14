@@ -100,7 +100,7 @@ add_triggers(jlm::rvsdg::region * region)
           add_triggers(new_lambda->subregion());
         }
       }
-      else if (auto t = dynamic_cast<jlm::rvsdg::theta_node *>(node))
+      else if (auto t = dynamic_cast<rvsdg::ThetaNode *>(node))
       {
         JLM_ASSERT(trigger != nullptr);
         JLM_ASSERT(get_trigger(t->subregion()) == nullptr);

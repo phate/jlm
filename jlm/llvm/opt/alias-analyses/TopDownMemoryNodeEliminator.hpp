@@ -32,7 +32,7 @@ class node;
 class region;
 class simple_node;
 class structural_node;
-class theta_node;
+class ThetaNode;
 }
 
 namespace jlm::llvm::aa
@@ -152,7 +152,7 @@ private:
   EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode);
 
   void
-  EliminateTopDownTheta(const rvsdg::theta_node & thetaNode);
+  EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode);
 
   void
   EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode);

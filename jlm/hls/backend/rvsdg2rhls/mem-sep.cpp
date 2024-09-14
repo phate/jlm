@@ -119,7 +119,7 @@ route_through(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
       }
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
     }
-    else if (auto tn = dynamic_cast<jlm::rvsdg::theta_node *>(target->node()))
+    else if (auto tn = dynamic_cast<rvsdg::ThetaNode *>(target->node()))
     {
       auto lv = tn->add_loopvar(parent_response);
       parrent_user->divert_to(lv);

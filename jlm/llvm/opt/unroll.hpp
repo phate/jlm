@@ -74,12 +74,12 @@ public:
   unrollinfo &
   operator=(unrollinfo &&) = delete;
 
-  inline jlm::rvsdg::theta_node *
+  inline rvsdg::ThetaNode *
   theta() const noexcept
   {
     auto node = idv()->region()->node();
     JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
-    return static_cast<jlm::rvsdg::theta_node *>(node);
+    return static_cast<rvsdg::ThetaNode *>(node);
   }
 
   inline bool
@@ -201,7 +201,7 @@ public:
   }
 
   static std::unique_ptr<unrollinfo>
-  create(jlm::rvsdg::theta_node * theta);
+  create(rvsdg::ThetaNode * theta);
 
 private:
   inline bool
@@ -240,7 +240,7 @@ private:
  * body is duplicated in the unrolled loop.
  */
 void
-unroll(jlm::rvsdg::theta_node * node, size_t factor);
+unroll(rvsdg::ThetaNode * node, size_t factor);
 
 }
 

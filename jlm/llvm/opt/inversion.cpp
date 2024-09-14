@@ -49,7 +49,7 @@ public:
 };
 
 static rvsdg::GammaNode *
-is_applicable(const jlm::rvsdg::theta_node * theta)
+is_applicable(const rvsdg::ThetaNode * theta)
 {
   auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
   if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchnode))
@@ -74,7 +74,7 @@ is_applicable(const jlm::rvsdg::theta_node * theta)
 }
 
 static void
-pullin(rvsdg::GammaNode * gamma, jlm::rvsdg::theta_node * theta)
+pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
 {
   pullin_bottom(gamma);
   for (const auto & lv : *theta)
@@ -137,7 +137,7 @@ to_structural_output(jlm::rvsdg::output * output)
 }
 
 static void
-invert(jlm::rvsdg::theta_node * otheta)
+invert(rvsdg::ThetaNode * otheta)
 {
   auto ogamma = is_applicable(otheta);
   if (!ogamma)
@@ -190,7 +190,7 @@ invert(jlm::rvsdg::theta_node * otheta)
   /* handle subregion 1 */
   jlm::rvsdg::substitution_map r1map;
   {
-    auto ntheta = jlm::rvsdg::theta_node::create(ngamma->subregion(1));
+    auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
 
     /* add loop variables to new theta node and setup substitution map */
     auto osubregion0 = ogamma->subregion(0);
@@ -296,7 +296,7 @@ invert(jlm::rvsdg::region * region)
       for (size_t r = 0; r < structnode->nsubregions(); r++)
         invert(structnode->subregion(r));
 
-      if (auto theta = dynamic_cast<jlm::rvsdg::theta_node *>(structnode))
+      if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(structnode))
         invert(theta);
     }
   }
