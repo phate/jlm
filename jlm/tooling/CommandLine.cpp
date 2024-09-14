@@ -887,6 +887,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
           "NumRvsdgNodes",
           "Annotate number of RVSDG nodes")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs,
+          "NumMemoryStateInputsOutputs",
+          "Annotate number of inputs/outputs with memory state type")),
       cl::CommaSeparated,
       cl::desc("Comma separated list of RVSDG tree printer annotations"));
 
