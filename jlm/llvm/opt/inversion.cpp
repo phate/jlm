@@ -93,7 +93,7 @@ pullin(rvsdg::GammaNode * gamma, jlm::rvsdg::theta_node * theta)
 static std::vector<std::vector<jlm::rvsdg::node *>>
 collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structural_node * gnode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(tnode));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(tnode));
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
   JLM_ASSERT(gnode->region()->node() == tnode);
 

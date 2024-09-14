@@ -139,9 +139,9 @@ test_push_theta_bottom()
   auto storenode = jlm::rvsdg::node_output::node(ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
-  assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(
+  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
       jlm::rvsdg::node_output::node(storenode->input(1)->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(
+  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
       jlm::rvsdg::node_output::node(storenode->input(2)->origin())));
 }
 

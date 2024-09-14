@@ -60,7 +60,7 @@ is_eqcmp(const jlm::rvsdg::operation & op)
 static bool
 is_theta_invariant(const jlm::rvsdg::output * output)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(output->region()->node()));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(output->region()->node()));
 
   if (jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(jlm::rvsdg::node_output::node(output)))
     return true;
@@ -81,7 +81,7 @@ push_from_theta(jlm::rvsdg::output * output)
 
   auto tmp = jlm::rvsdg::node_output::node(output);
   JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(tmp));
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(tmp->region()->node()));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(tmp->region()->node()));
   auto theta = static_cast<jlm::rvsdg::theta_node *>(tmp->region()->node());
 
   auto node = tmp->copy(theta->region(), {});

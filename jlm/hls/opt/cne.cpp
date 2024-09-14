@@ -200,8 +200,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
 
   auto n1 = jlm::rvsdg::node_output::node(o1);
   auto n2 = jlm::rvsdg::node_output::node(o2);
-  if (jlm::rvsdg::is<jlm::rvsdg::theta_op>(n1) && jlm::rvsdg::is<jlm::rvsdg::theta_op>(n2)
-      && n1 == n2)
+  if (is<jlm::rvsdg::ThetaOperation>(n1) && is<jlm::rvsdg::ThetaOperation>(n2) && n1 == n2)
   {
     auto so1 = static_cast<jlm::rvsdg::structural_output *>(o1);
     auto so2 = static_cast<jlm::rvsdg::structural_output *>(o2);
@@ -319,7 +318,7 @@ mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 static void
 mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
+  JLM_ASSERT(is<jlm::rvsdg::ThetaOperation>(node));
   auto theta = static_cast<const jlm::rvsdg::theta_node *>(node);
 
   /* mark loop variables */
@@ -414,7 +413,7 @@ mark(const jlm::rvsdg::structural_node * node, cnectx & ctx)
   static std::
       unordered_map<std::type_index, void (*)(const jlm::rvsdg::structural_node *, cnectx &)>
           map({ { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
-                { std::type_index(typeid(jlm::rvsdg::theta_op)), mark_theta },
+                { std::type_index(typeid(ThetaOperation)), mark_theta },
                 { std::type_index(typeid(jlm::hls::loop_op)), mark_loop },
                 { typeid(llvm::lambda::operation), mark_lambda },
                 { typeid(llvm::phi::operation), mark_phi },
@@ -525,7 +524,7 @@ divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
 static void
 divert_theta(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
+  JLM_ASSERT(is<jlm::rvsdg::ThetaOperation>(node));
   auto theta = static_cast<jlm::rvsdg::theta_node *>(node);
   auto subregion = node->subregion(0);
 
@@ -576,7 +575,7 @@ divert(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
   static std::unordered_map<std::type_index, void (*)(jlm::rvsdg::structural_node *, cnectx &)> map(
       { { std::type_index(typeid(rvsdg::GammaOperation)), divert_gamma },
-        { std::type_index(typeid(jlm::rvsdg::theta_op)), divert_theta },
+        { std::type_index(typeid(ThetaOperation)), divert_theta },
         { std::type_index(typeid(jlm::hls::loop_op)), divert_loop },
         { typeid(llvm::lambda::operation), divert_lambda },
         { typeid(llvm::phi::operation), divert_phi },

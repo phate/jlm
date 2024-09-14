@@ -329,7 +329,7 @@ static inline bool
 phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
   auto node = rvsdg::input::GetNode(*i);
-  JLM_ASSERT(is<rvsdg::theta_op>(node));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
   auto theta = static_cast<const rvsdg::structural_node *>(node);
   auto input = static_cast<const rvsdg::structural_input *>(i);
   auto output = theta->output(input->index());
@@ -350,7 +350,7 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
 static inline void
 convert_theta_node(const rvsdg::node & node, context & ctx)
 {
-  JLM_ASSERT(is<rvsdg::theta_op>(&node));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(&node));
   auto subregion = static_cast<const rvsdg::structural_node *>(&node)->subregion(0);
   auto predicate = subregion->result(0)->origin();
 
@@ -520,7 +520,7 @@ convert_node(const rvsdg::node & node, context & ctx)
       unordered_map<std::type_index, std::function<void(const rvsdg::node & node, context & ctx)>>
           map({ { typeid(lambda::operation), convert_lambda_node },
                 { std::type_index(typeid(rvsdg::GammaOperation)), convert_gamma_node },
-                { std::type_index(typeid(rvsdg::theta_op)), convert_theta_node },
+                { std::type_index(typeid(rvsdg::ThetaOperation)), convert_theta_node },
                 { typeid(phi::operation), convert_phi_node },
                 { typeid(delta::operation), convert_delta_node } });
 
