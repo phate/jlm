@@ -145,7 +145,7 @@ test_theta()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv1 = theta->add_loopvar(c);
@@ -198,7 +198,7 @@ test_theta2()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv1 = theta->add_loopvar(c);
@@ -242,7 +242,7 @@ test_theta3()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta1 = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta1 = jlm::rvsdg::ThetaNode::create(graph.root());
   auto r1 = theta1->subregion();
 
   auto lv1 = theta1->add_loopvar(c);
@@ -250,7 +250,7 @@ test_theta3()
   auto lv3 = theta1->add_loopvar(x);
   auto lv4 = theta1->add_loopvar(x);
 
-  auto theta2 = jlm::rvsdg::theta_node::create(r1);
+  auto theta2 = jlm::rvsdg::ThetaNode::create(r1);
   auto r2 = theta2->subregion();
   auto p = theta2->add_loopvar(lv1->argument());
   theta2->add_loopvar(lv2->argument());
@@ -302,7 +302,7 @@ test_theta4()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv1 = theta->add_loopvar(c);
@@ -355,7 +355,7 @@ test_theta5()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv0 = theta->add_loopvar(c);

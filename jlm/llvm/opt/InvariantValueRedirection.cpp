@@ -110,7 +110,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
       RedirectInSubregions(*gammaNode);
       RedirectGammaOutputs(*gammaNode);
     }
-    else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&node))
+    else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&node))
     {
       // Ensure we redirect invariant values of all nodes in the theta subregion first, otherwise we
       // might not be able to redirect some of the theta outputs.
@@ -153,7 +153,7 @@ InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 }
 
 void
-InvariantValueRedirection::RedirectThetaOutputs(rvsdg::theta_node & thetaNode)
+InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
   for (const auto & thetaOutput : thetaNode)
   {

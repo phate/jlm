@@ -534,7 +534,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownStructuralNode(
   {
     EliminateTopDownGamma(*gammaNode);
   }
-  else if (auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&structuralNode))
+  else if (auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&structuralNode))
   {
     EliminateTopDownTheta(*thetaNode);
   }
@@ -722,7 +722,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::theta_node & thetaNode)
+TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode)
 {
   auto & thetaRegion = *thetaNode.region();
   auto & thetaSubregion = *thetaNode.subregion();
@@ -946,7 +946,7 @@ TopDownMemoryNodeEliminator::CheckInvariants(
           collectRegionsAndCalls(*subregion, regions, callNodes);
         }
       }
-      else if (auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
+      else if (auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
       {
         auto subregion = thetaNode->subregion();
         regions.push_back(subregion);

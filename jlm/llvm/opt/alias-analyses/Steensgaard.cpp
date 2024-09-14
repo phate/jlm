@@ -1652,7 +1652,7 @@ Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
 }
 
 void
-Steensgaard::AnalyzeTheta(const jlm::rvsdg::theta_node & theta)
+Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 {
   for (auto thetaOutput : theta)
   {
@@ -1696,7 +1696,7 @@ Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
   {
     AnalyzeGamma(*gammaNode);
   }
-  else if (auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
+  else if (auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
   {
     AnalyzeTheta(*thetaNode);
   }

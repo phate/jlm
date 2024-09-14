@@ -128,7 +128,7 @@ TestTheta()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lv1 = theta->add_loopvar(x);
   auto lv2 = theta->add_loopvar(y);
@@ -171,13 +171,13 @@ TestNestedTheta()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto otheta = jlm::rvsdg::theta_node::create(graph.root());
+  auto otheta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lvo1 = otheta->add_loopvar(c);
   auto lvo2 = otheta->add_loopvar(x);
   auto lvo3 = otheta->add_loopvar(y);
 
-  auto itheta = jlm::rvsdg::theta_node::create(otheta->subregion());
+  auto itheta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
   auto lvi1 = itheta->add_loopvar(lvo1->argument());
   auto lvi2 = itheta->add_loopvar(lvo2->argument());
@@ -217,7 +217,7 @@ TestEvolvingTheta()
   auto x3 = &jlm::tests::GraphImport::Create(graph, vt, "x3");
   auto x4 = &jlm::tests::GraphImport::Create(graph, vt, "x4");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lv0 = theta->add_loopvar(c);
   auto lv1 = theta->add_loopvar(x1);

@@ -143,14 +143,14 @@ private:
   EncodeGammaExit(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeTheta(rvsdg::theta_node & thetaNode);
+  EncodeTheta(rvsdg::ThetaNode & thetaNode);
 
   std::vector<rvsdg::theta_output *>
-  EncodeThetaEntry(rvsdg::theta_node & thetaNode);
+  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
 
   void
   EncodeThetaExit(
-      rvsdg::theta_node & thetaNode,
+      rvsdg::ThetaNode & thetaNode,
       const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
 
   /**

@@ -174,7 +174,7 @@ RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 }
 
 static void
-RemoveUnusedStatesFromThetaNode(rvsdg::theta_node & thetaNode)
+RemoveUnusedStatesFromThetaNode(rvsdg::ThetaNode & thetaNode)
 {
   auto thetaSubregion = thetaNode.subregion();
   for (int i = thetaSubregion->narguments() - 1; i >= 0; --i)
@@ -203,7 +203,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
   {
     RemoveUnusedStatesFromGammaNode(*gammaNode);
   }
-  else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&structuralNode))
+  else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&structuralNode))
   {
     RemoveUnusedStatesFromThetaNode(*thetaNode);
   }

@@ -804,7 +804,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
     AnalyzePhi(*phiNode);
   else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
     AnalyzeGamma(*gammaNode);
-  else if (const auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
+  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
     AnalyzeTheta(*thetaNode);
   else
     JLM_UNREACHABLE("Unknown structural node operation");
@@ -963,7 +963,7 @@ Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 }
 
 void
-Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
+Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 {
   // Create a PointerObject for each argument in the inner region
   // And make it point to a superset of the corresponding input register

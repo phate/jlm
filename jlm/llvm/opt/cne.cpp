@@ -303,7 +303,7 @@ static void
 mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
-  auto theta = static_cast<const jlm::rvsdg::theta_node *>(node);
+  auto theta = static_cast<const rvsdg::ThetaNode *>(node);
 
   /* mark loop variables */
   for (size_t i1 = 0; i1 < theta->ninputs(); i1++)
@@ -486,7 +486,7 @@ static void
 divert_theta(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
-  auto theta = static_cast<jlm::rvsdg::theta_node *>(node);
+  auto theta = static_cast<rvsdg::ThetaNode *>(node);
   auto subregion = node->subregion(0);
 
   for (const auto & lv : *theta)

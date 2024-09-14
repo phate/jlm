@@ -89,7 +89,7 @@ TestTheta()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto thetaNode = jlm::rvsdg::theta_node::create(rvsdg.root());
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(rvsdg.root());
 
   auto thetaOutput0 = thetaNode->add_loopvar(p);
   auto thetaOutput1 = thetaNode->add_loopvar(x);

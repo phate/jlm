@@ -752,7 +752,7 @@ Convert(
 {
   auto & parentRegion = regionalizedVariableMap.GetTopRegion();
 
-  auto theta = rvsdg::theta_node::create(&parentRegion);
+  auto theta = rvsdg::ThetaNode::create(&parentRegion);
 
   regionalizedVariableMap.PushRegion(*theta->subregion());
   auto & thetaVariableMap = regionalizedVariableMap.GetTopVariableMap();

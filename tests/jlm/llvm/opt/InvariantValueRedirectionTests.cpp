@@ -103,12 +103,12 @@ TestTheta()
   auto x = lambdaNode->fctargument(1);
   auto l = lambdaNode->fctargument(2);
 
-  auto thetaNode1 = jlm::rvsdg::theta_node::create(lambdaNode->subregion());
+  auto thetaNode1 = jlm::rvsdg::ThetaNode::create(lambdaNode->subregion());
   auto thetaOutput1 = thetaNode1->add_loopvar(c);
   auto thetaOutput2 = thetaNode1->add_loopvar(x);
   auto thetaOutput3 = thetaNode1->add_loopvar(l);
 
-  auto thetaNode2 = jlm::rvsdg::theta_node::create(thetaNode1->subregion());
+  auto thetaNode2 = jlm::rvsdg::ThetaNode::create(thetaNode1->subregion());
   auto thetaOutput4 = thetaNode2->add_loopvar(thetaOutput1->argument());
   thetaNode2->add_loopvar(thetaOutput2->argument());
   auto thetaOutput5 = thetaNode2->add_loopvar(thetaOutput3->argument());

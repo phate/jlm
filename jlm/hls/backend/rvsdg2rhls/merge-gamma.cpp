@@ -153,7 +153,7 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
 {
   // eliminates gammas that are only active at the end of the loop and have unused outputs
   // seems to be mostly loop variables
-  auto theta = dynamic_cast<rvsdg::theta_node *>(gamma->region()->node());
+  auto theta = dynamic_cast<rvsdg::ThetaNode *>(gamma->region()->node());
   if (!theta || theta->predicate()->origin() != gamma->predicate()->origin())
   {
     return false;

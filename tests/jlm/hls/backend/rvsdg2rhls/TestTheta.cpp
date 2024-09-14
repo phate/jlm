@@ -30,7 +30,7 @@ TestUnknownBoundaries()
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
 
-  auto theta = jlm::rvsdg::theta_node::create(lambda->subregion());
+  auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto subregion = theta->subregion();
   auto idv = theta->add_loopvar(lambda->fctargument(0));
   auto lvs = theta->add_loopvar(lambda->fctargument(1));

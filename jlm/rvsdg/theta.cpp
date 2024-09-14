@@ -26,7 +26,7 @@ ThetaOperation::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new ThetaOperation(*this));
 }
 
-theta_node::theta_node(rvsdg::region & parent)
+ThetaNode::ThetaNode(rvsdg::region & parent)
     : structural_node(ThetaOperation(), &parent, 1)
 {
   auto predicate = control_false(subregion());
@@ -78,11 +78,10 @@ ThetaPredicateResult::Copy(rvsdg::output & origin, structural_output * output)
 
 /* theta node */
 
-theta_node::~theta_node()
-{}
+ThetaNode::~ThetaNode() noexcept = default;
 
-const theta_node::loopvar_iterator &
-theta_node::loopvar_iterator::operator++() noexcept
+const ThetaNode::loopvar_iterator &
+ThetaNode::loopvar_iterator::operator++() noexcept
 {
   if (output_ == nullptr)
     return *this;
@@ -101,13 +100,13 @@ theta_node::loopvar_iterator::operator++() noexcept
 }
 
 jlm::rvsdg::theta_output *
-theta_node::add_loopvar(jlm::rvsdg::output * origin)
+ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 {
   node::add_input(std::make_unique<theta_input>(this, origin, origin->Type()));
   node::add_output(std::make_unique<theta_output>(this, origin->Type()));
 
-  auto input = theta_node::input(ninputs() - 1);
-  auto output = theta_node::output(noutputs() - 1);
+  auto input = ThetaNode::input(ninputs() - 1);
+  auto output = ThetaNode::output(noutputs() - 1);
   input->output_ = output;
   output->input_ = input;
 
@@ -116,8 +115,8 @@ theta_node::add_loopvar(jlm::rvsdg::output * origin)
   return output;
 }
 
-jlm::rvsdg::theta_node *
-theta_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+ThetaNode *
+ThetaNode::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
 {
   auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);

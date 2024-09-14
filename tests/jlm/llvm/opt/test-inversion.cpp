@@ -29,7 +29,7 @@ test1()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lvx = theta->add_loopvar(x);
   auto lvy = theta->add_loopvar(y);
@@ -85,7 +85,7 @@ test2()
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lv1 = theta->add_loopvar(x);
 

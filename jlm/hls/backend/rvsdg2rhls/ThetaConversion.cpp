@@ -11,7 +11,7 @@ namespace jlm::hls
 {
 
 static void
-ConvertThetaNode(jlm::rvsdg::theta_node & theta)
+ConvertThetaNode(rvsdg::ThetaNode & theta)
 {
   jlm::rvsdg::substitution_map smap;
 
@@ -54,7 +54,7 @@ ConvertThetaNodesInStructuralNode(jlm::rvsdg::structural_node & structuralNode)
     ConvertThetaNodesInRegion(*structuralNode.subregion(n));
   }
 
-  if (auto thetaNode = dynamic_cast<jlm::rvsdg::theta_node *>(&structuralNode))
+  if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&structuralNode))
   {
     ConvertThetaNode(*thetaNode);
   }
