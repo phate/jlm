@@ -54,6 +54,12 @@ public:
       NumRvsdgNodes,
 
       /**
+       * Annotate region and structural nodes with the number of inputs/outputs of type
+       * MemoryStateType.
+       */
+      NumMemoryStateInputsOutputs,
+
+      /**
        * Must always be the last enum value. Used for iteration.
        */
       LastEnumValue
@@ -136,6 +142,20 @@ private:
    */
   static void
   AnnotateNumRvsdgNodes(const rvsdg::graph & rvsdg, util::AnnotationMap & annotationMap);
+
+  /**
+   * Adds an annotation to \p annotationMap that indicates the number of inputs/outputs of type
+   * MemoryStateType.
+   *
+   * @param rvsdg The RVSDG for which to compute the annotation.
+   * @param annotationMap The annotation map in which the annotation is inserted.
+   *
+   * @see NumMemoryStateInputsOutputs
+   */
+  static void
+  AnnotateNumMemoryStateInputsOutputs(
+      const rvsdg::graph & rvsdg,
+      util::AnnotationMap & annotationMap);
 
   void
   WriteTreeToFile(const RvsdgModule & rvsdgModule, const std::string & tree) const;

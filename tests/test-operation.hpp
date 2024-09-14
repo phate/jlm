@@ -205,6 +205,10 @@ public:
   copy() const override;
 };
 
+class StructuralNodeArgument;
+class StructuralNodeInput;
+class StructuralNodeOutput;
+
 class structural_node final : public rvsdg::structural_node
 {
 public:
@@ -216,6 +220,18 @@ private:
   {}
 
 public:
+  StructuralNodeInput &
+  AddInput(rvsdg::output & origin);
+
+  StructuralNodeInput &
+  AddInputWithArguments(rvsdg::output & origin);
+
+  StructuralNodeOutput &
+  AddOutput(std::shared_ptr<const rvsdg::type> type);
+
+  StructuralNodeOutput &
+  AddOutputWithResults(const std::vector<rvsdg::output *> & origins);
+
   static structural_node *
   create(rvsdg::region * parent, size_t nsubregions)
   {
@@ -224,6 +240,124 @@ public:
 
   virtual structural_node *
   copy(rvsdg::region * region, rvsdg::substitution_map & smap) const override;
+};
+
+class StructuralNodeInput final : public rvsdg::structural_input
+{
+  friend structural_node;
+
+public:
+  ~StructuralNodeInput() noexcept override;
+
+private:
+  StructuralNodeInput(
+      structural_node & node,
+      rvsdg::output & origin,
+      std::shared_ptr<const rvsdg::type> type)
+      : rvsdg::structural_input(&node, &origin, std::move(type))
+  {}
+
+public:
+  [[nodiscard]] size_t
+  NumArguments() const noexcept
+  {
+    return arguments.size();
+  }
+
+  [[nodiscard]] StructuralNodeArgument &
+  Argument(size_t n) noexcept
+  {
+    JLM_ASSERT(n < NumArguments());
+    // FIXME: I did not find a better way of doing it. The arguments attribute should be replaced
+    // by a std::vector<> to enable efficient access.
+    for (auto & argument : arguments)
+    {
+      if (argument.region()->index() == n)
+        return *util::AssertedCast<StructuralNodeArgument>(&argument);
+    }
+
+    JLM_UNREACHABLE("Unknown argument");
+  }
+};
+
+class StructuralNodeOutput final : public rvsdg::structural_output
+{
+  friend structural_node;
+
+public:
+  ~StructuralNodeOutput() noexcept override;
+
+private:
+  StructuralNodeOutput(structural_node & node, std::shared_ptr<const rvsdg::type> type)
+      : rvsdg::structural_output(&node, std::move(type))
+  {}
+};
+
+class StructuralNodeArgument final : public rvsdg::RegionArgument
+{
+  friend structural_node;
+
+public:
+  ~StructuralNodeArgument() noexcept override;
+
+  StructuralNodeArgument &
+  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+
+private:
+  StructuralNodeArgument(
+      rvsdg::region & region,
+      StructuralNodeInput * input,
+      std::shared_ptr<const rvsdg::type> type)
+      : rvsdg::RegionArgument(&region, input, std::move(type))
+  {}
+
+  static StructuralNodeArgument &
+  Create(rvsdg::region & region, StructuralNodeInput & input)
+  {
+    auto argument = new StructuralNodeArgument(region, &input, input.Type());
+    region.append_argument(argument);
+    return *argument;
+  }
+
+  static StructuralNodeArgument &
+  Create(rvsdg::region & region, std::shared_ptr<const rvsdg::type> type)
+  {
+    auto argument = new StructuralNodeArgument(region, nullptr, std::move(type));
+    region.append_argument(argument);
+    return *argument;
+  }
+};
+
+class StructuralNodeResult final : public rvsdg::RegionResult
+{
+  friend structural_node;
+
+public:
+  ~StructuralNodeResult() noexcept override;
+
+  StructuralNodeResult &
+  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+
+private:
+  StructuralNodeResult(rvsdg::output & origin, StructuralNodeOutput * output)
+      : rvsdg::RegionResult(origin.region(), &origin, output, origin.Type())
+  {}
+
+  static StructuralNodeResult &
+  Create(rvsdg::output & origin)
+  {
+    auto result = new StructuralNodeResult(origin, nullptr);
+    origin.region()->append_result(result);
+    return *result;
+  }
+
+  static StructuralNodeResult &
+  Create(rvsdg::output & origin, StructuralNodeOutput & output)
+  {
+    auto result = new StructuralNodeResult(origin, &output);
+    origin.region()->append_result(result);
+    return *result;
+  }
 };
 
 class test_op final : public rvsdg::simple_op

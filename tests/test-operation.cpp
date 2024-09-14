@@ -194,4 +194,70 @@ structural_node::copy(rvsdg::region * parent, rvsdg::substitution_map & smap) co
   return node;
 }
 
+StructuralNodeInput &
+structural_node::AddInput(rvsdg::output & origin)
+{
+  auto input =
+      std::unique_ptr<StructuralNodeInput>(new StructuralNodeInput(*this, origin, origin.Type()));
+  return *util::AssertedCast<StructuralNodeInput>(add_input(std::move(input)));
+}
+
+StructuralNodeInput &
+structural_node::AddInputWithArguments(rvsdg::output & origin)
+{
+  auto & input = AddInput(origin);
+  for (size_t n = 0; n < nsubregions(); n++)
+  {
+    StructuralNodeArgument::Create(*subregion(n), input);
+  }
+
+  return input;
+}
+
+StructuralNodeOutput &
+structural_node::AddOutput(std::shared_ptr<const rvsdg::type> type)
+{
+  auto output =
+      std::unique_ptr<StructuralNodeOutput>(new StructuralNodeOutput(*this, std::move(type)));
+  return *util::AssertedCast<StructuralNodeOutput>(add_output(std::move(output)));
+}
+
+StructuralNodeOutput &
+structural_node::AddOutputWithResults(const std::vector<rvsdg::output *> & origins)
+{
+  if (origins.size() != nsubregions())
+    throw util::error("Insufficient number of origins.");
+
+  auto & output = AddOutput(origins[0]->Type());
+  for (size_t n = 0; n < nsubregions(); n++)
+  {
+    StructuralNodeResult::Create(*origins[n], output);
+  }
+
+  return output;
+}
+
+StructuralNodeInput::~StructuralNodeInput() noexcept = default;
+
+StructuralNodeOutput::~StructuralNodeOutput() noexcept = default;
+
+StructuralNodeArgument::~StructuralNodeArgument() noexcept = default;
+
+StructuralNodeArgument &
+StructuralNodeArgument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+{
+  auto structuralNodeInput = util::AssertedCast<StructuralNodeInput>(input);
+  return structuralNodeInput != nullptr ? Create(region, *structuralNodeInput)
+                                        : Create(region, Type());
+}
+
+StructuralNodeResult::~StructuralNodeResult() noexcept = default;
+
+StructuralNodeResult &
+StructuralNodeResult::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+{
+  auto structuralNodeOutput = util::AssertedCast<StructuralNodeOutput>(output);
+  return structuralNodeOutput != nullptr ? Create(origin, *structuralNodeOutput) : Create(origin);
+}
+
 }
