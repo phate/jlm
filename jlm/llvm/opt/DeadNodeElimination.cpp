@@ -224,7 +224,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 
   if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
   {
-    auto thetaInput = util::AssertedCast<const jlm::rvsdg::theta_input>(thetaArgument->input());
+    auto thetaInput = util::AssertedCast<const rvsdg::ThetaInput>(thetaArgument->input());
     MarkOutput(*thetaInput->output());
     MarkOutput(*thetaInput->origin());
     return;
@@ -440,7 +440,7 @@ DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 
   SweepRegion(thetaSubregion);
 
-  auto matchInput = [&](const rvsdg::theta_input & input)
+  auto matchInput = [&](const rvsdg::ThetaInput & input)
   {
     return deadInputs.Contains(&input);
   };

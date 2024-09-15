@@ -24,7 +24,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
     changed = false;
     for (auto user : *out)
     {
-      if (auto ti = dynamic_cast<rvsdg::theta_input *>(user))
+      if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
       {
         auto arg = ti->argument();
         auto res = ti->result();

@@ -211,7 +211,7 @@ trace_edge(
         common_edge = subres->output();
       }
     }
-    else if (auto ti = dynamic_cast<jlm::rvsdg::theta_input *>(user))
+    else if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
     {
       auto tn = ti->node();
       auto lv = tn->add_loopvar(new_edge);

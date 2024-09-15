@@ -69,7 +69,7 @@ is_theta_invariant(const jlm::rvsdg::output * output)
   if (!argument)
     return false;
 
-  return is_invariant(static_cast<const jlm::rvsdg::theta_input *>(argument->input()));
+  return is_invariant(static_cast<const rvsdg::ThetaInput *>(argument->input()));
 }
 
 static rvsdg::RegionArgument *
@@ -103,7 +103,7 @@ is_idv(jlm::rvsdg::input * input)
   if (!a)
     return false;
 
-  auto tinput = static_cast<const theta_input *>(a->input());
+  auto tinput = static_cast<const ThetaInput *>(a->input());
   return jlm::rvsdg::node_output::node(tinput->result()->origin()) == node;
 }
 
