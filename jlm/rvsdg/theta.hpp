@@ -27,7 +27,7 @@ public:
   copy() const override;
 };
 
-class theta_input;
+class ThetaInput;
 class theta_output;
 
 class ThetaNode final : public structural_node
@@ -161,7 +161,7 @@ public:
    * \see theta_output#IsDead()
    */
   template<typename F>
-  util::HashSet<const theta_input *>
+  util::HashSet<const ThetaInput *>
   RemoveThetaOutputsWhere(const F & match);
 
   /**
@@ -177,7 +177,7 @@ public:
    * \see RemoveThetaOutputsWhere()
    * \see theta_output#IsDead()
    */
-  util::HashSet<const theta_input *>
+  util::HashSet<const ThetaInput *>
   PruneThetaOutputs()
   {
     auto match = [](const theta_output &)
@@ -194,7 +194,7 @@ public:
    * An input must match the condition specified by \p match and its respective argument must be
    * dead.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const theta_input&)
+   * @tparam F A type that supports the function call operator: bool operator(const ThetaInput&)
    * @param match Defines the condition of the elements to remove.
    * @return The outputs corresponding to the removed outputs.
    *
@@ -226,7 +226,7 @@ public:
   util::HashSet<const theta_output *>
   PruneThetaInputs()
   {
-    auto match = [](const theta_input &)
+    auto match = [](const ThetaInput &)
     {
       return true;
     };
@@ -234,7 +234,7 @@ public:
     return RemoveThetaInputsWhere(match);
   }
 
-  theta_input *
+  ThetaInput *
   input(size_t index) const noexcept;
 
   theta_output *
@@ -247,20 +247,15 @@ public:
   copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
-/* theta input */
-
-class theta_input final : public structural_input
+class ThetaInput final : public structural_input
 {
   friend ThetaNode;
   friend theta_output;
 
 public:
-  virtual ~theta_input() noexcept;
+  ~ThetaInput() noexcept override;
 
-  inline theta_input(
-      ThetaNode * node,
-      jlm::rvsdg::output * origin,
-      std::shared_ptr<const rvsdg::type> type)
+  ThetaInput(ThetaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::type> type)
       : structural_input(node, origin, std::move(type)),
         output_(nullptr)
   {}
@@ -292,7 +287,7 @@ private:
 };
 
 static inline bool
-is_invariant(const jlm::rvsdg::theta_input * input) noexcept
+is_invariant(const ThetaInput * input) noexcept
 {
   return input->result()->origin() == input->argument();
 }
@@ -302,7 +297,7 @@ is_invariant(const jlm::rvsdg::theta_input * input) noexcept
 class theta_output final : public structural_output
 {
   friend ThetaNode;
-  friend theta_input;
+  friend ThetaInput;
 
 public:
   virtual ~theta_output() noexcept;
@@ -318,7 +313,7 @@ public:
     return static_cast<ThetaNode *>(structural_output::node());
   }
 
-  inline jlm::rvsdg::theta_input *
+  [[nodiscard]] ThetaInput *
   input() const noexcept
   {
     return input_;
@@ -338,7 +333,7 @@ public:
   }
 
 private:
-  jlm::rvsdg::theta_input * input_;
+  ThetaInput * input_;
 };
 
 /**
@@ -355,14 +350,14 @@ public:
   Copy(rvsdg::region & region, structural_input * input) override;
 
 private:
-  ThetaArgument(rvsdg::region & region, theta_input & input)
+  ThetaArgument(rvsdg::region & region, ThetaInput & input)
       : RegionArgument(&region, &input, input.Type())
   {
     JLM_ASSERT(is<ThetaOperation>(region.node()));
   }
 
   static ThetaArgument &
-  Create(rvsdg::region & region, theta_input & input)
+  Create(rvsdg::region & region, ThetaInput & input)
   {
     auto thetaArgument = new ThetaArgument(region, input);
     region.append_argument(thetaArgument);
@@ -436,10 +431,10 @@ is_invariant(const jlm::rvsdg::theta_output * output) noexcept
 
 /* theta node method definitions */
 
-inline jlm::rvsdg::theta_input *
+inline ThetaInput *
 ThetaNode::input(size_t index) const noexcept
 {
-  return static_cast<theta_input *>(node::input(index));
+  return static_cast<ThetaInput *>(node::input(index));
 }
 
 inline jlm::rvsdg::theta_output *
@@ -449,10 +444,10 @@ ThetaNode::output(size_t index) const noexcept
 }
 
 template<typename F>
-util::HashSet<const theta_input *>
+util::HashSet<const ThetaInput *>
 ThetaNode::RemoveThetaOutputsWhere(const F & match)
 {
-  util::HashSet<const theta_input *> deadInputs;
+  util::HashSet<const ThetaInput *> deadInputs;
 
   // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
   for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
@@ -497,7 +492,7 @@ ThetaNode::RemoveThetaInputsWhere(const F & match)
 /* theta input method definitions */
 
 [[nodiscard]] inline RegionResult *
-theta_input::result() const noexcept
+ThetaInput::result() const noexcept
 {
   return output_->result();
 }

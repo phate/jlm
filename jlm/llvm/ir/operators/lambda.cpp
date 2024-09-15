@@ -322,7 +322,7 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto theta_input = dynamic_cast<rvsdg::theta_input *>(input))
+    if (auto theta_input = dynamic_cast<rvsdg::ThetaInput *>(input))
     {
       auto argument = theta_input->argument();
       worklist.insert(worklist.end(), argument->begin(), argument->end());

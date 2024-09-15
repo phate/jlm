@@ -33,9 +33,7 @@ ThetaNode::ThetaNode(rvsdg::region & parent)
   ThetaPredicateResult::Create(*predicate);
 }
 
-/* theta input */
-
-theta_input::~theta_input() noexcept
+ThetaInput::~ThetaInput() noexcept
 {
   if (output_)
     output_->input_ = nullptr;
@@ -54,7 +52,7 @@ ThetaArgument::~ThetaArgument() noexcept = default;
 ThetaArgument &
 ThetaArgument::Copy(rvsdg::region & region, structural_input * input)
 {
-  auto thetaInput = util::AssertedCast<theta_input>(input);
+  auto thetaInput = util::AssertedCast<ThetaInput>(input);
   return ThetaArgument::Create(region, *thetaInput);
 }
 
@@ -102,7 +100,7 @@ ThetaNode::loopvar_iterator::operator++() noexcept
 jlm::rvsdg::theta_output *
 ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 {
-  node::add_input(std::make_unique<theta_input>(this, origin, origin->Type()));
+  node::add_input(std::make_unique<ThetaInput>(this, origin, origin->Type()));
   node::add_output(std::make_unique<theta_output>(this, origin->Type()));
 
   auto input = ThetaNode::input(ninputs() - 1);

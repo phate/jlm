@@ -163,7 +163,7 @@ TestRemoveThetaInputsWhere()
 
   // Act & Assert
   auto deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [&](const theta_input & input)
+      [&](const ThetaInput & input)
       {
         return input.index() == thetaOutput1->input()->index();
       });
@@ -177,7 +177,7 @@ TestRemoveThetaInputsWhere()
   assert(thetaOutput2->argument()->index() == 1);
 
   deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [](const theta_input & input)
+      [](const ThetaInput & input)
       {
         return true;
       });
