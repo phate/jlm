@@ -367,7 +367,7 @@ region_to_dot(jlm::rvsdg::region * region)
     {
       dot << edge(be->argument(), be, true);
     }
-    else if (auto to = dynamic_cast<jlm::rvsdg::theta_output *>(region->result(i)->output()))
+    else if (auto to = dynamic_cast<rvsdg::ThetaOutput *>(region->result(i)->output()))
     {
       dot << edge(to->argument(), to->result(), true);
     }
