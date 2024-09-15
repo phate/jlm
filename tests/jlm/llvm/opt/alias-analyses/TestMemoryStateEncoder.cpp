@@ -1376,7 +1376,7 @@ ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
 
   auto thetaOutput =
-      jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
+      jlm::util::AssertedCast<jlm::rvsdg::ThetaOutput>(lambda_exit_mux->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -1400,7 +1400,7 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto thetaOutput =
-      jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambdaExitMerge->input(0)->origin());
+      jlm::util::AssertedCast<jlm::rvsdg::ThetaOutput>(lambdaExitMerge->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 
@@ -1424,7 +1424,7 @@ ValidateThetaTestSteensgaardAgnosticTopDown(const jlm::tests::ThetaTest & test)
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
 
   auto thetaOutput =
-      jlm::util::AssertedCast<jlm::rvsdg::theta_output>(lambda_exit_mux->input(0)->origin());
+      jlm::util::AssertedCast<jlm::rvsdg::ThetaOutput>(lambda_exit_mux->input(0)->origin());
   auto theta = jlm::rvsdg::node_output::node(thetaOutput);
   assert(theta == test.theta);
 

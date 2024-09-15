@@ -41,7 +41,7 @@ ThetaInput::~ThetaInput() noexcept
 
 /* theta output */
 
-theta_output::~theta_output() noexcept
+ThetaOutput::~ThetaOutput() noexcept
 {
   if (input_)
     input_->output_ = nullptr;
@@ -61,7 +61,7 @@ ThetaResult::~ThetaResult() noexcept = default;
 ThetaResult &
 ThetaResult::Copy(rvsdg::output & origin, structural_output * output)
 {
-  auto thetaOutput = util::AssertedCast<theta_output>(output);
+  auto thetaOutput = util::AssertedCast<ThetaOutput>(output);
   return ThetaResult::Create(origin, *thetaOutput);
 }
 
@@ -97,11 +97,11 @@ ThetaNode::loopvar_iterator::operator++() noexcept
   return *this;
 }
 
-jlm::rvsdg::theta_output *
+ThetaOutput *
 ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 {
   node::add_input(std::make_unique<ThetaInput>(this, origin, origin->Type()));
-  node::add_output(std::make_unique<theta_output>(this, origin->Type()));
+  node::add_output(std::make_unique<ThetaOutput>(this, origin->Type()));
 
   auto input = ThetaNode::input(ninputs() - 1);
   auto output = ThetaNode::output(noutputs() - 1);

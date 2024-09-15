@@ -763,7 +763,7 @@ Convert(
    * Add loop variables
    */
   auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
-  std::unordered_map<const variable *, rvsdg::theta_output *> thetaOutputMap;
+  std::unordered_map<const variable *, rvsdg::ThetaOutput *> thetaOutputMap;
   for (auto & v : demandSet.LoopVariables().Variables())
   {
     rvsdg::output * value = nullptr;

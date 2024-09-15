@@ -214,7 +214,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
+  if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(&output))
   {
     MarkOutput(*thetaOutput->node()->predicate()->origin());
     MarkOutput(*thetaOutput->result()->origin());
@@ -431,7 +431,7 @@ DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
   auto & thetaSubregion = *thetaNode.subregion();
 
-  auto matchOutput = [&](const rvsdg::theta_output & output)
+  auto matchOutput = [&](const rvsdg::ThetaOutput & output)
   {
     auto & argument = *output.argument();
     return !Context_->IsAlive(argument) && !Context_->IsAlive(output);

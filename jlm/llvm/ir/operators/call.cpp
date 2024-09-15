@@ -63,7 +63,7 @@ invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariant
 }
 
 static rvsdg::ThetaInput *
-invariantInput(const rvsdg::theta_output & output, InvariantOutputMap & invariantOutputs)
+invariantInput(const rvsdg::ThetaOutput & output, InvariantOutputMap & invariantOutputs)
 {
   auto origin = output.result()->origin();
 
@@ -97,7 +97,7 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
   if (invariantOutputs.find(&output) != invariantOutputs.end())
     return invariantOutputs[&output];
 
-  if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
+  if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(&output))
     return invariantInput(*thetaOutput, invariantOutputs);
 
   if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
@@ -198,7 +198,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(origin))
+    if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(origin))
     {
       if (auto input = invariantInput(*thetaOutput))
       {

@@ -195,7 +195,7 @@ invert(rvsdg::ThetaNode * otheta)
     /* add loop variables to new theta node and setup substitution map */
     auto osubregion0 = ogamma->subregion(0);
     auto osubregion1 = ogamma->subregion(1);
-    std::unordered_map<jlm::rvsdg::input *, jlm::rvsdg::theta_output *> nlvs;
+    std::unordered_map<jlm::rvsdg::input *, rvsdg::ThetaOutput *> nlvs;
     for (const auto & olv : *otheta)
     {
       auto ev = ngamma->add_entryvar(olv->input()->origin());

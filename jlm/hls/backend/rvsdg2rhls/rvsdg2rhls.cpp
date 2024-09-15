@@ -113,7 +113,7 @@ trace_call(jlm::rvsdg::input * input)
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
   const jlm::rvsdg::output * result;
-  if (auto to = dynamic_cast<const jlm::rvsdg::theta_output *>(input->origin()))
+  if (auto to = dynamic_cast<const rvsdg::ThetaOutput *>(input->origin()))
   {
     result = trace_call(to->input());
   }

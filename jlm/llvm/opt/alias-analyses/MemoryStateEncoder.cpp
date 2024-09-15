@@ -899,14 +899,14 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
 }
 
-std::vector<rvsdg::theta_output *>
+std::vector<rvsdg::ThetaOutput *>
 MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetThetaEntryExitNodes(thetaNode);
 
-  std::vector<rvsdg::theta_output *> thetaStateOutputs;
+  std::vector<rvsdg::ThetaOutput *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
@@ -921,7 +921,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 void
 MemoryStateEncoder::EncodeThetaExit(
     rvsdg::ThetaNode & thetaNode,
-    const std::vector<rvsdg::theta_output *> & thetaStateOutputs)
+    const std::vector<rvsdg::ThetaOutput *> & thetaStateOutputs)
 {
   auto subregion = thetaNode.subregion();
   auto & stateMap = Context_->GetRegionalizedStateMap();

@@ -239,7 +239,7 @@ public:
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is<rvsdg::theta_output>(Output_))
+    if (is<rvsdg::ThetaOutput>(Output_))
     {
       auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);

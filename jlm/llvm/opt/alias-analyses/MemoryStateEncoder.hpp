@@ -145,13 +145,13 @@ private:
   void
   EncodeTheta(rvsdg::ThetaNode & thetaNode);
 
-  std::vector<rvsdg::theta_output *>
+  std::vector<rvsdg::ThetaOutput *>
   EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
 
   void
   EncodeThetaExit(
       rvsdg::ThetaNode & thetaNode,
-      const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
+      const std::vector<rvsdg::ThetaOutput *> & thetaStateOutputs);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
