@@ -141,8 +141,7 @@ libllvm_HEADERS = \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \
-	tests/jlm/llvm/backend/llvm/r2j/test-empty-gamma \
-	tests/jlm/llvm/backend/llvm/r2j/test-partial-gamma \
+    tests/jlm/llvm/backend/llvm/r2j/GammaTests \
 	tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
 	tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
