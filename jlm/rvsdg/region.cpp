@@ -73,7 +73,7 @@ RegionResult::RegionResult(
   }
 }
 
-Region::~Region()
+Region::~Region() noexcept
 {
   on_region_destroy(this);
 
