@@ -420,7 +420,7 @@ public:
    * \p annotationMap.
    *
    * @param region The top-level region that is converted
-   * @param annotationMap A map with annotations for instances of \ref region%s or
+   * @param annotationMap A map with annotations for instances of \ref Region%s or
    * structural_node%s.
    * @return A string containing the ASCII tree of \p region.
    */
