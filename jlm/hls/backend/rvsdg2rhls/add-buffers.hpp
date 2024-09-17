@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-add_buffers(rvsdg::region * region, bool pass_through);
+add_buffers(rvsdg::Region * region, bool pass_through);
 
 void
 add_buffers(llvm::RvsdgModule & rm, bool pass_through);

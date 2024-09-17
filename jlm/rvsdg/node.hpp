@@ -35,14 +35,14 @@ class substitution_map;
 class input
 {
   friend class jlm::rvsdg::node;
-  friend class jlm::rvsdg::region;
+  friend class rvsdg::Region;
 
 public:
   virtual ~input() noexcept;
 
   input(
       jlm::rvsdg::output * origin,
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       std::shared_ptr<const rvsdg::type> type);
 
   input(const input &) = delete;
@@ -82,7 +82,7 @@ public:
     return Type_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
@@ -264,7 +264,7 @@ public:
 private:
   size_t index_;
   jlm::rvsdg::output * origin_;
-  jlm::rvsdg::region * region_;
+  rvsdg::Region * region_;
   std::shared_ptr<const rvsdg::type> Type_;
 };
 
@@ -285,14 +285,14 @@ class output
 {
   friend input;
   friend class jlm::rvsdg::node;
-  friend class jlm::rvsdg::region;
+  friend class rvsdg::Region;
 
   typedef std::unordered_set<jlm::rvsdg::input *>::const_iterator user_iterator;
 
 public:
   virtual ~output() noexcept;
 
-  output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type);
+  output(rvsdg::Region * region, std::shared_ptr<const rvsdg::type> type);
 
   output(const output &) = delete;
 
@@ -365,7 +365,7 @@ public:
     return Type_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
@@ -542,7 +542,7 @@ private:
   add_user(jlm::rvsdg::input * user);
 
   size_t index_;
-  jlm::rvsdg::region * region_;
+  rvsdg::Region * region_;
   std::shared_ptr<const rvsdg::type> Type_;
   std::unordered_set<jlm::rvsdg::input *> users_;
 };
@@ -609,7 +609,7 @@ class node
 public:
   virtual ~node();
 
-  node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region);
+  node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region);
 
   inline const jlm::rvsdg::operation &
   operation() const noexcept
@@ -783,14 +783,14 @@ public:
     return graph_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
   virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const;
 
   /**
     \brief Copy a node with substitutions
@@ -809,7 +809,7 @@ public:
     subsequent \ref copy operations.
   */
   virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const = 0;
+  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const = 0;
 
   inline size_t
   depth() const noexcept
@@ -840,7 +840,7 @@ public:
 private:
   size_t depth_;
   jlm::rvsdg::graph * graph_;
-  jlm::rvsdg::region * region_;
+  rvsdg::Region * region_;
   std::unique_ptr<jlm::rvsdg::operation> operation_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;

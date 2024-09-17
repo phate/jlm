@@ -20,7 +20,7 @@ class graph;
 class node;
 class node_normal_form;
 class output;
-class region;
+class Region;
 class simple_normal_form;
 class structural_normal_form;
 

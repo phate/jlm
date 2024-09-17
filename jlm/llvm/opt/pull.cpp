@@ -228,7 +228,7 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const jlm::rvsdg::node * 
   }
 
   /* collect subregions where node is used */
-  std::unordered_set<jlm::rvsdg::region *> subregions;
+  std::unordered_set<rvsdg::Region *> subregions;
   for (const auto & input : inputs)
   {
     for (const auto & argument : *input)
@@ -282,7 +282,7 @@ pull(rvsdg::GammaNode * gamma)
 }
 
 void
-pull(jlm::rvsdg::region * region)
+pull(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

@@ -27,7 +27,7 @@ protected:
   structural_node(
       /* FIXME: use move semantics instead of copy semantics for op */
       const jlm::rvsdg::structural_op & op,
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       size_t nsubregions);
 
 public:
@@ -37,7 +37,7 @@ public:
     return subregions_.size();
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   subregion(size_t index) const noexcept
   {
     JLM_ASSERT(index < nsubregions());
@@ -61,7 +61,7 @@ public:
   using node::RemoveOutput;
 
 private:
-  std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;
+  std::vector<std::unique_ptr<rvsdg::Region>> subregions_;
 };
 
 /* structural input class */
@@ -146,7 +146,7 @@ structural_node::output(size_t index) const noexcept
 
 template<class Operation>
 bool
-region::Contains(const jlm::rvsdg::region & region, bool checkSubregions)
+Region::Contains(const rvsdg::Region & region, bool checkSubregions)
 {
   for (auto & node : region.nodes)
   {

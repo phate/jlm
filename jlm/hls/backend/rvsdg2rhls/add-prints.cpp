@@ -14,7 +14,7 @@ namespace jlm::hls
 {
 
 void
-add_prints(jlm::rvsdg::region * region)
+add_prints(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -68,7 +68,7 @@ convert_prints(llvm::RvsdgModule & rm)
 }
 
 jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
+route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 {
   JLM_ASSERT(region != nullptr);
 
@@ -100,7 +100,7 @@ route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
 
 void
 convert_prints(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     jlm::rvsdg::output * printf,
     const std::shared_ptr<const llvm::FunctionType> & functionType)
 {

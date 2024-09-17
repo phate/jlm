@@ -173,7 +173,7 @@ public:
   copy() const override;
 
   static rvsdg::output &
-  Create(rvsdg::region & region, const std::vector<jlm::rvsdg::output *> & operands)
+  Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::output *> & operands)
   {
     LambdaExitMemoryStateMergeOperation operation(operands.size());
     return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
@@ -209,7 +209,7 @@ public:
   copy() const override;
 
   static rvsdg::output &
-  Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
+  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
   {
     CallEntryMemoryStateMergeOperation operation(operands.size());
     return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];

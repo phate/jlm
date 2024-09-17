@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 void
-add_forks(jlm::rvsdg::region * region)
+add_forks(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {

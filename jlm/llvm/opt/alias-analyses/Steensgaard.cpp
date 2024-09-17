@@ -1711,7 +1711,7 @@ Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
 }
 
 void
-Steensgaard::AnalyzeRegion(jlm::rvsdg::region & region)
+Steensgaard::AnalyzeRegion(rvsdg::Region & region)
 {
   // Check that we added a RegisterLocation for each required argument
   for (size_t n = 0; n < region.narguments(); n++)

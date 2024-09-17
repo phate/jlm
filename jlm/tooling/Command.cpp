@@ -562,7 +562,7 @@ JlmOptCommand::PrintAsRvsdgTree(
     util::StatisticsCollector &)
 {
   auto & rootRegion = *rvsdgModule.Rvsdg().root();
-  auto tree = rvsdg::region::ToTree(rootRegion);
+  auto tree = rvsdg::Region::ToTree(rootRegion);
 
   if (outputFile == "")
   {

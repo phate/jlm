@@ -1006,7 +1006,7 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 }
 
 void
-Andersen::AnalyzeRegion(rvsdg::region & region)
+Andersen::AnalyzeRegion(rvsdg::Region & region)
 {
   // Check that all region arguments of pointing types have PointerObjects
   for (size_t i = 0; i < region.narguments(); i++)

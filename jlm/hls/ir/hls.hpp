@@ -619,7 +619,7 @@ public:
 
 private:
   EntryArgument(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       rvsdg::structural_input & input,
       const std::shared_ptr<const rvsdg::type> type)
       : rvsdg::RegionArgument(&region, &input, std::move(type))
@@ -627,13 +627,13 @@ private:
 
 public:
   EntryArgument &
-  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
   static EntryArgument &
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       rvsdg::structural_input & input,
       const std::shared_ptr<const rvsdg::type> type)
   {
@@ -658,18 +658,16 @@ public:
   }
 
   backedge_argument &
-  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
 
 private:
-  backedge_argument(
-      jlm::rvsdg::region * region,
-      const std::shared_ptr<const jlm::rvsdg::type> & type)
+  backedge_argument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::type> & type)
       : rvsdg::RegionArgument(region, nullptr, type),
         result_(nullptr)
   {}
 
   static backedge_argument *
-  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
     auto argument = new backedge_argument(region, std::move(type));
     region->append_argument(argument);
@@ -752,7 +750,7 @@ public:
   {}
 
 private:
-  inline loop_node(jlm::rvsdg::region * parent)
+  inline loop_node(rvsdg::Region * parent)
       : structural_node(loop_op(), parent, 1)
   {}
 
@@ -760,9 +758,9 @@ private:
 
 public:
   static loop_node *
-  create(jlm::rvsdg::region * parent, bool init = true);
+  create(rvsdg::Region * parent, bool init = true);
 
-  inline jlm::rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -795,7 +793,7 @@ public:
   add_loopconst(jlm::rvsdg::output * origin);
 
   virtual loop_node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
 class bundletype final : public jlm::rvsdg::valuetype
@@ -1319,7 +1317,7 @@ public:
       const std::vector<jlm::rvsdg::output *> & load_operands,
       const std::vector<std::shared_ptr<const rvsdg::valuetype>> & loadTypes,
       const std::vector<jlm::rvsdg::output *> & store_operands,
-      jlm::rvsdg::region * region)
+      rvsdg::Region * region)
   {
     // Stores have both addr and data operand
     // But we are only interested in the data operand type
@@ -1479,7 +1477,7 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(std::shared_ptr<const jlm::llvm::arraytype> at, jlm::rvsdg::region * region)
+  create(std::shared_ptr<const jlm::llvm::arraytype> at, rvsdg::Region * region)
   {
     local_mem_op op(std::move(at));
     return jlm::rvsdg::simple_node::create_normalized(region, op, {});

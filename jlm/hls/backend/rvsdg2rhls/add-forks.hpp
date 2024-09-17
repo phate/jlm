@@ -16,10 +16,10 @@ namespace jlm::hls
  * Adds a fork for every output that has multiple consumers (node inputs). The original output is
  * connected to the fork's input and each consumer is connected to one of the fork's outputs.
  *
- * /param region The region for which to insert forks.
+ * /param region The Region for which to insert forks.
  */
 void
-add_forks(rvsdg::region * region);
+add_forks(rvsdg::Region * region);
 
 /**
  * Adds a fork for every output that has multiple consumers (node inputs). The original output is

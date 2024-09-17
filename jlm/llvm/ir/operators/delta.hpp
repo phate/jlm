@@ -139,7 +139,7 @@ public:
   ~node() override;
 
 private:
-  node(rvsdg::region * parent, delta::operation && op)
+  node(rvsdg::Region * parent, delta::operation && op)
       : structural_node(op, parent, 1)
   {}
 
@@ -150,7 +150,7 @@ public:
   ctxvar_constrange
   ctxvars() const;
 
-  rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -259,10 +259,10 @@ public:
   result() const noexcept;
 
   virtual delta::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   virtual delta::node *
-  copy(rvsdg::region * region, rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::substitution_map & smap) const override;
 
   /**
    * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
@@ -281,7 +281,7 @@ public:
    */
   static node *
   Create(
-      rvsdg::region * parent,
+      rvsdg::Region * parent,
       std::shared_ptr<const rvsdg::valuetype> type,
       const std::string & name,
       const llvm::linkage & linkage,
@@ -414,15 +414,15 @@ public:
   ~cvargument() override;
 
   cvargument &
-  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
 
 private:
-  cvargument(rvsdg::region * region, cvinput * input)
+  cvargument(rvsdg::Region * region, cvinput * input)
       : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
-  create(rvsdg::region * region, delta::cvinput * input)
+  create(rvsdg::Region * region, delta::cvinput * input)
   {
     auto argument = new cvargument(region, input);
     region->append_argument(argument);

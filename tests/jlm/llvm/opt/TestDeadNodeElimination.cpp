@@ -290,7 +290,7 @@ TestPhi()
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
   auto setupF1 =
-      [&](jlm::rvsdg::region & region, phi::rvoutput & rv2, jlm::rvsdg::RegionArgument & dx)
+      [&](jlm::rvsdg::Region & region, phi::rvoutput & rv2, jlm::rvsdg::RegionArgument & dx)
   {
     auto lambda1 = lambda::node::create(&region, functionType, "f1", linkage::external_linkage);
     auto f2Argument = lambda1->add_ctxvar(rv2.argument());
@@ -306,7 +306,7 @@ TestPhi()
   };
 
   auto setupF2 =
-      [&](jlm::rvsdg::region & region, phi::rvoutput & rv1, jlm::rvsdg::RegionArgument & dy)
+      [&](jlm::rvsdg::Region & region, phi::rvoutput & rv1, jlm::rvsdg::RegionArgument & dy)
   {
     auto lambda2 = lambda::node::create(&region, functionType, "f2", linkage::external_linkage);
     auto f1Argument = lambda2->add_ctxvar(rv1.argument());
@@ -321,7 +321,7 @@ TestPhi()
     return lambda2->finalize({ result });
   };
 
-  auto setupF3 = [&](jlm::rvsdg::region & region, jlm::rvsdg::RegionArgument & dz)
+  auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::RegionArgument & dz)
   {
     auto lambda3 = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
     auto zArgument = lambda3->add_ctxvar(&dz);
@@ -335,7 +335,7 @@ TestPhi()
     return lambda3->finalize({ result });
   };
 
-  auto setupF4 = [&](jlm::rvsdg::region & region)
+  auto setupF4 = [&](jlm::rvsdg::Region & region)
   {
     auto lambda = lambda::node::create(&region, functionType, "f4", linkage::external_linkage);
     return lambda->finalize({ lambda->fctargument(0) });

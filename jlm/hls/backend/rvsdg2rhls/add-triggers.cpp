@@ -15,7 +15,7 @@ namespace jlm::hls
 {
 
 jlm::rvsdg::output *
-get_trigger(jlm::rvsdg::region * region)
+get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
@@ -84,7 +84,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::t
 }
 
 void
-add_triggers(jlm::rvsdg::region * region)
+add_triggers(rvsdg::Region * region)
 {
   auto trigger = get_trigger(region);
   for (auto & node : jlm::rvsdg::topdown_traverser(region))

@@ -312,7 +312,7 @@ public:
   }
 
   virtual GammaNode *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(jlm::rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
 /* gamma input */
@@ -468,15 +468,15 @@ public:
   ~GammaArgument() noexcept override;
 
   GammaArgument &
-  Copy(rvsdg::region & region, structural_input * input) override;
+  Copy(rvsdg::Region & region, structural_input * input) override;
 
 private:
-  GammaArgument(rvsdg::region & region, GammaInput & input)
+  GammaArgument(rvsdg::Region & region, GammaInput & input)
       : RegionArgument(&region, &input, input.Type())
   {}
 
   static GammaArgument &
-  Create(rvsdg::region & region, GammaInput & input)
+  Create(rvsdg::Region & region, GammaInput & input)
   {
     auto gammaArgument = new GammaArgument(region, input);
     region.append_argument(gammaArgument);
@@ -495,7 +495,7 @@ public:
   ~GammaResult() noexcept override;
 
 private:
-  GammaResult(rvsdg::region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
+  GammaResult(rvsdg::Region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
       : RegionResult(&region, &origin, &gammaOutput, origin.Type())
   {}
 
@@ -503,7 +503,7 @@ private:
   Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
 
   static GammaResult &
-  Create(rvsdg::region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
+  Create(rvsdg::Region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
   {
     auto gammaResult = new GammaResult(region, origin, gammaOutput);
     origin.region()->append_result(gammaResult);

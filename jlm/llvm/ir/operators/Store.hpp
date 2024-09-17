@@ -32,7 +32,7 @@ public:
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & operands) const override;
 
@@ -216,7 +216,7 @@ class StoreNode : public rvsdg::simple_node
 {
 protected:
   StoreNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreOperation & operation,
       const std::vector<rvsdg::output *> & operands)
       : simple_node(&region, operation, operands)
@@ -314,7 +314,7 @@ class StoreNonVolatileNode final : public StoreNode
 {
 private:
   StoreNonVolatileNode(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreNonVolatileOperation & operation,
       const std::vector<jlm::rvsdg::output *> & operands)
       : StoreNode(region, operation, operands)
@@ -334,7 +334,7 @@ public:
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
   rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<rvsdg::output *>
   Create(
@@ -364,7 +364,7 @@ public:
 
   static std::vector<rvsdg::output *>
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreNonVolatileOperation & storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -373,7 +373,7 @@ public:
 
   static StoreNonVolatileNode &
   CreateNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreNonVolatileOperation & storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -485,7 +485,7 @@ private:
 class StoreVolatileNode final : public StoreNode
 {
   StoreVolatileNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreVolatileOperation & operation,
       const std::vector<rvsdg::output *> & operands)
       : StoreNode(region, operation, operands)
@@ -521,11 +521,11 @@ public:
   }
 
   rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static StoreVolatileNode &
   CreateNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreVolatileOperation & storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -551,7 +551,7 @@ public:
 
   static std::vector<rvsdg::output *>
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const StoreVolatileOperation & loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {

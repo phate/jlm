@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static bool
-region_contains_node(const jlm::rvsdg::region * region, const jlm::rvsdg::node * n)
+region_contains_node(const jlm::rvsdg::Region * region, const jlm::rvsdg::node * n)
 {
   for (const auto & node : region->nodes)
   {

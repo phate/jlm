@@ -107,7 +107,7 @@ private:
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
   MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody);
   circt::firrtl::FModuleOp
-  MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody);
+  MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody);
   circt::firrtl::FModuleOp
   MlirGen(const jlm::rvsdg::simple_node * node);
   // Operations
@@ -275,7 +275,7 @@ private:
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
 
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
-  createInstances(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
+  createInstances(rvsdg::Region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
   void
   check_module(circt::firrtl::FModuleOp & module);
 

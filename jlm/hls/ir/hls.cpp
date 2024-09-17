@@ -38,13 +38,13 @@ bundletype::ComputeHash() const noexcept
 EntryArgument::~EntryArgument() noexcept = default;
 
 EntryArgument &
-EntryArgument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+EntryArgument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
 {
   return EntryArgument::Create(region, *input, Type());
 }
 
 backedge_argument &
-backedge_argument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+backedge_argument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
 {
   JLM_ASSERT(input == nullptr);
   return *backedge_argument::create(&region, Type());
@@ -99,7 +99,7 @@ loop_node::add_loopconst(jlm::rvsdg::output * origin)
 }
 
 loop_node *
-loop_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+loop_node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
 {
   auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
@@ -165,7 +165,7 @@ loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::type> type)
 }
 
 loop_node *
-loop_node::create(jlm::rvsdg::region * parent, bool init)
+loop_node::create(rvsdg::Region * parent, bool init)
 {
   auto ln = new loop_node(parent);
   if (init)

@@ -67,7 +67,7 @@ public:
 
   graph();
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   root() const noexcept
   {
     return root_;
@@ -112,7 +112,7 @@ public:
 
 private:
   bool normalized_;
-  jlm::rvsdg::region * root_;
+  rvsdg::Region * root_;
   jlm::rvsdg::node_normal_form_hash node_normal_forms_;
 };
 

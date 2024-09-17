@@ -287,7 +287,7 @@ mark_arguments(jlm::rvsdg::structural_input * i1, jlm::rvsdg::structural_input *
 }
 
 static void
-mark(jlm::rvsdg::region *, cnectx &);
+mark(jlm::rvsdg::Region *, cnectx &);
 
 static void
 mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
@@ -464,7 +464,7 @@ mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
 }
 
 static void
-mark(jlm::rvsdg::region * region, cnectx & ctx)
+mark(rvsdg::Region * region, cnectx & ctx)
 {
   for (const auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -494,14 +494,14 @@ divert_outputs(jlm::rvsdg::node * node, cnectx & ctx)
 }
 
 static void
-divert_arguments(jlm::rvsdg::region * region, cnectx & ctx)
+divert_arguments(rvsdg::Region * region, cnectx & ctx)
 {
   for (size_t n = 0; n < region->narguments(); n++)
     divert_users(region->argument(n), ctx);
 }
 
 static void
-divert(jlm::rvsdg::region *, cnectx &);
+divert(rvsdg::Region *, cnectx &);
 
 static void
 divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
@@ -587,7 +587,7 @@ divert(jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert(jlm::rvsdg::region * region, cnectx & ctx)
+divert(rvsdg::Region * region, cnectx & ctx)
 {
   for (const auto & node : jlm::rvsdg::topdown_traverser(region))
   {

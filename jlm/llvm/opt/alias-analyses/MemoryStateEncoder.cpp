@@ -297,7 +297,7 @@ public:
   }
 
   StateMap::MemoryNodeStatePair *
-  InsertUndefinedState(rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  InsertUndefinedState(rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     auto & undefinedState = GetOrInsertUndefinedMemoryState(region);
     return InsertState(memoryNode, undefinedState);
@@ -319,20 +319,20 @@ public:
 
   std::vector<StateMap::MemoryNodeStatePair *>
   GetStates(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
   }
 
   bool
-  HasState(const rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  HasState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     return GetStateMap(region).HasState(memoryNode);
   }
 
   StateMap::MemoryNodeStatePair *
-  GetState(const rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  GetState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     return GetStateMap(region).GetState(memoryNode);
   }
@@ -345,7 +345,7 @@ public:
   }
 
   void
-  PushRegion(const rvsdg::region & region)
+  PushRegion(const rvsdg::Region & region)
   {
     JLM_ASSERT(StateMaps_.find(&region) == StateMaps_.end());
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) == MemoryNodeCacheMaps_.end());
@@ -355,7 +355,7 @@ public:
   }
 
   void
-  PopRegion(const rvsdg::region & region)
+  PopRegion(const rvsdg::Region & region)
   {
     JLM_ASSERT(StateMaps_.find(&region) != StateMaps_.end());
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) != MemoryNodeCacheMaps_.end());
@@ -366,27 +366,27 @@ public:
 
 private:
   rvsdg::output &
-  GetOrInsertUndefinedMemoryState(rvsdg::region & region)
+  GetOrInsertUndefinedMemoryState(rvsdg::Region & region)
   {
     return HasUndefinedMemoryState(region) ? GetUndefinedMemoryState(region)
                                            : InsertUndefinedMemoryState(region);
   }
 
   bool
-  HasUndefinedMemoryState(const rvsdg::region & region) const noexcept
+  HasUndefinedMemoryState(const rvsdg::Region & region) const noexcept
   {
     return UndefinedMemoryStates_.find(&region) != UndefinedMemoryStates_.end();
   }
 
   rvsdg::output &
-  GetUndefinedMemoryState(const rvsdg::region & region) const noexcept
+  GetUndefinedMemoryState(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(HasUndefinedMemoryState(region));
     return *UndefinedMemoryStates_.find(&region)->second;
   }
 
   rvsdg::output &
-  InsertUndefinedMemoryState(rvsdg::region & region) noexcept
+  InsertUndefinedMemoryState(rvsdg::Region & region) noexcept
   {
     auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType::Create());
     UndefinedMemoryStates_[&region] = undefinedMemoryState;
@@ -394,22 +394,22 @@ private:
   }
 
   StateMap &
-  GetStateMap(const rvsdg::region & region) const noexcept
+  GetStateMap(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(StateMaps_.find(&region) != StateMaps_.end());
     return *StateMaps_.at(&region);
   }
 
   MemoryNodeCache &
-  GetMemoryNodeCache(const rvsdg::region & region) const noexcept
+  GetMemoryNodeCache(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) != MemoryNodeCacheMaps_.end());
     return *MemoryNodeCacheMaps_.at(&region);
   }
 
-  std::unordered_map<const rvsdg::region *, std::unique_ptr<StateMap>> StateMaps_;
-  std::unordered_map<const rvsdg::region *, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
-  std::unordered_map<const rvsdg::region *, rvsdg::output *> UndefinedMemoryStates_;
+  std::unordered_map<const rvsdg::Region *, std::unique_ptr<StateMap>> StateMaps_;
+  std::unordered_map<const rvsdg::Region *, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
+  std::unordered_map<const rvsdg::Region *, rvsdg::output *> UndefinedMemoryStates_;
 
   const MemoryNodeProvisioning & MemoryNodeProvisioning_;
 };
@@ -485,7 +485,7 @@ MemoryStateEncoder::Encode(
 }
 
 void
-MemoryStateEncoder::EncodeRegion(rvsdg::region & region)
+MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 {
   using namespace jlm::rvsdg;
 

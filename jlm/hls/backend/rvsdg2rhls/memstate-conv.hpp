@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 void
-memstate_conv(jlm::rvsdg::region * region);
+memstate_conv(rvsdg::Region * region);
 
 void
 memstate_conv(llvm::RvsdgModule & rm);

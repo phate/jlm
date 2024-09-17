@@ -138,7 +138,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
 void
 instrument_ref(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
     const std::shared_ptr<const jlm::llvm::FunctionType> & loadFunctionType,

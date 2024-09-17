@@ -55,7 +55,7 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
 }
 
 phi::node *
-node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
 {
   phi::builder pb;
   pb.begin(region);
@@ -169,7 +169,7 @@ rvargument::~rvargument()
 {}
 
 rvargument &
-rvargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+rvargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
 {
   JLM_ASSERT(input == nullptr);
   return *rvargument::create(&region, Type());
@@ -181,7 +181,7 @@ cvargument::~cvargument()
 {}
 
 cvargument &
-cvargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
 {
   auto phiInput = util::AssertedCast<cvinput>(input);
   return *cvargument::create(&region, phiInput, Type());

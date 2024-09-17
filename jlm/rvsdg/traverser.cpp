@@ -18,7 +18,7 @@ namespace jlm::rvsdg
 topdown_traverser::~topdown_traverser() noexcept
 {}
 
-topdown_traverser::topdown_traverser(jlm::rvsdg::region * region)
+topdown_traverser::topdown_traverser(rvsdg::Region * region)
     : region_(region),
       tracker_(region->graph())
 {
@@ -123,7 +123,7 @@ topdown_traverser::input_change(input * in, output * old_origin, output * new_or
 bottomup_traverser::~bottomup_traverser() noexcept
 {}
 
-bottomup_traverser::bottomup_traverser(jlm::rvsdg::region * region, bool revisit)
+bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
     : region_(region),
       tracker_(region->graph()),
       new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)

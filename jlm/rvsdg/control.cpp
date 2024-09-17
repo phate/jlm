@@ -161,7 +161,7 @@ match(
 }
 
 jlm::rvsdg::output *
-control_constant(jlm::rvsdg::region * region, size_t nalternatives, size_t alternative)
+control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
   jlm::rvsdg::ctlconstant_op op({ alternative, nalternatives });
   return jlm::rvsdg::simple_node::create_normalized(region, op, {})[0];

@@ -188,7 +188,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   auto SetupFunctionF = [&](lambda::output * g)
   {
-    auto SetupOuterTheta = [](jlm::rvsdg::region * region, jlm::rvsdg::RegionArgument * functionG)
+    auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * functionG)
     {
       auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
       auto otf = outerTheta->add_loopvar(functionG);
@@ -281,13 +281,13 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto SetupFunctionF = [&](lambda::output * g)
   {
-    auto SetupOuterTheta = [&](jlm::rvsdg::region * region,
+    auto SetupOuterTheta = [&](jlm::rvsdg::Region * region,
                                jlm::rvsdg::RegionArgument * g,
                                jlm::rvsdg::output * value,
                                jlm::rvsdg::output * iOState,
                                jlm::rvsdg::output * memoryState)
     {
-      auto SetupInnerTheta = [&](jlm::rvsdg::region * region, jlm::rvsdg::RegionArgument * g)
+      auto SetupInnerTheta = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * g)
       {
         auto innerTheta = jlm::rvsdg::ThetaNode::create(region);
         auto thetaOutputG = innerTheta->add_loopvar(g);

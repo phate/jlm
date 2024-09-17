@@ -73,7 +73,7 @@ private:
   AnalyzeExports(const rvsdg::graph & graph);
 
   void
-  AnalyzeRegion(rvsdg::region & region);
+  AnalyzeRegion(rvsdg::Region & region);
 
   void
   AnalyzeLambda(const lambda::node & node);

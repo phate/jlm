@@ -23,7 +23,7 @@ input::~input() noexcept
 
 input::input(
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     std::shared_ptr<const rvsdg::type> type)
     : index_(0),
       origin_(origin),
@@ -83,7 +83,7 @@ output::~output() noexcept
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
+output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::type> type)
     : index_(0),
       region_(region),
       Type_(std::move(type))
@@ -163,7 +163,7 @@ node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::t
 
 /* node class */
 
-node::node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region)
+node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
     : depth_(0),
       graph_(region->graph()),
       region_(region),
@@ -288,7 +288,7 @@ node::recompute_depth() noexcept
 }
 
 jlm::rvsdg::node *
-node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   substitution_map smap;
 

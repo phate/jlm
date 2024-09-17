@@ -304,12 +304,12 @@ public:
   ~node() override;
 
 private:
-  node(jlm::rvsdg::region * parent, const phi::operation & op)
+  node(rvsdg::Region * parent, const phi::operation & op)
       : structural_node(op, parent, 1)
   {}
 
   static phi::node *
-  create(jlm::rvsdg::region * parent, const phi::operation & op)
+  create(rvsdg::Region * parent, const phi::operation & op)
   {
     return new phi::node(parent, op);
   }
@@ -375,7 +375,7 @@ public:
     return rviterator(nullptr);
   }
 
-  jlm::rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -486,7 +486,7 @@ public:
   output(size_t n) const noexcept;
 
   virtual phi::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
    * Extracts all lambda nodes from a phi node.
@@ -511,14 +511,14 @@ public:
       : node_(nullptr)
   {}
 
-  jlm::rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
     return node_ ? node_->subregion() : nullptr;
   }
 
   void
-  begin(jlm::rvsdg::region * parent)
+  begin(rvsdg::Region * parent)
   {
     if (node_)
       return;
@@ -660,7 +660,7 @@ public:
   ~rvargument() override;
 
 private:
-  rvargument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
+  rvargument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
       : RegionArgument(region, nullptr, std::move(type)),
         output_(nullptr)
   {}
@@ -676,7 +676,7 @@ private:
   operator=(rvargument &&) = delete;
 
   static rvargument *
-  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
     auto argument = new rvargument(region, std::move(type));
     region->append_argument(argument);
@@ -698,7 +698,7 @@ public:
   }
 
   rvargument &
-  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
 private:
   rvoutput * output_;
@@ -716,10 +716,7 @@ class cvargument final : public rvsdg::RegionArgument
 public:
   ~cvargument() override;
 
-  cvargument(
-      jlm::rvsdg::region * region,
-      phi::cvinput * input,
-      std::shared_ptr<const rvsdg::type> type)
+  cvargument(rvsdg::Region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
       : rvsdg::RegionArgument(region, input, std::move(type))
   {}
 
@@ -735,10 +732,10 @@ private:
   operator=(cvargument &&) = delete;
 
   cvargument &
-  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
   static cvargument *
-  create(jlm::rvsdg::region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
+  create(rvsdg::Region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
   {
     auto argument = new cvargument(region, input, std::move(type));
     region->append_argument(argument);
@@ -764,7 +761,7 @@ public:
 
 private:
   rvresult(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
       std::shared_ptr<const rvsdg::type> type)
@@ -786,7 +783,7 @@ private:
 
   static rvresult *
   create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
       std::shared_ptr<const rvsdg::type> type)

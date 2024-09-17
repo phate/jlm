@@ -193,7 +193,7 @@ node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 
 lambda::node *
 node::create(
-    jlm::rvsdg::region * parent,
+    rvsdg::Region * parent,
     std::shared_ptr<const jlm::llvm::FunctionType> type,
     const std::string & name,
     const llvm::linkage & linkage,
@@ -239,13 +239,13 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
 }
 
 lambda::node *
-node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   return util::AssertedCast<lambda::node>(jlm::rvsdg::node::copy(region, operands));
 }
 
 lambda::node *
-node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
 {
   auto lambda = create(region, Type(), name(), linkage(), attributes());
 
@@ -418,7 +418,7 @@ output::~output() = default;
 fctargument::~fctargument() = default;
 
 fctargument &
-fctargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
+fctargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
 {
   JLM_ASSERT(input == nullptr);
   return *fctargument::create(&region, Type());
@@ -429,7 +429,7 @@ fctargument::Copy(rvsdg::region & region, rvsdg::structural_input * input)
 cvargument::~cvargument() = default;
 
 cvargument &
-cvargument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
 {
   auto lambdaInput = util::AssertedCast<lambda::cvinput>(input);
   return *cvargument::create(&region, lambdaInput);

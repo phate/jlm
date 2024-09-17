@@ -337,7 +337,7 @@ public:
 
 private:
   void
-  AnalyzeRegion(rvsdg::region & region);
+  AnalyzeRegion(rvsdg::Region & region);
 
   void
   AnalyzeSimpleNode(const rvsdg::simple_node & node);

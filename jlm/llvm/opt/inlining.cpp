@@ -62,7 +62,7 @@ find_producer(jlm::rvsdg::input * input)
 }
 
 static jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
+route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 {
   JLM_ASSERT(region != nullptr);
 

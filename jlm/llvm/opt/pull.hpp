@@ -41,7 +41,7 @@ void
 pull(rvsdg::GammaNode * gamma);
 
 void
-pull(jlm::rvsdg::region * region);
+pull(rvsdg::Region * region);
 
 }
 

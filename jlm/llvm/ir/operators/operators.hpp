@@ -470,7 +470,7 @@ public:
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
+  Create(rvsdg::Region * region, std::shared_ptr<const rvsdg::type> type)
   {
     ConstantPointerNullOperation operation(CheckAndExtractType(type));
     return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
@@ -1039,7 +1039,7 @@ public:
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
     UndefValueOperation operation(std::move(type));
     return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
@@ -1120,7 +1120,7 @@ public:
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  Create(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::type> & type)
   {
     auto valueType = CheckAndConvertType(type);
 
@@ -1470,7 +1470,7 @@ public:
   }
 
   static rvsdg::output *
-  Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
+  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
   {
     std::vector<std::shared_ptr<const rvsdg::type>> operandTypes;
     operandTypes.reserve(operands.size());
@@ -1606,7 +1606,7 @@ public:
 
   static rvsdg::output &
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const std::vector<rvsdg::output *> & operands,
       std::shared_ptr<const rvsdg::type> resultType)
   {
@@ -1945,7 +1945,7 @@ public:
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
     ConstantAggregateZero operation(std::move(type));
     return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];

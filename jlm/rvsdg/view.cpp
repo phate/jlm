@@ -13,7 +13,7 @@ namespace jlm::rvsdg
 
 static std::string
 region_to_string(
-    const jlm::rvsdg::region * region,
+    const rvsdg::Region * region,
     size_t depth,
     std::unordered_map<const output *, std::string> &);
 
@@ -67,9 +67,7 @@ node_to_string(
 }
 
 static std::string
-region_header(
-    const jlm::rvsdg::region * region,
-    std::unordered_map<const output *, std::string> & map)
+region_header(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
 {
   std::string header("[");
   for (size_t n = 0; n < region->narguments(); n++)
@@ -92,7 +90,7 @@ region_header(
 
 static std::string
 region_body(
-    const jlm::rvsdg::region * region,
+    const rvsdg::Region * region,
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
@@ -115,9 +113,7 @@ region_body(
 }
 
 static std::string
-region_footer(
-    const jlm::rvsdg::region * region,
-    std::unordered_map<const output *, std::string> & map)
+region_footer(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
 {
   std::string footer("}[");
   for (size_t n = 0; n < region->nresults(); n++)
@@ -139,7 +135,7 @@ region_footer(
 
 static std::string
 region_to_string(
-    const jlm::rvsdg::region * region,
+    const rvsdg::Region * region,
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
@@ -151,20 +147,20 @@ region_to_string(
 }
 
 std::string
-view(const jlm::rvsdg::region * region)
+view(const rvsdg::Region * region)
 {
   std::unordered_map<const output *, std::string> map;
   return view(region, map);
 }
 
 std::string
-view(const jlm::rvsdg::region * region, std::unordered_map<const output *, std::string> & map)
+view(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
 {
   return region_to_string(region, 0, map);
 }
 
 void
-view(const jlm::rvsdg::region * region, FILE * out)
+view(const rvsdg::Region * region, FILE * out)
 {
   fputs(view(region).c_str(), out);
   fflush(out);
@@ -204,7 +200,7 @@ id(const jlm::rvsdg::node * node)
 }
 
 static inline std::string
-id(const jlm::rvsdg::region * region)
+id(const rvsdg::Region * region)
 {
   return jlm::util::strfmt("r", (intptr_t)region);
 }
@@ -276,7 +272,7 @@ type(const jlm::rvsdg::node * n)
 }
 
 static std::string
-convert_region(const jlm::rvsdg::region * region);
+convert_region(const jlm::rvsdg::Region * region);
 
 static inline std::string
 convert_simple_node(const jlm::rvsdg::simple_node * node)
@@ -339,7 +335,7 @@ convert_node(const jlm::rvsdg::node * node)
 }
 
 static inline std::string
-convert_region(const jlm::rvsdg::region * region)
+convert_region(const rvsdg::Region * region)
 {
   std::string s;
   s += region_starttag(id(region));
@@ -366,7 +362,7 @@ convert_region(const jlm::rvsdg::region * region)
 }
 
 std::string
-to_xml(const jlm::rvsdg::region * region)
+to_xml(const rvsdg::Region * region)
 {
   std::string s;
   s += xml_header();
@@ -378,7 +374,7 @@ to_xml(const jlm::rvsdg::region * region)
 }
 
 void
-view_xml(const jlm::rvsdg::region * region, FILE * out)
+view_xml(const rvsdg::Region * region, FILE * out)
 {
   fputs(to_xml(region).c_str(), out);
   fflush(out);

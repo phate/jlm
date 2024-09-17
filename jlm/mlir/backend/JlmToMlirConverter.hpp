@@ -81,7 +81,7 @@ private:
    * \return A list of outputs of the converted region/block.
    */
   ::llvm::SmallVector<::mlir::Value>
-  ConvertRegion(rvsdg::region & region, ::mlir::Block & block);
+  ConvertRegion(rvsdg::Region & region, ::mlir::Block & block);
 
   /**
    * Retreive the previously converted MLIR values from the map of operations

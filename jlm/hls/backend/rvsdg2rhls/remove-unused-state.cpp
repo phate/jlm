@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
+remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
 {
   // process children first so that unnecessary users get removed
   for (auto & node : jlm::rvsdg::topdown_traverser(region))

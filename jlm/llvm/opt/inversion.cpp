@@ -113,7 +113,7 @@ collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structu
 
 static void
 copy_condition_nodes(
-    jlm::rvsdg::region * target,
+    rvsdg::Region * target,
     jlm::rvsdg::substitution_map & smap,
     const std::vector<std::vector<jlm::rvsdg::node *>> & nodes)
 {
@@ -287,7 +287,7 @@ invert(rvsdg::ThetaNode * otheta)
 }
 
 static void
-invert(jlm::rvsdg::region * region)
+invert(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

@@ -131,7 +131,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
 }
 
 static void
-ConvertGammaNodesInRegion(rvsdg::region & region);
+ConvertGammaNodesInRegion(rvsdg::Region & region);
 
 static void
 ConvertGammaNodesInStructuralNode(rvsdg::structural_node & structuralNode)
@@ -155,7 +155,7 @@ ConvertGammaNodesInStructuralNode(rvsdg::structural_node & structuralNode)
 }
 
 static void
-ConvertGammaNodesInRegion(rvsdg::region & region)
+ConvertGammaNodesInRegion(rvsdg::Region & region)
 {
   for (auto & node : rvsdg::topdown_traverser(&region))
   {

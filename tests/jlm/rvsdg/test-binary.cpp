@@ -34,7 +34,7 @@ test_flattened_binary_reduction()
 
     jlm::rvsdg::view(graph, stdout);
     assert(
-        graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
+        graph.root()->nnodes() == 1 && Region::Contains<flattened_binary_op>(*graph.root(), false));
 
     flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::parallel);
     jlm::rvsdg::view(graph, stdout);
@@ -68,7 +68,7 @@ test_flattened_binary_reduction()
 
     jlm::rvsdg::view(graph, stdout);
     assert(
-        graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
+        graph.root()->nnodes() == 1 && Region::Contains<flattened_binary_op>(*graph.root(), false));
 
     flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::linear);
     jlm::rvsdg::view(graph, stdout);

@@ -58,26 +58,26 @@ int_constant_op(size_t nbits, int64_t value)
 extern template class domain_const_op<bittype, bitvalue_repr, format_value, type_of_value>;
 
 static inline jlm::rvsdg::output *
-create_bitconstant(jlm::rvsdg::region * region, const bitvalue_repr & vr)
+create_bitconstant(rvsdg::Region * region, const bitvalue_repr & vr)
 {
   return simple_node::create_normalized(region, bitconstant_op(vr), {})[0];
 }
 
 static inline jlm::rvsdg::output *
-create_bitconstant(jlm::rvsdg::region * region, size_t nbits, int64_t value)
+create_bitconstant(rvsdg::Region * region, size_t nbits, int64_t value)
 {
   return create_bitconstant(region, { nbits, value });
 }
 
 static inline jlm::rvsdg::output *
-create_bitconstant_undefined(jlm::rvsdg::region * region, size_t nbits)
+create_bitconstant_undefined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'X');
   return create_bitconstant(region, bitvalue_repr(s.c_str()));
 }
 
 static inline jlm::rvsdg::output *
-create_bitconstant_defined(jlm::rvsdg::region * region, size_t nbits)
+create_bitconstant_defined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'D');
   return create_bitconstant(region, bitvalue_repr(s.c_str()));

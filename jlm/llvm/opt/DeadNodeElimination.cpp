@@ -142,7 +142,7 @@ DeadNodeElimination::~DeadNodeElimination() noexcept = default;
 DeadNodeElimination::DeadNodeElimination() = default;
 
 void
-DeadNodeElimination::run(jlm::rvsdg::region & region)
+DeadNodeElimination::run(rvsdg::Region & region)
 {
   Context_ = Context::Create();
 
@@ -175,7 +175,7 @@ DeadNodeElimination::run(RvsdgModule & module, jlm::util::StatisticsCollector & 
 }
 
 void
-DeadNodeElimination::MarkRegion(const jlm::rvsdg::region & region)
+DeadNodeElimination::MarkRegion(const rvsdg::Region & region)
 {
   for (size_t n = 0; n < region.nresults(); n++)
   {
@@ -309,7 +309,7 @@ DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & rvsdg) const
 }
 
 void
-DeadNodeElimination::SweepRegion(jlm::rvsdg::region & region) const
+DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 

@@ -48,7 +48,7 @@ public:
 class TopDownMemoryNodeEliminator::Provisioning final : public MemoryNodeProvisioning
 {
   using RegionMap =
-      std::unordered_map<const rvsdg::region *, util::HashSet<const PointsToGraph::MemoryNode *>>;
+      std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>;
   using CallMap =
       std::unordered_map<const CallNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
 
@@ -74,14 +74,14 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::region & region) const override
+  GetRegionEntryNodes(const rvsdg::Region & region) const override
   {
     JLM_ASSERT(HasRegionEntryMemoryNodesSet(region));
     return RegionEntryMemoryNodes_.find(&region)->second;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::region & region) const override
+  GetRegionExitNodes(const rvsdg::Region & region) const override
   {
     JLM_ASSERT(HasRegionExitMemoryNodesSet(region));
     return RegionExitMemoryNodes_.find(&region)->second;
@@ -148,7 +148,7 @@ public:
 
   void
   AddRegionEntryNodes(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     auto & set = GetOrCreateRegionEntryMemoryNodesSet(region);
@@ -157,7 +157,7 @@ public:
 
   void
   AddRegionExitNodes(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     auto & set = GetOrCreateRegionExitMemoryNodesSet(region);
@@ -203,19 +203,19 @@ private:
   }
 
   bool
-  HasRegionEntryMemoryNodesSet(const rvsdg::region & region) const noexcept
+  HasRegionEntryMemoryNodesSet(const rvsdg::Region & region) const noexcept
   {
     return RegionEntryMemoryNodes_.find(&region) != RegionEntryMemoryNodes_.end();
   }
 
   bool
-  HasRegionExitMemoryNodesSet(const rvsdg::region & region) const noexcept
+  HasRegionExitMemoryNodesSet(const rvsdg::Region & region) const noexcept
   {
     return RegionExitMemoryNodes_.find(&region) != RegionExitMemoryNodes_.end();
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateRegionEntryMemoryNodesSet(const rvsdg::region & region)
+  GetOrCreateRegionEntryMemoryNodesSet(const rvsdg::Region & region)
   {
     if (!HasRegionEntryMemoryNodesSet(region))
     {
@@ -226,7 +226,7 @@ private:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateRegionExitMemoryNodesSet(const rvsdg::region & region)
+  GetOrCreateRegionExitMemoryNodesSet(const rvsdg::Region & region)
   {
     if (!HasRegionExitMemoryNodesSet(region))
     {
@@ -331,7 +331,7 @@ public:
    * @return Return the points-to graph memory nodes that are considered live in \p region.
    */
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLiveNodes(const rvsdg::region & region) noexcept
+  GetLiveNodes(const rvsdg::Region & region) noexcept
   {
     return GetOrCreateLiveNodesSet(region);
   }
@@ -344,7 +344,7 @@ public:
    */
   void
   AddLiveNodes(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     auto & liveNodes = GetOrCreateLiveNodesSet(region);
@@ -382,13 +382,13 @@ public:
 
 private:
   bool
-  HasLiveNodesSet(const rvsdg::region & region) const noexcept
+  HasLiveNodesSet(const rvsdg::Region & region) const noexcept
   {
     return LiveNodes_.find(&region) != LiveNodes_.end();
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateLiveNodesSet(const rvsdg::region & region)
+  GetOrCreateLiveNodesSet(const rvsdg::Region & region)
   {
     if (!HasLiveNodesSet(region))
     {
@@ -402,7 +402,7 @@ private:
   std::unique_ptr<Provisioning> Provisioning_;
 
   // Keeps track of the memory nodes that are live within a region.
-  std::unordered_map<const rvsdg::region *, util::HashSet<const PointsToGraph::MemoryNode *>>
+  std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
       LiveNodes_;
 
   // Keeps track of all lambda nodes where we annotated live nodes BEFORE traversing the lambda
@@ -467,7 +467,7 @@ TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule & rvsdgModule)
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::region & region)
+TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 {
   JLM_ASSERT(region.IsRootRegion() || rvsdg::is<phi::operation>(region.node()));
 
@@ -498,7 +498,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::region & region)
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::region & region)
+TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
 {
   auto isLambdaSubregion = rvsdg::is<lambda::operation>(region.node());
   auto isThetaSubregion = rvsdg::is<rvsdg::ThetaOperation>(region.node());
@@ -614,7 +614,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const lambda::node & lam
 void
 TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
 {
-  auto unifyLiveNodes = [&](const rvsdg::region & phiSubregion)
+  auto unifyLiveNodes = [&](const rvsdg::Region & phiSubregion)
   {
     std::vector<const lambda::node *> lambdaNodes;
     util::HashSet<const PointsToGraph::MemoryNode *> liveNodes;
@@ -917,11 +917,11 @@ TopDownMemoryNodeEliminator::CheckInvariants(
     const Provisioning & provisioning)
 {
   std::function<void(
-      const rvsdg::region &,
-      std::vector<const rvsdg::region *> &,
+      const rvsdg::Region &,
+      std::vector<const rvsdg::Region *> &,
       std::vector<const CallNode *> &)>
-      collectRegionsAndCalls = [&](const rvsdg::region & rootRegion,
-                                   std::vector<const rvsdg::region *> & regions,
+      collectRegionsAndCalls = [&](const rvsdg::Region & rootRegion,
+                                   std::vector<const rvsdg::Region *> & regions,
                                    std::vector<const CallNode *> & callNodes)
   {
     for (auto & node : rootRegion.nodes)
@@ -960,7 +960,7 @@ TopDownMemoryNodeEliminator::CheckInvariants(
   };
 
   std::vector<const CallNode *> callNodes;
-  std::vector<const rvsdg::region *> regions;
+  std::vector<const rvsdg::Region *> regions;
   collectRegionsAndCalls(*rvsdgModule.Rvsdg().root(), regions, callNodes);
 
   for (auto region : regions)

@@ -71,7 +71,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
 }
 
 void
-hls::distribute_constants(rvsdg::region * region)
+hls::distribute_constants(rvsdg::Region * region)
 {
   // push constants down as far as possible, since this is cheaper than having forks and potentially
   // buffers for them

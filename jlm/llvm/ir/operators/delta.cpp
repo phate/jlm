@@ -43,13 +43,13 @@ node::~node()
 {}
 
 delta::node *
-node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   return static_cast<delta::node *>(jlm::rvsdg::node::copy(region, operands));
 }
 
 delta::node *
-node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
 {
   auto delta = Create(region, Type(), name(), linkage(), Section(), constant());
 
@@ -173,7 +173,7 @@ cvargument::~cvargument()
 {}
 
 cvargument &
-cvargument::Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
 {
   auto deltaInput = util::AssertedCast<delta::cvinput>(input);
   return *cvargument::create(&region, deltaInput);

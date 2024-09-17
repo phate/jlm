@@ -55,7 +55,7 @@ unary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
 std::vector<jlm::rvsdg::output *>
 unary_normal_form::normalized_create(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const jlm::rvsdg::simple_op & op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {

@@ -23,7 +23,7 @@ namespace jlm::llvm::dot
  * @return a reference to the top-level graph corresponding to the region
  */
 util::Graph &
-WriteGraphs(util::GraphWriter & writer, rvsdg::region & region, bool emitTypeGraph);
+WriteGraphs(util::GraphWriter & writer, rvsdg::Region & region, bool emitTypeGraph);
 }
 
 #endif // JLM_LLVM_BACKEND_DOT_DOTWRITER_HPP

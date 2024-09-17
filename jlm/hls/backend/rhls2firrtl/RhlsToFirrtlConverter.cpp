@@ -2494,7 +2494,7 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
+RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody)
 {
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -2702,7 +2702,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
 
 std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
 RhlsToFirrtlConverter::createInstances(
-    jlm::rvsdg::region * subRegion,
+    rvsdg::Region * subRegion,
     mlir::Block * circuitBody,
     mlir::Block * body)
 {

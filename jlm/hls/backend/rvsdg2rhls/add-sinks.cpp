@@ -11,7 +11,7 @@ namespace jlm::hls
 {
 
 void
-add_sinks(jlm::rvsdg::region * region)
+add_sinks(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {

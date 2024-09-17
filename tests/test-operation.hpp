@@ -32,7 +32,7 @@ class GraphImport final : public rvsdg::GraphImport
 
 public:
   GraphImport &
-  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
   static GraphImport &
   Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
@@ -96,7 +96,7 @@ public:
 
   static inline rvsdg::node *
   create(
-      rvsdg::region * region,
+      rvsdg::Region * region,
       std::shared_ptr<const rvsdg::type> srctype,
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::type> dsttype)
@@ -215,7 +215,7 @@ public:
   ~structural_node() override;
 
 private:
-  structural_node(rvsdg::region * parent, size_t nsubregions)
+  structural_node(rvsdg::Region * parent, size_t nsubregions)
       : rvsdg::structural_node(structural_op(), parent, nsubregions)
   {}
 
@@ -233,13 +233,13 @@ public:
   AddOutputWithResults(const std::vector<rvsdg::output *> & origins);
 
   static structural_node *
-  create(rvsdg::region * parent, size_t nsubregions)
+  create(rvsdg::Region * parent, size_t nsubregions)
   {
     return new structural_node(parent, nsubregions);
   }
 
   virtual structural_node *
-  copy(rvsdg::region * region, rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::substitution_map & smap) const override;
 };
 
 class StructuralNodeInput final : public rvsdg::structural_input
@@ -301,18 +301,18 @@ public:
   ~StructuralNodeArgument() noexcept override;
 
   StructuralNodeArgument &
-  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
 private:
   StructuralNodeArgument(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       StructuralNodeInput * input,
       std::shared_ptr<const rvsdg::type> type)
       : rvsdg::RegionArgument(&region, input, std::move(type))
   {}
 
   static StructuralNodeArgument &
-  Create(rvsdg::region & region, StructuralNodeInput & input)
+  Create(rvsdg::Region & region, StructuralNodeInput & input)
   {
     auto argument = new StructuralNodeArgument(region, &input, input.Type());
     region.append_argument(argument);
@@ -320,7 +320,7 @@ private:
   }
 
   static StructuralNodeArgument &
-  Create(rvsdg::region & region, std::shared_ptr<const rvsdg::type> type)
+  Create(rvsdg::Region & region, std::shared_ptr<const rvsdg::type> type)
   {
     auto argument = new StructuralNodeArgument(region, nullptr, std::move(type));
     region.append_argument(argument);
@@ -384,7 +384,7 @@ public:
 
   static rvsdg::simple_node *
   create(
-      rvsdg::region * region,
+      rvsdg::Region * region,
       const std::vector<rvsdg::output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::type>> result_types)
   {
@@ -398,7 +398,7 @@ public:
 
   static rvsdg::simple_node *
   Create(
-      rvsdg::region * region,
+      rvsdg::Region * region,
       std::vector<std::shared_ptr<const rvsdg::type>> operandTypes,
       const std::vector<rvsdg::output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::type>> resultTypes)
@@ -412,7 +412,7 @@ class SimpleNode final : public rvsdg::simple_node
 {
 private:
   SimpleNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const test_op & operation,
       const std::vector<rvsdg::output *> & operands)
       : simple_node(&region, operation, operands)
@@ -425,7 +425,7 @@ public:
 
   static SimpleNode &
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const std::vector<rvsdg::output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::type>> resultTypes)
   {
@@ -466,7 +466,7 @@ create_testop_tac(
 
 static inline std::vector<rvsdg::output *>
 create_testop(
-    rvsdg::region * region,
+    rvsdg::Region * region,
     const std::vector<rvsdg::output *> & operands,
     std::vector<std::shared_ptr<const rvsdg::type>> result_types)
 {
@@ -482,7 +482,7 @@ class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 {
 private:
   TestGraphArgument(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       jlm::rvsdg::structural_input * input,
       std::shared_ptr<const jlm::rvsdg::type> type)
       : jlm::rvsdg::RegionArgument(&region, input, type)
@@ -490,14 +490,14 @@ private:
 
 public:
   TestGraphArgument &
-  Copy(jlm::rvsdg::region & region, jlm::rvsdg::structural_input * input) override
+  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override
   {
     return Create(region, input, Type());
   }
 
   static TestGraphArgument &
   Create(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       jlm::rvsdg::structural_input * input,
       std::shared_ptr<const jlm::rvsdg::type> type)
   {
@@ -511,7 +511,7 @@ class TestGraphResult final : public jlm::rvsdg::RegionResult
 {
 private:
   TestGraphResult(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       jlm::rvsdg::output & origin,
       jlm::rvsdg::structural_output * output)
       : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
@@ -530,7 +530,7 @@ public:
 
   static TestGraphResult &
   Create(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       jlm::rvsdg::output & origin,
       jlm::rvsdg::structural_output * output)
   {

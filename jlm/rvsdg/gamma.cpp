@@ -341,7 +341,7 @@ GammaNode::exitvar_iterator::operator++() noexcept
 }
 
 GammaNode *
-GammaNode::copy(rvsdg::region * region, substitution_map & smap) const
+GammaNode::copy(rvsdg::Region * region, substitution_map & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
@@ -374,7 +374,7 @@ GammaNode::copy(rvsdg::region * region, substitution_map & smap) const
 GammaArgument::~GammaArgument() noexcept = default;
 
 GammaArgument &
-GammaArgument::Copy(rvsdg::region & region, structural_input * input)
+GammaArgument::Copy(rvsdg::Region & region, structural_input * input)
 {
   auto gammaInput = util::AssertedCast<GammaInput>(input);
   return Create(region, *gammaInput);
