@@ -19,7 +19,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 jlm::rvsdg::output *
-jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
+jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
 {
   if (response->region() == target)
   {
@@ -37,7 +37,7 @@ jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * respo
 }
 
 jlm::rvsdg::output *
-jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * request)
+jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
 {
   if (request->region() == target)
   {
@@ -324,7 +324,7 @@ replace_store(jlm::rvsdg::simple_node * orig)
 
 void
 gather_mem_nodes(
-    jlm::rvsdg::region * region,
+    jlm::rvsdg::Region * region,
     std::vector<jlm::rvsdg::simple_node *> & load_nodes,
     std::vector<jlm::rvsdg::simple_node *> & store_nodes,
     std::vector<jlm::rvsdg::simple_node *> & decouple_nodes,

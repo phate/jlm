@@ -97,7 +97,7 @@ test1()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  assert(!jlm::rvsdg::region::Contains<CallOperation>(*graph.root(), true));
+  assert(!jlm::rvsdg::Region::Contains<CallOperation>(*graph.root(), true));
 }
 
 static void

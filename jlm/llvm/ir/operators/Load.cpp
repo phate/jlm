@@ -81,7 +81,7 @@ LoadNonVolatileNode::CopyWithNewMemoryStates(
 }
 
 rvsdg::node *
-LoadNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
+LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -157,7 +157,7 @@ LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & m
 }
 
 rvsdg::node *
-LoadVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
@@ -631,7 +631,7 @@ load_normal_form::normalize_node(rvsdg::node * node) const
 
 std::vector<rvsdg::output *>
 load_normal_form::normalized_create(
-    rvsdg::region * region,
+    rvsdg::Region * region,
     const rvsdg::simple_op & op,
     const std::vector<rvsdg::output *> & operands) const
 {

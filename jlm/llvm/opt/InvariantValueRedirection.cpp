@@ -92,7 +92,7 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
 }
 
 void
-InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
+InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
   auto isGammaNode = is<rvsdg::GammaOperation>(region.node());
   auto isThetaNode = is<rvsdg::ThetaOperation>(region.node());

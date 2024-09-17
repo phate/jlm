@@ -352,7 +352,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
 }
 
 std::string
-DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
+DotHLS::subregion_to_dot(rvsdg::Region * sr)
 {
   std::ostringstream dot;
   dot << "digraph G {\n";

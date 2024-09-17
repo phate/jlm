@@ -176,7 +176,7 @@ unrollinfo::create(rvsdg::ThetaNode * theta)
 static void
 unroll_body(
     const rvsdg::ThetaNode * theta,
-    jlm::rvsdg::region * target,
+    rvsdg::Region * target,
     jlm::rvsdg::substitution_map & smap,
     size_t factor)
 {
@@ -348,7 +348,7 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
 
 static jlm::rvsdg::output *
 create_unrolled_theta_predicate(
-    jlm::rvsdg::region * target,
+    rvsdg::Region * target,
     const jlm::rvsdg::substitution_map & smap,
     const unrollinfo & ui,
     size_t factor)
@@ -482,7 +482,7 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
 }
 
 static bool
-unroll(jlm::rvsdg::region * region, size_t factor)
+unroll(rvsdg::Region * region, size_t factor)
 {
   bool unrolled = false;
   for (auto & node : jlm::rvsdg::topdown_traverser(region))

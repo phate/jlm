@@ -209,7 +209,7 @@ is_slice_exclusive_(
 }
 
 void
-dump_xml(const jlm::rvsdg::region * region, const std::string & file_name)
+dump_xml(const rvsdg::Region * region, const std::string & file_name)
 {
   auto xml_file = fopen(file_name.c_str(), "w");
   jlm::rvsdg::view_xml(region, xml_file);
@@ -464,7 +464,7 @@ process_loopnode(loop_node * loopNode)
 }
 
 void
-dae_conv(jlm::rvsdg::region * region)
+dae_conv(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->nodes.begin().ptr());
   bool changed;

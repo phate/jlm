@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 void
-add_buffers(jlm::rvsdg::region * region, bool pass_through)
+add_buffers(rvsdg::Region * region, bool pass_through)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

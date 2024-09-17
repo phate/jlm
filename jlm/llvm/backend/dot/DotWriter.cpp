@@ -133,7 +133,7 @@ AttachNodeOutput(
  * If the type does not already exist in the type graph, it is created.
  */
 static void
-CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * typeGraph)
+CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * typeGraph)
 {
   graph.SetProgramObject(region);
 
@@ -189,7 +189,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::region & region, util::Graph * type
 }
 
 util::Graph &
-WriteGraphs(util::GraphWriter & writer, rvsdg::region & region, bool emitTypeGraph)
+WriteGraphs(util::GraphWriter & writer, rvsdg::Region & region, bool emitTypeGraph)
 {
   util::Graph * typeGraph = nullptr;
   if (emitTypeGraph)

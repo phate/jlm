@@ -88,16 +88,16 @@ public:
   ~ThetaNode() noexcept override;
 
 private:
-  explicit ThetaNode(rvsdg::region & parent);
+  explicit ThetaNode(rvsdg::Region & parent);
 
 public:
   static ThetaNode *
-  create(jlm::rvsdg::region * parent)
+  create(rvsdg::Region * parent)
   {
     return new ThetaNode(*parent);
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -244,7 +244,7 @@ public:
   add_loopvar(jlm::rvsdg::output * origin);
 
   virtual ThetaNode *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
 };
 
 class ThetaInput final : public structural_input
@@ -345,17 +345,17 @@ public:
   ~ThetaArgument() noexcept override;
 
   ThetaArgument &
-  Copy(rvsdg::region & region, structural_input * input) override;
+  Copy(rvsdg::Region & region, structural_input * input) override;
 
 private:
-  ThetaArgument(rvsdg::region & region, ThetaInput & input)
+  ThetaArgument(rvsdg::Region & region, ThetaInput & input)
       : RegionArgument(&region, &input, input.Type())
   {
     JLM_ASSERT(is<ThetaOperation>(region.node()));
   }
 
   static ThetaArgument &
-  Create(rvsdg::region & region, ThetaInput & input)
+  Create(rvsdg::Region & region, ThetaInput & input)
   {
     auto thetaArgument = new ThetaArgument(region, input);
     region.append_argument(thetaArgument);

@@ -36,7 +36,7 @@ graph::~graph()
 
 graph::graph()
     : normalized_(false),
-      root_(new jlm::rvsdg::region(nullptr, this))
+      root_(new rvsdg::Region(nullptr, this))
 {}
 
 std::unique_ptr<jlm::rvsdg::graph>

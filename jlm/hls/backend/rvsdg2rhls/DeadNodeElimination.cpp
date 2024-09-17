@@ -81,7 +81,7 @@ RemoveUnusedInputs(hls::loop_node & loopNode)
 }
 
 static bool
-EliminateDeadNodesInRegion(jlm::rvsdg::region & region)
+EliminateDeadNodesInRegion(rvsdg::Region & region)
 {
   bool changed;
   bool anyChanged = false;

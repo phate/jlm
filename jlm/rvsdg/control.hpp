@@ -257,16 +257,16 @@ to_match_op(const jlm::rvsdg::operation & op) noexcept
 }
 
 jlm::rvsdg::output *
-control_constant(jlm::rvsdg::region * region, size_t nalternatives, size_t alternative);
+control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
 
 static inline jlm::rvsdg::output *
-control_false(jlm::rvsdg::region * region)
+control_false(rvsdg::Region * region)
 {
   return control_constant(region, 2, 0);
 }
 
 static inline jlm::rvsdg::output *
-control_true(jlm::rvsdg::region * region)
+control_true(rvsdg::Region * region)
 {
   return control_constant(region, 2, 1);
 }

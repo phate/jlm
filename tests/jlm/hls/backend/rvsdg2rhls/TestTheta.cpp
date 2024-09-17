@@ -57,10 +57,10 @@ TestUnknownBoundaries()
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

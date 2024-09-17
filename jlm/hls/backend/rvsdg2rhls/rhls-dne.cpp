@@ -268,7 +268,7 @@ dead_loop(jlm::rvsdg::node * ndmux_node)
 }
 
 bool
-dne(jlm::rvsdg::region * sr)
+dne(rvsdg::Region * sr)
 {
   bool any_changed = false;
   bool changed;

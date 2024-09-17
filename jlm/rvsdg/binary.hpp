@@ -34,7 +34,7 @@ public:
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
@@ -111,7 +111,7 @@ public:
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 };
@@ -220,7 +220,7 @@ public:
       const std::vector<jlm::rvsdg::output *> & operands) const;
 
   static void
-  reduce(jlm::rvsdg::region * region, const flattened_binary_op::reduction & reduction);
+  reduce(rvsdg::Region * region, const flattened_binary_op::reduction & reduction);
 
   static inline void
   reduce(jlm::rvsdg::graph * graph, const flattened_binary_op::reduction & reduction)

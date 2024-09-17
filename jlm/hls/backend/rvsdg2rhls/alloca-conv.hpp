@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-alloca_conv(jlm::rvsdg::region * region);
+alloca_conv(rvsdg::Region * region);
 
 void
 alloca_conv(llvm::RvsdgModule & rm);

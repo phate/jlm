@@ -46,7 +46,7 @@ TestWithMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static void
@@ -82,7 +82,7 @@ TestWithoutMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

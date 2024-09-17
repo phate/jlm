@@ -137,7 +137,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
 }
 
 void
-BaseHLS::create_node_names(jlm::rvsdg::region * r)
+BaseHLS::create_node_names(rvsdg::Region * r)
 {
   for (auto & node : r->nodes)
   {

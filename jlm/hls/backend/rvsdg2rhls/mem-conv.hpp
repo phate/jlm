@@ -53,10 +53,10 @@ jlm::rvsdg::simple_node *
 ReplaceStore(jlm::rvsdg::substitution_map & smap, const jlm::rvsdg::simple_node * originalStore);
 
 jlm::rvsdg::output *
-route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * response);
+route_response(rvsdg::Region * target, jlm::rvsdg::output * response);
 
 jlm::rvsdg::output *
-route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * request);
+route_request(rvsdg::Region * target, jlm::rvsdg::output * request);
 
 } // namespace jlm::hls
 

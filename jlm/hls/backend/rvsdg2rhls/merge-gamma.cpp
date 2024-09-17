@@ -193,7 +193,7 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
 }
 
 void
-merge_gamma(jlm::rvsdg::region * region)
+merge_gamma(rvsdg::Region * region)
 {
   bool changed = true;
   while (changed)

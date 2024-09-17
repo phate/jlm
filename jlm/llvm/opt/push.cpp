@@ -403,7 +403,7 @@ push(rvsdg::ThetaNode * theta)
 }
 
 static void
-push(jlm::rvsdg::region * region)
+push(rvsdg::Region * region)
 {
   for (auto node : jlm::rvsdg::topdown_traverser(region))
   {

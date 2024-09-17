@@ -102,7 +102,7 @@ static void
 convert_node(const rvsdg::node & node, context & ctx);
 
 static inline void
-convert_region(rvsdg::region & region, context & ctx)
+convert_region(rvsdg::Region & region, context & ctx)
 {
   auto entry = basic_block::create(*ctx.cfg());
   ctx.lpbb()->add_outedge(entry);

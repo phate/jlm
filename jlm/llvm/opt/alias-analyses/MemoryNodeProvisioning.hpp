@@ -30,10 +30,10 @@ public:
   GetPointsToGraph() const noexcept = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const jlm::rvsdg::region & region) const = 0;
+  GetRegionEntryNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const jlm::rvsdg::region & region) const = 0;
+  GetRegionExitNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallEntryNodes(const CallNode & callNode) const = 0;

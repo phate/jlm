@@ -42,7 +42,7 @@ MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 }
 
 ::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdgRegion)
+MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion)
 {
   // MLIR use blocks as the innermost "container"
   // In the RVSDG Dialect a region should contain one and only one block
@@ -54,7 +54,7 @@ MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdg
 MlirToJlmConverter::GetConvertedInputs(
     ::mlir::Operation & mlirOp,
     const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
-    const rvsdg::region & rvsdgRegion)
+    const rvsdg::Region & rvsdgRegion)
 {
   ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
   for (::mlir::Value operand : mlirOp.getOperands())
@@ -77,7 +77,7 @@ MlirToJlmConverter::GetConvertedInputs(
 }
 
 ::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion)
+MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion)
 {
   ::mlir::sortTopologically(&block);
 
@@ -258,7 +258,7 @@ MlirToJlmConverter::ConvertBitBinaryNode(
 rvsdg::node *
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
-    rvsdg::region & rvsdgRegion,
+    rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::output *> & inputs)
 {
 
@@ -397,14 +397,14 @@ MlirToJlmConverter::ConvertOperation(
 }
 
 void
-MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion)
+MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & rvsdgRegion)
 {
   JLM_ASSERT(mlirOmega.getRegions().size() == 1);
   ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
 jlm::rvsdg::node *
-MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion)
+MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion)
 {
   // Get the name of the function
   auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));

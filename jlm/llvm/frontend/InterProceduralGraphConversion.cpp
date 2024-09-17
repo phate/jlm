@@ -61,7 +61,7 @@ public:
     JLM_ASSERT(NumRegions() == 0);
   }
 
-  RegionalizedVariableMap(const ipgraph_module & interProceduralGraphModule, rvsdg::region & region)
+  RegionalizedVariableMap(const ipgraph_module & interProceduralGraphModule, rvsdg::Region & region)
       : InterProceduralGraphModule_(interProceduralGraphModule)
   {
     PushRegion(region);
@@ -88,14 +88,14 @@ public:
     return VariableMap(NumRegions() - 1);
   }
 
-  rvsdg::region &
+  rvsdg::Region &
   GetRegion(size_t n) noexcept
   {
     JLM_ASSERT(n < NumRegions());
     return *RegionStack_[n];
   }
 
-  rvsdg::region &
+  rvsdg::Region &
   GetTopRegion() noexcept
   {
     JLM_ASSERT(NumRegions() > 0);
@@ -103,7 +103,7 @@ public:
   }
 
   void
-  PushRegion(rvsdg::region & region)
+  PushRegion(rvsdg::Region & region)
   {
     VariableMapStack_.push_back(std::make_unique<llvm::VariableMap>());
     RegionStack_.push_back(&region);
@@ -125,7 +125,7 @@ public:
 private:
   const ipgraph_module & InterProceduralGraphModule_;
   std::vector<std::unique_ptr<llvm::VariableMap>> VariableMapStack_;
-  std::vector<rvsdg::region *> RegionStack_;
+  std::vector<rvsdg::Region *> RegionStack_;
 };
 
 class ControlFlowRestructuringStatistics final : public util::Statistics
@@ -461,7 +461,7 @@ requiresExport(const ipgraph_node & ipgNode)
 static void
 ConvertAssignment(
     const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
@@ -474,7 +474,7 @@ ConvertAssignment(
 static void
 ConvertSelect(
     const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
@@ -494,7 +494,7 @@ ConvertSelect(
 static void
 ConvertBranch(
     const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
@@ -505,7 +505,7 @@ ConvertBranch(
 
 template<class TNode, class TOperation>
 static void
-Convert(const llvm::tac & threeAddressCode, rvsdg::region & region, llvm::VariableMap & variableMap)
+Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::VariableMap & variableMap)
 {
   std::vector<rvsdg::output *> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++)
@@ -528,7 +528,7 @@ Convert(const llvm::tac & threeAddressCode, rvsdg::region & region, llvm::Variab
 static void
 ConvertThreeAddressCode(
     const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   if (is<assignment_op>(&threeAddressCode))
@@ -581,7 +581,7 @@ ConvertThreeAddressCode(
 static void
 ConvertBasicBlock(
     const taclist & basicBlock,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   for (const auto & threeAddressCode : basicBlock)
@@ -1001,7 +1001,7 @@ ConvertFunctionNode(
 static rvsdg::output *
 ConvertDataNodeInitialization(
     const data_node_init & init,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   auto & variableMap = regionalizedVariableMap.GetTopVariableMap();

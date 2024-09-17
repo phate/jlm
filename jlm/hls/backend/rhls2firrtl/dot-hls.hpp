@@ -40,7 +40,7 @@ private:
   prepare_loop_out_port(hls::loop_node * ln);
 
   std::string
-  subregion_to_dot(jlm::rvsdg::region * sr);
+  subregion_to_dot(rvsdg::Region * sr);
 
   int loop_ctr = 0;
 };

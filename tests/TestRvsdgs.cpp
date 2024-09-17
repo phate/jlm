@@ -2218,7 +2218,7 @@ PhiTest2::SetupRvsdg()
   };
 
   auto SetupA =
-      [&](jlm::rvsdg::region & region, phi::rvargument & functionB, phi::rvargument & functionD)
+      [&](jlm::rvsdg::Region & region, phi::rvargument & functionB, phi::rvargument & functionD)
   {
     auto lambda = lambda::node::create(&region, recFunctionType, "a", linkage::external_linkage);
     auto pointerArgument = lambda->fctargument(0);
@@ -2259,7 +2259,7 @@ PhiTest2::SetupRvsdg()
             jlm::rvsdg::node_output::node(paAlloca[0])));
   };
 
-  auto SetupB = [&](jlm::rvsdg::region & region,
+  auto SetupB = [&](jlm::rvsdg::Region & region,
                     phi::cvargument & functionI,
                     phi::rvargument & functionC,
                     phi::cvargument & functionEight)
@@ -2304,7 +2304,7 @@ PhiTest2::SetupRvsdg()
             jlm::rvsdg::node_output::node(pbAlloca[0])));
   };
 
-  auto SetupC = [&](jlm::rvsdg::region & region, phi::rvargument & functionA)
+  auto SetupC = [&](jlm::rvsdg::Region & region, phi::rvargument & functionA)
   {
     auto lambda = lambda::node::create(&region, recFunctionType, "c", linkage::external_linkage);
     auto xArgument = lambda->fctargument(0);
@@ -2343,7 +2343,7 @@ PhiTest2::SetupRvsdg()
             jlm::rvsdg::node_output::node(pcAlloca[0])));
   };
 
-  auto SetupD = [&](jlm::rvsdg::region & region, phi::rvargument & functionA)
+  auto SetupD = [&](jlm::rvsdg::Region & region, phi::rvargument & functionA)
   {
     auto lambda = lambda::node::create(&region, recFunctionType, "d", linkage::external_linkage);
     auto xArgument = lambda->fctargument(0);

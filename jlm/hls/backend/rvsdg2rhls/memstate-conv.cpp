@@ -25,7 +25,7 @@ memstate_conv(llvm::RvsdgModule & rm)
 }
 
 void
-memstate_conv(jlm::rvsdg::region * region)
+memstate_conv(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

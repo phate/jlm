@@ -145,7 +145,7 @@ CallOperation::copy() const
 }
 
 rvsdg::node *
-CallNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }

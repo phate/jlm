@@ -188,7 +188,7 @@ RemoveUnusedStatesFromThetaNode(rvsdg::ThetaNode & thetaNode)
 }
 
 static void
-RemoveUnusedStatesInRegion(rvsdg::region & region);
+RemoveUnusedStatesInRegion(rvsdg::Region & region);
 
 static void
 RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
@@ -214,7 +214,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
 }
 
 static void
-RemoveUnusedStatesInRegion(rvsdg::region & region)
+RemoveUnusedStatesInRegion(rvsdg::Region & region)
 {
   for (auto & node : rvsdg::topdown_traverser(&region))
   {

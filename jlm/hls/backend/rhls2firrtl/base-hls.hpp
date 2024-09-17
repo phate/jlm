@@ -64,7 +64,7 @@ protected:
   get_hls_lambda(llvm::RvsdgModule & rm);
 
   void
-  create_node_names(jlm::rvsdg::region * r);
+  create_node_names(rvsdg::Region * r);
 
   virtual std::string
   get_text(llvm::RvsdgModule & rm) = 0;

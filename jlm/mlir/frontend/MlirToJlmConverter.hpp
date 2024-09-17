@@ -85,7 +85,7 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
-  ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdgRegion);
+  ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts the MLIR block and all operations in it
@@ -95,7 +95,7 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
-  ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion);
+  ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion);
 
   /**
    * Retreive the previously converted RVSDG ouputs from the map of operations
@@ -109,7 +109,7 @@ private:
   GetConvertedInputs(
       ::mlir::Operation & mlirOp,
       const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
-      const rvsdg::region & rvsdgRegion);
+      const rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
@@ -145,7 +145,7 @@ private:
   rvsdg::node *
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
-      rvsdg::region & rvsdgRegion,
+      rvsdg::Region & rvsdgRegion,
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
@@ -154,7 +154,7 @@ private:
    * \param rvsdgRegion The RVSDG region that the omega node will reside in.
    */
   void
-  ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion);
+  ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.
@@ -163,7 +163,7 @@ private:
    * \result The converted Lambda node.
    */
   rvsdg::node *
-  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion);
+  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts an MLIR type into an RVSDG type.

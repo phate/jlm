@@ -61,7 +61,7 @@ private:
   RedirectInRootRegion(rvsdg::graph & rvsdg);
 
   static void
-  RedirectInRegion(rvsdg::region & region);
+  RedirectInRegion(rvsdg::Region & region);
 
   static void
   RedirectInSubregions(rvsdg::structural_node & structuralNode);

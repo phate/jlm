@@ -51,7 +51,7 @@ public:
 
 protected:
   RegionArgument(
-      rvsdg::region * region,
+      rvsdg::Region * region,
       structural_input * input,
       std::shared_ptr<const rvsdg::type> type);
 
@@ -81,7 +81,7 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(rvsdg::region & region, structural_input * input) = 0;
+  Copy(rvsdg::Region & region, structural_input * input) = 0;
 
 private:
   structural_input * input_;
@@ -108,7 +108,7 @@ public:
 
 protected:
   RegionResult(
-      rvsdg::region * region,
+      rvsdg::Region * region,
       rvsdg::output * origin,
       structural_output * output,
       std::shared_ptr<const rvsdg::type> type);
@@ -146,7 +146,7 @@ private:
   structural_output * output_;
 };
 
-class region
+class Region
 {
   typedef jlm::util::intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_node_list_accessor>
       region_nodes_list;
@@ -160,11 +160,11 @@ class region
           region_bottom_node_list;
 
 public:
-  ~region();
+  ~Region() noexcept;
 
-  region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph);
+  Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
 
-  region(jlm::rvsdg::structural_node * node, size_t index);
+  Region(rvsdg::structural_node * node, size_t index);
 
   inline region_nodes_list::iterator
   begin()
@@ -368,7 +368,7 @@ public:
     map will be updated as nodes are copied.
   */
   void
-  copy(region * target, substitution_map & smap, bool copy_arguments, bool copy_results) const;
+  copy(Region * target, substitution_map & smap, bool copy_arguments, bool copy_results) const;
 
   void
   prune(bool recursive);
@@ -387,7 +387,7 @@ public:
    */
   template<class Operation>
   static inline bool
-  Contains(const jlm::rvsdg::region & region, bool checkSubregions);
+  Contains(const rvsdg::Region & region, bool checkSubregions);
 
   /**
    * Counts the number of (sub-)regions contained within \p region. The count includes \p region,
@@ -398,7 +398,7 @@ public:
    * @return The number of (sub-)regions.
    */
   [[nodiscard]] static size_t
-  NumRegions(const jlm::rvsdg::region & region) noexcept;
+  NumRegions(const rvsdg::Region & region) noexcept;
 
   /**
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
@@ -420,12 +420,12 @@ public:
    * \p annotationMap.
    *
    * @param region The top-level region that is converted
-   * @param annotationMap A map with annotations for instances of \ref region%s or
+   * @param annotationMap A map with annotations for instances of \ref Region%s or
    * structural_node%s.
    * @return A string containing the ASCII tree of \p region.
    */
   [[nodiscard]] static std::string
-  ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept;
+  ToTree(const rvsdg::Region & region, const util::AnnotationMap & annotationMap) noexcept;
 
   /**
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
@@ -448,7 +448,7 @@ public:
    * @return A string containing the ASCII tree of \p region
    */
   [[nodiscard]] static std::string
-  ToTree(const rvsdg::region & region) noexcept;
+  ToTree(const rvsdg::Region & region) noexcept;
 
   region_nodes_list nodes;
 
@@ -459,7 +459,7 @@ public:
 private:
   static void
   ToTree(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::AnnotationMap & annotationMap,
       size_t indentationDepth,
       std::stringstream & stream) noexcept;
@@ -494,16 +494,16 @@ remove(jlm::rvsdg::node * node)
 }
 
 size_t
-nnodes(const jlm::rvsdg::region * region) noexcept;
+nnodes(const rvsdg::Region * region) noexcept;
 
 size_t
-nstructnodes(const jlm::rvsdg::region * region) noexcept;
+nstructnodes(const rvsdg::Region * region) noexcept;
 
 size_t
-nsimpnodes(const jlm::rvsdg::region * region) noexcept;
+nsimpnodes(const rvsdg::Region * region) noexcept;
 
 size_t
-ninputs(const jlm::rvsdg::region * region) noexcept;
+ninputs(const rvsdg::Region * region) noexcept;
 
 } // namespace
 

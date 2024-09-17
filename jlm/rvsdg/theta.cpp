@@ -26,7 +26,7 @@ ThetaOperation::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new ThetaOperation(*this));
 }
 
-ThetaNode::ThetaNode(rvsdg::region & parent)
+ThetaNode::ThetaNode(rvsdg::Region & parent)
     : structural_node(ThetaOperation(), &parent, 1)
 {
   auto predicate = control_false(subregion());
@@ -50,7 +50,7 @@ ThetaOutput::~ThetaOutput() noexcept
 ThetaArgument::~ThetaArgument() noexcept = default;
 
 ThetaArgument &
-ThetaArgument::Copy(rvsdg::region & region, structural_input * input)
+ThetaArgument::Copy(rvsdg::Region & region, structural_input * input)
 {
   auto thetaInput = util::AssertedCast<ThetaInput>(input);
   return ThetaArgument::Create(region, *thetaInput);
@@ -114,7 +114,7 @@ ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 }
 
 ThetaNode *
-ThetaNode::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+ThetaNode::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
 {
   auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);

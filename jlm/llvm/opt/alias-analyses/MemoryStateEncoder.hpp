@@ -83,7 +83,7 @@ public:
 
 private:
   void
-  EncodeRegion(rvsdg::region & region);
+  EncodeRegion(rvsdg::Region & region);
 
   void
   EncodeStructuralNode(rvsdg::structural_node & structuralNode);

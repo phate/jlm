@@ -79,7 +79,7 @@ StoreNonVolatileNode::CopyWithNewMemoryStates(
 }
 
 rvsdg::node *
-StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
+StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -155,7 +155,7 @@ StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & 
 }
 
 rvsdg::node *
-StoreVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+StoreVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
@@ -383,7 +383,7 @@ store_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
 std::vector<jlm::rvsdg::output *>
 store_normal_form::normalized_create(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const jlm::rvsdg::simple_op & op,
     const std::vector<jlm::rvsdg::output *> & ops) const
 {

@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-merge_gamma(jlm::rvsdg::region * region);
+merge_gamma(rvsdg::Region * region);
 
 void
 merge_gamma(llvm::RvsdgModule & rm);

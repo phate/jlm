@@ -33,7 +33,7 @@ void
 remove_unused_state(llvm::RvsdgModule & rm);
 
 void
-remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments = true);
+remove_unused_state(rvsdg::Region * region, bool can_remove_arguments = true);
 
 } // namespace jlm::hls
 

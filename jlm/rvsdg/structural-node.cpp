@@ -57,7 +57,7 @@ structural_node::~structural_node()
 
 structural_node::structural_node(
     const jlm::rvsdg::structural_op & op,
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     size_t nsubregions)
     : node(op.copy(), region)
 {
@@ -65,7 +65,7 @@ structural_node::structural_node(
     throw jlm::util::error("Number of subregions must be greater than zero.");
 
   for (size_t n = 0; n < nsubregions; n++)
-    subregions_.emplace_back(std::unique_ptr<jlm::rvsdg::region>(new jlm::rvsdg::region(this, n)));
+    subregions_.emplace_back(std::unique_ptr<rvsdg::Region>(new jlm::rvsdg::Region(this, n)));
 
   on_node_create(this);
 }

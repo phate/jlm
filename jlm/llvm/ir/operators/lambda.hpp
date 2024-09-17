@@ -156,7 +156,7 @@ public:
   ~node() override;
 
 private:
-  node(jlm::rvsdg::region * parent, lambda::operation && op)
+  node(rvsdg::Region * parent, lambda::operation && op)
       : structural_node(op, parent, 1)
   {}
 
@@ -179,7 +179,7 @@ public:
   [[nodiscard]] fctresult_constrange
   fctresults() const;
 
-  [[nodiscard]] jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
     return structural_node::subregion(0);
@@ -297,11 +297,10 @@ public:
   fctresult(size_t n) const noexcept;
 
   lambda::node *
-  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
-      const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   lambda::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
 
   /**
    * @return The memory state argument of the lambda subregion.
@@ -355,7 +354,7 @@ public:
    */
   static node *
   create(
-      jlm::rvsdg::region * parent,
+      rvsdg::Region * parent,
       std::shared_ptr<const jlm::llvm::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage,
@@ -366,7 +365,7 @@ public:
    */
   static node *
   create(
-      jlm::rvsdg::region * parent,
+      rvsdg::Region * parent,
       std::shared_ptr<const jlm::llvm::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage)
@@ -527,15 +526,15 @@ public:
   }
 
   fctargument &
-  Copy(rvsdg::region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
 private:
-  fctargument(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  fctargument(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::type> type)
       : rvsdg::RegionArgument(region, nullptr, std::move(type))
   {}
 
   static fctargument *
-  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::type> type)
   {
     auto argument = new fctargument(region, std::move(type));
     region->append_argument(argument);
@@ -604,15 +603,15 @@ public:
   ~cvargument() override;
 
   cvargument &
-  Copy(rvsdg::region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
 
 private:
-  cvargument(jlm::rvsdg::region * region, cvinput * input)
+  cvargument(rvsdg::Region * region, cvinput * input)
       : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
-  create(jlm::rvsdg::region * region, lambda::cvinput * input)
+  create(rvsdg::Region * region, lambda::cvinput * input)
   {
     auto argument = new cvargument(region, input);
     region->append_argument(argument);

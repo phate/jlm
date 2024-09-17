@@ -309,7 +309,7 @@ simple_node_to_dot(jlm::rvsdg::simple_node * simpleNode)
 }
 
 std::string
-region_to_dot(jlm::rvsdg::region * region)
+region_to_dot(rvsdg::Region * region)
 {
   std::ostringstream dot;
   dot << "subgraph cluster_reg" << hex((intptr_t)region) << " {\n";
@@ -394,7 +394,7 @@ region_to_dot(jlm::rvsdg::region * region)
 }
 
 std::string
-to_dot(jlm::rvsdg::region * region)
+to_dot(rvsdg::Region * region)
 {
   std::ostringstream dot;
   dot << "digraph G {\n";
@@ -404,7 +404,7 @@ to_dot(jlm::rvsdg::region * region)
 }
 
 void
-view_dot(jlm::rvsdg::region * region, FILE * out)
+view_dot(rvsdg::Region * region, FILE * out)
 {
   fputs(jlm::hls::to_dot(region).c_str(), out);
   fflush(out);

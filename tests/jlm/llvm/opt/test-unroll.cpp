@@ -21,7 +21,7 @@
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static size_t
-nthetas(jlm::rvsdg::region * region)
+nthetas(jlm::rvsdg::Region * region)
 {
   size_t n = 0;
   for (const auto & node : region->nodes)
@@ -274,7 +274,7 @@ test_unknown_boundaries()
 }
 
 static std::vector<jlm::rvsdg::ThetaNode *>
-find_thetas(jlm::rvsdg::region * region)
+find_thetas(jlm::rvsdg::Region * region)
 {
   std::vector<jlm::rvsdg::ThetaNode *> thetas;
   for (auto & node : jlm::rvsdg::topdown_traverser(region))

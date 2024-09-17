@@ -134,7 +134,7 @@ trace_call(jlm::rvsdg::input * input)
 }
 
 void
-inline_calls(jlm::rvsdg::region * region)
+inline_calls(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -176,7 +176,7 @@ inline_calls(jlm::rvsdg::region * region)
 size_t alloca_cnt = 0;
 
 void
-convert_alloca(jlm::rvsdg::region * region)
+convert_alloca(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

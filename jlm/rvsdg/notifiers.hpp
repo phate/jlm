@@ -14,10 +14,10 @@ namespace jlm::rvsdg
 class input;
 class node;
 class output;
-class region;
+class Region;
 
-extern jlm::util::notifier<jlm::rvsdg::region *> on_region_create;
-extern jlm::util::notifier<jlm::rvsdg::region *> on_region_destroy;
+extern jlm::util::notifier<rvsdg::Region *> on_region_create;
+extern jlm::util::notifier<rvsdg::Region *> on_region_destroy;
 
 extern jlm::util::notifier<jlm::rvsdg::node *> on_node_create;
 extern jlm::util::notifier<jlm::rvsdg::node *> on_node_destroy;

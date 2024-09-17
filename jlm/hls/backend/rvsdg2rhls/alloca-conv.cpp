@@ -116,7 +116,7 @@ gep_to_index(jlm::rvsdg::output * o)
 }
 
 void
-alloca_conv(jlm::rvsdg::region * region)
+alloca_conv(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

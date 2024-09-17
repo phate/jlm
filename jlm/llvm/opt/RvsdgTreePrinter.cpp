@@ -50,7 +50,7 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & sta
   statistics->Start();
 
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
-  auto tree = rvsdg::region::ToTree(*rvsdgModule.Rvsdg().root(), annotationMap);
+  auto tree = rvsdg::Region::ToTree(*rvsdgModule.Rvsdg().root(), annotationMap);
   WriteTreeToFile(rvsdgModule, tree);
 
   statistics->Stop();
@@ -92,7 +92,7 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
 {
   static std::string_view label("NumRvsdgNodes");
 
-  std::function<size_t(const rvsdg::region &)> annotateRegion = [&](const rvsdg::region & region)
+  std::function<size_t(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
     for (auto & node : region.nodes)
     {
@@ -128,7 +128,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
   std::string_view inputLabel("NumMemoryStateTypeInputs");
   std::string_view outputLabel("NumMemoryStateTypeOutputs");
 
-  std::function<void(const rvsdg::region &)> annotateRegion = [&](const rvsdg::region & region)
+  std::function<void(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
     size_t numMemoryStateArguments = 0;
     for (size_t n = 0; n < region.narguments(); n++)
