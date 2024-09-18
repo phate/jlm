@@ -793,7 +793,7 @@ public:
   add_loopconst(jlm::rvsdg::output * origin);
 
   virtual loop_node *
-  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
 class bundletype final : public jlm::rvsdg::valuetype

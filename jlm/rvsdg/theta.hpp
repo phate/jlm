@@ -244,7 +244,7 @@ public:
   add_loopvar(jlm::rvsdg::output * origin);
 
   virtual ThetaNode *
-  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
 class ThetaInput final : public structural_input

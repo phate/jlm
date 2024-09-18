@@ -239,7 +239,7 @@ public:
   }
 
   virtual structural_node *
-  copy(rvsdg::Region * region, rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
 class StructuralNodeInput final : public rvsdg::structural_input

@@ -121,7 +121,7 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
   auto deps = route_dependencies(lambda, call);
   JLM_ASSERT(lambda->ncvarguments() == deps.size());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t n = 1; n < call->ninputs(); n++)
   {
     auto argument = lambda->fctargument(n - 1);

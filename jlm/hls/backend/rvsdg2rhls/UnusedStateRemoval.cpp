@@ -70,7 +70,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
       lambdaNode.linkage(),
       lambdaNode.attributes());
 
-  jlm::rvsdg::substitution_map substitutionMap;
+  rvsdg::SubstitutionMap substitutionMap;
   for (size_t i = 0; i < lambdaNode.ncvarguments(); ++i)
   {
     auto oldArgument = lambdaNode.cvargument(i);

@@ -13,7 +13,7 @@ namespace jlm::hls
 static void
 ConvertThetaNode(rvsdg::ThetaNode & theta)
 {
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
 
   auto loop = hls::loop_node::create(theta.region());
   std::vector<jlm::rvsdg::input *> branches;
