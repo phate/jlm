@@ -193,7 +193,7 @@ public:
   Region(rvsdg::structural_node * node, size_t index);
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the arguments of the region.
+   * @return Returns an iterator range for iterating through the arguments of the region.
    */
   [[nodiscard]] RegionArgumentRange
   Arguments() noexcept
@@ -202,7 +202,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the arguments of the region.
+   * @return Returns an iterator range for iterating through the arguments of the region.
    */
   [[nodiscard]] RegionArgumentConstRange
   Arguments() const noexcept
@@ -211,7 +211,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the results of the region.
+   * @return Returns an iterator range for iterating through the results of the region.
    */
   [[nodiscard]] RegionResultRange
   Results() noexcept
@@ -220,7 +220,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the results of the region.
+   * @return Returns an iterator range for iterating through the results of the region.
    */
   [[nodiscard]] RegionResultConstRange
   Results() const noexcept
@@ -229,7 +229,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the top nodes of the region.
+   * @return Returns an iterator range for iterating through the top nodes of the region.
    */
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
@@ -238,7 +238,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the top nodes of the region.
+   * @return Returns an iterator range for iterating through the top nodes of the region.
    */
   [[nodiscard]] TopNodeConstRange
   TopNodes() const noexcept
@@ -247,7 +247,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the nodes of the region.
+   * @return Returns an iterator range for iterating through the nodes of the region.
    */
   [[nodiscard]] NodeRange
   Nodes() noexcept
@@ -256,7 +256,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the nodes of the region.
+   * @return Returns an iterator range for iterating through the nodes of the region.
    */
   [[nodiscard]] NodeConstRange
   Nodes() const noexcept
@@ -265,7 +265,7 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the bottom nodes of the region.
+   * @return Returns an iterator range for iterating through the bottom nodes of the region.
    */
   [[nodiscard]] BottomNodeRange
   BottomNodes() noexcept
@@ -274,7 +274,8 @@ public:
   }
 
   /**
-   * @return Returns an \ref iterator_range for iterating through the bottom nodes of the region.
+   * @return Returns an iterator range for iterating through the bottom nodes of the
+   * region.
    */
   [[nodiscard]] BottomNodeConstRange
   BottomNodes() const noexcept
