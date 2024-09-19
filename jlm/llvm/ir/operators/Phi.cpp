@@ -55,13 +55,13 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
 }
 
 phi::node *
-node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   phi::builder pb;
   pb.begin(region);
 
   /* add context variables */
-  jlm::rvsdg::substitution_map subregionmap;
+  rvsdg::SubstitutionMap subregionmap;
   for (auto it = begin_cv(); it != end_cv(); it++)
   {
     auto origin = smap.lookup(it->origin());

@@ -486,7 +486,7 @@ public:
   output(size_t n) const noexcept;
 
   virtual phi::node *
-  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
    * Extracts all lambda nodes from a phi node.

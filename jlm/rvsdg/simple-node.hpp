@@ -45,7 +45,7 @@ public:
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   virtual jlm::rvsdg::node *
-  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
   static inline jlm::rvsdg::simple_node *
   create(

@@ -166,7 +166,7 @@ structural_node::~structural_node()
 {}
 
 structural_node *
-structural_node::copy(rvsdg::Region * parent, rvsdg::substitution_map & smap) const
+structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) const
 {
   graph()->mark_denormalized();
   auto node = structural_node::create(parent, nsubregions());

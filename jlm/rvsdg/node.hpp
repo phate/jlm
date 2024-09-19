@@ -28,7 +28,7 @@ class type;
 class graph;
 class node_normal_form;
 class output;
-class substitution_map;
+class SubstitutionMap;
 
 /* inputs */
 
@@ -809,7 +809,7 @@ public:
     subsequent \ref copy operations.
   */
   virtual jlm::rvsdg::node *
-  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const = 0;
+  copy(rvsdg::Region * region, SubstitutionMap & smap) const = 0;
 
   inline size_t
   depth() const noexcept

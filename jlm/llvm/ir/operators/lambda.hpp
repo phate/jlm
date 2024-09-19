@@ -300,7 +300,7 @@ public:
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   lambda::node *
-  copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
    * @return The memory state argument of the lambda subregion.

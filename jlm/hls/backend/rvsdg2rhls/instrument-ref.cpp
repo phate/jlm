@@ -27,7 +27,7 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
       llvm::lambda::node::create(ln->region(), ln->Type(), name, ln->linkage(), ln->attributes());
 
   /* add context variables */
-  jlm::rvsdg::substitution_map subregionmap;
+  rvsdg::SubstitutionMap subregionmap;
   for (auto & cv : ln->ctxvars())
   {
     auto origin = cv.origin();

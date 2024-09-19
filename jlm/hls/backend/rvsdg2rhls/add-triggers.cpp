@@ -50,7 +50,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::t
       ln->linkage(),
       ln->attributes());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
     // copy over cvarguments

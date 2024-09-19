@@ -42,7 +42,7 @@ graph::graph()
 std::unique_ptr<jlm::rvsdg::graph>
 graph::copy() const
 {
-  jlm::rvsdg::substitution_map smap;
+  SubstitutionMap smap;
   std::unique_ptr<jlm::rvsdg::graph> graph(new jlm::rvsdg::graph());
   root()->copy(graph->root(), smap, true, true);
   return graph;

@@ -204,7 +204,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       ln->linkage(),
       ln->attributes());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
     // copy over cvarguments

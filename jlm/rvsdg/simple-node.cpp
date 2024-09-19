@@ -79,7 +79,7 @@ simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *
 }
 
 jlm::rvsdg::node *
-simple_node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
+simple_node::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
   std::vector<jlm::rvsdg::output *> operands;
   for (size_t n = 0; n < ninputs(); n++)
