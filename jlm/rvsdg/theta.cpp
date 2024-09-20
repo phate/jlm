@@ -114,12 +114,12 @@ ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 }
 
 ThetaNode *
-ThetaNode::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
+ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
 
-  jlm::rvsdg::substitution_map rmap;
+  rvsdg::SubstitutionMap rmap;
   auto theta = create(region);
 
   /* add loop variables */

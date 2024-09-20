@@ -262,7 +262,7 @@ public:
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   virtual delta::node *
-  copy(rvsdg::Region * region, rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
    * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.

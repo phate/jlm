@@ -14,7 +14,7 @@ namespace jlm::hls
 static void
 ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 {
-  rvsdg::substitution_map substitutionMap;
+  rvsdg::SubstitutionMap substitutionMap;
 
   // create a branch for each gamma input and map the corresponding argument of each subregion to an
   // output of the branch
@@ -55,7 +55,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 static void
 ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
 {
-  rvsdg::substitution_map substitutionMap;
+  rvsdg::SubstitutionMap substitutionMap;
 
   // Map arguments to origins of inputs. Forks will automatically be created later
   for (size_t i = 0; i < gammaNode.nentryvars(); i++)

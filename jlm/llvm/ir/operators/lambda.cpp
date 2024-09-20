@@ -245,12 +245,12 @@ node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 }
 
 lambda::node *
-node::copy(rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto lambda = create(region, Type(), name(), linkage(), attributes());
 
   /* add context variables */
-  jlm::rvsdg::substitution_map subregionmap;
+  rvsdg::SubstitutionMap subregionmap;
   for (auto & cv : ctxvars())
   {
     auto origin = smap.lookup(cv.origin());

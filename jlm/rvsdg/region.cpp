@@ -178,7 +178,7 @@ Region::remove_node(jlm::rvsdg::node * node)
 }
 
 void
-Region::copy(Region * target, substitution_map & smap, bool copy_arguments, bool copy_results) const
+Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const
 {
   smap.insert(this, target);
 

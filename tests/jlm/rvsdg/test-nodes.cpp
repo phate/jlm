@@ -40,7 +40,7 @@ test_node_copy(void)
   jlm::rvsdg::view(graph.root(), stdout);
 
   /* copy first into second region with arguments and results */
-  substitution_map smap;
+  SubstitutionMap smap;
   smap.insert(i1, i1);
   smap.insert(i2, i2);
   smap.insert(o1, o1);
@@ -61,7 +61,7 @@ test_node_copy(void)
   assert(r2->nnodes() == 2);
 
   /* copy second into third region only with arguments */
-  jlm::rvsdg::substitution_map smap2;
+  jlm::rvsdg::SubstitutionMap smap2;
   auto & a3 = TestGraphArgument::Create(*n1->subregion(2), i1, stype);
   auto & a4 = TestGraphArgument::Create(*n1->subregion(2), i2, vtype);
   smap2.insert(r2->argument(0), &a3);
@@ -81,7 +81,7 @@ test_node_copy(void)
   assert(r3->nnodes() == 2);
 
   /* copy structural node */
-  jlm::rvsdg::substitution_map smap3;
+  jlm::rvsdg::SubstitutionMap smap3;
   smap3.insert(s, s);
   smap3.insert(v, v);
   n1->copy(graph.root(), smap3);

@@ -30,7 +30,7 @@ class structural_input;
 class structural_node;
 class structural_op;
 class structural_output;
-class substitution_map;
+class SubstitutionMap;
 
 /**
  * \brief Represents the argument of a region.
@@ -485,7 +485,7 @@ public:
     map will be updated as nodes are copied.
   */
   void
-  copy(Region * target, substitution_map & smap, bool copy_arguments, bool copy_results) const;
+  copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const;
 
   void
   prune(bool recursive);

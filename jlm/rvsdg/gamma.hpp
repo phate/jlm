@@ -312,7 +312,7 @@ public:
   }
 
   virtual GammaNode *
-  copy(jlm::rvsdg::Region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
 };
 
 /* gamma input */

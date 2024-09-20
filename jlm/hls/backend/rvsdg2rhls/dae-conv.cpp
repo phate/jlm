@@ -224,7 +224,7 @@ decouple_load(
 {
   // loadNode is always a part of loop_slice due to state edges
   auto new_loop = loop_node::create(loopNode->region(), false);
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   std::vector<backedge_argument *> backedge_args;
   // create arguments
   for (size_t i = 0; i < loopNode->subregion()->narguments(); ++i)

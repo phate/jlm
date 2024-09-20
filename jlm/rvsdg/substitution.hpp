@@ -18,7 +18,7 @@ class output;
 class Region;
 class structural_input;
 
-class substitution_map final
+class SubstitutionMap final
 {
 public:
   bool

@@ -290,7 +290,7 @@ node::recompute_depth() noexcept
 jlm::rvsdg::node *
 node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  substitution_map smap;
+  SubstitutionMap smap;
 
   size_t noperands = std::min(operands.size(), ninputs());
   for (size_t n = 0; n < noperands; n++)

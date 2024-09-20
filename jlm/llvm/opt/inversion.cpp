@@ -114,7 +114,7 @@ collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structu
 static void
 copy_condition_nodes(
     rvsdg::Region * target,
-    jlm::rvsdg::substitution_map & smap,
+    rvsdg::SubstitutionMap & smap,
     const std::vector<std::vector<jlm::rvsdg::node *>> & nodes)
 {
   for (size_t n = 0; n < nodes.size(); n++)
@@ -146,7 +146,7 @@ invert(rvsdg::ThetaNode * otheta)
   pullin(ogamma, otheta);
 
   /* copy condition nodes for new gamma node */
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   auto cnodes = collect_condition_nodes(otheta, ogamma);
   for (const auto & olv : *otheta)
     smap.insert(olv->argument(), olv->input()->origin());
@@ -156,7 +156,7 @@ invert(rvsdg::ThetaNode * otheta)
       rvsdg::GammaNode::create(smap.lookup(ogamma->predicate()->origin()), ogamma->nsubregions());
 
   /* handle subregion 0 */
-  jlm::rvsdg::substitution_map r0map;
+  rvsdg::SubstitutionMap r0map;
   {
     /* setup substitution map for exit region copying */
     auto osubregion0 = ogamma->subregion(0);
@@ -188,7 +188,7 @@ invert(rvsdg::ThetaNode * otheta)
   }
 
   /* handle subregion 1 */
-  jlm::rvsdg::substitution_map r1map;
+  rvsdg::SubstitutionMap r1map;
   {
     auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
 

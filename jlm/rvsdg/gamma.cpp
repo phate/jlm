@@ -28,7 +28,7 @@ perform_predicate_reduction(GammaNode * gamma)
   auto cop = static_cast<const ctlconstant_op *>(&constant->operation());
   auto alternative = cop->value().alternative();
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (auto it = gamma->begin_entryvar(); it != gamma->end_entryvar(); it++)
     smap.insert(it->argument(alternative), it->origin());
 
@@ -341,12 +341,12 @@ GammaNode::exitvar_iterator::operator++() noexcept
 }
 
 GammaNode *
-GammaNode::copy(rvsdg::Region * region, substitution_map & smap) const
+GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
   /* add entry variables to new gamma */
-  std::vector<jlm::rvsdg::substitution_map> rmap(nsubregions());
+  std::vector<SubstitutionMap> rmap(nsubregions());
   for (auto oev = begin_entryvar(); oev != end_entryvar(); oev++)
   {
     auto nev = gamma->add_entryvar(smap.lookup(oev->origin()));
