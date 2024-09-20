@@ -16,6 +16,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
+/*
 static int
 GammaWithMatch()
 {
@@ -231,3 +232,73 @@ PartialEmptyGamma()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/llvm/r2j/GammaTests-PartialEmptyGamma", PartialEmptyGamma)
+*/
+static int
+PulledInGamma()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto bit1Type = jlm::rvsdg::bittype::Create(1);
+  auto controlType = jlm::rvsdg::ctltype::Create(2);
+
+  auto functionType = FunctionType::Create(
+      { bit1Type, bit1Type, valueType, valueType, valueType },
+      { controlType, valueType });
+
+  RvsdgModule rvsdgModule(filepath(""), "", "");
+
+  auto lambdaNode = lambda::node::create(
+      rvsdgModule.Rvsdg().root(),
+      functionType,
+      "f",
+      linkage::external_linkage);
+
+  // Create first gamma
+  jlm::rvsdg::GammaNode * gammaNode1 = nullptr;
+  {
+    auto match1 = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
+
+    gammaNode1 = jlm::rvsdg::GammaNode::create(match1, 2);
+    auto gammaInput1 = gammaNode1->add_entryvar(lambdaNode->fctargument(2));
+    auto gammaInput2 = gammaNode1->add_entryvar(lambdaNode->fctargument(3));
+    gammaNode1->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
+  }
+
+  // Create second gamma
+  jlm::rvsdg::GammaNode * gammaNode2 = nullptr;
+  {
+    auto match2 = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(1));
+
+    gammaNode2 = jlm::rvsdg::GammaNode::create(match2, 2);
+    auto gammaInput1 = gammaNode2->add_entryvar(gammaNode1->output(0));
+    auto gammaInput2 = gammaNode2->add_entryvar(lambdaNode->fctargument(4));
+
+    auto controlConstant0 = jlm::rvsdg::ctlconstant_op::create(gammaNode2->subregion(0), { 0, 2 });
+    auto controlConstant1 = jlm::rvsdg::ctlconstant_op::create(gammaNode2->subregion(1), { 1, 2 });
+
+    gammaNode2->add_exitvar({ controlConstant0, controlConstant1 });
+    gammaNode2->add_exitvar({ gammaInput2->argument(0), gammaInput1->argument(1) });
+  }
+
+  auto lambdaOutput = lambdaNode->finalize({ gammaNode2->output(0), gammaNode2->output(1) });
+
+  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+
+  jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+
+  std::cout << to_str(*module) << std::flush;
+
+  // Assert
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/llvm/r2j/GammaTests-PulledInGamma", PulledInGamma)

@@ -172,6 +172,7 @@ convert_simple_node(const rvsdg::node & node, context & ctx)
     ctx.insert(node.output(n), ctx.lpbb()->last()->result(n));
 }
 
+#if 0
 static void
 convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
 {
@@ -225,6 +226,7 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
 
   ctx.set_lpbb(bb);
 }
+#endif
 
 static inline void
 convert_gamma_node(const rvsdg::node & node, context & ctx)
@@ -235,9 +237,11 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
   auto predicate = gamma->predicate()->origin();
   auto cfg = ctx.cfg();
 
+#if 0
   if (gamma->nsubregions() == 2 && gamma->subregion(0)->nnodes() == 0
       && gamma->subregion(1)->nnodes() == 0)
     return convert_empty_gamma_node(gamma, ctx);
+#endif
 
   auto entry = basic_block::create(*cfg);
   auto exit = basic_block::create(*cfg);
@@ -257,6 +261,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
       ctx.insert(argument, ctx.variable(argument->input()->origin()));
     }
 
+#if 0
     if (subregion->nnodes() == 0 && nalternatives == 2)
     {
       /* subregin is empty */
@@ -265,15 +270,16 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     }
     else
     {
-      /* convert subregion */
-      auto region_entry = basic_block::create(*cfg);
-      entry->add_outedge(region_entry);
-      ctx.set_lpbb(region_entry);
-      convert_region(*subregion, ctx);
+#endif
+    /* convert subregion */
+    auto region_entry = basic_block::create(*cfg);
+    entry->add_outedge(region_entry);
+    ctx.set_lpbb(region_entry);
+    convert_region(*subregion, ctx);
 
-      phi_nodes.push_back(ctx.lpbb());
+    phi_nodes.push_back(ctx.lpbb());
       ctx.lpbb()->add_outedge(exit);
-    }
+    //    }
   }
 
   /* add phi instructions */
