@@ -31,7 +31,7 @@ test_single_operand_phi()
   bb0->add_outedge(cfg.exit());
   cfg.exit()->append_result(bb0->last()->result(0));
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 
   assert(is_valid(cfg));
 }
