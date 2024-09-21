@@ -664,16 +664,16 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  mlir::BlockArgument memRes = GetInPort(module, 0);
-  auto memResValid = GetSubfield(body, memRes, "valid");
-  auto memResReady = GetSubfield(body, memRes, "ready");
-  auto memResBundle = GetSubfield(body, memRes, "data");
-  auto memResId = GetSubfield(body, memResBundle, "id");
-  auto memResData = GetSubfield(body, memResBundle, "data");
+  // mlir::BlockArgument memRes = GetInPort(module, 0);
+  // auto memResValid = GetSubfield(body, memRes, "valid");
+  // auto memResReady = GetSubfield(body, memRes, "ready");
+  // auto memResBundle = GetSubfield(body, memRes, "data");
+  // auto memResId = GetSubfield(body, memResBundle, "id");
+  // auto memResData = GetSubfield(body, memResBundle, "data");
 
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-  Connect(body, memResReady, zeroBitValue);
+  // Connect(body, memResReady, zeroBitValue);
 
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
@@ -681,33 +681,82 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
     auto outValid = GetSubfield(body, outBundle, "valid");
     auto outData = GetSubfield(body, outBundle, "data");
     Connect(body, outValid, zeroBitValue);
+    ConnectInvalid(body, outData);
 
-    int nbits = JlmSize(&node->output(i)->type());
-    if (nbits == 64)
-    {
-      Connect(body, outData, memResData);
-    }
-    else
-    {
-      Connect(body, outData, AddBitsOp(body, memResData, nbits - 1, 0));
+    // int nbits = JlmSize(&node->output(i)->type());
+    // if (nbits == 64)
+    // {
+    //   Connect(body, outData, memResData);
+    // }
+    // else
+    // {
+    //   Connect(body, outData, AddBitsOp(body, memResData, nbits - 1, 0));
+    // }
+  }
+  for (size_t j = 0; j < node->ninputs(); ++j) {
+      mlir::BlockArgument memRes = GetInPort(module, j);
+      auto memResValid = GetSubfield(body, memRes, "valid");
+      auto memResReady = GetSubfield(body, memRes, "ready");
+      auto memResBundle = GetSubfield(body, memRes, "data");
+      auto memResId = GetSubfield(body, memResBundle, "id");
+      auto memResData = GetSubfield(body, memResBundle, "data");
+      auto elseBody = body;
+      for (size_t i = 0; i < node->noutputs(); ++i) {
+          auto outBundle = GetOutPort(module, i);
+          auto outValid = GetSubfield(elseBody, outBundle, "valid");
+          auto outReady = GetSubfield(elseBody, outBundle, "ready");
+          auto outData = GetSubfield(elseBody, outBundle, "data");
+          auto condition = AddAndOp(elseBody, memResValid, AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId));
+          auto whenOp = AddWhenOp(elseBody, condition, true);
+          auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+          Connect(thenBody, outValid, oneBitValue);
+          Connect(thenBody, memResReady, outReady);
+          int nbits = JlmSize(&node->output(i)->type());
+          if(nbits == 64){
+              Connect(thenBody, outData, memResData);
+          } else {
+              Connect(thenBody, outData, AddBitsOp(thenBody, memResData, nbits-1, 0));
+          }
+          elseBody = whenOp.getElseBodyBuilder().getBlock();
+      }
+    // auto elseBody = body;
+    // for (size_t i = 0; i < node->noutputs(); ++i)
+    // {
+    //   auto outBundle = GetOutPort(module, i);
+    //   auto outValid = GetSubfield(elseBody, outBundle, "valid");
+    //   auto outReady = GetSubfield(elseBody, outBundle, "ready");
+
+    //   auto condition = AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId);
+    //   auto whenOp = AddWhenOp(elseBody, condition, true);
+    //   auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+    //   Connect(thenBody, outValid, memResValid);
+    //   Connect(thenBody, memResReady, outReady);
+    //   elseBody = whenOp.getElseBodyBuilder().getBlock();
+    // }
+    // // connect to ready for other ids - for example stores
+    // Connect(elseBody, memResReady, oneBitValue);
+
+    // connect to ready for other ids - for example stores
+    Connect(elseBody, memResReady, oneBitValue);
+    // assert we don't get a response to the same ID on several in ports - if this shows up we need taken logic for outputs
+    for (size_t i = 0; i < j; ++i) {
+        mlir::BlockArgument memRes2 = GetInPort(module, i);
+        auto memResValid2 = GetSubfield(body, memRes2, "valid");
+        auto memResBundle2 = GetSubfield(body, memRes2, "data");
+        auto memResId2 = GetSubfield(body, memResBundle2, "id");
+        auto id_assert = Builder_->create<circt::firrtl::AssertOp>(
+                Builder_->getUnknownLoc(),
+                GetClockSignal(module),
+                AddNotOp(body, AddAndOp(body, AddAndOp(body, memResValid, memResValid2), AddEqOp(body, memResId, memResId2))),
+                AddNotOp(body, GetResetSignal(module)),
+                "overlapping reponse id",
+                mlir::ValueRange(),
+                "response_id_assert_"+std::to_string(j)+"_"+std::to_string(i)
+        );
+        body->push_back(id_assert);
     }
   }
-  auto elseBody = body;
-  for (size_t i = 0; i < node->noutputs(); ++i)
-  {
-    auto outBundle = GetOutPort(module, i);
-    auto outValid = GetSubfield(elseBody, outBundle, "valid");
-    auto outReady = GetSubfield(elseBody, outBundle, "ready");
 
-    auto condition = AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId);
-    auto whenOp = AddWhenOp(elseBody, condition, true);
-    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    Connect(thenBody, outValid, memResValid);
-    Connect(thenBody, memResReady, outReady);
-    elseBody = whenOp.getElseBodyBuilder().getBlock();
-  }
-  // connect to ready for other ids - for example stores
-  Connect(elseBody, memResReady, oneBitValue);
   return module;
 }
 
