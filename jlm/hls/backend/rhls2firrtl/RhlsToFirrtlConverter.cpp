@@ -768,24 +768,24 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   auto body = module.getBodyBlock();
   auto op = dynamic_cast<const mem_req_op *>(&node->operation());
 
-  auto reqType = dynamic_cast<const bundletype *>(&node->output(0)->type());
-  // TODO: more robust check
-  auto hasWrite = reqType->elements_.size() == 5;
+  // auto reqType = dynamic_cast<const bundletype *>(&node->output(0)->type());
+  // // TODO: more robust check
+  // auto hasWrite = reqType->elements_.size() == 5;
 
-  mlir::BlockArgument memReq = GetOutPort(module, 0);
-  mlir::Value memReqData;
-  mlir::Value memReqWrite;
-  auto memReqReady = GetSubfield(body, memReq, "ready");
-  auto memReqValid = GetSubfield(body, memReq, "valid");
-  auto memReqBundle = GetSubfield(body, memReq, "data");
-  auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
-  auto memReqSize = GetSubfield(body, memReqBundle, "size");
-  auto memReqId = GetSubfield(body, memReqBundle, "id");
-  if (hasWrite)
-  {
-    memReqData = GetSubfield(body, memReqBundle, "data");
-    memReqWrite = GetSubfield(body, memReqBundle, "write");
-  }
+  // mlir::BlockArgument memReq = GetOutPort(module, 0);
+  // mlir::Value memReqData;
+  // mlir::Value memReqWrite;
+  // auto memReqReady = GetSubfield(body, memReq, "ready");
+  // auto memReqValid = GetSubfield(body, memReq, "valid");
+  // auto memReqBundle = GetSubfield(body, memReq, "data");
+  // auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
+  // auto memReqSize = GetSubfield(body, memReqBundle, "size");
+  // auto memReqId = GetSubfield(body, memReqBundle, "id");
+  // if (hasWrite)
+  // {
+  //   memReqData = GetSubfield(body, memReqBundle, "data");
+  //   memReqWrite = GetSubfield(body, memReqBundle, "write");
+  // }
 
   auto loadTypes = op->GetLoadTypes();
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -833,84 +833,176 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
 
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-  // default req connection
-  Connect(body, memReqValid, zeroBitValue);
-  ConnectInvalid(body, memReqBundle);
-  mlir::Value previousGranted = GetConstant(body, 1, 0);
-  for (size_t i = 0; i < loadTypes->size(); ++i)
-  {
-    Connect(body, loadAddrReadys[i], zeroBitValue);
-    auto notOp = AddNotOp(body, previousGranted);
-    auto condition = AddAndOp(body, notOp, loadAddrValids[i]);
-    auto whenOp = AddWhenOp(body, condition, false);
-    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    Connect(thenBody, loadAddrReadys[i], memReqReady);
-    Connect(thenBody, memReqValid, loadAddrValids[i]);
-    Connect(thenBody, memReqAddr, loadAddrDatas[i]);
-    Connect(thenBody, memReqId, loadIds[i]);
-    // no data or write
-    int bitWidth;
-    auto loadType = loadTypes->at(i).get();
-    if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
-    {
-      bitWidth = bitType->nbits();
+  // // // // default req connection
+  // // // Connect(body, memReqValid, zeroBitValue);
+  // // // ConnectInvalid(body, memReqBundle);
+  // // // mlir::Value previousGranted = GetConstant(body, 1, 0);
+  // // // for (size_t i = 0; i < loadTypes->size(); ++i)
+  // // // {
+  // // //   Connect(body, loadAddrReadys[i], zeroBitValue);
+  // // //   auto notOp = AddNotOp(body, previousGranted);
+  // // //   auto condition = AddAndOp(body, notOp, loadAddrValids[i]);
+  // // //   auto whenOp = AddWhenOp(body, condition, false);
+  // // //   auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+  // // //   Connect(thenBody, loadAddrReadys[i], memReqReady);
+  // // //   Connect(thenBody, memReqValid, loadAddrValids[i]);
+  // // //   Connect(thenBody, memReqAddr, loadAddrDatas[i]);
+  // // //   Connect(thenBody, memReqId, loadIds[i]);
+  // // //   // no data or write
+  // // //   int bitWidth;
+  // // //   auto loadType = loadTypes->at(i).get();
+  // // //   if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
+  // // //   {
+  // // //     bitWidth = bitType->nbits();
+  // // //   }
+  // // //   else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
+  // // //   {
+  // // //     bitWidth = 64;
+  // // //   }
+  // // //   else
+  // // //   {
+  // // //     throw jlm::util::error("unknown width for mem request");
+  // //   }
+  // //   int log2Bytes = log2(bitWidth / 8);
+  // //   Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+  // //   if (hasWrite)
+  // //   {
+  // //     Connect(thenBody, memReqWrite, zeroBitValue);
+  //   }
+  //   // update for next iteration
+  //   previousGranted = AddOrOp(body, previousGranted, loadAddrValids[i]);
+  // }
+  // // stores
+  // for (size_t i = 0; i < storeTypes->size(); ++i)
+  // {
+  //   Connect(body, storeAddrReadys[i], zeroBitValue);
+  //   Connect(body, storeDataReadys[i], zeroBitValue);
+  //   auto notOp = AddNotOp(body, previousGranted);
+  //   auto condition = AddAndOp(body, notOp, storeAddrValids[i]);
+  //   condition = AddAndOp(body, condition, storeDataValids[i]);
+  //   auto whenOp = AddWhenOp(body, condition, false);
+  //   auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+  //   Connect(thenBody, storeAddrReadys[i], memReqReady);
+  //   Connect(thenBody, storeDataReadys[i], memReqReady);
+  //   Connect(thenBody, memReqValid, storeAddrValids[i]);
+  //   Connect(thenBody, memReqAddr, storeAddrDatas[i]);
+  //   // TODO: pad
+  //   Connect(thenBody, memReqData, storeDataDatas[i]);
+  //   Connect(thenBody, memReqId, storeIds[i]);
+  //   // no data or write
+  //   int bitWidth;
+  //   auto storeType = storeTypes->at(i).get();
+  //   if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
+  //   {
+  //     bitWidth = bitType->nbits();
+  //   }
+  //   else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
+  //   {
+  //     bitWidth = 64;
+  //   }
+  //   else
+  //   {
+  //     throw jlm::util::error("unknown width for mem request");
+  //   }
+  //   int log2Bytes = log2(bitWidth / 8);
+  //   Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+  //   Connect(thenBody, memReqWrite, oneBitValue);
+  //   // update for next iteration
+  //   previousGranted = AddOrOp(body, previousGranted, condition);
+  // }
+  // //    WriteModuleToFile(module, node);
+
+    ::llvm::SmallVector<mlir::Value> loadGranted(loadTypes->size(), zeroBitValue);
+    ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
+    for (size_t j = 0; j < node->noutputs(); ++j) {
+        auto reqType = dynamic_cast<const jlm::hls::bundletype *>(&node->output(j)->type());
+        // TODO: more robust check
+        auto hasWrite = reqType->elements_.size() == 5;
+        mlir::BlockArgument memReq = GetOutPort(module, j);
+        mlir::Value memReqData;
+        mlir::Value memReqWrite;
+        auto memReqReady = GetSubfield(body, memReq, "ready");
+        auto memReqValid = GetSubfield(body, memReq, "valid");
+        auto memReqBundle = GetSubfield(body, memReq, "data");
+        auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
+        auto memReqSize = GetSubfield(body, memReqBundle, "size");
+        auto memReqId = GetSubfield(body, memReqBundle, "id");
+        if (hasWrite) {
+            memReqData = GetSubfield(body, memReqBundle, "data");
+            memReqWrite = GetSubfield(body, memReqBundle, "write");
+        }
+          // default req connection
+        Connect(body, memReqValid, zeroBitValue);
+        ConnectInvalid(body, memReqBundle);
+        mlir::Value previousGranted = zeroBitValue;
+        for (size_t i = 0; i < loadTypes->size(); ++i) {
+            if(j==0){
+                Connect(body, loadAddrReadys[i], zeroBitValue);
+            }
+            auto canGrant = AddNotOp(body, AddOrOp(body, previousGranted, loadGranted[i]));
+            auto grant = AddAndOp(body, canGrant, loadAddrValids[i]);
+            auto whenOp = AddWhenOp(body, grant, false);
+            auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+            Connect(thenBody, loadAddrReadys[i], memReqReady);
+            Connect(thenBody, memReqValid, loadAddrValids[i]);
+            Connect(thenBody, memReqAddr, loadAddrDatas[i]);
+            Connect(thenBody, memReqId, loadIds[i]);
+            // no data or write
+            int bitWidth;
+            auto loadType = loadTypes->at(i).get();
+            if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType)) {
+                bitWidth = bitType->nbits();
+            } else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType)) {
+                bitWidth = 64;
+            } else {
+                throw jlm::util::error("unknown width for mem request");
+            }
+            int log2Bytes = log2(bitWidth / 8);
+            Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+            if (hasWrite) {
+                Connect(thenBody, memReqWrite, zeroBitValue);
+            }
+            // update for next iteration
+            previousGranted = AddOrOp(body, previousGranted, grant);
+            loadGranted[i] = AddOrOp(body, loadGranted[i], grant);
+        }
+        //stores
+        for (size_t i = 0; hasWrite && i < storeTypes->size(); ++i) {
+            if(j==0) {
+                Connect(body, storeAddrReadys[i], zeroBitValue);
+                Connect(body, storeDataReadys[i], zeroBitValue);
+            }
+            auto notOp = AddNotOp(body, AddOrOp(body, previousGranted, storeGranted[i]));
+            auto grant = AddAndOp(body, notOp, storeAddrValids[i]);
+            grant = AddAndOp(body, grant, storeDataValids[i]);
+            auto whenOp = AddWhenOp(body, grant, false);
+            auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+            Connect(thenBody, storeAddrReadys[i], memReqReady);
+            Connect(thenBody, storeDataReadys[i], memReqReady);
+            Connect(thenBody, memReqValid, storeAddrValids[i]);
+            Connect(thenBody, memReqAddr, storeAddrDatas[i]);
+            // TODO: pad
+            Connect(thenBody, memReqData, storeDataDatas[i]);
+            Connect(thenBody, memReqId, storeIds[i]);
+            // no data or write
+            int bitWidth;
+            auto storeType = storeTypes->at(i).get();
+            if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType)) {
+                bitWidth = bitType->nbits();
+            } else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType)) {
+                bitWidth = 64;
+            } else {
+                throw jlm::util::error("unknown width for mem request");
+            }
+            int log2Bytes = log2(bitWidth / 8);
+            Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+            Connect(thenBody, memReqWrite, oneBitValue);
+            // update for next iteration
+            previousGranted = AddOrOp(body, previousGranted, grant);
+            storeGranted[i] = AddOrOp(body, storeGranted[i], grant);
+        }
     }
-    else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
-    {
-      bitWidth = 64;
-    }
-    else
-    {
-      throw jlm::util::error("unknown width for mem request");
-    }
-    int log2Bytes = log2(bitWidth / 8);
-    Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-    if (hasWrite)
-    {
-      Connect(thenBody, memReqWrite, zeroBitValue);
-    }
-    // update for next iteration
-    previousGranted = AddOrOp(body, previousGranted, loadAddrValids[i]);
-  }
-  // stores
-  for (size_t i = 0; i < storeTypes->size(); ++i)
-  {
-    Connect(body, storeAddrReadys[i], zeroBitValue);
-    Connect(body, storeDataReadys[i], zeroBitValue);
-    auto notOp = AddNotOp(body, previousGranted);
-    auto condition = AddAndOp(body, notOp, storeAddrValids[i]);
-    condition = AddAndOp(body, condition, storeDataValids[i]);
-    auto whenOp = AddWhenOp(body, condition, false);
-    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    Connect(thenBody, storeAddrReadys[i], memReqReady);
-    Connect(thenBody, storeDataReadys[i], memReqReady);
-    Connect(thenBody, memReqValid, storeAddrValids[i]);
-    Connect(thenBody, memReqAddr, storeAddrDatas[i]);
-    // TODO: pad
-    Connect(thenBody, memReqData, storeDataDatas[i]);
-    Connect(thenBody, memReqId, storeIds[i]);
-    // no data or write
-    int bitWidth;
-    auto storeType = storeTypes->at(i).get();
-    if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
-    {
-      bitWidth = bitType->nbits();
-    }
-    else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
-    {
-      bitWidth = 64;
-    }
-    else
-    {
-      throw jlm::util::error("unknown width for mem request");
-    }
-    int log2Bytes = log2(bitWidth / 8);
-    Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-    Connect(thenBody, memReqWrite, oneBitValue);
-    // update for next iteration
-    previousGranted = AddOrOp(body, previousGranted, condition);
-  }
-  //    WriteModuleToFile(module, node);
+
   return module;
 }
 
