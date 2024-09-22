@@ -664,16 +664,8 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  // mlir::BlockArgument memRes = GetInPort(module, 0);
-  // auto memResValid = GetSubfield(body, memRes, "valid");
-  // auto memResReady = GetSubfield(body, memRes, "ready");
-  // auto memResBundle = GetSubfield(body, memRes, "data");
-  // auto memResId = GetSubfield(body, memResBundle, "id");
-  // auto memResData = GetSubfield(body, memResBundle, "data");
-
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-  // Connect(body, memResReady, zeroBitValue);
 
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
@@ -682,78 +674,64 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
     auto outData = GetSubfield(body, outBundle, "data");
     Connect(body, outValid, zeroBitValue);
     ConnectInvalid(body, outData);
-
-    // int nbits = JlmSize(&node->output(i)->type());
-    // if (nbits == 64)
-    // {
-    //   Connect(body, outData, memResData);
-    // }
-    // else
-    // {
-    //   Connect(body, outData, AddBitsOp(body, memResData, nbits - 1, 0));
-    // }
   }
-  for (size_t j = 0; j < node->ninputs(); ++j) {
-      mlir::BlockArgument memRes = GetInPort(module, j);
-      auto memResValid = GetSubfield(body, memRes, "valid");
-      auto memResReady = GetSubfield(body, memRes, "ready");
-      auto memResBundle = GetSubfield(body, memRes, "data");
-      auto memResId = GetSubfield(body, memResBundle, "id");
-      auto memResData = GetSubfield(body, memResBundle, "data");
-      auto elseBody = body;
-      for (size_t i = 0; i < node->noutputs(); ++i) {
-          auto outBundle = GetOutPort(module, i);
-          auto outValid = GetSubfield(elseBody, outBundle, "valid");
-          auto outReady = GetSubfield(elseBody, outBundle, "ready");
-          auto outData = GetSubfield(elseBody, outBundle, "data");
-          auto condition = AddAndOp(elseBody, memResValid, AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId));
-          auto whenOp = AddWhenOp(elseBody, condition, true);
-          auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-          Connect(thenBody, outValid, oneBitValue);
-          Connect(thenBody, memResReady, outReady);
-          int nbits = JlmSize(&node->output(i)->type());
-          if(nbits == 64){
-              Connect(thenBody, outData, memResData);
-          } else {
-              Connect(thenBody, outData, AddBitsOp(thenBody, memResData, nbits-1, 0));
-          }
-          elseBody = whenOp.getElseBodyBuilder().getBlock();
+  for (size_t j = 0; j < node->ninputs(); ++j)
+  {
+    mlir::BlockArgument memRes = GetInPort(module, j);
+    auto memResValid = GetSubfield(body, memRes, "valid");
+    auto memResReady = GetSubfield(body, memRes, "ready");
+    auto memResBundle = GetSubfield(body, memRes, "data");
+    auto memResId = GetSubfield(body, memResBundle, "id");
+    auto memResData = GetSubfield(body, memResBundle, "data");
+    auto elseBody = body;
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
+      auto outBundle = GetOutPort(module, i);
+      auto outValid = GetSubfield(elseBody, outBundle, "valid");
+      auto outReady = GetSubfield(elseBody, outBundle, "ready");
+      auto outData = GetSubfield(elseBody, outBundle, "data");
+      auto condition =
+          AddAndOp(elseBody, memResValid, AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId));
+      auto whenOp = AddWhenOp(elseBody, condition, true);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, outValid, oneBitValue);
+      Connect(thenBody, memResReady, outReady);
+      int nbits = JlmSize(&node->output(i)->type());
+      if (nbits == 64)
+      {
+        Connect(thenBody, outData, memResData);
       }
-    // auto elseBody = body;
-    // for (size_t i = 0; i < node->noutputs(); ++i)
-    // {
-    //   auto outBundle = GetOutPort(module, i);
-    //   auto outValid = GetSubfield(elseBody, outBundle, "valid");
-    //   auto outReady = GetSubfield(elseBody, outBundle, "ready");
+      else
+      {
+        Connect(thenBody, outData, AddBitsOp(thenBody, memResData, nbits - 1, 0));
+      }
+      elseBody = whenOp.getElseBodyBuilder().getBlock();
+    }
 
-    //   auto condition = AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId);
-    //   auto whenOp = AddWhenOp(elseBody, condition, true);
-    //   auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    //   Connect(thenBody, outValid, memResValid);
-    //   Connect(thenBody, memResReady, outReady);
-    //   elseBody = whenOp.getElseBodyBuilder().getBlock();
-    // }
-    // // connect to ready for other ids - for example stores
-    // Connect(elseBody, memResReady, oneBitValue);
-
-    // connect to ready for other ids - for example stores
+    // Connect to ready for other ids - for example stores
     Connect(elseBody, memResReady, oneBitValue);
-    // assert we don't get a response to the same ID on several in ports - if this shows up we need taken logic for outputs
-    for (size_t i = 0; i < j; ++i) {
-        mlir::BlockArgument memRes2 = GetInPort(module, i);
-        auto memResValid2 = GetSubfield(body, memRes2, "valid");
-        auto memResBundle2 = GetSubfield(body, memRes2, "data");
-        auto memResId2 = GetSubfield(body, memResBundle2, "id");
-        auto id_assert = Builder_->create<circt::firrtl::AssertOp>(
-                Builder_->getUnknownLoc(),
-                GetClockSignal(module),
-                AddNotOp(body, AddAndOp(body, AddAndOp(body, memResValid, memResValid2), AddEqOp(body, memResId, memResId2))),
-                AddNotOp(body, GetResetSignal(module)),
-                "overlapping reponse id",
-                mlir::ValueRange(),
-                "response_id_assert_"+std::to_string(j)+"_"+std::to_string(i)
-        );
-        body->push_back(id_assert);
+    // Assert we don't get a response to the same ID on several in ports - if this shows up we need
+    // taken logic for outputs
+    for (size_t i = 0; i < j; ++i)
+    {
+      mlir::BlockArgument memRes2 = GetInPort(module, i);
+      auto memResValid2 = GetSubfield(body, memRes2, "valid");
+      auto memResBundle2 = GetSubfield(body, memRes2, "data");
+      auto memResId2 = GetSubfield(body, memResBundle2, "id");
+      auto id_assert = Builder_->create<circt::firrtl::AssertOp>(
+          Builder_->getUnknownLoc(),
+          GetClockSignal(module),
+          AddNotOp(
+              body,
+              AddAndOp(
+                  body,
+                  AddAndOp(body, memResValid, memResValid2),
+                  AddEqOp(body, memResId, memResId2))),
+          AddNotOp(body, GetResetSignal(module)),
+          "overlapping reponse id",
+          mlir::ValueRange(),
+          "response_id_assert_" + std::to_string(j) + "_" + std::to_string(i));
+      body->push_back(id_assert);
     }
   }
 
@@ -767,25 +745,6 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
   auto op = dynamic_cast<const mem_req_op *>(&node->operation());
-
-  // auto reqType = dynamic_cast<const bundletype *>(&node->output(0)->type());
-  // // TODO: more robust check
-  // auto hasWrite = reqType->elements_.size() == 5;
-
-  // mlir::BlockArgument memReq = GetOutPort(module, 0);
-  // mlir::Value memReqData;
-  // mlir::Value memReqWrite;
-  // auto memReqReady = GetSubfield(body, memReq, "ready");
-  // auto memReqValid = GetSubfield(body, memReq, "valid");
-  // auto memReqBundle = GetSubfield(body, memReq, "data");
-  // auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
-  // auto memReqSize = GetSubfield(body, memReqBundle, "size");
-  // auto memReqId = GetSubfield(body, memReqBundle, "id");
-  // if (hasWrite)
-  // {
-  //   memReqData = GetSubfield(body, memReqBundle, "data");
-  //   memReqWrite = GetSubfield(body, memReqBundle, "write");
-  // }
 
   auto loadTypes = op->GetLoadTypes();
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -801,12 +760,11 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> storeDataValids;
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> storeDataDatas;
   ::llvm::SmallVector<mlir::Value> storeIds;
-  // the ports for loads come first and consist only of addresses. Stores have both addresses and
-  // data
+  // The ports for loads come first and consist only of addresses.
+  // Stores have both addresses and data
   size_t id = 0;
   for (size_t i = 0; i < op->get_nloads(); ++i)
   {
-    //        loadAddrTypes.push_back(&node->input(i)->type());
     auto bundle = GetInPort(module, i);
     loadAddrReadys.push_back(GetSubfield(body, bundle, "ready"));
     loadAddrValids.push_back(GetSubfield(body, bundle, "valid"));
@@ -817,7 +775,6 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   for (size_t i = op->get_nloads(); i < node->ninputs(); ++i)
   {
     // Store
-    //        storeAddrTypes.push_back(&node->input(i)->type());
     auto addrBundle = GetInPort(module, i);
     storeAddrReadys.push_back(GetSubfield(body, addrBundle, "ready"));
     storeAddrValids.push_back(GetSubfield(body, addrBundle, "valid"));
@@ -833,175 +790,113 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
 
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-  // // // // default req connection
-  // // // Connect(body, memReqValid, zeroBitValue);
-  // // // ConnectInvalid(body, memReqBundle);
-  // // // mlir::Value previousGranted = GetConstant(body, 1, 0);
-  // // // for (size_t i = 0; i < loadTypes->size(); ++i)
-  // // // {
-  // // //   Connect(body, loadAddrReadys[i], zeroBitValue);
-  // // //   auto notOp = AddNotOp(body, previousGranted);
-  // // //   auto condition = AddAndOp(body, notOp, loadAddrValids[i]);
-  // // //   auto whenOp = AddWhenOp(body, condition, false);
-  // // //   auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-  // // //   Connect(thenBody, loadAddrReadys[i], memReqReady);
-  // // //   Connect(thenBody, memReqValid, loadAddrValids[i]);
-  // // //   Connect(thenBody, memReqAddr, loadAddrDatas[i]);
-  // // //   Connect(thenBody, memReqId, loadIds[i]);
-  // // //   // no data or write
-  // // //   int bitWidth;
-  // // //   auto loadType = loadTypes->at(i).get();
-  // // //   if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
-  // // //   {
-  // // //     bitWidth = bitType->nbits();
-  // // //   }
-  // // //   else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
-  // // //   {
-  // // //     bitWidth = 64;
-  // // //   }
-  // // //   else
-  // // //   {
-  // // //     throw jlm::util::error("unknown width for mem request");
-  // //   }
-  // //   int log2Bytes = log2(bitWidth / 8);
-  // //   Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-  // //   if (hasWrite)
-  // //   {
-  // //     Connect(thenBody, memReqWrite, zeroBitValue);
-  //   }
-  //   // update for next iteration
-  //   previousGranted = AddOrOp(body, previousGranted, loadAddrValids[i]);
-  // }
-  // // stores
-  // for (size_t i = 0; i < storeTypes->size(); ++i)
-  // {
-  //   Connect(body, storeAddrReadys[i], zeroBitValue);
-  //   Connect(body, storeDataReadys[i], zeroBitValue);
-  //   auto notOp = AddNotOp(body, previousGranted);
-  //   auto condition = AddAndOp(body, notOp, storeAddrValids[i]);
-  //   condition = AddAndOp(body, condition, storeDataValids[i]);
-  //   auto whenOp = AddWhenOp(body, condition, false);
-  //   auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-  //   Connect(thenBody, storeAddrReadys[i], memReqReady);
-  //   Connect(thenBody, storeDataReadys[i], memReqReady);
-  //   Connect(thenBody, memReqValid, storeAddrValids[i]);
-  //   Connect(thenBody, memReqAddr, storeAddrDatas[i]);
-  //   // TODO: pad
-  //   Connect(thenBody, memReqData, storeDataDatas[i]);
-  //   Connect(thenBody, memReqId, storeIds[i]);
-  //   // no data or write
-  //   int bitWidth;
-  //   auto storeType = storeTypes->at(i).get();
-  //   if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
-  //   {
-  //     bitWidth = bitType->nbits();
-  //   }
-  //   else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
-  //   {
-  //     bitWidth = 64;
-  //   }
-  //   else
-  //   {
-  //     throw jlm::util::error("unknown width for mem request");
-  //   }
-  //   int log2Bytes = log2(bitWidth / 8);
-  //   Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-  //   Connect(thenBody, memReqWrite, oneBitValue);
-  //   // update for next iteration
-  //   previousGranted = AddOrOp(body, previousGranted, condition);
-  // }
-  // //    WriteModuleToFile(module, node);
-
-    ::llvm::SmallVector<mlir::Value> loadGranted(loadTypes->size(), zeroBitValue);
-    ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
-    for (size_t j = 0; j < node->noutputs(); ++j) {
-        auto reqType = dynamic_cast<const jlm::hls::bundletype *>(&node->output(j)->type());
-        // TODO: more robust check
-        auto hasWrite = reqType->elements_.size() == 5;
-        mlir::BlockArgument memReq = GetOutPort(module, j);
-        mlir::Value memReqData;
-        mlir::Value memReqWrite;
-        auto memReqReady = GetSubfield(body, memReq, "ready");
-        auto memReqValid = GetSubfield(body, memReq, "valid");
-        auto memReqBundle = GetSubfield(body, memReq, "data");
-        auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
-        auto memReqSize = GetSubfield(body, memReqBundle, "size");
-        auto memReqId = GetSubfield(body, memReqBundle, "id");
-        if (hasWrite) {
-            memReqData = GetSubfield(body, memReqBundle, "data");
-            memReqWrite = GetSubfield(body, memReqBundle, "write");
-        }
-          // default req connection
-        Connect(body, memReqValid, zeroBitValue);
-        ConnectInvalid(body, memReqBundle);
-        mlir::Value previousGranted = zeroBitValue;
-        for (size_t i = 0; i < loadTypes->size(); ++i) {
-            if(j==0){
-                Connect(body, loadAddrReadys[i], zeroBitValue);
-            }
-            auto canGrant = AddNotOp(body, AddOrOp(body, previousGranted, loadGranted[i]));
-            auto grant = AddAndOp(body, canGrant, loadAddrValids[i]);
-            auto whenOp = AddWhenOp(body, grant, false);
-            auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-            Connect(thenBody, loadAddrReadys[i], memReqReady);
-            Connect(thenBody, memReqValid, loadAddrValids[i]);
-            Connect(thenBody, memReqAddr, loadAddrDatas[i]);
-            Connect(thenBody, memReqId, loadIds[i]);
-            // no data or write
-            int bitWidth;
-            auto loadType = loadTypes->at(i).get();
-            if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType)) {
-                bitWidth = bitType->nbits();
-            } else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType)) {
-                bitWidth = 64;
-            } else {
-                throw jlm::util::error("unknown width for mem request");
-            }
-            int log2Bytes = log2(bitWidth / 8);
-            Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-            if (hasWrite) {
-                Connect(thenBody, memReqWrite, zeroBitValue);
-            }
-            // update for next iteration
-            previousGranted = AddOrOp(body, previousGranted, grant);
-            loadGranted[i] = AddOrOp(body, loadGranted[i], grant);
-        }
-        //stores
-        for (size_t i = 0; hasWrite && i < storeTypes->size(); ++i) {
-            if(j==0) {
-                Connect(body, storeAddrReadys[i], zeroBitValue);
-                Connect(body, storeDataReadys[i], zeroBitValue);
-            }
-            auto notOp = AddNotOp(body, AddOrOp(body, previousGranted, storeGranted[i]));
-            auto grant = AddAndOp(body, notOp, storeAddrValids[i]);
-            grant = AddAndOp(body, grant, storeDataValids[i]);
-            auto whenOp = AddWhenOp(body, grant, false);
-            auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-            Connect(thenBody, storeAddrReadys[i], memReqReady);
-            Connect(thenBody, storeDataReadys[i], memReqReady);
-            Connect(thenBody, memReqValid, storeAddrValids[i]);
-            Connect(thenBody, memReqAddr, storeAddrDatas[i]);
-            // TODO: pad
-            Connect(thenBody, memReqData, storeDataDatas[i]);
-            Connect(thenBody, memReqId, storeIds[i]);
-            // no data or write
-            int bitWidth;
-            auto storeType = storeTypes->at(i).get();
-            if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType)) {
-                bitWidth = bitType->nbits();
-            } else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType)) {
-                bitWidth = 64;
-            } else {
-                throw jlm::util::error("unknown width for mem request");
-            }
-            int log2Bytes = log2(bitWidth / 8);
-            Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-            Connect(thenBody, memReqWrite, oneBitValue);
-            // update for next iteration
-            previousGranted = AddOrOp(body, previousGranted, grant);
-            storeGranted[i] = AddOrOp(body, storeGranted[i], grant);
-        }
+  ::llvm::SmallVector<mlir::Value> loadGranted(loadTypes->size(), zeroBitValue);
+  ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
+  for (size_t j = 0; j < node->noutputs(); ++j)
+  {
+    auto reqType = dynamic_cast<const jlm::hls::bundletype *>(&node->output(j)->type());
+    // TODO: more robust check
+    auto hasWrite = reqType->elements_.size() == 5;
+    mlir::BlockArgument memReq = GetOutPort(module, j);
+    mlir::Value memReqData;
+    mlir::Value memReqWrite;
+    auto memReqReady = GetSubfield(body, memReq, "ready");
+    auto memReqValid = GetSubfield(body, memReq, "valid");
+    auto memReqBundle = GetSubfield(body, memReq, "data");
+    auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
+    auto memReqSize = GetSubfield(body, memReqBundle, "size");
+    auto memReqId = GetSubfield(body, memReqBundle, "id");
+    if (hasWrite)
+    {
+      memReqData = GetSubfield(body, memReqBundle, "data");
+      memReqWrite = GetSubfield(body, memReqBundle, "write");
     }
+    // Default request connection
+    Connect(body, memReqValid, zeroBitValue);
+    ConnectInvalid(body, memReqBundle);
+    mlir::Value previousGranted = zeroBitValue;
+    for (size_t i = 0; i < loadTypes->size(); ++i)
+    {
+      if (j == 0)
+      {
+        Connect(body, loadAddrReadys[i], zeroBitValue);
+      }
+      auto canGrant = AddNotOp(body, AddOrOp(body, previousGranted, loadGranted[i]));
+      auto grant = AddAndOp(body, canGrant, loadAddrValids[i]);
+      auto whenOp = AddWhenOp(body, grant, false);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, loadAddrReadys[i], memReqReady);
+      Connect(thenBody, memReqValid, loadAddrValids[i]);
+      Connect(thenBody, memReqAddr, loadAddrDatas[i]);
+      Connect(thenBody, memReqId, loadIds[i]);
+      // No data or write
+      int bitWidth;
+      auto loadType = loadTypes->at(i).get();
+      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
+      {
+        bitWidth = bitType->nbits();
+      }
+      else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
+      {
+        bitWidth = 64;
+      }
+      else
+      {
+        throw jlm::util::error("unknown width for mem request");
+      }
+      int log2Bytes = log2(bitWidth / 8);
+      Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+      if (hasWrite)
+      {
+        Connect(thenBody, memReqWrite, zeroBitValue);
+      }
+      // Update for next iteration
+      previousGranted = AddOrOp(body, previousGranted, grant);
+      loadGranted[i] = AddOrOp(body, loadGranted[i], grant);
+    }
+    // Stores
+    for (size_t i = 0; hasWrite && i < storeTypes->size(); ++i)
+    {
+      if (j == 0)
+      {
+        Connect(body, storeAddrReadys[i], zeroBitValue);
+        Connect(body, storeDataReadys[i], zeroBitValue);
+      }
+      auto notOp = AddNotOp(body, AddOrOp(body, previousGranted, storeGranted[i]));
+      auto grant = AddAndOp(body, notOp, storeAddrValids[i]);
+      grant = AddAndOp(body, grant, storeDataValids[i]);
+      auto whenOp = AddWhenOp(body, grant, false);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, storeAddrReadys[i], memReqReady);
+      Connect(thenBody, storeDataReadys[i], memReqReady);
+      Connect(thenBody, memReqValid, storeAddrValids[i]);
+      Connect(thenBody, memReqAddr, storeAddrDatas[i]);
+      // TODO: pad
+      Connect(thenBody, memReqData, storeDataDatas[i]);
+      Connect(thenBody, memReqId, storeIds[i]);
+      // No data or write
+      int bitWidth;
+      auto storeType = storeTypes->at(i).get();
+      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
+      {
+        bitWidth = bitType->nbits();
+      }
+      else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
+      {
+        bitWidth = 64;
+      }
+      else
+      {
+        throw jlm::util::error("unknown width for mem request");
+      }
+      int log2Bytes = log2(bitWidth / 8);
+      Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+      Connect(thenBody, memReqWrite, oneBitValue);
+      // Update for next iteration
+      previousGranted = AddOrOp(body, previousGranted, grant);
+      storeGranted[i] = AddOrOp(body, storeGranted[i], grant);
+    }
+  }
 
   return module;
 }
