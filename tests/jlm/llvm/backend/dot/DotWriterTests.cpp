@@ -57,6 +57,7 @@ TestWriteGraphs()
   auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(0);
   auto & input = gammaNode.GetInputPort(1);
   assert(argument.GetAttributeGraphElement("input") == &input);
+  assert(argument.GetLabel().find("#0 (1)") != std::string::npos);
 
   // Check that the last argument is colored red to represent the memory state type
   auto & stateConnections = fctBody.GetArgumentNode(5).GetConnections();
