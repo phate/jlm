@@ -57,12 +57,15 @@ TestWriteGraphs()
   auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(0);
   auto & input = gammaNode.GetInputPort(1);
   assert(argument.GetAttributeGraphElement("input") == &input);
-  assert(argument.GetLabel().find("#0 (1)") != std::string::npos);
+  // The label also includes the attribute index and input index
+  assert(argument.GetLabel() == "a0 <- i1");
+  auto & result = argument.GetConnections().front()->GetOtherEnd(argument);
+  assert(result.GetLabel() == "r0 -> o0");
 
   // Check that the last argument is colored red to represent the memory state type
   auto & stateConnections = fctBody.GetArgumentNode(5).GetConnections();
   assert(stateConnections.size() == 1);
-  assert(stateConnections[0]->GetAttributeString("color") == "#FF0000");
+  assert(stateConnections.front()->GetAttributeString("color") == "#FF0000");
 
   return 0;
 }

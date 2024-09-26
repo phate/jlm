@@ -146,14 +146,14 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
 
     // Give the argument a label using its local index, not the global argument index
     // Use an uppercase A to distinguish
-    node.SetLabel(util::strfmt("#", n));
+    node.SetLabel(util::strfmt("a", n));
 
     // If this argument corresponds to one of the structural node's inputs, reference it
     if (argument.input())
     {
       node.SetAttributeObject("input", *argument.input());
       // Include the local index of the node's input in the label
-      node.AppendToLabel(util::strfmt("(", argument.input()->index(), ")"), " ");
+      node.AppendToLabel(util::strfmt("<- i", argument.input()->index()), " ");
     }
   }
 
@@ -191,14 +191,14 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     AttachNodeInput(node, result);
 
     // Use the result's local index as the label
-    node.SetLabel(util::strfmt("#", n));
+    node.SetLabel(util::strfmt("r", n));
 
     // If this result corresponds to one of the structural node's outputs, reference it
     if (result.output())
     {
       node.SetAttributeObject("output", *result.output());
       // Include the local index of the node's output in the label
-      node.AppendToLabel(util::strfmt("(", result.output()->index(), ")"), " ");
+      node.AppendToLabel(util::strfmt("-> o", result.output()->index()), " ");
     }
   }
 }

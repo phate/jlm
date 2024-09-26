@@ -597,7 +597,7 @@ InputPort::InputPort(jlm::util::InOutNode & node)
 const char *
 InputPort::GetIdPrefix() const
 {
-  return "i";
+  return "in";
 }
 
 Node &
@@ -634,7 +634,7 @@ OutputPort::OutputPort(jlm::util::InOutNode & node)
 const char *
 OutputPort::GetIdPrefix() const
 {
-  return "o";
+  return "out";
 }
 
 Node &
@@ -917,7 +917,7 @@ ArgumentNode::ArgumentNode(jlm::util::Graph & graph)
 const char *
 ArgumentNode::GetIdPrefix() const
 {
-  return "a";
+  return "arg";
 }
 
 bool
@@ -958,7 +958,7 @@ ResultNode::ResultNode(jlm::util::Graph & graph)
 const char *
 ResultNode::GetIdPrefix() const
 {
-  return "r";
+  return "res";
 }
 
 bool
