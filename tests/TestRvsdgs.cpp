@@ -1336,20 +1336,21 @@ GammaTest::SetupRvsdg()
   auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, biteq);
 
   auto gammanode = jlm::rvsdg::GammaNode::create(predicate, 2);
-  auto p1ev = gammanode->add_entryvar(fct->GetFunctionArguments()[1]);
-  auto p2ev = gammanode->add_entryvar(fct->GetFunctionArguments()[2]);
-  auto p3ev = gammanode->add_entryvar(fct->GetFunctionArguments()[3]);
-  auto p4ev = gammanode->add_entryvar(fct->GetFunctionArguments()[4]);
+  auto p1ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[1]);
+  auto p2ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[2]);
+  auto p3ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[3]);
+  auto p4ev = gammanode->AddEntryVar(fct->GetFunctionArguments()[4]);
 
-  auto tmp1 = gammanode->add_exitvar({ p1ev->argument(0), p3ev->argument(1) });
-  auto tmp2 = gammanode->add_exitvar({ p2ev->argument(0), p4ev->argument(1) });
+  auto tmp1 = gammanode->AddExitVar({ p1ev.branchArgument[0], p3ev.branchArgument[1] });
+  auto tmp2 = gammanode->AddExitVar({ p2ev.branchArgument[0], p4ev.branchArgument[1] });
 
   auto ld1 = LoadNonVolatileNode::Create(
-      tmp1,
+      tmp1.output,
       { fct->GetFunctionArguments()[5] },
       jlm::rvsdg::bittype::Create(32),
       4);
-  auto ld2 = LoadNonVolatileNode::Create(tmp2, { ld1[1] }, jlm::rvsdg::bittype::Create(32), 4);
+  auto ld2 =
+      LoadNonVolatileNode::Create(tmp2.output, { ld1[1] }, jlm::rvsdg::bittype::Create(32), 4);
   auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
 
   fct->finalize({ sum, ld2[1] });
@@ -1386,39 +1387,39 @@ GammaTest2::SetupRvsdg()
     {
       auto gammaNode = rvsdg::GammaNode::create(predicate, 2);
 
-      auto gammaInputX = gammaNode->add_entryvar(xAddress);
-      auto gammaInputY = gammaNode->add_entryvar(yAddress);
-      auto gammaInputZ = gammaNode->add_entryvar(zAddress);
-      auto gammaInputMemoryState = gammaNode->add_entryvar(memoryState);
+      auto gammaInputX = gammaNode->AddEntryVar(xAddress);
+      auto gammaInputY = gammaNode->AddEntryVar(yAddress);
+      auto gammaInputZ = gammaNode->AddEntryVar(zAddress);
+      auto gammaInputMemoryState = gammaNode->AddEntryVar(memoryState);
 
       // gamma subregion 0
       auto loadXResults = LoadNonVolatileNode::Create(
-          gammaInputX->argument(0),
-          { gammaInputMemoryState->argument(0) },
+          gammaInputX.branchArgument[0],
+          { gammaInputMemoryState.branchArgument[0] },
           jlm::rvsdg::bittype::Create(32),
           4);
 
       auto one = rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 1);
       auto storeZRegion0Results =
-          StoreNonVolatileNode::Create(gammaInputZ->argument(0), one, { loadXResults[1] }, 4);
+          StoreNonVolatileNode::Create(gammaInputZ.branchArgument[0], one, { loadXResults[1] }, 4);
 
       // gamma subregion 1
       auto loadYResults = LoadNonVolatileNode::Create(
-          gammaInputY->argument(1),
-          { gammaInputMemoryState->argument(1) },
+          gammaInputY.branchArgument[1],
+          { gammaInputMemoryState.branchArgument[1] },
           jlm::rvsdg::bittype::Create(32),
           4);
 
       auto two = rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 2);
       auto storeZRegion1Results =
-          StoreNonVolatileNode::Create(gammaInputZ->argument(1), two, { loadYResults[1] }, 4);
+          StoreNonVolatileNode::Create(gammaInputZ.branchArgument[1], two, { loadYResults[1] }, 4);
 
       // finalize gamma
-      auto gammaOutputA = gammaNode->add_exitvar({ loadXResults[0], loadYResults[0] });
+      auto gammaOutputA = gammaNode->AddExitVar({ loadXResults[0], loadYResults[0] });
       auto gammaOutputMemoryState =
-          gammaNode->add_exitvar({ storeZRegion0Results[0], storeZRegion1Results[0] });
+          gammaNode->AddExitVar({ storeZRegion0Results[0], storeZRegion1Results[0] });
 
-      return std::make_tuple(gammaOutputA, gammaOutputMemoryState);
+      return std::make_tuple(gammaOutputA.output, gammaOutputMemoryState.output);
     };
 
     auto iOStateType = iostatetype::Create();
@@ -1469,7 +1470,7 @@ GammaTest2::SetupRvsdg()
 
     return std::make_tuple(
         lambda->output(),
-        gammaOutputA->node(),
+        &rvsdg::AssertGetOwnerNode<jlm::rvsdg::GammaNode>(*gammaOutputA),
         rvsdg::output::GetNode(*allocaZResults[0]));
   };
 
@@ -2056,32 +2057,35 @@ PhiTest1::SetupRvsdg()
     auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
-    auto nev = gammaNode->add_entryvar(valueArgument);
-    auto resultev = gammaNode->add_entryvar(pointerArgument);
-    auto fibev = gammaNode->add_entryvar(ctxVarFib);
-    auto gIIoState = gammaNode->add_entryvar(iOStateArgument);
-    auto gIMemoryState = gammaNode->add_entryvar(memoryStateArgument);
+    auto nev = gammaNode->AddEntryVar(valueArgument);
+    auto resultev = gammaNode->AddEntryVar(pointerArgument);
+    auto fibev = gammaNode->AddEntryVar(ctxVarFib);
+    auto gIIoState = gammaNode->AddEntryVar(iOStateArgument);
+    auto gIMemoryState = gammaNode->AddEntryVar(memoryStateArgument);
 
     /* gamma subregion 0 */
     auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
-    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), one);
+    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
     auto & callFibm1 = CallNode::CreateNode(
-        fibev->argument(0),
+        fibev.branchArgument[0],
         fibFunctionType,
-        { nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0) });
+        { nm1,
+          resultev.branchArgument[0],
+          gIIoState.branchArgument[0],
+          gIMemoryState.branchArgument[0] });
 
     two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
-    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), two);
+    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
     auto & callFibm2 = CallNode::CreateNode(
-        fibev->argument(0),
+        fibev.branchArgument[0],
         fibFunctionType,
         { nm2,
-          resultev->argument(0),
+          resultev.branchArgument[0],
           callFibm1.GetIoStateOutput(),
           callFibm1.GetMemoryStateOutput() });
 
     auto gepnm1 = GetElementPtrOperation::Create(
-        resultev->argument(0),
+        resultev.branchArgument[0],
         { nm1 },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
@@ -2092,7 +2096,7 @@ PhiTest1::SetupRvsdg()
         8);
 
     auto gepnm2 = GetElementPtrOperation::Create(
-        resultev->argument(0),
+        resultev.branchArgument[0],
         { nm2 },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
@@ -2104,19 +2108,19 @@ PhiTest1::SetupRvsdg()
     /* gamma subregion 1 */
     /* Nothing needs to be done */
 
-    auto sumex = gammaNode->add_exitvar({ sum, nev->argument(1) });
+    auto sumex = gammaNode->AddExitVar({ sum, nev.branchArgument[1] });
     auto gOIoState =
-        gammaNode->add_exitvar({ callFibm2.GetIoStateOutput(), gIIoState->argument(1) });
-    auto gOMemoryState = gammaNode->add_exitvar({ ldnm2[1], gIMemoryState->argument(1) });
+        gammaNode->AddExitVar({ callFibm2.GetIoStateOutput(), gIIoState.branchArgument[1] });
+    auto gOMemoryState = gammaNode->AddExitVar({ ldnm2[1], gIMemoryState.branchArgument[1] });
 
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
-    auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
+    auto store = StoreNonVolatileNode::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 
-    auto lambdaOutput = lambda->finalize({ gOIoState, store[0] });
+    auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });
 
     fibrv->result()->divert_to(lambdaOutput);
     auto phiNode = pb.end();
@@ -3919,21 +3923,24 @@ VariadicFunctionTest2::SetupRvsdg()
     auto matchResult = rvsdg::match_op::Create(*icmpResult, { { 1, 1 } }, 0, 2);
 
     auto gammaNode = rvsdg::GammaNode::create(matchResult, 2);
-    auto gammaVaAddress = gammaNode->add_entryvar(allocaResults[0]);
-    auto gammaLoadResult = gammaNode->add_entryvar(loadResults[0]);
-    auto gammaMemoryState = gammaNode->add_entryvar(loadResults[1]);
+    auto gammaVaAddress = gammaNode->AddEntryVar(allocaResults[0]);
+    auto gammaLoadResult = gammaNode->AddEntryVar(loadResults[0]);
+    auto gammaMemoryState = gammaNode->AddEntryVar(loadResults[1]);
 
     // gamma subregion 0
     auto zero = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 0);
     auto two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 2);
     auto eight = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 8);
     auto gepResult1 = GetElementPtrOperation::Create(
-        gammaVaAddress->argument(0),
+        gammaVaAddress.branchArgument[0],
         { zero, two },
         structType,
         pointerType);
-    auto loadResultsGamma0 =
-        LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(0) }, pointerType, 8);
+    auto loadResultsGamma0 = LoadNonVolatileNode::Create(
+        gepResult1,
+        { gammaMemoryState.branchArgument[0] },
+        pointerType,
+        8);
     auto gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma0[0],
         { eight },
@@ -3947,32 +3954,36 @@ VariadicFunctionTest2::SetupRvsdg()
     auto eightBit32 = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 8);
     auto three = jlm::rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 3);
     gepResult1 = GetElementPtrOperation::Create(
-        gammaVaAddress->argument(1),
+        gammaVaAddress.branchArgument[1],
         { zero, three },
         structType,
         pointerType);
-    auto loadResultsGamma1 =
-        LoadNonVolatileNode::Create(gepResult1, { gammaMemoryState->argument(1) }, pointerType, 16);
-    auto & zextResult = zext_op::Create(*gammaLoadResult->argument(1), rvsdg::bittype::Create(64));
+    auto loadResultsGamma1 = LoadNonVolatileNode::Create(
+        gepResult1,
+        { gammaMemoryState.branchArgument[1] },
+        pointerType,
+        16);
+    auto & zextResult =
+        zext_op::Create(*gammaLoadResult.branchArgument[1], rvsdg::bittype::Create(64));
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
         { &zextResult },
         rvsdg::bittype::Create(8),
         pointerType);
-    auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult->argument(1), eightBit32);
+    auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult.branchArgument[1], eightBit32);
     auto storeResultsGamma1 = StoreNonVolatileNode::Create(
-        gammaVaAddress->argument(1),
+        gammaVaAddress.branchArgument[1],
         addResult,
         { loadResultsGamma1[1] },
         16);
 
-    auto gammaAddress = gammaNode->add_exitvar({ loadResultsGamma0[0], gepResult2 });
+    auto gammaAddress = gammaNode->AddExitVar({ loadResultsGamma0[0], gepResult2 });
     auto gammaOutputMemoryState =
-        gammaNode->add_exitvar({ storeResultsGamma0[0], storeResultsGamma1[0] });
+        gammaNode->AddExitVar({ storeResultsGamma0[0], storeResultsGamma1[0] });
 
     loadResults = LoadNonVolatileNode::Create(
-        gammaAddress,
-        { gammaOutputMemoryState },
+        gammaAddress.output,
+        { gammaOutputMemoryState.output },
         rvsdg::bittype::Create(32),
         4);
     auto & callVaEnd = CallNode::CreateNode(

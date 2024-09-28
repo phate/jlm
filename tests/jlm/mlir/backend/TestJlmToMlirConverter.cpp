@@ -509,8 +509,8 @@ TestGamma()
         3             // nalternatives
     );
 
-    rvsdgGammaNode->add_entryvar(entryvar1);
-    rvsdgGammaNode->add_entryvar(entryvar2);
+    rvsdgGammaNode->AddEntryVar(entryvar1);
+    rvsdgGammaNode->AddEntryVar(entryvar2);
 
     std::vector<jlm::rvsdg::output *> exitvars1;
     std::vector<jlm::rvsdg::output *> exitvars2;
@@ -521,8 +521,8 @@ TestGamma()
           jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, 10 * (i + 1)));
     }
 
-    rvsdgGammaNode->add_exitvar(exitvars1);
-    rvsdgGammaNode->add_exitvar(exitvars2);
+    rvsdgGammaNode->AddExitVar(exitvars1);
+    rvsdgGammaNode->AddExitVar(exitvars2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

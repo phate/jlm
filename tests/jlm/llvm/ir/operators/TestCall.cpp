@@ -202,10 +202,10 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
       auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
       auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
-      auto ev = gamma->add_entryvar(itf->argument());
-      auto xv = gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
+      auto ev = gamma->AddEntryVar(itf->argument());
+      auto xv = gamma->AddExitVar(ev.branchArgument);
 
-      itf->result()->divert_to(xv);
+      itf->result()->divert_to(xv.output);
       otf->result()->divert_to(itf);
 
       return otf;
@@ -407,29 +407,32 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
-    auto nev = gammaNode->add_entryvar(valueArgument);
-    auto resultev = gammaNode->add_entryvar(pointerArgument);
-    auto fibev = gammaNode->add_entryvar(ctxVarFib);
-    auto gIIoState = gammaNode->add_entryvar(iOStateArgument);
-    auto gIMemoryState = gammaNode->add_entryvar(memoryStateArgument);
+    auto nev = gammaNode->AddEntryVar(valueArgument);
+    auto resultev = gammaNode->AddEntryVar(pointerArgument);
+    auto fibev = gammaNode->AddEntryVar(ctxVarFib);
+    auto gIIoState = gammaNode->AddEntryVar(iOStateArgument);
+    auto gIMemoryState = gammaNode->AddEntryVar(memoryStateArgument);
 
     /* gamma subregion 0 */
     auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
-    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), one);
+    auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
     auto callfibm1Results = CallNode::Create(
-        fibev->argument(0),
+        fibev.branchArgument[0],
         functionType,
-        { nm1, resultev->argument(0), gIIoState->argument(0), gIMemoryState->argument(0) });
+        { nm1,
+          resultev.branchArgument[0],
+          gIIoState.branchArgument[0],
+          gIMemoryState.branchArgument[0] });
 
     two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
-    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev->argument(0), two);
+    auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
     auto callfibm2Results = CallNode::Create(
-        fibev->argument(0),
+        fibev.branchArgument[0],
         functionType,
-        { nm2, resultev->argument(0), callfibm1Results[0], callfibm1Results[1] });
+        { nm2, resultev.branchArgument[0], callfibm1Results[0], callfibm1Results[1] });
 
     auto gepnm1 = GetElementPtrOperation::Create(
-        resultev->argument(0),
+        resultev.branchArgument[0],
         { nm1 },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
@@ -440,7 +443,7 @@ TestCallTypeClassifierRecursiveDirectCall()
         8);
 
     auto gepnm2 = GetElementPtrOperation::Create(
-        resultev->argument(0),
+        resultev.branchArgument[0],
         { nm2 },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
@@ -452,18 +455,18 @@ TestCallTypeClassifierRecursiveDirectCall()
     /* gamma subregion 1 */
     /* Nothing needs to be done */
 
-    auto sumex = gammaNode->add_exitvar({ sum, nev->argument(1) });
-    auto gOIoState = gammaNode->add_exitvar({ callfibm2Results[0], gIIoState->argument(1) });
-    auto gOMemoryState = gammaNode->add_exitvar({ ldnm2[1], gIMemoryState->argument(1) });
+    auto sumex = gammaNode->AddExitVar({ sum, nev.branchArgument[1] });
+    auto gOIoState = gammaNode->AddExitVar({ callfibm2Results[0], gIIoState.branchArgument[1] });
+    auto gOMemoryState = gammaNode->AddExitVar({ ldnm2[1], gIMemoryState.branchArgument[1] });
 
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
-    auto store = StoreNonVolatileNode::Create(gepn, sumex, { gOMemoryState }, 8);
+    auto store = StoreNonVolatileNode::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 
-    auto lambdaOutput = lambda->finalize({ gOIoState, store[0] });
+    auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });
 
     fibrv->result()->divert_to(lambdaOutput);
     pb.end();

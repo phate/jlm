@@ -660,8 +660,9 @@ TestGamma()
 
     for (size_t n = 0; n < 4; n++)
     {
-      auto & argument0 = pointsToGraph.GetRegisterNode(*test.gamma->entryvar(n)->argument(0));
-      auto & argument1 = pointsToGraph.GetRegisterNode(*test.gamma->entryvar(n)->argument(1));
+      auto entryvar = test.gamma->GetEntryVar(n);
+      auto & argument0 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[0]);
+      auto & argument1 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[1]);
 
       assertTargets(argument0, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
       assertTargets(argument1, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
@@ -669,7 +670,7 @@ TestGamma()
 
     for (size_t n = 0; n < 4; n++)
     {
-      auto & gammaOutput = pointsToGraph.GetRegisterNode(*test.gamma->exitvar(0));
+      auto & gammaOutput = pointsToGraph.GetRegisterNode(*test.gamma->GetExitVars()[0].output);
       assertTargets(gammaOutput, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     }
 

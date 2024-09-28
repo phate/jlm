@@ -70,25 +70,27 @@ test1()
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
 
     auto gamma = jlm::rvsdg::GammaNode::create(controlArgument, 2);
-    auto gammaInputF1 = gamma->add_entryvar(d);
-    auto gammaInputValue = gamma->add_entryvar(valueArgument);
-    auto gammaInputIoState = gamma->add_entryvar(iOStateArgument);
-    auto gammaInputMemoryState = gamma->add_entryvar(memoryStateArgument);
+    auto gammaInputF1 = gamma->AddEntryVar(d);
+    auto gammaInputValue = gamma->AddEntryVar(valueArgument);
+    auto gammaInputIoState = gamma->AddEntryVar(iOStateArgument);
+    auto gammaInputMemoryState = gamma->AddEntryVar(memoryStateArgument);
 
     auto callResults = CallNode::Create(
-        gammaInputF1->argument(0),
+        gammaInputF1.branchArgument[0],
         jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).Type(),
-        { gammaInputValue->argument(0),
-          gammaInputIoState->argument(0),
-          gammaInputMemoryState->argument(0) });
+        { gammaInputValue.branchArgument[0],
+          gammaInputIoState.branchArgument[0],
+          gammaInputMemoryState.branchArgument[0] });
 
-    auto gammaOutputValue = gamma->add_exitvar({ callResults[0], gammaInputValue->argument(1) });
+    auto gammaOutputValue =
+        gamma->AddExitVar({ callResults[0], gammaInputValue.branchArgument[1] });
     auto gammaOutputIoState =
-        gamma->add_exitvar({ callResults[1], gammaInputIoState->argument(1) });
+        gamma->AddExitVar({ callResults[1], gammaInputIoState.branchArgument[1] });
     auto gammaOutputMemoryState =
-        gamma->add_exitvar({ callResults[2], gammaInputMemoryState->argument(1) });
+        gamma->AddExitVar({ callResults[2], gammaInputMemoryState.branchArgument[1] });
 
-    return lambda->finalize({ gammaOutputValue, gammaOutputIoState, gammaOutputMemoryState });
+    return lambda->finalize(
+        { gammaOutputValue.output, gammaOutputIoState.output, gammaOutputMemoryState.output });
   };
 
   auto f1 = SetupF1();
