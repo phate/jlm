@@ -81,9 +81,9 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
   {
     if (jlm::rvsdg::node_output::node(lv->result()->origin()) != gamma)
     {
-      auto ev = gamma->add_entryvar(lv->result()->origin());
-      JLM_ASSERT(ev->narguments() == 2);
-      auto xv = gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
+      auto ev = gamma->AddEntryVar(lv->result()->origin());
+      JLM_ASSERT(ev.branches.size() == 2);
+      auto xv = gamma->add_exitvar({ ev.branches[0], ev.branches[1] });
       lv->result()->divert_to(xv);
     }
   }
@@ -160,18 +160,18 @@ invert(rvsdg::ThetaNode * otheta)
   {
     /* setup substitution map for exit region copying */
     auto osubregion0 = ogamma->subregion(0);
-    for (auto oev = ogamma->begin_entryvar(); oev != ogamma->end_entryvar(); oev++)
+    for (const auto & oev : ogamma->GetEntryVars())
     {
-      if (auto argument = to_argument(oev->origin()))
+      if (auto argument = to_argument(oev.input->origin()))
       {
-        auto nev = ngamma->add_entryvar(argument->input()->origin());
-        r0map.insert(oev->argument(0), nev->argument(0));
+        auto nev = ngamma->AddEntryVar(argument->input()->origin());
+        r0map.insert(oev.branches[0], nev.branches[0]);
       }
       else
       {
-        auto substitute = smap.lookup(oev->origin());
-        auto nev = ngamma->add_entryvar(substitute);
-        r0map.insert(oev->argument(0), nev->argument(0));
+        auto substitute = smap.lookup(oev.input->origin());
+        auto nev = ngamma->AddEntryVar(substitute);
+        r0map.insert(oev.branches[0], nev.branches[0]);
       }
     }
 
@@ -198,24 +198,23 @@ invert(rvsdg::ThetaNode * otheta)
     std::unordered_map<jlm::rvsdg::input *, rvsdg::ThetaOutput *> nlvs;
     for (const auto & olv : *otheta)
     {
-      auto ev = ngamma->add_entryvar(olv->input()->origin());
-      auto nlv = ntheta->add_loopvar(ev->argument(1));
+      auto ev = ngamma->AddEntryVar(olv->input()->origin());
+      auto nlv = ntheta->add_loopvar(ev.branches[1]);
       r1map.insert(olv->argument(), nlv->argument());
       nlvs[olv->input()] = nlv;
     }
-    for (size_t n = 1; n < ogamma->ninputs(); n++)
+    for (const auto & oev : ogamma->GetEntryVars())
     {
-      auto oev = util::AssertedCast<rvsdg::GammaInput>(ogamma->input(n));
-      if (auto argument = to_argument(oev->origin()))
+      if (auto argument = to_argument(oev.input->origin()))
       {
-        r1map.insert(oev->argument(1), nlvs[argument->input()]->argument());
+        r1map.insert(oev.branches[1], nlvs[argument->input()]->argument());
       }
       else
       {
-        auto ev = ngamma->add_entryvar(smap.lookup(oev->origin()));
-        auto nlv = ntheta->add_loopvar(ev->argument(1));
-        r1map.insert(oev->argument(1), nlv->argument());
-        nlvs[oev] = nlv;
+        auto ev = ngamma->AddEntryVar(smap.lookup(oev.input->origin()));
+        auto nlv = ntheta->add_loopvar(ev.branches[1]);
+        r1map.insert(oev.branches[1], nlv->argument());
+        nlvs[oev.input] = nlv;
       }
     }
 
@@ -242,18 +241,17 @@ invert(rvsdg::ThetaNode * otheta)
       nlvs[olv->input()]->result()->divert_to(substitute);
       r1map.insert(olv->result()->origin(), nlvs[olv->input()]);
     }
-    for (size_t n = 1; n < ogamma->ninputs(); n++)
+    for (const auto & oev : ogamma->GetEntryVars())
     {
-      auto oev = util::AssertedCast<rvsdg::GammaInput>(ogamma->input(n));
-      if (auto argument = to_argument(oev->origin()))
+      if (auto argument = to_argument(oev.input->origin()))
       {
-        r1map.insert(oev->argument(0), nlvs[argument->input()]);
+        r1map.insert(oev.branches[0], nlvs[argument->input()]);
       }
       else
       {
-        auto substitute = r1map.lookup(oev->origin());
-        nlvs[oev]->result()->divert_to(substitute);
-        r1map.insert(oev->argument(0), nlvs[oev]);
+        auto substitute = r1map.lookup(oev.input->origin());
+        nlvs[oev.input]->result()->divert_to(substitute);
+        r1map.insert(oev.branches[0], nlvs[oev.input]);
       }
     }
 

@@ -26,10 +26,10 @@ test_gamma(void)
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
 
   auto gamma = GammaNode::create(pred, 3);
-  auto ev0 = gamma->add_entryvar(v0);
-  auto ev1 = gamma->add_entryvar(v1);
-  auto ev2 = gamma->add_entryvar(v2);
-  gamma->add_exitvar({ ev0->argument(0), ev1->argument(1), ev2->argument(2) });
+  auto ev0 = gamma->AddEntryVar(v0);
+  auto ev1 = gamma->AddEntryVar(v1);
+  auto ev2 = gamma->AddEntryVar(v2);
+  gamma->add_exitvar({ ev0.branches[0], ev1.branches[1], ev2.branches[2] });
 
   jlm::tests::GraphExport::Create(*gamma->output(0), "dummy");
 
@@ -44,7 +44,7 @@ test_gamma(void)
   /* test entry and exit variable iterators */
 
   auto gamma3 = GammaNode::create(v3, 2);
-  assert(gamma3->begin_entryvar() == gamma3->end_entryvar());
+  assert(gamma3->GetEntryVars().empty());
   assert(gamma3->begin_exitvar() == gamma3->end_exitvar());
 }
 
@@ -65,10 +65,10 @@ test_predicate_reduction(void)
   auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
 
   auto gamma = GammaNode::create(pred, 3);
-  auto ev0 = gamma->add_entryvar(v0);
-  auto ev1 = gamma->add_entryvar(v1);
-  auto ev2 = gamma->add_entryvar(v2);
-  gamma->add_exitvar({ ev0->argument(0), ev1->argument(1), ev2->argument(2) });
+  auto ev0 = gamma->AddEntryVar(v0);
+  auto ev1 = gamma->AddEntryVar(v1);
+  auto ev2 = gamma->AddEntryVar(v2);
+  gamma->add_exitvar({ ev0.branches[0], ev1.branches[1], ev2.branches[2] });
 
   auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
 
@@ -94,8 +94,8 @@ test_invariant_reduction(void)
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
   auto gamma = GammaNode::create(pred, 2);
-  auto ev = gamma->add_entryvar(v);
-  gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
+  auto ev = gamma->AddEntryVar(v);
+  gamma->add_exitvar(ev.branches);
 
   auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
 
@@ -193,19 +193,15 @@ TestRemoveGammaOutputsWhere()
   auto v3 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
   auto gammaNode = GammaNode::create(predicate, 2);
-  auto gammaInput0 = gammaNode->add_entryvar(v0);
-  auto gammaInput1 = gammaNode->add_entryvar(v1);
-  auto gammaInput2 = gammaNode->add_entryvar(v2);
-  auto gammaInput3 = gammaNode->add_entryvar(v3);
+  auto gammaInput0 = gammaNode->AddEntryVar(v0);
+  auto gammaInput1 = gammaNode->AddEntryVar(v1);
+  auto gammaInput2 = gammaNode->AddEntryVar(v2);
+  auto gammaInput3 = gammaNode->AddEntryVar(v3);
 
-  auto gammaOutput0 =
-      gammaNode->add_exitvar({ gammaInput0->argument(0), gammaInput0->argument(1) });
-  auto gammaOutput1 =
-      gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput1->argument(1) });
-  auto gammaOutput2 =
-      gammaNode->add_exitvar({ gammaInput2->argument(0), gammaInput2->argument(1) });
-  auto gammaOutput3 =
-      gammaNode->add_exitvar({ gammaInput3->argument(0), gammaInput3->argument(1) });
+  auto gammaOutput0 = gammaNode->add_exitvar(gammaInput0.branches);
+  auto gammaOutput1 = gammaNode->add_exitvar(gammaInput1.branches);
+  auto gammaOutput2 = gammaNode->add_exitvar(gammaInput2.branches);
+  auto gammaOutput3 = gammaNode->add_exitvar(gammaInput3.branches);
 
   jlm::tests::GraphExport::Create(*gammaOutput0, "");
   jlm::tests::GraphExport::Create(*gammaOutput2, "");
@@ -255,17 +251,15 @@ TestPruneOutputs()
   auto v3 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
   auto gammaNode = GammaNode::create(predicate, 2);
-  auto gammaInput0 = gammaNode->add_entryvar(v0);
-  auto gammaInput1 = gammaNode->add_entryvar(v1);
-  auto gammaInput2 = gammaNode->add_entryvar(v2);
-  auto gammaInput3 = gammaNode->add_entryvar(v3);
+  auto gammaInput0 = gammaNode->AddEntryVar(v0);
+  auto gammaInput1 = gammaNode->AddEntryVar(v1);
+  auto gammaInput2 = gammaNode->AddEntryVar(v2);
+  auto gammaInput3 = gammaNode->AddEntryVar(v3);
 
-  auto gammaOutput0 =
-      gammaNode->add_exitvar({ gammaInput0->argument(0), gammaInput0->argument(1) });
-  gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput1->argument(1) });
-  auto gammaOutput2 =
-      gammaNode->add_exitvar({ gammaInput2->argument(0), gammaInput2->argument(1) });
-  gammaNode->add_exitvar({ gammaInput3->argument(0), gammaInput3->argument(1) });
+  auto gammaOutput0 = gammaNode->add_exitvar(gammaInput0.branches);
+  gammaNode->add_exitvar(gammaInput1.branches);
+  auto gammaOutput2 = gammaNode->add_exitvar(gammaInput2.branches);
+  gammaNode->add_exitvar(gammaInput3.branches);
 
   jlm::tests::GraphExport::Create(*gammaOutput0, "");
   jlm::tests::GraphExport::Create(*gammaOutput2, "");
@@ -302,16 +296,13 @@ TestIsInvariant()
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
   auto gammaNode = GammaNode::create(predicate, 2);
-  auto gammaInput0 = gammaNode->add_entryvar(v0);
-  auto gammaInput1 = gammaNode->add_entryvar(v1);
-  auto gammaInput2 = gammaNode->add_entryvar(v1);
+  auto gammaInput0 = gammaNode->AddEntryVar(v0);
+  auto gammaInput1 = gammaNode->AddEntryVar(v1);
+  auto gammaInput2 = gammaNode->AddEntryVar(v1);
 
-  auto gammaOutput0 =
-      gammaNode->add_exitvar({ gammaInput0->argument(0), gammaInput0->argument(1) });
-  auto gammaOutput1 =
-      gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
-  auto gammaOutput2 =
-      gammaNode->add_exitvar({ gammaInput0->argument(0), gammaInput2->argument(1) });
+  auto gammaOutput0 = gammaNode->add_exitvar(gammaInput0.branches);
+  auto gammaOutput1 = gammaNode->add_exitvar({ gammaInput1.branches[0], gammaInput2.branches[1] });
+  auto gammaOutput2 = gammaNode->add_exitvar({ gammaInput0.branches[0], gammaInput2.branches[1] });
 
   // Act & Assert
   assert(gammaOutput0->IsInvariant());

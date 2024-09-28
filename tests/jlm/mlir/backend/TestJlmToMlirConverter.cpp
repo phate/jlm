@@ -508,8 +508,8 @@ TestGamma()
         3             // nalternatives
     );
 
-    rvsdgGammaNode->add_entryvar(entryvar1);
-    rvsdgGammaNode->add_entryvar(entryvar2);
+    rvsdgGammaNode->AddEntryVar(entryvar1);
+    rvsdgGammaNode->AddEntryVar(entryvar2);
 
     std::vector<jlm::rvsdg::output *> exitvars1;
     std::vector<jlm::rvsdg::output *> exitvars2;

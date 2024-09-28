@@ -40,9 +40,9 @@ GammaWithMatch()
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
-  auto gammaInput1 = gamma->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gamma->add_entryvar(lambdaNode->fctargument(2));
-  auto gammaOutput = gamma->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
+  auto gammaInput1 = gamma->AddEntryVar(lambdaNode->fctargument(1));
+  auto gammaInput2 = gamma->AddEntryVar(lambdaNode->fctargument(2));
+  auto gammaOutput = gamma->add_exitvar({ gammaInput1.branches[0], gammaInput2.branches[1] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
@@ -92,9 +92,9 @@ GammaWithoutMatch()
       linkage::external_linkage);
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->fctargument(0), 2);
-  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->fctargument(2));
-  auto gammaOutput = gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
+  auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->fctargument(1));
+  auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->fctargument(2));
+  auto gammaOutput = gammaNode->add_exitvar({ gammaInput1.branches[0], gammaInput2.branches[1] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
@@ -148,10 +148,10 @@ EmptyGammaWithThreeSubregions()
   auto match = jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->fctargument(0));
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
-  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->fctargument(2));
+  auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->fctargument(1));
+  auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->fctargument(2));
   auto gammaOutput = gammaNode->add_exitvar(
-      { gammaInput1->argument(0), gammaInput1->argument(1), gammaInput2->argument(2) });
+      { gammaInput1.branches[0], gammaInput1.branches[1], gammaInput2.branches[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
@@ -199,12 +199,12 @@ PartialEmptyGamma()
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
-  auto gammaInput = gammaNode->add_entryvar(lambdaNode->fctargument(1));
+  auto gammaInput = gammaNode->AddEntryVar(lambdaNode->fctargument(1));
   auto output = jlm::tests::create_testop(
       gammaNode->subregion(1),
-      { gammaInput->argument(1) },
+      { gammaInput.branches[1] },
       { valueType })[0];
-  auto gammaOutput = gammaNode->add_exitvar({ gammaInput->argument(0), output });
+  auto gammaOutput = gammaNode->add_exitvar({ gammaInput.branches[0], output });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
 

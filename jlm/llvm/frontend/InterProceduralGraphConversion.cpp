@@ -485,9 +485,9 @@ ConvertSelect(
   auto predicate = rvsdg::simple_node::create_normalized(&region, op, { p })[0];
 
   auto gamma = rvsdg::GammaNode::create(predicate, 2);
-  auto ev1 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(2)));
-  auto ev2 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(1)));
-  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
+  auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));
+  auto ev2 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(1)));
+  auto ex = gamma->add_exitvar({ ev1.branches[0], ev2.branches[1] });
   variableMap.insert(threeAddressCode.result(0), ex);
 }
 
@@ -707,9 +707,10 @@ Convert(
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::GammaInput *> gammaInputMap;
+  std::unordered_map<const variable *, rvsdg::input *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
-    gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
+    gammaInputMap[&v] =
+        gamma->AddEntryVar(regionalizedVariableMap.GetTopVariableMap().lookup(&v)).input;
 
   /*
    * Convert subregions.
@@ -720,7 +721,9 @@ Convert(
   {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
     for (const auto & pair : gammaInputMap)
-      regionalizedVariableMap.GetTopVariableMap().insert(pair.first, pair.second->argument(n));
+      regionalizedVariableMap.GetTopVariableMap().insert(
+          pair.first,
+          gamma->MapInputEntryVar(*pair.second).branches[n]);
 
     ConvertAggregationNode(
         *branchAggregationNode.child(n),

@@ -32,24 +32,19 @@ TestGamma()
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(p, 2);
 
-  auto gammaInput1 = gammaNode->add_entryvar(x);
-  auto gammaInput2 = gammaNode->add_entryvar(y);
-  auto gammaInput3 = gammaNode->add_entryvar(z);
-  auto gammaInput4 = gammaNode->add_entryvar(x);
-  auto gammaInput5 = gammaNode->add_entryvar(x);
-  auto gammaInput6 = gammaNode->add_entryvar(x);
-  auto gammaInput7 = gammaNode->add_entryvar(x);
+  auto gammaInput1 = gammaNode->AddEntryVar(x);
+  auto gammaInput2 = gammaNode->AddEntryVar(y);
+  auto gammaInput3 = gammaNode->AddEntryVar(z);
+  auto gammaInput4 = gammaNode->AddEntryVar(x);
+  auto gammaInput5 = gammaNode->AddEntryVar(x);
+  auto gammaInput6 = gammaNode->AddEntryVar(x);
+  auto gammaInput7 = gammaNode->AddEntryVar(x);
 
-  auto gammaOutput1 =
-      gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput1->argument(1) });
-  auto gammaOutput2 =
-      gammaNode->add_exitvar({ gammaInput2->argument(0), gammaInput3->argument(1) });
-  auto gammaOutput3 =
-      gammaNode->add_exitvar({ gammaInput4->argument(0), gammaInput5->argument(1) });
-  auto gammaOutput4 =
-      gammaNode->add_exitvar({ gammaInput6->argument(0), gammaInput6->argument(1) });
-  auto gammaOutput5 =
-      gammaNode->add_exitvar({ gammaInput6->argument(0), gammaInput7->argument(1) });
+  auto gammaOutput1 = gammaNode->add_exitvar(gammaInput1.branches);
+  auto gammaOutput2 = gammaNode->add_exitvar({ gammaInput2.branches[0], gammaInput3.branches[1] });
+  auto gammaOutput3 = gammaNode->add_exitvar({ gammaInput4.branches[0], gammaInput5.branches[1] });
+  auto gammaOutput4 = gammaNode->add_exitvar({ gammaInput6.branches[0], gammaInput6.branches[1] });
+  auto gammaOutput5 = gammaNode->add_exitvar({ gammaInput6.branches[0], gammaInput7.branches[1] });
 
   GraphExport::Create(*gammaOutput1, "");
   GraphExport::Create(*gammaOutput2, "");
@@ -63,7 +58,7 @@ TestGamma()
   // Assert
   assert(gammaNode->ninputs() == 7);  // gammaInput1 was removed
   assert(gammaNode->noutputs() == 4); // gammaOutput1 was removed
-  assert(gammaInput2->index() == 1);
+  assert(gammaInput2.input->index() == 1);
   assert(gammaOutput2->index() == 0);
   // FIXME: The transformation is way too conservative here. The only input and output it removes
   // are gammaInput1 and gammaOutput1, respectively. However, it could also remove gammaOutput3,

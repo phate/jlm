@@ -29,8 +29,8 @@ perform_predicate_reduction(GammaNode * gamma)
   auto alternative = cop->value().alternative();
 
   rvsdg::SubstitutionMap smap;
-  for (auto it = gamma->begin_entryvar(); it != gamma->end_entryvar(); it++)
-    smap.insert(it->argument(alternative), it->origin());
+  for (const auto & ev : gamma->GetEntryVars())
+    smap.insert(ev.branches[alternative], ev.input->origin());
 
   gamma->subregion(alternative)->copy(gamma->region(), smap, false, false);
 
@@ -265,10 +265,6 @@ GammaOperation::operator==(const operation & other) const noexcept
   return op && op->nalternatives_ == nalternatives_;
 }
 
-/* gamma input */
-
-GammaInput::~GammaInput() noexcept = default;
-
 /* gamma output */
 
 GammaOutput::~GammaOutput() noexcept = default;
@@ -304,22 +300,44 @@ GammaOutput::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 
 GammaNode::~GammaNode() noexcept = default;
 
-const GammaNode::entryvar_iterator &
-GammaNode::entryvar_iterator::operator++() noexcept
+GammaNode::EntryVar
+GammaNode::AddEntryVar(rvsdg::output * origin)
 {
-  if (input_ == nullptr)
-    return *this;
+  auto gammaInput = new structural_input(this, origin, origin->Type());
+  node::add_input(std::unique_ptr<node_input>(gammaInput));
 
-  auto node = input_->node();
-  auto index = input_->index();
-  if (index == node->ninputs() - 1)
+  EntryVar ev;
+  ev.input = gammaInput;
+
+  for (size_t n = 0; n < nsubregions(); n++)
   {
-    input_ = nullptr;
-    return *this;
+    ev.branches.push_back(&GammaArgument::Create(*subregion(n), *gammaInput));
   }
 
-  input_ = static_cast<GammaInput *>(node->input(++index));
-  return *this;
+  return ev;
+}
+
+GammaNode::EntryVar
+GammaNode::GetEntryVar(std::size_t index) const
+{
+  EntryVar ev;
+  ev.input = input(index + 1);
+  for (size_t n = 0; n < nsubregions(); ++n)
+  {
+    ev.branches.push_back(subregion(n)->argument(index));
+  }
+  return ev;
+}
+
+std::vector<GammaNode::EntryVar>
+GammaNode::GetEntryVars() const
+{
+  std::vector<GammaNode::EntryVar> vars;
+  for (size_t n = 0; n < ninputs() - 1; ++n)
+  {
+    vars.push_back(GetEntryVar(n));
+  }
+  return vars;
 }
 
 const GammaNode::exitvar_iterator &
@@ -347,11 +365,11 @@ GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 
   /* add entry variables to new gamma */
   std::vector<SubstitutionMap> rmap(nsubregions());
-  for (auto oev = begin_entryvar(); oev != end_entryvar(); oev++)
+  for (const auto & oev : GetEntryVars())
   {
-    auto nev = gamma->add_entryvar(smap.lookup(oev->origin()));
-    for (size_t n = 0; n < nev->narguments(); n++)
-      rmap[n].insert(oev->argument(n), nev->argument(n));
+    auto nev = gamma->AddEntryVar(smap.lookup(oev.input->origin()));
+    for (size_t n = 0; n < nsubregions(); n++)
+      rmap[n].insert(oev.branches[n], nev.branches[n]);
   }
 
   /* copy subregions */
@@ -371,12 +389,20 @@ GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
   return gamma;
 }
 
+GammaNode::EntryVar
+GammaNode::MapInputEntryVar(const rvsdg::input & input) const
+{
+  JLM_ASSERT(rvsdg::input::GetNode(input) == this);
+  JLM_ASSERT(input.index() != 0);
+  return GetEntryVar(input.index() - 1);
+}
+
 GammaArgument::~GammaArgument() noexcept = default;
 
 GammaArgument &
 GammaArgument::Copy(rvsdg::Region & region, structural_input * input)
 {
-  auto gammaInput = util::AssertedCast<GammaInput>(input);
+  auto gammaInput = input;
   return Create(region, *gammaInput);
 }
 

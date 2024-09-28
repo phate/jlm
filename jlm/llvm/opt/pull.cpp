@@ -70,9 +70,9 @@ single_successor(const jlm::rvsdg::node * node)
 }
 
 static void
-remove(rvsdg::GammaInput * input)
+remove(rvsdg::input * input)
 {
-  auto gamma = input->node();
+  auto gamma = jlm::util::AssertedCast<rvsdg::GammaNode>(rvsdg::input::GetNode(*input));
 
   for (size_t n = 0; n < gamma->nsubregions(); n++)
     gamma->subregion(n)->RemoveArgument(input->index() - 1);
@@ -86,9 +86,10 @@ pullin_node(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
   std::vector<std::vector<jlm::rvsdg::output *>> operands(gamma->nsubregions());
   for (size_t i = 0; i < node->ninputs(); i++)
   {
-    auto ev = gamma->add_entryvar(node->input(i)->origin());
-    for (size_t a = 0; a < ev->narguments(); a++)
-      operands[a].push_back(ev->argument(a));
+    auto ev = gamma->AddEntryVar(node->input(i)->origin());
+    std::size_t index = 0;
+    for (auto input : ev.branches)
+      operands[index++].push_back(input);
   }
 
   /* copy node into subregions */
@@ -119,7 +120,7 @@ cleanup(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     while (node->output(n)->nusers() != 0)
-      remove(util::AssertedCast<rvsdg::GammaInput>(*node->output(n)->begin()));
+      remove(*node->output(n)->begin());
   }
   remove(node);
 }
@@ -128,10 +129,12 @@ void
 pullin_top(rvsdg::GammaNode * gamma)
 {
   /* FIXME: This is inefficient. We can do better. */
-  auto ev = gamma->begin_entryvar();
-  while (ev != gamma->end_entryvar())
+  auto evs = gamma->GetEntryVars();
+  size_t index = 0;
+  while (index < evs.size())
   {
-    auto node = jlm::rvsdg::node_output::node(ev->origin());
+    const auto & ev = evs[index];
+    auto node = jlm::rvsdg::node_output::node(ev.input->origin());
     auto tmp = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
     if (node && tmp != node && single_successor(node))
     {
@@ -139,11 +142,12 @@ pullin_top(rvsdg::GammaNode * gamma)
 
       cleanup(gamma, node);
 
-      ev = gamma->begin_entryvar();
+      evs = gamma->GetEntryVars();
+      index = 0;
     }
     else
     {
-      ev++;
+      index++;
     }
   }
 }
@@ -185,8 +189,8 @@ pullin_bottom(rvsdg::GammaNode * gamma)
         }
         else
         {
-          auto ev = gamma->add_entryvar(input->origin());
-          operands.push_back(ev->argument(r));
+          auto ev = gamma->AddEntryVar(input->origin());
+          operands.push_back(ev.branches[r]);
         }
       }
 
@@ -218,12 +222,12 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const jlm::rvsdg::node * 
   JLM_ASSERT(single_successor(node));
 
   /* collect all gamma inputs */
-  std::unordered_set<const rvsdg::GammaInput *> inputs;
+  std::unordered_set<const rvsdg::input *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *(node->output(n)))
     {
-      inputs.insert(util::AssertedCast<const rvsdg::GammaInput>(user));
+      inputs.insert(user);
     }
   }
 
@@ -231,10 +235,10 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const jlm::rvsdg::node * 
   std::unordered_set<rvsdg::Region *> subregions;
   for (const auto & input : inputs)
   {
-    for (const auto & argument : *input)
+    for (const auto & argument : gamma->MapInputEntryVar(*input).branches)
     {
-      if (argument.nusers() != 0)
-        subregions.insert(argument.region());
+      if (argument->nusers() != 0)
+        subregions.insert(argument->region());
     }
   }
 
@@ -254,13 +258,15 @@ pull(rvsdg::GammaNode * gamma)
   auto prednode = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
 
   /* FIXME: This is inefficient. We can do better. */
-  auto ev = gamma->begin_entryvar();
-  while (ev != gamma->end_entryvar())
+  auto evs = gamma->GetEntryVars();
+  size_t index = 0;
+  while (index < evs.size())
   {
-    auto node = jlm::rvsdg::node_output::node(ev->origin());
+    const auto & ev = evs[index];
+    auto node = jlm::rvsdg::node_output::node(ev.input->origin());
     if (!node || prednode == node || !single_successor(node))
     {
-      ev++;
+      index++;
       continue;
     }
 
@@ -272,11 +278,12 @@ pull(rvsdg::GammaNode * gamma)
       */
       pullin_node(gamma, node);
       cleanup(gamma, node);
-      ev = gamma->begin_entryvar();
+      evs = gamma->GetEntryVars();
+      index = 0;
     }
     else
     {
-      ev++;
+      index++;
     }
   }
 }

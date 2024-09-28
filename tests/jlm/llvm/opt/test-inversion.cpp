@@ -43,16 +43,16 @@ test1()
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
-  auto evx = gamma->add_entryvar(lvx->argument());
-  auto evy = gamma->add_entryvar(lvy->argument());
+  auto evx = gamma->AddEntryVar(lvx->argument());
+  auto evy = gamma->AddEntryVar(lvy->argument());
 
   auto b = jlm::tests::create_testop(
       gamma->subregion(0),
-      { evx->argument(0), evy->argument(0) },
+      { evx.branches[0], evy.branches[0] },
       { vt })[0];
   auto c = jlm::tests::create_testop(
       gamma->subregion(1),
-      { evx->argument(1), evy->argument(1) },
+      { evx.branches[1], evy.branches[1] },
       { vt })[0];
 
   auto xvy = gamma->add_exitvar({ b, c });
@@ -98,13 +98,13 @@ test2()
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
-  auto ev1 = gamma->add_entryvar(n1);
-  auto ev2 = gamma->add_entryvar(lv1->argument());
-  auto ev3 = gamma->add_entryvar(n2);
+  auto ev1 = gamma->AddEntryVar(n1);
+  auto ev2 = gamma->AddEntryVar(lv1->argument());
+  auto ev3 = gamma->AddEntryVar(n2);
 
-  gamma->add_exitvar({ ev1->argument(0), ev1->argument(1) });
-  gamma->add_exitvar({ ev2->argument(0), ev2->argument(1) });
-  gamma->add_exitvar({ ev3->argument(0), ev3->argument(1) });
+  gamma->add_exitvar(ev1.branches);
+  gamma->add_exitvar(ev2.branches);
+  gamma->add_exitvar(ev3.branches);
 
   lv1->result()->divert_to(gamma->output(1));
 

@@ -51,18 +51,18 @@ TestGamma()
   auto y = lambdaNode->fctargument(2);
 
   auto gammaNode1 = jlm::rvsdg::GammaNode::create(c, 2);
-  auto gammaInput1 = gammaNode1->add_entryvar(c);
-  auto gammaInput2 = gammaNode1->add_entryvar(x);
-  auto gammaInput3 = gammaNode1->add_entryvar(y);
+  auto gammaInput1 = gammaNode1->AddEntryVar(c);
+  auto gammaInput2 = gammaNode1->AddEntryVar(x);
+  auto gammaInput3 = gammaNode1->AddEntryVar(y);
 
-  auto gammaNode2 = jlm::rvsdg::GammaNode::create(gammaInput1->argument(0), 2);
-  auto gammaInput4 = gammaNode2->add_entryvar(gammaInput2->argument(0));
-  auto gammaInput5 = gammaNode2->add_entryvar(gammaInput3->argument(0));
-  gammaNode2->add_exitvar({ gammaInput4->argument(0), gammaInput4->argument(1) });
-  gammaNode2->add_exitvar({ gammaInput5->argument(0), gammaInput5->argument(1) });
+  auto gammaNode2 = jlm::rvsdg::GammaNode::create(gammaInput1.branches[0], 2);
+  auto gammaInput4 = gammaNode2->AddEntryVar(gammaInput2.branches[0]);
+  auto gammaInput5 = gammaNode2->AddEntryVar(gammaInput3.branches[0]);
+  gammaNode2->add_exitvar(gammaInput4.branches);
+  gammaNode2->add_exitvar(gammaInput5.branches);
 
-  gammaNode1->add_exitvar({ gammaNode2->output(0), gammaInput2->argument(1) });
-  gammaNode1->add_exitvar({ gammaNode2->output(1), gammaInput3->argument(1) });
+  gammaNode1->add_exitvar({ gammaNode2->output(0), gammaInput2.branches[1] });
+  gammaNode1->add_exitvar({ gammaNode2->output(1), gammaInput3.branches[1] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaNode1->output(0), gammaNode1->output(1) });
 
@@ -163,18 +163,18 @@ TestCall()
     auto memoryStateArgument = lambdaNode->fctargument(4);
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
-    auto gammaInputX = gammaNode->add_entryvar(xArgument);
-    auto gammaInputY = gammaNode->add_entryvar(yArgument);
-    auto gammaInputIOState = gammaNode->add_entryvar(ioStateArgument);
-    auto gammaInputMemoryState = gammaNode->add_entryvar(memoryStateArgument);
+    auto gammaInputX = gammaNode->AddEntryVar(xArgument);
+    auto gammaInputY = gammaNode->AddEntryVar(yArgument);
+    auto gammaInputIOState = gammaNode->AddEntryVar(ioStateArgument);
+    auto gammaInputMemoryState = gammaNode->AddEntryVar(memoryStateArgument);
     auto gammaOutputX =
-        gammaNode->add_exitvar({ gammaInputY->argument(0), gammaInputY->argument(1) });
+        gammaNode->add_exitvar({ gammaInputY.branches[0], gammaInputY.branches[1] });
     auto gammaOutputY =
-        gammaNode->add_exitvar({ gammaInputX->argument(0), gammaInputX->argument(1) });
+        gammaNode->add_exitvar({ gammaInputX.branches[0], gammaInputX.branches[1] });
     auto gammaOutputIOState =
-        gammaNode->add_exitvar({ gammaInputIOState->argument(0), gammaInputIOState->argument(1) });
+        gammaNode->add_exitvar({ gammaInputIOState.branches[0], gammaInputIOState.branches[1] });
     auto gammaOutputMemoryState = gammaNode->add_exitvar(
-        { gammaInputMemoryState->argument(0), gammaInputMemoryState->argument(1) });
+        { gammaInputMemoryState.branches[0], gammaInputMemoryState.branches[1] });
 
     lambdaOutputTest1 = lambdaNode->finalize(
         { gammaOutputX, gammaOutputY, gammaOutputIOState, gammaOutputMemoryState });
@@ -253,16 +253,13 @@ TestCallWithMemoryStateNodes()
 
     auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
 
-    auto gammaInputX = gammaNode->add_entryvar(xArgument);
-    auto gammaInputMemoryState1 = gammaNode->add_entryvar(lambdaEntrySplitResults[0]);
-    auto gammaInputMemoryState2 = gammaNode->add_entryvar(lambdaEntrySplitResults[1]);
+    auto gammaInputX = gammaNode->AddEntryVar(xArgument);
+    auto gammaInputMemoryState1 = gammaNode->AddEntryVar(lambdaEntrySplitResults[0]);
+    auto gammaInputMemoryState2 = gammaNode->AddEntryVar(lambdaEntrySplitResults[1]);
 
-    auto gammaOutputX =
-        gammaNode->add_exitvar({ gammaInputX->argument(0), gammaInputX->argument(1) });
-    auto gammaOutputMemoryState1 = gammaNode->add_exitvar(
-        { gammaInputMemoryState2->argument(0), gammaInputMemoryState2->argument(1) });
-    auto gammaOutputMemoryState2 = gammaNode->add_exitvar(
-        { gammaInputMemoryState1->argument(0), gammaInputMemoryState1->argument(1) });
+    auto gammaOutputX = gammaNode->add_exitvar(gammaInputX.branches);
+    auto gammaOutputMemoryState1 = gammaNode->add_exitvar(gammaInputMemoryState2.branches);
+    auto gammaOutputMemoryState2 = gammaNode->add_exitvar(gammaInputMemoryState1.branches);
 
     auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
         *lambdaNode->subregion(),

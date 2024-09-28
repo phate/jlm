@@ -929,16 +929,16 @@ void
 Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 {
   // Handle input variables
-  for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)
+  for (const auto & ev : gamma.GetEntryVars())
   {
-    if (!IsOrContainsPointerType(ev->type()))
+    if (!IsOrContainsPointerType(ev.input->type()))
       continue;
 
-    auto & inputRegister = *ev->origin();
+    auto & inputRegister = *ev.input->origin();
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
 
-    for (auto & argument : *ev)
-      Set_->MapRegisterToExistingPointerObject(argument, inputRegisterPO);
+    for (auto & argument : ev.branches)
+      Set_->MapRegisterToExistingPointerObject(*argument, inputRegisterPO);
   }
 
   // Handle subregions

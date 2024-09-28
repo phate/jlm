@@ -858,9 +858,9 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
-    auto gammaInput = gammaNode.add_entryvar(&memoryNodeStatePair->State());
-    for (auto & argument : *gammaInput)
-      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), argument);
+    auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
+    for (auto & argument : gammaInput.branches)
+      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *argument);
   }
 }
 

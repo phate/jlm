@@ -106,7 +106,6 @@ private:
 
 /* gamma node */
 
-class GammaInput;
 class GammaOutput;
 
 class GammaNode : public structural_node
@@ -116,58 +115,6 @@ public:
 
 private:
   GammaNode(rvsdg::output * predicate, size_t nalternatives);
-
-  class entryvar_iterator
-  {
-  public:
-    constexpr entryvar_iterator(GammaInput * input) noexcept
-        : input_(input)
-    {}
-
-    GammaInput *
-    input() const noexcept
-    {
-      return input_;
-    }
-
-    const entryvar_iterator &
-    operator++() noexcept;
-
-    inline const entryvar_iterator
-    operator++(int) noexcept
-    {
-      entryvar_iterator it(*this);
-      ++(*this);
-      return it;
-    }
-
-    inline bool
-    operator==(const entryvar_iterator & other) const noexcept
-    {
-      return input_ == other.input_;
-    }
-
-    inline bool
-    operator!=(const entryvar_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    GammaInput &
-    operator*() noexcept
-    {
-      return *input_;
-    }
-
-    GammaInput *
-    operator->() noexcept
-    {
-      return input_;
-    }
-
-  private:
-    GammaInput * input_;
-  };
 
   class exitvar_iterator
   {
@@ -222,13 +169,28 @@ private:
   };
 
 public:
+  /**
+   * \brief A variable routed into a gamma region
+   */
+  struct EntryVar
+  {
+    /**
+     * \brief Variable at entry point (input to gamma node)
+     */
+    rvsdg::input * input;
+    /**
+     * \brief Variable inside each of the branch regions (argument in per subregion)
+     */
+    std::vector<rvsdg::output *> branches;
+  };
+
   static GammaNode *
   create(jlm::rvsdg::output * predicate, size_t nalternatives)
   {
     return new GammaNode(predicate, nalternatives);
   }
 
-  inline GammaInput *
+  inline rvsdg::input *
   predicate() const noexcept;
 
   inline size_t
@@ -244,26 +206,11 @@ public:
     return node::noutputs();
   }
 
-  inline GammaInput *
+  inline rvsdg::input *
   entryvar(size_t index) const noexcept;
 
   [[nodiscard]] inline GammaOutput *
   exitvar(size_t index) const noexcept;
-
-  inline GammaNode::entryvar_iterator
-  begin_entryvar() const
-  {
-    if (nentryvars() == 0)
-      return entryvar_iterator(nullptr);
-
-    return entryvar_iterator(entryvar(0));
-  }
-
-  inline GammaNode::entryvar_iterator
-  end_entryvar() const
-  {
-    return entryvar_iterator(nullptr);
-  }
 
   inline GammaNode::exitvar_iterator
   begin_exitvar() const
@@ -280,8 +227,60 @@ public:
     return exitvar_iterator(nullptr);
   }
 
-  inline GammaInput *
-  add_entryvar(jlm::rvsdg::output * origin);
+  /**
+   * \brief Routes a variable into the gamma branches.
+   *
+   * \param origin
+   *   Value to be routed in.
+   *
+   * \returns
+   *   Description of entry variable.
+   *
+   * Routes a variable into a gamma region. To access the
+   * variable in each branch use \ref EntryVar::branches.
+   */
+  EntryVar
+  AddEntryVar(rvsdg::output * origin);
+
+  /**
+   * \brief Gets entry variable by index.
+   *
+   * \param index
+   *   Index of entry variable
+   *
+   * \returns
+   *   Description of entry variable.
+   *
+   * Looks up the \p index 'th entry variable into the gamma
+   * node and returns its description.
+   */
+  EntryVar
+  GetEntryVar(std::size_t index) const;
+
+  /**
+   * \brief Gets all entry variables for this gamma.
+   */
+  std::vector<EntryVar>
+  GetEntryVars() const;
+
+  /**
+   * \brief Maps gamma input to entry variable.
+   *
+   * \param input
+   *   Input to be mapped.
+   *
+   * \returns
+   *   The entry variable description corresponding to this input
+   *
+   * \pre
+   *   \p input must be an input of this node and must not be the predicate
+   *
+   * Maps the gamma input to the entry variable description corresponding
+   * to it. This allows to trace the value through to users in the
+   * gamma subregions.
+   */
+  EntryVar
+  MapInputEntryVar(const rvsdg::input & input) const;
 
   inline GammaOutput *
   add_exitvar(const std::vector<jlm::rvsdg::output *> & values);
@@ -313,67 +312,6 @@ public:
 
   virtual GammaNode *
   copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
-};
-
-/* gamma input */
-
-class GammaInput final : public structural_input
-{
-  friend GammaNode;
-
-public:
-  ~GammaInput() noexcept override;
-
-private:
-  GammaInput(GammaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::type> type)
-      : structural_input(node, origin, std::move(type))
-  {}
-
-public:
-  GammaNode *
-  node() const noexcept
-  {
-    return static_cast<GammaNode *>(structural_input::node());
-  }
-
-  inline argument_list::iterator
-  begin()
-  {
-    return arguments.begin();
-  }
-
-  inline argument_list::const_iterator
-  begin() const
-  {
-    return arguments.begin();
-  }
-
-  inline argument_list::iterator
-  end()
-  {
-    return arguments.end();
-  }
-
-  inline argument_list::const_iterator
-  end() const
-  {
-    return arguments.end();
-  }
-
-  inline size_t
-  narguments() const noexcept
-  {
-    return arguments.size();
-  }
-
-  [[nodiscard]] RegionArgument *
-  argument(size_t n) const noexcept
-  {
-    JLM_ASSERT(n < narguments());
-    auto argument = node()->subregion(n)->argument(index() - 1);
-    JLM_ASSERT(argument->input() == this);
-    return argument;
-  }
 };
 
 /* gamma output */
@@ -453,8 +391,8 @@ public:
 inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
     : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(
-      std::unique_ptr<node_input>(new GammaInput(this, predicate, ctltype::Create(nalternatives))));
+  node::add_input(std::unique_ptr<node_input>(
+      new rvsdg::structural_input(this, predicate, ctltype::Create(nalternatives))));
 }
 
 /**
@@ -471,12 +409,12 @@ public:
   Copy(rvsdg::Region & region, structural_input * input) override;
 
 private:
-  GammaArgument(rvsdg::Region & region, GammaInput & input)
+  GammaArgument(rvsdg::Region & region, rvsdg::structural_input & input)
       : RegionArgument(&region, &input, input.Type())
   {}
 
   static GammaArgument &
-  Create(rvsdg::Region & region, GammaInput & input)
+  Create(rvsdg::Region & region, rvsdg::structural_input & input)
   {
     auto gammaArgument = new GammaArgument(region, input);
     region.append_argument(gammaArgument);
@@ -511,37 +449,22 @@ private:
   }
 };
 
-inline GammaInput *
+inline rvsdg::input *
 GammaNode::predicate() const noexcept
 {
-  return util::AssertedCast<GammaInput>(structural_node::input(0));
+  return structural_node::input(0);
 }
 
-inline GammaInput *
+inline rvsdg::input *
 GammaNode::entryvar(size_t index) const noexcept
 {
-  return util::AssertedCast<GammaInput>(node::input(index + 1));
+  return node::input(index + 1);
 }
 
 inline GammaOutput *
 GammaNode::exitvar(size_t index) const noexcept
 {
   return static_cast<GammaOutput *>(node::output(index));
-}
-
-inline GammaInput *
-GammaNode::add_entryvar(jlm::rvsdg::output * origin)
-{
-  auto input =
-      node::add_input(std::unique_ptr<node_input>(new GammaInput(this, origin, origin->Type())));
-  auto gammaInput = util::AssertedCast<GammaInput>(input);
-
-  for (size_t n = 0; n < nsubregions(); n++)
-  {
-    GammaArgument::Create(*subregion(n), *gammaInput);
-  }
-
-  return gammaInput;
 }
 
 inline GammaOutput *

@@ -73,7 +73,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 
   if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
-    gamma->add_entryvar(output);
+    gamma->AddEntryVar(output);
     output = region->argument(region->narguments() - 1);
   }
   else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))

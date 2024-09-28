@@ -1615,16 +1615,16 @@ void
 Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
 {
   // Handle entry variables
-  for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++)
+  for (const auto & ev : node.GetEntryVars())
   {
-    auto & origin = *ev->origin();
+    auto & origin = *ev.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
-      auto & originLocation = Context_->GetLocation(*ev->origin());
-      for (auto & argument : *ev)
+      auto & originLocation = Context_->GetLocation(*ev.input->origin());
+      for (auto argument : ev.branches)
       {
-        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(argument);
+        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*argument);
         Context_->Join(argumentLocation, originLocation);
       }
     }

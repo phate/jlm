@@ -24,6 +24,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
     changed = false;
     for (auto user : *out)
     {
+      auto node = rvsdg::input::GetNode(*user);
       if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
       {
         auto arg = ti->argument();
@@ -45,24 +46,24 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
           break;
         }
       }
-      if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
+      if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(node))
       {
-        if (gi->node()->predicate() == gi)
+        if (gammaNode->predicate() == user)
         {
           continue;
         }
-        for (int i = gi->narguments() - 1; i >= 0; --i)
+        for (auto argument : gammaNode->MapInputEntryVar(*user).branches)
         {
-          if (gi->argument(i)->nusers())
+          if (argument->nusers())
           {
             auto arg_replacement = dynamic_cast<rvsdg::simple_output *>(
-                rvsdg::simple_node::create_normalized(gi->argument(i)->region(), op, {})[0]);
-            gi->argument(i)->divert_users(arg_replacement);
+                rvsdg::simple_node::create_normalized(argument->region(), op, {})[0]);
+            argument->divert_users(arg_replacement);
             distribute_constant(op, arg_replacement);
           }
-          gi->node()->subregion(i)->RemoveArgument(gi->argument(i)->index());
+          argument->region()->RemoveArgument(argument->index());
         }
-        gi->node()->RemoveInput(gi->index());
+        gammaNode->RemoveInput(user->index());
         changed = true;
         break;
       }

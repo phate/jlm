@@ -559,8 +559,9 @@ TestGamma()
 
   for (size_t n = 0; n < 4; n++)
   {
-    auto & argument0 = ptg->GetRegisterNode(*test.gamma->entryvar(n)->argument(0));
-    auto & argument1 = ptg->GetRegisterNode(*test.gamma->entryvar(n)->argument(1));
+    auto entryvar = test.gamma->GetEntryVar(n);
+    auto & argument0 = ptg->GetRegisterNode(*entryvar.branches[0]);
+    auto & argument1 = ptg->GetRegisterNode(*entryvar.branches[1]);
 
     assert(TargetsExactly(argument0, { &lambda, &ptg->GetExternalMemoryNode() }));
     assert(TargetsExactly(argument1, { &lambda, &ptg->GetExternalMemoryNode() }));

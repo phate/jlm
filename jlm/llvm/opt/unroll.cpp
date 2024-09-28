@@ -405,9 +405,9 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
     rvsdg::SubstitutionMap rmap[2];
     for (const auto & olv : *otheta)
     {
-      auto ev = ngamma->add_entryvar(olv->input()->origin());
-      auto nlv = ntheta->add_loopvar(ev->argument(1));
-      rmap[0].insert(olv, ev->argument(0));
+      auto ev = ngamma->AddEntryVar(olv->input()->origin());
+      auto nlv = ntheta->add_loopvar(ev.branches[1]);
+      rmap[0].insert(olv, ev.branches[0]);
       rmap[1].insert(olv->argument(), nlv->argument());
     }
 
@@ -438,9 +438,9 @@ unroll_unknown_theta(const unrollinfo & ui, size_t factor)
     rvsdg::SubstitutionMap rmap[2];
     for (const auto & olv : *otheta)
     {
-      auto ev = ngamma->add_entryvar(smap.lookup(olv));
-      auto nlv = ntheta->add_loopvar(ev->argument(1));
-      rmap[0].insert(olv, ev->argument(0));
+      auto ev = ngamma->AddEntryVar(smap.lookup(olv));
+      auto nlv = ntheta->add_loopvar(ev.branches[1]);
+      rmap[0].insert(olv, ev.branches[0]);
       rmap[1].insert(olv->argument(), nlv->argument());
     }
 

@@ -35,14 +35,14 @@ test_gamma()
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
-  auto evx = gamma->add_entryvar(x);
-  auto evs = gamma->add_entryvar(s);
+  auto evx = gamma->AddEntryVar(x);
+  auto evs = gamma->AddEntryVar(s);
 
   auto null = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
-  auto bin = jlm::tests::create_testop(gamma->subregion(0), { null, evx->argument(0) }, { vt })[0];
-  auto state = jlm::tests::create_testop(gamma->subregion(0), { bin, evs->argument(0) }, { st })[0];
+  auto bin = jlm::tests::create_testop(gamma->subregion(0), { null, evx.branches[0] }, { vt })[0];
+  auto state = jlm::tests::create_testop(gamma->subregion(0), { bin, evs.branches[0] }, { st })[0];
 
-  gamma->add_exitvar({ state, evs->argument(1) });
+  gamma->add_exitvar({ state, evs.branches[1] });
 
   GraphExport::Create(*gamma->output(0), "x");
 

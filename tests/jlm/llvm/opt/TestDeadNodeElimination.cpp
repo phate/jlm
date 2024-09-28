@@ -60,15 +60,15 @@ TestGamma()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
-  auto ev1 = gamma->add_entryvar(x);
-  auto ev2 = gamma->add_entryvar(y);
-  auto ev3 = gamma->add_entryvar(x);
+  auto ev1 = gamma->AddEntryVar(x);
+  auto ev2 = gamma->AddEntryVar(y);
+  auto ev3 = gamma->AddEntryVar(x);
 
-  auto t = jlm::tests::create_testop(gamma->subregion(1), { ev2->argument(1) }, { vt })[0];
+  auto t = jlm::tests::create_testop(gamma->subregion(1), { ev2.branches[1] }, { vt })[0];
 
-  gamma->add_exitvar({ ev1->argument(0), ev1->argument(1) });
-  gamma->add_exitvar({ ev2->argument(0), t });
-  gamma->add_exitvar({ ev3->argument(0), ev1->argument(1) });
+  gamma->add_exitvar(ev1.branches);
+  gamma->add_exitvar({ ev2.branches[0], t });
+  gamma->add_exitvar({ ev3.branches[0], ev1.branches[1] });
 
   GraphExport::Create(*gamma->output(0), "z");
   GraphExport::Create(*gamma->output(2), "w");
@@ -98,7 +98,7 @@ TestGamma2()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
-  gamma->add_entryvar(x);
+  gamma->AddEntryVar(x);
 
   auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
   auto n2 = jlm::tests::create_testop(gamma->subregion(1), {}, { vt })[0];

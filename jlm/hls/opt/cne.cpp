@@ -509,10 +509,10 @@ divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node));
   auto gamma = static_cast<GammaNode *>(node);
 
-  for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++)
+  for (const auto & ev : gamma->GetEntryVars())
   {
-    for (size_t n = 0; n < ev->narguments(); n++)
-      divert_users(ev->argument(n), ctx);
+    for (auto input : ev.branches)
+      divert_users(input, ctx);
   }
 
   for (size_t r = 0; r < node->nsubregions(); r++)

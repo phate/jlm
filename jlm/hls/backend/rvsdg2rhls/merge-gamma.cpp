@@ -121,11 +121,11 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
         auto new_gamma = rvsdg::GammaNode::create(new_match, match->nalternatives());
         rvsdg::SubstitutionMap rmap0; // subregion 0 of the new gamma - 1 of the old
         rvsdg::SubstitutionMap rmap1;
-        for (auto oev = old_gamma->begin_entryvar(); oev != old_gamma->end_entryvar(); oev++)
+        for (const auto & oev : old_gamma->GetEntryVars())
         {
-          auto nev = new_gamma->add_entryvar(oev->origin());
-          rmap0.insert(oev->argument(1), nev->argument(0));
-          rmap1.insert(oev->argument(0), nev->argument(1));
+          auto nev = new_gamma->AddEntryVar(oev.input->origin());
+          rmap0.insert(oev.branches[1], nev.branches[0]);
+          rmap1.insert(oev.branches[0], nev.branches[1]);
         }
         /* copy subregions */
         old_gamma->subregion(0)->copy(new_gamma->subregion(1), rmap1, false, false);
@@ -250,18 +250,17 @@ depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
   return false;
 }
 
-rvsdg::GammaInput *
+rvsdg::input *
 get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
 {
   for (auto user : *origin)
   {
-    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
-    if (gi && gi->node() == gamma)
+    if (rvsdg::input::GetNode(*user) == gamma)
     {
-      return gi;
+      return user;
     }
   }
-  return gamma->add_entryvar(origin);
+  return gamma->AddEntryVar(origin).input;
 }
 
 bool
@@ -269,11 +268,10 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
-    if (gi && gi != gamma->predicate())
+    auto other_gamma = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+    if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate
-      auto other_gamma = gi->node();
       JLM_ASSERT(other_gamma->nsubregions() == gamma->nsubregions());
       bool can_merge = true;
       for (size_t i = 0; i < gamma->nentryvars(); ++i)
@@ -302,15 +300,17 @@ merge_gamma(rvsdg::GammaNode * gamma)
             auto go = dynamic_cast<rvsdg::GammaOutput *>(ev->origin());
             for (size_t j = 0; j < gamma->nsubregions(); ++j)
             {
-              rmap[j].insert(ev->argument(j), go->result(j)->origin());
+              rmap[j].insert(gamma->MapInputEntryVar(*ev).branches[j], go->result(j)->origin());
             }
           }
           else
           {
             auto oev = get_entryvar(ev->origin(), other_gamma);
+            const auto & evArguments = gamma->MapInputEntryVar(*ev).branches;
+            const auto & oevArguments = other_gamma->MapInputEntryVar(*oev).branches;
             for (size_t j = 0; j < gamma->nsubregions(); ++j)
             {
-              rmap[j].insert(ev->argument(j), oev->argument(j));
+              rmap[j].insert(evArguments[j], oevArguments[j]);
             }
           }
         }
