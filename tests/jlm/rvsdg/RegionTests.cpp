@@ -12,6 +12,74 @@
 #include <algorithm>
 #include <cassert>
 
+static int
+IteratorRanges()
+{
+  using namespace jlm::tests;
+
+  // Arrange
+  auto valueType = valuetype::Create();
+
+  jlm::rvsdg::graph graph;
+
+  auto structuralNode = structural_node::create(graph.root(), 1);
+  auto & subregion = *structuralNode->subregion(0);
+  auto & constSubregion = *static_cast<const jlm::rvsdg::Region *>(structuralNode->subregion(0));
+
+  auto & argument0 = TestGraphArgument::Create(subregion, nullptr, valueType);
+  auto & argument1 = TestGraphArgument::Create(subregion, nullptr, valueType);
+
+  auto topNode0 = test_op::create(&subregion, {}, { valueType });
+  auto node0 = test_op::create(&subregion, { &argument0 }, { valueType });
+  auto node1 = test_op::create(&subregion, { &argument1 }, { valueType });
+  auto bottomNode0 = test_op::create(&subregion, { &argument0, &argument1 }, { valueType });
+
+  auto & result0 = TestGraphResult::Create(*topNode0->output(0), nullptr);
+  auto & result1 = TestGraphResult::Create(*node0->output(0), nullptr);
+  auto & result2 = TestGraphResult::Create(*node1->output(0), nullptr);
+
+  // Act & Assert
+  auto numArguments = std::distance(subregion.Arguments().begin(), subregion.Arguments().end());
+  assert(numArguments == 2);
+  for (auto & argument : constSubregion.Arguments())
+  {
+    assert(argument == &argument0 || argument == &argument1);
+  }
+
+  auto numTopNodes = std::distance(subregion.TopNodes().begin(), subregion.TopNodes().end());
+  assert(numTopNodes == 1);
+  for (auto & topNode : constSubregion.TopNodes())
+  {
+    assert(&topNode == topNode0);
+  }
+
+  auto numNodes = std::distance(subregion.Nodes().begin(), subregion.Nodes().end());
+  assert(numNodes == 4);
+  for (auto & node : constSubregion.Nodes())
+  {
+    assert(&node == topNode0 || &node == node0 || &node == node1 || &node == bottomNode0);
+  }
+
+  auto numBottomNodes =
+      std::distance(subregion.BottomNodes().begin(), subregion.BottomNodes().end());
+  assert(numBottomNodes == 1);
+  for (auto & bottomNode : constSubregion.BottomNodes())
+  {
+    assert(&bottomNode == bottomNode0);
+  }
+
+  auto numResults = std::distance(subregion.Results().begin(), subregion.Results().end());
+  assert(numResults == 3);
+  for (auto & result : constSubregion.Results())
+  {
+    assert(result == &result0 || result == &result1 || result == &result2);
+  }
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-IteratorRanges", IteratorRanges)
+
 /**
  * Test Region::Contains().
  */
