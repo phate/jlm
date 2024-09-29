@@ -597,7 +597,7 @@ InputPort::InputPort(jlm::util::InOutNode & node)
 const char *
 InputPort::GetIdPrefix() const
 {
-  return "i";
+  return "in";
 }
 
 Node &
@@ -634,7 +634,7 @@ OutputPort::OutputPort(jlm::util::InOutNode & node)
 const char *
 OutputPort::GetIdPrefix() const
 {
-  return "o";
+  return "out";
 }
 
 Node &
@@ -889,7 +889,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
     for (auto & graph : SubGraphs_)
     {
       out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" BGCOLOR=\"white\" ";
-      out << "SUBGRAPH=\"" << graph->GetFullId() << "\">";
+      out << "_SUBGRAPH=\"" << graph->GetFullId() << "\">";
       PrintStringAsHtmlText(out, graph->GetFullId(), true);
       out << "</TD>" << std::endl;
     }
@@ -917,7 +917,7 @@ ArgumentNode::ArgumentNode(jlm::util::Graph & graph)
 const char *
 ArgumentNode::GetIdPrefix() const
 {
-  return "a";
+  return "arg";
 }
 
 bool
@@ -958,7 +958,7 @@ ResultNode::ResultNode(jlm::util::Graph & graph)
 const char *
 ResultNode::GetIdPrefix() const
 {
-  return "r";
+  return "res";
 }
 
 bool

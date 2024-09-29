@@ -144,9 +144,16 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     auto & argument = *region.argument(n);
     AttachNodeOutput(node, argument, typeGraph);
 
+    // Give the argument a label using its local index, not the global argument index
+    node.SetLabel(util::strfmt("a", n));
+
     // If this argument corresponds to one of the structural node's inputs, reference it
     if (argument.input())
+    {
       node.SetAttributeObject("input", *argument.input());
+      // Include the local index of the node's input in the label
+      node.AppendToLabel(util::strfmt("<- i", argument.input()->index()), " ");
+    }
   }
 
   // Create a node for each node in the region in topological order.
@@ -182,9 +189,16 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     auto & result = *region.result(n);
     AttachNodeInput(node, result);
 
+    // Use the result's local index as the label
+    node.SetLabel(util::strfmt("r", n));
+
     // If this result corresponds to one of the structural node's outputs, reference it
     if (result.output())
+    {
       node.SetAttributeObject("output", *result.output());
+      // Include the local index of the node's output in the label
+      node.AppendToLabel(util::strfmt("-> o", result.output()->index()), " ");
+    }
   }
 }
 
