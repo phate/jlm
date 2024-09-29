@@ -376,7 +376,25 @@ public:
     return std::unique_ptr<cfg>(new cfg(im));
   }
 
+  static std::string
+  ToAscii(const cfg & controlFlowGraph);
+
 private:
+  static std::string
+  ToAscii(const entry_node & entryNode);
+
+  static std::string
+  ToAscii(const exit_node & exitNode);
+
+  static std::string
+  ToAscii(const basic_block & basicBlock);
+
+  static std::string
+  CreateTargets(const cfg_node & node);
+
+  static std::string
+  CreateLabel(const cfg_node & node);
+
   ipgraph_module & module_;
   std::unique_ptr<exit_node> exit_;
   std::unique_ptr<entry_node> entry_;

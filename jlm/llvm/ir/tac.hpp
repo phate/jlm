@@ -126,6 +126,9 @@ public:
   void
   convert(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
 
+  static std::string
+  ToAscii(const tac & threeAddressCode);
+
   static std::unique_ptr<llvm::tac>
   create(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands)
   {

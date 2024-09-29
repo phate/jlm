@@ -190,6 +190,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/test-ssa-destruction \
     tests/jlm/llvm/ir/TestTypes \
     tests/jlm/llvm/ir/TestAnnotation \
+    tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
