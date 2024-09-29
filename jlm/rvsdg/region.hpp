@@ -146,6 +146,20 @@ private:
   structural_output * output_;
 };
 
+/**
+ * \brief Represent acyclic RVSDG subgraphs
+ *
+ * Regions represent acyclic RVSDG subgraphs and are instantiated with an index in \ref
+ * structural_node%s. Each region has \ref RegionArgument%s and \ref RegionResult%s that represent
+ * the values at the beginning and end of the acyclic graph, respectively. In addition, each region
+ * keeps track of the following properties:
+ *
+ * 1. The nodes of the acyclic subgraph. They represent the computations performed in the region.
+ * 2. The top nodes of the acyclic subgraph. These are all nodes of the region that have no inputs,
+ * i.e., constants.
+ * 3. The bottom nodes of the acyclic subgraph. These are all nodes of the region that have no
+ * users, i.e. that are dead. See \ref output::IsDead() for more information.
+ */
 class Region
 {
   typedef jlm::util::intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_node_list_accessor>
