@@ -145,7 +145,6 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     AttachNodeOutput(node, argument, typeGraph);
 
     // Give the argument a label using its local index, not the global argument index
-    // Use an uppercase A to distinguish
     node.SetLabel(util::strfmt("a", n));
 
     // If this argument corresponds to one of the structural node's inputs, reference it
