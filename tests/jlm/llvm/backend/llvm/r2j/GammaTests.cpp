@@ -221,7 +221,7 @@ PartialEmptyGamma()
   assert(ipg.nnodes() == 1);
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
-  print_ascii(*cfg, stdout);
+  std::cout << cfg::ToAscii(*cfg) << std::flush;
 
   assert(!is_proper_structured(*cfg));
   assert(is_structured(*cfg));

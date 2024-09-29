@@ -67,7 +67,7 @@ test_is_structured()
   bb->add_outedge(join);
   join->add_outedge(cfg.exit());
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
   assert(is_structured(cfg));
 }
 
