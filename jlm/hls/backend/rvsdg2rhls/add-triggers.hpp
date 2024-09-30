@@ -17,7 +17,7 @@ rvsdg::output *
 get_trigger(rvsdg::Region * region);
 
 llvm::lambda::node *
-add_lambda_argument(llvm::lambda::node * ln, const rvsdg::type * type);
+add_lambda_argument(llvm::lambda::node * ln, const rvsdg::Type * type);
 
 void
 add_triggers(rvsdg::Region * region);

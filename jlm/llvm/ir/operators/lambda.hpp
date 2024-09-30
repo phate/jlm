@@ -484,13 +484,13 @@ class output final : public jlm::rvsdg::structural_output
 public:
   ~output() override;
 
-  output(lambda::node * node, std::shared_ptr<const rvsdg::type> type)
+  output(lambda::node * node, std::shared_ptr<const rvsdg::Type> type)
       : structural_output(node, std::move(type))
   {}
 
 private:
   static output *
-  create(lambda::node * node, std::shared_ptr<const rvsdg::type> type)
+  create(lambda::node * node, std::shared_ptr<const rvsdg::Type> type)
   {
     auto output = std::make_unique<lambda::output>(node, std::move(type));
     return jlm::util::AssertedCast<lambda::output>(node->append_output(std::move(output)));
@@ -529,12 +529,12 @@ public:
   Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
 private:
-  fctargument(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  fctargument(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
       : rvsdg::RegionArgument(region, nullptr, std::move(type))
   {}
 
   static fctargument *
-  create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto argument = new fctargument(region, std::move(type));
     region->append_argument(argument);

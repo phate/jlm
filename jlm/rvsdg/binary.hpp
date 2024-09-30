@@ -135,8 +135,8 @@ public:
   virtual ~binary_op() noexcept;
 
   inline binary_op(
-      const std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
-      std::shared_ptr<const jlm::rvsdg::type> result)
+      const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
+      std::shared_ptr<const jlm::rvsdg::Type> result)
       : simple_op(std::move(operands), { std::move(result) })
   {}
 

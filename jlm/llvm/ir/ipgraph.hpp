@@ -180,10 +180,10 @@ public:
   virtual const std::string &
   name() const noexcept = 0;
 
-  virtual const jlm::rvsdg::type &
+  virtual const jlm::rvsdg::Type &
   type() const noexcept = 0;
 
-  virtual std::shared_ptr<const jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::Type>
   Type() const = 0;
 
   virtual const llvm::linkage &
@@ -223,10 +223,10 @@ public:
     return cfg_.get();
   }
 
-  virtual const jlm::rvsdg::type &
+  virtual const jlm::rvsdg::Type &
   type() const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
   const FunctionType &
@@ -393,7 +393,7 @@ public:
   virtual const PointerType &
   type() const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
   [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &

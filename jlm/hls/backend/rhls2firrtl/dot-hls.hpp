@@ -31,7 +31,7 @@ private:
   node_to_dot(const jlm::rvsdg::node * node);
 
   std::string
-  edge(std::string src, std::string snk, const jlm::rvsdg::type & type, bool back = false);
+  edge(std::string src, std::string snk, const jlm::rvsdg::Type & type, bool back = false);
 
   std::string
   loop_to_dot(hls::loop_node * ln);

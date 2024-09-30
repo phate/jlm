@@ -66,7 +66,7 @@ private:
 /* gamma operation */
 
 class output;
-class type;
+class Type;
 
 class GammaOperation final : public structural_op
 {
@@ -325,7 +325,7 @@ public:
   ~GammaInput() noexcept override;
 
 private:
-  GammaInput(GammaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::type> type)
+  GammaInput(GammaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::Type> type)
       : structural_input(node, origin, std::move(type))
   {}
 
@@ -385,7 +385,7 @@ class GammaOutput final : public structural_output
 public:
   ~GammaOutput() noexcept override;
 
-  GammaOutput(GammaNode * node, std::shared_ptr<const rvsdg::type> type)
+  GammaOutput(GammaNode * node, std::shared_ptr<const rvsdg::Type> type)
       : structural_output(node, std::move(type))
   {}
 

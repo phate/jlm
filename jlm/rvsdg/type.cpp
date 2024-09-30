@@ -9,7 +9,7 @@
 namespace jlm::rvsdg
 {
 
-type::~type() noexcept
+Type::~Type() noexcept
 {}
 
 valuetype::~valuetype() noexcept

@@ -634,7 +634,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
       }
       else
       {
-        JLM_UNREACHABLE("Unhandled node type!");
+        JLM_UNREACHABLE("Unhandled node Type!");
       }
     }
 

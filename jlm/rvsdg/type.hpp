@@ -13,21 +13,21 @@
 namespace jlm::rvsdg
 {
 
-class type
+class Type
 {
 public:
-  virtual ~type() noexcept;
+  virtual ~Type() noexcept;
 
 protected:
-  inline constexpr type() noexcept
+  inline constexpr Type() noexcept
   {}
 
 public:
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept = 0;
+  operator==(const jlm::rvsdg::Type & other) const noexcept = 0;
 
   inline bool
-  operator!=(const jlm::rvsdg::type & other) const noexcept
+  operator!=(const jlm::rvsdg::Type & other) const noexcept
   {
     return !(*this == other);
   }
@@ -44,46 +44,46 @@ public:
   ComputeHash() const noexcept = 0;
 };
 
-class valuetype : public jlm::rvsdg::type
+class valuetype : public jlm::rvsdg::Type
 {
 public:
   virtual ~valuetype() noexcept;
 
 protected:
   inline constexpr valuetype() noexcept
-      : jlm::rvsdg::type()
+      : jlm::rvsdg::Type()
   {}
 };
 
-class statetype : public jlm::rvsdg::type
+class statetype : public jlm::rvsdg::Type
 {
 public:
   virtual ~statetype() noexcept;
 
 protected:
   inline constexpr statetype() noexcept
-      : jlm::rvsdg::type()
+      : jlm::rvsdg::Type()
   {}
 };
 
 template<class T>
 static inline bool
-is(const jlm::rvsdg::type & type) noexcept
+is(const jlm::rvsdg::Type & type) noexcept
 {
   static_assert(
-      std::is_base_of<jlm::rvsdg::type, T>::value,
-      "Template parameter T must be derived from jlm::rvsdg::type.");
+      std::is_base_of<jlm::rvsdg::Type, T>::value,
+      "Template parameter T must be derived from jlm::rvsdg::Type.");
 
   return dynamic_cast<const T *>(&type) != nullptr;
 }
 
 template<class T>
 static inline bool
-is(const std::shared_ptr<const jlm::rvsdg::type> & type) noexcept
+is(const std::shared_ptr<const jlm::rvsdg::Type> & type) noexcept
 {
   static_assert(
-      std::is_base_of<jlm::rvsdg::type, T>::value,
-      "Template parameter T must be derived from jlm::rvsdg::type.");
+      std::is_base_of<jlm::rvsdg::Type, T>::value,
+      "Template parameter T must be derived from jlm::rvsdg::Type.");
 
   return dynamic_cast<const T *>(type.get()) != nullptr;
 }

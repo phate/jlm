@@ -28,16 +28,16 @@ get_trigger(rvsdg::Region * region)
 }
 
 jlm::llvm::lambda::node *
-add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::type> type)
+add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto old_fcttype = ln->type();
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_argument_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
     new_argument_types.push_back(old_fcttype.Arguments()[i]);
   }
   new_argument_types.push_back(std::move(type));
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_result_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_result_types;
   for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
   {
     new_result_types.push_back(old_fcttype.Results()[i]);

@@ -12,6 +12,7 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 namespace jlm::util
 {
@@ -53,7 +54,7 @@ protected:
   RegionArgument(
       rvsdg::Region * region,
       structural_input * input,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
   RegionArgument(const RegionArgument &) = delete;
@@ -111,7 +112,7 @@ protected:
       rvsdg::Region * region,
       rvsdg::output * origin,
       structural_output * output,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
   RegionResult(const RegionResult &) = delete;
@@ -173,12 +174,128 @@ class Region
       intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_bottom_node_list_accessor>
           region_bottom_node_list;
 
+  using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
+  using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
+  using RegionArgumentRange = util::iterator_range<RegionArgumentIterator>;
+  using RegionArgumentConstRange = util::iterator_range<RegionArgumentConstIterator>;
+
+  using RegionResultIterator = std::vector<RegionResult *>::iterator;
+  using RegionResultConstIterator = std::vector<RegionResult *>::const_iterator;
+  using RegionResultRange = util::iterator_range<RegionResultIterator>;
+  using RegionResultConstRange = util::iterator_range<RegionResultConstIterator>;
+
+  using TopNodeIterator = region_top_node_list::iterator;
+  using TopNodeConstIterator = region_top_node_list::const_iterator;
+  using TopNodeRange = util::iterator_range<TopNodeIterator>;
+  using TopNodeConstRange = util::iterator_range<TopNodeConstIterator>;
+
+  using NodeIterator = region_nodes_list::iterator;
+  using NodeConstIterator = region_nodes_list::const_iterator;
+  using NodeRange = util::iterator_range<NodeIterator>;
+  using NodeConstRange = util::iterator_range<NodeConstIterator>;
+
+  using BottomNodeIterator = region_bottom_node_list::iterator;
+  using BottomNodeConstIterator = region_bottom_node_list::const_iterator;
+  using BottomNodeRange = util::iterator_range<BottomNodeIterator>;
+  using BottomNodeConstRange = util::iterator_range<BottomNodeConstIterator>;
+
 public:
   ~Region() noexcept;
 
   Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
 
   Region(rvsdg::structural_node * node, size_t index);
+
+  /**
+   * @return Returns an iterator range for iterating through the arguments of the region.
+   */
+  [[nodiscard]] RegionArgumentRange
+  Arguments() noexcept
+  {
+    return { arguments_.begin(), arguments_.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the arguments of the region.
+   */
+  [[nodiscard]] RegionArgumentConstRange
+  Arguments() const noexcept
+  {
+    return { arguments_.begin(), arguments_.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the results of the region.
+   */
+  [[nodiscard]] RegionResultRange
+  Results() noexcept
+  {
+    return { results_.begin(), results_.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the results of the region.
+   */
+  [[nodiscard]] RegionResultConstRange
+  Results() const noexcept
+  {
+    return { results_.begin(), results_.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the top nodes of the region.
+   */
+  [[nodiscard]] TopNodeRange
+  TopNodes() noexcept
+  {
+    return { top_nodes.begin(), top_nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the top nodes of the region.
+   */
+  [[nodiscard]] TopNodeConstRange
+  TopNodes() const noexcept
+  {
+    return { top_nodes.begin(), top_nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the nodes of the region.
+   */
+  [[nodiscard]] NodeRange
+  Nodes() noexcept
+  {
+    return { nodes.begin(), nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the nodes of the region.
+   */
+  [[nodiscard]] NodeConstRange
+  Nodes() const noexcept
+  {
+    return { nodes.begin(), nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the bottom nodes of the region.
+   */
+  [[nodiscard]] BottomNodeRange
+  BottomNodes() noexcept
+  {
+    return { bottom_nodes.begin(), bottom_nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the bottom nodes of the
+   * region.
+   */
+  [[nodiscard]] BottomNodeConstRange
+  BottomNodes() const noexcept
+  {
+    return { bottom_nodes.begin(), bottom_nodes.end() };
+  }
 
   inline region_nodes_list::iterator
   begin()

@@ -384,13 +384,13 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-  output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  output(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
       : structural_output(node, std::move(type))
   {}
 
 private:
   static output *
-  create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  create(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
   {
     auto output = std::make_unique<delta::output>(node, std::move(type));
     return static_cast<delta::output *>(node->append_output(std::move(output)));

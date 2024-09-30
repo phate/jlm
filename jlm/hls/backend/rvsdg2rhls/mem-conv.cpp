@@ -566,12 +566,12 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // This modifies the function signature so we create a new lambda node to replace the old one
   //
   auto oldFunctionType = lambda->type();
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
     newArgumentTypes.push_back(oldFunctionType.Arguments()[i]);
   }
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
     newResultTypes.push_back(oldFunctionType.Results()[i]);

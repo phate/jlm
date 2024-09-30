@@ -127,8 +127,8 @@ class LoadOperation : public rvsdg::simple_op
 {
 protected:
   LoadOperation(
-      const std::vector<std::shared_ptr<const rvsdg::type>> & operandTypes,
-      const std::vector<std::shared_ptr<const rvsdg::type>> & resultTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
       : simple_op(operandTypes, resultTypes),
         Alignment_(alignment)
@@ -224,24 +224,24 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
         { PointerType::Create(), iostatetype::Create() });
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(std::shared_ptr<const rvsdg::valuetype> loadedType, size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
         { std::move(loadedType), iostatetype::Create() });
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
@@ -480,22 +480,22 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(1, PointerType::Create());
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, PointerType::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(std::shared_ptr<const rvsdg::valuetype> loadedType, size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(1, std::move(loadedType));
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, std::move(loadedType));
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());

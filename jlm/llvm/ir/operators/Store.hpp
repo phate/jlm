@@ -89,8 +89,8 @@ class StoreOperation : public rvsdg::simple_op
 {
 protected:
   StoreOperation(
-      const std::vector<std::shared_ptr<const rvsdg::type>> & operandTypes,
-      const std::vector<std::shared_ptr<const rvsdg::type>> & resultTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
       : simple_op(operandTypes, resultTypes),
         Alignment_(alignment)
@@ -183,7 +183,7 @@ public:
 
 private:
   static const std::shared_ptr<const jlm::rvsdg::valuetype>
-  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
   {
     if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
     {
@@ -193,12 +193,12 @@ private:
     throw util::error("Expected value type");
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(std::shared_ptr<const rvsdg::valuetype> storedType, size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
         { PointerType::Create(), std::move(storedType) });
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
@@ -382,7 +382,7 @@ public:
 
 private:
   static std::shared_ptr<const rvsdg::valuetype>
-  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
   {
     if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
     {
@@ -447,7 +447,7 @@ public:
 
 private:
   static std::shared_ptr<const rvsdg::valuetype>
-  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
   {
     if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
       return storedType;
@@ -455,23 +455,23 @@ private:
     throw jlm::util::error("Expected value type");
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(std::shared_ptr<const rvsdg::valuetype> storedType, size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
         { PointerType::Create(), std::move(storedType), iostatetype::Create() });
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types({ iostatetype::Create() });
-    std::vector<std::shared_ptr<const rvsdg::type>> memoryStates(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ iostatetype::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> memoryStates(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), memoryStates.begin(), memoryStates.end());
@@ -560,7 +560,7 @@ public:
 
 private:
   static std::shared_ptr<const rvsdg::valuetype>
-  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::type> & type)
+  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
   {
     if (auto storedType = std::dynamic_pointer_cast<const rvsdg::valuetype>(type))
       return storedType;
