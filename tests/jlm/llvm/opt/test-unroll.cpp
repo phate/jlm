@@ -47,15 +47,15 @@ create_theta(
 
   auto theta = ThetaNode::create(&graph->GetRootRegion());
   auto subregion = theta->subregion();
-  auto idv = theta->add_loopvar(init);
-  auto lvs = theta->add_loopvar(step);
-  auto lve = theta->add_loopvar(end);
+  auto idv = theta->AddLoopVar(init);
+  auto lvs = theta->AddLoopVar(step);
+  auto lve = theta->AddLoopVar(end);
 
-  auto arm = SimpleNode::create_normalized(subregion, aop, { idv->argument(), lvs->argument() })[0];
-  auto cmp = SimpleNode::create_normalized(subregion, cop, { arm, lve->argument() })[0];
+  auto arm = SimpleNode::create_normalized(subregion, aop, { idv.pre, lvs.pre })[0];
+  auto cmp = SimpleNode::create_normalized(subregion, cop, { arm, lve.pre })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
-  idv->result()->divert_to(arm);
+  idv.post->divert_to(arm);
   theta->set_predicate(match);
 
   return theta;
@@ -87,7 +87,7 @@ test_unrollinfo()
     assert(!ui->is_known());
     assert(!ui->niterations());
     assert(ui->theta() == theta);
-    assert(ui->idv()->input()->origin() == x);
+    assert(theta->MapPreLoopVar(*ui->idv()).input->origin() == x);
   }
 
   {
@@ -242,19 +242,19 @@ test_unknown_boundaries()
   auto y = &jlm::tests::GraphImport::Create(graph, bt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
-  auto lv1 = theta->add_loopvar(x);
-  auto lv2 = theta->add_loopvar(y);
+  auto lv1 = theta->AddLoopVar(x);
+  auto lv2 = theta->AddLoopVar(y);
 
   auto one = jlm::rvsdg::create_bitconstant(theta->subregion(), 32, 1);
-  auto add = jlm::rvsdg::bitadd_op::create(32, lv1->argument(), one);
-  auto cmp = jlm::rvsdg::bitult_op::create(32, add, lv2->argument());
+  auto add = jlm::rvsdg::bitadd_op::create(32, lv1.pre, one);
+  auto cmp = jlm::rvsdg::bitult_op::create(32, add, lv2.pre);
   auto match = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, cmp);
 
-  lv1->result()->divert_to(add);
+  lv1.post->divert_to(add);
 
   theta->set_predicate(match);
 
-  auto & ex1 = GraphExport::Create(*lv1, "x");
+  auto & ex1 = GraphExport::Create(*lv1.output, "x");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(2);
@@ -301,59 +301,59 @@ test_nested_theta()
   /* Outer loop */
   auto otheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lvo_init = otheta->add_loopvar(init);
-  auto lvo_step = otheta->add_loopvar(step);
-  auto lvo_end = otheta->add_loopvar(end);
+  auto lvo_init = otheta->AddLoopVar(init);
+  auto lvo_step = otheta->AddLoopVar(step);
+  auto lvo_end = otheta->AddLoopVar(end);
 
-  auto add = jlm::rvsdg::bitadd_op::create(32, lvo_init->argument(), lvo_step->argument());
-  auto compare = jlm::rvsdg::bitult_op::create(32, add, lvo_end->argument());
+  auto add = jlm::rvsdg::bitadd_op::create(32, lvo_init.pre, lvo_step.pre);
+  auto compare = jlm::rvsdg::bitult_op::create(32, add, lvo_end.pre);
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, compare);
   otheta->set_predicate(match);
-  lvo_init->result()->divert_to(add);
+  lvo_init.post->divert_to(add);
 
   /* First inner loop in the original loop */
   auto inner_theta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
   auto inner_init = jlm::rvsdg::create_bitconstant(otheta->subregion(), 32, 0);
-  auto lvi_init = inner_theta->add_loopvar(inner_init);
-  auto lvi_step = inner_theta->add_loopvar(lvo_step->argument());
-  auto lvi_end = inner_theta->add_loopvar(lvo_end->argument());
+  auto lvi_init = inner_theta->AddLoopVar(inner_init);
+  auto lvi_step = inner_theta->AddLoopVar(lvo_step.pre);
+  auto lvi_end = inner_theta->AddLoopVar(lvo_end.pre);
 
-  auto inner_add = jlm::rvsdg::bitadd_op::create(32, lvi_init->argument(), lvi_step->argument());
-  auto inner_compare = jlm::rvsdg::bitult_op::create(32, inner_add, lvi_end->argument());
+  auto inner_add = jlm::rvsdg::bitadd_op::create(32, lvi_init.pre, lvi_step.pre);
+  auto inner_compare = jlm::rvsdg::bitult_op::create(32, inner_add, lvi_end.pre);
   auto inner_match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, inner_compare);
   inner_theta->set_predicate(inner_match);
-  lvi_init->result()->divert_to(inner_add);
+  lvi_init.post->divert_to(inner_add);
 
   /* Nested inner loop */
   auto inner_nested_theta = jlm::rvsdg::ThetaNode::create(inner_theta->subregion());
 
   auto inner_nested_init = jlm::rvsdg::create_bitconstant(inner_theta->subregion(), 32, 0);
-  auto lvi_nested_init = inner_nested_theta->add_loopvar(inner_nested_init);
-  auto lvi_nested_step = inner_nested_theta->add_loopvar(lvi_step->argument());
-  auto lvi_nested_end = inner_nested_theta->add_loopvar(lvi_end->argument());
+  auto lvi_nested_init = inner_nested_theta->AddLoopVar(inner_nested_init);
+  auto lvi_nested_step = inner_nested_theta->AddLoopVar(lvi_step.pre);
+  auto lvi_nested_end = inner_nested_theta->AddLoopVar(lvi_end.pre);
 
   auto inner_nested_add =
-      jlm::rvsdg::bitadd_op::create(32, lvi_nested_init->argument(), lvi_nested_step->argument());
+      jlm::rvsdg::bitadd_op::create(32, lvi_nested_init.pre, lvi_nested_step.pre);
   auto inner_nested_compare =
-      jlm::rvsdg::bitult_op::create(32, inner_nested_add, lvi_nested_end->argument());
+      jlm::rvsdg::bitult_op::create(32, inner_nested_add, lvi_nested_end.pre);
   auto inner_nested_match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, inner_nested_compare);
   inner_nested_theta->set_predicate(inner_nested_match);
-  lvi_nested_init->result()->divert_to(inner_nested_add);
+  lvi_nested_init.post->divert_to(inner_nested_add);
 
   /* Second inner loop in the original loop */
   auto inner2_theta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
   auto inner2_init = jlm::rvsdg::create_bitconstant(otheta->subregion(), 32, 0);
-  auto lvi2_init = inner2_theta->add_loopvar(inner2_init);
-  auto lvi2_step = inner2_theta->add_loopvar(lvo_step->argument());
-  auto lvi2_end = inner2_theta->add_loopvar(lvo_end->argument());
+  auto lvi2_init = inner2_theta->AddLoopVar(inner2_init);
+  auto lvi2_step = inner2_theta->AddLoopVar(lvo_step.pre);
+  auto lvi2_end = inner2_theta->AddLoopVar(lvo_end.pre);
 
-  auto inner2_add = jlm::rvsdg::bitadd_op::create(32, lvi2_init->argument(), lvi2_step->argument());
-  auto inner2_compare = jlm::rvsdg::bitult_op::create(32, inner2_add, lvi2_end->argument());
+  auto inner2_add = jlm::rvsdg::bitadd_op::create(32, lvi2_init.pre, lvi2_step.pre);
+  auto inner2_compare = jlm::rvsdg::bitult_op::create(32, inner2_add, lvi2_end.pre);
   auto inner2_match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, inner2_compare);
   inner2_theta->set_predicate(inner2_match);
-  lvi2_init->result()->divert_to(inner2_add);
+  lvi2_init.post->divert_to(inner2_add);
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(4);

@@ -1622,29 +1622,29 @@ ThetaTest::SetupRvsdg()
 
   auto thetanode = jlm::rvsdg::ThetaNode::create(fct->subregion());
 
-  auto n = thetanode->add_loopvar(zero);
-  auto l = thetanode->add_loopvar(fct->GetFunctionArguments()[0]);
-  auto a = thetanode->add_loopvar(fct->GetFunctionArguments()[1]);
-  auto c = thetanode->add_loopvar(fct->GetFunctionArguments()[2]);
-  auto s = thetanode->add_loopvar(fct->GetFunctionArguments()[3]);
+  auto n = thetanode->AddLoopVar(zero);
+  auto l = thetanode->AddLoopVar(fct->GetFunctionArguments()[0]);
+  auto a = thetanode->AddLoopVar(fct->GetFunctionArguments()[1]);
+  auto c = thetanode->AddLoopVar(fct->GetFunctionArguments()[2]);
+  auto s = thetanode->AddLoopVar(fct->GetFunctionArguments()[3]);
 
   auto gepnode = GetElementPtrOperation::Create(
-      a->argument(),
-      { n->argument() },
+      a.pre,
+      { n.pre },
       jlm::rvsdg::bittype::Create(32),
       pointerType);
-  auto store = StoreNonVolatileNode::Create(gepnode, c->argument(), { s->argument() }, 4);
+  auto store = StoreNonVolatileNode::Create(gepnode, c.pre, { s.pre }, 4);
 
   auto one = jlm::rvsdg::create_bitconstant(thetanode->subregion(), 32, 1);
-  auto sum = jlm::rvsdg::bitadd_op::create(32, n->argument(), one);
-  auto cmp = jlm::rvsdg::bitult_op::create(32, sum, l->argument());
+  auto sum = jlm::rvsdg::bitadd_op::create(32, n.pre, one);
+  auto cmp = jlm::rvsdg::bitult_op::create(32, sum, l.pre);
   auto predicate = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
-  n->result()->divert_to(sum);
-  s->result()->divert_to(store[0]);
+  n.post->divert_to(sum);
+  s.post->divert_to(store[0]);
   thetanode->set_predicate(predicate);
 
-  fct->finalize({ s });
+  fct->finalize({ s.output });
   GraphExport::Create(*fct->output(), "f");
 
   /*

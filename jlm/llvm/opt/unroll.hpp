@@ -53,9 +53,9 @@ private:
   inline unrollinfo(
       rvsdg::Node * cmpnode,
       rvsdg::Node * armnode,
-      rvsdg::RegionArgument * idv,
-      rvsdg::RegionArgument * step,
-      rvsdg::RegionArgument * end)
+      rvsdg::output * idv,
+      rvsdg::output * step,
+      rvsdg::output * end)
       : end_(end),
         step_(step),
         cmpnode_(cmpnode),
@@ -132,7 +132,7 @@ public:
     return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->GetOperation());
   }
 
-  inline rvsdg::RegionArgument *
+  inline rvsdg::output *
   idv() const noexcept
   {
     return idv_;
@@ -141,7 +141,7 @@ public:
   inline jlm::rvsdg::output *
   init() const noexcept
   {
-    return idv()->input()->origin();
+    return theta()->MapPreLoopVar(*idv()).input->origin();
   }
 
   inline const jlm::rvsdg::bitvalue_repr *
@@ -150,7 +150,7 @@ public:
     return value(init());
   }
 
-  inline rvsdg::RegionArgument *
+  inline rvsdg::output *
   step() const noexcept
   {
     return step_;
@@ -162,7 +162,7 @@ public:
     return value(step());
   }
 
-  inline rvsdg::RegionArgument *
+  inline rvsdg::output *
   end() const noexcept
   {
     return end_;
@@ -224,11 +224,11 @@ private:
     return &static_cast<const rvsdg::bitconstant_op *>(&p->GetOperation())->value();
   }
 
-  rvsdg::RegionArgument * end_;
-  rvsdg::RegionArgument * step_;
+  rvsdg::output * end_;
+  rvsdg::output * step_;
   rvsdg::Node * cmpnode_;
   rvsdg::Node * armnode_;
-  rvsdg::RegionArgument * idv_;
+  rvsdg::output * idv_;
 };
 
 /**

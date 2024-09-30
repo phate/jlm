@@ -22,26 +22,27 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   // smap.
   for (size_t i = 0; i < theta.ninputs(); i++)
   {
+    auto loopvar = theta.MapInputLoopVar(*theta.input(i));
     // Check if the input is a loop invariant such that a loop constant buffer should be created.
     // Memory state inputs are not loop variables containting a value, so we ignor these.
-    if (is_invariant(theta.input(i))
-        && !jlm::rvsdg::is<jlm::llvm::MemoryStateType>(theta.input(i)->Type()))
+    if (ThetaLoopVarIsInvariant(loopvar)
+        && !jlm::rvsdg::is<jlm::llvm::MemoryStateType>(loopvar.input->Type()))
     {
-      smap.insert(theta.input(i)->argument(), loop->add_loopconst(theta.input(i)->origin()));
+      smap.insert(loopvar.pre, loop->add_loopconst(loopvar.input->origin()));
       branches.push_back(nullptr);
       // The HLS loop has no output for this input. The users of the theta output is
       // therefore redirected to the input origin, as the value is loop invariant.
-      theta.output(i)->divert_users(theta.input(i)->origin());
+      loopvar.output->divert_users(loopvar.input->origin());
     }
     else
     {
       jlm::rvsdg::output * buffer;
-      loop->add_loopvar(theta.input(i)->origin(), &buffer);
-      smap.insert(theta.input(i)->argument(), buffer);
+      loop->AddLoopVar(loopvar.input->origin(), &buffer);
+      smap.insert(loopvar.pre, buffer);
       // buffer out is only used by branch
       branches.push_back(*buffer->begin());
       // divert theta outputs
-      theta.output(i)->divert_users(loop->output(loop->noutputs() - 1));
+      loopvar.output->divert_users(loop->output(loop->noutputs() - 1));
     }
   }
 
@@ -54,7 +55,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   {
     if (branches[i])
     {
-      branches[i]->divert_to(smap.lookup(theta.input(i)->result()->origin()));
+      branches[i]->divert_to(smap.lookup(theta.MapInputLoopVar(*theta.input(i)).post->origin()));
     }
   }
 

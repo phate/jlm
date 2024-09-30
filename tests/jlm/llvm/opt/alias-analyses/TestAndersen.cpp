@@ -595,7 +595,7 @@ TestTheta()
 
   auto & gepOutput = ptg->GetRegisterNode(*test.gep->output(0));
 
-  auto & thetaArgument2 = ptg->GetRegisterNode(*test.theta->output(2)->argument());
+  auto & thetaArgument2 = ptg->GetRegisterNode(*test.theta->GetLoopVars()[2].pre);
   auto & thetaOutput2 = ptg->GetRegisterNode(*test.theta->output(2));
 
   assert(TargetsExactly(lambdaArgument1, { &lambda, &ptg->GetExternalMemoryNode() }));

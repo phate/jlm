@@ -130,23 +130,23 @@ TestTheta()
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lv1 = theta->add_loopvar(x);
-  auto lv2 = theta->add_loopvar(y);
-  auto lv3 = theta->add_loopvar(z);
-  auto lv4 = theta->add_loopvar(y);
+  auto lv1 = theta->AddLoopVar(x);
+  auto lv2 = theta->AddLoopVar(y);
+  auto lv3 = theta->AddLoopVar(z);
+  auto lv4 = theta->AddLoopVar(y);
 
-  lv1->result()->divert_to(lv2->argument());
-  lv2->result()->divert_to(lv1->argument());
+  lv1.post->divert_to(lv2.pre);
+  lv2.post->divert_to(lv1.pre);
 
-  auto t = jlm::tests::create_testop(theta->subregion(), { lv3->argument() }, { vt })[0];
-  lv3->result()->divert_to(t);
-  lv4->result()->divert_to(lv2->argument());
+  auto t = jlm::tests::create_testop(theta->subregion(), { lv3.pre }, { vt })[0];
+  lv3.post->divert_to(t);
+  lv4.post->divert_to(lv2.pre);
 
   auto c = jlm::tests::create_testop(theta->subregion(), {}, { ct })[0];
   theta->set_predicate(c);
 
-  GraphExport::Create(*theta->output(0), "a");
-  GraphExport::Create(*theta->output(3), "b");
+  GraphExport::Create(*lv1.output, "a");
+  GraphExport::Create(*lv4.output, "b");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   RunDeadNodeElimination(rm);
@@ -173,26 +173,26 @@ TestNestedTheta()
 
   auto otheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lvo1 = otheta->add_loopvar(c);
-  auto lvo2 = otheta->add_loopvar(x);
-  auto lvo3 = otheta->add_loopvar(y);
+  auto lvo1 = otheta->AddLoopVar(c);
+  auto lvo2 = otheta->AddLoopVar(x);
+  auto lvo3 = otheta->AddLoopVar(y);
 
   auto itheta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
-  auto lvi1 = itheta->add_loopvar(lvo1->argument());
-  auto lvi2 = itheta->add_loopvar(lvo2->argument());
-  auto lvi3 = itheta->add_loopvar(lvo3->argument());
+  auto lvi1 = itheta->AddLoopVar(lvo1.pre);
+  auto lvi2 = itheta->AddLoopVar(lvo2.pre);
+  auto lvi3 = itheta->AddLoopVar(lvo3.pre);
 
-  lvi2->result()->divert_to(lvi3->argument());
+  lvi2.post->divert_to(lvi3.pre);
 
-  itheta->set_predicate(lvi1->argument());
+  itheta->set_predicate(lvi1.pre);
 
-  lvo2->result()->divert_to(itheta->output(1));
-  lvo3->result()->divert_to(itheta->output(1));
+  lvo2.post->divert_to(lvi2.output);
+  lvo3.post->divert_to(lvi2.output);
 
-  otheta->set_predicate(lvo1->argument());
+  otheta->set_predicate(lvo1.pre);
 
-  GraphExport::Create(*otheta->output(2), "y");
+  GraphExport::Create(*lvo3.output, "y");
 
   //	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);
@@ -219,19 +219,19 @@ TestEvolvingTheta()
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lv0 = theta->add_loopvar(c);
-  auto lv1 = theta->add_loopvar(x1);
-  auto lv2 = theta->add_loopvar(x2);
-  auto lv3 = theta->add_loopvar(x3);
-  auto lv4 = theta->add_loopvar(x4);
+  auto lv0 = theta->AddLoopVar(c);
+  auto lv1 = theta->AddLoopVar(x1);
+  auto lv2 = theta->AddLoopVar(x2);
+  auto lv3 = theta->AddLoopVar(x3);
+  auto lv4 = theta->AddLoopVar(x4);
 
-  lv1->result()->divert_to(lv2->argument());
-  lv2->result()->divert_to(lv3->argument());
-  lv3->result()->divert_to(lv4->argument());
+  lv1.post->divert_to(lv2.pre);
+  lv2.post->divert_to(lv3.pre);
+  lv3.post->divert_to(lv4.pre);
 
-  theta->set_predicate(lv0->argument());
+  theta->set_predicate(lv0.pre);
 
-  GraphExport::Create(*lv1, "x1");
+  GraphExport::Create(*lv1.output, "x1");
 
   //	jlm::rvsdg::view(graph, stdout);
   RunDeadNodeElimination(rm);

@@ -765,7 +765,7 @@ Convert(
    * Add loop variables
    */
   auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
-  std::unordered_map<const variable *, rvsdg::ThetaOutput *> thetaOutputMap;
+  std::unordered_map<const variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
   for (auto & v : demandSet.LoopVariables().Variables())
   {
     rvsdg::output * value = nullptr;
@@ -778,8 +778,9 @@ Convert(
     {
       value = outerVariableMap.lookup(&v);
     }
-    thetaOutputMap[&v] = theta->add_loopvar(value);
-    thetaVariableMap.insert(&v, thetaOutputMap[&v]->argument());
+    auto loopvar = theta->AddLoopVar(value);
+    thetaLoopVarMap[&v] = loopvar;
+    thetaVariableMap.insert(&v, loopvar.pre);
   }
 
   /*
@@ -797,8 +798,8 @@ Convert(
    */
   for (auto & v : demandSet.LoopVariables().Variables())
   {
-    JLM_ASSERT(thetaOutputMap.find(&v) != thetaOutputMap.end());
-    thetaOutputMap[&v]->result()->divert_to(thetaVariableMap.lookup(&v));
+    JLM_ASSERT(thetaLoopVarMap.find(&v) != thetaLoopVarMap.end());
+    thetaLoopVarMap[&v].post->divert_to(thetaVariableMap.lookup(&v));
   }
 
   /*
@@ -820,7 +821,7 @@ Convert(
   for (auto & v : demandSet.LoopVariables().Variables())
   {
     JLM_ASSERT(outerVariableMap.contains(&v));
-    outerVariableMap.insert(&v, thetaOutputMap[&v]);
+    outerVariableMap.insert(&v, thetaLoopVarMap[&v].output);
   }
 }
 

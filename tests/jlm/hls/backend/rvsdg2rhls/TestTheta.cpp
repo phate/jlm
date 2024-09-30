@@ -34,18 +34,15 @@ TestUnknownBoundaries()
 
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto subregion = theta->subregion();
-  auto idv = theta->add_loopvar(lambda->GetFunctionArguments()[0]);
-  auto lvs = theta->add_loopvar(lambda->GetFunctionArguments()[1]);
-  auto lve = theta->add_loopvar(lambda->GetFunctionArguments()[2]);
+  auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
+  auto lvs = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
+  auto lve = theta->AddLoopVar(lambda->GetFunctionArguments()[2]);
 
-  auto arm = jlm::rvsdg::SimpleNode::create_normalized(
-      subregion,
-      add,
-      { idv->argument(), lvs->argument() })[0];
-  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lve->argument() })[0];
+  auto arm = jlm::rvsdg::SimpleNode::create_normalized(subregion, add, { idv.pre, lvs.pre })[0];
+  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lve.pre })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
-  idv->result()->divert_to(arm);
+  idv.post->divert_to(arm);
   theta->set_predicate(match);
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });

@@ -367,7 +367,7 @@ MlirToJlmConverter::ConvertOperation(
     // Add loop vars to the theta node
     for (size_t i = 0; i < inputs.size(); i++)
     {
-      rvsdgThetaNode->add_loopvar(inputs[i]);
+      rvsdgThetaNode->AddLoopVar(inputs[i]);
     }
 
     auto regionResults = ConvertRegion(mlirThetaNode.getRegion(), *rvsdgThetaNode->subregion());
