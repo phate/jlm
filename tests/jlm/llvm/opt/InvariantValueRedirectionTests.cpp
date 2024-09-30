@@ -104,20 +104,21 @@ TestTheta()
   auto l = lambdaNode->GetFunctionArguments()[2];
 
   auto thetaNode1 = jlm::rvsdg::ThetaNode::create(lambdaNode->subregion());
-  auto thetaOutput1 = thetaNode1->add_loopvar(c);
-  auto thetaOutput2 = thetaNode1->add_loopvar(x);
-  auto thetaOutput3 = thetaNode1->add_loopvar(l);
+  auto thetaVar1 = thetaNode1->AddLoopVar(c);
+  auto thetaVar2 = thetaNode1->AddLoopVar(x);
+  auto thetaVar3 = thetaNode1->AddLoopVar(l);
 
   auto thetaNode2 = jlm::rvsdg::ThetaNode::create(thetaNode1->subregion());
-  auto thetaOutput4 = thetaNode2->add_loopvar(thetaOutput1->argument());
-  thetaNode2->add_loopvar(thetaOutput2->argument());
-  auto thetaOutput5 = thetaNode2->add_loopvar(thetaOutput3->argument());
-  thetaNode2->set_predicate(thetaOutput4->argument());
+  auto thetaVar4 = thetaNode2->AddLoopVar(thetaVar1.pre);
+  thetaNode2->AddLoopVar(thetaVar2.pre);
+  auto thetaVar5 = thetaNode2->AddLoopVar(thetaVar3.pre);
+  thetaNode2->set_predicate(thetaVar4.pre);
 
-  thetaOutput3->result()->divert_to(thetaOutput5);
-  thetaNode1->set_predicate(thetaOutput1->argument());
+  thetaVar3.post->divert_to(thetaVar5.output);
+  thetaNode1->set_predicate(thetaVar1.pre);
 
-  auto lambdaOutput = lambdaNode->finalize({ thetaOutput1, thetaOutput2, thetaOutput3 });
+  auto lambdaOutput =
+      lambdaNode->finalize({ thetaVar1.output, thetaVar2.output, thetaVar3.output });
 
   GraphExport::Create(*lambdaOutput, "test");
 
@@ -127,7 +128,7 @@ TestTheta()
   // Assert
   assert(lambdaNode->GetFunctionResults()[0]->origin() == c);
   assert(lambdaNode->GetFunctionResults()[1]->origin() == x);
-  assert(lambdaNode->GetFunctionResults()[2]->origin() == thetaOutput3);
+  assert(lambdaNode->GetFunctionResults()[2]->origin() == thetaVar3.output);
 
   return 0;
 }

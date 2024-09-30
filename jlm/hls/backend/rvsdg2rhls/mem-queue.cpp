@@ -213,7 +213,7 @@ separate_load_edge(
       auto loop_node = jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
       jlm::rvsdg::output * buffer;
 
-      addr_edge = loop_node->add_loopvar(addr_edge, &buffer);
+      addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
       addr_edge_user->divert_to(addr_edge);
       mem_edge = find_loop_output(sti);
       auto sti_arg = sti->arguments.first();

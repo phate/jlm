@@ -899,20 +899,20 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
 }
 
-std::vector<rvsdg::ThetaOutput *>
+std::vector<rvsdg::output *>
 MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetThetaEntryExitNodes(thetaNode);
 
-  std::vector<rvsdg::ThetaOutput *> thetaStateOutputs;
+  std::vector<rvsdg::output *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
-    auto thetaStateOutput = thetaNode.add_loopvar(&memoryNodeStatePair->State());
-    stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *thetaStateOutput->argument());
-    thetaStateOutputs.push_back(thetaStateOutput);
+    auto loopvar = thetaNode.AddLoopVar(&memoryNodeStatePair->State());
+    stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *loopvar.pre);
+    thetaStateOutputs.push_back(loopvar.output);
   }
 
   return thetaStateOutputs;
@@ -921,7 +921,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 void
 MemoryStateEncoder::EncodeThetaExit(
     rvsdg::ThetaNode & thetaNode,
-    const std::vector<rvsdg::ThetaOutput *> & thetaStateOutputs)
+    const std::vector<rvsdg::output *> & thetaStateOutputs)
 {
   auto subregion = thetaNode.subregion();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -934,10 +934,11 @@ MemoryStateEncoder::EncodeThetaExit(
     auto thetaStateOutput = thetaStateOutputs[n];
     auto & memoryNodeStatePair = memoryNodeStatePairs[n];
     auto & memoryNode = memoryNodeStatePair->MemoryNode();
-    JLM_ASSERT(thetaStateOutput->input()->origin() == &memoryNodeStatePair->State());
+    auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
+    JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
 
     auto & subregionState = stateMap.GetState(*subregion, memoryNode)->State();
-    thetaStateOutput->result()->divert_to(&subregionState);
+    loopvar.post->divert_to(&subregionState);
     memoryNodeStatePair->ReplaceState(*thetaStateOutput);
   }
 }

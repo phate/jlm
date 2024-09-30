@@ -1126,13 +1126,13 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 {
   // Create a PointerObject for each argument in the inner region
   // And make it point to a superset of the corresponding input register
-  for (const auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(thetaOutput->type()))
+    if (!IsOrContainsPointerType(loopVar.input->type()))
       continue;
 
-    auto & inputReg = *thetaOutput->input()->origin();
-    auto & innerArgumentReg = *thetaOutput->argument();
+    auto & inputReg = *loopVar.input->origin();
+    auto & innerArgumentReg = *loopVar.pre;
     const auto inputRegPO = Set_->GetRegisterPointerObject(inputReg);
     const auto innerArgumentRegPO = Set_->CreateRegisterPointerObject(innerArgumentReg);
 
@@ -1144,14 +1144,14 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 
   // Iterate over loop variables again, making the inner arguments point to a superset
   // of what the corresponding result registers point to
-  for (const auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(thetaOutput->type()))
+    if (!IsOrContainsPointerType(loopVar.input->type()))
       continue;
 
-    auto & innerArgumentReg = *thetaOutput->argument();
-    auto & innerResultReg = *thetaOutput->result()->origin();
-    auto & outputReg = *thetaOutput;
+    auto & innerArgumentReg = *loopVar.pre;
+    auto & innerResultReg = *loopVar.post->origin();
+    auto & outputReg = *loopVar.output;
 
     const auto innerArgumentRegPO = Set_->GetRegisterPointerObject(innerArgumentReg);
     const auto innerResultRegPO = Set_->GetRegisterPointerObject(innerResultReg);

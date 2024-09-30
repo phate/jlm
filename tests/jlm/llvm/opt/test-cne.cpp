@@ -148,24 +148,24 @@ test_theta()
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
 
-  auto lv1 = theta->add_loopvar(c);
-  auto lv2 = theta->add_loopvar(x);
-  auto lv3 = theta->add_loopvar(x);
-  auto lv4 = theta->add_loopvar(x);
+  auto lv1 = theta->AddLoopVar(c);
+  auto lv2 = theta->AddLoopVar(x);
+  auto lv3 = theta->AddLoopVar(x);
+  auto lv4 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::create_testop(region, { lv2->argument() }, { vt })[0];
-  auto u2 = jlm::tests::create_testop(region, { lv3->argument() }, { vt })[0];
-  auto b1 = jlm::tests::create_testop(region, { lv3->argument(), lv4->argument() }, { vt })[0];
+  auto u1 = jlm::tests::create_testop(region, { lv2.pre }, { vt })[0];
+  auto u2 = jlm::tests::create_testop(region, { lv3.pre }, { vt })[0];
+  auto b1 = jlm::tests::create_testop(region, { lv3.pre, lv4.pre }, { vt })[0];
 
-  lv2->result()->divert_to(u1);
-  lv3->result()->divert_to(u2);
-  lv4->result()->divert_to(b1);
+  lv2.post->divert_to(u1);
+  lv3.post->divert_to(u2);
+  lv4.post->divert_to(b1);
 
-  theta->set_predicate(lv1->argument());
+  theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*theta->output(1), "lv2");
-  GraphExport::Create(*theta->output(2), "lv3");
-  GraphExport::Create(*theta->output(3), "lv4");
+  GraphExport::Create(*lv2.output, "lv2");
+  GraphExport::Create(*lv3.output, "lv3");
+  GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
@@ -201,29 +201,29 @@ test_theta2()
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
 
-  auto lv1 = theta->add_loopvar(c);
-  auto lv2 = theta->add_loopvar(x);
-  auto lv3 = theta->add_loopvar(x);
+  auto lv1 = theta->AddLoopVar(c);
+  auto lv2 = theta->AddLoopVar(x);
+  auto lv3 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::create_testop(region, { lv2->argument() }, { vt })[0];
-  auto u2 = jlm::tests::create_testop(region, { lv3->argument() }, { vt })[0];
+  auto u1 = jlm::tests::create_testop(region, { lv2.pre }, { vt })[0];
+  auto u2 = jlm::tests::create_testop(region, { lv3.pre }, { vt })[0];
   auto b1 = jlm::tests::create_testop(region, { u2, u2 }, { vt })[0];
 
-  lv2->result()->divert_to(u1);
-  lv3->result()->divert_to(b1);
+  lv2.post->divert_to(u1);
+  lv3.post->divert_to(b1);
 
-  theta->set_predicate(lv1->argument());
+  theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*theta->output(1), "lv2");
-  GraphExport::Create(*theta->output(2), "lv3");
+  GraphExport::Create(*lv2.output, "lv2");
+  GraphExport::Create(*lv3.output, "lv3");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(lv2->result()->origin() == u1);
-  assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
+  assert(lv2.post->origin() == u1);
+  assert(lv2.pre->nusers() != 0 && lv3.pre->nusers() != 0);
 }
 
 static inline void
@@ -245,32 +245,32 @@ test_theta3()
   auto theta1 = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto r1 = theta1->subregion();
 
-  auto lv1 = theta1->add_loopvar(c);
-  auto lv2 = theta1->add_loopvar(x);
-  auto lv3 = theta1->add_loopvar(x);
-  auto lv4 = theta1->add_loopvar(x);
+  auto lv1 = theta1->AddLoopVar(c);
+  auto lv2 = theta1->AddLoopVar(x);
+  auto lv3 = theta1->AddLoopVar(x);
+  auto lv4 = theta1->AddLoopVar(x);
 
   auto theta2 = jlm::rvsdg::ThetaNode::create(r1);
   auto r2 = theta2->subregion();
-  auto p = theta2->add_loopvar(lv1->argument());
-  theta2->add_loopvar(lv2->argument());
-  theta2->add_loopvar(lv3->argument());
-  theta2->add_loopvar(lv4->argument());
-  theta2->set_predicate(p->argument());
+  auto p = theta2->AddLoopVar(lv1.pre);
+  auto p2 = theta2->AddLoopVar(lv2.pre);
+  auto p3 = theta2->AddLoopVar(lv3.pre);
+  auto p4 = theta2->AddLoopVar(lv4.pre);
+  theta2->set_predicate(p.pre);
 
-  auto u1 = jlm::tests::test_op::create(r1, { theta2->output(1) }, { vt });
-  auto b1 = jlm::tests::test_op::create(r1, { theta2->output(2), theta2->output(2) }, { vt });
-  auto u2 = jlm::tests::test_op::create(r1, { theta2->output(3) }, { vt });
+  auto u1 = jlm::tests::test_op::create(r1, { p2.output }, { vt });
+  auto b1 = jlm::tests::test_op::create(r1, { p3.output, p3.output }, { vt });
+  auto u2 = jlm::tests::test_op::create(r1, { p4.output }, { vt });
 
-  lv2->result()->divert_to(u1->output(0));
-  lv3->result()->divert_to(b1->output(0));
-  lv4->result()->divert_to(u1->output(0));
+  lv2.post->divert_to(u1->output(0));
+  lv3.post->divert_to(b1->output(0));
+  lv4.post->divert_to(u1->output(0));
 
-  theta1->set_predicate(lv1->argument());
+  theta1->set_predicate(lv1.pre);
 
-  GraphExport::Create(*theta1->output(1), "lv2");
-  GraphExport::Create(*theta1->output(2), "lv3");
-  GraphExport::Create(*theta1->output(3), "lv4");
+  GraphExport::Create(*lv2.output, "lv2");
+  GraphExport::Create(*lv3.output, "lv3");
+  GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
@@ -305,23 +305,23 @@ test_theta4()
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
 
-  auto lv1 = theta->add_loopvar(c);
-  auto lv2 = theta->add_loopvar(x);
-  auto lv3 = theta->add_loopvar(x);
-  auto lv4 = theta->add_loopvar(y);
-  auto lv5 = theta->add_loopvar(y);
-  auto lv6 = theta->add_loopvar(x);
-  auto lv7 = theta->add_loopvar(x);
+  auto lv1 = theta->AddLoopVar(c);
+  auto lv2 = theta->AddLoopVar(x);
+  auto lv3 = theta->AddLoopVar(x);
+  auto lv4 = theta->AddLoopVar(y);
+  auto lv5 = theta->AddLoopVar(y);
+  auto lv6 = theta->AddLoopVar(x);
+  auto lv7 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::test_op::create(region, { lv2->argument() }, { vt });
-  auto b1 = jlm::tests::test_op::create(region, { lv3->argument(), lv3->argument() }, { vt });
+  auto u1 = jlm::tests::test_op::create(region, { lv2.pre }, { vt });
+  auto b1 = jlm::tests::test_op::create(region, { lv3.pre, lv3.pre }, { vt });
 
-  lv2->result()->divert_to(lv4->argument());
-  lv3->result()->divert_to(lv5->argument());
-  lv4->result()->divert_to(u1->output(0));
-  lv5->result()->divert_to(b1->output(0));
+  lv2.post->divert_to(lv4.pre);
+  lv3.post->divert_to(lv5.pre);
+  lv4.post->divert_to(u1->output(0));
+  lv5.post->divert_to(b1->output(0));
 
-  theta->set_predicate(lv1->argument());
+  theta->set_predicate(lv1.pre);
 
   auto & ex1 = GraphExport::Create(*theta->output(1), "lv2");
   auto & ex2 = GraphExport::Create(*theta->output(2), "lv3");
@@ -334,8 +334,8 @@ test_theta4()
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(ex1.origin() != ex2.origin());
-  assert(lv2->argument()->nusers() != 0 && lv3->argument()->nusers() != 0);
-  assert(lv6->result()->origin() == lv7->result()->origin());
+  assert(lv2.pre->nusers() != 0 && lv3.pre->nusers() != 0);
+  assert(lv6.post->origin() == lv7.post->origin());
 }
 
 static inline void
@@ -358,16 +358,16 @@ test_theta5()
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
 
-  auto lv0 = theta->add_loopvar(c);
-  auto lv1 = theta->add_loopvar(x);
-  auto lv2 = theta->add_loopvar(x);
-  auto lv3 = theta->add_loopvar(y);
-  auto lv4 = theta->add_loopvar(y);
+  auto lv0 = theta->AddLoopVar(c);
+  auto lv1 = theta->AddLoopVar(x);
+  auto lv2 = theta->AddLoopVar(x);
+  auto lv3 = theta->AddLoopVar(y);
+  auto lv4 = theta->AddLoopVar(y);
 
-  lv1->result()->divert_to(lv3->argument());
-  lv2->result()->divert_to(lv4->argument());
+  lv1.post->divert_to(lv3.pre);
+  lv2.post->divert_to(lv4.pre);
 
-  theta->set_predicate(lv0->argument());
+  theta->set_predicate(lv0.pre);
 
   auto & ex1 = GraphExport::Create(*theta->output(1), "lv1");
   auto & ex2 = GraphExport::Create(*theta->output(2), "lv2");

@@ -159,15 +159,15 @@ InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 void
 InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
-  for (const auto & thetaOutput : thetaNode)
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<iostatetype>(thetaOutput->type()))
+    if (rvsdg::is<iostatetype>(loopVar.input->type()))
       continue;
 
-    if (rvsdg::is_invariant(thetaOutput))
-      thetaOutput->divert_users(thetaOutput->input()->origin());
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+      loopVar.output->divert_users(loopVar.input->origin());
   }
 }
 

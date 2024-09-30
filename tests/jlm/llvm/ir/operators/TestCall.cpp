@@ -200,18 +200,18 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::output * functionG)
     {
       auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
-      auto otf = outerTheta->add_loopvar(functionG);
+      auto otf = outerTheta->AddLoopVar(functionG);
 
       auto innerTheta = jlm::rvsdg::ThetaNode::create(outerTheta->subregion());
-      auto itf = innerTheta->add_loopvar(otf->argument());
+      auto itf = innerTheta->AddLoopVar(otf.pre);
 
       auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
       auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
-      auto ev = gamma->AddEntryVar(itf->argument());
+      auto ev = gamma->AddEntryVar(itf.pre);
       auto xv = gamma->AddExitVar(ev.branchArgument);
 
-      itf->result()->divert_to(xv.output);
-      otf->result()->divert_to(itf);
+      itf.post->divert_to(xv.output);
+      otf.post->divert_to(itf.output);
 
       return otf;
     };
@@ -233,7 +233,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto functionG = SetupOuterTheta(lambda->subregion(), functionGArgument);
 
     auto callResults =
-        CallNode::Create(functionG, functionTypeG, { iOStateArgument, memoryStateArgument });
+        CallNode::Create(functionG.output, functionTypeG, { iOStateArgument, memoryStateArgument });
 
     lambda->finalize(callResults);
 
@@ -300,31 +300,31 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
                                jlm::rvsdg::output * iOState,
                                jlm::rvsdg::output * memoryState)
     {
-      auto SetupInnerTheta = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * g)
+      auto SetupInnerTheta = [&](jlm::rvsdg::Region * region, jlm::rvsdg::output * g)
       {
         auto innerTheta = jlm::rvsdg::ThetaNode::create(region);
-        auto thetaOutputG = innerTheta->add_loopvar(g);
+        auto thetaOutputG = innerTheta->AddLoopVar(g);
 
         return thetaOutputG;
       };
 
       auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
-      auto thetaOutputG = outerTheta->add_loopvar(g);
-      auto thetaOutputValue = outerTheta->add_loopvar(value);
-      auto thetaOutputIoState = outerTheta->add_loopvar(iOState);
-      auto thetaOutputMemoryState = outerTheta->add_loopvar(memoryState);
+      auto thetaOutputG = outerTheta->AddLoopVar(g);
+      auto thetaOutputValue = outerTheta->AddLoopVar(value);
+      auto thetaOutputIoState = outerTheta->AddLoopVar(iOState);
+      auto thetaOutputMemoryState = outerTheta->AddLoopVar(memoryState);
 
-      auto functionG = SetupInnerTheta(outerTheta->subregion(), thetaOutputG->argument());
+      auto functionG = SetupInnerTheta(outerTheta->subregion(), thetaOutputG.pre);
 
       auto callResults = CallNode::Create(
-          functionG,
+          functionG.output,
           functionTypeG,
-          { thetaOutputIoState->argument(), thetaOutputMemoryState->argument() });
+          { thetaOutputIoState.pre, thetaOutputMemoryState.pre });
 
-      thetaOutputG->result()->divert_to(functionG);
-      thetaOutputValue->result()->divert_to(callResults[0]);
-      thetaOutputIoState->result()->divert_to(callResults[1]);
-      thetaOutputMemoryState->result()->divert_to(callResults[2]);
+      thetaOutputG.post->divert_to(functionG.output);
+      thetaOutputValue.post->divert_to(callResults[0]);
+      thetaOutputIoState.post->divert_to(callResults[1]);
+      thetaOutputMemoryState.post->divert_to(callResults[2]);
 
       return std::make_tuple(
           thetaOutputValue,
@@ -356,7 +356,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         iOStateArgument,
         memoryStateArgument);
 
-    auto lambdaOutput = lambda->finalize({ loopValue, iOState, memoryState });
+    auto lambdaOutput = lambda->finalize({ loopValue.output, iOState.output, memoryState.output });
 
     return std::make_tuple(lambdaOutput, callNode);
   };

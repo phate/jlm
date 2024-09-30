@@ -66,7 +66,7 @@ ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 }
 
 rvsdg::StructuralOutput *
-loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
+loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
   auto output = rvsdg::StructuralOutput::create(this, origin->Type());

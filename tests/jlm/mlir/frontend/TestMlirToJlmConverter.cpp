@@ -998,7 +998,7 @@ TestThetaOp()
 
       std::cout << "Checking theta node" << std::endl;
       assert(thetaNode->ninputs() == 2);
-      assert(thetaNode->nloopvars() == 2);
+      assert(thetaNode->GetLoopVars().size() == 2);
       assert(thetaNode->noutputs() == 2);
       assert(thetaNode->nsubregions() == 1);
       assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->type()));
