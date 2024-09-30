@@ -95,6 +95,13 @@ output::debug_string() const
   return jlm::util::strfmt(index());
 }
 
+rvsdg::node *
+output::GetNode(const rvsdg::output & output) noexcept
+{
+  auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
+  return nodeOutput ? nodeOutput->node() : nullptr;
+}
+
 void
 output::remove_user(jlm::rvsdg::input * user)
 {

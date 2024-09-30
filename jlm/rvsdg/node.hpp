@@ -374,6 +374,17 @@ public:
   virtual std::string
   debug_string() const;
 
+  /**
+   * Retrieve the associated node from \p output if \p output is derived from
+   * jlm::rvsdg::node_output.
+   *
+   * @param input The output from which to retrieve the node.
+   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
+   * otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::node *
+  GetNode(const rvsdg::output & output) noexcept;
+
   template<class T>
   class iterator
   {
