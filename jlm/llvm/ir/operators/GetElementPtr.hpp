@@ -70,7 +70,7 @@ public:
       const variable * baseAddress,
       const std::vector<const variable *> & offsets,
       std::shared_ptr<const rvsdg::valuetype> pointeeType,
-      std::shared_ptr<const rvsdg::type> resultType)
+      std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
@@ -101,7 +101,7 @@ public:
       rvsdg::output * baseAddress,
       const std::vector<rvsdg::output *> & offsets,
       std::shared_ptr<const rvsdg::valuetype> pointeeType,
-      std::shared_ptr<const rvsdg::type> resultType)
+      std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
@@ -116,7 +116,7 @@ public:
 
 private:
   static void
-  CheckPointerType(const rvsdg::type & type)
+  CheckPointerType(const rvsdg::Type & type)
   {
     if (!is<PointerType>(type))
     {
@@ -143,10 +143,10 @@ private:
     return offsetTypes;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(const std::vector<std::shared_ptr<const rvsdg::bittype>> & indexTypes)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     types.insert(types.end(), indexTypes.begin(), indexTypes.end());
 
     return types;

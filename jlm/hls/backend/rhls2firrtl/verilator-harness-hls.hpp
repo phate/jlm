@@ -48,10 +48,10 @@ private:
   }
 
   std::string
-  convert_to_c_type(const jlm::rvsdg::type * type);
+  convert_to_c_type(const jlm::rvsdg::Type * type);
 
   std::string
-  convert_to_c_type_postfix(const jlm::rvsdg::type * type);
+  convert_to_c_type_postfix(const jlm::rvsdg::Type * type);
 
   void
   get_function_header(

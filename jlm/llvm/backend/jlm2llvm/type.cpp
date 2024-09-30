@@ -128,17 +128,17 @@ convert(const scalablevectortype & type, context & ctx)
 
 template<class T>
 static ::llvm::Type *
-convert(const rvsdg::type & type, context & ctx)
+convert(const rvsdg::Type & type, context & ctx)
 {
   JLM_ASSERT(rvsdg::is<T>(type));
   return convert(*static_cast<const T *>(&type), ctx);
 }
 
 ::llvm::Type *
-convert_type(const rvsdg::type & type, context & ctx)
+convert_type(const rvsdg::Type & type, context & ctx)
 {
   static std::
-      unordered_map<std::type_index, std::function<::llvm::Type *(const rvsdg::type &, context &)>>
+      unordered_map<std::type_index, std::function<::llvm::Type *(const rvsdg::Type &, context &)>>
           map({ { typeid(rvsdg::bittype), convert<rvsdg::bittype> },
                 { typeid(FunctionType), convert<FunctionType> },
                 { typeid(PointerType), convert<PointerType> },

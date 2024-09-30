@@ -24,8 +24,8 @@ class MemCpyOperation : public rvsdg::simple_op
 {
 protected:
   MemCpyOperation(
-      const std::vector<std::shared_ptr<const rvsdg::type>> & operandTypes,
-      const std::vector<std::shared_ptr<const rvsdg::type>> & resultTypes)
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
       : simple_op(operandTypes, resultTypes)
   {
     JLM_ASSERT(operandTypes.size() >= 4);
@@ -72,7 +72,7 @@ class MemCpyNonVolatileOperation final : public MemCpyOperation
 public:
   ~MemCpyNonVolatileOperation() override;
 
-  MemCpyNonVolatileOperation(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
+  MemCpyNonVolatileOperation(std::shared_ptr<const rvsdg::Type> lengthType, size_t numMemoryStates)
       : MemCpyOperation(
             CreateOperandTypes(std::move(lengthType), numMemoryStates),
             CreateResultTypes(numMemoryStates))
@@ -119,16 +119,16 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateOperandTypes(std::shared_ptr<const rvsdg::type> length, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  CreateOperandTypes(std::shared_ptr<const rvsdg::Type> length, size_t numMemoryStates)
   {
     auto pointerType = PointerType::Create();
-    std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType, pointerType, length };
+    std::vector<std::shared_ptr<const rvsdg::Type>> types = { pointerType, pointerType, length };
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
     return { numMemoryStates, MemoryStateType::Create() };
@@ -151,7 +151,7 @@ class MemCpyVolatileOperation final : public MemCpyOperation
 public:
   ~MemCpyVolatileOperation() noexcept override;
 
-  MemCpyVolatileOperation(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
+  MemCpyVolatileOperation(std::shared_ptr<const rvsdg::Type> lengthType, size_t numMemoryStates)
       : MemCpyOperation(
             CreateOperandTypes(std::move(lengthType), numMemoryStates),
             CreateResultTypes(numMemoryStates))
@@ -200,11 +200,11 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateOperandTypes(std::shared_ptr<const rvsdg::type> lengthType, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  CreateOperandTypes(std::shared_ptr<const rvsdg::Type> lengthType, size_t numMemoryStates)
   {
     auto pointerType = PointerType::Create();
-    std::vector<std::shared_ptr<const rvsdg::type>> types = { pointerType,
+    std::vector<std::shared_ptr<const rvsdg::Type>> types = { pointerType,
                                                               pointerType,
                                                               std::move(lengthType),
                                                               iostatetype::Create() };
@@ -212,10 +212,10 @@ private:
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(1, iostatetype::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, iostatetype::Create());
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
   }

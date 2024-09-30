@@ -30,8 +30,8 @@ public:
   }
 
   inline sext_op(
-      std::shared_ptr<const rvsdg::type> srctype,
-      std::shared_ptr<const rvsdg::type> dsttype)
+      std::shared_ptr<const rvsdg::Type> srctype,
+      std::shared_ptr<const rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(srctype);
@@ -74,7 +74,7 @@ public:
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)

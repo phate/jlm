@@ -122,7 +122,7 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
 /* phi builder class */
 
 rvoutput *
-builder::add_recvar(std::shared_ptr<const jlm::rvsdg::type> type)
+builder::add_recvar(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   if (!node_)
     return nullptr;

@@ -79,13 +79,13 @@ public:
   structural_input(
       jlm::rvsdg::structural_node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
   static structural_input *
   create(
       structural_node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const jlm::rvsdg::type> type)
+      std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto input = std::make_unique<structural_input>(node, origin, std::move(type));
     return node->append_input(std::move(input));
@@ -112,10 +112,10 @@ class structural_output : public node_output
 public:
   virtual ~structural_output() noexcept;
 
-  structural_output(jlm::rvsdg::structural_node * node, std::shared_ptr<const rvsdg::type> type);
+  structural_output(jlm::rvsdg::structural_node * node, std::shared_ptr<const rvsdg::Type> type);
 
   static structural_output *
-  create(structural_node * node, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(structural_node * node, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto output = std::make_unique<structural_output>(node, std::move(type));
     return node->append_output(std::move(output));

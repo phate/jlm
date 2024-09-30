@@ -28,7 +28,7 @@ namespace jlm::rvsdg
 class GraphImport : public RegionArgument
 {
 protected:
-  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name);
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
 
 public:
   [[nodiscard]] const std::string &

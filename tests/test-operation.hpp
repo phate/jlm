@@ -26,7 +26,7 @@ namespace jlm::tests
  */
 class GraphImport final : public rvsdg::GraphImport
 {
-  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
       : rvsdg::GraphImport(graph, std::move(type), std::move(name))
   {}
 
@@ -35,7 +35,7 @@ public:
   Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
   static GraphImport &
-  Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name)
+  Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
   {
     auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
     graph.root()->append_argument(graphImport);
@@ -74,8 +74,8 @@ public:
   virtual ~unary_op() noexcept;
 
   inline unary_op(
-      std::shared_ptr<const rvsdg::type> srctype,
-      std::shared_ptr<const rvsdg::type> dsttype) noexcept
+      std::shared_ptr<const rvsdg::Type> srctype,
+      std::shared_ptr<const rvsdg::Type> dsttype) noexcept
       : rvsdg::unary_op(std::move(srctype), std::move(dsttype))
   {}
 
@@ -97,9 +97,9 @@ public:
   static inline rvsdg::node *
   create(
       rvsdg::Region * region,
-      std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::Type> srctype,
       rvsdg::output * operand,
-      std::shared_ptr<const rvsdg::type> dsttype)
+      std::shared_ptr<const rvsdg::Type> dsttype)
   {
     return rvsdg::simple_node::create(
         region,
@@ -109,9 +109,9 @@ public:
 
   static inline rvsdg::output *
   create_normalized(
-      std::shared_ptr<const rvsdg::type> srctype,
+      std::shared_ptr<const rvsdg::Type> srctype,
       rvsdg::output * operand,
-      std::shared_ptr<const rvsdg::type> dsttype)
+      std::shared_ptr<const rvsdg::Type> dsttype)
   {
     unary_op op(std::move(srctype), std::move(dsttype));
     return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
@@ -138,8 +138,8 @@ public:
   virtual ~binary_op() noexcept;
 
   inline binary_op(
-      const std::shared_ptr<const rvsdg::type> & srctype,
-      std::shared_ptr<const rvsdg::type> dsttype,
+      const std::shared_ptr<const rvsdg::Type> & srctype,
+      std::shared_ptr<const rvsdg::Type> dsttype,
       const enum rvsdg::binary_op::flags & flags) noexcept
       : rvsdg::binary_op({ srctype, srctype }, std::move(dsttype)),
         flags_(flags)
@@ -167,8 +167,8 @@ public:
 
   static inline rvsdg::node *
   create(
-      const std::shared_ptr<const rvsdg::type> & srctype,
-      std::shared_ptr<const rvsdg::type> dsttype,
+      const std::shared_ptr<const rvsdg::Type> & srctype,
+      std::shared_ptr<const rvsdg::Type> dsttype,
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
@@ -178,8 +178,8 @@ public:
 
   static inline rvsdg::output *
   create_normalized(
-      const std::shared_ptr<const rvsdg::type> srctype,
-      std::shared_ptr<const rvsdg::type> dsttype,
+      const std::shared_ptr<const rvsdg::Type> srctype,
+      std::shared_ptr<const rvsdg::Type> dsttype,
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
@@ -227,7 +227,7 @@ public:
   AddInputWithArguments(rvsdg::output & origin);
 
   StructuralNodeOutput &
-  AddOutput(std::shared_ptr<const rvsdg::type> type);
+  AddOutput(std::shared_ptr<const rvsdg::Type> type);
 
   StructuralNodeOutput &
   AddOutputWithResults(const std::vector<rvsdg::output *> & origins);
@@ -253,7 +253,7 @@ private:
   StructuralNodeInput(
       structural_node & node,
       rvsdg::output & origin,
-      std::shared_ptr<const rvsdg::type> type)
+      std::shared_ptr<const rvsdg::Type> type)
       : rvsdg::structural_input(&node, &origin, std::move(type))
   {}
 
@@ -288,7 +288,7 @@ public:
   ~StructuralNodeOutput() noexcept override;
 
 private:
-  StructuralNodeOutput(structural_node & node, std::shared_ptr<const rvsdg::type> type)
+  StructuralNodeOutput(structural_node & node, std::shared_ptr<const rvsdg::Type> type)
       : rvsdg::structural_output(&node, std::move(type))
   {}
 };
@@ -307,7 +307,7 @@ private:
   StructuralNodeArgument(
       rvsdg::Region & region,
       StructuralNodeInput * input,
-      std::shared_ptr<const rvsdg::type> type)
+      std::shared_ptr<const rvsdg::Type> type)
       : rvsdg::RegionArgument(&region, input, std::move(type))
   {}
 
@@ -320,7 +320,7 @@ private:
   }
 
   static StructuralNodeArgument &
-  Create(rvsdg::Region & region, std::shared_ptr<const rvsdg::type> type)
+  Create(rvsdg::Region & region, std::shared_ptr<const rvsdg::Type> type)
   {
     auto argument = new StructuralNodeArgument(region, nullptr, std::move(type));
     region.append_argument(argument);
@@ -366,8 +366,8 @@ public:
   virtual ~test_op();
 
   inline test_op(
-      std::vector<std::shared_ptr<const rvsdg::type>> arguments,
-      std::vector<std::shared_ptr<const rvsdg::type>> results)
+      std::vector<std::shared_ptr<const rvsdg::Type>> arguments,
+      std::vector<std::shared_ptr<const rvsdg::Type>> results)
       : simple_op(std::move(arguments), std::move(results))
   {}
 
@@ -386,9 +386,9 @@ public:
   create(
       rvsdg::Region * region,
       const std::vector<rvsdg::output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::type>> result_types)
+      std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> operand_types;
+    std::vector<std::shared_ptr<const rvsdg::Type>> operand_types;
     for (const auto & operand : operands)
       operand_types.push_back(operand->Type());
 
@@ -399,9 +399,9 @@ public:
   static rvsdg::simple_node *
   Create(
       rvsdg::Region * region,
-      std::vector<std::shared_ptr<const rvsdg::type>> operandTypes,
+      std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes,
       const std::vector<rvsdg::output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::type>> resultTypes)
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     test_op op(std::move(operandTypes), std::move(resultTypes));
     return rvsdg::simple_node::create(region, op, { operands });
@@ -427,7 +427,7 @@ public:
   Create(
       rvsdg::Region & region,
       const std::vector<rvsdg::output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::type>> resultTypes)
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     auto operandTypes = ExtractTypes(operands);
     test_op operation(std::move(operandTypes), std::move(resultTypes));
@@ -437,10 +437,10 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   ExtractTypes(const std::vector<rvsdg::output *> & outputs)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types;
+    std::vector<std::shared_ptr<const rvsdg::Type>> types;
     types.reserve(outputs.size());
     for (auto output : outputs)
     {
@@ -454,9 +454,9 @@ private:
 static inline std::unique_ptr<llvm::tac>
 create_testop_tac(
     const std::vector<const llvm::variable *> & arguments,
-    std::vector<std::shared_ptr<const rvsdg::type>> result_types)
+    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
 {
-  std::vector<std::shared_ptr<const rvsdg::type>> argument_types;
+  std::vector<std::shared_ptr<const rvsdg::Type>> argument_types;
   for (const auto & arg : arguments)
     argument_types.push_back(arg->Type());
 
@@ -468,9 +468,9 @@ static inline std::vector<rvsdg::output *>
 create_testop(
     rvsdg::Region * region,
     const std::vector<rvsdg::output *> & operands,
-    std::vector<std::shared_ptr<const rvsdg::type>> result_types)
+    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
 {
-  std::vector<std::shared_ptr<const rvsdg::type>> operand_types;
+  std::vector<std::shared_ptr<const rvsdg::Type>> operand_types;
   for (const auto & operand : operands)
     operand_types.push_back(operand->Type());
 
@@ -484,7 +484,7 @@ private:
   TestGraphArgument(
       rvsdg::Region & region,
       jlm::rvsdg::structural_input * input,
-      std::shared_ptr<const jlm::rvsdg::type> type)
+      std::shared_ptr<const jlm::rvsdg::Type> type)
       : jlm::rvsdg::RegionArgument(&region, input, type)
   {}
 
@@ -499,7 +499,7 @@ public:
   Create(
       rvsdg::Region & region,
       jlm::rvsdg::structural_input * input,
-      std::shared_ptr<const jlm::rvsdg::type> type)
+      std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto graphArgument = new TestGraphArgument(region, input, std::move(type));
     region.append_argument(graphArgument);

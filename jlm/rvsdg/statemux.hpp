@@ -93,7 +93,7 @@ is_mux_op(const jlm::rvsdg::operation & op)
 
 static inline std::vector<jlm::rvsdg::output *>
 create_state_mux(
-    std::shared_ptr<const jlm::rvsdg::type> type,
+    std::shared_ptr<const jlm::rvsdg::Type> type,
     const std::vector<jlm::rvsdg::output *> & operands,
     size_t nresults)
 {
@@ -111,7 +111,7 @@ create_state_mux(
 
 static inline jlm::rvsdg::output *
 create_state_merge(
-    std::shared_ptr<const jlm::rvsdg::type> type,
+    std::shared_ptr<const jlm::rvsdg::Type> type,
     const std::vector<jlm::rvsdg::output *> & operands)
 {
   return create_state_mux(std::move(type), operands, 1)[0];
@@ -119,7 +119,7 @@ create_state_merge(
 
 static inline std::vector<jlm::rvsdg::output *>
 create_state_split(
-    std::shared_ptr<const jlm::rvsdg::type> type,
+    std::shared_ptr<const jlm::rvsdg::Type> type,
     jlm::rvsdg::output * operand,
     size_t nresults)
 {

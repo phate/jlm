@@ -67,8 +67,8 @@ public:
   virtual ~simple_op();
 
   simple_op(
-      std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands,
-      std::vector<std::shared_ptr<const jlm::rvsdg::type>> results)
+      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
+      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> results)
       : operands_(std::move(operands)),
         results_(std::move(results))
   {}
@@ -76,21 +76,21 @@ public:
   size_t
   narguments() const noexcept;
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   argument(size_t index) const noexcept;
 
   size_t
   nresults() const noexcept;
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   result(size_t index) const noexcept;
 
   static jlm::rvsdg::simple_normal_form *
   normal_form(jlm::rvsdg::graph * graph) noexcept;
 
 private:
-  std::vector<std::shared_ptr<const rvsdg::type>> operands_;
-  std::vector<std::shared_ptr<const rvsdg::type>> results_;
+  std::vector<std::shared_ptr<const rvsdg::Type>> operands_;
+  std::vector<std::shared_ptr<const rvsdg::Type>> results_;
 };
 
 /* structural operation */

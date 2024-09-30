@@ -170,7 +170,7 @@ private:
    * \param type The MLIR type to be converted.
    * \result The converted RVSDG type.
    */
-  static std::unique_ptr<rvsdg::type>
+  static std::unique_ptr<rvsdg::Type>
   ConvertType(::mlir::Type & type);
 
   std::unique_ptr<::mlir::MLIRContext> Context_;

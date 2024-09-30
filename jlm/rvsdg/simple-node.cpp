@@ -21,7 +21,7 @@ simple_input::~simple_input() noexcept
 simple_input::simple_input(
     jlm::rvsdg::simple_node * node,
     jlm::rvsdg::output * origin,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {}
 
@@ -29,7 +29,7 @@ simple_input::simple_input(
 
 simple_output::simple_output(
     jlm::rvsdg::simple_node * node,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {}
 
