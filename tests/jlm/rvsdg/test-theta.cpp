@@ -163,7 +163,7 @@ TestRemoveThetaInputsWhere()
 
   // Act & Assert
   auto deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [&](const ThetaInput & input)
+      [&](const jlm::rvsdg::input & input)
       {
         return input.index() == thetaOutput1->input()->index();
       });
@@ -176,13 +176,14 @@ TestRemoveThetaInputsWhere()
   assert(thetaOutput2->input()->index() == 1);
   assert(thetaOutput2->argument()->index() == 1);
 
+  auto expectDeadOutput = thetaNode->output(2);
   deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [](const ThetaInput & input)
+      [](const jlm::rvsdg::input & input)
       {
         return true;
       });
   assert(deadOutputs.Size() == 1);
-  assert(deadOutputs.Contains(thetaNode->output(2)));
+  assert(deadOutputs.Contains(expectDeadOutput));
   assert(thetaNode->ninputs() == 1);
   assert(thetaNode->subregion()->narguments() == 1);
   assert(thetaOutput0->input()->index() == 0);

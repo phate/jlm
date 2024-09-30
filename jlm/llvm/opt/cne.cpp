@@ -312,10 +312,12 @@ mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
     {
       auto input1 = theta->input(i1);
       auto input2 = theta->input(i2);
-      if (congruent(input1->argument(), input2->argument(), ctx))
+      auto loopvar1 = theta->MapEntryLoopVar(*input1);
+      auto loopvar2 = theta->MapEntryLoopVar(*input2);
+      if (congruent(loopvar1.pre, loopvar2.pre, ctx))
       {
-        ctx.mark(input1->argument(), input2->argument());
-        ctx.mark(input1->output(), input2->output());
+        ctx.mark(loopvar1.pre, loopvar2.pre);
+        ctx.mark(loopvar1.exit, loopvar2.exit);
       }
     }
   }

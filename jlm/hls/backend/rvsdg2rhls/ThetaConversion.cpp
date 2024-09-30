@@ -23,7 +23,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   {
     jlm::rvsdg::output * buffer;
     loop->add_loopvar(theta.input(i)->origin(), &buffer);
-    smap.insert(theta.input(i)->argument(), buffer);
+    smap.insert(theta.MapEntryLoopVar(*theta.input(i)).pre, buffer);
     // buffer out is only used by branch
     branches.push_back(*buffer->begin());
     // divert theta outputs
@@ -37,7 +37,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   loop->set_predicate(smap.lookup(theta.predicate()->origin()));
   for (size_t i = 0; i < theta.ninputs(); i++)
   {
-    branches[i]->divert_to(smap.lookup(theta.input(i)->result()->origin()));
+    branches[i]->divert_to(smap.lookup(theta.MapEntryLoopVar(*theta.input(i)).post->origin()));
   }
 
   remove(&theta);

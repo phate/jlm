@@ -440,7 +440,7 @@ DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 
   SweepRegion(thetaSubregion);
 
-  auto matchInput = [&](const rvsdg::ThetaInput & input)
+  auto matchInput = [&](const rvsdg::input & input)
   {
     return deadInputs.Contains(&input);
   };
