@@ -36,7 +36,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 {
   auto & oldFunctionType = lambdaNode.type();
 
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
     auto argument = lambdaNode.subregion()->argument(i);
@@ -49,7 +49,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     }
   }
 
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
     auto result = lambdaNode.subregion()->result(i);

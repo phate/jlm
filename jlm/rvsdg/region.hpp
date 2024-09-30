@@ -54,7 +54,7 @@ protected:
   RegionArgument(
       rvsdg::Region * region,
       structural_input * input,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
   RegionArgument(const RegionArgument &) = delete;
@@ -112,7 +112,7 @@ protected:
       rvsdg::Region * region,
       rvsdg::output * origin,
       structural_output * output,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
   RegionResult(const RegionResult &) = delete;

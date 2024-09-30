@@ -21,7 +21,7 @@ namespace jlm::llvm::dot
  * The function is recursive, and will create nodes for subtypes of aggregate types.
  */
 static util::Node &
-GetOrCreateTypeGraphNode(const rvsdg::type & type, util::Graph & typeGraph)
+GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
 {
   // If the type already has a corresponding node, return it
   if (auto * graphElement = typeGraph.GetElementFromProgramObject(type))

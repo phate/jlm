@@ -28,7 +28,7 @@ public:
 
   tacvariable(
       llvm::tac * tac,
-      std::shared_ptr<const jlm::rvsdg::type> type,
+      std::shared_ptr<const jlm::rvsdg::Type> type,
       const std::string & name)
       : variable(std::move(type), name),
         tac_(tac)
@@ -41,7 +41,7 @@ public:
   }
 
   static std::unique_ptr<tacvariable>
-  create(llvm::tac * tac, std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+  create(llvm::tac * tac, std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
   {
     return std::make_unique<tacvariable>(tac, std::move(type), name);
   }

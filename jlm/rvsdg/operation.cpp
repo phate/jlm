@@ -31,7 +31,7 @@ simple_op::narguments() const noexcept
   return operands_.size();
 }
 
-const std::shared_ptr<const rvsdg::type> &
+const std::shared_ptr<const rvsdg::Type> &
 simple_op::argument(size_t index) const noexcept
 {
   JLM_ASSERT(index < narguments());
@@ -44,7 +44,7 @@ simple_op::nresults() const noexcept
   return results_.size();
 }
 
-const std::shared_ptr<const rvsdg::type> &
+const std::shared_ptr<const rvsdg::Type> &
 simple_op::result(size_t index) const noexcept
 {
   JLM_ASSERT(index < nresults());

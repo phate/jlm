@@ -17,7 +17,7 @@ namespace jlm::llvm::aa
  * @return true if pointees should be tracked for all values of the given type, otherwise false
  */
 bool
-IsOrContainsPointerType(const rvsdg::type & type)
+IsOrContainsPointerType(const rvsdg::Type & type)
 {
   return IsOrContains<PointerType>(type);
 }

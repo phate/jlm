@@ -54,7 +54,7 @@ convert_function_type(const ::llvm::Type * t, context & ctx)
   auto type = ::llvm::cast<const ::llvm::FunctionType>(t);
 
   /* arguments */
-  std::vector<std::shared_ptr<const rvsdg::type>> argumentTypes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
   for (size_t n = 0; n < type->getNumParams(); n++)
     argumentTypes.push_back(ConvertType(type->getParamType(n), ctx));
   if (type->isVarArg())
@@ -63,7 +63,7 @@ convert_function_type(const ::llvm::Type * t, context & ctx)
   argumentTypes.push_back(MemoryStateType::Create());
 
   /* results */
-  std::vector<std::shared_ptr<const rvsdg::type>> resultTypes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
   if (type->getReturnType()->getTypeID() != ::llvm::Type::VoidTyID)
     resultTypes.push_back(ConvertType(type->getReturnType(), ctx));
   resultTypes.push_back(iostatetype::Create());

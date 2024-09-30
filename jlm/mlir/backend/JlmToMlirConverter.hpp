@@ -170,7 +170,7 @@ private:
    * \result The corresponding MLIR RVSDG type.
    */
   ::mlir::Type
-  ConvertType(const rvsdg::type & type);
+  ConvertType(const rvsdg::Type & type);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;

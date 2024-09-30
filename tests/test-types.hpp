@@ -24,7 +24,7 @@ public:
   debug_string() const override;
 
   virtual bool
-  operator==(const rvsdg::type & other) const noexcept override;
+  operator==(const rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -46,7 +46,7 @@ public:
   debug_string() const override;
 
   virtual bool
-  operator==(const rvsdg::type & other) const noexcept override;
+  operator==(const rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;

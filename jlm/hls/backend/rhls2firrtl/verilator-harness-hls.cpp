@@ -710,7 +710,7 @@ VerilatorHarnessHLS::get_function_header(
 }
 
 std::string
-VerilatorHarnessHLS::convert_to_c_type(const jlm::rvsdg::type * type)
+VerilatorHarnessHLS::convert_to_c_type(const jlm::rvsdg::Type * type)
 {
   if (auto t = dynamic_cast<const jlm::rvsdg::bittype *>(type))
   {
@@ -731,7 +731,7 @@ VerilatorHarnessHLS::convert_to_c_type(const jlm::rvsdg::type * type)
 }
 
 std::string
-VerilatorHarnessHLS::convert_to_c_type_postfix(const jlm::rvsdg::type * type)
+VerilatorHarnessHLS::convert_to_c_type_postfix(const jlm::rvsdg::Type * type)
 {
   if (auto t = dynamic_cast<const llvm::arraytype *>(type))
   {

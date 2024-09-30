@@ -419,12 +419,12 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region 
 
   // Create the RVSDG function signature
   auto lambdaRefType = ::mlir::cast<::mlir::rvsdg::LambdaRefType>(result);
-  std::vector<std::shared_ptr<const rvsdg::type>> argumentTypes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
   for (auto argumentType : lambdaRefType.getParameterTypes())
   {
     argumentTypes.push_back(ConvertType(argumentType));
   }
-  std::vector<std::shared_ptr<const rvsdg::type>> resultTypes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
   for (auto returnType : lambdaRefType.getReturnTypes())
   {
     resultTypes.push_back(ConvertType(returnType));
@@ -447,7 +447,7 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region 
   return rvsdgLambda;
 }
 
-std::unique_ptr<rvsdg::type>
+std::unique_ptr<rvsdg::Type>
 MlirToJlmConverter::ConvertType(::mlir::Type & type)
 {
   if (auto ctrlType = ::mlir::dyn_cast<::mlir::rvsdg::RVSDG_CTRLType>(type))
