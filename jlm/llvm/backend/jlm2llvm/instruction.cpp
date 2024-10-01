@@ -279,7 +279,7 @@ convert_phi(
 
 static ::llvm::Value *
 CreateLoadInstruction(
-    const rvsdg::valuetype & loadedType,
+    const rvsdg::ValueType & loadedType,
     const variable * address,
     bool isVolatile,
     size_t alignment,
@@ -840,7 +840,7 @@ convert_cast(
     context & ctx)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
-  auto dsttype = std::dynamic_pointer_cast<const rvsdg::valuetype>(op.result(0));
+  auto dsttype = std::dynamic_pointer_cast<const rvsdg::ValueType>(op.result(0));
   auto operand = operands[0];
 
   if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))

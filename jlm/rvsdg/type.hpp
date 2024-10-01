@@ -44,13 +44,13 @@ public:
   ComputeHash() const noexcept = 0;
 };
 
-class valuetype : public jlm::rvsdg::Type
+class ValueType : public Type
 {
 public:
-  virtual ~valuetype() noexcept;
+  ~ValueType() noexcept override;
 
 protected:
-  inline constexpr valuetype() noexcept
+  constexpr ValueType() noexcept
       : jlm::rvsdg::Type()
   {}
 };

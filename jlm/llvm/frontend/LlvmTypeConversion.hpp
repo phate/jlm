@@ -27,7 +27,7 @@ class context;
 fpsize
 ExtractFloatingPointSize(const ::llvm::Type * type);
 
-std::shared_ptr<const rvsdg::valuetype>
+std::shared_ptr<const rvsdg::ValueType>
 ConvertType(const ::llvm::Type * type, context & ctx);
 
 static inline std::shared_ptr<const FunctionType>

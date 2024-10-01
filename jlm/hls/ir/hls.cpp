@@ -192,7 +192,7 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
 }
 
 std::shared_ptr<const bundletype>
-get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write)
+get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("addr", llvm::PointerType::Create());
@@ -207,7 +207,7 @@ get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write
 }
 
 std::shared_ptr<const bundletype>
-get_mem_res_type(std::shared_ptr<const jlm::rvsdg::valuetype> dataType)
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));

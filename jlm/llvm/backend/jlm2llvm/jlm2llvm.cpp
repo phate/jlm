@@ -42,7 +42,7 @@ has_return_value(const llvm::cfg & cfg)
   for (size_t n = 0; n < cfg.exit()->nresults(); n++)
   {
     auto result = cfg.exit()->result(n);
-    if (rvsdg::is<rvsdg::valuetype>(result->type()))
+    if (rvsdg::is<rvsdg::ValueType>(result->type()))
       return true;
   }
 
@@ -65,7 +65,7 @@ create_return(const cfg_node * node, context & ctx)
   }
 
   auto result = cfg.exit()->result(0);
-  JLM_ASSERT(rvsdg::is<rvsdg::valuetype>(result->type()));
+  JLM_ASSERT(rvsdg::is<rvsdg::ValueType>(result->type()));
   builder.CreateRet(ctx.value(result));
 }
 

@@ -31,7 +31,7 @@ ExtractFloatingPointSize(const ::llvm::Type * type)
   return i->second;
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_integer_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::IntegerTyID);
@@ -40,14 +40,14 @@ convert_integer_type(const ::llvm::Type * t, context & ctx)
   return rvsdg::bittype::Create(type->getBitWidth());
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_pointer_type(const ::llvm::Type * t, context &)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::PointerTyID);
   return PointerType::Create();
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_function_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::FunctionTyID);
@@ -72,7 +72,7 @@ convert_function_type(const ::llvm::Type * t, context & ctx)
   return FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_fp_type(const ::llvm::Type * t, context & ctx)
 {
   static const std::unordered_map<::llvm::Type::TypeID, fpsize> map(
@@ -87,7 +87,7 @@ convert_fp_type(const ::llvm::Type * t, context & ctx)
   return fptype::Create(i->second);
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_struct_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->isStructTy());
@@ -100,7 +100,7 @@ convert_struct_type(const ::llvm::Type * t, context & ctx)
                          : StructType::Create(isPacked, declaration);
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_array_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->isArrayTy());
@@ -108,7 +108,7 @@ convert_array_type(const ::llvm::Type * t, context & ctx)
   return arraytype::Create(std::move(etype), t->getArrayNumElements());
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_fixed_vector_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::FixedVectorTyID);
@@ -118,7 +118,7 @@ convert_fixed_vector_type(const ::llvm::Type * t, context & ctx)
       ::llvm::cast<::llvm::FixedVectorType>(t)->getNumElements());
 }
 
-static std::shared_ptr<const rvsdg::valuetype>
+static std::shared_ptr<const rvsdg::ValueType>
 convert_scalable_vector_type(const ::llvm::Type * t, context & ctx)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::ScalableVectorTyID);
@@ -128,12 +128,12 @@ convert_scalable_vector_type(const ::llvm::Type * t, context & ctx)
       ::llvm::cast<::llvm::ScalableVectorType>(t)->getMinNumElements());
 }
 
-std::shared_ptr<const rvsdg::valuetype>
+std::shared_ptr<const rvsdg::ValueType>
 ConvertType(const ::llvm::Type * t, context & ctx)
 {
   static std::unordered_map<
       ::llvm::Type::TypeID,
-      std::function<std::shared_ptr<const rvsdg::valuetype>(const ::llvm::Type *, context &)>>
+      std::function<std::shared_ptr<const rvsdg::ValueType>(const ::llvm::Type *, context &)>>
       map({ { ::llvm::Type::IntegerTyID, convert_integer_type },
             { ::llvm::Type::PointerTyID, convert_pointer_type },
             { ::llvm::Type::FunctionTyID, convert_function_type },

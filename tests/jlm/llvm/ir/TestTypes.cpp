@@ -28,9 +28,9 @@ TestIsOrContains()
   assert(!IsOrContains<PointerType>(*ioStateType));
 
   // Checking supertypes should work
-  assert(IsOrContains<jlm::rvsdg::valuetype>(*pointerType));
-  assert(!IsOrContains<jlm::rvsdg::valuetype>(*memoryStateType));
-  assert(!IsOrContains<jlm::rvsdg::valuetype>(*ioStateType));
+  assert(IsOrContains<jlm::rvsdg::ValueType>(*pointerType));
+  assert(!IsOrContains<jlm::rvsdg::ValueType>(*memoryStateType));
+  assert(!IsOrContains<jlm::rvsdg::ValueType>(*ioStateType));
   assert(!IsOrContains<jlm::rvsdg::statetype>(*pointerType));
   assert(IsOrContains<jlm::rvsdg::statetype>(*memoryStateType));
   assert(IsOrContains<jlm::rvsdg::statetype>(*ioStateType));
