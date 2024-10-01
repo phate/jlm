@@ -164,6 +164,11 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertGamma(*gamma, block, inputs);
   }
+  else if (auto theta = dynamic_cast<const rvsdg::theta_node *>(&node))
+  {
+    // Loop
+    return ConvertTheta(*theta, block, inputs);
+  }
   else
   {
     auto message = util::strfmt("Unimplemented structural node: ", node.operation().debug_string());
@@ -464,6 +469,38 @@ JlmToMlirConverter::ConvertGamma(
   return gamma;
 }
 
+::mlir::Operation *
+JlmToMlirConverter::ConvertTheta(
+    const rvsdg::theta_node & thetaNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
+  ::llvm::SmallVector<::mlir::Type> outputTypeRange;
+  for (size_t i = 0; i < thetaNode.noutputs(); ++i)
+  {
+    outputTypeRange.push_back(ConvertType(thetaNode.output(i)->type()));
+  }
+
+  ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
+  ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
+
+  auto theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
+      Builder_->getUnknownLoc(),
+      ::mlir::TypeRange(::llvm::ArrayRef(outputTypeRange)),
+      ::mlir::ValueRange(::llvm::ArrayRef(inputs)),
+      attributes);
+
+  block.push_back(theta);
+  auto & thetaBlock = theta.getRegion().emplaceBlock();
+  auto regionResults = ConvertRegion(*thetaNode.subregion(), thetaBlock);
+  auto results = ::mlir::ValueRange({ std::next(regionResults.begin()), inputs.end() });
+  auto thetaResult = Builder_->create<::mlir::rvsdg::ThetaResult>(
+      Builder_->getUnknownLoc(),
+      regionResults[0],
+      results);
+  thetaBlock.push_back(thetaResult);
+  return theta;
+}
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::type & type)
 {
