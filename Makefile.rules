@@ -179,11 +179,7 @@ docs: .PHONY
 # Clang format rules
 
 format:
-	@for FILE in $(SOURCES) $(HEADERS) ; do \
-		clang-format-$(LLVM_VERSION) --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
-	done
+	clang-format-$(LLVM_VERSION) --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
 
 format-dry-run:
-	@for FILE in $(SOURCES) $(HEADERS) ; do \
-		clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $$FILE || exit 1 ;\
-	done
+	clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
