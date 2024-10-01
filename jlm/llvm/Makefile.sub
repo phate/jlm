@@ -152,7 +152,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/frontend/llvm/TestFNeg \
     tests/jlm/llvm/frontend/llvm/test-function-call \
     tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
-    tests/jlm/llvm/frontend/llvm/LlvmTypeConversionTests.cpp \
     tests/jlm/llvm/frontend/llvm/test-recursive-data \
     tests/jlm/llvm/frontend/llvm/test-restructuring \
     tests/jlm/llvm/frontend/llvm/test-select \
