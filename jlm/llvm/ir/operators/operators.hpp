@@ -639,7 +639,7 @@ class ConstantDataArray final : public jlm::rvsdg::simple_op
 public:
   virtual ~ConstantDataArray();
 
-  ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::valuetype> & type, size_t size)
+  ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
       : simple_op({ size, type }, { arraytype::Create(type, size) })
   {
     if (size == 0)
@@ -661,7 +661,7 @@ public:
     return std::static_pointer_cast<const arraytype>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
     return std::static_pointer_cast<const arraytype>(result(0))->element_type();
@@ -673,7 +673,7 @@ public:
     if (elements.size() == 0)
       throw jlm::util::error("expected at least one element.");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
       throw jlm::util::error("expected value type.");
 
@@ -687,7 +687,7 @@ public:
     if (elements.empty())
       throw jlm::util::error("Expected at least one element.");
 
-    auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!valueType)
     {
       throw jlm::util::error("Expected value type.");
@@ -1081,7 +1081,7 @@ class PoisonValueOperation final : public jlm::rvsdg::simple_op
 public:
   ~PoisonValueOperation() noexcept override;
 
-  explicit PoisonValueOperation(std::shared_ptr<const jlm::rvsdg::valuetype> type)
+  explicit PoisonValueOperation(std::shared_ptr<const jlm::rvsdg::ValueType> type)
       : jlm::rvsdg::simple_op({}, { std::move(type) })
   {}
 
@@ -1104,10 +1104,10 @@ public:
   std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   GetType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(result(0).get());
+    return *util::AssertedCast<const rvsdg::ValueType>(result(0).get());
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1129,10 +1129,10 @@ public:
   }
 
 private:
-  static std::shared_ptr<const jlm::rvsdg::valuetype>
+  static std::shared_ptr<const jlm::rvsdg::ValueType>
   CheckAndConvertType(const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    if (auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(type))
+    if (auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(type))
       return valueType;
 
     throw jlm::util::error("Expected value type.");
@@ -1490,8 +1490,8 @@ public:
   virtual ~bitcast_op();
 
   inline bitcast_op(
-      std::shared_ptr<const jlm::rvsdg::valuetype> srctype,
-      std::shared_ptr<const jlm::rvsdg::valuetype> dsttype)
+      std::shared_ptr<const jlm::rvsdg::ValueType> srctype,
+      std::shared_ptr<const jlm::rvsdg::ValueType> dsttype)
       : unary_op(std::move(srctype), std::move(dsttype))
   {}
 
@@ -1549,17 +1549,17 @@ public:
 
 private:
   static std::pair<
-      std::shared_ptr<const jlm::rvsdg::valuetype>,
-      std::shared_ptr<const jlm::rvsdg::valuetype>>
+      std::shared_ptr<const jlm::rvsdg::ValueType>,
+      std::shared_ptr<const jlm::rvsdg::ValueType>>
   check_types(
       const std::shared_ptr<const jlm::rvsdg::Type> & otype,
       const std::shared_ptr<const jlm::rvsdg::Type> & rtype)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(otype);
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(otype);
     if (!ot)
       throw jlm::util::error("expected value type.");
 
-    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(rtype);
+    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(rtype);
     if (!rt)
       throw jlm::util::error("expected value type.");
 
@@ -1852,7 +1852,7 @@ class ConstantArray final : public jlm::rvsdg::simple_op
 public:
   virtual ~ConstantArray();
 
-  ConstantArray(const std::shared_ptr<const jlm::rvsdg::valuetype> & type, size_t size)
+  ConstantArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
       : jlm::rvsdg::simple_op({ size, type }, { arraytype::Create(type, size) })
   {
     if (size == 0)
@@ -1874,7 +1874,7 @@ public:
     return std::static_pointer_cast<const arraytype>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
     return std::static_pointer_cast<const arraytype>(result(0))->element_type();
@@ -1886,7 +1886,7 @@ public:
     if (elements.size() == 0)
       throw jlm::util::error("expected at least one element.\n");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
       throw jlm::util::error("expected value Type.\n");
 
@@ -1900,7 +1900,7 @@ public:
     if (operands.empty())
       throw util::error("Expected at least one element.\n");
 
-    auto valueType = std::dynamic_pointer_cast<const rvsdg::valuetype>(operands[0]->Type());
+    auto valueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(operands[0]->Type());
     if (!valueType)
     {
       throw util::error("Expected value type.\n");
@@ -2092,7 +2092,7 @@ public:
 
   inline insertelement_op(
       const std::shared_ptr<const vectortype> & vectype,
-      const std::shared_ptr<const jlm::rvsdg::valuetype> & vtype,
+      const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
       : simple_op({ vectype, vtype, btype }, { vectype })
   {
@@ -2120,7 +2120,7 @@ public:
     if (!vct)
       throw jlm::util::error("expected vector type.");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(value->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value->Type());
     if (!vt)
       throw jlm::util::error("expected value type.");
 
@@ -2349,7 +2349,7 @@ public:
     return std::static_pointer_cast<const vectortype>(result(0))->size();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
     return std::static_pointer_cast<const vectortype>(result(0))->type();
@@ -2361,7 +2361,7 @@ public:
     if (elements.empty())
       throw jlm::util::error("Expected at least one element.");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
       throw jlm::util::error("Expected value type.");
 
@@ -2410,10 +2410,10 @@ public:
     return indices_.end();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return *std::static_pointer_cast<const rvsdg::valuetype>(argument(0));
+    return *std::static_pointer_cast<const rvsdg::ValueType>(argument(0));
   }
 
   static inline std::unique_ptr<llvm::tac>

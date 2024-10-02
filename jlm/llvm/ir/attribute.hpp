@@ -226,12 +226,12 @@ class type_attribute final : public enum_attribute
 public:
   ~type_attribute() noexcept override;
 
-  type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::valuetype> type)
+  type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
       : enum_attribute(kind),
         type_(std::move(type))
   {}
 
-  [[nodiscard]] const jlm::rvsdg::valuetype &
+  [[nodiscard]] const jlm::rvsdg::ValueType &
   type() const noexcept
   {
     return *type_;
@@ -241,7 +241,7 @@ public:
   operator==(const attribute &) const override;
 
 private:
-  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
+  std::shared_ptr<const jlm::rvsdg::ValueType> type_;
 };
 
 }
