@@ -794,7 +794,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
   for (size_t j = 0; j < node->noutputs(); ++j)
   {
-    auto reqType = util::AssertedCast<const jlm::hls::bundletype>(& node->output(j)->type());
+    auto reqType = util::AssertedCast<const jlm::hls::bundletype>(&node->output(j)->type());
     auto hasWrite = reqType->elements_.size() == 5;
     mlir::BlockArgument memReq = GetOutPort(module, j);
     mlir::Value memReqData;
