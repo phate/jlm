@@ -33,13 +33,13 @@ public:
   Create();
 };
 
-class statetype final : public rvsdg::statetype
+class statetype final : public rvsdg::StateType
 {
 public:
   virtual ~statetype();
 
   inline constexpr statetype() noexcept
-      : rvsdg::statetype()
+      : rvsdg::StateType()
   {}
 
   virtual std::string

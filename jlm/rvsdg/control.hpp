@@ -22,7 +22,7 @@ namespace jlm::rvsdg
 
 /* control type */
 
-class ctltype final : public jlm::rvsdg::statetype
+class ctltype final : public StateType
 {
 public:
   virtual ~ctltype() noexcept;

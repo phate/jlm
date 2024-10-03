@@ -661,7 +661,7 @@ convert_select(
   JLM_ASSERT(is<select_op>(op));
   auto & select = *static_cast<const select_op *>(&op);
 
-  if (rvsdg::is<rvsdg::statetype>(select.type()))
+  if (rvsdg::is<rvsdg::StateType>(select.type()))
     return nullptr;
 
   auto c = ctx.value(operands[0]);

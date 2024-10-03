@@ -457,14 +457,14 @@ public:
 private:
 };
 
-class triggertype final : public jlm::rvsdg::statetype
+class triggertype final : public rvsdg::StateType
 {
 public:
   virtual ~triggertype()
   {}
 
   triggertype()
-      : jlm::rvsdg::statetype()
+      : rvsdg::StateType()
   {}
 
   std::string

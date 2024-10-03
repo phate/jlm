@@ -55,14 +55,14 @@ protected:
   {}
 };
 
-class statetype : public jlm::rvsdg::Type
+class StateType : public Type
 {
 public:
-  virtual ~statetype() noexcept;
+  ~StateType() noexcept override;
 
 protected:
-  inline constexpr statetype() noexcept
-      : jlm::rvsdg::Type()
+  constexpr StateType() noexcept
+      : Type()
   {}
 };
 

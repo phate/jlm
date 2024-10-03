@@ -147,7 +147,7 @@ protected:
       auto & operandType = *operandTypes[n];
       auto & resultType = *resultTypes[n];
       JLM_ASSERT(operandType == resultType);
-      JLM_ASSERT(is<rvsdg::statetype>(operandType));
+      JLM_ASSERT(is<rvsdg::StateType>(operandType));
     }
   }
 

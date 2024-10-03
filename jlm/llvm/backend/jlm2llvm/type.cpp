@@ -47,8 +47,8 @@ convert(const FunctionType & functionType, context & ctx)
   }
 
   /*
-    The return type can either be (ValueType, statetype, statetype, ...) if the function has
-    a return value, or (statetype, statetype, ...) if the function returns void.
+    The return type can either be (ValueType, StateType, StateType, ...) if the function has
+    a return value, or (StateType, StateType, ...) if the function returns void.
   */
   auto resultType = ::llvm::Type::getVoidTy(lctx);
   if (functionType.NumResults() > 0 && rvsdg::is<rvsdg::ValueType>(functionType.ResultType(0)))
