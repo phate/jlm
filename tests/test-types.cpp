@@ -40,7 +40,7 @@ valuetype::Create()
   return std::shared_ptr<const valuetype>(std::shared_ptr<void>(), &instance);
 }
 
-/* StateType */
+/* statetype */
 
 statetype::~statetype()
 {}
