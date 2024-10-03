@@ -118,14 +118,18 @@ TestCallTypeClassifierIndirectCall()
   auto SetupFunction = [&]()
   {
     auto lambda = lambda::node::create(graph->root(), fcttype2, "fct", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(1);
-    auto memoryStateArgument = lambda->fctargument(2);
+    auto iOStateArgument = lambda->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
     auto alloca = alloca_op::create(PointerType::Create(), one, 8);
 
-    auto store = StoreNonVolatileNode::Create(alloca[0], lambda->fctargument(0), { alloca[1] }, 8);
+    auto store = StoreNonVolatileNode::Create(
+        alloca[0],
+        lambda->GetFunctionArguments()[0],
+        { alloca[1] },
+        8);
 
     auto load = LoadNonVolatileNode::Create(alloca[0], store, PointerType::Create(), 8);
 
@@ -175,8 +179,8 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   {
     auto lambda =
         lambda::node::create(graph->root(), functionTypeG, "g", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto constant = jlm::tests::test_op::create(lambda->subregion(), {}, { vt });
 
@@ -186,9 +190,9 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     return lambdaOutput;
   };
 
-  auto SetupFunctionF = [&](lambda::output * g)
+  auto SetupFunctionF = [&](jlm::rvsdg::output * g)
   {
-    auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * functionG)
+    auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::output * functionG)
     {
       auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
       auto otf = outerTheta->add_loopvar(functionG);
@@ -216,9 +220,9 @@ TestCallTypeClassifierNonRecursiveDirectCall()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
-    auto functionGArgument = lambda->add_ctxvar(g);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto functionGArgument = lambda->AddContextVar(g).inner;
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto functionG = SetupOuterTheta(lambda->subregion(), functionGArgument);
 
@@ -271,18 +275,18 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   {
     auto lambda =
         lambda::node::create(graph->root(), functionTypeG, "g", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto c1 = jlm::tests::test_op::create(lambda->subregion(), {}, { vt });
 
     return lambda->finalize({ c1->output(0), iOStateArgument, memoryStateArgument });
   };
 
-  auto SetupFunctionF = [&](lambda::output * g)
+  auto SetupFunctionF = [&](jlm::rvsdg::output * g)
   {
     auto SetupOuterTheta = [&](jlm::rvsdg::Region * region,
-                               jlm::rvsdg::RegionArgument * g,
+                               jlm::rvsdg::output * g,
                                jlm::rvsdg::output * value,
                                jlm::rvsdg::output * iOState,
                                jlm::rvsdg::output * memoryState)
@@ -329,9 +333,9 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
-    auto functionG = lambda->add_ctxvar(g);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto functionG = lambda->AddContextVar(g).inner;
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto value = jlm::tests::test_op::create(lambda->subregion(), {}, { vt })->output(0);
 
@@ -392,11 +396,11 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     auto lambda =
         lambda::node::create(pb.subregion(), functionType, "fib", linkage::external_linkage);
-    auto valueArgument = lambda->fctargument(0);
-    auto pointerArgument = lambda->fctargument(1);
-    auto iOStateArgument = lambda->fctargument(2);
-    auto memoryStateArgument = lambda->fctargument(3);
-    auto ctxVarFib = lambda->add_ctxvar(fibrv->argument());
+    auto valueArgument = lambda->GetFunctionArguments()[0];
+    auto pointerArgument = lambda->GetFunctionArguments()[1];
+    auto iOStateArgument = lambda->GetFunctionArguments()[2];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[3];
+    auto ctxVarFib = lambda->AddContextVar(fibrv->argument()).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);

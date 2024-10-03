@@ -206,28 +206,30 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       ln->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (const auto & ctxvar : ln->GetContextVars())
   {
-    // copy over cvarguments
-    smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
+    // copy over context vars
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(ctxvar.input->origin()).inner);
   }
 
   size_t new_i = 0;
-  for (size_t i = 0; i < ln->nfctarguments(); ++i)
+  auto args = ln->GetFunctionArguments();
+  auto new_args = new_lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() >= new_args.size());
+  for (size_t i = 0; i < args.size(); ++i)
   {
-    auto arg = ln->fctargument(i);
+    auto arg = args[i];
     if (!is_passthrough(arg))
     {
-      smap.insert(arg, new_lambda->fctargument(new_i));
+      smap.insert(arg, new_args[new_i]);
       new_i++;
     }
   }
   ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
 
   std::vector<jlm::rvsdg::output *> new_results;
-  for (size_t i = 0; i < ln->type().NumResults(); ++i)
+  for (auto res : ln->GetFunctionResults())
   {
-    auto res = ln->fctresult(i);
     if (!is_passthrough(res))
     {
       new_results.push_back(smap.lookup(res->origin()));
@@ -263,7 +265,7 @@ remove_region_passthrough(const rvsdg::RegionArgument * arg)
 }
 
 bool
-is_passthrough(const rvsdg::RegionResult * res)
+is_passthrough(const rvsdg::input * res)
 {
   auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
   if (arg)
@@ -274,7 +276,7 @@ is_passthrough(const rvsdg::RegionResult * res)
 }
 
 bool
-is_passthrough(const rvsdg::RegionArgument * arg)
+is_passthrough(const rvsdg::output * arg)
 {
   if (arg->nusers() == 1)
   {

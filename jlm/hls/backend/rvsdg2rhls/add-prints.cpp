@@ -88,7 +88,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   }
   else if (auto lambda = dynamic_cast<llvm::lambda::node *>(region->node()))
   {
-    output = lambda->add_ctxvar(output);
+    output = lambda->AddContextVar(output).inner;
   }
   else
   {

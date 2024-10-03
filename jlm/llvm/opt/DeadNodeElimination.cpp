@@ -230,24 +230,28 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto o = dynamic_cast<const lambda::output *>(&output))
+  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(output))
   {
-    for (auto & result : o->node()->fctresults())
+    for (auto & result : lambda->GetFunctionResults())
     {
-      MarkOutput(*result.origin());
+      MarkOutput(*result->origin());
     }
     return;
   }
 
-  if (is<lambda::fctargument>(&output))
+  if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(output))
   {
-    return;
-  }
-
-  if (auto cv = dynamic_cast<const lambda::cvargument *>(&output))
-  {
-    MarkOutput(*cv->input()->origin());
-    return;
+    if (auto ctxvar = lambda->MapBinderContextVar(output))
+    {
+      // Bound context variable.
+      MarkOutput(*ctxvar->input->origin());
+      return;
+    }
+    else
+    {
+      // Function argument.
+      return;
+    }
   }
 
   if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))

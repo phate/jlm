@@ -235,14 +235,14 @@ find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
-  jlm::rvsdg::RegionArgument * response_function = nullptr;
-  for (size_t i = 0; i < lambda->ncvarguments(); ++i)
+  jlm::rvsdg::output * response_function = nullptr;
+  for (const auto & ctxvar : lambda->GetContextVars())
   {
-    auto ip = lambda->cvargument(i)->input();
+    auto ip = ctxvar.input;
     if (dynamic_cast<const jlm::llvm::PointerType *>(ip)
         && get_impport_function_name(ip) == "decouple_response")
     {
-      response_function = lambda->cvargument(i);
+      response_function = ctxvar.inner;
     }
   }
   JLM_ASSERT(response_function == nullptr);
@@ -647,16 +647,20 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
       lambda->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < lambda->ncvarguments(); ++i)
+  for (const auto & ctxvar : lambda->GetContextVars())
   {
-    smap.insert(
-        lambda->cvargument(i),
-        newLambda->add_ctxvar(lambda->cvargument(i)->input()->origin()));
+    smap.insert(ctxvar.inner, newLambda->AddContextVar(ctxvar.input->origin()).inner);
   }
 
-  for (size_t i = 0; i < lambda->nfctarguments(); ++i)
+  auto args = lambda->GetFunctionArguments();
+  auto newArgs = newLambda->GetFunctionArguments();
+  // The new function has more arguments than the old function.
+  // Substitution of existing arguments is safe, but note
+  // that this is not an isomorphism.
+  JLM_ASSERT(args.size() <= newArgs.size());
+  for (size_t i = 0; i < args.size(); ++i)
   {
-    smap.insert(lambda->fctargument(i), newLambda->fctargument(i));
+    smap.insert(args[i], newArgs[i]);
   }
   lambda->subregion()->copy(newLambda->subregion(), smap, false, false);
 
@@ -669,7 +673,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   std::vector<jlm::rvsdg::output *> newResults;
   // The new arguments are placed directly after the original arguments so we create an index that
   // points to the first new argument
-  auto newArgumentsIndex = lambda->nfctarguments();
+  auto newArgumentsIndex = args.size();
   for (auto & portNode : portNodes)
   {
     auto loadNodes = std::get<0>(portNode);
@@ -695,9 +699,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
 
   std::vector<jlm::rvsdg::output *> originalResults;
-  for (auto & result : lambda->fctresults())
+  for (auto result : lambda->GetFunctionResults())
   {
-    originalResults.push_back(smap.lookup(result.origin()));
+    originalResults.push_back(smap.lookup(result->origin()));
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
@@ -724,19 +728,20 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->Nodes().begin().ptr());
 
   // Go through in reverse since we are removing things
-  for (int i = newLambda->ncvarguments() - 1; i >= 0; --i)
+  auto ctxvars = newLambda->GetContextVars();
+  for (size_t n = ctxvars.size(); n > 0; --n)
   {
-    auto cvarg = newLambda->cvargument(i);
-    if (dynamic_cast<const jlm::llvm::PointerType *>(&cvarg->type()))
+    const auto & ctxvar = ctxvars[n - 1];
+    if (dynamic_cast<const jlm::llvm::PointerType *>(&ctxvar.input->type()))
     {
       // The only functions at this time is decoupled loads that are encoded as functions by the
       // user
       auto visited = std::unordered_set<jlm::rvsdg::output *>();
-      if (IsDecoupledFunctionPointer(cvarg->input()->origin(), visited))
+      if (IsDecoupledFunctionPointer(ctxvar.input->origin(), visited))
       {
-        JLM_ASSERT(cvarg->nusers() == 0);
-        auto cvip = cvarg->input();
-        newLambda->subregion()->RemoveArgument(cvarg->index());
+        JLM_ASSERT(ctxvar.inner->nusers() == 0);
+        auto cvip = ctxvar.input;
+        newLambda->subregion()->RemoveArgument(ctxvar.inner->index());
         // TODO: work around const
         newLambda->RemoveInput(cvip->index());
         auto graphImport = util::AssertedCast<const llvm::GraphImport>(cvip->origin());

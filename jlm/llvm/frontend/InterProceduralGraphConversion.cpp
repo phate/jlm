@@ -614,14 +614,15 @@ Convert(
   /*
    * Add arguments
    */
-  JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.nfctarguments());
+  JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.GetFunctionArguments().size());
+  auto lambdaArgs = lambdaNode.GetFunctionArguments();
   for (size_t n = 0; n < entryAggregationNode.narguments(); n++)
   {
     auto functionNodeArgument = entryAggregationNode.argument(n);
-    auto lambdaNodeArgument = lambdaNode.fctargument(n);
+    auto lambdaNodeArgument = lambdaArgs[n];
 
     topVariableMap.insert(functionNodeArgument, lambdaNodeArgument);
-    lambdaNodeArgument->set_attributes(functionNodeArgument->attributes());
+    lambdaNode.SetArgumentAttributes(*lambdaNodeArgument, functionNodeArgument->attributes());
   }
 
   /*
@@ -631,7 +632,7 @@ Convert(
   {
     if (outerVariableMap.contains(&v))
     {
-      topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
+      topVariableMap.insert(&v, lambdaNode.AddContextVar(outerVariableMap.lookup(&v)).inner);
     }
     else
     {
@@ -912,7 +913,7 @@ AnnotateAggregationTree(
   return demandMap;
 }
 
-static lambda::output *
+static rvsdg::output *
 ConvertAggregationTreeToLambda(
     const aggnode & aggregationTreeRoot,
     const AnnotationMap & demandMap,

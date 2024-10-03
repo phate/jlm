@@ -153,7 +153,7 @@ TestLoad1()
 
     auto & lambda = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & lambdaOutput = pointsToGraph.GetRegisterNode(*test.lambda->output());
-    auto & lambdaArgument0 = pointsToGraph.GetRegisterNode(*test.lambda->fctargument(0));
+    auto & lambdaArgument0 = pointsToGraph.GetRegisterNode(*test.lambda->GetFunctionArguments()[0]);
 
     assertTargets(loadResult, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
 
@@ -284,7 +284,7 @@ TestBitCast()
 
     auto & lambda = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & lambdaOut = pointsToGraph.GetRegisterNode(*test.lambda->output());
-    auto & lambdaArg = pointsToGraph.GetRegisterNode(*test.lambda->fctargument(0));
+    auto & lambdaArg = pointsToGraph.GetRegisterNode(*test.lambda->GetFunctionArguments()[0]);
 
     auto & bitCast = pointsToGraph.GetRegisterNode(*test.bitCast->output(0));
 
@@ -316,7 +316,7 @@ TestConstantPointerNull()
 
     auto & lambda = pointsToGraph.GetLambdaNode(*test.lambda);
     auto & lambdaOut = pointsToGraph.GetRegisterNode(*test.lambda->output());
-    auto & lambdaArg = pointsToGraph.GetRegisterNode(*test.lambda->fctargument(0));
+    auto & lambdaArg = pointsToGraph.GetRegisterNode(*test.lambda->GetFunctionArguments()[0]);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
     auto & constantPointerNull =
@@ -402,14 +402,14 @@ TestCall1()
     auto & plambda_g = ptg.GetRegisterNode(*test.lambda_g->output());
     auto & plambda_h = ptg.GetRegisterNode(*test.lambda_h->output());
 
-    auto & lambda_f_arg0 = ptg.GetRegisterNode(*test.lambda_f->fctargument(0));
-    auto & lambda_f_arg1 = ptg.GetRegisterNode(*test.lambda_f->fctargument(1));
+    auto & lambda_f_arg0 = ptg.GetRegisterNode(*test.lambda_f->GetFunctionArguments()[0]);
+    auto & lambda_f_arg1 = ptg.GetRegisterNode(*test.lambda_f->GetFunctionArguments()[1]);
 
-    auto & lambda_g_arg0 = ptg.GetRegisterNode(*test.lambda_g->fctargument(0));
-    auto & lambda_g_arg1 = ptg.GetRegisterNode(*test.lambda_g->fctargument(1));
+    auto & lambda_g_arg0 = ptg.GetRegisterNode(*test.lambda_g->GetFunctionArguments()[0]);
+    auto & lambda_g_arg1 = ptg.GetRegisterNode(*test.lambda_g->GetFunctionArguments()[1]);
 
-    auto & lambda_h_cv0 = ptg.GetRegisterNode(*test.lambda_h->cvargument(0));
-    auto & lambda_h_cv1 = ptg.GetRegisterNode(*test.lambda_h->cvargument(1));
+    auto & lambda_h_cv0 = ptg.GetRegisterNode(*test.lambda_h->GetContextVars()[0].inner);
+    auto & lambda_h_cv1 = ptg.GetRegisterNode(*test.lambda_h->GetContextVars()[1].inner);
 
     assertTargets(palloca_x, { &alloca_x });
     assertTargets(palloca_y, { &alloca_y });
@@ -457,12 +457,13 @@ TestCall2()
 
     auto & lambda_destroy = ptg.GetLambdaNode(*test.lambda_destroy);
     auto & lambda_destroy_out = ptg.GetRegisterNode(*test.lambda_destroy->output());
-    auto & lambda_destroy_arg = ptg.GetRegisterNode(*test.lambda_destroy->fctargument(0));
+    auto & lambda_destroy_arg =
+        ptg.GetRegisterNode(*test.lambda_destroy->GetFunctionArguments()[0]);
 
     auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
     auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
-    auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.lambda_test->cvargument(0));
-    auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.lambda_test->cvargument(1));
+    auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.lambda_test->GetContextVars()[0].inner);
+    auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.lambda_test->GetContextVars()[1].inner);
 
     auto & call_create1_out = ptg.GetRegisterNode(*test.CallCreate1().output(0));
     auto & call_create2_out = ptg.GetRegisterNode(*test.CallCreate2().output(0));
@@ -515,13 +516,14 @@ TestIndirectCall()
 
     auto & lambda_indcall = ptg.GetLambdaNode(test.GetLambdaIndcall());
     auto & lambda_indcall_out = ptg.GetRegisterNode(*test.GetLambdaIndcall().output());
-    auto & lambda_indcall_arg = ptg.GetRegisterNode(*test.GetLambdaIndcall().fctargument(0));
+    auto & lambda_indcall_arg =
+        ptg.GetRegisterNode(*test.GetLambdaIndcall().GetFunctionArguments()[0]);
 
     auto & lambda_test = ptg.GetLambdaNode(test.GetLambdaTest());
     auto & lambda_test_out = ptg.GetRegisterNode(*test.GetLambdaTest().output());
-    auto & lambda_test_cv0 = ptg.GetRegisterNode(*test.GetLambdaTest().cvargument(0));
-    auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.GetLambdaTest().cvargument(1));
-    auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.GetLambdaTest().cvargument(2));
+    auto & lambda_test_cv0 = ptg.GetRegisterNode(*test.GetLambdaTest().GetContextVars()[0].inner);
+    auto & lambda_test_cv1 = ptg.GetRegisterNode(*test.GetLambdaTest().GetContextVars()[1].inner);
+    auto & lambda_test_cv2 = ptg.GetRegisterNode(*test.GetLambdaTest().GetContextVars()[2].inner);
 
     assertTargets(lambda_three_out, { &lambda_three, &lambda_four });
 
@@ -591,8 +593,10 @@ TestExternalCall1()
     assert(pointsToGraph.NumRegisterNodes() == 7);
 
     auto & lambdaF = pointsToGraph.GetLambdaNode(test.LambdaF());
-    auto & lambdaFArgument0 = pointsToGraph.GetRegisterNode(*test.LambdaF().fctargument(0));
-    auto & lambdaFArgument1 = pointsToGraph.GetRegisterNode(*test.LambdaF().fctargument(1));
+    auto & lambdaFArgument0 =
+        pointsToGraph.GetRegisterNode(*test.LambdaF().GetFunctionArguments()[0]);
+    auto & lambdaFArgument1 =
+        pointsToGraph.GetRegisterNode(*test.LambdaF().GetFunctionArguments()[1]);
 
     auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().Result(0));
 
@@ -649,7 +653,8 @@ TestGamma()
 
     for (size_t n = 1; n < 5; n++)
     {
-      auto & lambdaArgument = pointsToGraph.GetRegisterNode(*test.lambda->fctargument(n));
+      auto & lambdaArgument =
+          pointsToGraph.GetRegisterNode(*test.lambda->GetFunctionArguments()[n]);
       assertTargets(lambdaArgument, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     }
 
@@ -691,7 +696,7 @@ TestTheta()
     assert(pointsToGraph.NumRegisterNodes() == 2);
 
     auto & lambda = pointsToGraph.GetLambdaNode(*test.lambda);
-    auto & lambdaArgument1 = pointsToGraph.GetRegisterNode(*test.lambda->fctargument(1));
+    auto & lambdaArgument1 = pointsToGraph.GetRegisterNode(*test.lambda->GetFunctionArguments()[1]);
     auto & lambdaOutput = pointsToGraph.GetRegisterNode(*test.lambda->output());
 
     auto & gepOutput = pointsToGraph.GetRegisterNode(*test.gep->output(0));
@@ -735,12 +740,12 @@ TestDelta1()
 
     auto & lambda_g = ptg.GetLambdaNode(*test.lambda_g);
     auto & plambda_g = ptg.GetRegisterNode(*test.lambda_g->output());
-    auto & lambda_g_arg0 = ptg.GetRegisterNode(*test.lambda_g->fctargument(0));
+    auto & lambda_g_arg0 = ptg.GetRegisterNode(*test.lambda_g->GetFunctionArguments()[0]);
 
     auto & lambda_h = ptg.GetLambdaNode(*test.lambda_h);
     auto & plambda_h = ptg.GetRegisterNode(*test.lambda_h->output());
-    auto & lambda_h_cv0 = ptg.GetRegisterNode(*test.lambda_h->cvargument(0));
-    auto & lambda_h_cv1 = ptg.GetRegisterNode(*test.lambda_h->cvargument(1));
+    auto & lambda_h_cv0 = ptg.GetRegisterNode(*test.lambda_h->GetContextVars()[0].inner);
+    auto & lambda_h_cv1 = ptg.GetRegisterNode(*test.lambda_h->GetContextVars()[1].inner);
 
     assertTargets(pdelta_f, { &delta_f });
 
@@ -783,13 +788,13 @@ TestDelta2()
 
     auto & lambda_f1 = ptg.GetLambdaNode(*test.lambda_f1);
     auto & lambda_f1_out = ptg.GetRegisterNode(*test.lambda_f1->output());
-    auto & lambda_f1_cvd1 = ptg.GetRegisterNode(*test.lambda_f1->cvargument(0));
+    auto & lambda_f1_cvd1 = ptg.GetRegisterNode(*test.lambda_f1->GetContextVars()[0].inner);
 
     auto & lambda_f2 = ptg.GetLambdaNode(*test.lambda_f2);
     auto & lambda_f2_out = ptg.GetRegisterNode(*test.lambda_f2->output());
-    auto & lambda_f2_cvd1 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(0));
-    auto & lambda_f2_cvd2 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(1));
-    auto & lambda_f2_cvf1 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(2));
+    auto & lambda_f2_cvd1 = ptg.GetRegisterNode(*test.lambda_f2->GetContextVars()[0].inner);
+    auto & lambda_f2_cvd2 = ptg.GetRegisterNode(*test.lambda_f2->GetContextVars()[1].inner);
+    auto & lambda_f2_cvf1 = ptg.GetRegisterNode(*test.lambda_f2->GetContextVars()[2].inner);
 
     assertTargets(delta_d1_out, { &delta_d1 });
     assertTargets(delta_d2_out, { &delta_d2 });
@@ -833,13 +838,13 @@ TestImports()
 
     auto & lambda_f1 = ptg.GetLambdaNode(*test.lambda_f1);
     auto & lambda_f1_out = ptg.GetRegisterNode(*test.lambda_f1->output());
-    auto & lambda_f1_cvd1 = ptg.GetRegisterNode(*test.lambda_f1->cvargument(0));
+    auto & lambda_f1_cvd1 = ptg.GetRegisterNode(*test.lambda_f1->GetContextVars()[0].inner);
 
     auto & lambda_f2 = ptg.GetLambdaNode(*test.lambda_f2);
     auto & lambda_f2_out = ptg.GetRegisterNode(*test.lambda_f2->output());
-    auto & lambda_f2_cvd1 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(0));
-    auto & lambda_f2_cvd2 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(1));
-    auto & lambda_f2_cvf1 = ptg.GetRegisterNode(*test.lambda_f2->cvargument(2));
+    auto & lambda_f2_cvd1 = ptg.GetRegisterNode(*test.lambda_f2->GetContextVars()[0].inner);
+    auto & lambda_f2_cvd2 = ptg.GetRegisterNode(*test.lambda_f2->GetContextVars()[1].inner);
+    auto & lambda_f2_cvf1 = ptg.GetRegisterNode(*test.lambda_f2->GetContextVars()[2].inner);
 
     assertTargets(import_d1, { &d1 });
     assertTargets(import_d2, { &d2 });
@@ -877,7 +882,7 @@ TestPhi1()
 
     auto & lambda_fib = ptg.GetLambdaNode(*test.lambda_fib);
     auto & lambda_fib_out = ptg.GetRegisterNode(*test.lambda_fib->output());
-    auto & lambda_fib_arg1 = ptg.GetRegisterNode(*test.lambda_fib->fctargument(1));
+    auto & lambda_fib_arg1 = ptg.GetRegisterNode(*test.lambda_fib->GetFunctionArguments()[1]);
 
     auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
     auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
@@ -927,8 +932,10 @@ TestExternalMemory()
     assert(pointsToGraph.NumRegisterNodes() == 3);
 
     auto & lambdaF = pointsToGraph.GetLambdaNode(*test.LambdaF);
-    auto & lambdaFArgument0 = pointsToGraph.GetRegisterNode(*test.LambdaF->fctargument(0));
-    auto & lambdaFArgument1 = pointsToGraph.GetRegisterNode(*test.LambdaF->fctargument(1));
+    auto & lambdaFArgument0 =
+        pointsToGraph.GetRegisterNode(*test.LambdaF->GetFunctionArguments()[0]);
+    auto & lambdaFArgument1 =
+        pointsToGraph.GetRegisterNode(*test.LambdaF->GetFunctionArguments()[1]);
 
     assertTargets(lambdaFArgument0, { &lambdaF, &pointsToGraph.GetExternalMemoryNode() });
     assertTargets(lambdaFArgument1, { &lambdaF, &pointsToGraph.GetExternalMemoryNode() });
@@ -956,8 +963,10 @@ TestEscapedMemory1()
     assert(pointsToGraph.NumLambdaNodes() == 1);
     assert(pointsToGraph.NumRegisterNodes() == 7);
 
-    auto & lambdaTestArgument0 = pointsToGraph.GetRegisterNode(*test.LambdaTest->fctargument(0));
-    auto & lambdaTestCv0 = pointsToGraph.GetRegisterNode(*test.LambdaTest->cvargument(0));
+    auto & lambdaTestArgument0 =
+        pointsToGraph.GetRegisterNode(*test.LambdaTest->GetFunctionArguments()[0]);
+    auto & lambdaTestCv0 =
+        pointsToGraph.GetRegisterNode(*test.LambdaTest->GetContextVars()[0].inner);
     auto & loadNode1Output = pointsToGraph.GetRegisterNode(*test.LoadNode1->output(0));
 
     auto deltaA = &pointsToGraph.GetDeltaNode(*test.DeltaA);
@@ -1129,11 +1138,15 @@ TestMemcpy2()
   assert(pointsToGraph->NumLambdaNodes() == 2);
 
   auto & lambdaFNode = pointsToGraph->GetLambdaNode(test.LambdaF());
-  auto & lambdaFArgument0 = pointsToGraph->GetRegisterNode(*test.LambdaF().fctargument(0));
-  auto & lambdaFArgument1 = pointsToGraph->GetRegisterNode(*test.LambdaF().fctargument(1));
+  auto & lambdaFArgument0 =
+      pointsToGraph->GetRegisterNode(*test.LambdaF().GetFunctionArguments()[0]);
+  auto & lambdaFArgument1 =
+      pointsToGraph->GetRegisterNode(*test.LambdaF().GetFunctionArguments()[1]);
 
-  auto & lambdaGArgument0 = pointsToGraph->GetRegisterNode(*test.LambdaG().fctargument(0));
-  auto & lambdaGArgument1 = pointsToGraph->GetRegisterNode(*test.LambdaG().fctargument(1));
+  auto & lambdaGArgument0 =
+      pointsToGraph->GetRegisterNode(*test.LambdaG().GetFunctionArguments()[0]);
+  auto & lambdaGArgument1 =
+      pointsToGraph->GetRegisterNode(*test.LambdaG().GetFunctionArguments()[1]);
 
   auto & memcpyOperand0 = pointsToGraph->GetRegisterNode(*test.Memcpy().input(0)->origin());
   auto & memcpyOperand1 = pointsToGraph->GetRegisterNode(*test.Memcpy().input(1)->origin());
@@ -1168,7 +1181,7 @@ TestMemcpy3()
   assert(pointsToGraph->NumAllocaNodes() == 1);
 
   auto & lambdaNode = pointsToGraph->GetLambdaNode(test.Lambda());
-  auto & lambdaArgument0 = pointsToGraph->GetRegisterNode(*test.Lambda().fctargument(0));
+  auto & lambdaArgument0 = pointsToGraph->GetRegisterNode(*test.Lambda().GetFunctionArguments()[0]);
 
   auto & allocaNode = pointsToGraph->GetAllocaNode(test.Alloca());
 

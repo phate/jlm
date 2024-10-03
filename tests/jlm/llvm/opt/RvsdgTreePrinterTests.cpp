@@ -39,7 +39,7 @@ PrintRvsdgTree()
       functionType,
       "f",
       linkage::external_linkage);
-  auto lambdaOutput = lambda->finalize({ lambda->fctargument(0) });
+  auto lambdaOutput = lambda->finalize({ lambda->GetFunctionArguments()[0] });
   jlm::tests::GraphExport::Create(*lambdaOutput, "f");
 
   auto tempDirectory = std::filesystem::temp_directory_path();
