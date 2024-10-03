@@ -172,12 +172,12 @@ public:
    *
    * @return The called function.
    */
-  [[nodiscard]] lambda::output &
+  [[nodiscard]] rvsdg::output &
   GetLambdaOutput() const noexcept
   {
     if (GetCallType() == CallType::NonRecursiveDirectCall)
     {
-      return *jlm::util::AssertedCast<lambda::output>(Output_);
+      return *Output_;
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
@@ -187,8 +187,7 @@ public:
      * would be better if we did not use the index for retrieving the result, but instead
      * explicitly encoded it in an phi_argument.
      */
-    return *jlm::util::AssertedCast<lambda::output>(
-        argument->region()->result(argument->index())->origin());
+    return *argument->region()->result(argument->index())->origin();
   }
 
   /** \brief Returns the imported function.
@@ -219,7 +218,7 @@ public:
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateNonRecursiveDirectCallClassifier(lambda::output & output)
+  CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
   {
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }

@@ -32,8 +32,8 @@ TestLambda()
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto constant = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -151,8 +151,8 @@ TestAddOperation()
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
@@ -252,8 +252,8 @@ TestComZeroExt()
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
@@ -398,8 +398,8 @@ TestMatch()
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     // Create a match operation
     std::cout << "Match Operation" << std::endl;
