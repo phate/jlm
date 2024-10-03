@@ -60,8 +60,8 @@ public:
   virtual ~unary_op() noexcept;
 
   inline unary_op(
-      std::shared_ptr<const jlm::rvsdg::type> operand,
-      std::shared_ptr<const jlm::rvsdg::type> result)
+      std::shared_ptr<const jlm::rvsdg::Type> operand,
+      std::shared_ptr<const jlm::rvsdg::Type> result)
       : simple_op({ std::move(operand) }, { std::move(result) })
   {}
 

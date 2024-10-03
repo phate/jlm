@@ -22,7 +22,7 @@ ctltype::~ctltype() noexcept
 {}
 
 ctltype::ctltype(size_t nalternatives)
-    : jlm::rvsdg::statetype(),
+    : StateType(),
       nalternatives_(nalternatives)
 {}
 
@@ -33,7 +33,7 @@ ctltype::debug_string() const
 }
 
 bool
-ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
+ctltype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const ctltype *>(&other);
   return type && type->nalternatives_ == nalternatives_;

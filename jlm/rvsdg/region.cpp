@@ -25,7 +25,7 @@ RegionArgument::~RegionArgument() noexcept
 RegionArgument::RegionArgument(
     rvsdg::Region * region,
     jlm::rvsdg::structural_input * input,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : output(region, std::move(type)),
       input_(input)
 {
@@ -55,7 +55,7 @@ RegionResult::RegionResult(
     rvsdg::Region * region,
     jlm::rvsdg::output * origin,
     jlm::rvsdg::structural_output * output,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : input(origin, region, std::move(type)),
       output_(output)
 {

@@ -87,7 +87,7 @@ has_side_effects(const jlm::rvsdg::node * node)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    if (dynamic_cast<const jlm::rvsdg::statetype *>(&node->output(n)->type()))
+    if (dynamic_cast<const rvsdg::StateType *>(&node->output(n)->type()))
       return true;
   }
 
@@ -155,14 +155,6 @@ copy_from_theta(jlm::rvsdg::node * node)
 static bool
 is_gamma_top_pushable(const jlm::rvsdg::node * node)
 {
-  /*
-    FIXME: This is techically not fully correct. It is
-    only possible to push a load out of a gamma node, if
-    it is guaranteed to load from a valid address.
-  */
-  if (is<LoadNonVolatileOperation>(node))
-    return true;
-
   return !has_side_effects(node);
 }
 

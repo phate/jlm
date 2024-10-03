@@ -43,7 +43,7 @@ public:
   input(
       jlm::rvsdg::output * origin,
       rvsdg::Region * region,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
   input(const input &) = delete;
 
@@ -70,13 +70,13 @@ public:
   void
   divert_to(jlm::rvsdg::output * new_origin);
 
-  [[nodiscard]] const rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
     return *Type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return Type_;
@@ -265,7 +265,7 @@ private:
   size_t index_;
   jlm::rvsdg::output * origin_;
   rvsdg::Region * region_;
-  std::shared_ptr<const rvsdg::type> Type_;
+  std::shared_ptr<const rvsdg::Type> Type_;
 };
 
 template<class T>
@@ -292,7 +292,7 @@ class output
 public:
   virtual ~output() noexcept;
 
-  output(rvsdg::Region * region, std::shared_ptr<const rvsdg::type> type);
+  output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
 
   output(const output &) = delete;
 
@@ -353,13 +353,13 @@ public:
     return users_.end();
   }
 
-  [[nodiscard]] const rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
     return *Type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return Type_;
@@ -373,6 +373,17 @@ public:
 
   virtual std::string
   debug_string() const;
+
+  /**
+   * Retrieve the associated node from \p output if \p output is derived from
+   * jlm::rvsdg::node_output.
+   *
+   * @param output The output from which to retrieve the node.
+   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
+   * otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::node *
+  GetNode(const rvsdg::output & output) noexcept;
 
   template<class T>
   class iterator
@@ -543,7 +554,7 @@ private:
 
   size_t index_;
   rvsdg::Region * region_;
-  std::shared_ptr<const rvsdg::type> Type_;
+  std::shared_ptr<const rvsdg::Type> Type_;
   std::unordered_set<jlm::rvsdg::input *> users_;
 };
 
@@ -566,7 +577,7 @@ public:
   node_input(
       jlm::rvsdg::output * origin,
       jlm::rvsdg::node * node,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
   jlm::rvsdg::node *
   node() const noexcept
@@ -583,7 +594,7 @@ private:
 class node_output : public jlm::rvsdg::output
 {
 public:
-  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type);
+  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type);
 
   jlm::rvsdg::node *
   node() const noexcept

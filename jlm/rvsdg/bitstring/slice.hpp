@@ -54,7 +54,7 @@ public:
   virtual std::unique_ptr<jlm::rvsdg::operation>
   copy() const override;
 
-  inline const type &
+  inline const Type &
   argument_type() const noexcept
   {
     return *std::static_pointer_cast<const bittype>(argument(0));

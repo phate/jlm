@@ -255,7 +255,7 @@ class ThetaInput final : public structural_input
 public:
   ~ThetaInput() noexcept override;
 
-  ThetaInput(ThetaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::type> type)
+  ThetaInput(ThetaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::Type> type)
       : structural_input(node, origin, std::move(type)),
         output_(nullptr)
   {}
@@ -300,7 +300,7 @@ class ThetaOutput final : public structural_output
 public:
   ~ThetaOutput() noexcept override;
 
-  ThetaOutput(ThetaNode * node, const std::shared_ptr<const rvsdg::type> type)
+  ThetaOutput(ThetaNode * node, const std::shared_ptr<const rvsdg::Type> type)
       : structural_output(node, std::move(type)),
         input_(nullptr)
   {}

@@ -22,7 +22,7 @@ namespace jlm::rvsdg
 
 /* control type */
 
-class ctltype final : public jlm::rvsdg::statetype
+class ctltype final : public StateType
 {
 public:
   virtual ~ctltype() noexcept;
@@ -33,7 +33,7 @@ public:
   debug_string() const override;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   std::size_t
   ComputeHash() const noexcept override;
@@ -63,7 +63,7 @@ private:
 };
 
 static inline bool
-is_ctltype(const jlm::rvsdg::type & type) noexcept
+is_ctltype(const jlm::rvsdg::Type & type) noexcept
 {
   return dynamic_cast<const ctltype *>(&type) != nullptr;
 }
@@ -224,7 +224,7 @@ public:
 
 private:
   static const bittype &
-  CheckAndExtractBitType(const rvsdg::type & type)
+  CheckAndExtractBitType(const rvsdg::Type & type)
   {
     if (auto bitType = dynamic_cast<const bittype *>(&type))
     {

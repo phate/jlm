@@ -24,7 +24,7 @@ input::~input() noexcept
 input::input(
     jlm::rvsdg::output * origin,
     rvsdg::Region * region,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       origin_(origin),
       region_(region),
@@ -83,7 +83,7 @@ output::~output() noexcept
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::type> type)
+output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       region_(region),
       Type_(std::move(type))
@@ -93,6 +93,13 @@ std::string
 output::debug_string() const
 {
   return jlm::util::strfmt(index());
+}
+
+rvsdg::node *
+output::GetNode(const rvsdg::output & output) noexcept
+{
+  auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
+  return nodeOutput ? nodeOutput->node() : nullptr;
 }
 
 void
@@ -149,14 +156,14 @@ namespace jlm::rvsdg
 node_input::node_input(
     jlm::rvsdg::output * origin,
     jlm::rvsdg::node * node,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
 /* node_output class */
 
-node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type)
+node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}

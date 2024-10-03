@@ -22,7 +22,7 @@ valuetype::debug_string() const
 }
 
 bool
-valuetype::operator==(const rvsdg::type & other) const noexcept
+valuetype::operator==(const rvsdg::Type & other) const noexcept
 {
   return dynamic_cast<const valuetype *>(&other) != nullptr;
 }
@@ -52,7 +52,7 @@ statetype::debug_string() const
 }
 
 bool
-statetype::operator==(const rvsdg::type & other) const noexcept
+statetype::operator==(const rvsdg::Type & other) const noexcept
 {
   return dynamic_cast<const statetype *>(&other) != nullptr;
 }

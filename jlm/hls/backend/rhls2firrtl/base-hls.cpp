@@ -103,7 +103,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
 }
 
 int
-BaseHLS::JlmSize(const jlm::rvsdg::type * type)
+BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 {
   if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
   {
@@ -121,7 +121,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
   {
     return ceil(log2(ct->nalternatives()));
   }
-  else if (dynamic_cast<const jlm::rvsdg::statetype *>(type))
+  else if (dynamic_cast<const rvsdg::StateType *>(type))
   {
     return 1;
   }

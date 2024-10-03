@@ -155,7 +155,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 }
 
 backedge_argument *
-loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::type> type)
+loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto argument_loop = backedge_argument::create(subregion(), std::move(type));
   auto result_loop = backedge_result::create(argument_loop);
@@ -192,9 +192,9 @@ loop_node::set_predicate(jlm::rvsdg::output * p)
 }
 
 std::shared_ptr<const bundletype>
-get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write)
+get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write)
 {
-  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> elements;
+  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("addr", llvm::PointerType::Create());
   elements.emplace_back("size", jlm::rvsdg::bittype::Create(4));
   elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
@@ -207,9 +207,9 @@ get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write
 }
 
 std::shared_ptr<const bundletype>
-get_mem_res_type(std::shared_ptr<const jlm::rvsdg::valuetype> dataType)
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
-  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::type>>> elements;
+  std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));
   elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
   return std::make_shared<bundletype>(std::move(elements));

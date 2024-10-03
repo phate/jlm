@@ -19,14 +19,14 @@ namespace jlm::llvm
 /** \brief Function type class
  *
  */
-class FunctionType final : public jlm::rvsdg::valuetype
+class FunctionType final : public jlm::rvsdg::ValueType
 {
 public:
   ~FunctionType() noexcept override;
 
   FunctionType(
-      std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
-      std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes);
+      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
+      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes);
 
   FunctionType(const FunctionType & other);
 
@@ -38,10 +38,10 @@ public:
   FunctionType &
   operator=(FunctionType && other) noexcept;
 
-  const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+  const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> &
   Arguments() const noexcept;
 
-  const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+  const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> &
   Results() const noexcept;
 
   size_t
@@ -56,14 +56,14 @@ public:
     return ArgumentTypes_.size();
   }
 
-  const jlm::rvsdg::type &
+  const jlm::rvsdg::Type &
   ResultType(size_t index) const noexcept
   {
     JLM_ASSERT(index < ResultTypes_.size());
     return *ResultTypes_[index];
   }
 
-  const jlm::rvsdg::type &
+  const jlm::rvsdg::Type &
   ArgumentType(size_t index) const noexcept
   {
     JLM_ASSERT(index < ArgumentTypes_.size());
@@ -74,26 +74,26 @@ public:
   debug_string() const override;
 
   bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
   static std::shared_ptr<const FunctionType>
   Create(
-      std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
-      std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes);
+      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
+      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes);
 
 private:
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> ResultTypes_;
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> ArgumentTypes_;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> ResultTypes_;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> ArgumentTypes_;
 };
 
 /** \brief PointerType class
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
  */
-class PointerType final : public jlm::rvsdg::valuetype
+class PointerType final : public jlm::rvsdg::ValueType
 {
 public:
   ~PointerType() noexcept override;
@@ -104,7 +104,7 @@ public:
   debug_string() const override;
 
   bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -115,13 +115,13 @@ public:
 
 /* array type */
 
-class arraytype final : public jlm::rvsdg::valuetype
+class arraytype final : public rvsdg::ValueType
 {
 public:
   virtual ~arraytype();
 
-  inline arraytype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t nelements)
-      : jlm::rvsdg::valuetype(),
+  inline arraytype(std::shared_ptr<const rvsdg::ValueType> type, size_t nelements)
+      : jlm::rvsdg::ValueType(),
         nelements_(nelements),
         type_(std::move(type))
   {}
@@ -140,7 +140,7 @@ public:
   debug_string() const override;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -151,27 +151,27 @@ public:
     return nelements_;
   }
 
-  inline const jlm::rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   element_type() const noexcept
   {
     return *type_;
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   GetElementType() const noexcept
   {
     return type_;
   }
 
   static std::shared_ptr<const arraytype>
-  Create(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t nelements)
+  Create(std::shared_ptr<const rvsdg::ValueType> type, size_t nelements)
   {
     return std::make_shared<arraytype>(std::move(type), nelements);
   }
 
 private:
   size_t nelements_;
-  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
+  std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
 /* floating point type */
@@ -185,13 +185,13 @@ enum class fpsize
   fp128
 };
 
-class fptype final : public jlm::rvsdg::valuetype
+class fptype final : public rvsdg::ValueType
 {
 public:
   virtual ~fptype();
 
   inline fptype(const fpsize & size)
-      : jlm::rvsdg::valuetype(),
+      : rvsdg::ValueType(),
         size_(size)
   {}
 
@@ -199,7 +199,7 @@ public:
   debug_string() const override;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -219,17 +219,15 @@ private:
 
 /* vararg type */
 
-class varargtype final : public jlm::rvsdg::statetype
+class varargtype final : public rvsdg::StateType
 {
 public:
   virtual ~varargtype();
 
-  inline constexpr varargtype()
-      : jlm::rvsdg::statetype()
-  {}
+  constexpr varargtype() = default;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -242,22 +240,22 @@ public:
 };
 
 static inline bool
-is_varargtype(const jlm::rvsdg::type & type)
+is_varargtype(const jlm::rvsdg::Type & type)
 {
   return dynamic_cast<const varargtype *>(&type) != nullptr;
 }
 
-static inline std::unique_ptr<jlm::rvsdg::type>
+static inline std::unique_ptr<jlm::rvsdg::Type>
 create_varargtype()
 {
-  return std::unique_ptr<jlm::rvsdg::type>(new varargtype());
+  return std::unique_ptr<jlm::rvsdg::Type>(new varargtype());
 }
 
 /** \brief StructType class
  *
  * This class is the equivalent of LLVM's StructType class.
  */
-class StructType final : public jlm::rvsdg::valuetype
+class StructType final : public rvsdg::ValueType
 {
 public:
   class Declaration;
@@ -265,13 +263,13 @@ public:
   ~StructType() override;
 
   StructType(bool isPacked, const Declaration & declaration)
-      : jlm::rvsdg::valuetype(),
+      : rvsdg::ValueType(),
         IsPacked_(isPacked),
         Declaration_(declaration)
   {}
 
   StructType(std::string name, bool isPacked, const Declaration & declaration)
-      : jlm::rvsdg::valuetype(),
+      : rvsdg::ValueType(),
         IsPacked_(isPacked),
         Name_(std::move(name)),
         Declaration_(declaration)
@@ -312,7 +310,7 @@ public:
   }
 
   bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -343,7 +341,7 @@ class StructType::Declaration final
 public:
   ~Declaration() = default;
 
-  Declaration(std::vector<std::shared_ptr<const rvsdg::type>> types)
+  Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
       : Types_(std::move(types))
   {}
 
@@ -360,24 +358,24 @@ public:
     return Types_.size();
   }
 
-  [[nodiscard]] const valuetype &
+  [[nodiscard]] const ValueType &
   GetElement(size_t index) const noexcept
   {
     JLM_ASSERT(index < NumElements());
-    return *util::AssertedCast<const valuetype>(Types_[index].get());
+    return *util::AssertedCast<const ValueType>(Types_[index].get());
   }
 
-  [[nodiscard]] std::shared_ptr<const valuetype>
+  [[nodiscard]] std::shared_ptr<const ValueType>
   GetElementType(size_t index) const noexcept
   {
     JLM_ASSERT(index < NumElements());
-    auto type = std::dynamic_pointer_cast<const valuetype>(Types_[index]);
+    auto type = std::dynamic_pointer_cast<const ValueType>(Types_[index]);
     JLM_ASSERT(type);
     return type;
   }
 
   void
-  Append(std::shared_ptr<const jlm::rvsdg::valuetype> type)
+  Append(std::shared_ptr<const ValueType> type)
   {
     Types_.push_back(std::move(type));
   }
@@ -389,21 +387,21 @@ public:
   }
 
   static std::unique_ptr<Declaration>
-  Create(std::vector<std::shared_ptr<const rvsdg::type>> types)
+  Create(std::vector<std::shared_ptr<const rvsdg::Type>> types)
   {
     return std::make_unique<Declaration>(std::move(types));
   }
 
 private:
-  std::vector<std::shared_ptr<const rvsdg::type>> Types_;
+  std::vector<std::shared_ptr<const rvsdg::Type>> Types_;
 };
 
 /* vector type */
 
-class vectortype : public jlm::rvsdg::valuetype
+class vectortype : public rvsdg::ValueType
 {
 public:
-  vectortype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  vectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
       : size_(size),
         type_(std::move(type))
   {}
@@ -419,7 +417,7 @@ public:
   operator=(vectortype && other) = default;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   size_t
   size() const noexcept
@@ -427,13 +425,13 @@ public:
     return size_;
   }
 
-  const jlm::rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
     return *type_;
   }
 
-  const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
     return type_;
@@ -441,7 +439,7 @@ public:
 
 private:
   size_t size_;
-  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
+  std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
 class fixedvectortype final : public vectortype
@@ -449,12 +447,12 @@ class fixedvectortype final : public vectortype
 public:
   ~fixedvectortype() override;
 
-  fixedvectortype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  fixedvectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
       : vectortype(std::move(type), size)
   {}
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -463,7 +461,7 @@ public:
   debug_string() const override;
 
   static std::shared_ptr<const fixedvectortype>
-  Create(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  Create(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
   {
     return std::make_shared<fixedvectortype>(std::move(type), size);
   }
@@ -474,12 +472,12 @@ class scalablevectortype final : public vectortype
 public:
   ~scalablevectortype() override;
 
-  scalablevectortype(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  scalablevectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
       : vectortype(std::move(type), size)
   {}
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -488,7 +486,7 @@ public:
   debug_string() const override;
 
   static std::shared_ptr<const scalablevectortype>
-  Create(std::shared_ptr<const jlm::rvsdg::valuetype> type, size_t size)
+  Create(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
   {
     return std::make_shared<scalablevectortype>(std::move(type), size);
   }
@@ -498,16 +496,15 @@ public:
  *
  * This type is used for state edges that sequentialize input/output operations.
  */
-class iostatetype final : public jlm::rvsdg::statetype
+class iostatetype final : public rvsdg::StateType
 {
 public:
   ~iostatetype() override;
 
-  constexpr iostatetype() noexcept
-  {}
+  constexpr iostatetype() noexcept = default;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -524,20 +521,18 @@ public:
  * Represents the type of abstract memory locations and is used in state edges for sequentialiazing
  * memory operations, such as load and store operations.
  */
-class MemoryStateType final : public jlm::rvsdg::statetype
+class MemoryStateType final : public rvsdg::StateType
 {
 public:
   ~MemoryStateType() noexcept override;
 
-  constexpr MemoryStateType() noexcept
-      : jlm::rvsdg::statetype()
-  {}
+  constexpr MemoryStateType() noexcept = default;
 
   std::string
   debug_string() const override;
 
   bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
@@ -548,7 +543,7 @@ public:
 
 template<class ELEMENTYPE>
 inline bool
-IsOrContains(const jlm::rvsdg::type & type)
+IsOrContains(const jlm::rvsdg::Type & type)
 {
   if (jlm::rvsdg::is<ELEMENTYPE>(type))
     return true;
@@ -576,10 +571,10 @@ IsOrContains(const jlm::rvsdg::type & type)
  * Given a type, determines if it is one of LLVM's aggregate types.
  * Vectors are not considered to be aggregate types, despite being based on a subtype.
  * @param type the type to check
- * @return true if the type is an aggreate type, false otherwise
+ * @return true if the type is an aggregate type, false otherwise
  */
 inline bool
-IsAggregateType(const jlm::rvsdg::type & type)
+IsAggregateType(const jlm::rvsdg::Type & type)
 {
   return jlm::rvsdg::is<arraytype>(type) || jlm::rvsdg::is<StructType>(type);
 }

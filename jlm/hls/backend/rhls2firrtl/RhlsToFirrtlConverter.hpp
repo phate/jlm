@@ -278,9 +278,9 @@ private:
   circt::firrtl::IntType
   GetIntType(int size);
   circt::firrtl::IntType
-  GetIntType(const jlm::rvsdg::type * type, int extend = 0);
+  GetIntType(const jlm::rvsdg::Type * type, int extend = 0);
   circt::firrtl::FIRRTLBaseType
-  GetFirrtlType(const jlm::rvsdg::type * type);
+  GetFirrtlType(const jlm::rvsdg::Type * type);
   std::string
   GetModuleName(const jlm::rvsdg::node * node);
   bool

@@ -47,11 +47,11 @@ convert(const FunctionType & functionType, context & ctx)
   }
 
   /*
-    The return type can either be (valuetype, statetype, statetype, ...) if the function has
-    a return value, or (statetype, statetype, ...) if the function returns void.
+    The return type can either be (ValueType, StateType, StateType, ...) if the function has
+    a return value, or (StateType, StateType, ...) if the function returns void.
   */
   auto resultType = ::llvm::Type::getVoidTy(lctx);
-  if (functionType.NumResults() > 0 && rvsdg::is<rvsdg::valuetype>(functionType.ResultType(0)))
+  if (functionType.NumResults() > 0 && rvsdg::is<rvsdg::ValueType>(functionType.ResultType(0)))
     resultType = convert_type(functionType.ResultType(0), ctx);
 
   return ::llvm::FunctionType::get(resultType, argumentTypes, isvararg);
@@ -128,17 +128,17 @@ convert(const scalablevectortype & type, context & ctx)
 
 template<class T>
 static ::llvm::Type *
-convert(const rvsdg::type & type, context & ctx)
+convert(const rvsdg::Type & type, context & ctx)
 {
   JLM_ASSERT(rvsdg::is<T>(type));
   return convert(*static_cast<const T *>(&type), ctx);
 }
 
 ::llvm::Type *
-convert_type(const rvsdg::type & type, context & ctx)
+convert_type(const rvsdg::Type & type, context & ctx)
 {
   static std::
-      unordered_map<std::type_index, std::function<::llvm::Type *(const rvsdg::type &, context &)>>
+      unordered_map<std::type_index, std::function<::llvm::Type *(const rvsdg::Type &, context &)>>
           map({ { typeid(rvsdg::bittype), convert<rvsdg::bittype> },
                 { typeid(FunctionType), convert<FunctionType> },
                 { typeid(PointerType), convert<PointerType> },

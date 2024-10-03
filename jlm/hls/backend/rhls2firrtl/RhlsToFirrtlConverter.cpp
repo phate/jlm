@@ -320,7 +320,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     mlir::Value result = AddCvtOp(body, input0);
 
     // TODO: support structs
-    const jlm::rvsdg::type * pointeeType = &op->GetPointeeType();
+    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
@@ -3923,13 +3923,13 @@ RhlsToFirrtlConverter::GetIntType(int size)
 // which is useful for, e.g., additions where the result has to be 1
 // larger than the operands to accommodate for the carry.
 circt::firrtl::IntType
-RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::type * type, int extend)
+RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::Type * type, int extend)
 {
   return circt::firrtl::IntType::get(Builder_->getContext(), false, JlmSize(type) + extend);
 }
 
 circt::firrtl::FIRRTLBaseType
-RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::type * type)
+RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::Type * type)
 {
   if (auto bt = dynamic_cast<const bundletype *>(type))
   {
@@ -3968,7 +3968,7 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
   }
   if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&node->operation()))
   {
-    const jlm::rvsdg::type * pointeeType = &op->GetPointeeType();
+    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);

@@ -32,7 +32,7 @@ public:
   }
 
   static int
-  JlmSize(const jlm::rvsdg::type * type);
+  JlmSize(const jlm::rvsdg::Type * type);
 
   /**
    * @return The size of a pointer in bits.

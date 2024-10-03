@@ -9,13 +9,10 @@
 namespace jlm::rvsdg
 {
 
-type::~type() noexcept
-{}
+Type::~Type() noexcept = default;
 
-valuetype::~valuetype() noexcept
-{}
+ValueType::~ValueType() noexcept = default;
 
-statetype::~statetype() noexcept
-{}
+StateType::~StateType() noexcept = default;
 
 }

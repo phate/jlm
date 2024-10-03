@@ -18,9 +18,9 @@ namespace jlm::llvm
 FunctionType::~FunctionType() noexcept = default;
 
 FunctionType::FunctionType(
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
-    : jlm::rvsdg::valuetype(),
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes)
+    : jlm::rvsdg::ValueType(),
       ResultTypes_(std::move(resultTypes)),
       ArgumentTypes_(std::move(argumentTypes))
 {}
@@ -28,18 +28,18 @@ FunctionType::FunctionType(
 FunctionType::FunctionType(const FunctionType & rhs) = default;
 
 FunctionType::FunctionType(FunctionType && other) noexcept
-    : jlm::rvsdg::valuetype(other),
+    : jlm::rvsdg::ValueType(other),
       ResultTypes_(std::move(other.ResultTypes_)),
       ArgumentTypes_(std::move(other.ArgumentTypes_))
 {}
 
-const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> &
 FunctionType::Arguments() const noexcept
 {
   return ArgumentTypes_;
 }
 
-const std::vector<std::shared_ptr<const jlm::rvsdg::type>> &
+const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> &
 FunctionType::Results() const noexcept
 {
   return ResultTypes_;
@@ -52,7 +52,7 @@ FunctionType::debug_string() const
 }
 
 bool
-FunctionType::operator==(const jlm::rvsdg::type & _other) const noexcept
+FunctionType::operator==(const jlm::rvsdg::Type & _other) const noexcept
 {
   auto other = dynamic_cast<const FunctionType *>(&_other);
   if (other == nullptr)
@@ -112,8 +112,8 @@ FunctionType::operator=(FunctionType && rhs) noexcept
 
 std::shared_ptr<const FunctionType>
 FunctionType::Create(
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> argumentTypes,
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes)
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes)
 {
   return std::make_shared<FunctionType>(std::move(argumentTypes), std::move(resultTypes));
 }
@@ -127,7 +127,7 @@ PointerType::debug_string() const
 }
 
 bool
-PointerType::operator==(const jlm::rvsdg::type & other) const noexcept
+PointerType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return jlm::rvsdg::is<PointerType>(other);
 }
@@ -157,7 +157,7 @@ arraytype::debug_string() const
 }
 
 bool
-arraytype::operator==(const jlm::rvsdg::type & other) const noexcept
+arraytype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const arraytype *>(&other);
   return type && type->element_type() == element_type() && type->nelements() == nelements();
@@ -190,7 +190,7 @@ fptype::debug_string() const
 }
 
 bool
-fptype::operator==(const jlm::rvsdg::type & other) const noexcept
+fptype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const fptype *>(&other);
   return type && type->size() == size();
@@ -248,7 +248,7 @@ varargtype::~varargtype()
 {}
 
 bool
-varargtype::operator==(const jlm::rvsdg::type & other) const noexcept
+varargtype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return dynamic_cast<const varargtype *>(&other) != nullptr;
 }
@@ -275,7 +275,7 @@ varargtype::Create()
 StructType::~StructType() = default;
 
 bool
-StructType::operator==(const jlm::rvsdg::type & other) const noexcept
+StructType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const StructType *>(&other);
   return type && type->IsPacked_ == IsPacked_ && type->Name_ == Name_
@@ -301,7 +301,7 @@ StructType::debug_string() const
 /* vectortype */
 
 bool
-vectortype::operator==(const jlm::rvsdg::type & other) const noexcept
+vectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const vectortype *>(&other);
   return type && type->size_ == size_ && *type->type_ == *type_;
@@ -313,7 +313,7 @@ fixedvectortype::~fixedvectortype()
 {}
 
 bool
-fixedvectortype::operator==(const jlm::rvsdg::type & other) const noexcept
+fixedvectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return vectortype::operator==(other);
 }
@@ -338,7 +338,7 @@ scalablevectortype::~scalablevectortype()
 {}
 
 bool
-scalablevectortype::operator==(const jlm::rvsdg::type & other) const noexcept
+scalablevectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return vectortype::operator==(other);
 }
@@ -363,7 +363,7 @@ iostatetype::~iostatetype()
 {}
 
 bool
-iostatetype::operator==(const jlm::rvsdg::type & other) const noexcept
+iostatetype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return jlm::rvsdg::is<iostatetype>(other);
 }
@@ -399,7 +399,7 @@ MemoryStateType::debug_string() const
 }
 
 bool
-MemoryStateType::operator==(const jlm::rvsdg::type & other) const noexcept
+MemoryStateType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return jlm::rvsdg::is<MemoryStateType>(other);
 }

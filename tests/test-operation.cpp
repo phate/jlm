@@ -215,7 +215,7 @@ structural_node::AddInputWithArguments(rvsdg::output & origin)
 }
 
 StructuralNodeOutput &
-structural_node::AddOutput(std::shared_ptr<const rvsdg::type> type)
+structural_node::AddOutput(std::shared_ptr<const rvsdg::Type> type)
 {
   auto output =
       std::unique_ptr<StructuralNodeOutput>(new StructuralNodeOutput(*this, std::move(type)));

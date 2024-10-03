@@ -465,7 +465,7 @@ JlmToMlirConverter::ConvertGamma(
 }
 
 ::mlir::Type
-JlmToMlirConverter::ConvertType(const rvsdg::type & type)
+JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&type))
   {

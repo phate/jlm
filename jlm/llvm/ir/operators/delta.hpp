@@ -26,7 +26,7 @@ public:
   ~operation() override;
 
   operation(
-      std::shared_ptr<const rvsdg::valuetype> type,
+      std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -81,13 +81,13 @@ public:
     return constant_;
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
     return type_;
@@ -98,7 +98,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const rvsdg::valuetype> type_;
+  std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
 class cvargument;
@@ -162,13 +162,13 @@ public:
     return *static_cast<const delta::operation *>(&structural_node::operation());
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
     return operation().type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
     return operation().Type();
@@ -282,7 +282,7 @@ public:
   static node *
   Create(
       rvsdg::Region * parent,
-      std::shared_ptr<const rvsdg::valuetype> type,
+      std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -384,13 +384,13 @@ class output final : public rvsdg::structural_output
 public:
   ~output() override;
 
-  output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  output(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
       : structural_output(node, std::move(type))
   {}
 
 private:
   static output *
-  create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  create(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
   {
     auto output = std::make_unique<delta::output>(node, std::move(type));
     return static_cast<delta::output *>(node->append_output(std::move(output)));

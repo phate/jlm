@@ -42,7 +42,6 @@ public:
 
   /**
    * Constructs a graph element with no label, attributes or associated program object
-   * @param label
    */
   GraphElement();
 
