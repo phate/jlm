@@ -529,7 +529,7 @@ perform_load_load_state_reduction(
       rvsdg::output *(size_t, rvsdg::output *, std::vector<std::vector<rvsdg::output *>> &)>
       reduce_state = [&](size_t index, rvsdg::output * operand, auto & mxstates)
   {
-    JLM_ASSERT(rvsdg::is<rvsdg::statetype>(operand->type()));
+    JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->type()));
 
     if (!is<LoadNonVolatileOperation>(rvsdg::node_output::node(operand)))
       return operand;

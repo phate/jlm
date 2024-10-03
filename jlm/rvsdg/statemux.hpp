@@ -65,7 +65,7 @@ class mux_op final : public simple_op
 public:
   virtual ~mux_op() noexcept;
 
-  inline mux_op(std::shared_ptr<const statetype> type, size_t narguments, size_t nresults)
+  inline mux_op(std::shared_ptr<const StateType> type, size_t narguments, size_t nresults)
       : simple_op({ narguments, type }, { nresults, type })
   {}
 
@@ -100,7 +100,7 @@ create_state_mux(
   if (operands.empty())
     throw jlm::util::error("Insufficient number of operands.");
 
-  auto st = std::dynamic_pointer_cast<const jlm::rvsdg::statetype>(type);
+  auto st = std::dynamic_pointer_cast<const StateType>(type);
   if (!st)
     throw jlm::util::error("Expected state type.");
 

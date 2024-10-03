@@ -344,7 +344,7 @@ convert_attributes(const function_node & f, context & ctx)
   {
     auto argument = f.cfg()->entry()->argument(n);
 
-    if (rvsdg::is<rvsdg::statetype>(argument->type()))
+    if (rvsdg::is<rvsdg::StateType>(argument->type()))
       continue;
 
     argsets.push_back(convert_attributes(argument->attributes(), ctx));

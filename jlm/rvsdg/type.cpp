@@ -13,7 +13,6 @@ Type::~Type() noexcept = default;
 
 ValueType::~ValueType() noexcept = default;
 
-statetype::~statetype() noexcept
-{}
+StateType::~StateType() noexcept = default;
 
 }

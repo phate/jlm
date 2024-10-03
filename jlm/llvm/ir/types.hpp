@@ -219,14 +219,12 @@ private:
 
 /* vararg type */
 
-class varargtype final : public jlm::rvsdg::statetype
+class varargtype final : public rvsdg::StateType
 {
 public:
   virtual ~varargtype();
 
-  inline constexpr varargtype()
-      : jlm::rvsdg::statetype()
-  {}
+  constexpr varargtype() = default;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
@@ -498,13 +496,12 @@ public:
  *
  * This type is used for state edges that sequentialize input/output operations.
  */
-class iostatetype final : public jlm::rvsdg::statetype
+class iostatetype final : public rvsdg::StateType
 {
 public:
   ~iostatetype() override;
 
-  constexpr iostatetype() noexcept
-  {}
+  constexpr iostatetype() noexcept = default;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
@@ -524,14 +521,12 @@ public:
  * Represents the type of abstract memory locations and is used in state edges for sequentialiazing
  * memory operations, such as load and store operations.
  */
-class MemoryStateType final : public jlm::rvsdg::statetype
+class MemoryStateType final : public rvsdg::StateType
 {
 public:
   ~MemoryStateType() noexcept override;
 
-  constexpr MemoryStateType() noexcept
-      : jlm::rvsdg::statetype()
-  {}
+  constexpr MemoryStateType() noexcept = default;
 
   std::string
   debug_string() const override;

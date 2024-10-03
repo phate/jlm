@@ -22,7 +22,7 @@ ctltype::~ctltype() noexcept
 {}
 
 ctltype::ctltype(size_t nalternatives)
-    : jlm::rvsdg::statetype(),
+    : StateType(),
       nalternatives_(nalternatives)
 {}
 
