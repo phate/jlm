@@ -171,7 +171,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
   if (init)
   {
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
-    auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype::Create(2));
+    auto pred_arg = ln->add_backedge(rvsdg::ControlType::Create(2));
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals

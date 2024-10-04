@@ -70,7 +70,7 @@ convert(const arraytype & type, context & ctx)
 }
 
 static ::llvm::Type *
-convert(const rvsdg::ctltype & type, context & ctx)
+convert(const rvsdg::ControlType & type, context & ctx)
 {
   if (type.nalternatives() == 2)
     return ::llvm::Type::getInt1Ty(ctx.llvm_module().getContext());
@@ -143,7 +143,7 @@ convert_type(const rvsdg::Type & type, context & ctx)
                 { typeid(FunctionType), convert<FunctionType> },
                 { typeid(PointerType), convert<PointerType> },
                 { typeid(arraytype), convert<arraytype> },
-                { typeid(rvsdg::ctltype), convert<rvsdg::ctltype> },
+                { typeid(rvsdg::ControlType), convert<rvsdg::ControlType> },
                 { typeid(fptype), convert<fptype> },
                 { typeid(StructType), convert<StructType> },
                 { typeid(fixedvectortype), convert<fixedvectortype> },

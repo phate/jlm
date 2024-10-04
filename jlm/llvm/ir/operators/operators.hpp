@@ -370,7 +370,7 @@ public:
   virtual ~ctl2bits_op() noexcept;
 
   inline ctl2bits_op(
-      std::shared_ptr<const jlm::rvsdg::ctltype> srctype,
+      std::shared_ptr<const rvsdg::ControlType> srctype,
       std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
       : jlm::rvsdg::simple_op({ std::move(srctype) }, { std::move(dsttype) })
   {}
@@ -387,7 +387,7 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::ctltype>(operand->Type());
+    auto st = std::dynamic_pointer_cast<const rvsdg::ControlType>(operand->Type());
     if (!st)
       throw jlm::util::error("expected control type.");
 
@@ -407,7 +407,7 @@ class branch_op final : public jlm::rvsdg::simple_op
 public:
   virtual ~branch_op() noexcept;
 
-  explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ctltype> type)
+  explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ControlType> type)
       : jlm::rvsdg::simple_op({ std::move(type) }, {})
   {}
 
@@ -423,13 +423,13 @@ public:
   inline size_t
   nalternatives() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::ctltype>(argument(0))->nalternatives();
+    return std::static_pointer_cast<const rvsdg::ControlType>(argument(0))->nalternatives();
   }
 
   static std::unique_ptr<llvm::tac>
   create(size_t nalternatives, const variable * operand)
   {
-    branch_op op(jlm::rvsdg::ctltype::Create(nalternatives));
+    branch_op op(jlm::rvsdg::ControlType::Create(nalternatives));
     return tac::create(op, { operand });
   }
 };
