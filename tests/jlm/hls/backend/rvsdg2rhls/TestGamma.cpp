@@ -55,7 +55,7 @@ TestWithoutMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ft = FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));

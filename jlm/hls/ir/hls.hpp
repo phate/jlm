@@ -25,7 +25,7 @@ class branch_op final : public jlm::rvsdg::simple_op
 private:
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
       : jlm::rvsdg::simple_op(
-            { jlm::rvsdg::ctltype::Create(nalternatives), type },
+            { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
         loop(loop)
   {}
@@ -58,9 +58,9 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value, bool loop = false)
   {
-    auto ctl = dynamic_cast<const jlm::rvsdg::ctltype *>(&predicate.type());
+    auto ctl = dynamic_cast<const rvsdg::ControlType *>(&predicate.type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
 
     auto region = predicate.region();
     branch_op op(ctl->nalternatives(), value.Type(), loop);
@@ -259,9 +259,9 @@ public:
   {
     if (alternatives.empty())
       throw util::error("Insufficient number of operands.");
-    auto ctl = dynamic_cast<const jlm::rvsdg::ctltype *>(&predicate.type());
+    auto ctl = dynamic_cast<const rvsdg::ControlType *>(&predicate.type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
     if (alternatives.size() != ctl->nalternatives())
       throw util::error("Alternatives and predicate do not match.");
 
@@ -281,7 +281,7 @@ private:
   {
     auto vec =
         std::vector<std::shared_ptr<const jlm::rvsdg::Type>>(nalternatives + 1, std::move(type));
-    vec[0] = jlm::rvsdg::ctltype::Create(nalternatives);
+    vec[0] = rvsdg::ControlType::Create(nalternatives);
     return vec;
   }
 };
@@ -330,7 +330,7 @@ public:
   virtual ~predicate_buffer_op()
   {}
 
-  explicit predicate_buffer_op(const std::shared_ptr<const jlm::rvsdg::ctltype> & type)
+  explicit predicate_buffer_op(const std::shared_ptr<const rvsdg::ControlType> & type)
       : jlm::rvsdg::simple_op({ type }, { type })
   {}
 
@@ -357,9 +357,9 @@ public:
   create(jlm::rvsdg::output & predicate)
   {
     auto region = predicate.region();
-    auto ctl = std::dynamic_pointer_cast<const jlm::rvsdg::ctltype>(predicate.Type());
+    auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
     predicate_buffer_op op(ctl);
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate });
   }
@@ -372,7 +372,7 @@ public:
   {}
 
   loop_constant_buffer_op(
-      const std::shared_ptr<const jlm::rvsdg::ctltype> & ctltype,
+      const std::shared_ptr<const rvsdg::ControlType> & ctltype,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : jlm::rvsdg::simple_op({ ctltype, type }, { type })
   {}
@@ -400,9 +400,9 @@ public:
   create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value)
   {
     auto region = predicate.region();
-    auto ctl = std::dynamic_pointer_cast<const jlm::rvsdg::ctltype>(predicate.Type());
+    auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
     loop_constant_buffer_op op(ctl, value.Type());
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate, &value });
   }
@@ -770,7 +770,7 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::ctltype *>(&result->type()));
+    JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
     return result;
   }
 

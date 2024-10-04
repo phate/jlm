@@ -78,8 +78,9 @@ GammaWithoutMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), valueType, valueType }, { valueType });
+  auto functionType = FunctionType::Create(
+      { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
   auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));

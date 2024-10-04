@@ -453,8 +453,8 @@ public:
 inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
     : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(
-      std::unique_ptr<node_input>(new GammaInput(this, predicate, ctltype::Create(nalternatives))));
+  node::add_input(std::unique_ptr<node_input>(
+      new GammaInput(this, predicate, ControlType::Create(nalternatives))));
 }
 
 /**
