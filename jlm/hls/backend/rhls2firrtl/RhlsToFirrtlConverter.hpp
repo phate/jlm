@@ -121,8 +121,20 @@ private:
   MlirGenStateGate(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
   MlirGenMem(const jlm::rvsdg::simple_node * node);
+  /**
+   * Generate a FIRRTL module for a HLS memory response node that implements the functionality for
+   * retreiving memory responses.
+   * @param node The HLS memory response node.
+   * @return The generated FIRRTL module.
+   */
   circt::firrtl::FModuleOp
   MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node);
+  /**
+   * Generate a FIRRTL module for a HLS memory request node that implements the functionality for
+   * performing memory requests.
+   * @param node The HLS memory request node.
+   * @return The generated FIRRTL module.
+   */
   circt::firrtl::FModuleOp
   MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
