@@ -452,7 +452,7 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
 {
   if (auto ctrlType = ::mlir::dyn_cast<::mlir::rvsdg::RVSDG_CTRLType>(type))
   {
-    return std::make_unique<jlm::rvsdg::ctltype>(ctrlType.getNumOptions());
+    return std::make_unique<rvsdg::ControlType>(ctrlType.getNumOptions());
   }
   else if (auto intType = ::mlir::dyn_cast<::mlir::IntegerType>(type))
   {

@@ -25,7 +25,7 @@ test_gamma()
 {
   using namespace jlm::llvm;
 
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -59,7 +59,7 @@ test_theta()
 {
   using namespace jlm::llvm;
 
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::tests::test_op nop({}, { vt });
   jlm::tests::test_op bop({ vt, vt }, { vt });
@@ -109,7 +109,7 @@ test_push_theta_bottom()
 
   auto mt = MemoryStateType::Create();
   auto pt = PointerType::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::graph graph;
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");

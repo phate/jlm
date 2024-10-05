@@ -107,7 +107,7 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const ctltype *>(&result->type()));
+    JLM_ASSERT(dynamic_cast<const ControlType *>(&result->type()));
     return result;
   }
 
@@ -407,7 +407,7 @@ public:
 
 private:
   explicit ThetaPredicateResult(rvsdg::output & origin)
-      : RegionResult(origin.region(), &origin, nullptr, ctltype::Create(2))
+      : RegionResult(origin.region(), &origin, nullptr, ControlType::Create(2))
   {
     JLM_ASSERT(is<ThetaOperation>(origin.region()->node()));
   }
