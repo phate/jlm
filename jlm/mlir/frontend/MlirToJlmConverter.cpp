@@ -109,43 +109,43 @@ MlirToJlmConverter::ConvertCmpIOp(
 {
   if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::eq)
   {
-    return rvsdg::node_output::node(rvsdg::biteq_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::biteq_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ne)
   {
-    return rvsdg::node_output::node(rvsdg::bitne_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitne_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sge)
   {
-    return rvsdg::node_output::node(rvsdg::bitsge_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitsge_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sgt)
   {
-    return rvsdg::node_output::node(rvsdg::bitsgt_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitsgt_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sle)
   {
-    return rvsdg::node_output::node(rvsdg::bitsle_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitsle_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::slt)
   {
-    return rvsdg::node_output::node(rvsdg::bitslt_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitslt_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::uge)
   {
-    return rvsdg::node_output::node(rvsdg::bituge_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bituge_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ugt)
   {
-    return rvsdg::node_output::node(rvsdg::bitugt_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitugt_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ule)
   {
-    return rvsdg::node_output::node(rvsdg::bitule_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitule_op::create(nbits, inputs[0], inputs[1]));
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ult)
   {
-    return rvsdg::node_output::node(rvsdg::bitult_op::create(nbits, inputs[0], inputs[1]));
+    return rvsdg::output::GetNode(*rvsdg::bitult_op::create(nbits, inputs[0], inputs[1]));
   }
   else
   {
@@ -162,91 +162,91 @@ MlirToJlmConverter::ConvertBitBinaryNode(
     return nullptr;
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitadd_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitadd_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AndIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitand_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitand_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitashr_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitashr_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::MulIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitmul_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitmul_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::OrIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitor_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitor_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::DivSIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitsdiv_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitsdiv_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShLIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitshl_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitshl_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitshr_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitshr_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::RemSIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitsmod_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitsmod_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::SubIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitsub_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitsub_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::DivUIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitudiv_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitudiv_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::RemUIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitumod_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitumod_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::XOrIOp>(&mlirOperation))
   {
-    return rvsdg::node_output::node(rvsdg::bitxor_op::create(
+    return rvsdg::output::GetNode(*rvsdg::bitxor_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0],
         inputs[1]));
@@ -275,7 +275,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!st)
       JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
-    return rvsdg::node_output::node(&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
+    return rvsdg::output::GetNode(*&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
   }
 
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
@@ -294,8 +294,8 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
     auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
-    return rvsdg::node_output::node(
-        rvsdg::create_bitconstant(&rvsdgRegion, integerType.getWidth(), constant.value()));
+    return rvsdg::output::GetNode(
+        *rvsdg::create_bitconstant(&rvsdgRegion, integerType.getWidth(), constant.value()));
   }
 
   // Binary Integer Comparision operations
@@ -312,7 +312,7 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
     JLM_ASSERT(::mlir::isa<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()));
-    return rvsdg::node_output::node(rvsdg::control_constant(
+    return rvsdg::output::GetNode(*rvsdg::control_constant(
         &rvsdgRegion,
         ::mlir::cast<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()).getNumOptions(),
         MlirCtrlConst.getValue()));
@@ -369,7 +369,7 @@ MlirToJlmConverter::ConvertOperation(
       mapping[matchRuleAttr.getValues().front()] = matchRuleAttr.getIndex();
     }
 
-    return rvsdg::node_output::node(rvsdg::match_op::Create(
+    return rvsdg::output::GetNode(*rvsdg::match_op::Create(
         *(inputs[0]),                 // predicate
         mapping,                      // mapping
         defaultAlternative,           // defaultAlternative

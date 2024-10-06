@@ -109,7 +109,7 @@ output::remove_user(jlm::rvsdg::input * user)
 
   users_.erase(user);
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
       region()->bottom_nodes.push_back(node);
@@ -121,7 +121,7 @@ output::add_user(jlm::rvsdg::input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
       region()->bottom_nodes.erase(node);
@@ -196,7 +196,7 @@ node::~node()
 node_input *
 node::add_input(std::unique_ptr<node_input> input)
 {
-  auto producer = node_output::node(input->origin());
+  auto producer = output::GetNode(*input->origin());
 
   if (ninputs() == 0)
   {
@@ -218,7 +218,7 @@ void
 node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
-  auto producer = node_output::node(input(index)->origin());
+  auto producer = output::GetNode(*input(index)->origin());
 
   /* remove input */
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -271,7 +271,7 @@ node::recompute_depth() noexcept
   size_t new_depth = 0;
   for (size_t n = 0; n < ninputs(); n++)
   {
-    auto producer = node_output::node(input(n)->origin());
+    auto producer = output::GetNode(*input(n)->origin());
     new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
   }
   if (new_depth == depth())
@@ -309,7 +309,7 @@ node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 jlm::rvsdg::node *
 producer(const jlm::rvsdg::output * output) noexcept
 {
-  if (auto node = node_output::node(output))
+  if (auto node = output::GetNode(*output))
     return node;
 
   JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));

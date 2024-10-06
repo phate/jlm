@@ -136,13 +136,13 @@ test_push_theta_bottom()
   jlm::llvm::push_bottom(theta);
   jlm::rvsdg::view(graph, stdout);
 
-  auto storenode = jlm::rvsdg::node_output::node(ex.origin());
+  auto storenode = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
   assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
-      jlm::rvsdg::node_output::node(storenode->input(1)->origin())));
+      jlm::rvsdg::output::GetNode(*storenode->input(1)->origin())));
   assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
-      jlm::rvsdg::node_output::node(storenode->input(2)->origin())));
+      jlm::rvsdg::output::GetNode(*storenode->input(2)->origin())));
 }
 
 static int

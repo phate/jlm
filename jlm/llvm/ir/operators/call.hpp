@@ -388,7 +388,7 @@ public:
   [[nodiscard]] static rvsdg::simple_node *
   GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
   {
-    auto node = rvsdg::node_output::node(callNode.GetMemoryStateInput()->origin());
+    auto node = rvsdg::output::GetNode(*callNode.GetMemoryStateInput()->origin());
     return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
                                                         : nullptr;
   }

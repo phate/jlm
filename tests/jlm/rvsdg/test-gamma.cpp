@@ -137,12 +137,12 @@ test_control_constant_reduction()
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex1.origin());
+  auto match = output::GetNode(*ex1.origin());
   assert(match && is<match_op>(match->operation()));
   auto & match_op = to_match_op(match->operation());
   assert(match_op.default_alternative() == 0);
 
-  assert(node_output::node(ex2.origin()) == gamma);
+  assert(output::GetNode(*ex2.origin()) == gamma);
 }
 
 static void
@@ -172,7 +172,7 @@ test_control_constant_reduction2()
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex.origin());
+  auto match = output::GetNode(*ex.origin());
   assert(is<match_op>(match));
 }
 

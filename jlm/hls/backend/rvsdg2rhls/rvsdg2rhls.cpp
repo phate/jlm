@@ -276,7 +276,7 @@ rename_delta(llvm::delta::node * odn)
 
   odn->output()->divert_users(data);
   jlm::rvsdg::remove(odn);
-  return static_cast<llvm::delta::node *>(jlm::rvsdg::node_output::node(data));
+  return static_cast<llvm::delta::node *>(jlm::rvsdg::output::GetNode(*data));
 }
 
 llvm::lambda::node *
