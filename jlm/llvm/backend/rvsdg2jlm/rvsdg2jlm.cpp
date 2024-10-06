@@ -127,9 +127,11 @@ create_cfg(const lambda::node & lambda, context & ctx)
   ctx.set_cfg(cfg.get());
 
   /* add arguments */
+  size_t n = 0;
   for (auto & fctarg : lambda.fctarguments())
   {
-    auto argument = llvm::argument::create("", fctarg.Type(), fctarg.attributes());
+    auto name = util::strfmt("_a", n++, "_");
+    auto argument = llvm::argument::create(name, fctarg.Type(), fctarg.attributes());
     auto v = cfg->entry()->append_argument(std::move(argument));
     ctx.insert(&fctarg, v);
   }
