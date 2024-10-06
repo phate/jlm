@@ -130,10 +130,14 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
 
   std::function<void(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
-    auto numMemoryStateArguments = region.Arguments().CountWhere(IsMemoryStateOutput);
+    auto argumentRange = region.Arguments();
+    auto numMemoryStateArguments =
+        std::count_if(argumentRange.begin(), argumentRange.end(), IsMemoryStateOutput);
     annotationMap.AddAnnotation(&region, { argumentLabel, numMemoryStateArguments });
 
-    auto numMemoryStateResults = region.Results().CountWhere(IsMemoryStateInput);
+    auto resultRange = region.Results();
+    auto numMemoryStateResults =
+        std::count_if(resultRange.begin(), resultRange.end(), IsMemoryStateInput);
     annotationMap.AddAnnotation(&region, { resultLabel, numMemoryStateResults });
 
     for (auto & node : region.nodes)

@@ -42,30 +42,6 @@ public:
     return end_;
   }
 
-  /**
-   * Count all elements in this range that match the specified condition \p match.
-   *
-   * @tparam F A type that supports the function call operator bool operator(const E e), where E
-   * is the element type returned by the dereference operator of the iterators in this range.
-   * @param match Defines the condition for the elements to be counted.
-   * @return The number of times an element in the range fulfilled the condition \p match.
-   */
-  template<typename F>
-  std::size_t
-  CountWhere(const F & match)
-  {
-    std::size_t count = 0;
-    for (auto it = begin(); it != end(); it++)
-    {
-      if (match(*it))
-      {
-        count++;
-      }
-    }
-
-    return count;
-  }
-
 private:
   T begin_, end_;
 };
