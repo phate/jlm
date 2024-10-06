@@ -387,13 +387,15 @@ private:
   ToAscii(const exit_node & exitNode);
 
   static std::string
-  ToAscii(const basic_block & basicBlock);
+  ToAscii(
+      const basic_block & basicBlock,
+      const std::unordered_map<cfg_node *, std::string> & labels);
 
   static std::string
-  CreateTargets(const cfg_node & node);
+  CreateTargets(const cfg_node & node, const std::unordered_map<cfg_node *, std::string> & labels);
 
-  static std::string
-  CreateLabel(const cfg_node & node);
+  static std::unordered_map<cfg_node *, std::string>
+  CreateLabels(const std::vector<cfg_node *> & nodes);
 
   ipgraph_module & module_;
   std::unique_ptr<exit_node> exit_;
