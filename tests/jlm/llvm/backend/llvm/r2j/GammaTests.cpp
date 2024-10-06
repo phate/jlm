@@ -243,7 +243,7 @@ PulledInGamma()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto bit1Type = jlm::rvsdg::bittype::Create(1);
-  auto controlType = jlm::rvsdg::ctltype::Create(2);
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   auto functionType = FunctionType::Create(
       { bit1Type, bit1Type, valueType, valueType, valueType },
