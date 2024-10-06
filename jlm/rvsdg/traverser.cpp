@@ -128,8 +128,10 @@ bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
       tracker_(region->graph()),
       new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
 {
-  for (auto & node : region->bottom_nodes)
-    tracker_.set_nodestate(&node, traversal_nodestate::frontier);
+  for (auto & bottomNode : region->BottomNodes())
+  {
+    tracker_.set_nodestate(&bottomNode, traversal_nodestate::frontier);
+  }
 
   for (size_t n = 0; n < region->nresults(); n++)
   {

@@ -93,9 +93,9 @@ graph::ExtractTailNodes(const graph & rvsdg)
   auto & rootRegion = *rvsdg.root();
 
   std::vector<rvsdg::node *> nodes;
-  for (auto & node : rootRegion.bottom_nodes)
+  for (auto & bottomNode : rootRegion.BottomNodes())
   {
-    nodes.push_back(&node);
+    nodes.push_back(&bottomNode);
   }
 
   for (size_t n = 0; n < rootRegion.nresults(); n++)

@@ -83,7 +83,7 @@ Region::~Region() noexcept
   prune(false);
   JLM_ASSERT(nodes.empty());
   JLM_ASSERT(top_nodes.empty());
-  JLM_ASSERT(bottom_nodes.empty());
+  JLM_ASSERT(NumBottomNodes() == 0);
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
@@ -177,6 +177,34 @@ Region::remove_node(jlm::rvsdg::node * node)
   delete node;
 }
 
+bool
+Region::AddBottomNode(rvsdg::node & node)
+{
+  if (node.region() != this)
+    return false;
+
+  if (!node.IsDead())
+    return false;
+
+  if (node.IsBottomNode())
+  {
+    JLM_ASSERT(node.IsDead());
+    return false;
+  }
+
+  BottomNodes_.push_back(&node);
+
+  return true;
+}
+
+bool
+Region::RemoveBottomNode(rvsdg::node & node)
+{
+  auto numBottomNodes = NumBottomNodes();
+  BottomNodes_.erase(&node);
+  return numBottomNodes != NumBottomNodes();
+}
+
 void
 Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const
 {
@@ -227,8 +255,8 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 void
 Region::prune(bool recursive)
 {
-  while (bottom_nodes.first())
-    remove_node(bottom_nodes.first());
+  while (BottomNodes_.first())
+    remove_node(BottomNodes_.first());
 
   if (!recursive)
     return;

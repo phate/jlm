@@ -696,6 +696,27 @@ public:
   inline void
   recompute_depth() noexcept;
 
+  /**
+   * \brief Determines whether the node is dead.
+   *
+   * A node is considered dead if all its outputs are dead.
+   *
+   * @return True, if the node is dead, otherwise false.
+   *
+   * \see output::IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    for (auto & output : outputs_)
+    {
+      if (!output->IsDead())
+        return false;
+    }
+
+    return true;
+  }
+
 protected:
   node_input *
   add_input(std::unique_ptr<node_input> input);
@@ -826,6 +847,15 @@ public:
   depth() const noexcept
   {
     return depth_;
+  }
+
+  /**
+   * @return True, if the node is in the bottom node set of its region, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsBottomNode() const noexcept
+  {
+    return region_bottom_node_list_anchor_.next != nullptr;
   }
 
 private:
