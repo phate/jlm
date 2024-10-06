@@ -37,7 +37,7 @@ test_bitunary_reduction()
 
   // jlm::rvsdg::view(graph, stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::bitnot_op>(jlm::rvsdg::node_output::node(ex.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::bitnot_op>(jlm::rvsdg::output::GetNode(*ex.origin())));
 }
 
 static inline void
@@ -65,7 +65,7 @@ test_bitbinary_reduction()
 
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(jlm::rvsdg::node_output::node(ex.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::bitadd_op>(jlm::rvsdg::output::GetNode(*ex.origin())));
 }
 
 static inline void

@@ -35,8 +35,8 @@ namespace
 jlm::rvsdg::output *
 concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
 {
-  auto node1 = node_output::node(arg1);
-  auto node2 = node_output::node(arg2);
+  auto node1 = output::GetNode(*arg1);
+  auto node2 = output::GetNode(*arg2);
   if (!node1 || !node2)
     return nullptr;
 
@@ -112,7 +112,7 @@ public:
           {
             // FIXME: switch to comparing operator, not just typeid, after
             // converting "concat" to not be a binary operator anymore
-            return is<bitconcat_op>(node_output::node(arg));
+            return is<bitconcat_op>(output::GetNode(*arg));
           });
     }
     else
@@ -160,7 +160,7 @@ public:
           {
             // FIXME: switch to comparing operator, not just typeid, after
             // converting "concat" to not be a binary operator anymore
-            return is<bitconcat_op>(node_output::node(arg));
+            return is<bitconcat_op>(output::GetNode(*arg));
           });
     }
     else
@@ -282,8 +282,8 @@ bitconcat_op::can_reduce_operand_pair(
     const jlm::rvsdg::output * arg1,
     const jlm::rvsdg::output * arg2) const noexcept
 {
-  auto node1 = node_output::node(arg1);
-  auto node2 = node_output::node(arg2);
+  auto node1 = output::GetNode(*arg1);
+  auto node2 = output::GetNode(*arg2);
 
   if (!node1 || !node2)
     return binop_reduction_none;

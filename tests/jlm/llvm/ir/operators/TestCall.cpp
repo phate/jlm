@@ -40,7 +40,7 @@ TestCopy()
   auto callResults = CallNode::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
   // Act
-  auto node = jlm::rvsdg::node_output::node(callResults[0]);
+  auto node = jlm::rvsdg::output::GetNode(*callResults[0]);
   auto callNode = jlm::util::AssertedCast<const CallNode>(node);
   auto copiedNode = callNode->copy(rvsdg.root(), { function2, value2, iOState2, memoryState2 });
 
@@ -71,7 +71,7 @@ TestCallNodeAccessors()
 
   // Act
   auto results = CallNode::Create(f, functionType, { v, i, m });
-  auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(results[0]));
+  auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*results[0]));
 
   // Assert
   assert(callNode.NumArguments() == 3);
@@ -137,7 +137,7 @@ TestCallTypeClassifierIndirectCall()
     GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])),
         load[0]);
   };
 
@@ -229,7 +229,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     return std::make_tuple(
         lambda,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -317,7 +317,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
           thetaOutputValue,
           thetaOutputIoState,
           thetaOutputMemoryState,
-          jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+          jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])));
     };
 
     auto vt = jlm::tests::valuetype::Create();
@@ -468,8 +468,8 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm1Results[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm2Results[0])));
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callfibm1Results[0])),
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();

@@ -195,8 +195,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return congruent(output1, output2, vs, ctx);
   }
 
-  auto n1 = jlm::rvsdg::node_output::node(o1);
-  auto n2 = jlm::rvsdg::node_output::node(o2);
+  auto n1 = jlm::rvsdg::output::GetNode(*o1);
+  auto n2 = jlm::rvsdg::output::GetNode(*o2);
   if (is<rvsdg::ThetaOperation>(n1) && is<rvsdg::ThetaOperation>(n2) && n1 == n2)
   {
     auto so1 = static_cast<jlm::rvsdg::structural_output *>(o1);

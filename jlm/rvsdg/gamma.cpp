@@ -16,7 +16,7 @@ namespace jlm::rvsdg
 static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
-  auto constant = node_output::node(gamma->predicate()->origin());
+  auto constant = output::GetNode(*gamma->predicate()->origin());
   return constant && is_ctlconstant_op(constant->operation());
 }
 
@@ -73,7 +73,7 @@ static std::unordered_set<jlm::rvsdg::structural_output *>
 is_control_constant_reducible(GammaNode * gamma)
 {
   /* check gamma predicate */
-  auto match = node_output::node(gamma->predicate()->origin());
+  auto match = output::GetNode(*gamma->predicate()->origin());
   if (!is<match_op>(match))
     return {};
 
@@ -96,7 +96,7 @@ is_control_constant_reducible(GammaNode * gamma)
     size_t n;
     for (n = 0; n < it->nresults(); n++)
     {
-      auto node = node_output::node(it->result(n)->origin());
+      auto node = output::GetNode(*it->result(n)->origin());
       if (!is<ctlconstant_op>(node))
         break;
 
