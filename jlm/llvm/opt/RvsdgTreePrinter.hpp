@@ -14,6 +14,8 @@
 namespace jlm::rvsdg
 {
 class graph;
+class input;
+class output;
 }
 
 namespace jlm::util
@@ -165,6 +167,12 @@ private:
 
   static uint64_t
   GetOutputFileNameCounter(const RvsdgModule & rvsdgModule);
+
+  [[nodiscard]] static bool
+  IsMemoryStateInput(const rvsdg::input * input) noexcept;
+
+  [[nodiscard]] static bool
+  IsMemoryStateOutput(const rvsdg::output * output) noexcept;
 
   Configuration Configuration_;
 };
