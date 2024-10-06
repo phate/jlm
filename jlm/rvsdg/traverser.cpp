@@ -52,7 +52,7 @@ topdown_traverser::predecessors_visited(const jlm::rvsdg::node * node) noexcept
 {
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto predecessor = node_output::node(node->input(n)->origin());
+    auto predecessor = output::GetNode(*node->input(n)->origin());
     if (!predecessor)
       continue;
 
@@ -133,7 +133,7 @@ bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
 
   for (size_t n = 0; n < region->nresults(); n++)
   {
-    auto node = node_output::node(region->result(n)->origin());
+    auto node = output::GetNode(*region->result(n)->origin());
     if (node && !node->has_successors())
       tracker_.set_nodestate(node, traversal_nodestate::frontier);
   }
@@ -156,7 +156,7 @@ bottomup_traverser::next()
   tracker_.set_nodestate(node, traversal_nodestate::behind);
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto producer = node_output::node(node->input(n)->origin());
+    auto producer = output::GetNode(*node->input(n)->origin());
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
@@ -180,7 +180,7 @@ bottomup_traverser::node_destroy(jlm::rvsdg::node * node)
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto producer = node_output::node(node->input(n)->origin());
+    auto producer = output::GetNode(*node->input(n)->origin());
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
@@ -192,7 +192,7 @@ bottomup_traverser::input_change(input * in, output * old_origin, output * new_o
   if (in->region() != region() || !is<node_input>(*in) || !is<node_output>(old_origin))
     return;
 
-  auto node = node_output::node(old_origin);
+  auto node = output::GetNode(*old_origin);
   traversal_nodestate state = tracker_.get_nodestate(node);
 
   /* ignore nodes that have been traversed already, or that are already

@@ -185,7 +185,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
 void
 loop_node::set_predicate(jlm::rvsdg::output * p)
 {
-  auto node = jlm::rvsdg::node_output::node(predicate()->origin());
+  auto node = jlm::rvsdg::output::GetNode(*predicate()->origin());
   predicate()->origin()->divert_users(p);
   if (node && !node->has_users())
     remove(node);

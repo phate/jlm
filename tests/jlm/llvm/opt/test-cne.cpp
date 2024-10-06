@@ -172,9 +172,9 @@ test_theta()
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto un1 = jlm::rvsdg::node_output::node(u1);
-  auto un2 = jlm::rvsdg::node_output::node(u2);
-  auto bn1 = jlm::rvsdg::node_output::node(b1);
+  auto un1 = jlm::rvsdg::output::GetNode(*u1);
+  auto un2 = jlm::rvsdg::output::GetNode(*u2);
+  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
   assert(un1->input(0)->origin() == un2->input(0)->origin());
   assert(bn1->input(0)->origin() == un1->input(0)->origin());
   assert(bn1->input(1)->origin() == region->argument(3));
@@ -416,7 +416,7 @@ test_lambda()
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto bn1 = jlm::rvsdg::node_output::node(b1);
+  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
   assert(bn1->input(0)->origin() == bn1->input(1)->origin());
 }
 

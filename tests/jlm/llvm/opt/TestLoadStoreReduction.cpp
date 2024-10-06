@@ -52,10 +52,10 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto load = jlm::rvsdg::node_output::node(exportedValue.origin());
+  auto load = jlm::rvsdg::output::GetNode(*exportedValue.origin());
   assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 2);
-  auto store = jlm::rvsdg::node_output::node(load->input(1)->origin());
+  auto store = jlm::rvsdg::output::GetNode(*load->input(1)->origin());
   assert(is<StoreNonVolatileOperation>(store));
 
   return 0;

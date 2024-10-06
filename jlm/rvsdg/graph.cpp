@@ -103,7 +103,7 @@ graph::ExtractTailNodes(const graph & rvsdg)
     auto output = rootRegion.result(n)->origin();
     if (IsOnlyExported(*output))
     {
-      nodes.push_back(rvsdg::node_output::node(output));
+      nodes.push_back(rvsdg::output::GetNode(*output));
     }
   }
 

@@ -202,7 +202,7 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
       continue;
     }
 
-    auto matchnode = rvsdg::node_output::node(predicate);
+    auto matchnode = rvsdg::output::GetNode(*predicate);
     if (is<rvsdg::match_op>(matchnode))
     {
       auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
@@ -282,7 +282,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     auto output = gamma->output(n);
 
     bool invariant = true;
-    auto matchnode = rvsdg::node_output::node(predicate);
+    auto matchnode = rvsdg::output::GetNode(*predicate);
     bool select = (gamma->nsubregions() == 2) && is<rvsdg::match_op>(matchnode);
     std::vector<std::pair<const variable *, cfg_node *>> arguments;
     for (size_t r = 0; r < gamma->nsubregions(); r++)
@@ -292,7 +292,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
       auto v = ctx.variable(origin);
       arguments.push_back(std::make_pair(v, phi_nodes[r]));
       invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
-      auto tmp = rvsdg::node_output::node(origin);
+      auto tmp = rvsdg::output::GetNode(*origin);
       select &= (tmp == nullptr && origin->region()->node() == &node);
     }
 
@@ -306,7 +306,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     if (select)
     {
       /* use select instead of phi */
-      auto matchnode = rvsdg::node_output::node(predicate);
+      auto matchnode = rvsdg::output::GetNode(*predicate);
       auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
       auto d = matchop->default_alternative();
       auto c = ctx.variable(matchnode->input(0)->origin());
@@ -442,7 +442,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-    auto node = rvsdg::node_output::node(subregion->result(n)->origin());
+    auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
 
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
@@ -469,7 +469,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
     auto result = subregion->result(n);
-    auto node = rvsdg::node_output::node(result->origin());
+    auto node = rvsdg::output::GetNode(*result->origin());
 
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
