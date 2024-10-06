@@ -130,26 +130,10 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
 
   std::function<void(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
-    size_t numMemoryStateArguments = 0;
-    for (size_t n = 0; n < region.narguments(); n++)
-    {
-      auto argument = region.argument(n);
-      if (rvsdg::is<MemoryStateType>(argument->type()))
-      {
-        numMemoryStateArguments++;
-      }
-    }
+    auto numMemoryStateArguments = region.Arguments().CountWhere(IsMemoryStateOutput);
     annotationMap.AddAnnotation(&region, { argumentLabel, numMemoryStateArguments });
 
-    size_t numMemoryStateResults = 0;
-    for (size_t n = 0; n < region.nresults(); n++)
-    {
-      auto result = region.result(n);
-      if (rvsdg::is<MemoryStateType>(result->type()))
-      {
-        numMemoryStateResults++;
-      }
-    }
+    auto numMemoryStateResults = region.Results().CountWhere(IsMemoryStateInput);
     annotationMap.AddAnnotation(&region, { resultLabel, numMemoryStateResults });
 
     for (auto & node : region.nodes)
@@ -218,6 +202,18 @@ RvsdgTreePrinter::GetOutputFileNameCounter(const RvsdgModule & rvsdgModule)
   static std::unordered_map<std::string_view, uint64_t> RvsdgModuleCounterMap_;
 
   return RvsdgModuleCounterMap_[rvsdgModule.SourceFileName().to_str()]++;
+}
+
+bool
+RvsdgTreePrinter::IsMemoryStateInput(const rvsdg::input * input) noexcept
+{
+  return rvsdg::is<MemoryStateType>(input->Type());
+}
+
+bool
+RvsdgTreePrinter::IsMemoryStateOutput(const rvsdg::output * output) noexcept
+{
+  return rvsdg::is<MemoryStateType>(output->Type());
 }
 
 }
