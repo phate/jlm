@@ -51,7 +51,7 @@ public:
 static rvsdg::GammaNode *
 is_applicable(const rvsdg::ThetaNode * theta)
 {
-  auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
+  auto matchnode = jlm::rvsdg::output::GetNode(*theta->predicate()->origin());
   if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchnode))
     return nullptr;
 
@@ -79,7 +79,7 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
   pullin_bottom(gamma);
   for (const auto & lv : *theta)
   {
-    if (jlm::rvsdg::node_output::node(lv->result()->origin()) != gamma)
+    if (jlm::rvsdg::output::GetNode(*lv->result()->origin()) != gamma)
     {
       auto ev = gamma->add_entryvar(lv->result()->origin());
       JLM_ASSERT(ev->narguments() == 2);

@@ -161,7 +161,7 @@ associative_flatten(std::vector<jlm::rvsdg::output *> args, const FlattenTester 
     {
       auto arg = args[n];
       JLM_ASSERT(is<node_output>(arg));
-      auto sub_args = jlm::rvsdg::operands(node_output::node(arg));
+      auto sub_args = jlm::rvsdg::operands(output::GetNode(*arg));
       args[n] = sub_args[0];
       args.insert(args.begin() + n + 1, sub_args.begin() + 1, sub_args.end());
     }

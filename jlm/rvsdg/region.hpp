@@ -297,30 +297,6 @@ public:
     return { BottomNodes_.begin(), BottomNodes_.end() };
   }
 
-  inline region_nodes_list::iterator
-  begin()
-  {
-    return nodes.begin();
-  }
-
-  inline region_nodes_list::const_iterator
-  begin() const
-  {
-    return nodes.begin();
-  }
-
-  inline region_nodes_list::iterator
-  end()
-  {
-    return nodes.end();
-  }
-
-  inline region_nodes_list::const_iterator
-  end() const
-  {
-    return nodes.end();
-  }
-
   inline jlm::rvsdg::graph *
   graph() const noexcept
   {

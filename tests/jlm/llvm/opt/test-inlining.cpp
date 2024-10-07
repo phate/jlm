@@ -166,7 +166,7 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(jlm::rvsdg::node_output::node(f2->node()->fctresult(0)->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::output::GetNode(*f2->node()->fctresult(0)->origin())));
 }
 
 static int

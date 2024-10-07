@@ -185,7 +185,7 @@ is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
   if (operands.size() != 2)
     return false;
 
-  auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
+  auto memStateMergeNode = rvsdg::output::GetNode(*operands[1]);
   if (!is<MemoryStateMergeOperation>(memStateMergeNode))
     return false;
 
@@ -209,13 +209,13 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 {
   auto address = operands[0];
 
-  auto allocanode = rvsdg::node_output::node(address);
+  auto allocanode = rvsdg::output::GetNode(*address);
   if (!is<alloca_op>(allocanode))
     return false;
 
   for (size_t n = 1; n < operands.size(); n++)
   {
-    auto node = rvsdg::node_output::node(operands[n]);
+    auto node = rvsdg::output::GetNode(*operands[n]);
     if (is<alloca_op>(node) && node != allocanode)
       return true;
   }
@@ -226,10 +226,10 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 static bool
 is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
 {
-  if (is<StoreNonVolatileOperation>(rvsdg::node_output::node(state)))
+  if (is<StoreNonVolatileOperation>(rvsdg::output::GetNode(*state)))
   {
-    auto storenode = rvsdg::node_output::node(state);
-    auto addressnode = rvsdg::node_output::node(storenode->input(0)->origin());
+    auto storenode = rvsdg::output::GetNode(*state);
+    auto addressnode = rvsdg::output::GetNode(*storenode->input(0)->origin());
     if (is<alloca_op>(addressnode) && addressnode != loadalloca)
       return true;
   }
@@ -257,7 +257,7 @@ is_load_store_state_reducible(
   if (operands.size() == 2)
     return false;
 
-  auto allocanode = rvsdg::node_output::node(address);
+  auto allocanode = rvsdg::output::GetNode(*address);
   if (!is<alloca_op>(allocanode))
     return false;
 
@@ -303,7 +303,7 @@ is_load_store_reducible(
 
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
-  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::node_output::node(firstState));
+  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::output::GetNode(*firstState));
   if (!storeNode)
   {
     return false;
@@ -317,7 +317,7 @@ is_load_store_reducible(
   for (size_t n = 1; n < operands.size(); n++)
   {
     auto state = operands[n];
-    auto node = rvsdg::node_output::node(state);
+    auto node = rvsdg::output::GetNode(*state);
     if (node != storeNode)
     {
       return false;
@@ -353,7 +353,7 @@ perform_load_store_reduction(
     const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
-  auto storenode = rvsdg::node_output::node(operands[1]);
+  auto storenode = rvsdg::output::GetNode(*operands[1]);
 
   std::vector<rvsdg::output *> results(1, storenode->input(1)->origin());
   results.insert(results.end(), std::next(operands.begin()), operands.end());
@@ -366,7 +366,7 @@ perform_load_mux_reduction(
     const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
-  auto memStateMergeNode = rvsdg::node_output::node(operands[1]);
+  auto memStateMergeNode = rvsdg::output::GetNode(*operands[1]);
 
   auto ld = LoadNonVolatileNode::Create(
       operands[0],
@@ -385,13 +385,13 @@ perform_load_alloca_reduction(
     const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
-  auto allocanode = rvsdg::node_output::node(operands[0]);
+  auto allocanode = rvsdg::output::GetNode(*operands[0]);
 
   std::vector<rvsdg::output *> loadstates;
   std::vector<rvsdg::output *> otherstates;
   for (size_t n = 1; n < operands.size(); n++)
   {
-    auto node = rvsdg::node_output::node(operands[n]);
+    auto node = rvsdg::output::GetNode(*operands[n]);
     if (!is<alloca_op>(node) || node == allocanode)
       loadstates.push_back(operands[n]);
     else
@@ -413,7 +413,7 @@ perform_load_store_state_reduction(
     const std::vector<rvsdg::output *> & operands)
 {
   auto address = operands[0];
-  auto allocanode = rvsdg::node_output::node(address);
+  auto allocanode = rvsdg::output::GetNode(*address);
 
   std::vector<rvsdg::output *> new_loadstates;
   std::vector<rvsdg::output *> results(operands.size(), nullptr);
@@ -493,7 +493,7 @@ is_load_load_state_reducible(const std::vector<rvsdg::output *> & operands)
 
   for (size_t n = 1; n < operands.size(); n++)
   {
-    if (is<LoadNonVolatileOperation>(rvsdg::node_output::node(operands[n])))
+    if (is<LoadNonVolatileOperation>(rvsdg::output::GetNode(*operands[n])))
       return true;
   }
 
@@ -509,7 +509,7 @@ perform_load_load_state_reduction(
 
   auto load_state_input = [](rvsdg::output * result)
   {
-    auto ld = rvsdg::node_output::node(result);
+    auto ld = rvsdg::output::GetNode(*result);
     JLM_ASSERT(is<LoadNonVolatileOperation>(ld));
 
     /*
@@ -531,7 +531,7 @@ perform_load_load_state_reduction(
   {
     JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->type()));
 
-    if (!is<LoadNonVolatileOperation>(rvsdg::node_output::node(operand)))
+    if (!is<LoadNonVolatileOperation>(rvsdg::output::GetNode(*operand)))
       return operand;
 
     mxstates[index].push_back(operand);

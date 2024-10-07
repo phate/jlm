@@ -114,7 +114,7 @@ public:
   inline void
   set_predicate(jlm::rvsdg::output * p)
   {
-    auto node = node_output::node(predicate()->origin());
+    auto node = output::GetNode(*predicate()->origin());
 
     predicate()->divert_to(p);
     if (node && !node->has_users())

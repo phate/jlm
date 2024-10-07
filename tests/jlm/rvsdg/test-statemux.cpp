@@ -45,7 +45,7 @@ test_mux_mux_reduction()
 
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto node = node_output::node(ex.origin());
+  auto node = output::GetNode(*ex.origin());
   assert(node->ninputs() == 4);
   assert(node->input(0)->origin() == x);
   assert(node->input(1)->origin() == y);
@@ -79,7 +79,7 @@ test_multiple_origin_reduction()
 
   view(graph.root(), stdout);
 
-  assert(node_output::node(ex.origin())->ninputs() == 1);
+  assert(output::GetNode(*ex.origin())->ninputs() == 1);
 }
 
 static int

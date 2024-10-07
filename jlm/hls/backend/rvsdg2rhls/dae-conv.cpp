@@ -258,7 +258,7 @@ decouple_load(
   }
   // copy nodes
   std::vector<std::vector<jlm::rvsdg::node *>> context(loopNode->subregion()->nnodes());
-  for (auto & node : *loopNode->subregion())
+  for (auto & node : loopNode->subregion()->Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
     context[node.depth()].push_back(&node);

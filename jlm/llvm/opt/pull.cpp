@@ -131,8 +131,8 @@ pullin_top(rvsdg::GammaNode * gamma)
   auto ev = gamma->begin_entryvar();
   while (ev != gamma->end_entryvar())
   {
-    auto node = jlm::rvsdg::node_output::node(ev->origin());
-    auto tmp = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
+    auto node = jlm::rvsdg::output::GetNode(*ev->origin());
+    auto tmp = jlm::rvsdg::output::GetNode(*gamma->predicate()->origin());
     if (node && tmp != node && single_successor(node))
     {
       pullin_node(gamma, node);
@@ -178,7 +178,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
       for (size_t i = 0; i < node->ninputs(); i++)
       {
         auto input = node->input(i);
-        if (jlm::rvsdg::node_output::node(input->origin()) == gamma)
+        if (jlm::rvsdg::output::GetNode(*input->origin()) == gamma)
         {
           auto output = static_cast<jlm::rvsdg::structural_output *>(input->origin());
           operands.push_back(gamma->subregion(r)->result(output->index())->origin());
@@ -251,13 +251,13 @@ pull(rvsdg::GammaNode * gamma)
   if (gamma->nsubregions() == 2 && empty(gamma))
     return;
 
-  auto prednode = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
+  auto prednode = jlm::rvsdg::output::GetNode(*gamma->predicate()->origin());
 
   /* FIXME: This is inefficient. We can do better. */
   auto ev = gamma->begin_entryvar();
   while (ev != gamma->end_entryvar())
   {
-    auto node = jlm::rvsdg::node_output::node(ev->origin());
+    auto node = jlm::rvsdg::output::GetNode(*ev->origin());
     if (!node || prednode == node || !single_successor(node))
     {
       ev++;

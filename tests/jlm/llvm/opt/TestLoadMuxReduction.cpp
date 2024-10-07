@@ -50,19 +50,19 @@ TestSuccess()
   // jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto load = jlm::rvsdg::node_output::node(ex1.origin());
+  auto load = jlm::rvsdg::output::GetNode(*ex1.origin());
   assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 4);
   assert(load->input(1)->origin() == s1);
   assert(load->input(2)->origin() == s2);
   assert(load->input(3)->origin() == s3);
 
-  auto merge = jlm::rvsdg::node_output::node(ex2.origin());
+  auto merge = jlm::rvsdg::output::GetNode(*ex2.origin());
   assert(is<MemoryStateMergeOperation>(merge));
   assert(merge->ninputs() == 3);
   for (size_t n = 0; n < merge->ninputs(); n++)
   {
-    auto node = jlm::rvsdg::node_output::node(merge->input(n)->origin());
+    auto node = jlm::rvsdg::output::GetNode(*merge->input(n)->origin());
     assert(node == load);
   }
 }
@@ -144,7 +144,7 @@ TestLoadWithoutStates()
   jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto load = jlm::rvsdg::node_output::node(ex.origin());
+  auto load = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(is<LoadNonVolatileOperation>(load));
   assert(load->ninputs() == 1);
 }

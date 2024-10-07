@@ -171,7 +171,7 @@ node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
 {
   auto & result = lambdaNode.GetMemoryStateRegionResult();
 
-  auto node = rvsdg::node_output::node(result.origin());
+  auto node = rvsdg::output::GetNode(*result.origin());
   return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
                                                        : nullptr;
 }
