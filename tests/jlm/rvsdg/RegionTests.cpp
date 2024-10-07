@@ -441,3 +441,43 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/RegionTests-ToTree_RvsdgWithStructuralNodesAndAnnotations",
     ToTree_RvsdgWithStructuralNodesAndAnnotations)
+
+static int
+BottomNodeTests()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  auto valueType = valuetype::Create();
+
+  // Arrange
+  graph rvsdg;
+
+  // Act & Assert
+  // A newly created node without any users should automatically be added to the bottom nodes
+  auto structuralNode = jlm::tests::structural_node::create(rvsdg.root(), 1);
+  assert(structuralNode->IsDead());
+  assert(rvsdg.root()->NumBottomNodes() == 1);
+  assert(&*(rvsdg.root()->BottomNodes().begin()) == structuralNode);
+
+  // The node cedes to be dead
+  auto & output = structuralNode->AddOutput(valueType);
+  jlm::tests::GraphExport::Create(output, "x");
+  assert(structuralNode->IsDead() == false);
+  assert(rvsdg.root()->NumBottomNodes() == 0);
+  assert(rvsdg.root()->BottomNodes().begin() == rvsdg.root()->BottomNodes().end());
+
+  // And it becomes dead again
+  rvsdg.root()->RemoveResultsWhere(
+      [](const RegionResult & result)
+      {
+        return true;
+      });
+  assert(structuralNode->IsDead());
+  assert(rvsdg.root()->NumBottomNodes() == 1);
+  assert(&*(rvsdg.root()->BottomNodes().begin()) == structuralNode);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-BottomNodeTests", BottomNodeTests)

@@ -501,10 +501,12 @@ public:
    * The node \p node is only added to the bottom nodes of this region, iff:
    * 1. The node \p node belongs to the same region instance.
    * 2. All the outputs of \p node are dead. See node::IsDead() for more details.
-   * 3. The node \p node is not already in the bottom nodes of the region.
    *
    * @param node The node that is added.
    * @return True, if \p node was added, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is created or becomes dead. There is
+   * no need to invoke it manually.
    */
   bool
   AddBottomNode(rvsdg::node & node);
@@ -514,6 +516,9 @@ public:
    *
    * @param node The node that is removed.
    * @return True, if \p node was a bottom node and removed, otherwise false.
+   *
+   * @note This method is automatically invoked when a node cedes to be dead. There is no need to
+   * invoke it manually.
    */
   bool
   RemoveBottomNode(rvsdg::node & node);

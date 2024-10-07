@@ -849,15 +849,6 @@ public:
     return depth_;
   }
 
-  /**
-   * @return True, if the node is in the bottom node set of its region, otherwise false.
-   */
-  [[nodiscard]] bool
-  IsBottomNode() const noexcept
-  {
-    return region_bottom_node_list_anchor_.next != nullptr;
-  }
-
 private:
   jlm::util::intrusive_list_anchor<jlm::rvsdg::node> region_node_list_anchor_;
 

@@ -186,12 +186,7 @@ Region::AddBottomNode(rvsdg::node & node)
   if (!node.IsDead())
     return false;
 
-  if (node.IsBottomNode())
-  {
-    JLM_ASSERT(node.IsDead());
-    return false;
-  }
-
+  // FIXME: We should check that a node is not already part of the bottom nodes before adding it.
   BottomNodes_.push_back(&node);
 
   return true;
