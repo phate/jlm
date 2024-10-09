@@ -336,7 +336,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
     }
   }
 
-  JLM_ASSERT(region.bottom_nodes.empty());
+  JLM_ASSERT(region.NumBottomNodes() == 0);
 }
 
 void

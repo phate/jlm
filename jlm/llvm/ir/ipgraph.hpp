@@ -377,7 +377,7 @@ private:
   inline data_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
+      std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -396,7 +396,7 @@ public:
   std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::ValueType> &
   GetValueType() const noexcept
   {
     return ValueType_;
@@ -445,7 +445,7 @@ public:
   Create(
       llvm::ipgraph & clg,
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
+      std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -462,7 +462,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const jlm::rvsdg::valuetype> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::ValueType> ValueType_;
   std::unique_ptr<data_node_init> init_;
 };
 

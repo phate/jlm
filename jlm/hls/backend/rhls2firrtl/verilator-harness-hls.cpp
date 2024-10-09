@@ -478,7 +478,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   size_t register_ix = 0;
   for (size_t i = 0; i < ln->type().NumArguments(); ++i)
   {
-    if (dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ArgumentType(i)))
+    if (dynamic_cast<const rvsdg::StateType *>(&ln->type().ArgumentType(i)))
     {
       register_ix++;
       continue;
@@ -552,8 +552,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    hls_loads.erase(hls_loads.begin(), hls_loads.end());\n"
          "    hls_stores.erase(hls_stores.begin(), hls_stores.end());\n"
          "    mem_access_ctr = 0;\n";
-  if (ln->type().NumResults()
-      && !dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ResultType(0)))
+  if (ln->type().NumResults() && !dynamic_cast<const rvsdg::StateType *>(&ln->type().ResultType(0)))
   {
     cpp << "    return top->o_data_0;\n";
   }
@@ -607,8 +606,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "        close(fd[0]);\n"
          "    }\n";
 
-  if (ln->type().NumResults()
-      && !dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ResultType(0)))
+  if (ln->type().NumResults() && !dynamic_cast<const rvsdg::StateType *>(&ln->type().ResultType(0)))
   {
     cpp << "    return 0;\n";
   }
@@ -618,8 +616,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
          "    ";
   call_function(cpp, ln, "run_ref");
   cpp << "\n";
-  if (ln->type().NumResults()
-      && !dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ResultType(0)))
+  if (ln->type().NumResults() && !dynamic_cast<const rvsdg::StateType *>(&ln->type().ResultType(0)))
   {
     cpp << "    return ";
   }
@@ -643,7 +640,7 @@ VerilatorHarnessHLS::call_function(
   cpp << function_name << "(";
   for (size_t i = 0; i < ln->type().NumArguments(); ++i)
   {
-    if (dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ArgumentType(i)))
+    if (dynamic_cast<const rvsdg::StateType *>(&ln->type().ArgumentType(i)))
     {
       continue;
     }
@@ -674,7 +671,7 @@ VerilatorHarnessHLS::get_function_header(
   else
   {
     auto type = &ln->type().ResultType(0);
-    if (dynamic_cast<const jlm::rvsdg::statetype *>(type))
+    if (dynamic_cast<const rvsdg::StateType *>(type))
     {
       return_type = "void";
     }
@@ -690,7 +687,7 @@ VerilatorHarnessHLS::get_function_header(
   cpp << return_type << " " << function_name << "(\n";
   for (size_t i = 0; i < ln->type().NumArguments(); ++i)
   {
-    if (dynamic_cast<const jlm::rvsdg::statetype *>(&ln->type().ArgumentType(i)))
+    if (dynamic_cast<const rvsdg::StateType *>(&ln->type().ArgumentType(i)))
     {
       continue;
     }

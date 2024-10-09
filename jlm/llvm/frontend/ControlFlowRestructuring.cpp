@@ -67,7 +67,7 @@ reinsert_tcloop(const tcloop & l)
 }
 
 static const tacvariable *
-create_pvariable(basic_block & bb, std::shared_ptr<const rvsdg::ctltype> type)
+create_pvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#p", c++, "#");
@@ -75,7 +75,7 @@ create_pvariable(basic_block & bb, std::shared_ptr<const rvsdg::ctltype> type)
 }
 
 static const tacvariable *
-create_qvariable(basic_block & bb, std::shared_ptr<const rvsdg::ctltype> type)
+create_qvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#q", c++, "#");
@@ -83,7 +83,7 @@ create_qvariable(basic_block & bb, std::shared_ptr<const rvsdg::ctltype> type)
 }
 
 static const tacvariable *
-create_tvariable(basic_block & bb, std::shared_ptr<const rvsdg::ctltype> type)
+create_tvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#q", c++, "#");
@@ -96,22 +96,23 @@ create_rvariable(basic_block & bb)
   static size_t c = 0;
   auto name = util::strfmt("#r", c++, "#");
 
-  return bb.append_last(UndefValueOperation::Create(rvsdg::ctltype::Create(2), name))->result(0);
+  return bb.append_last(UndefValueOperation::Create(rvsdg::ControlType::Create(2), name))
+      ->result(0);
 }
 
 static inline void
 append_branch(basic_block * bb, const variable * operand)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::ctltype *>(&operand->type()));
-  auto nalternatives = static_cast<const rvsdg::ctltype *>(&operand->type())->nalternatives();
+  JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&operand->type()));
+  auto nalternatives = static_cast<const rvsdg::ControlType *>(&operand->type())->nalternatives();
   bb->append_last(branch_op::create(nalternatives, operand));
 }
 
 static inline void
 append_constant(basic_block * bb, const tacvariable * result, size_t value)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::ctltype *>(&result->type()));
-  auto nalternatives = static_cast<const rvsdg::ctltype *>(&result->type())->nalternatives();
+  JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
+  auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
 
   rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(value, nalternatives));
   bb->append_last(tac::create(op, {}));
@@ -261,14 +262,14 @@ restructure_loops(cfg_node * entry, cfg_node * exit, std::vector<tcloop> & loops
     if (sccstruct->nenodes() > 1)
     {
       auto bb = find_tvariable_bb(entry);
-      ev = create_tvariable(*bb, rvsdg::ctltype::Create(sccstruct->nenodes()));
+      ev = create_tvariable(*bb, rvsdg::ControlType::Create(sccstruct->nenodes()));
     }
 
     auto rv = create_rvariable(*new_ne);
 
     const tacvariable * xv = nullptr;
     if (sccstruct->nxnodes() > 1)
-      xv = create_qvariable(*new_ne, rvsdg::ctltype::Create(sccstruct->nxnodes()));
+      xv = create_qvariable(*new_ne, rvsdg::ControlType::Create(sccstruct->nxnodes()));
 
     append_branch(new_nr, rv);
 
@@ -427,7 +428,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   }
 
   /* insert new continuation point */
-  auto p = create_pvariable(hbb, rvsdg::ctltype::Create(c.points.size()));
+  auto p = create_pvariable(hbb, rvsdg::ControlType::Create(c.points.size()));
   auto cn = basic_block::create(cfg);
   append_branch(cn, p);
   std::unordered_map<cfg_node *, size_t> indices;

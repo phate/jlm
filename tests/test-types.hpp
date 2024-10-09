@@ -11,13 +11,13 @@
 namespace jlm::tests
 {
 
-class valuetype final : public rvsdg::valuetype
+class valuetype final : public rvsdg::ValueType
 {
 public:
   virtual ~valuetype();
 
   inline constexpr valuetype() noexcept
-      : rvsdg::valuetype()
+      : rvsdg::ValueType()
   {}
 
   virtual std::string
@@ -33,13 +33,13 @@ public:
   Create();
 };
 
-class statetype final : public rvsdg::statetype
+class statetype final : public rvsdg::StateType
 {
 public:
   virtual ~statetype();
 
   inline constexpr statetype() noexcept
-      : rvsdg::statetype()
+      : rvsdg::StateType()
   {}
 
   virtual std::string

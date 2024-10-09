@@ -15,7 +15,7 @@ namespace jlm::rvsdg
 
 /* bitstring type */
 
-class bittype final : public jlm::rvsdg::valuetype
+class bittype final : public jlm::rvsdg::ValueType
 {
 public:
   virtual ~bittype() noexcept;

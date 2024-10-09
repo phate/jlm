@@ -50,9 +50,12 @@ test1()
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto ct = jlm::rvsdg::ctltype::Create(2);
+    auto ct = jlm::rvsdg::ControlType::Create(2);
     auto functionType = FunctionType::Create(
-        { jlm::rvsdg::ctltype::Create(2), vt, iostatetype::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::ControlType::Create(2),
+          vt,
+          iostatetype::Create(),
+          MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
@@ -163,7 +166,7 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(jlm::rvsdg::node_output::node(f2->node()->fctresult(0)->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::output::GetNode(*f2->node()->fctresult(0)->origin())));
 }
 
 static int

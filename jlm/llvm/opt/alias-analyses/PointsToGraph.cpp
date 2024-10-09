@@ -513,7 +513,7 @@ PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 std::string
 PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
 {
-  auto node = jlm::rvsdg::node_output::node(&output);
+  auto node = jlm::rvsdg::output::GetNode(*&output);
 
   if (node != nullptr)
     return util::strfmt(node->operation().debug_string(), ":o", output.index());

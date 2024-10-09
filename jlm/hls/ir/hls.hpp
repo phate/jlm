@@ -25,7 +25,7 @@ class branch_op final : public jlm::rvsdg::simple_op
 private:
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
       : jlm::rvsdg::simple_op(
-            { jlm::rvsdg::ctltype::Create(nalternatives), type },
+            { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
         loop(loop)
   {}
@@ -58,9 +58,9 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value, bool loop = false)
   {
-    auto ctl = dynamic_cast<const jlm::rvsdg::ctltype *>(&predicate.type());
+    auto ctl = dynamic_cast<const rvsdg::ControlType *>(&predicate.type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
 
     auto region = predicate.region();
     branch_op op(ctl->nalternatives(), value.Type(), loop);
@@ -259,9 +259,9 @@ public:
   {
     if (alternatives.empty())
       throw util::error("Insufficient number of operands.");
-    auto ctl = dynamic_cast<const jlm::rvsdg::ctltype *>(&predicate.type());
+    auto ctl = dynamic_cast<const rvsdg::ControlType *>(&predicate.type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
     if (alternatives.size() != ctl->nalternatives())
       throw util::error("Alternatives and predicate do not match.");
 
@@ -281,7 +281,7 @@ private:
   {
     auto vec =
         std::vector<std::shared_ptr<const jlm::rvsdg::Type>>(nalternatives + 1, std::move(type));
-    vec[0] = jlm::rvsdg::ctltype::Create(nalternatives);
+    vec[0] = rvsdg::ControlType::Create(nalternatives);
     return vec;
   }
 };
@@ -330,7 +330,7 @@ public:
   virtual ~predicate_buffer_op()
   {}
 
-  explicit predicate_buffer_op(const std::shared_ptr<const jlm::rvsdg::ctltype> & type)
+  explicit predicate_buffer_op(const std::shared_ptr<const rvsdg::ControlType> & type)
       : jlm::rvsdg::simple_op({ type }, { type })
   {}
 
@@ -357,9 +357,9 @@ public:
   create(jlm::rvsdg::output & predicate)
   {
     auto region = predicate.region();
-    auto ctl = std::dynamic_pointer_cast<const jlm::rvsdg::ctltype>(predicate.Type());
+    auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
     predicate_buffer_op op(ctl);
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate });
   }
@@ -372,7 +372,7 @@ public:
   {}
 
   loop_constant_buffer_op(
-      const std::shared_ptr<const jlm::rvsdg::ctltype> & ctltype,
+      const std::shared_ptr<const rvsdg::ControlType> & ctltype,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : jlm::rvsdg::simple_op({ ctltype, type }, { type })
   {}
@@ -400,9 +400,9 @@ public:
   create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value)
   {
     auto region = predicate.region();
-    auto ctl = std::dynamic_pointer_cast<const jlm::rvsdg::ctltype>(predicate.Type());
+    auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a ctltype.");
+      throw util::error("Predicate needs to be a control type.");
     loop_constant_buffer_op op(ctl, value.Type());
     return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate, &value });
   }
@@ -457,14 +457,14 @@ public:
 private:
 };
 
-class triggertype final : public jlm::rvsdg::statetype
+class triggertype final : public rvsdg::StateType
 {
 public:
   virtual ~triggertype()
   {}
 
   triggertype()
-      : jlm::rvsdg::statetype()
+      : rvsdg::StateType()
   {}
 
   std::string
@@ -770,7 +770,7 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::ctltype *>(&result->type()));
+    JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
     return result;
   }
 
@@ -796,7 +796,7 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class bundletype final : public jlm::rvsdg::valuetype
+class bundletype final : public jlm::rvsdg::ValueType
 {
 public:
   ~bundletype()
@@ -804,7 +804,7 @@ public:
 
   bundletype(
       const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements)
-      : jlm::rvsdg::valuetype(),
+      : jlm::rvsdg::ValueType(),
         elements_(std::move(elements))
   {}
 
@@ -867,10 +867,10 @@ public:
 };
 
 std::shared_ptr<const bundletype>
-get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write);
+get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write);
 
 std::shared_ptr<const bundletype>
-get_mem_res_type(std::shared_ptr<const jlm::rvsdg::valuetype> dataType);
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
 class load_op final : public jlm::rvsdg::simple_op
 {
@@ -878,7 +878,7 @@ public:
   virtual ~load_op()
   {}
 
-  load_op(const std::shared_ptr<const rvsdg::valuetype> & pointeeType, size_t numStates)
+  load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
       : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
   {}
 
@@ -892,7 +892,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(std::shared_ptr<const rvsdg::valuetype> pointeeType, size_t numStates)
+  CreateInTypes(std::shared_ptr<const rvsdg::ValueType> pointeeType, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         1,
@@ -906,7 +906,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(std::shared_ptr<const rvsdg::valuetype> pointeeType, size_t numStates)
+  CreateOutTypes(std::shared_ptr<const rvsdg::ValueType> pointeeType, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, std::move(pointeeType));
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
@@ -937,7 +937,7 @@ public:
   {
     auto region = addr.region();
     load_op op(
-        std::dynamic_pointer_cast<const rvsdg::valuetype>(load_result.Type()),
+        std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
         states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
@@ -952,10 +952,10 @@ public:
     return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
   }
 
-  [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
+  [[nodiscard]] std::shared_ptr<const rvsdg::ValueType>
   GetLoadedType() const noexcept
   {
-    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
+    return std::dynamic_pointer_cast<const rvsdg::ValueType>(result(0));
   }
 };
 
@@ -1091,7 +1091,7 @@ public:
   virtual ~decoupled_load_op()
   {}
 
-  decoupled_load_op(const std::shared_ptr<const rvsdg::valuetype> & pointeeType)
+  decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType)
       : simple_op(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
   {}
 
@@ -1104,7 +1104,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(std::shared_ptr<const rvsdg::valuetype> pointeeType)
+  CreateInTypes(std::shared_ptr<const rvsdg::ValueType> pointeeType)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, llvm::PointerType::Create());
     types.emplace_back(std::move(pointeeType)); // result
@@ -1112,7 +1112,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(std::shared_ptr<const rvsdg::valuetype> pointeeType)
+  CreateOutTypes(std::shared_ptr<const rvsdg::ValueType> pointeeType)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, std::move(pointeeType));
     types.emplace_back(llvm::PointerType::Create()); // addr
@@ -1134,7 +1134,7 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(jlm::rvsdg::output & addr, jlm::rvsdg::output & load_result)
   {
-    decoupled_load_op op(std::dynamic_pointer_cast<const rvsdg::valuetype>(load_result.Type()));
+    decoupled_load_op op(std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()));
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
@@ -1147,10 +1147,10 @@ public:
     return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
   }
 
-  [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
+  [[nodiscard]] std::shared_ptr<const rvsdg::ValueType>
   GetLoadedType() const noexcept
   {
-    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
+    return std::dynamic_pointer_cast<const rvsdg::ValueType>(result(0));
   }
 };
 
@@ -1160,7 +1160,7 @@ public:
   virtual ~mem_resp_op()
   {}
 
-  explicit mem_resp_op(const std::vector<std::shared_ptr<const rvsdg::valuetype>> & output_types)
+  explicit mem_resp_op(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
       : simple_op(CreateInTypes(output_types), CreateOutTypes(output_types))
   {}
 
@@ -1174,7 +1174,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(const std::vector<std::shared_ptr<const rvsdg::valuetype>> & output_types)
+  CreateInTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
   {
     size_t max_width = 64;
     // TODO: calculate size onece JlmSize is moved
@@ -1189,7 +1189,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::vector<std::shared_ptr<const rvsdg::valuetype>> & output_types)
+  CreateOutTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     types.reserve(output_types.size());
@@ -1215,7 +1215,7 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(
       rvsdg::output & result,
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & output_types)
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
   {
     auto region = result.region();
     // TODO: verify port here
@@ -1232,8 +1232,8 @@ public:
   virtual ~mem_req_op() = default;
 
   mem_req_op(
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & load_types,
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & store_types)
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
       : simple_op(CreateInTypes(load_types, store_types), CreateOutTypes(load_types, store_types))
   {
     for (auto loadType : load_types)
@@ -1262,8 +1262,8 @@ public:
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateInTypes(
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & load_types,
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & store_types)
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     for (size_t i = 0; i < load_types.size(); i++)
@@ -1280,8 +1280,8 @@ public:
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateOutTypes(
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & load_types,
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & store_types)
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
   {
     size_t max_width = 64;
     // TODO: fix once JlmSize is moved
@@ -1315,18 +1315,18 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(
       const std::vector<jlm::rvsdg::output *> & load_operands,
-      const std::vector<std::shared_ptr<const rvsdg::valuetype>> & loadTypes,
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & loadTypes,
       const std::vector<jlm::rvsdg::output *> & store_operands,
       rvsdg::Region * region)
   {
     // Stores have both addr and data operand
     // But we are only interested in the data operand type
     JLM_ASSERT(store_operands.size() % 2 == 0);
-    std::vector<std::shared_ptr<const rvsdg::valuetype>> storeTypes;
+    std::vector<std::shared_ptr<const rvsdg::ValueType>> storeTypes;
     for (size_t i = 1; i < store_operands.size(); i += 2)
     {
       storeTypes.push_back(
-          std::dynamic_pointer_cast<const rvsdg::valuetype>(store_operands[i]->Type()));
+          std::dynamic_pointer_cast<const rvsdg::ValueType>(store_operands[i]->Type()));
     }
     mem_req_op op(loadTypes, storeTypes);
     std::vector<jlm::rvsdg::output *> operands(load_operands);
@@ -1363,7 +1363,7 @@ public:
   virtual ~store_op()
   {}
 
-  store_op(const std::shared_ptr<const rvsdg::valuetype> & pointeeType, size_t numStates)
+  store_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
       : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
   {}
 
@@ -1377,7 +1377,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(const std::shared_ptr<const rvsdg::valuetype> & pointeeType, size_t numStates)
+  CreateInTypes(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         { llvm::PointerType::Create(), pointeeType });
@@ -1389,7 +1389,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::shared_ptr<const rvsdg::valuetype> & pointeeType, size_t numStates)
+  CreateOutTypes(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         numStates,
@@ -1417,7 +1417,7 @@ public:
       jlm::rvsdg::output & value,
       const std::vector<jlm::rvsdg::output *> & states)
   {
-    store_op op(std::dynamic_pointer_cast<const rvsdg::valuetype>(value.Type()), states.size());
+    store_op op(std::dynamic_pointer_cast<const rvsdg::ValueType>(value.Type()), states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&value);
@@ -1431,10 +1431,10 @@ public:
     return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::valuetype>(argument(1).get());
+    return *util::AssertedCast<const rvsdg::ValueType>(argument(1).get());
   }
 };
 
@@ -1538,7 +1538,7 @@ public:
   virtual ~local_load_op()
   {}
 
-  local_load_op(const std::shared_ptr<const jlm::rvsdg::valuetype> & valuetype, size_t numStates)
+  local_load_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
       : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
@@ -1552,7 +1552,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(const std::shared_ptr<const jlm::rvsdg::valuetype> & valuetype, size_t numStates)
+  CreateInTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, jlm::rvsdg::bittype::Create(64));
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
@@ -1564,7 +1564,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::shared_ptr<const jlm::rvsdg::valuetype> & valuetype, size_t numStates)
+  CreateOutTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, valuetype);
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
@@ -1594,7 +1594,7 @@ public:
       jlm::rvsdg::output & load_result)
   {
     auto region = index.region();
-    auto valuetype = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(load_result.Type());
+    auto valuetype = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(load_result.Type());
     local_load_op op(valuetype, states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&index);
@@ -1603,10 +1603,10 @@ public:
     return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
   }
 
-  [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
+  [[nodiscard]] std::shared_ptr<const rvsdg::ValueType>
   GetLoadedType() const noexcept
   {
-    return std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0));
+    return std::dynamic_pointer_cast<const rvsdg::ValueType>(result(0));
   }
 };
 
@@ -1616,7 +1616,7 @@ public:
   virtual ~local_store_op()
   {}
 
-  local_store_op(const std::shared_ptr<const jlm::rvsdg::valuetype> & valuetype, size_t numStates)
+  local_store_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
       : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
@@ -1630,7 +1630,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(const std::shared_ptr<const jlm::rvsdg::valuetype> & valuetype, size_t numStates)
+  CreateInTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         { jlm::rvsdg::bittype::Create(64), valuetype });
@@ -1642,7 +1642,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::shared_ptr<const jlm::rvsdg::valuetype> & valuetype, size_t numStates)
+  CreateOutTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         numStates,
@@ -1671,7 +1671,7 @@ public:
       const std::vector<jlm::rvsdg::output *> & states)
   {
     auto region = index.region();
-    auto valuetype = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(value.Type());
+    auto valuetype = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value.Type());
     local_store_op op(valuetype, states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&index);
@@ -1680,10 +1680,10 @@ public:
     return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
   }
 
-  [[nodiscard]] const jlm::rvsdg::valuetype &
+  [[nodiscard]] const jlm::rvsdg::ValueType &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const jlm::rvsdg::valuetype>(argument(1).get());
+    return *util::AssertedCast<const jlm::rvsdg::ValueType>(argument(1).get());
   }
 };
 

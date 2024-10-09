@@ -117,11 +117,11 @@ BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
   {
     return GetPointerSizeInBits();
   }
-  else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(type))
+  else if (auto ct = dynamic_cast<const rvsdg::ControlType *>(type))
   {
     return ceil(log2(ct->nalternatives()));
   }
-  else if (dynamic_cast<const jlm::rvsdg::statetype *>(type))
+  else if (dynamic_cast<const rvsdg::StateType *>(type))
   {
     return 1;
   }

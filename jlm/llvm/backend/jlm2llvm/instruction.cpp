@@ -279,7 +279,7 @@ convert_phi(
 
 static ::llvm::Value *
 CreateLoadInstruction(
-    const rvsdg::valuetype & loadedType,
+    const rvsdg::ValueType & loadedType,
     const variable * address,
     bool isVolatile,
     size_t alignment,
@@ -661,7 +661,7 @@ convert_select(
   JLM_ASSERT(is<select_op>(op));
   auto & select = *static_cast<const select_op *>(&op);
 
-  if (rvsdg::is<rvsdg::statetype>(select.type()))
+  if (rvsdg::is<rvsdg::StateType>(select.type()))
     return nullptr;
 
   auto c = ctx.value(operands[0]);
@@ -840,7 +840,7 @@ convert_cast(
     context & ctx)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
-  auto dsttype = std::dynamic_pointer_cast<const rvsdg::valuetype>(op.result(0));
+  auto dsttype = std::dynamic_pointer_cast<const rvsdg::ValueType>(op.result(0));
   auto operand = operands[0];
 
   if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))

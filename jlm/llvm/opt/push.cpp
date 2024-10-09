@@ -87,7 +87,7 @@ has_side_effects(const jlm::rvsdg::node * node)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    if (dynamic_cast<const jlm::rvsdg::statetype *>(&node->output(n)->type()))
+    if (dynamic_cast<const rvsdg::StateType *>(&node->output(n)->type()))
       return true;
   }
 
@@ -355,7 +355,7 @@ pushout_store(jlm::rvsdg::node * storenode)
     std::unordered_set<jlm::rvsdg::input *> users;
     for (const auto & user : *states[n])
     {
-      if (jlm::rvsdg::input::GetNode(*user) != jlm::rvsdg::node_output::node(nstates[0]))
+      if (jlm::rvsdg::input::GetNode(*user) != jlm::rvsdg::output::GetNode(*nstates[0]))
         users.insert(user);
     }
 
@@ -371,7 +371,7 @@ push_bottom(rvsdg::ThetaNode * theta)
 {
   for (const auto & lv : *theta)
   {
-    auto storenode = jlm::rvsdg::node_output::node(lv->result()->origin());
+    auto storenode = jlm::rvsdg::output::GetNode(*lv->result()->origin());
     if (jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode))
     {
       pushout_store(storenode);

@@ -374,6 +374,17 @@ public:
   virtual std::string
   debug_string() const;
 
+  /**
+   * Retrieve the associated node from \p output if \p output is derived from
+   * jlm::rvsdg::node_output.
+   *
+   * @param output The output from which to retrieve the node.
+   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
+   * otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::node *
+  GetNode(const rvsdg::output & output) noexcept;
+
   template<class T>
   class iterator
   {
@@ -684,6 +695,27 @@ public:
 
   inline void
   recompute_depth() noexcept;
+
+  /**
+   * \brief Determines whether the node is dead.
+   *
+   * A node is considered dead if all its outputs are dead.
+   *
+   * @return True, if the node is dead, otherwise false.
+   *
+   * \see output::IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    for (auto & output : outputs_)
+    {
+      if (!output->IsDead())
+        return false;
+    }
+
+    return true;
+  }
 
 protected:
   node_input *
