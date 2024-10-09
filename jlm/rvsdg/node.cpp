@@ -113,7 +113,8 @@ output::remove_user(jlm::rvsdg::input * user)
   {
     if (!node->has_users())
     {
-      JLM_ASSERT(region()->AddBottomNode(*node));
+      bool wasAdded = region()->AddBottomNode(*node);
+      JLM_ASSERT(wasAdded);
     }
   }
 }
@@ -127,7 +128,8 @@ output::add_user(jlm::rvsdg::input * user)
   {
     if (!node->has_users())
     {
-      JLM_ASSERT(region()->RemoveBottomNode(*node));
+      bool wasRemoved = region()->RemoveBottomNode(*node);
+      JLM_ASSERT(wasRemoved);
     }
   }
   users_.insert(user);
@@ -180,7 +182,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
       region_(region),
       operation_(std::move(op))
 {
-  JLM_ASSERT(region->AddBottomNode(*this));
+  bool wasAdded = region->AddBottomNode(*this);
+  JLM_ASSERT(wasAdded);
   region->top_nodes.push_back(this);
   region->nodes.push_back(this);
 }
@@ -188,7 +191,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
 node::~node()
 {
   outputs_.clear();
-  JLM_ASSERT(region()->RemoveBottomNode(*this));
+  bool wasRemoved = region()->RemoveBottomNode(*this);
+  JLM_ASSERT(wasRemoved);
 
   if (ninputs() == 0)
     region()->top_nodes.erase(this);
