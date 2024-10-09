@@ -76,7 +76,7 @@ PointerObjectSet::NumMemoryPointerObjectsCanPoint() const noexcept
   size_t count = 0;
   for (auto & pointerObject : PointerObjects_)
   {
-    count += pointerObject.Kind != PointerObjectKind::Register && pointerObject.CanPoint();
+    count += !pointerObject.IsRegister() && pointerObject.CanPoint();
   }
   return count;
 }
