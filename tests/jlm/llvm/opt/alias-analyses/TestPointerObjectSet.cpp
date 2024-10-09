@@ -852,10 +852,8 @@ TestClonePointerObjectConstraintSet()
 
   // Modifying the copy doesn't affect the original
   constraintsClone->AddConstraint(LoadConstraint(register0, alloca0));
-#ifndef ANDERSEN_NO_FLAGS
   assert(constraintsClone->GetConstraints().size() == 2);
   assert(constraints.GetConstraints().size() == 1);
-#endif
 
   // Solving only affects the PointerObjectSet belonging to that constraint set
   constraints.SolveNaively();
@@ -869,9 +867,7 @@ TestClonePointerObjectConstraintSet()
 static int
 TestPointerObjectSet()
 {
-#ifndef ANDERSEN_NO_FLAGS
   TestFlagFunctions();
-#endif
   TestCreatePointerObjects();
   TestPointerObjectUnification();
   TestPointerObjectUnificationPointees();
@@ -881,13 +877,9 @@ TestPointerObjectSet()
   TestSupersetConstraint();
   TestStoreConstraintDirectly();
   TestLoadConstraintDirectly();
-#ifndef ANDERSEN_NO_FLAGS
   TestEscapedFunctionConstraint();
-#endif
   TestFunctionCallConstraint();
-#ifndef ANDERSEN_NO_FLAGS
   TestAddPointsToExternalConstraint();
-#endif
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
   TestPointerObjectConstraintSetSolve<false>();
