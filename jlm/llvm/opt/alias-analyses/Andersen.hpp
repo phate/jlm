@@ -30,6 +30,7 @@ public:
   /**
    * Environment variable that when set, triggers analyzing the program with every single
    * valid combination of Configuration flags.
+   * Must be set to a number, that determines how many times each config is used.
    */
   static inline const char * const ENV_TEST_ALL_CONFIGS = "JLM_ANDERSEN_TEST_ALL_CONFIGS";
 
@@ -226,9 +227,9 @@ public:
       config.SetSolver(Solver::Worklist);
       config.SetWorklistSolverPolicy(
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
-      config.EnableOnlineCycleDetection(false);
-      config.EnableHybridCycleDetection(true);
-      config.EnableLazyCycleDetection(true);
+      config.EnableOnlineCycleDetection(true);
+      config.EnableHybridCycleDetection(false);
+      config.EnableLazyCycleDetection(false);
       config.EnableDifferencePropagation(true);
       config.EnablePreferImplicitPointees(true);
       return config;
