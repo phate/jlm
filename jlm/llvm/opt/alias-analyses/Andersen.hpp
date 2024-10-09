@@ -227,9 +227,9 @@ public:
       config.SetSolver(Solver::Worklist);
       config.SetWorklistSolverPolicy(
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
-      config.EnableOnlineCycleDetection(true);
-      config.EnableHybridCycleDetection(false);
-      config.EnableLazyCycleDetection(false);
+      config.EnableOnlineCycleDetection(false);
+      config.EnableHybridCycleDetection(true);
+      config.EnableLazyCycleDetection(true);
       config.EnableDifferencePropagation(true);
       config.EnablePreferImplicitPointees(true);
       return config;

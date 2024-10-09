@@ -385,7 +385,6 @@ PointerObjectSet::AddToPointsToSet(PointerObjectIndex pointer, PointerObjectInde
   const auto pointerRoot = GetUnificationRoot(pointer);
 
   NumSetInsertionAttempts_++;
-
   return PointsToSets_[pointerRoot].Insert(pointee);
 }
 

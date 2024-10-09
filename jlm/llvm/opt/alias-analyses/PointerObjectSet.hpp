@@ -32,6 +32,7 @@ enum class PointerObjectKind : uint8_t
   AllocaMemoryObject,
   MallocMemoryObject,
   GlobalMemoryObject,
+  // Represents functions, they can not point to any memory objects.
   FunctionMemoryObject,
   // Represents functions and global variables imported from other modules.
   ImportMemoryObject,
@@ -87,18 +88,11 @@ class PointerObjectSet final
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
       // Ensure that certain kinds of PointerObject always CanPoint or never CanPoint
-      switch (kind)
-      {
-      case PointerObjectKind::ImportMemoryObject:
-      case PointerObjectKind::FunctionMemoryObject:
+      if (kind == PointerObjectKind::FunctionMemoryObject
+          || kind == PointerObjectKind::ImportMemoryObject)
         JLM_ASSERT(!CanPoint());
-        break;
-      case PointerObjectKind::Register:
+      else if (kind == PointerObjectKind::Register)
         JLM_ASSERT(CanPoint());
-        break;
-      default:
-        break;
-      }
 
       if (!CanPoint())
       {

@@ -49,10 +49,8 @@ TestFlagFunctions()
   assert(!set.MarkAsPointingToExternal(registerPO));
   assert(set.IsPointingToExternal(registerPO));
 
-  // Test that allocas can both be marked and not marked "CanPoint"
+  // Create a new PointerObject to start with empty flags
   auto allocaPO = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(), true);
-
-  assert(set.CanPoint(allocaPO));
   assert(!set.IsPointerObjectRegister(allocaPO));
 
   // Escaping means another module can write a pointer to you.
@@ -66,10 +64,6 @@ TestFlagFunctions()
   // Already marked with these flags, trying to set them again makes no difference
   assert(!set.MarkAsPointingToExternal(allocaPO));
   assert(!set.MarkAsPointeesEscaping(allocaPO));
-
-  // lambdas are never "CanPoint"
-  auto lambdaPO = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
-  assert(!set.CanPoint(lambdaPO));
 }
 
 // Test creating pointer objects for each type of memory node
@@ -88,7 +82,7 @@ TestCreatePointerObjects()
   const auto dummy0 = set.CreateDummyRegisterPointerObject();
 
   // For PointerObjects representing MemoryObjects, there is only one Create function
-  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(), true);
+  const auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(), false);
   const auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode(), true);
   const auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode(), true);
   const auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
@@ -106,12 +100,27 @@ TestCreatePointerObjects()
   assert(set.GetPointerObjectKind(import0) == PointerObjectKind::ImportMemoryObject);
 
   // Most pointer objects don't start out as escaped
-  assert(!set.HasEscaped(dummy0) && !set.IsPointingToExternal(dummy0));
-  assert(!set.HasEscaped(alloca0) && !set.IsPointingToExternal(alloca0));
-  assert(!set.HasEscaped(malloc0) && !set.IsPointingToExternal(malloc0));
-  assert(!set.HasEscaped(delta0) && !set.IsPointingToExternal(delta0));
-  // But import memory objects have always escaped
-  assert(set.HasEscaped(import0) && set.IsPointingToExternal(import0));
+  assert(!set.HasEscaped(dummy0));
+  assert(!set.HasEscaped(alloca0));
+  assert(!set.HasEscaped(malloc0));
+  assert(!set.HasEscaped(delta0));
+  assert(!set.HasEscaped(lambda0));
+  // ...but imported objects are always escaped
+  assert(set.HasEscaped(import0));
+  // ...which also means it points to external, and has its pointees escaping
+  assert(set.IsPointingToExternal(import0) && set.HasPointeesEscaping(import0));
+
+  // Some kinds of PointerObjects have CanPoint() configurable is the constructor
+  assert(!set.CanPoint(alloca0));
+  assert(set.CanPoint(malloc0));
+  assert(set.CanPoint(delta0));
+  // ...while others have implied values of CanPoint()
+  assert(set.CanPoint(register0));
+  assert(!set.CanPoint(lambda0));
+  assert(!set.CanPoint(import0));
+
+  // CanPoint() == false implies pointing to external and having all pointees escaping
+  assert(set.IsPointingToExternal(alloca0) && set.HasPointeesEscaping(alloca0));
 
   // Registers have helper function for looking up existing PointerObjects
   assert(set.GetRegisterPointerObject(rvsdg.GetAllocaOutput()) == register0);
