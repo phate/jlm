@@ -284,7 +284,7 @@ public:
   [[nodiscard]] BottomNodeRange
   BottomNodes() noexcept
   {
-    return { bottom_nodes.begin(), bottom_nodes.end() };
+    return { BottomNodes_.begin(), BottomNodes_.end() };
   }
 
   /**
@@ -294,7 +294,7 @@ public:
   [[nodiscard]] BottomNodeConstRange
   BottomNodes() const noexcept
   {
-    return { bottom_nodes.begin(), bottom_nodes.end() };
+    return { BottomNodes_.begin(), BottomNodes_.end() };
   }
 
   inline jlm::rvsdg::graph *
@@ -459,8 +459,45 @@ public:
     return nodes.size();
   }
 
+  /**
+   * @return The number of bottom nodes in the region.
+   */
+  [[nodiscard]] size_t
+  NumBottomNodes() const noexcept
+  {
+    return BottomNodes_.size();
+  }
+
   void
   remove_node(jlm::rvsdg::node * node);
+
+  /**
+   * \brief Adds \p node to the bottom nodes of the region.
+   *
+   * The node \p node is only added to the bottom nodes of this region, iff:
+   * 1. The node \p node belongs to the same region instance.
+   * 2. All the outputs of \p node are dead. See node::IsDead() for more details.
+   *
+   * @param node The node that is added.
+   * @return True, if \p node was added, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is created or becomes dead. There is
+   * no need to invoke it manually.
+   */
+  bool
+  AddBottomNode(rvsdg::node & node);
+
+  /**
+   * Removes \p node from the bottom nodes in the region.
+   *
+   * @param node The node that is removed.
+   * @return True, if \p node was a bottom node and removed, otherwise false.
+   *
+   * @note This method is automatically invoked when a node cedes to be dead. There is no need to
+   * invoke it manually.
+   */
+  bool
+  RemoveBottomNode(rvsdg::node & node);
 
   /**
     \brief Copy a region with substitutions
@@ -561,8 +598,6 @@ public:
 
   region_top_node_list top_nodes;
 
-  region_bottom_node_list bottom_nodes;
-
 private:
   static void
   ToTree(
@@ -592,6 +627,7 @@ private:
   jlm::rvsdg::structural_node * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
+  region_bottom_node_list BottomNodes_;
 };
 
 static inline void

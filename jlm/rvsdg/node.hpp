@@ -696,6 +696,27 @@ public:
   inline void
   recompute_depth() noexcept;
 
+  /**
+   * \brief Determines whether the node is dead.
+   *
+   * A node is considered dead if all its outputs are dead.
+   *
+   * @return True, if the node is dead, otherwise false.
+   *
+   * \see output::IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    for (auto & output : outputs_)
+    {
+      if (!output->IsDead())
+        return false;
+    }
+
+    return true;
+  }
+
 protected:
   node_input *
   add_input(std::unique_ptr<node_input> input);

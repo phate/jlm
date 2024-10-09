@@ -106,7 +106,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
     anyChanged |= changed;
   } while (changed);
 
-  JLM_ASSERT(region.bottom_nodes.empty());
+  JLM_ASSERT(region.NumBottomNodes() == 0);
   return anyChanged;
 }
 
