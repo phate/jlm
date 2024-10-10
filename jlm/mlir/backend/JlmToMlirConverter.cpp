@@ -733,20 +733,10 @@ JlmToMlirConverter::ConvertTheta(
   ::llvm::SmallVector<::mlir::Type> outputTypeRange;
   for (size_t i = 0; i < thetaNode.noutputs(); ++i)
   {
-//<<<<<<< HEAD
     outputTypeRange.push_back(ConvertType(*thetaNode.output(i)->Type()));
   }
 
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
-/*
-=======
-    outputTypeRange.push_back(ConvertType(thetaNode.output(i)->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
-  ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
->>>>>>> 4c76b163 (add faulty theta conversion)
-*/
   auto theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
       Builder_->getUnknownLoc(),
       ::mlir::TypeRange(::llvm::ArrayRef(outputTypeRange)),
@@ -756,11 +746,7 @@ JlmToMlirConverter::ConvertTheta(
   block.push_back(theta);
   auto & thetaBlock = theta.getRegion().emplaceBlock();
   auto regionResults = ConvertRegion(*thetaNode.subregion(), thetaBlock);
-//<<<<<<< HEAD
   auto results = ::mlir::ValueRange({ std::next(regionResults.begin()), regionResults.end() });
-//=======
-//  auto results = ::mlir::ValueRange({ std::next(regionResults.begin()), inputs.end() });
-//>>>>>>> 4c76b163 (add faulty theta conversion)
   auto thetaResult = Builder_->create<::mlir::rvsdg::ThetaResult>(
       Builder_->getUnknownLoc(),
       regionResults[0],
