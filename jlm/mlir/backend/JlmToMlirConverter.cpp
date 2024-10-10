@@ -493,7 +493,7 @@ JlmToMlirConverter::ConvertTheta(
   block.push_back(theta);
   auto & thetaBlock = theta.getRegion().emplaceBlock();
   auto regionResults = ConvertRegion(*thetaNode.subregion(), thetaBlock);
-  auto results = ::mlir::ValueRange({ std::next(regionResults.begin()), inputs.end() });
+  auto results = ::mlir::ValueRange({ std::next(regionResults.begin()), regionResults.end() });
   auto thetaResult = Builder_->create<::mlir::rvsdg::ThetaResult>(
       Builder_->getUnknownLoc(),
       regionResults[0],
