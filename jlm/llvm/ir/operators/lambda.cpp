@@ -41,18 +41,6 @@ operation::copy() const
 
 node::~node() = default;
 
-node::fctargument_range
-node::fctarguments()
-{
-  fctargiterator end(nullptr);
-
-  if (nfctarguments() == 0)
-    return { end, end };
-
-  fctargiterator begin(fctargument(0));
-  return { begin, end };
-}
-
 node::fctargument_constrange
 node::fctarguments() const
 {
@@ -62,42 +50,6 @@ node::fctarguments() const
     return { end, end };
 
   fctargconstiterator begin(fctargument(0));
-  return { begin, end };
-}
-
-node::ctxvar_range
-node::ctxvars()
-{
-  cviterator end(nullptr);
-
-  if (ncvarguments() == 0)
-    return { end, end };
-
-  cviterator begin(input(0));
-  return { begin, end };
-}
-
-node::ctxvar_constrange
-node::ctxvars() const
-{
-  cvconstiterator end(nullptr);
-
-  if (ncvarguments() == 0)
-    return { end, end };
-
-  cvconstiterator begin(input(0));
-  return { begin, end };
-}
-
-node::fctresult_range
-node::fctresults()
-{
-  fctresiterator end(nullptr);
-
-  if (nfctresults() == 0)
-    return { end, end };
-
-  fctresiterator begin(fctresult(0));
   return { begin, end };
 }
 
@@ -113,10 +65,36 @@ node::fctresults() const
   return { begin, end };
 }
 
-cvinput *
-node::input(size_t n) const noexcept
+[[nodiscard]] node::ContextVar
+node::MapInputContextVar(const rvsdg::input & input) const noexcept
 {
-  return util::AssertedCast<cvinput>(structural_node::input(n));
+  JLM_ASSERT(rvsdg::input::GetNode(input) == this);
+  return GetContextVar(input.index());
+}
+
+[[nodiscard]] std::optional<node::ContextVar>
+node::MapBinderContextVar(const rvsdg::output & output) const noexcept
+{
+  auto argument = util::AssertedCast<const lambda::cvargument>(&output);
+  return ContextVar{ argument->input(), const_cast<lambda::cvargument *>(argument) };
+}
+
+[[nodiscard]] node::ContextVar
+node::GetContextVar(size_t index) const noexcept
+{
+  return ContextVar{ input(index),
+                     subregion()->argument(operation().Type()->NumArguments() + index) };
+}
+
+[[nodiscard]] std::vector<node::ContextVar>
+node::GetContextVars() const noexcept
+{
+  std::vector<ContextVar> vars;
+  for (size_t n = 0; n < ninputs(); ++n)
+  {
+    vars.push_back(GetContextVar(n));
+  }
+  return vars;
 }
 
 lambda::output *
@@ -131,23 +109,18 @@ node::fctargument(size_t n) const noexcept
   return util::AssertedCast<lambda::fctargument>(subregion()->argument(n));
 }
 
-lambda::cvargument *
-node::cvargument(size_t n) const noexcept
-{
-  return input(n)->argument();
-}
-
 lambda::result *
 node::fctresult(size_t n) const noexcept
 {
   return util::AssertedCast<lambda::result>(subregion()->result(n));
 }
 
-cvargument *
-node::add_ctxvar(jlm::rvsdg::output * origin)
+node::ContextVar
+node::AddContextVar(jlm::rvsdg::output * origin)
 {
-  auto input = cvinput::create(this, origin);
-  return cvargument::create(subregion(), input);
+  auto input = rvsdg::structural_input::create(this, origin, origin->Type());
+  auto argument = cvargument::create(subregion(), input);
+  return ContextVar{ input, argument };
 }
 
 rvsdg::RegionArgument &
@@ -251,11 +224,10 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
-  for (auto & cv : ctxvars())
+  for (const auto & cv : GetContextVars())
   {
-    auto origin = smap.lookup(cv.origin());
-    auto newcv = lambda->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto origin = smap.lookup(cv.input->origin());
+    subregionmap.insert(cv.inner, lambda->AddContextVar(origin).inner);
   }
 
   /* collect function arguments */
@@ -295,10 +267,12 @@ node::ComputeCallSummary() const
     auto input = worklist.front();
     worklist.pop_front();
 
-    if (auto cvinput = dynamic_cast<lambda::cvinput *>(input))
+    auto inputNode = rvsdg::input::GetNode(*input);
+
+    if (auto lambdaNode = dynamic_cast<lambda::node *>(inputNode))
     {
-      auto argument = cvinput->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto & argument = *lambdaNode->MapInputContextVar(*input).inner;
+      worklist.insert(worklist.end(), argument.begin(), argument.end());
       continue;
     }
 
@@ -366,7 +340,6 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    auto inputNode = rvsdg::input::GetNode(*input);
     if (is<CallOperation>(inputNode) && input == inputNode->input(0))
     {
       directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
@@ -379,8 +352,7 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input);
-    if (simpleInput != nullptr)
+    if (auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input))
     {
       otherUsers.emplace_back(simpleInput);
       continue;
@@ -397,16 +369,6 @@ node::IsExported(const lambda::node & lambdaNode)
 {
   auto callSummary = lambdaNode.ComputeCallSummary();
   return callSummary->IsExported();
-}
-
-/* lambda context variable input class */
-
-cvinput::~cvinput() = default;
-
-cvargument *
-cvinput::argument() const noexcept
-{
-  return util::AssertedCast<cvargument>(arguments.first());
 }
 
 /* lambda output class */
@@ -431,8 +393,7 @@ cvargument::~cvargument() = default;
 cvargument &
 cvargument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
 {
-  auto lambdaInput = util::AssertedCast<lambda::cvinput>(input);
-  return *cvargument::create(&region, lambdaInput);
+  return *cvargument::create(&region, input);
 }
 
 /* lambda result class */

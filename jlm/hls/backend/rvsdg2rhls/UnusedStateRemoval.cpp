@@ -71,12 +71,12 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
       lambdaNode.attributes());
 
   rvsdg::SubstitutionMap substitutionMap;
-  for (size_t i = 0; i < lambdaNode.ncvarguments(); ++i)
+  for (const auto & ctxvar : lambdaNode.GetContextVars())
   {
-    auto oldArgument = lambdaNode.cvargument(i);
-    auto origin = oldArgument->input()->origin();
+    auto oldArgument = ctxvar.inner;
+    auto origin = ctxvar.inner->input()->origin();
 
-    auto newArgument = newLambda->add_ctxvar(origin);
+    auto newArgument = newLambda->AddContextVar(origin).inner;
     substitutionMap.insert(oldArgument, newArgument);
   }
 

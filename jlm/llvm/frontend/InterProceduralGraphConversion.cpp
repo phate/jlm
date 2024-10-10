@@ -630,7 +630,7 @@ Convert(
   {
     if (outerVariableMap.contains(&v))
     {
-      topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
+      topVariableMap.insert(&v, lambdaNode.AddContextVar(outerVariableMap.lookup(&v)).inner);
     }
     else
     {

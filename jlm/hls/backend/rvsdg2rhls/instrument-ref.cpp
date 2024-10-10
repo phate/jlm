@@ -28,11 +28,11 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
-  for (auto & cv : ln->ctxvars())
+  for (const auto & cv : ln->GetContextVars())
   {
-    auto origin = cv.origin();
-    auto newcv = lambda->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto origin = cv.input->origin();
+    auto newcv = lambda->AddContextVar(origin);
+    subregionmap.insert(cv.inner, newcv.inner);
   }
 
   /* collect function arguments */
