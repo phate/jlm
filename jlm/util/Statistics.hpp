@@ -223,6 +223,10 @@ protected:
     inline static const char * NumPointsToGraphUnknownMemorySources =
         "#PointsToGraphUnknownMemorySources";
 
+    inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
+    inline static const char * NumPointsToGraphPointsToRelations =
+        "#PointsToGraphPointsToRelations";
+
     static inline const char * Timer = "Time";
   };
 

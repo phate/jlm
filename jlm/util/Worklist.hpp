@@ -295,59 +295,53 @@ private:
 };
 
 /**
- * A fake worklist that only holds a single bit of information:
- *  "Has any item been pushed since the last reset?"
- * Used to implement the Topological worklist policy, which is not technically a worklist policy
+ * A fake worklist that remembers which work items have been pushed,
+ * but without providing any kind of iteration interface for accessing them.
+ * Each work item must be explicitly removed by name.
+ * Used to implement the Topological worklist policy, which is not technically a worklist policy.
  * @tparam T the type of the work items.
  * @see Worklist
  */
 template<typename T>
-class ObserverWorklist final : public Worklist<T>
+class Workset final : public Worklist<T>
 {
 public:
-  ~ObserverWorklist() override = default;
+  ~Workset() override = default;
 
-  ObserverWorklist() = default;
+  Workset() = default;
 
   [[nodiscard]] bool
   HasMoreWorkItems() const noexcept override
   {
-    JLM_UNREACHABLE("Dummy worklist");
+    return !PushedItems_.IsEmpty();
   }
 
   T
   PopWorkItem() override
   {
-    JLM_UNREACHABLE("Dummy worklist");
+    JLM_UNREACHABLE("The Workset does not provide an iteration order");
   }
 
   void
-  PushWorkItem(T item [[maybe_unused]]) override
+  PushWorkItem(T item) override
   {
-    PushMade_ = true;
+    PushedItems_.Insert(item);
   }
 
-  /**
-   * @return true if the PushWorkItem method has been called since the last time
-   * ResetPush() was called.
-   */
   [[nodiscard]] bool
-  HasPushBeenMade() const noexcept
+  HasWorkItem(T item) const noexcept
   {
-    return PushMade_;
+    return PushedItems_.Contains(item);
   }
 
-  /**
-   * Makes the dummy worklist forget about being pushed to.
-   */
   void
-  ResetPush()
+  RemoveWorkItem(T item)
   {
-    PushMade_ = false;
+    PushedItems_.Remove(item);
   }
 
 private:
-  bool PushMade_ = false;
+  util::HashSet<T> PushedItems_;
 };
 
 }

@@ -59,6 +59,11 @@ class PointerObjectSet final
     // The kind of pointer object
     PointerObjectKind Kind : util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
+    // If set, this pointer object may point to other pointer objects.
+    // If unset, the analysis should make no attempt at tracking what this PointerObject may target.
+    // The final PointsToGraph will not have any outgoing edges for this object.
+    const uint8_t CanPointFlag : 1;
+
     // This memory object's address is known outside the module.
     // Can only be true on memory objects.
     uint8_t HasEscaped : 1;
@@ -73,15 +78,23 @@ class PointerObjectSet final
     // This flag is implied by HasEscaped
     uint8_t PointsToExternal : 1;
 
-    explicit PointerObject(PointerObjectKind kind)
+    explicit PointerObject(PointerObjectKind kind, bool canPoint)
         : Kind(kind),
+          CanPointFlag(canPoint),
           HasEscaped(0),
           PointeesEscaping(0),
           PointsToExternal(0)
     {
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
-      if (!ShouldTrackPointees())
+      // Ensure that certain kinds of PointerObject always CanPoint or never CanPoint
+      if (kind == PointerObjectKind::FunctionMemoryObject
+          || kind == PointerObjectKind::ImportMemoryObject)
+        JLM_ASSERT(!CanPoint());
+      else if (kind == PointerObjectKind::Register)
+        JLM_ASSERT(CanPoint());
+
+      if (!CanPoint())
       {
         // No attempt is made at tracking pointees, so use these flags to inform others
         PointeesEscaping = 1;
@@ -104,16 +117,13 @@ class PointerObjectSet final
 
     /**
      * Some memory objects can only be pointed to, but never themselves contain pointers.
-     * To avoid tracking their pointees, they are instead marked as both PointsToExternal and
-     * PointeesEscaping. This makes their points-to set equivalent to the set of all escaped
-     * memory objects, which means the set of explicit pointees can be empty.
      * When converting the analysis result to a PointsToGraph, these PointerObjects get no pointees.
-     * @return true if the analysis should attempt track the points-to set of this PointerObject.
+     * @return true if the analysis tracks the points-to set of this PointerObject.
      */
     [[nodiscard]] bool
-    ShouldTrackPointees() const noexcept
+    CanPoint() const noexcept
     {
-      return Kind != PointerObjectKind::FunctionMemoryObject;
+      return CanPointFlag;
     }
 
     /**
@@ -157,11 +167,18 @@ class PointerObjectSet final
 
   std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
 
+  // How many items have been attempted added to explicit points-to sets
+  size_t NumSetInsertionAttempts_ = 0;
+
+  // How many pointees have been removed from points-to sets.
+  // Explicit pointees can only be removed through unification, and the remove method
+  size_t NumExplicitPointeesRemoved_ = 0;
+
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
   [[nodiscard]] PointerObjectIndex
-  AddPointerObject(PointerObjectKind kind);
+  AddPointerObject(PointerObjectKind kind, bool canPoint);
 
   /**
    * Internal helper function for making P(superset) a superset of P(subset), with a callback.
@@ -175,20 +192,28 @@ class PointerObjectSet final
       NewPointeeFunctor & onNewPointee);
 
 public:
+  PointerObjectSet() = default;
+
   [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
-
-  /**
-   * @return the number of PointerObjects where CanTrackPointeesImplicitly() is true
-   */
-  [[nodiscard]] size_t
-  NumPointerObjectsWithImplicitPointees() const noexcept;
 
   /**
    * @return the number of PointerObjects in the set matching the specified \p kind.
    */
   [[nodiscard]] size_t
   NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept;
+
+  /**
+   * @return the number of PointerObjects in the set representing virtual registers
+   */
+  [[nodiscard]] size_t
+  NumRegisterPointerObjects() const noexcept;
+
+  [[nodiscard]] size_t
+  NumMemoryPointerObjects() const noexcept;
+
+  [[nodiscard]] size_t
+  NumMemoryPointerObjectsCanPoint() const noexcept;
 
   /**
    * Creates a PointerObject of Register kind and maps the rvsdg output to the new PointerObject.
@@ -238,13 +263,13 @@ public:
   CreateDummyRegisterPointerObject();
 
   [[nodiscard]] PointerObjectIndex
-  CreateAllocaMemoryObject(const rvsdg::node & allocaNode);
+  CreateAllocaMemoryObject(const rvsdg::node & allocaNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
-  CreateMallocMemoryObject(const rvsdg::node & mallocNode);
+  CreateMallocMemoryObject(const rvsdg::node & mallocNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
-  CreateGlobalMemoryObject(const delta::node & deltaNode);
+  CreateGlobalMemoryObject(const delta::node & deltaNode, bool canPoint);
 
   /**
    * Creates a PointerObject of Function kind associated with the given \p lambdaNode.
@@ -302,7 +327,7 @@ public:
    * @return true if the PointerObject with the given \p index can point, otherwise false
    */
   [[nodiscard]] bool
-  ShouldTrackPointees(PointerObjectIndex index) const noexcept;
+  CanPoint(PointerObjectIndex index) const noexcept;
 
   /**
    * @return true if the PointerObject with the given \p index is a Register
@@ -461,6 +486,21 @@ public:
    */
   [[nodiscard]] bool
   HasIdenticalSolAs(const PointerObjectSet & other) const;
+
+  /**
+   * @return the number of pointees that have been inserted, or were attempted inserted
+   * but already existed, among all points-to sets in this PointerObjectSet.
+   * Unioning a set x into another makes |x| insertion attempts.
+   */
+  [[nodiscard]] size_t
+  GetNumSetInsertionAttempts() const noexcept;
+
+  /**
+   * @return the number of pointees that have been removed from points-to sets,
+   * due to either unification, or the RemoveAllPointees() method.
+   */
+  [[nodiscard]] size_t
+  GetNumExplicitPointeesRemoved() const noexcept;
 };
 
 /**
@@ -872,7 +912,7 @@ public:
      * When Prefer Implicit Pointees is enabled, and a node's pointees can be tracked fully
      * implicitly, its set of explicit pointees is cleared.
      */
-    std::optional<size_t> NumExplicitPointeesRemoved;
+    std::optional<size_t> NumPipExplicitPointeesRemoved;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
