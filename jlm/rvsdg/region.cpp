@@ -43,6 +43,12 @@ RegionArgument::RegionArgument(
   }
 }
 
+[[nodiscard]] std::variant<node *, Region *>
+RegionArgument::GetOwner() const noexcept
+{
+  return region();
+}
+
 RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
@@ -71,6 +77,12 @@ RegionResult::RegionResult(
 
     output->results.push_back(this);
   }
+}
+
+[[nodiscard]] std::variant<node *, Region *>
+RegionResult::GetOwner() const noexcept
+{
+  return region();
 }
 
 Region::~Region() noexcept

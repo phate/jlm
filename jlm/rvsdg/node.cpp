@@ -167,12 +167,24 @@ node_input::node_input(
       node_(node)
 {}
 
+[[nodiscard]] std::variant<node *, Region *>
+node_input::GetOwner() const noexcept
+{
+  return node_;
+}
+
 /* node_output class */
 
 node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}
+
+[[nodiscard]] std::variant<node *, Region *>
+node_output::GetOwner() const noexcept
+{
+  return node_;
+}
 
 /* node class */
 
@@ -341,4 +353,71 @@ normalize(jlm::rvsdg::node * node)
   return nf->normalize_node(node);
 }
 
+/**
+  \page def_use_inspection Inspecting the graph and matching against different operations
+
+  When inspecting the graph for analysis it is necessary to identify
+  different nodes/operations and structures. Depending on the direction,
+  the two fundamental questions of interest are:
+
+  - what is the origin of a value, what operation is computing it?
+  - what are the users of a particular value, what operations depend on it?
+
+  This requires resolving the type of operation a specific \ref rvsdg::input
+  or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
+
+  - the output of a node representing an operation
+  - the entry argument into a region
+
+  Likewise, every \ref rvsdg::input is one of the following:
+
+  - the input of a node representing an operation
+  - the exit result of a region
+
+  Analysis code can determine which of the two is the case using
+  \ref rvsdg::output::GetOwner and \ref rvsdg::input::GetOwner, respectively,
+  and then branch deeper based on its results. For convenience, code
+  can more directly match against the specific kinds of nodes using
+  the following convenience functions:
+
+  - \ref rvsdg::TryGetOwnerNode checks if the owner of an output/input
+    is a graph node of the requested kind
+  - \ref rvsdg::TryGetRegionParentNode checks if the output/input is
+    a region entry argument / exit result, and if the parent node
+    of the region is of the requested kind
+
+  Example:
+  \code
+  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(def))
+  {
+    // This is an output of a lambda node -- so this must
+    // be a function definition.
+  }
+  else if (auto gamma = rvsdg::TryGetOwnerNode<GammaNode>(def))
+  {
+    // This is an output of a gamma node -- so it is potentially
+    // dependent on evaluating a condition.
+  }
+  else if (auto gamma = rvsdg::TryGetRegionParentNode<GammaNode>(def))
+  {
+    // This is an entry argument to a region inside a gamma node.
+  }
+  \endcode
+
+  Similarly, the following variants of the accessor functions
+  assert that the nodes are of requested type and will throw
+  an exception otherwise:
+
+  - \ref rvsdg::AssertGetOwnerNode asserts that the owner of an
+    output/input is a graph node of the requested kind and
+    returns it.
+  - \ref rvsdg::AssertGetRegionParentNode asserts that the
+    output/input is a region entry argument / exit result,
+    and that the parent node of the region is of the requested
+    kind
+
+  These are mostly suitable for unit tests rather, or for the
+  rare circumstances that the type of node can be assumed to
+  be known statically.
+*/
 }
