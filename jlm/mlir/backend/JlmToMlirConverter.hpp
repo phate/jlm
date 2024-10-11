@@ -14,10 +14,10 @@
 #include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
+#include "JLM/JLMOps.h"
 #include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
-#include "JLM/JLMOps.h"
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>

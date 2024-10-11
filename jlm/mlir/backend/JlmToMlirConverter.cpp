@@ -499,6 +499,7 @@ JlmToMlirConverter::ConvertTheta(
   thetaBlock.push_back(thetaResult);
   return theta;
 }
+
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
