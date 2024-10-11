@@ -50,9 +50,12 @@ test1()
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto ct = jlm::rvsdg::ctltype::Create(2);
+    auto ct = jlm::rvsdg::ControlType::Create(2);
     auto functionType = FunctionType::Create(
-        { jlm::rvsdg::ctltype::Create(2), vt, iostatetype::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::ControlType::Create(2),
+          vt,
+          iostatetype::Create(),
+          MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
@@ -62,7 +65,7 @@ test1()
     auto iOStateArgument = lambda->fctargument(2);
     auto memoryStateArgument = lambda->fctargument(3);
 
-    auto gamma = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gamma = jlm::rvsdg::GammaNode::create(controlArgument, 2);
     auto gammaInputF1 = gamma->add_entryvar(d);
     auto gammaInputValue = gamma->add_entryvar(valueArgument);
     auto gammaInputIoState = gamma->add_entryvar(iOStateArgument);
@@ -97,7 +100,7 @@ test1()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  assert(!jlm::rvsdg::region::Contains<CallOperation>(*graph.root(), true));
+  assert(!jlm::rvsdg::Region::Contains<CallOperation>(*graph.root(), true));
 }
 
 static void
@@ -163,7 +166,7 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(jlm::rvsdg::node_output::node(f2->node()->fctresult(0)->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::output::GetNode(*f2->node()->fctresult(0)->origin())));
 }
 
 static int

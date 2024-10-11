@@ -102,7 +102,7 @@ static void
 convert_node(const rvsdg::node & node, context & ctx);
 
 static inline void
-convert_region(rvsdg::region & region, context & ctx)
+convert_region(rvsdg::Region & region, context & ctx)
 {
   auto entry = basic_block::create(*ctx.cfg());
   ctx.lpbb()->add_outedge(entry);
@@ -127,9 +127,11 @@ create_cfg(const lambda::node & lambda, context & ctx)
   ctx.set_cfg(cfg.get());
 
   /* add arguments */
+  size_t n = 0;
   for (auto & fctarg : lambda.fctarguments())
   {
-    auto argument = llvm::argument::create("", fctarg.Type(), fctarg.attributes());
+    auto name = util::strfmt("_a", n++, "_");
+    auto argument = llvm::argument::create(name, fctarg.Type(), fctarg.attributes());
     auto v = cfg->entry()->append_argument(std::move(argument));
     ctx.insert(&fctarg, v);
   }
@@ -173,7 +175,7 @@ convert_simple_node(const rvsdg::node & node, context & ctx)
 }
 
 static void
-convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
+convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
 {
   JLM_ASSERT(gamma->nsubregions() == 2);
   JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
@@ -190,8 +192,8 @@ convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
   {
     auto output = gamma->output(n);
 
-    auto a0 = static_cast<const rvsdg::argument *>(gamma->subregion(0)->result(n)->origin());
-    auto a1 = static_cast<const rvsdg::argument *>(gamma->subregion(1)->result(n)->origin());
+    auto a0 = static_cast<const rvsdg::RegionArgument *>(gamma->subregion(0)->result(n)->origin());
+    auto a1 = static_cast<const rvsdg::RegionArgument *>(gamma->subregion(1)->result(n)->origin());
     auto o0 = a0->input()->origin();
     auto o1 = a1->input()->origin();
 
@@ -202,7 +204,7 @@ convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
       continue;
     }
 
-    auto matchnode = rvsdg::node_output::node(predicate);
+    auto matchnode = rvsdg::output::GetNode(*predicate);
     if (is<rvsdg::match_op>(matchnode))
     {
       auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
@@ -229,8 +231,8 @@ convert_empty_gamma_node(const rvsdg::gamma_node * gamma, context & ctx)
 static inline void
 convert_gamma_node(const rvsdg::node & node, context & ctx)
 {
-  JLM_ASSERT(is<rvsdg::gamma_op>(&node));
-  auto gamma = static_cast<const rvsdg::gamma_node *>(&node);
+  JLM_ASSERT(is<rvsdg::GammaOperation>(&node));
+  auto gamma = static_cast<const rvsdg::GammaNode *>(&node);
   auto nalternatives = gamma->nsubregions();
   auto predicate = gamma->predicate()->origin();
   auto cfg = ctx.cfg();
@@ -282,7 +284,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     auto output = gamma->output(n);
 
     bool invariant = true;
-    auto matchnode = rvsdg::node_output::node(predicate);
+    auto matchnode = rvsdg::output::GetNode(*predicate);
     bool select = (gamma->nsubregions() == 2) && is<rvsdg::match_op>(matchnode);
     std::vector<std::pair<const variable *, cfg_node *>> arguments;
     for (size_t r = 0; r < gamma->nsubregions(); r++)
@@ -292,7 +294,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
       auto v = ctx.variable(origin);
       arguments.push_back(std::make_pair(v, phi_nodes[r]));
       invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
-      auto tmp = rvsdg::node_output::node(origin);
+      auto tmp = rvsdg::output::GetNode(*origin);
       select &= (tmp == nullptr && origin->region()->node() == &node);
     }
 
@@ -306,7 +308,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     if (select)
     {
       /* use select instead of phi */
-      auto matchnode = rvsdg::node_output::node(predicate);
+      auto matchnode = rvsdg::output::GetNode(*predicate);
       auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
       auto d = matchop->default_alternative();
       auto c = ctx.variable(matchnode->input(0)->origin());
@@ -329,7 +331,7 @@ static inline bool
 phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
   auto node = rvsdg::input::GetNode(*i);
-  JLM_ASSERT(is<rvsdg::theta_op>(node));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
   auto theta = static_cast<const rvsdg::structural_node *>(node);
   auto input = static_cast<const rvsdg::structural_input *>(i);
   auto output = theta->output(input->index());
@@ -350,7 +352,7 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
 static inline void
 convert_theta_node(const rvsdg::node & node, context & ctx)
 {
-  JLM_ASSERT(is<rvsdg::theta_op>(&node));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(&node));
   auto subregion = static_cast<const rvsdg::structural_node *>(&node)->subregion(0);
   auto predicate = subregion->result(0)->origin();
 
@@ -442,7 +444,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-    auto node = rvsdg::node_output::node(subregion->result(n)->origin());
+    auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
 
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
@@ -469,7 +471,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
     auto result = subregion->result(n);
-    auto node = rvsdg::node_output::node(result->origin());
+    auto node = rvsdg::output::GetNode(*result->origin());
 
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
@@ -519,8 +521,8 @@ convert_node(const rvsdg::node & node, context & ctx)
   static std::
       unordered_map<std::type_index, std::function<void(const rvsdg::node & node, context & ctx)>>
           map({ { typeid(lambda::operation), convert_lambda_node },
-                { std::type_index(typeid(rvsdg::gamma_op)), convert_gamma_node },
-                { std::type_index(typeid(rvsdg::theta_op)), convert_theta_node },
+                { std::type_index(typeid(rvsdg::GammaOperation)), convert_gamma_node },
+                { std::type_index(typeid(rvsdg::ThetaOperation)), convert_theta_node },
                 { typeid(phi::operation), convert_phi_node },
                 { typeid(delta::operation), convert_delta_node } });
 

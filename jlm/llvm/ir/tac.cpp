@@ -119,4 +119,30 @@ tac::replace(
   operation_ = operation.copy();
 }
 
+std::string
+tac::ToAscii(const jlm::llvm::tac & threeAddressCode)
+{
+  std::string resultString;
+  for (size_t n = 0; n < threeAddressCode.nresults(); n++)
+  {
+    resultString += threeAddressCode.result(n)->debug_string();
+    if (n != threeAddressCode.nresults() - 1)
+      resultString += ", ";
+  }
+
+  std::string operandString;
+  for (size_t n = 0; n < threeAddressCode.noperands(); n++)
+  {
+    operandString += threeAddressCode.operand(n)->debug_string();
+    if (n != threeAddressCode.noperands() - 1)
+      operandString += ", ";
+  }
+
+  std::string operationString = threeAddressCode.operation().debug_string();
+  std::string resultOperationSeparator = resultString.empty() ? "" : " = ";
+  std::string operationOperandSeparator = operandString.empty() ? "" : " ";
+  return resultString + resultOperationSeparator + operationString + operationOperandSeparator
+       + operandString;
+}
+
 }

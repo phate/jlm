@@ -837,7 +837,7 @@ public:
     return *CallG_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::argument &
+  [[nodiscard]] const jlm::rvsdg::RegionArgument &
   ExternalGArgument() const noexcept
   {
     return *ExternalGArgument_;
@@ -851,7 +851,7 @@ private:
 
   jlm::llvm::CallNode * CallG_;
 
-  jlm::rvsdg::argument * ExternalGArgument_;
+  jlm::rvsdg::RegionArgument * ExternalGArgument_;
 };
 
 /**
@@ -901,7 +901,7 @@ public:
     return *CallF_;
   }
 
-  [[nodiscard]] jlm::rvsdg::argument &
+  [[nodiscard]] jlm::rvsdg::RegionArgument &
   ExternalF()
   {
     JLM_ASSERT(ExternalFArgument_ != nullptr);
@@ -916,7 +916,7 @@ private:
 
   jlm::llvm::CallNode * CallF_ = {};
 
-  jlm::rvsdg::argument * ExternalFArgument_ = {};
+  jlm::rvsdg::RegionArgument * ExternalFArgument_ = {};
 };
 
 /** \brief GammaTest class
@@ -950,7 +950,7 @@ private:
 public:
   jlm::llvm::lambda::node * lambda;
 
-  jlm::rvsdg::gamma_node * gamma;
+  rvsdg::GammaNode * gamma;
 };
 
 /** \brief GammaTest2 class
@@ -1020,7 +1020,7 @@ public:
     return *LambdaH_;
   }
 
-  [[nodiscard]] rvsdg::gamma_node &
+  [[nodiscard]] rvsdg::GammaNode &
   GetGamma() const noexcept
   {
     return *Gamma_;
@@ -1076,7 +1076,7 @@ private:
   llvm::lambda::node * LambdaG_;
   llvm::lambda::node * LambdaH_;
 
-  rvsdg::gamma_node * Gamma_;
+  rvsdg::GammaNode * Gamma_;
 
   llvm::CallNode * CallFromG_;
   llvm::CallNode * CallFromH_;
@@ -1113,7 +1113,7 @@ private:
 
 public:
   jlm::llvm::lambda::node * lambda;
-  jlm::rvsdg::theta_node * theta;
+  jlm::rvsdg::ThetaNode * theta;
   jlm::rvsdg::node * gep;
 };
 
@@ -1321,8 +1321,8 @@ public:
   jlm::llvm::lambda::node * lambda_f1;
   jlm::llvm::lambda::node * lambda_f2;
 
-  jlm::rvsdg::argument * import_d1;
-  jlm::rvsdg::argument * import_d2;
+  jlm::rvsdg::RegionArgument * import_d1;
+  jlm::rvsdg::RegionArgument * import_d2;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -1386,7 +1386,7 @@ public:
   jlm::llvm::lambda::node * lambda_fib;
   jlm::llvm::lambda::node * lambda_test;
 
-  jlm::rvsdg::gamma_node * gamma;
+  rvsdg::GammaNode * gamma;
 
   jlm::llvm::phi::node * phi;
 
@@ -1770,8 +1770,8 @@ public:
   jlm::rvsdg::node * ReturnAddressMalloc;
   jlm::rvsdg::node * CallExternalFunction1Malloc;
 
-  jlm::rvsdg::argument * ExternalFunction1Import;
-  jlm::rvsdg::argument * ExternalFunction2Import;
+  jlm::rvsdg::RegionArgument * ExternalFunction1Import;
+  jlm::rvsdg::RegionArgument * ExternalFunction2Import;
 
   jlm::llvm::LoadNonVolatileNode * LoadNode;
 };
@@ -1804,7 +1804,7 @@ public:
 
   jlm::llvm::delta::node * DeltaGlobal;
 
-  jlm::rvsdg::argument * ImportExternalFunction;
+  jlm::rvsdg::RegionArgument * ImportExternalFunction;
 
   jlm::llvm::CallNode * CallExternalFunction;
 
@@ -2279,7 +2279,7 @@ public:
     return *LocalFuncRegister_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::argument &
+  [[nodiscard]] const jlm::rvsdg::RegionArgument &
   GetLocalFunctionParam() const noexcept
   {
     JLM_ASSERT(LocalFuncParam_);
@@ -2306,7 +2306,7 @@ private:
 
   jlm::llvm::delta::node * Global_ = {};
   jlm::llvm::lambda::node * LocalFunc_ = {};
-  jlm::rvsdg::argument * LocalFuncParam_ = {};
+  jlm::rvsdg::RegionArgument * LocalFuncParam_ = {};
   jlm::rvsdg::output * LocalFuncRegister_ = {};
   jlm::rvsdg::node * LocalFuncParamAllocaNode_ = {};
   jlm::llvm::lambda::node * ExportedFunc_ = {};
@@ -2438,7 +2438,7 @@ public:
     return *LambdaG_;
   }
 
-  [[nodiscard]] rvsdg::argument &
+  [[nodiscard]] rvsdg::RegionArgument &
   GetImportH() const noexcept
   {
     JLM_ASSERT(ImportH_ != nullptr);
@@ -2466,7 +2466,7 @@ private:
   llvm::lambda::node * LambdaF_ = {};
   llvm::lambda::node * LambdaG_ = {};
 
-  rvsdg::argument * ImportH_ = {};
+  rvsdg::RegionArgument * ImportH_ = {};
 
   llvm::CallNode * CallH_ = {};
 

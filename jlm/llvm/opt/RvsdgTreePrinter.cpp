@@ -50,7 +50,7 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & sta
   statistics->Start();
 
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
-  auto tree = rvsdg::region::ToTree(*rvsdgModule.Rvsdg().root(), annotationMap);
+  auto tree = rvsdg::Region::ToTree(*rvsdgModule.Rvsdg().root(), annotationMap);
   WriteTreeToFile(rvsdgModule, tree);
 
   statistics->Stop();
@@ -74,6 +74,9 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::graph & rvsdg) const
     case Configuration::Annotation::NumRvsdgNodes:
       AnnotateNumRvsdgNodes(rvsdg, annotationMap);
       break;
+    case Configuration::Annotation::NumMemoryStateInputsOutputs:
+      AnnotateNumMemoryStateInputsOutputs(rvsdg, annotationMap);
+      break;
     default:
       JLM_UNREACHABLE("Unhandled RVSDG tree annotation.");
     }
@@ -89,7 +92,7 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
 {
   static std::string_view label("NumRvsdgNodes");
 
-  std::function<size_t(const rvsdg::region &)> annotateRegion = [&](const rvsdg::region & region)
+  std::function<size_t(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
     for (auto & node : region.nodes)
     {
@@ -110,6 +113,66 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
     annotationMap.AddAnnotation(&region, { label, numNodes });
 
     return numNodes;
+  };
+
+  annotateRegion(*rvsdg.root());
+}
+
+void
+RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
+    const rvsdg::graph & rvsdg,
+    util::AnnotationMap & annotationMap)
+{
+  std::string_view argumentLabel("NumMemoryStateTypeArguments");
+  std::string_view resultLabel("NumMemoryStateTypeResults");
+  std::string_view inputLabel("NumMemoryStateTypeInputs");
+  std::string_view outputLabel("NumMemoryStateTypeOutputs");
+
+  std::function<void(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
+  {
+    auto argumentRange = region.Arguments();
+    auto numMemoryStateArguments =
+        std::count_if(argumentRange.begin(), argumentRange.end(), IsMemoryStateOutput);
+    annotationMap.AddAnnotation(&region, { argumentLabel, numMemoryStateArguments });
+
+    auto resultRange = region.Results();
+    auto numMemoryStateResults =
+        std::count_if(resultRange.begin(), resultRange.end(), IsMemoryStateInput);
+    annotationMap.AddAnnotation(&region, { resultLabel, numMemoryStateResults });
+
+    for (auto & node : region.nodes)
+    {
+      if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+      {
+        size_t numMemoryStateInputs = 0;
+        for (size_t n = 0; n < structuralNode->ninputs(); n++)
+        {
+          auto input = structuralNode->input(n);
+          if (rvsdg::is<MemoryStateType>(input->type()))
+          {
+            numMemoryStateInputs++;
+          }
+        }
+        annotationMap.AddAnnotation(structuralNode, { inputLabel, numMemoryStateInputs });
+
+        size_t numMemoryStateOutputs = 0;
+        for (size_t n = 0; n < structuralNode->noutputs(); n++)
+        {
+          auto output = structuralNode->output(n);
+          if (rvsdg::is<MemoryStateType>(output->type()))
+          {
+            numMemoryStateOutputs++;
+          }
+        }
+        annotationMap.AddAnnotation(structuralNode, { outputLabel, numMemoryStateOutputs });
+
+        for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+        {
+          auto subregion = structuralNode->subregion(n);
+          annotateRegion(*subregion);
+        }
+      }
+    }
   };
 
   annotateRegion(*rvsdg.root());
@@ -143,6 +206,18 @@ RvsdgTreePrinter::GetOutputFileNameCounter(const RvsdgModule & rvsdgModule)
   static std::unordered_map<std::string_view, uint64_t> RvsdgModuleCounterMap_;
 
   return RvsdgModuleCounterMap_[rvsdgModule.SourceFileName().to_str()]++;
+}
+
+bool
+RvsdgTreePrinter::IsMemoryStateInput(const rvsdg::input * input) noexcept
+{
+  return rvsdg::is<MemoryStateType>(input->Type());
+}
+
+bool
+RvsdgTreePrinter::IsMemoryStateOutput(const rvsdg::output * output) noexcept
+{
+  return rvsdg::is<MemoryStateType>(output->Type());
 }
 
 }

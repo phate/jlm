@@ -50,7 +50,7 @@ find_producer(jlm::rvsdg::input * input)
 {
   auto graph = input->region()->graph();
 
-  auto argument = dynamic_cast<jlm::rvsdg::argument *>(input->origin());
+  auto argument = dynamic_cast<rvsdg::RegionArgument *>(input->origin());
   if (argument == nullptr)
     return input->origin();
 
@@ -62,7 +62,7 @@ find_producer(jlm::rvsdg::input * input)
 }
 
 static jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
+route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 {
   JLM_ASSERT(region != nullptr);
 
@@ -71,12 +71,12 @@ route_to_region(jlm::rvsdg::output * output, jlm::rvsdg::region * region)
 
   output = route_to_region(output, region->node()->region());
 
-  if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(region->node()))
+  if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
     gamma->add_entryvar(output);
     output = region->argument(region->narguments() - 1);
   }
-  else if (auto theta = dynamic_cast<jlm::rvsdg::theta_node *>(region->node()))
+  else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
   {
     output = theta->add_loopvar(output)->argument();
   }
@@ -121,7 +121,7 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
   auto deps = route_dependencies(lambda, call);
   JLM_ASSERT(lambda->ncvarguments() == deps.size());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t n = 1; n < call->ninputs(); n++)
   {
     auto argument = lambda->fctargument(n - 1);

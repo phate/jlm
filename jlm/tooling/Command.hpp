@@ -418,6 +418,12 @@ private:
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
+  static void
+  PrintAsDot(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
   [[nodiscard]] std::vector<llvm::optimization *>
   GetOptimizations() const;
 

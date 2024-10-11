@@ -22,17 +22,7 @@ class ipgraph_module;
 /* control flow graph */
 
 std::string
-to_str(const llvm::cfg & cfg);
-
-std::string
 to_dot(const llvm::cfg & cfg);
-
-static inline void
-print_ascii(const llvm::cfg & cfg, FILE * out)
-{
-  fputs(to_str(cfg).c_str(), out);
-  fflush(out);
-}
 
 static inline void
 print_dot(const llvm::cfg & cfg, FILE * out)

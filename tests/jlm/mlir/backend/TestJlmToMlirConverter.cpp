@@ -395,7 +395,7 @@ TestMatch()
     std::cout << "Function Setup" << std::endl;
     auto functionType = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::ctltype::Create(2), iostatetype::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::ControlType::Create(2), iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda =
         lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
@@ -504,7 +504,7 @@ TestGamma()
     auto CtrlConstant = jlm::rvsdg::control_constant(graph->root(), 3, 1);
     auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
     auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
-    jlm::rvsdg::gamma_node * rvsdgGammaNode = jlm::rvsdg::gamma_node::create(
+    auto rvsdgGammaNode = jlm::rvsdg::GammaNode::create(
         CtrlConstant, // predicate
         3             // nalternatives
     );

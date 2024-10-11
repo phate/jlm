@@ -13,14 +13,14 @@ namespace jlm::hls
 {
 
 void
-remove_unused_state(jlm::rvsdg::region * region, bool can_remove_arguments)
+remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
 {
   // process children first so that unnecessary users get removed
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
     {
-      if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
       {
         // process subnodes first
         for (size_t n = 0; n < gn->nsubregions(); n++)
@@ -127,7 +127,7 @@ remove_unused_state(llvm::RvsdgModule & rm)
 }
 
 void
-remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
+remove_gamma_passthrough(rvsdg::GammaNode * gn)
 { // remove inputs in reverse
   for (int i = gn->nentryvars() - 1; i >= 0; --i)
   {
@@ -136,7 +136,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
     auto arg = gn->subregion(0)->argument(i);
     if (arg->nusers() == 1)
     {
-      auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
+      auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
       res_index = res ? res->index() : res_index;
     }
     for (size_t n = 0; n < gn->nsubregions(); n++)
@@ -145,7 +145,7 @@ remove_gamma_passthrough(jlm::rvsdg::gamma_node * gn)
       can_remove &=
           is_passthrough(sr->argument(i)) &&
           // check that all subregions pass through to the same result
-          dynamic_cast<jlm::rvsdg::result *>(*sr->argument(i)->begin())->index() == res_index;
+          dynamic_cast<rvsdg::RegionResult *>(*sr->argument(i)->begin())->index() == res_index;
     }
     if (can_remove)
     {
@@ -174,7 +174,7 @@ jlm::llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln)
 {
   auto old_fcttype = ln->type();
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_argument_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
     auto arg = ln->subregion()->argument(i);
@@ -185,7 +185,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       new_argument_types.push_back(argtype);
     }
   }
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_result_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_result_types;
   for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
   {
     auto res = ln->subregion()->result(i);
@@ -204,7 +204,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       ln->linkage(),
       ln->attributes());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
     // copy over cvarguments
@@ -248,9 +248,9 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
 }
 
 void
-remove_region_passthrough(const jlm::rvsdg::argument * arg)
+remove_region_passthrough(const rvsdg::RegionArgument * arg)
 {
-  auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
+  auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
   auto origin = arg->input()->origin();
   // divert users of output to origin of input
   arg->region()->node()->output(res->output()->index())->divert_users(origin);
@@ -262,9 +262,9 @@ remove_region_passthrough(const jlm::rvsdg::argument * arg)
 }
 
 bool
-is_passthrough(const jlm::rvsdg::result * res)
+is_passthrough(const rvsdg::RegionResult * res)
 {
-  auto arg = dynamic_cast<jlm::rvsdg::argument *>(res->origin());
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
   if (arg)
   {
     return true;
@@ -273,11 +273,11 @@ is_passthrough(const jlm::rvsdg::result * res)
 }
 
 bool
-is_passthrough(const jlm::rvsdg::argument * arg)
+is_passthrough(const rvsdg::RegionArgument * arg)
 {
   if (arg->nusers() == 1)
   {
-    auto res = dynamic_cast<jlm::rvsdg::result *>(*arg->begin());
+    auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
     // used only by a result
     if (res)
     {

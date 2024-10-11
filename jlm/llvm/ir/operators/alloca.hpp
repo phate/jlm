@@ -24,7 +24,7 @@ public:
   virtual ~alloca_op() noexcept;
 
   inline alloca_op(
-      std::shared_ptr<const rvsdg::valuetype> allocatedType,
+      std::shared_ptr<const rvsdg::ValueType> allocatedType,
       std::shared_ptr<const rvsdg::bittype> btype,
       size_t alignment)
       : simple_op({ btype }, { { PointerType::Create() }, { MemoryStateType::Create() } }),
@@ -51,13 +51,13 @@ public:
     return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
   }
 
-  inline const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   value_type() const noexcept
   {
     return *AllocatedType_;
   }
 
-  inline const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   ValueType() const noexcept
   {
     return AllocatedType_;
@@ -71,7 +71,7 @@ public:
 
   static std::unique_ptr<llvm::tac>
   create(
-      std::shared_ptr<const rvsdg::valuetype> allocatedType,
+      std::shared_ptr<const rvsdg::ValueType> allocatedType,
       const variable * size,
       size_t alignment)
   {
@@ -85,7 +85,7 @@ public:
 
   static std::vector<rvsdg::output *>
   create(
-      std::shared_ptr<const rvsdg::valuetype> allocatedType,
+      std::shared_ptr<const rvsdg::ValueType> allocatedType,
       rvsdg::output * size,
       size_t alignment)
   {
@@ -99,7 +99,7 @@ public:
 
 private:
   size_t alignment_;
-  std::shared_ptr<const rvsdg::valuetype> AllocatedType_;
+  std::shared_ptr<const rvsdg::ValueType> AllocatedType_;
 };
 
 }

@@ -11,8 +11,8 @@
 
 namespace jlm::rvsdg
 {
-class gamma_node;
-class theta_node;
+class GammaNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm::aa
@@ -73,7 +73,7 @@ private:
   AnalyzeExports(const rvsdg::graph & graph);
 
   void
-  AnalyzeRegion(rvsdg::region & region);
+  AnalyzeRegion(rvsdg::Region & region);
 
   void
   AnalyzeLambda(const lambda::node & node);
@@ -85,10 +85,10 @@ private:
   AnalyzePhi(const phi::node & node);
 
   void
-  AnalyzeGamma(const rvsdg::gamma_node & node);
+  AnalyzeGamma(const rvsdg::GammaNode & node);
 
   void
-  AnalyzeTheta(const rvsdg::theta_node & node);
+  AnalyzeTheta(const rvsdg::ThetaNode & node);
 
   void
   AnalyzeSimpleNode(const rvsdg::simple_node & node);

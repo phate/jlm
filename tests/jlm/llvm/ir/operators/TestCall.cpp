@@ -40,7 +40,7 @@ TestCopy()
   auto callResults = CallNode::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
   // Act
-  auto node = jlm::rvsdg::node_output::node(callResults[0]);
+  auto node = jlm::rvsdg::output::GetNode(*callResults[0]);
   auto callNode = jlm::util::AssertedCast<const CallNode>(node);
   auto copiedNode = callNode->copy(rvsdg.root(), { function2, value2, iOState2, memoryState2 });
 
@@ -71,7 +71,7 @@ TestCallNodeAccessors()
 
   // Act
   auto results = CallNode::Create(f, functionType, { v, i, m });
-  auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(results[0]));
+  auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*results[0]));
 
   // Assert
   assert(callNode.NumArguments() == 3);
@@ -137,7 +137,7 @@ TestCallTypeClassifierIndirectCall()
     GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])),
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])),
         load[0]);
   };
 
@@ -188,16 +188,16 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   auto SetupFunctionF = [&](lambda::output * g)
   {
-    auto SetupOuterTheta = [](jlm::rvsdg::region * region, jlm::rvsdg::argument * functionG)
+    auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * functionG)
     {
-      auto outerTheta = jlm::rvsdg::theta_node::create(region);
+      auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
       auto otf = outerTheta->add_loopvar(functionG);
 
-      auto innerTheta = jlm::rvsdg::theta_node::create(outerTheta->subregion());
+      auto innerTheta = jlm::rvsdg::ThetaNode::create(outerTheta->subregion());
       auto itf = innerTheta->add_loopvar(otf->argument());
 
       auto predicate = jlm::rvsdg::control_false(innerTheta->subregion());
-      auto gamma = jlm::rvsdg::gamma_node::create(predicate, 2);
+      auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
       auto ev = gamma->add_entryvar(itf->argument());
       auto xv = gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
@@ -229,7 +229,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     return std::make_tuple(
         lambda,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -281,21 +281,21 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto SetupFunctionF = [&](lambda::output * g)
   {
-    auto SetupOuterTheta = [&](jlm::rvsdg::region * region,
-                               jlm::rvsdg::argument * g,
+    auto SetupOuterTheta = [&](jlm::rvsdg::Region * region,
+                               jlm::rvsdg::RegionArgument * g,
                                jlm::rvsdg::output * value,
                                jlm::rvsdg::output * iOState,
                                jlm::rvsdg::output * memoryState)
     {
-      auto SetupInnerTheta = [&](jlm::rvsdg::region * region, jlm::rvsdg::argument * g)
+      auto SetupInnerTheta = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * g)
       {
-        auto innerTheta = jlm::rvsdg::theta_node::create(region);
+        auto innerTheta = jlm::rvsdg::ThetaNode::create(region);
         auto thetaOutputG = innerTheta->add_loopvar(g);
 
         return thetaOutputG;
       };
 
-      auto outerTheta = jlm::rvsdg::theta_node::create(region);
+      auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
       auto thetaOutputG = outerTheta->add_loopvar(g);
       auto thetaOutputValue = outerTheta->add_loopvar(value);
       auto thetaOutputIoState = outerTheta->add_loopvar(iOState);
@@ -317,7 +317,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
           thetaOutputValue,
           thetaOutputIoState,
           thetaOutputMemoryState,
-          jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callResults[0])));
+          jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])));
     };
 
     auto vt = jlm::tests::valuetype::Create();
@@ -402,7 +402,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
     auto predicate = jlm::rvsdg::match(1, { { 0, 1 } }, 0, 2, bitult);
 
-    auto gammaNode = jlm::rvsdg::gamma_node::create(predicate, 2);
+    auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
     auto nev = gammaNode->add_entryvar(valueArgument);
     auto resultev = gammaNode->add_entryvar(pointerArgument);
     auto fibev = gammaNode->add_entryvar(ctxVarFib);
@@ -468,8 +468,8 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm1Results[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::node_output::node(callfibm2Results[0])));
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callfibm1Results[0])),
+        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();

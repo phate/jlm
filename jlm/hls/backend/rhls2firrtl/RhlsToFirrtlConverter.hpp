@@ -107,7 +107,7 @@ private:
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
   MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody);
   circt::firrtl::FModuleOp
-  MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody);
+  MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody);
   circt::firrtl::FModuleOp
   MlirGen(const jlm::rvsdg::simple_node * node);
   // Operations
@@ -121,8 +121,20 @@ private:
   MlirGenStateGate(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
   MlirGenMem(const jlm::rvsdg::simple_node * node);
+  /**
+   * Generate a FIRRTL module for a HLS memory response node that implements the functionality for
+   * retreiving memory responses.
+   * @param node The HLS memory response node.
+   * @return The generated FIRRTL module.
+   */
   circt::firrtl::FModuleOp
   MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node);
+  /**
+   * Generate a FIRRTL module for a HLS memory request node that implements the functionality for
+   * performing memory requests.
+   * @param node The HLS memory request node.
+   * @return The generated FIRRTL module.
+   */
   circt::firrtl::FModuleOp
   MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node);
   circt::firrtl::FModuleOp
@@ -247,7 +259,7 @@ private:
   DropMSBs(mlir::Block * body, mlir::Value value, int amount);
 
   jlm::rvsdg::output *
-  TraceArgument(jlm::rvsdg::argument * arg);
+  TraceArgument(rvsdg::RegionArgument * arg);
   jlm::rvsdg::simple_output *
   TraceStructuralOutput(jlm::rvsdg::structural_output * out);
 
@@ -266,16 +278,16 @@ private:
   circt::firrtl::IntType
   GetIntType(int size);
   circt::firrtl::IntType
-  GetIntType(const jlm::rvsdg::type * type, int extend = 0);
+  GetIntType(const jlm::rvsdg::Type * type, int extend = 0);
   circt::firrtl::FIRRTLBaseType
-  GetFirrtlType(const jlm::rvsdg::type * type);
+  GetFirrtlType(const jlm::rvsdg::Type * type);
   std::string
   GetModuleName(const jlm::rvsdg::node * node);
   bool
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
 
   std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
-  createInstances(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
+  createInstances(rvsdg::Region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
   void
   check_module(circt::firrtl::FModuleOp & module);
 

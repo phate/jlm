@@ -84,7 +84,7 @@ private:
    * \return A list of outputs of the converted region/block.
    */
   ::llvm::SmallVector<::mlir::Value>
-  ConvertRegion(rvsdg::region & region, ::mlir::Block & block);
+  ConvertRegion(rvsdg::Region & region, ::mlir::Block & block);
 
   /**
    * Retreive the previously converted MLIR values from the map of operations
@@ -163,7 +163,7 @@ private:
    */
   ::mlir::Operation *
   ConvertGamma(
-      const rvsdg::gamma_node & gammaNode,
+      const rvsdg::GammaNode & gammaNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
@@ -179,7 +179,7 @@ private:
    * \result The corresponding MLIR RVSDG type.
    */
   ::mlir::Type
-  ConvertType(const rvsdg::type & type);
+  ConvertType(const rvsdg::Type & type);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;

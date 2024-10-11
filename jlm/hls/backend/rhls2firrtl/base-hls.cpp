@@ -62,7 +62,7 @@ BaseHLS::get_port_name(jlm::rvsdg::input * port)
   {
     result += "i";
   }
-  else if (dynamic_cast<const jlm::rvsdg::result *>(port))
+  else if (dynamic_cast<const rvsdg::RegionResult *>(port))
   {
     result += "r";
   }
@@ -82,7 +82,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
     throw std::logic_error("nullptr!");
   }
   std::string result;
-  if (dynamic_cast<const jlm::rvsdg::argument *>(port))
+  if (dynamic_cast<const jlm::rvsdg::RegionArgument *>(port))
   {
     result += "a";
   }
@@ -103,7 +103,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
 }
 
 int
-BaseHLS::JlmSize(const jlm::rvsdg::type * type)
+BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 {
   if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
   {
@@ -117,11 +117,11 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
   {
     return GetPointerSizeInBits();
   }
-  else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(type))
+  else if (auto ct = dynamic_cast<const rvsdg::ControlType *>(type))
   {
     return ceil(log2(ct->nalternatives()));
   }
-  else if (dynamic_cast<const jlm::rvsdg::statetype *>(type))
+  else if (dynamic_cast<const rvsdg::StateType *>(type))
   {
     return 1;
   }
@@ -137,7 +137,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
 }
 
 void
-BaseHLS::create_node_names(jlm::rvsdg::region * r)
+BaseHLS::create_node_names(rvsdg::Region * r)
 {
   for (auto & node : r->nodes)
   {

@@ -25,7 +25,7 @@ test_gamma()
 {
   using namespace jlm::llvm;
 
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -34,7 +34,7 @@ test_gamma()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto evx = gamma->add_entryvar(x);
   auto evs = gamma->add_entryvar(s);
 
@@ -59,7 +59,7 @@ test_theta()
 {
   using namespace jlm::llvm;
 
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::tests::test_op nop({}, { vt });
   jlm::tests::test_op bop({ vt, vt }, { vt });
@@ -72,7 +72,7 @@ test_theta()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lv1 = theta->add_loopvar(c);
   auto lv2 = theta->add_loopvar(x);
@@ -109,7 +109,7 @@ test_push_theta_bottom()
 
   auto mt = MemoryStateType::Create();
   auto pt = PointerType::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::graph graph;
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -117,7 +117,7 @@ test_push_theta_bottom()
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lvc = theta->add_loopvar(c);
   auto lva = theta->add_loopvar(a);
@@ -136,13 +136,13 @@ test_push_theta_bottom()
   jlm::llvm::push_bottom(theta);
   jlm::rvsdg::view(graph, stdout);
 
-  auto storenode = jlm::rvsdg::node_output::node(ex.origin());
+  auto storenode = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
-  assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(
-      jlm::rvsdg::node_output::node(storenode->input(1)->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::theta_op>(
-      jlm::rvsdg::node_output::node(storenode->input(2)->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
+      jlm::rvsdg::output::GetNode(*storenode->input(1)->origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
+      jlm::rvsdg::output::GetNode(*storenode->input(2)->origin())));
 }
 
 static int

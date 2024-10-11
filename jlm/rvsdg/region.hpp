@@ -12,6 +12,7 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/iterator_range.hpp>
 
 namespace jlm::util
 {
@@ -29,7 +30,7 @@ class structural_input;
 class structural_node;
 class structural_op;
 class structural_output;
-class substitution_map;
+class SubstitutionMap;
 
 /**
  * \brief Represents the argument of a region.
@@ -39,32 +40,32 @@ class substitution_map;
  * depends on the structural node the region is part of. A region argument is either linked
  * with a \ref structural_input or is a standalone argument.
  */
-class argument : public output
+class RegionArgument : public output
 {
-  util::intrusive_list_anchor<argument> structural_input_anchor_;
+  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_;
 
 public:
-  typedef util::intrusive_list_accessor<argument, &argument::structural_input_anchor_>
+  typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
       structural_input_accessor;
 
-  ~argument() noexcept override;
+  ~RegionArgument() noexcept override;
 
 protected:
-  argument(
-      rvsdg::region * region,
+  RegionArgument(
+      rvsdg::Region * region,
       structural_input * input,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
-  argument(const argument &) = delete;
+  RegionArgument(const RegionArgument &) = delete;
 
-  argument(argument &&) = delete;
+  RegionArgument(RegionArgument &&) = delete;
 
-  argument &
-  operator=(const argument &) = delete;
+  RegionArgument &
+  operator=(const RegionArgument &) = delete;
 
-  argument &
-  operator=(argument &&) = delete;
+  RegionArgument &
+  operator=(RegionArgument &&) = delete;
 
   [[nodiscard]] structural_input *
   input() const noexcept
@@ -80,8 +81,8 @@ public:
    *
    * @return A reference to the copied argument.
    */
-  virtual argument &
-  Copy(rvsdg::region & region, structural_input * input) = 0;
+  virtual RegionArgument &
+  Copy(rvsdg::Region & region, structural_input * input) = 0;
 
 private:
   structural_input * input_;
@@ -96,33 +97,33 @@ private:
  * depends on the structural node the region is part of. A region result is either linked
  * with a \ref structural_output or is a standalone result.
  */
-class result : public input
+class RegionResult : public input
 {
-  util::intrusive_list_anchor<result> structural_output_anchor_;
+  util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
 
 public:
-  typedef util::intrusive_list_accessor<result, &result::structural_output_anchor_>
+  typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>
       structural_output_accessor;
 
-  ~result() noexcept override;
+  ~RegionResult() noexcept override;
 
 protected:
-  result(
-      rvsdg::region * region,
+  RegionResult(
+      rvsdg::Region * region,
       rvsdg::output * origin,
       structural_output * output,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
-  result(const result &) = delete;
+  RegionResult(const RegionResult &) = delete;
 
-  result(result &&) = delete;
+  RegionResult(RegionResult &&) = delete;
 
-  result &
-  operator=(const result &) = delete;
+  RegionResult &
+  operator=(const RegionResult &) = delete;
 
-  result &
-  operator=(result &&) = delete;
+  RegionResult &
+  operator=(RegionResult &&) = delete;
 
   [[nodiscard]] structural_output *
   output() const noexcept
@@ -139,14 +140,28 @@ public:
    *
    * @return A reference to the copied result.
    */
-  virtual result &
+  virtual RegionResult &
   Copy(rvsdg::output & origin, structural_output * output) = 0;
 
 private:
   structural_output * output_;
 };
 
-class region
+/**
+ * \brief Represent acyclic RVSDG subgraphs
+ *
+ * Regions represent acyclic RVSDG subgraphs and are instantiated with an index in \ref
+ * structural_node%s. Each region has \ref RegionArgument%s and \ref RegionResult%s that represent
+ * the values at the beginning and end of the acyclic graph, respectively. In addition, each region
+ * keeps track of the following properties:
+ *
+ * 1. The nodes of the acyclic subgraph. They represent the computations performed in the region.
+ * 2. The top nodes of the acyclic subgraph. These are all nodes of the region that have no inputs,
+ * i.e., constants.
+ * 3. The bottom nodes of the acyclic subgraph. These are all nodes of the region that have no
+ * users, i.e. that are dead. See \ref output::IsDead() for more information.
+ */
+class Region
 {
   typedef jlm::util::intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_node_list_accessor>
       region_nodes_list;
@@ -159,35 +174,127 @@ class region
       intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_bottom_node_list_accessor>
           region_bottom_node_list;
 
+  using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
+  using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
+  using RegionArgumentRange = util::iterator_range<RegionArgumentIterator>;
+  using RegionArgumentConstRange = util::iterator_range<RegionArgumentConstIterator>;
+
+  using RegionResultIterator = std::vector<RegionResult *>::iterator;
+  using RegionResultConstIterator = std::vector<RegionResult *>::const_iterator;
+  using RegionResultRange = util::iterator_range<RegionResultIterator>;
+  using RegionResultConstRange = util::iterator_range<RegionResultConstIterator>;
+
+  using TopNodeIterator = region_top_node_list::iterator;
+  using TopNodeConstIterator = region_top_node_list::const_iterator;
+  using TopNodeRange = util::iterator_range<TopNodeIterator>;
+  using TopNodeConstRange = util::iterator_range<TopNodeConstIterator>;
+
+  using NodeIterator = region_nodes_list::iterator;
+  using NodeConstIterator = region_nodes_list::const_iterator;
+  using NodeRange = util::iterator_range<NodeIterator>;
+  using NodeConstRange = util::iterator_range<NodeConstIterator>;
+
+  using BottomNodeIterator = region_bottom_node_list::iterator;
+  using BottomNodeConstIterator = region_bottom_node_list::const_iterator;
+  using BottomNodeRange = util::iterator_range<BottomNodeIterator>;
+  using BottomNodeConstRange = util::iterator_range<BottomNodeConstIterator>;
+
 public:
-  ~region();
+  ~Region() noexcept;
 
-  region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph);
+  Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
 
-  region(jlm::rvsdg::structural_node * node, size_t index);
+  Region(rvsdg::structural_node * node, size_t index);
 
-  inline region_nodes_list::iterator
-  begin()
+  /**
+   * @return Returns an iterator range for iterating through the arguments of the region.
+   */
+  [[nodiscard]] RegionArgumentRange
+  Arguments() noexcept
   {
-    return nodes.begin();
+    return { arguments_.begin(), arguments_.end() };
   }
 
-  inline region_nodes_list::const_iterator
-  begin() const
+  /**
+   * @return Returns an iterator range for iterating through the arguments of the region.
+   */
+  [[nodiscard]] RegionArgumentConstRange
+  Arguments() const noexcept
   {
-    return nodes.begin();
+    return { arguments_.begin(), arguments_.end() };
   }
 
-  inline region_nodes_list::iterator
-  end()
+  /**
+   * @return Returns an iterator range for iterating through the results of the region.
+   */
+  [[nodiscard]] RegionResultRange
+  Results() noexcept
   {
-    return nodes.end();
+    return { results_.begin(), results_.end() };
   }
 
-  inline region_nodes_list::const_iterator
-  end() const
+  /**
+   * @return Returns an iterator range for iterating through the results of the region.
+   */
+  [[nodiscard]] RegionResultConstRange
+  Results() const noexcept
   {
-    return nodes.end();
+    return { results_.begin(), results_.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the top nodes of the region.
+   */
+  [[nodiscard]] TopNodeRange
+  TopNodes() noexcept
+  {
+    return { top_nodes.begin(), top_nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the top nodes of the region.
+   */
+  [[nodiscard]] TopNodeConstRange
+  TopNodes() const noexcept
+  {
+    return { top_nodes.begin(), top_nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the nodes of the region.
+   */
+  [[nodiscard]] NodeRange
+  Nodes() noexcept
+  {
+    return { nodes.begin(), nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the nodes of the region.
+   */
+  [[nodiscard]] NodeConstRange
+  Nodes() const noexcept
+  {
+    return { nodes.begin(), nodes.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the bottom nodes of the region.
+   */
+  [[nodiscard]] BottomNodeRange
+  BottomNodes() noexcept
+  {
+    return { BottomNodes_.begin(), BottomNodes_.end() };
+  }
+
+  /**
+   * @return Returns an iterator range for iterating through the bottom nodes of the
+   * region.
+   */
+  [[nodiscard]] BottomNodeConstRange
+  BottomNodes() const noexcept
+  {
+    return { BottomNodes_.begin(), BottomNodes_.end() };
   }
 
   inline jlm::rvsdg::graph *
@@ -221,7 +328,7 @@ public:
    * Multiple invocations of append_argument for the same argument are undefined.
    */
   void
-  append_argument(jlm::rvsdg::argument * argument);
+  append_argument(RegionArgument * argument);
 
   /**
    * Removes an argument from the region given an arguments' index.
@@ -235,8 +342,8 @@ public:
    * runtime is therefore O(n), where n is the region's number of arguments.
    *
    * \see narguments()
-   * \see argument#index()
-   * \see argument::nusers()
+   * \see RegionArgument#index()
+   * \see RegionArgument::nusers()
    */
   void
   RemoveArgument(size_t index);
@@ -268,7 +375,7 @@ public:
     return arguments_.size();
   }
 
-  inline jlm::rvsdg::argument *
+  inline RegionArgument *
   argument(size_t index) const noexcept
   {
     JLM_ASSERT(index < narguments());
@@ -280,7 +387,7 @@ public:
    * Multiple invocations of append_result for the same result are undefined.
    */
   void
-  append_result(jlm::rvsdg::result * result);
+  append_result(RegionResult * result);
 
   /**
    * Removes a result from the region given a results' index.
@@ -293,7 +400,7 @@ public:
    * runtime is therefore O(n), where n is the region's number of results.
    *
    * \see nresults()
-   * \see result#index()
+   * \see RegionResult#index()
    */
   void
   RemoveResult(size_t index);
@@ -301,7 +408,7 @@ public:
   /**
    * Remove all results that match the condition specified by \p match.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const result&)
+   * @tparam F A type that supports the function call operator: bool operator(const RegionResult&)
    * @param match Defines the condition for the results to remove.
    */
   template<typename F>
@@ -325,7 +432,7 @@ public:
   void
   PruneArguments()
   {
-    auto match = [](const rvsdg::argument &)
+    auto match = [](const RegionArgument &)
     {
       return true;
     };
@@ -339,7 +446,7 @@ public:
     return results_.size();
   }
 
-  inline jlm::rvsdg::result *
+  [[nodiscard]] RegionResult *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < nresults());
@@ -352,8 +459,45 @@ public:
     return nodes.size();
   }
 
+  /**
+   * @return The number of bottom nodes in the region.
+   */
+  [[nodiscard]] size_t
+  NumBottomNodes() const noexcept
+  {
+    return BottomNodes_.size();
+  }
+
   void
   remove_node(jlm::rvsdg::node * node);
+
+  /**
+   * \brief Adds \p node to the bottom nodes of the region.
+   *
+   * The node \p node is only added to the bottom nodes of this region, iff:
+   * 1. The node \p node belongs to the same region instance.
+   * 2. All the outputs of \p node are dead. See node::IsDead() for more details.
+   *
+   * @param node The node that is added.
+   * @return True, if \p node was added, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is created or becomes dead. There is
+   * no need to invoke it manually.
+   */
+  bool
+  AddBottomNode(rvsdg::node & node);
+
+  /**
+   * Removes \p node from the bottom nodes in the region.
+   *
+   * @param node The node that is removed.
+   * @return True, if \p node was a bottom node and removed, otherwise false.
+   *
+   * @note This method is automatically invoked when a node cedes to be dead. There is no need to
+   * invoke it manually.
+   */
+  bool
+  RemoveBottomNode(rvsdg::node & node);
 
   /**
     \brief Copy a region with substitutions
@@ -368,7 +512,7 @@ public:
     map will be updated as nodes are copied.
   */
   void
-  copy(region * target, substitution_map & smap, bool copy_arguments, bool copy_results) const;
+  copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const;
 
   void
   prune(bool recursive);
@@ -387,7 +531,7 @@ public:
    */
   template<class Operation>
   static inline bool
-  Contains(const jlm::rvsdg::region & region, bool checkSubregions);
+  Contains(const rvsdg::Region & region, bool checkSubregions);
 
   /**
    * Counts the number of (sub-)regions contained within \p region. The count includes \p region,
@@ -398,7 +542,7 @@ public:
    * @return The number of (sub-)regions.
    */
   [[nodiscard]] static size_t
-  NumRegions(const jlm::rvsdg::region & region) noexcept;
+  NumRegions(const rvsdg::Region & region) noexcept;
 
   /**
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
@@ -420,12 +564,12 @@ public:
    * \p annotationMap.
    *
    * @param region The top-level region that is converted
-   * @param annotationMap A map with annotations for instances of \ref region%s or
+   * @param annotationMap A map with annotations for instances of \ref Region%s or
    * structural_node%s.
    * @return A string containing the ASCII tree of \p region.
    */
   [[nodiscard]] static std::string
-  ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept;
+  ToTree(const rvsdg::Region & region, const util::AnnotationMap & annotationMap) noexcept;
 
   /**
    * Converts \p region and all of its contained structural nodes with subregions to a tree in
@@ -448,18 +592,16 @@ public:
    * @return A string containing the ASCII tree of \p region
    */
   [[nodiscard]] static std::string
-  ToTree(const rvsdg::region & region) noexcept;
+  ToTree(const rvsdg::Region & region) noexcept;
 
   region_nodes_list nodes;
 
   region_top_node_list top_nodes;
 
-  region_bottom_node_list bottom_nodes;
-
 private:
   static void
   ToTree(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::AnnotationMap & annotationMap,
       size_t indentationDepth,
       std::stringstream & stream) noexcept;
@@ -483,8 +625,9 @@ private:
   size_t index_;
   jlm::rvsdg::graph * graph_;
   jlm::rvsdg::structural_node * node_;
-  std::vector<jlm::rvsdg::result *> results_;
-  std::vector<jlm::rvsdg::argument *> arguments_;
+  std::vector<RegionResult *> results_;
+  std::vector<RegionArgument *> arguments_;
+  region_bottom_node_list BottomNodes_;
 };
 
 static inline void
@@ -494,16 +637,16 @@ remove(jlm::rvsdg::node * node)
 }
 
 size_t
-nnodes(const jlm::rvsdg::region * region) noexcept;
+nnodes(const rvsdg::Region * region) noexcept;
 
 size_t
-nstructnodes(const jlm::rvsdg::region * region) noexcept;
+nstructnodes(const rvsdg::Region * region) noexcept;
 
 size_t
-nsimpnodes(const jlm::rvsdg::region * region) noexcept;
+nsimpnodes(const rvsdg::Region * region) noexcept;
 
 size_t
-ninputs(const jlm::rvsdg::region * region) noexcept;
+ninputs(const rvsdg::Region * region) noexcept;
 
 } // namespace
 

@@ -8,8 +8,8 @@
 namespace jlm::rvsdg
 {
 
-jlm::util::notifier<jlm::rvsdg::region *> on_region_create;
-jlm::util::notifier<jlm::rvsdg::region *> on_region_destroy;
+jlm::util::notifier<rvsdg::Region *> on_region_create;
+jlm::util::notifier<rvsdg::Region *> on_region_destroy;
 
 jlm::util::notifier<jlm::rvsdg::node *> on_node_create;
 jlm::util::notifier<jlm::rvsdg::node *> on_node_destroy;

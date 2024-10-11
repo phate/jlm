@@ -26,7 +26,7 @@ DotHLS::get_text(llvm::RvsdgModule & rm)
 }
 
 std::string
-DotHLS::argument_to_dot(jlm::rvsdg::argument * port)
+DotHLS::argument_to_dot(rvsdg::RegionArgument * port)
 {
   auto name = get_port_name(port);
 
@@ -45,7 +45,7 @@ DotHLS::argument_to_dot(jlm::rvsdg::argument * port)
 }
 
 std::string
-DotHLS::result_to_dot(jlm::rvsdg::result * port)
+DotHLS::result_to_dot(rvsdg::RegionResult * port)
 {
   auto name = get_port_name(port);
 
@@ -167,11 +167,11 @@ DotHLS::node_to_dot(const jlm::rvsdg::node * node)
 }
 
 std::string
-DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::type & type, bool back)
+DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::Type & type, bool back)
 {
   auto color = "black";
   JLM_ASSERT(src != "" && snk != "");
-  if (dynamic_cast<const jlm::rvsdg::ctltype *>(&type))
+  if (dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     color = "green";
   }
@@ -352,7 +352,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
 }
 
 std::string
-DotHLS::subregion_to_dot(jlm::rvsdg::region * sr)
+DotHLS::subregion_to_dot(rvsdg::Region * sr)
 {
   std::ostringstream dot;
   dot << "digraph G {\n";

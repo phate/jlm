@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-check_rhls(jlm::rvsdg::region * sr)
+check_rhls(rvsdg::Region * sr)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(sr))
   {

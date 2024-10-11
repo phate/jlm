@@ -27,12 +27,12 @@ class node;
 
 namespace jlm::rvsdg
 {
-class gamma_node;
+class GammaNode;
 class node;
-class region;
+class Region;
 class simple_node;
 class structural_node;
-class theta_node;
+class ThetaNode;
 }
 
 namespace jlm::llvm::aa
@@ -121,7 +121,7 @@ private:
    * @param region The RVSDG root region or a phi subregion.
    */
   void
-  EliminateTopDownRootRegion(rvsdg::region & region);
+  EliminateTopDownRootRegion(rvsdg::Region & region);
 
   /**
    * Processes the intra-procedural nodes in a lambda, theta, or gamma subregion top-down. The
@@ -131,7 +131,7 @@ private:
    * @param region A lambda, theta, or gamma subregion.
    */
   void
-  EliminateTopDownRegion(rvsdg::region & region);
+  EliminateTopDownRegion(rvsdg::Region & region);
 
   void
   EliminateTopDownStructuralNode(const rvsdg::structural_node & structuralNode);
@@ -149,10 +149,10 @@ private:
   EliminateTopDownPhi(const phi::node & phiNode);
 
   void
-  EliminateTopDownGamma(const rvsdg::gamma_node & gammaNode);
+  EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode);
 
   void
-  EliminateTopDownTheta(const rvsdg::theta_node & thetaNode);
+  EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode);
 
   void
   EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode);

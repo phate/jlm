@@ -11,7 +11,7 @@
 
 namespace jlm::rvsdg
 {
-class gamma_node;
+class GammaNode;
 }
 
 namespace jlm::llvm
@@ -32,16 +32,16 @@ public:
 };
 
 void
-pullin_top(jlm::rvsdg::gamma_node * gamma);
+pullin_top(rvsdg::GammaNode * gamma);
 
 void
-pullin_bottom(jlm::rvsdg::gamma_node * gamma);
+pullin_bottom(rvsdg::GammaNode * gamma);
 
 void
-pull(jlm::rvsdg::gamma_node * gamma);
+pull(rvsdg::GammaNode * gamma);
 
 void
-pull(jlm::rvsdg::region * region);
+pull(rvsdg::Region * region);
 
 }
 

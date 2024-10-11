@@ -25,7 +25,7 @@ class nullary_op : public simple_op
 public:
   virtual ~nullary_op() noexcept;
 
-  inline explicit nullary_op(std::shared_ptr<const jlm::rvsdg::type> result)
+  inline explicit nullary_op(std::shared_ptr<const jlm::rvsdg::Type> result)
       : simple_op({}, { std::move(result) })
   {}
 };
@@ -95,7 +95,7 @@ public:
   }
 
   static inline jlm::rvsdg::output *
-  create(jlm::rvsdg::region * region, const value_repr & vr)
+  create(rvsdg::Region * region, const value_repr & vr)
   {
     domain_const_op op(vr);
     return simple_node::create_normalized(region, op, {})[0];

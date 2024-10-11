@@ -32,7 +32,7 @@ public:
   }
 
   static int
-  JlmSize(const jlm::rvsdg::type * type);
+  JlmSize(const jlm::rvsdg::Type * type);
 
   /**
    * @return The size of a pointer in bits.
@@ -64,7 +64,7 @@ protected:
   get_hls_lambda(llvm::RvsdgModule & rm);
 
   void
-  create_node_names(jlm::rvsdg::region * r);
+  create_node_names(rvsdg::Region * r);
 
   virtual std::string
   get_text(llvm::RvsdgModule & rm) = 0;
@@ -72,10 +72,10 @@ protected:
   static std::string
   get_base_file_name(const llvm::RvsdgModule & rm);
 
-  std::vector<jlm::rvsdg::argument *>
+  std::vector<jlm::rvsdg::RegionArgument *>
   get_mem_resps(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::argument *> mem_resps;
+    std::vector<jlm::rvsdg::RegionArgument *> mem_resps;
     for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
     {
       auto arg = lambda->subregion()->argument(i);
@@ -87,10 +87,10 @@ protected:
     return mem_resps;
   }
 
-  std::vector<jlm::rvsdg::result *>
+  std::vector<rvsdg::RegionResult *>
   get_mem_reqs(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::result *> mem_resps;
+    std::vector<rvsdg::RegionResult *> mem_resps;
     for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
     {
       if (dynamic_cast<const jlm::hls::bundletype *>(&lambda->subregion()->result(i)->type()))
@@ -101,10 +101,10 @@ protected:
     return mem_resps;
   }
 
-  std::vector<jlm::rvsdg::argument *>
+  std::vector<jlm::rvsdg::RegionArgument *>
   get_reg_args(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::argument *> args;
+    std::vector<jlm::rvsdg::RegionArgument *> args;
     for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
     {
       auto argtype = &lambda->subregion()->argument(i)->type();
@@ -117,10 +117,10 @@ protected:
     return args;
   }
 
-  std::vector<jlm::rvsdg::result *>
+  std::vector<rvsdg::RegionResult *>
   get_reg_results(const llvm::lambda::node * lambda)
   {
-    std::vector<jlm::rvsdg::result *> results;
+    std::vector<rvsdg::RegionResult *> results;
     for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
     {
       auto argtype = &lambda->subregion()->result(i)->type();

@@ -27,7 +27,7 @@ protected:
   structural_node(
       /* FIXME: use move semantics instead of copy semantics for op */
       const jlm::rvsdg::structural_op & op,
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       size_t nsubregions);
 
 public:
@@ -37,7 +37,7 @@ public:
     return subregions_.size();
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   subregion(size_t index) const noexcept
   {
     JLM_ASSERT(index < nsubregions());
@@ -61,14 +61,13 @@ public:
   using node::RemoveOutput;
 
 private:
-  std::vector<std::unique_ptr<jlm::rvsdg::region>> subregions_;
+  std::vector<std::unique_ptr<rvsdg::Region>> subregions_;
 };
 
 /* structural input class */
 
-typedef jlm::util::
-    intrusive_list<jlm::rvsdg::argument, jlm::rvsdg::argument::structural_input_accessor>
-        argument_list;
+typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
+    argument_list;
 
 class structural_input : public node_input
 {
@@ -80,13 +79,13 @@ public:
   structural_input(
       jlm::rvsdg::structural_node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
   static structural_input *
   create(
       structural_node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const jlm::rvsdg::type> type)
+      std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto input = std::make_unique<structural_input>(node, origin, std::move(type));
     return node->append_input(std::move(input));
@@ -103,9 +102,8 @@ public:
 
 /* structural output class */
 
-typedef jlm::util::
-    intrusive_list<jlm::rvsdg::result, jlm::rvsdg::result::structural_output_accessor>
-        result_list;
+typedef jlm::util::intrusive_list<RegionResult, RegionResult::structural_output_accessor>
+    result_list;
 
 class structural_output : public node_output
 {
@@ -114,10 +112,10 @@ class structural_output : public node_output
 public:
   virtual ~structural_output() noexcept;
 
-  structural_output(jlm::rvsdg::structural_node * node, std::shared_ptr<const rvsdg::type> type);
+  structural_output(jlm::rvsdg::structural_node * node, std::shared_ptr<const rvsdg::Type> type);
 
   static structural_output *
-  create(structural_node * node, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(structural_node * node, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto output = std::make_unique<structural_output>(node, std::move(type));
     return node->append_output(std::move(output));
@@ -148,7 +146,7 @@ structural_node::output(size_t index) const noexcept
 
 template<class Operation>
 bool
-region::Contains(const jlm::rvsdg::region & region, bool checkSubregions)
+Region::Contains(const rvsdg::Region & region, bool checkSubregions)
 {
   for (auto & node : region.nodes)
   {

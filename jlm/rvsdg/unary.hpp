@@ -32,7 +32,7 @@ public:
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
@@ -60,8 +60,8 @@ public:
   virtual ~unary_op() noexcept;
 
   inline unary_op(
-      std::shared_ptr<const jlm::rvsdg::type> operand,
-      std::shared_ptr<const jlm::rvsdg::type> result)
+      std::shared_ptr<const jlm::rvsdg::Type> operand,
+      std::shared_ptr<const jlm::rvsdg::Type> result)
       : simple_op({ std::move(operand) }, { std::move(result) })
   {}
 

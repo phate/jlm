@@ -27,7 +27,7 @@ public:
 
 protected:
   simple_node(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & operands);
 
@@ -42,15 +42,14 @@ public:
   operation() const noexcept;
 
   virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
-      const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
   static inline jlm::rvsdg::simple_node *
   create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
@@ -59,7 +58,7 @@ public:
 
   static inline std::vector<jlm::rvsdg::output *>
   create_normalized(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
@@ -80,7 +79,7 @@ public:
   simple_input(
       simple_node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
   simple_node *
@@ -99,7 +98,7 @@ class simple_output final : public node_output
 public:
   virtual ~simple_output() noexcept;
 
-  simple_output(jlm::rvsdg::simple_node * node, std::shared_ptr<const rvsdg::type> type);
+  simple_output(jlm::rvsdg::simple_node * node, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   simple_node *

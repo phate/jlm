@@ -92,10 +92,10 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
 }
 
 void
-InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
+InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
-  auto isGammaNode = is<rvsdg::gamma_op>(region.node());
-  auto isThetaNode = is<rvsdg::theta_op>(region.node());
+  auto isGammaNode = is<rvsdg::GammaOperation>(region.node());
+  auto isThetaNode = is<rvsdg::ThetaOperation>(region.node());
   auto isLambdaNode = is<lambda::operation>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
@@ -103,14 +103,14 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
   // it is irrelevant in which order we handle the nodes.
   for (auto & node : region.nodes)
   {
-    if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&node))
+    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&node))
     {
       // Ensure we redirect invariant values of all nodes in the gamma subregions first, otherwise
       // we might not be able to redirect some of the gamma outputs.
       RedirectInSubregions(*gammaNode);
       RedirectGammaOutputs(*gammaNode);
     }
-    else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&node))
+    else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&node))
     {
       // Ensure we redirect invariant values of all nodes in the theta subregion first, otherwise we
       // might not be able to redirect some of the theta outputs.
@@ -127,8 +127,8 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
 void
 InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structuralNode)
 {
-  auto isGammaNode = is<rvsdg::gamma_op>(&structuralNode);
-  auto isThetaNode = is<rvsdg::theta_op>(&structuralNode);
+  auto isGammaNode = is<rvsdg::GammaOperation>(&structuralNode);
+  auto isThetaNode = is<rvsdg::ThetaOperation>(&structuralNode);
   JLM_ASSERT(isGammaNode || isThetaNode);
 
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
@@ -138,7 +138,7 @@ InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structu
 }
 
 void
-InvariantValueRedirection::RedirectGammaOutputs(rvsdg::gamma_node & gammaNode)
+InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 {
   for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
   {
@@ -153,7 +153,7 @@ InvariantValueRedirection::RedirectGammaOutputs(rvsdg::gamma_node & gammaNode)
 }
 
 void
-InvariantValueRedirection::RedirectThetaOutputs(rvsdg::theta_node & thetaNode)
+InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
   for (const auto & thetaOutput : thetaNode)
   {
@@ -216,7 +216,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
       for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
       {
         auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::node_output::node(lambdaExitMergeInput->origin());
+        auto node = rvsdg::output::GetNode(*lambdaExitMergeInput->origin());
         if (node == lambdaEntrySplit)
         {
           auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());

@@ -183,8 +183,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (is<rvsdg::ThetaArgument>(o1) && is<rvsdg::ThetaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
-    auto a1 = static_cast<jlm::rvsdg::argument *>(o1);
-    auto a2 = static_cast<jlm::rvsdg::argument *>(o2);
+    auto a1 = static_cast<rvsdg::RegionArgument *>(o1);
+    auto a2 = static_cast<rvsdg::RegionArgument *>(o2);
     vs.insert(a1, a2);
     auto i1 = a1->input(), i2 = a2->input();
     if (!congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx))
@@ -195,10 +195,9 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return congruent(output1, output2, vs, ctx);
   }
 
-  auto n1 = jlm::rvsdg::node_output::node(o1);
-  auto n2 = jlm::rvsdg::node_output::node(o2);
-  if (jlm::rvsdg::is<jlm::rvsdg::theta_op>(n1) && jlm::rvsdg::is<jlm::rvsdg::theta_op>(n2)
-      && n1 == n2)
+  auto n1 = jlm::rvsdg::output::GetNode(*o1);
+  auto n2 = jlm::rvsdg::output::GetNode(*o2);
+  if (is<rvsdg::ThetaOperation>(n1) && is<rvsdg::ThetaOperation>(n2) && n1 == n2)
   {
     auto so1 = static_cast<jlm::rvsdg::structural_output *>(o1);
     auto so2 = static_cast<jlm::rvsdg::structural_output *>(o2);
@@ -208,7 +207,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return congruent(r1->origin(), r2->origin(), vs, ctx);
   }
 
-  if (jlm::rvsdg::is<jlm::rvsdg::gamma_op>(n1) && n1 == n2)
+  if (rvsdg::is<rvsdg::GammaOperation>(n1) && n1 == n2)
   {
     auto so1 = static_cast<jlm::rvsdg::structural_output *>(o1);
     auto so2 = static_cast<jlm::rvsdg::structural_output *>(o2);
@@ -226,8 +225,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (is<rvsdg::GammaArgument>(o1) && is<rvsdg::GammaArgument>(o2))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
-    auto a1 = static_cast<jlm::rvsdg::argument *>(o1);
-    auto a2 = static_cast<jlm::rvsdg::argument *>(o2);
+    auto a1 = static_cast<rvsdg::RegionArgument *>(o1);
+    auto a2 = static_cast<rvsdg::RegionArgument *>(o2);
     return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
   }
 
@@ -272,12 +271,12 @@ mark_arguments(jlm::rvsdg::structural_input * i1, jlm::rvsdg::structural_input *
 }
 
 static void
-mark(jlm::rvsdg::region *, cnectx &);
+mark(rvsdg::Region *, cnectx &);
 
 static void
 mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node->operation()));
+  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node->operation()));
 
   /* mark entry variables */
   for (size_t i1 = 1; i1 < node->ninputs(); i1++)
@@ -303,8 +302,8 @@ mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 static void
 mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
-  auto theta = static_cast<const jlm::rvsdg::theta_node *>(node);
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
+  auto theta = static_cast<const rvsdg::ThetaNode *>(node);
 
   /* mark loop variables */
   for (size_t i1 = 0; i1 < theta->ninputs(); i1++)
@@ -375,8 +374,8 @@ mark(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
   static std::
       unordered_map<std::type_index, void (*)(const jlm::rvsdg::structural_node *, cnectx &)>
-          map({ { std::type_index(typeid(jlm::rvsdg::gamma_op)), mark_gamma },
-                { std::type_index(typeid(jlm::rvsdg::theta_op)), mark_theta },
+          map({ { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
+                { std::type_index(typeid(rvsdg::ThetaOperation)), mark_theta },
                 { typeid(lambda::operation), mark_lambda },
                 { typeid(phi::operation), mark_phi },
                 { typeid(delta::operation), mark_delta } });
@@ -426,7 +425,7 @@ mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
 }
 
 static void
-mark(jlm::rvsdg::region * region, cnectx & ctx)
+mark(rvsdg::Region * region, cnectx & ctx)
 {
   for (const auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -456,20 +455,20 @@ divert_outputs(jlm::rvsdg::node * node, cnectx & ctx)
 }
 
 static void
-divert_arguments(jlm::rvsdg::region * region, cnectx & ctx)
+divert_arguments(rvsdg::Region * region, cnectx & ctx)
 {
   for (size_t n = 0; n < region->narguments(); n++)
     divert_users(region->argument(n), ctx);
 }
 
 static void
-divert(jlm::rvsdg::region *, cnectx &);
+divert(rvsdg::Region *, cnectx &);
 
 static void
 divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(node));
-  auto gamma = static_cast<jlm::rvsdg::gamma_node *>(node);
+  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node));
+  auto gamma = static_cast<rvsdg::GammaNode *>(node);
 
   for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++)
   {
@@ -486,8 +485,8 @@ divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
 static void
 divert_theta(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
-  auto theta = static_cast<jlm::rvsdg::theta_node *>(node);
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
+  auto theta = static_cast<rvsdg::ThetaNode *>(node);
   auto subregion = node->subregion(0);
 
   for (const auto & lv : *theta)
@@ -528,8 +527,8 @@ static void
 divert(jlm::rvsdg::structural_node * node, cnectx & ctx)
 {
   static std::unordered_map<std::type_index, void (*)(jlm::rvsdg::structural_node *, cnectx &)> map(
-      { { std::type_index(typeid(jlm::rvsdg::gamma_op)), divert_gamma },
-        { std::type_index(typeid(jlm::rvsdg::theta_op)), divert_theta },
+      { { std::type_index(typeid(rvsdg::GammaOperation)), divert_gamma },
+        { std::type_index(typeid(rvsdg::ThetaOperation)), divert_theta },
         { typeid(lambda::operation), divert_lambda },
         { typeid(phi::operation), divert_phi },
         { typeid(delta::operation), divert_delta } });
@@ -540,7 +539,7 @@ divert(jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert(jlm::rvsdg::region * region, cnectx & ctx)
+divert(rvsdg::Region * region, cnectx & ctx)
 {
   for (const auto & node : jlm::rvsdg::topdown_traverser(region))
   {

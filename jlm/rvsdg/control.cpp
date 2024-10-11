@@ -14,48 +14,46 @@ namespace jlm::rvsdg
 /* control constant */
 
 // explicit instantiation
-template class domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
+template class domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
 
-/* control type */
+ControlType::~ControlType() noexcept = default;
 
-ctltype::~ctltype() noexcept
-{}
-
-ctltype::ctltype(size_t nalternatives)
-    : jlm::rvsdg::statetype(),
+ControlType::ControlType(size_t nalternatives)
+    : StateType(),
       nalternatives_(nalternatives)
 {}
 
 std::string
-ctltype::debug_string() const
+ControlType::debug_string() const
 {
   return jlm::util::strfmt("ctl(", nalternatives_, ")");
 }
 
 bool
-ctltype::operator==(const jlm::rvsdg::type & other) const noexcept
+ControlType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const ctltype *>(&other);
+  auto type = dynamic_cast<const ControlType *>(&other);
   return type && type->nalternatives_ == nalternatives_;
 }
 
 std::size_t
-ctltype::ComputeHash() const noexcept
+ControlType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(ctltype).hash_code();
+  auto typeHash = typeid(ControlType).hash_code();
   auto numAlternativesHash = std::hash<size_t>()(nalternatives_);
   return util::CombineHashes(typeHash, numAlternativesHash);
 }
 
-std::shared_ptr<const ctltype>
-ctltype::Create(std::size_t nalternatives)
+std::shared_ptr<const ControlType>
+ControlType::Create(std::size_t nalternatives)
 {
-  static const ctltype static_instances[4] = { // ctltype(0) is not valid, but put it in here so
-                                               // the static array indexing works correctly
-                                               ctltype(0),
-                                               ctltype(1),
-                                               ctltype(2),
-                                               ctltype(3)
+  static const ControlType static_instances[4] = {
+    // ControlType(0) is not valid, but put it in here so
+    // the static array indexing works correctly
+    ControlType(0),
+    ControlType(1),
+    ControlType(2),
+    ControlType(3)
   };
 
   if (nalternatives < 4)
@@ -64,13 +62,13 @@ ctltype::Create(std::size_t nalternatives)
     {
       throw jlm::util::error("Alternatives of a control type must be non-zero.");
     }
-    return std::shared_ptr<const jlm::rvsdg::ctltype>(
+    return std::shared_ptr<const ControlType>(
         std::shared_ptr<void>(),
         &static_instances[nalternatives]);
   }
   else
   {
-    return std::make_shared<ctltype>(nalternatives);
+    return std::make_shared<ControlType>(nalternatives);
   }
 }
 
@@ -94,7 +92,7 @@ match_op::match_op(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : jlm::rvsdg::unary_op(bittype::Create(nbits), ctltype::Create(nalternatives)),
+    : jlm::rvsdg::unary_op(bittype::Create(nbits), ControlType::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}
@@ -161,7 +159,7 @@ match(
 }
 
 jlm::rvsdg::output *
-control_constant(jlm::rvsdg::region * region, size_t nalternatives, size_t alternative)
+control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
   jlm::rvsdg::ctlconstant_op op({ alternative, nalternatives });
   return jlm::rvsdg::simple_node::create_normalized(region, op, {})[0];

@@ -21,7 +21,7 @@ simple_input::~simple_input() noexcept
 simple_input::simple_input(
     jlm::rvsdg::simple_node * node,
     jlm::rvsdg::output * origin,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {}
 
@@ -29,7 +29,7 @@ simple_input::simple_input(
 
 simple_output::simple_output(
     jlm::rvsdg::simple_node * node,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {}
 
@@ -46,7 +46,7 @@ simple_node::~simple_node()
 }
 
 simple_node::simple_node(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const jlm::rvsdg::simple_op & op,
     const std::vector<jlm::rvsdg::output *> & operands)
     : node(op.copy(), region)
@@ -71,8 +71,7 @@ simple_node::simple_node(
 }
 
 jlm::rvsdg::node *
-simple_node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
-    const
+simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   auto node = create(region, *static_cast<const simple_op *>(&operation()), operands);
   graph()->mark_denormalized();
@@ -80,7 +79,7 @@ simple_node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::out
 }
 
 jlm::rvsdg::node *
-simple_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+simple_node::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
   std::vector<jlm::rvsdg::output *> operands;
   for (size_t n = 0; n < ninputs(); n++)

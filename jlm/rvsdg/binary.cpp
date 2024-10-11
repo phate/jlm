@@ -153,7 +153,7 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
 
 std::vector<jlm::rvsdg::output *>
 binary_normal_form::normalized_create(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const jlm::rvsdg::simple_op & base_op,
     const std::vector<jlm::rvsdg::output *> & args) const
 {
@@ -297,7 +297,7 @@ flattened_binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
 std::vector<jlm::rvsdg::output *>
 flattened_binary_normal_form::normalized_create(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const jlm::rvsdg::simple_op & base_op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
@@ -417,7 +417,7 @@ flattened_binary_op::reduce(
 
 void
 flattened_binary_op::reduce(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const flattened_binary_op::reduction & reduction)
 {
   for (auto & node : topdown_traverser(region))
@@ -436,7 +436,7 @@ flattened_binary_op::reduce(
     }
   }
 
-  JLM_ASSERT(!region::Contains<flattened_binary_op>(*region, true));
+  JLM_ASSERT(!Region::Contains<flattened_binary_op>(*region, true));
 }
 
 }

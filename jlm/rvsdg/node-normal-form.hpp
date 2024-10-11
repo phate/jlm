@@ -26,7 +26,7 @@ class graph;
 class node;
 class operation;
 class output;
-class region;
+class Region;
 
 class node_normal_form
 {

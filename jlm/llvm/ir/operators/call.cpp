@@ -21,7 +21,7 @@ static rvsdg::input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
 
 static rvsdg::structural_input *
-invariantInput(const rvsdg::gamma_output & output, InvariantOutputMap & invariantOutputs)
+invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariantOutputs)
 {
   size_t n;
   rvsdg::structural_input * input = nullptr;
@@ -32,7 +32,7 @@ invariantInput(const rvsdg::gamma_output & output, InvariantOutputMap & invarian
     bool resultIsInvariant = false;
     while (true)
     {
-      if (auto argument = dynamic_cast<const rvsdg::argument *>(origin))
+      if (auto argument = dynamic_cast<const rvsdg::RegionArgument *>(origin))
       {
         resultIsInvariant = true;
         input = argument->input();
@@ -62,8 +62,8 @@ invariantInput(const rvsdg::gamma_output & output, InvariantOutputMap & invarian
   return nullptr;
 }
 
-static rvsdg::theta_input *
-invariantInput(const rvsdg::theta_output & output, InvariantOutputMap & invariantOutputs)
+static rvsdg::ThetaInput *
+invariantInput(const rvsdg::ThetaOutput & output, InvariantOutputMap & invariantOutputs)
 {
   auto origin = output.result()->origin();
 
@@ -97,16 +97,16 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
   if (invariantOutputs.find(&output) != invariantOutputs.end())
     return invariantOutputs[&output];
 
-  if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(&output))
+  if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(&output))
     return invariantInput(*thetaOutput, invariantOutputs);
 
   if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
   {
-    auto thetaInput = static_cast<const rvsdg::theta_input *>(thetaArgument->input());
+    auto thetaInput = static_cast<const rvsdg::ThetaInput *>(thetaArgument->input());
     return invariantInput(*thetaInput->output(), invariantOutputs);
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(&output))
+  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
     return invariantInput(*gammaOutput, invariantOutputs);
 
   return nullptr;
@@ -145,7 +145,7 @@ CallOperation::copy() const
 }
 
 rvsdg::node *
-CallNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
@@ -166,7 +166,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
     if (is<rvsdg::GraphImport>(origin))
       return origin;
 
-    if (is<rvsdg::simple_op>(rvsdg::node_output::node(origin)))
+    if (is<rvsdg::simple_op>(rvsdg::output::GetNode(*origin)))
       return origin;
 
     if (is<phi::rvargument>(origin))
@@ -176,12 +176,12 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 
     if (is<lambda::cvargument>(origin))
     {
-      auto argument = util::AssertedCast<const rvsdg::argument>(origin);
+      auto argument = util::AssertedCast<const rvsdg::RegionArgument>(origin);
       origin = argument->input()->origin();
       continue;
     }
 
-    if (auto gammaOutput = dynamic_cast<const rvsdg::gamma_output *>(origin))
+    if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(origin))
     {
       if (auto input = invariantInput(*gammaOutput))
       {
@@ -198,7 +198,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto thetaOutput = dynamic_cast<const rvsdg::theta_output *>(origin))
+    if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(origin))
     {
       if (auto input = invariantInput(*thetaOutput))
       {
@@ -246,7 +246,7 @@ CallNode::ClassifyCall(const CallNode & callNode)
     return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*lambdaOutput);
   }
 
-  if (auto argument = dynamic_cast<rvsdg::argument *>(output))
+  if (auto argument = dynamic_cast<rvsdg::RegionArgument *>(output))
   {
     if (is<phi::rvargument>(argument))
     {

@@ -34,20 +34,20 @@ test_flattened_binary_reduction()
 
     jlm::rvsdg::view(graph, stdout);
     assert(
-        graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
+        graph.root()->nnodes() == 1 && Region::Contains<flattened_binary_op>(*graph.root(), false));
 
     flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::parallel);
     jlm::rvsdg::view(graph, stdout);
 
     assert(graph.root()->nnodes() == 3);
 
-    auto node0 = node_output::node(ex.origin());
+    auto node0 = output::GetNode(*ex.origin());
     assert(is<jlm::tests::binary_op>(node0));
 
-    auto node1 = node_output::node(node0->input(0)->origin());
+    auto node1 = output::GetNode(*node0->input(0)->origin());
     assert(is<jlm::tests::binary_op>(node1));
 
-    auto node2 = node_output::node(node0->input(1)->origin());
+    auto node2 = output::GetNode(*node0->input(1)->origin());
     assert(is<jlm::tests::binary_op>(node2));
   }
 
@@ -68,20 +68,20 @@ test_flattened_binary_reduction()
 
     jlm::rvsdg::view(graph, stdout);
     assert(
-        graph.root()->nnodes() == 1 && region::Contains<flattened_binary_op>(*graph.root(), false));
+        graph.root()->nnodes() == 1 && Region::Contains<flattened_binary_op>(*graph.root(), false));
 
     flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::linear);
     jlm::rvsdg::view(graph, stdout);
 
     assert(graph.root()->nnodes() == 3);
 
-    auto node0 = node_output::node(ex.origin());
+    auto node0 = output::GetNode(*ex.origin());
     assert(is<jlm::tests::binary_op>(node0));
 
-    auto node1 = node_output::node(node0->input(0)->origin());
+    auto node1 = output::GetNode(*node0->input(0)->origin());
     assert(is<jlm::tests::binary_op>(node1));
 
-    auto node2 = node_output::node(node1->input(0)->origin());
+    auto node2 = output::GetNode(*node1->input(0)->origin());
     assert(is<jlm::tests::binary_op>(node2));
   }
 }

@@ -36,7 +36,7 @@ TestGamma()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto controlType = jlm::rvsdg::ctltype::Create(2);
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType =
       FunctionType::Create({ controlType, valueType, valueType }, { valueType, valueType });
 
@@ -50,12 +50,12 @@ TestGamma()
   auto x = lambdaNode->fctargument(1);
   auto y = lambdaNode->fctargument(2);
 
-  auto gammaNode1 = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gammaNode1 = jlm::rvsdg::GammaNode::create(c, 2);
   auto gammaInput1 = gammaNode1->add_entryvar(c);
   auto gammaInput2 = gammaNode1->add_entryvar(x);
   auto gammaInput3 = gammaNode1->add_entryvar(y);
 
-  auto gammaNode2 = jlm::rvsdg::gamma_node::create(gammaInput1->argument(0), 2);
+  auto gammaNode2 = jlm::rvsdg::GammaNode::create(gammaInput1->argument(0), 2);
   auto gammaInput4 = gammaNode2->add_entryvar(gammaInput2->argument(0));
   auto gammaInput5 = gammaNode2->add_entryvar(gammaInput3->argument(0));
   gammaNode2->add_exitvar({ gammaInput4->argument(0), gammaInput4->argument(1) });
@@ -88,7 +88,7 @@ TestTheta()
 
   auto ioStateType = iostatetype::Create();
   auto valueType = jlm::tests::valuetype::Create();
-  auto controlType = jlm::rvsdg::ctltype::Create(2);
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = FunctionType::Create(
       { controlType, valueType, ioStateType },
       { controlType, valueType, ioStateType });
@@ -103,12 +103,12 @@ TestTheta()
   auto x = lambdaNode->fctargument(1);
   auto l = lambdaNode->fctargument(2);
 
-  auto thetaNode1 = jlm::rvsdg::theta_node::create(lambdaNode->subregion());
+  auto thetaNode1 = jlm::rvsdg::ThetaNode::create(lambdaNode->subregion());
   auto thetaOutput1 = thetaNode1->add_loopvar(c);
   auto thetaOutput2 = thetaNode1->add_loopvar(x);
   auto thetaOutput3 = thetaNode1->add_loopvar(l);
 
-  auto thetaNode2 = jlm::rvsdg::theta_node::create(thetaNode1->subregion());
+  auto thetaNode2 = jlm::rvsdg::ThetaNode::create(thetaNode1->subregion());
   auto thetaOutput4 = thetaNode2->add_loopvar(thetaOutput1->argument());
   thetaNode2->add_loopvar(thetaOutput2->argument());
   auto thetaOutput5 = thetaNode2->add_loopvar(thetaOutput3->argument());
@@ -143,7 +143,7 @@ TestCall()
   auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
-  auto controlType = jlm::rvsdg::ctltype::Create(2);
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionTypeTest1 = FunctionType::Create(
       { controlType, valueType, valueType, ioStateType, memoryStateType },
       { valueType, valueType, ioStateType, memoryStateType });
@@ -162,7 +162,7 @@ TestCall()
     auto ioStateArgument = lambdaNode->fctargument(3);
     auto memoryStateArgument = lambdaNode->fctargument(4);
 
-    auto gammaNode = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
     auto gammaInputX = gammaNode->add_entryvar(xArgument);
     auto gammaInputY = gammaNode->add_entryvar(yArgument);
     auto gammaInputIOState = gammaNode->add_entryvar(ioStateArgument);
@@ -230,7 +230,7 @@ TestCallWithMemoryStateNodes()
   auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
-  auto controlType = jlm::rvsdg::ctltype::Create(2);
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionTypeTest1 = FunctionType::Create(
       { controlType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
@@ -251,7 +251,7 @@ TestCallWithMemoryStateNodes()
     auto lambdaEntrySplitResults =
         LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 2);
 
-    auto gammaNode = jlm::rvsdg::gamma_node::create(controlArgument, 2);
+    auto gammaNode = jlm::rvsdg::GammaNode::create(controlArgument, 2);
 
     auto gammaInputX = gammaNode->add_entryvar(xArgument);
     auto gammaInputMemoryState1 = gammaNode->add_entryvar(lambdaEntrySplitResults[0]);

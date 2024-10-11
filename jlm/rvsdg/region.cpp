@@ -14,7 +14,7 @@
 namespace jlm::rvsdg
 {
 
-argument::~argument() noexcept
+RegionArgument::~RegionArgument() noexcept
 {
   on_output_destroy(this);
 
@@ -22,10 +22,10 @@ argument::~argument() noexcept
     input()->arguments.erase(this);
 }
 
-argument::argument(
-    jlm::rvsdg::region * region,
+RegionArgument::RegionArgument(
+    rvsdg::Region * region,
     jlm::rvsdg::structural_input * input,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : output(region, std::move(type)),
       input_(input)
 {
@@ -43,7 +43,7 @@ argument::argument(
   }
 }
 
-result::~result() noexcept
+RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
 
@@ -51,11 +51,11 @@ result::~result() noexcept
     output()->results.erase(this);
 }
 
-result::result(
-    jlm::rvsdg::region * region,
+RegionResult::RegionResult(
+    rvsdg::Region * region,
     jlm::rvsdg::output * origin,
     jlm::rvsdg::structural_output * output,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : input(origin, region, std::move(type)),
       output_(output)
 {
@@ -73,7 +73,7 @@ result::result(
   }
 }
 
-region::~region()
+Region::~Region() noexcept
 {
   on_region_destroy(this);
 
@@ -83,13 +83,13 @@ region::~region()
   prune(false);
   JLM_ASSERT(nodes.empty());
   JLM_ASSERT(top_nodes.empty());
-  JLM_ASSERT(bottom_nodes.empty());
+  JLM_ASSERT(NumBottomNodes() == 0);
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
 }
 
-region::region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph)
+Region::Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph)
     : index_(0),
       graph_(graph),
       node_(nullptr)
@@ -97,7 +97,7 @@ region::region(jlm::rvsdg::region * parent, jlm::rvsdg::graph * graph)
   on_region_create(this);
 }
 
-region::region(jlm::rvsdg::structural_node * node, size_t index)
+Region::Region(jlm::rvsdg::structural_node * node, size_t index)
     : index_(index),
       graph_(node->graph()),
       node_(node)
@@ -106,7 +106,7 @@ region::region(jlm::rvsdg::structural_node * node, size_t index)
 }
 
 void
-region::append_argument(jlm::rvsdg::argument * argument)
+Region::append_argument(RegionArgument * argument)
 {
   if (argument->region() != this)
     throw jlm::util::error("Appending argument to wrong region.");
@@ -122,10 +122,10 @@ region::append_argument(jlm::rvsdg::argument * argument)
 }
 
 void
-region::RemoveArgument(size_t index)
+Region::RemoveArgument(size_t index)
 {
   JLM_ASSERT(index < narguments());
-  jlm::rvsdg::argument * argument = arguments_[index];
+  RegionArgument * argument = arguments_[index];
 
   delete argument;
   for (size_t n = index; n < arguments_.size() - 1; n++)
@@ -137,7 +137,7 @@ region::RemoveArgument(size_t index)
 }
 
 void
-region::append_result(jlm::rvsdg::result * result)
+Region::append_result(RegionResult * result)
 {
   if (result->region() != this)
     throw jlm::util::error("Appending result to wrong region.");
@@ -157,10 +157,10 @@ region::append_result(jlm::rvsdg::result * result)
 }
 
 void
-region::RemoveResult(size_t index)
+Region::RemoveResult(size_t index)
 {
   JLM_ASSERT(index < results_.size());
-  jlm::rvsdg::result * result = results_[index];
+  RegionResult * result = results_[index];
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)
@@ -172,13 +172,36 @@ region::RemoveResult(size_t index)
 }
 
 void
-region::remove_node(jlm::rvsdg::node * node)
+Region::remove_node(jlm::rvsdg::node * node)
 {
   delete node;
 }
 
+bool
+Region::AddBottomNode(rvsdg::node & node)
+{
+  if (node.region() != this)
+    return false;
+
+  if (!node.IsDead())
+    return false;
+
+  // FIXME: We should check that a node is not already part of the bottom nodes before adding it.
+  BottomNodes_.push_back(&node);
+
+  return true;
+}
+
+bool
+Region::RemoveBottomNode(rvsdg::node & node)
+{
+  auto numBottomNodes = NumBottomNodes();
+  BottomNodes_.erase(&node);
+  return numBottomNodes != NumBottomNodes();
+}
+
 void
-region::copy(region * target, substitution_map & smap, bool copy_arguments, bool copy_results) const
+Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const
 {
   smap.insert(this, target);
 
@@ -225,10 +248,10 @@ region::copy(region * target, substitution_map & smap, bool copy_arguments, bool
 }
 
 void
-region::prune(bool recursive)
+Region::prune(bool recursive)
 {
-  while (bottom_nodes.first())
-    remove_node(bottom_nodes.first());
+  while (BottomNodes_.first())
+    remove_node(BottomNodes_.first());
 
   if (!recursive)
     return;
@@ -244,7 +267,7 @@ region::prune(bool recursive)
 }
 
 void
-region::normalize(bool recursive)
+Region::normalize(bool recursive)
 {
   for (auto node : jlm::rvsdg::topdown_traverser(this))
   {
@@ -260,13 +283,13 @@ region::normalize(bool recursive)
 }
 
 bool
-region::IsRootRegion() const noexcept
+Region::IsRootRegion() const noexcept
 {
   return this->graph()->root() == this;
 }
 
 size_t
-region::NumRegions(const jlm::rvsdg::region & region) noexcept
+Region::NumRegions(const rvsdg::Region & region) noexcept
 {
   size_t numRegions = 1;
   for (auto & node : region.nodes)
@@ -284,7 +307,7 @@ region::NumRegions(const jlm::rvsdg::region & region) noexcept
 }
 
 std::string
-region::ToTree(const rvsdg::region & region, const util::AnnotationMap & annotationMap) noexcept
+Region::ToTree(const rvsdg::Region & region, const util::AnnotationMap & annotationMap) noexcept
 {
   std::stringstream stream;
   ToTree(region, annotationMap, 0, stream);
@@ -292,7 +315,7 @@ region::ToTree(const rvsdg::region & region, const util::AnnotationMap & annotat
 }
 
 std::string
-region::ToTree(const rvsdg::region & region) noexcept
+Region::ToTree(const rvsdg::Region & region) noexcept
 {
   std::stringstream stream;
   util::AnnotationMap annotationMap;
@@ -301,8 +324,8 @@ region::ToTree(const rvsdg::region & region) noexcept
 }
 
 void
-region::ToTree(
-    const rvsdg::region & region,
+Region::ToTree(
+    const rvsdg::Region & region,
     const util::AnnotationMap & annotationMap,
     size_t indentationDepth,
     std::stringstream & stream) noexcept
@@ -344,7 +367,7 @@ region::ToTree(
 }
 
 std::string
-region::GetAnnotationString(
+Region::GetAnnotationString(
     const void * key,
     const util::AnnotationMap & annotationMap,
     char annotationSeparator,
@@ -358,7 +381,7 @@ region::GetAnnotationString(
 }
 
 std::string
-region::ToString(
+Region::ToString(
     const std::vector<util::Annotation> & annotations,
     char annotationSeparator,
     char labelValueSeparator)
@@ -374,7 +397,7 @@ region::ToString(
 }
 
 std::string
-region::ToString(const util::Annotation & annotation, char labelValueSeparator)
+Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
 {
   std::string value;
   if (annotation.HasValueType<std::string>())
@@ -402,7 +425,7 @@ region::ToString(const util::Annotation & annotation, char labelValueSeparator)
 }
 
 size_t
-nnodes(const jlm::rvsdg::region * region) noexcept
+nnodes(const jlm::rvsdg::Region * region) noexcept
 {
   size_t n = region->nnodes();
   for (const auto & node : region->nodes)
@@ -418,7 +441,7 @@ nnodes(const jlm::rvsdg::region * region) noexcept
 }
 
 size_t
-nstructnodes(const jlm::rvsdg::region * region) noexcept
+nstructnodes(const rvsdg::Region * region) noexcept
 {
   size_t n = 0;
   for (const auto & node : region->nodes)
@@ -435,7 +458,7 @@ nstructnodes(const jlm::rvsdg::region * region) noexcept
 }
 
 size_t
-nsimpnodes(const jlm::rvsdg::region * region) noexcept
+nsimpnodes(const rvsdg::Region * region) noexcept
 {
   size_t n = 0;
   for (const auto & node : region->nodes)
@@ -455,7 +478,7 @@ nsimpnodes(const jlm::rvsdg::region * region) noexcept
 }
 
 size_t
-ninputs(const jlm::rvsdg::region * region) noexcept
+ninputs(const rvsdg::Region * region) noexcept
 {
   size_t n = region->nresults();
   for (const auto & node : region->nodes)

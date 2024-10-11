@@ -39,7 +39,7 @@ mem_sep_argument(llvm::RvsdgModule & rm)
 }
 
 // from MemoryStateEncoder.cpp
-jlm::rvsdg::argument *
+rvsdg::RegionArgument *
 GetMemoryStateArgument(const llvm::lambda::node & lambda)
 {
   auto subregion = lambda.subregion();
@@ -52,7 +52,7 @@ GetMemoryStateArgument(const llvm::lambda::node & lambda)
   return nullptr;
 }
 
-jlm::rvsdg::result *
+rvsdg::RegionResult *
 GetMemoryStateResult(const llvm::lambda::node & lambda)
 {
   auto subregion = lambda.subregion();
@@ -67,7 +67,7 @@ GetMemoryStateResult(const llvm::lambda::node & lambda)
 }
 
 void
-gather_mem_nodes(jlm::rvsdg::region * region, std::vector<jlm::rvsdg::simple_node *> & mem_nodes)
+gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::simple_node *> & mem_nodes)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -91,7 +91,7 @@ gather_mem_nodes(jlm::rvsdg::region * region, std::vector<jlm::rvsdg::simple_nod
 }
 
 jlm::rvsdg::output *
-route_through(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
+route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
 {
   if (response->region() == target)
   {
@@ -101,7 +101,7 @@ route_through(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
   {
     auto parent_response = route_through(target->node()->region(), response);
     auto parrent_user = *parent_response->begin();
-    if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(target->node()))
+    if (auto gn = dynamic_cast<rvsdg::GammaNode *>(target->node()))
     {
       auto ip = gn->add_entryvar(parent_response);
       std::vector<jlm::rvsdg::output *> vec;
@@ -119,7 +119,7 @@ route_through(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
       }
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
     }
-    else if (auto tn = dynamic_cast<jlm::rvsdg::theta_node *>(target->node()))
+    else if (auto tn = dynamic_cast<rvsdg::ThetaNode *>(target->node()))
     {
       auto lv = tn->add_loopvar(parent_response);
       parrent_user->divert_to(lv);
@@ -131,7 +131,7 @@ route_through(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
 
 /* assign each load and store its own state edge. */
 void
-mem_sep_independent(jlm::rvsdg::region * region)
+mem_sep_independent(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
   auto lambda_region = lambda->subregion();
@@ -170,7 +170,7 @@ mem_sep_independent(jlm::rvsdg::region * region)
   }
 }
 
-jlm::rvsdg::result *
+rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::output * common_edge,
     jlm::rvsdg::output * new_edge,
@@ -188,12 +188,12 @@ trace_edge(
     JLM_ASSERT(new_edge->nusers() == 1);
     auto user = *common_edge->begin();
     auto new_next = *new_edge->begin();
-    if (auto res = dynamic_cast<jlm::rvsdg::result *>(user))
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       // end of region reached
       return res;
     }
-    else if (auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user))
+    else if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
     {
       auto gn = gi->node();
       auto ip = gn->add_entryvar(new_edge);
@@ -211,7 +211,7 @@ trace_edge(
         common_edge = subres->output();
       }
     }
-    else if (auto ti = dynamic_cast<jlm::rvsdg::theta_input *>(user))
+    else if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
     {
       auto tn = ti->node();
       auto lv = tn->add_loopvar(new_edge);
@@ -275,7 +275,7 @@ trace_edge(
 
 /* assign each pointer argument its own state edge. */
 void
-mem_sep_argument(jlm::rvsdg::region * region)
+mem_sep_argument(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
   auto lambda_region = lambda->subregion();

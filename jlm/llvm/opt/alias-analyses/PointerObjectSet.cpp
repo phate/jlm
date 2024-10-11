@@ -26,12 +26,12 @@ namespace jlm::llvm::aa
 static constexpr bool ENABLE_UNIFICATION = true;
 
 PointerObjectIndex
-PointerObjectSet::AddPointerObject(PointerObjectKind kind)
+PointerObjectSet::AddPointerObject(PointerObjectKind kind, bool canPoint)
 {
   JLM_ASSERT(PointerObjects_.size() < std::numeric_limits<PointerObjectIndex>::max());
   PointerObjectIndex index = PointerObjects_.size();
 
-  PointerObjects_.emplace_back(kind);
+  PointerObjects_.emplace_back(kind, canPoint);
   if constexpr (ENABLE_UNIFICATION)
   {
     PointerObjectParents_.push_back(index);
@@ -48,17 +48,6 @@ PointerObjectSet::NumPointerObjects() const noexcept
 }
 
 size_t
-PointerObjectSet::NumPointerObjectsWithImplicitPointees() const noexcept
-{
-  size_t count = 0;
-  for (auto & pointerObject : PointerObjects_)
-  {
-    count += pointerObject.CanTrackPointeesImplicitly();
-  }
-  return count;
-}
-
-size_t
 PointerObjectSet::NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept
 {
   size_t count = 0;
@@ -69,11 +58,34 @@ PointerObjectSet::NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept
   return count;
 }
 
+size_t
+PointerObjectSet::NumRegisterPointerObjects() const noexcept
+{
+  return NumPointerObjectsOfKind(PointerObjectKind::Register);
+}
+
+size_t
+PointerObjectSet::NumMemoryPointerObjects() const noexcept
+{
+  return NumPointerObjects() - NumRegisterPointerObjects();
+}
+
+size_t
+PointerObjectSet::NumMemoryPointerObjectsCanPoint() const noexcept
+{
+  size_t count = 0;
+  for (auto & pointerObject : PointerObjects_)
+  {
+    count += !pointerObject.IsRegister() && pointerObject.CanPoint();
+  }
+  return count;
+}
+
 PointerObjectIndex
 PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
-  return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register);
+  return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register, true);
 }
 
 PointerObjectIndex
@@ -105,35 +117,37 @@ PointerObjectSet::MapRegisterToExistingPointerObject(
 PointerObjectIndex
 PointerObjectSet::CreateDummyRegisterPointerObject()
 {
-  return AddPointerObject(PointerObjectKind::Register);
+  return AddPointerObject(PointerObjectKind::Register, true);
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode)
+PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode, bool canPoint)
 {
   JLM_ASSERT(AllocaMap_.count(&allocaNode) == 0);
-  return AllocaMap_[&allocaNode] = AddPointerObject(PointerObjectKind::AllocaMemoryObject);
+  return AllocaMap_[&allocaNode] =
+             AddPointerObject(PointerObjectKind::AllocaMemoryObject, canPoint);
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateMallocMemoryObject(const rvsdg::node & mallocNode)
+PointerObjectSet::CreateMallocMemoryObject(const rvsdg::node & mallocNode, bool canPoint)
 {
   JLM_ASSERT(MallocMap_.count(&mallocNode) == 0);
-  return MallocMap_[&mallocNode] = AddPointerObject(PointerObjectKind::MallocMemoryObject);
+  return MallocMap_[&mallocNode] =
+             AddPointerObject(PointerObjectKind::MallocMemoryObject, canPoint);
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode)
+PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode, bool canPoint)
 {
   JLM_ASSERT(GlobalMap_.count(&deltaNode) == 0);
-  return GlobalMap_[&deltaNode] = AddPointerObject(PointerObjectKind::GlobalMemoryObject);
+  return GlobalMap_[&deltaNode] = AddPointerObject(PointerObjectKind::GlobalMemoryObject, canPoint);
 }
 
 PointerObjectIndex
 PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 {
   JLM_ASSERT(!FunctionMap_.HasKey(&lambdaNode));
-  const auto pointerObject = AddPointerObject(PointerObjectKind::FunctionMemoryObject);
+  const auto pointerObject = AddPointerObject(PointerObjectKind::FunctionMemoryObject, false);
   FunctionMap_.Insert(&lambdaNode, pointerObject);
   return pointerObject;
 }
@@ -156,7 +170,10 @@ PointerObjectIndex
 PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode)
 {
   JLM_ASSERT(ImportMap_.count(&importNode) == 0);
-  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject);
+
+  // All import memory objects are marked as CanPoint() == false, as the analysis has no chance at
+  // tracking the points-to set of pointers located in separate modules
+  auto importMemoryObject = AddPointerObject(PointerObjectKind::ImportMemoryObject, false);
   ImportMap_[&importNode] = importMemoryObject;
 
   // Memory objects defined in other modules are definitely not private to this module
@@ -208,10 +225,10 @@ PointerObjectSet::GetPointerObjectKind(PointerObjectIndex index) const noexcept
 }
 
 bool
-PointerObjectSet::ShouldTrackPointees(PointerObjectIndex index) const noexcept
+PointerObjectSet::CanPoint(PointerObjectIndex index) const noexcept
 {
   JLM_ASSERT(index < NumPointerObjects());
-  return PointerObjects_[index].ShouldTrackPointees();
+  return PointerObjects_[index].CanPoint();
 }
 
 bool
@@ -339,8 +356,13 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
   PointerObjectParents_[oldRoot] = newRoot;
 
   // Copy over all pointees, and clean the pointee set from the old root
-  PointsToSets_[newRoot].UnionWith(PointsToSets_[oldRoot]);
-  PointsToSets_[oldRoot].Clear();
+  auto & oldRootPointees = PointsToSets_[oldRoot];
+
+  NumSetInsertionAttempts_ += oldRootPointees.Size();
+  PointsToSets_[newRoot].UnionWith(oldRootPointees);
+
+  NumExplicitPointeesRemoved_ += oldRootPointees.Size();
+  oldRootPointees.Clear();
 
   return newRoot;
 }
@@ -362,6 +384,7 @@ PointerObjectSet::AddToPointsToSet(PointerObjectIndex pointer, PointerObjectInde
 
   const auto pointerRoot = GetUnificationRoot(pointer);
 
+  NumSetInsertionAttempts_++;
   return PointsToSets_[pointerRoot].Insert(pointee);
 }
 
@@ -381,6 +404,8 @@ PointerObjectSet::PropagateNewPointees(
 
   auto & P_super = PointsToSets_[supersetRoot];
   auto & P_sub = PointsToSets_[subsetRoot];
+
+  NumSetInsertionAttempts_ += P_sub.Size();
 
   bool modified = false;
   for (PointerObjectIndex pointee : P_sub.Items())
@@ -426,6 +451,7 @@ void
 PointerObjectSet::RemoveAllPointees(PointerObjectIndex index)
 {
   auto root = GetUnificationRoot(index);
+  NumExplicitPointeesRemoved_ += PointsToSets_[root].Size();
   PointsToSets_[root].Clear();
 }
 
@@ -483,6 +509,18 @@ PointerObjectSet::HasIdenticalSolAs(const PointerObjectSet & other) const
     }
   }
   return true;
+}
+
+size_t
+PointerObjectSet::GetNumSetInsertionAttempts() const noexcept
+{
+  return NumSetInsertionAttempts_;
+}
+
+size_t
+PointerObjectSet::GetNumExplicitPointeesRemoved() const noexcept
+{
+  return NumExplicitPointeesRemoved_;
 }
 
 // Makes P(superset) a superset of P(subset)
@@ -792,18 +830,18 @@ HandleEscapedFunction(
     markAsPointsToExternal(argumentPO.value());
   }
 
-  // All results of pointer type need to be flagged as HasEscaped
+  // All results of pointer type need to be flagged as pointees escaping
   for (auto & result : lambdaNode.fctresults())
   {
     const auto resultPO = set.TryGetRegisterPointerObject(*result.origin());
     if (!resultPO)
       continue;
 
-    // Nothing to be done if it is already marked as escaped
-    if (set.HasEscaped(resultPO.value()))
+    // Nothing to be done if it is already marked as pointees escaping
+    if (set.HasPointeesEscaping(resultPO.value()))
       continue;
 
-    // Mark the result register as escaping any pointees it may have
+    // Mark the result register as making any pointees it may have escape
     markAsPointeesEscaping(resultPO.value());
   }
 }
@@ -961,8 +999,8 @@ CreateSubsetGraphNodeLabel(PointerObjectSet & set, PointerObjectIndex index)
     label << "#" << set.GetUnificationRoot(index);
   }
 
-  if (!set.ShouldTrackPointees(index))
-    label << "\nNOTRACK";
+  if (!set.CanPoint(index))
+    label << "\nCantPoint";
 
   return label.str();
 }
@@ -1610,7 +1648,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     statistics.NumHybridCycleUnifications = 0;
 
   if constexpr (EnablePreferImplicitPointees)
-    statistics.NumExplicitPointeesRemoved = 0;
+    statistics.NumPipExplicitPointeesRemoved = 0;
 
   // The worklist, initialized with every unification root
   Worklist worklist;
@@ -1757,7 +1795,10 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
         // if any unification happens, the result must be added to the worklist
         bool anyUnification = false;
-        for (const auto pointee : newPointees.Items())
+
+        // Make a copy of the set, as the node itself may be unified, invalidating newPointees
+        auto unificationMembers = newPointees;
+        for (const auto pointee : unificationMembers.Items())
         {
           const auto pointeeRoot = Set_.GetUnificationRoot(pointee);
           if (pointeeRoot == refUnificationRoot)
@@ -1772,8 +1813,8 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         {
           JLM_ASSERT(Set_.IsUnificationRoot(refUnificationRoot));
           worklist.PushWorkItem(refUnificationRoot);
-          // If the current node became unified due to HCD, stop the current work item visit.
-          if (Set_.GetUnificationRoot(node) == refUnificationRoot)
+          // If the node itself was unified, the new root has been added to the worklist, so exit
+          if (refUnificationRoot == Set_.GetUnificationRoot(node))
             return;
         }
       }
@@ -1840,7 +1881,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     // If this node can track all pointees implicitly, remove its explicit nodes
     if (EnablePreferImplicitPointees && Set_.CanTrackPointeesImplicitly(node))
     {
-      *(statistics.NumExplicitPointeesRemoved) += Set_.GetPointsToSet(node).Size();
+      *(statistics.NumPipExplicitPointeesRemoved) += Set_.GetPointsToSet(node).Size();
       // This also causes newPointees to become empty
       RemoveAllPointees(node);
     }
@@ -1961,13 +2002,12 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     FlushNewSupersetEdges();
   };
 
-  // The observer worklist only contains one bit of state:
-  //   "has anything been pushed since last reset?"
+  // The Workset worklist only remembers which work items have been pushed.
   // It does not provide an iteration order, so if any work item need to be revisited,
-  // we do a topological traversal over all work items instead, called a "sweep".
+  // we do a topological traversal over all work items instead, visiting ones in the Workset.
   // Performing topological sorting also detects all cycles, which are unified away.
   constexpr bool useTopologicalTraversal =
-      std::is_same_v<Worklist, util::ObserverWorklist<PointerObjectIndex>>;
+      std::is_same_v<Worklist, util::Workset<PointerObjectIndex>>;
 
   if constexpr (useTopologicalTraversal)
   {
@@ -1976,10 +2016,9 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 
     statistics.NumTopologicalWorklistSweeps = 0;
 
-    while (worklist.HasPushBeenMade())
+    while (worklist.HasMoreWorkItems())
     {
       (*statistics.NumTopologicalWorklistSweeps)++;
-      worklist.ResetPush();
 
       // First perform a topological sort of the entire subset graph, with respect to simple edges
       util::FindStronglyConnectedComponents<PointerObjectIndex>(
@@ -1988,7 +2027,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
           sccIndex,
           topologicalOrder);
 
-      // Visit all nodes in topological order
+      // Visit nodes in topological order, if they are in the workset.
       // cycles will result in neighbouring nodes in the topologicalOrder sharing sccIndex
       for (size_t i = 0; i < topologicalOrder.size(); i++)
       {
@@ -2001,13 +2040,19 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
           {
             // This node is in a cycle with the next node, unify them
             nextNode = UnifyPointerObjects(node, nextNode);
+            // Make sure the new root is visited
+            worklist.RemoveWorkItem(node);
+            worklist.PushWorkItem(nextNode);
             continue;
           }
         }
 
-        // Otherwise handle the work item (only unification roots)
-        if (Set_.IsUnificationRoot(node))
+        // If this work item is in the workset, handle it. Repeat immediately if it gets re-added.
+        while (worklist.HasWorkItem(node))
+        {
+          worklist.RemoveWorkItem(node);
           HandleWorkItem(node);
+        }
       }
     }
   }
@@ -2060,7 +2105,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
     constexpr bool vPreferImplicitPointees = decltype(tPreferImplicitPointees)::value;
 
     if constexpr (
-        std::is_same_v<Worklist, util::ObserverWorklist<PointerObjectIndex>>
+        std::is_same_v<Worklist, util::Workset<PointerObjectIndex>>
         && (vOnlineCycleDetection || vHybridCycleDetection || vLazyCycleDetection))
     {
       JLM_UNREACHABLE("Can not enable online, hybrid or lazy cycle detection with the topo policy");
@@ -2084,11 +2129,11 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   };
 
   std::variant<
-      typename util::LrfWorklist<PointerObjectIndex> *,
-      typename util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
-      typename util::ObserverWorklist<PointerObjectIndex> *,
-      typename util::LifoWorklist<PointerObjectIndex> *,
-      typename util::FifoWorklist<PointerObjectIndex> *>
+      util::LrfWorklist<PointerObjectIndex> *,
+      util::TwoPhaseLrfWorklist<PointerObjectIndex> *,
+      util::Workset<PointerObjectIndex> *,
+      util::LifoWorklist<PointerObjectIndex> *,
+      util::FifoWorklist<PointerObjectIndex> *>
       policyVariant;
 
   if (policy == WorklistSolverPolicy::LeastRecentlyFired)
@@ -2096,7 +2141,7 @@ PointerObjectConstraintSet::SolveUsingWorklist(
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
     policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::TopologicalSort)
-    policyVariant = (util::ObserverWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = (util::Workset<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
     policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)

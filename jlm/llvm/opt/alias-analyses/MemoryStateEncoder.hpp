@@ -83,7 +83,7 @@ public:
 
 private:
   void
-  EncodeRegion(rvsdg::region & region);
+  EncodeRegion(rvsdg::Region & region);
 
   void
   EncodeStructuralNode(rvsdg::structural_node & structuralNode);
@@ -134,24 +134,24 @@ private:
   EncodeDelta(const delta::node & deltaNode);
 
   void
-  EncodeGamma(rvsdg::gamma_node & gammaNode);
+  EncodeGamma(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaEntry(rvsdg::gamma_node & gammaNode);
+  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaExit(rvsdg::gamma_node & gammaNode);
+  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeTheta(rvsdg::theta_node & thetaNode);
+  EncodeTheta(rvsdg::ThetaNode & thetaNode);
 
-  std::vector<rvsdg::theta_output *>
-  EncodeThetaEntry(rvsdg::theta_node & thetaNode);
+  std::vector<rvsdg::ThetaOutput *>
+  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
 
   void
   EncodeThetaExit(
-      rvsdg::theta_node & thetaNode,
-      const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
+      rvsdg::ThetaNode & thetaNode,
+      const std::vector<rvsdg::ThetaOutput *> & thetaStateOutputs);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the

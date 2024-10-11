@@ -15,7 +15,7 @@ namespace jlm::hls
 {
 
 jlm::rvsdg::output *
-get_trigger(jlm::rvsdg::region * region)
+get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
@@ -28,16 +28,16 @@ get_trigger(jlm::rvsdg::region * region)
 }
 
 jlm::llvm::lambda::node *
-add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::type> type)
+add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto old_fcttype = ln->type();
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_argument_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
     new_argument_types.push_back(old_fcttype.Arguments()[i]);
   }
   new_argument_types.push_back(std::move(type));
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> new_result_types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_result_types;
   for (size_t i = 0; i < old_fcttype.NumResults(); ++i)
   {
     new_result_types.push_back(old_fcttype.Results()[i]);
@@ -50,7 +50,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::t
       ln->linkage(),
       ln->attributes());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t i = 0; i < ln->ncvarguments(); ++i)
   {
     // copy over cvarguments
@@ -84,7 +84,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::t
 }
 
 void
-add_triggers(jlm::rvsdg::region * region)
+add_triggers(rvsdg::Region * region)
 {
   auto trigger = get_trigger(region);
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
@@ -100,14 +100,14 @@ add_triggers(jlm::rvsdg::region * region)
           add_triggers(new_lambda->subregion());
         }
       }
-      else if (auto t = dynamic_cast<jlm::rvsdg::theta_node *>(node))
+      else if (auto t = dynamic_cast<rvsdg::ThetaNode *>(node))
       {
         JLM_ASSERT(trigger != nullptr);
         JLM_ASSERT(get_trigger(t->subregion()) == nullptr);
         t->add_loopvar(trigger);
         add_triggers(t->subregion());
       }
-      else if (auto gn = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      else if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
       {
         JLM_ASSERT(trigger != nullptr);
         JLM_ASSERT(get_trigger(gn->subregion(0)) == nullptr);

@@ -19,7 +19,7 @@ namespace jlm::hls
  * /param region The region for which to insert forks.
  */
 void
-add_forks(rvsdg::region * region);
+add_forks(rvsdg::Region * region);
 
 /**
  * Adds a fork for every output that has multiple consumers (node inputs). The original output is

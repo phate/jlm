@@ -28,22 +28,22 @@ class type;
 class graph;
 class node_normal_form;
 class output;
-class substitution_map;
+class SubstitutionMap;
 
 /* inputs */
 
 class input
 {
   friend class jlm::rvsdg::node;
-  friend class jlm::rvsdg::region;
+  friend class rvsdg::Region;
 
 public:
   virtual ~input() noexcept;
 
   input(
       jlm::rvsdg::output * origin,
-      jlm::rvsdg::region * region,
-      std::shared_ptr<const rvsdg::type> type);
+      rvsdg::Region * region,
+      std::shared_ptr<const rvsdg::Type> type);
 
   input(const input &) = delete;
 
@@ -70,19 +70,19 @@ public:
   void
   divert_to(jlm::rvsdg::output * new_origin);
 
-  [[nodiscard]] const rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
     return *Type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return Type_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
@@ -264,8 +264,8 @@ public:
 private:
   size_t index_;
   jlm::rvsdg::output * origin_;
-  jlm::rvsdg::region * region_;
-  std::shared_ptr<const rvsdg::type> Type_;
+  rvsdg::Region * region_;
+  std::shared_ptr<const rvsdg::Type> Type_;
 };
 
 template<class T>
@@ -285,14 +285,14 @@ class output
 {
   friend input;
   friend class jlm::rvsdg::node;
-  friend class jlm::rvsdg::region;
+  friend class rvsdg::Region;
 
   typedef std::unordered_set<jlm::rvsdg::input *>::const_iterator user_iterator;
 
 public:
   virtual ~output() noexcept;
 
-  output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type);
+  output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
 
   output(const output &) = delete;
 
@@ -353,19 +353,19 @@ public:
     return users_.end();
   }
 
-  [[nodiscard]] const rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
     return *Type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return Type_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
@@ -373,6 +373,17 @@ public:
 
   virtual std::string
   debug_string() const;
+
+  /**
+   * Retrieve the associated node from \p output if \p output is derived from
+   * jlm::rvsdg::node_output.
+   *
+   * @param output The output from which to retrieve the node.
+   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
+   * otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::node *
+  GetNode(const rvsdg::output & output) noexcept;
 
   template<class T>
   class iterator
@@ -542,8 +553,8 @@ private:
   add_user(jlm::rvsdg::input * user);
 
   size_t index_;
-  jlm::rvsdg::region * region_;
-  std::shared_ptr<const rvsdg::type> Type_;
+  rvsdg::Region * region_;
+  std::shared_ptr<const rvsdg::Type> Type_;
   std::unordered_set<jlm::rvsdg::input *> users_;
 };
 
@@ -566,7 +577,7 @@ public:
   node_input(
       jlm::rvsdg::output * origin,
       jlm::rvsdg::node * node,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
   jlm::rvsdg::node *
   node() const noexcept
@@ -583,7 +594,7 @@ private:
 class node_output : public jlm::rvsdg::output
 {
 public:
-  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type);
+  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type);
 
   jlm::rvsdg::node *
   node() const noexcept
@@ -609,7 +620,7 @@ class node
 public:
   virtual ~node();
 
-  node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region);
+  node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region);
 
   inline const jlm::rvsdg::operation &
   operation() const noexcept
@@ -684,6 +695,27 @@ public:
 
   inline void
   recompute_depth() noexcept;
+
+  /**
+   * \brief Determines whether the node is dead.
+   *
+   * A node is considered dead if all its outputs are dead.
+   *
+   * @return True, if the node is dead, otherwise false.
+   *
+   * \see output::IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    for (auto & output : outputs_)
+    {
+      if (!output->IsDead())
+        return false;
+    }
+
+    return true;
+  }
 
 protected:
   node_input *
@@ -783,14 +815,14 @@ public:
     return graph_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
   virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const;
 
   /**
     \brief Copy a node with substitutions
@@ -809,7 +841,7 @@ public:
     subsequent \ref copy operations.
   */
   virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const = 0;
+  copy(rvsdg::Region * region, SubstitutionMap & smap) const = 0;
 
   inline size_t
   depth() const noexcept
@@ -840,7 +872,7 @@ public:
 private:
   size_t depth_;
   jlm::rvsdg::graph * graph_;
-  jlm::rvsdg::region * region_;
+  rvsdg::Region * region_;
   std::unique_ptr<jlm::rvsdg::operation> operation_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;

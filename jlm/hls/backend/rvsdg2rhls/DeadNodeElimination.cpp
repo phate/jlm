@@ -81,7 +81,7 @@ RemoveUnusedInputs(hls::loop_node & loopNode)
 }
 
 static bool
-EliminateDeadNodesInRegion(jlm::rvsdg::region & region)
+EliminateDeadNodesInRegion(rvsdg::Region & region)
 {
   bool changed;
   bool anyChanged = false;
@@ -106,7 +106,7 @@ EliminateDeadNodesInRegion(jlm::rvsdg::region & region)
     anyChanged |= changed;
   } while (changed);
 
-  JLM_ASSERT(region.bottom_nodes.empty());
+  JLM_ASSERT(region.NumBottomNodes() == 0);
   return anyChanged;
 }
 

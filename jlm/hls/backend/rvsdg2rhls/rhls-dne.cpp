@@ -68,7 +68,7 @@ remove_loop_passthrough(loop_node * ln)
     if (arg->nusers() == 1)
     {
       auto user = *arg->begin();
-      if (auto result = dynamic_cast<jlm::rvsdg::result *>(user))
+      if (auto result = dynamic_cast<rvsdg::RegionResult *>(user))
       {
         auto out = result->output();
         out->divert_users(in->origin());
@@ -268,7 +268,7 @@ dead_loop(jlm::rvsdg::node * ndmux_node)
 }
 
 bool
-dne(jlm::rvsdg::region * sr)
+dne(rvsdg::Region * sr)
 {
   bool any_changed = false;
   bool changed;

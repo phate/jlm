@@ -24,7 +24,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
     changed = false;
     for (auto user : *out)
     {
-      if (auto ti = dynamic_cast<rvsdg::theta_input *>(user))
+      if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
       {
         auto arg = ti->argument();
         auto res = ti->result();
@@ -45,7 +45,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
           break;
         }
       }
-      if (auto gi = dynamic_cast<rvsdg::gamma_input *>(user))
+      if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
       {
         if (gi->node()->predicate() == gi)
         {
@@ -71,7 +71,7 @@ distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
 }
 
 void
-hls::distribute_constants(rvsdg::region * region)
+hls::distribute_constants(rvsdg::Region * region)
 {
   // push constants down as far as possible, since this is cheaper than having forks and potentially
   // buffers for them
@@ -83,11 +83,11 @@ hls::distribute_constants(rvsdg::region * region)
       {
         distribute_constants(ln->subregion());
       }
-      else if (auto t = dynamic_cast<rvsdg::theta_node *>(node))
+      else if (auto t = dynamic_cast<rvsdg::ThetaNode *>(node))
       {
         distribute_constants(t->subregion());
       }
-      else if (auto gn = dynamic_cast<rvsdg::gamma_node *>(node))
+      else if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
       {
         for (size_t i = 0; i < gn->nsubregions(); ++i)
         {

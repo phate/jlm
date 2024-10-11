@@ -79,7 +79,7 @@ StoreNonVolatileNode::CopyWithNewMemoryStates(
 }
 
 rvsdg::node *
-StoreNonVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands)
+StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -155,7 +155,7 @@ StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & 
 }
 
 rvsdg::node *
-StoreVolatileNode::copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const
+StoreVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
 }
@@ -167,13 +167,13 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
 {
   JLM_ASSERT(operands.size() > 2);
 
-  auto memStateMergeNode = jlm::rvsdg::node_output::node(operands[2]);
+  auto memStateMergeNode = jlm::rvsdg::output::GetNode(*operands[2]);
   if (!is<MemoryStateMergeOperation>(memStateMergeNode))
     return false;
 
   for (size_t n = 2; n < operands.size(); n++)
   {
-    auto node = jlm::rvsdg::node_output::node(operands[n]);
+    auto node = jlm::rvsdg::output::GetNode(*operands[n]);
     if (node != memStateMergeNode)
       return false;
   }
@@ -188,7 +188,7 @@ is_store_store_reducible(
 {
   JLM_ASSERT(operands.size() > 2);
 
-  auto storenode = jlm::rvsdg::node_output::node(operands[2]);
+  auto storenode = jlm::rvsdg::output::GetNode(*operands[2]);
   if (!is<StoreNonVolatileOperation>(storenode))
     return false;
 
@@ -201,7 +201,7 @@ is_store_store_reducible(
 
   for (size_t n = 2; n < operands.size(); n++)
   {
-    if (jlm::rvsdg::node_output::node(operands[n]) != storenode || operands[n]->nusers() != 1)
+    if (jlm::rvsdg::output::GetNode(*operands[n]) != storenode || operands[n]->nusers() != 1)
       return false;
   }
 
@@ -216,7 +216,7 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
   if (operands.size() == 3)
     return false;
 
-  auto alloca = jlm::rvsdg::node_output::node(operands[0]);
+  auto alloca = jlm::rvsdg::output::GetNode(*operands[0]);
   if (!alloca || !is<alloca_op>(alloca->operation()))
     return false;
 
@@ -246,7 +246,7 @@ perform_store_mux_reduction(
     const StoreNonVolatileOperation & op,
     const std::vector<jlm::rvsdg::output *> & operands)
 {
-  auto memStateMergeNode = jlm::rvsdg::node_output::node(operands[2]);
+  auto memStateMergeNode = jlm::rvsdg::output::GetNode(*operands[2]);
   auto memStateMergeOperands = jlm::rvsdg::operands(memStateMergeNode);
 
   auto states = StoreNonVolatileNode::Create(
@@ -263,7 +263,7 @@ perform_store_store_reduction(
     const std::vector<jlm::rvsdg::output *> & operands)
 {
   JLM_ASSERT(is_store_store_reducible(op, operands));
-  auto storenode = jlm::rvsdg::node_output::node(operands[2]);
+  auto storenode = jlm::rvsdg::output::GetNode(*operands[2]);
 
   auto storeops = jlm::rvsdg::operands(storenode);
   std::vector<jlm::rvsdg::output *> states(std::next(std::next(storeops.begin())), storeops.end());
@@ -277,7 +277,7 @@ perform_store_alloca_reduction(
 {
   auto value = operands[1];
   auto address = operands[0];
-  auto alloca_state = jlm::rvsdg::node_output::node(address)->output(1);
+  auto alloca_state = jlm::rvsdg::output::GetNode(*address)->output(1);
   std::unordered_set<jlm::rvsdg::output *> states(
       std::next(std::next(operands.begin())),
       operands.end());
@@ -358,7 +358,7 @@ store_normal_form::normalize_node(jlm::rvsdg::node * node) const
   if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
   {
     auto outputs = perform_multiple_origin_reduction(*op, operands);
-    auto new_node = jlm::rvsdg::node_output::node(outputs[0]);
+    auto new_node = jlm::rvsdg::output::GetNode(*outputs[0]);
 
     std::unordered_map<jlm::rvsdg::output *, jlm::rvsdg::output *> origin2output;
     for (size_t n = 0; n < outputs.size(); n++)
@@ -383,7 +383,7 @@ store_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
 std::vector<jlm::rvsdg::output *>
 store_normal_form::normalized_create(
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     const jlm::rvsdg::simple_op & op,
     const std::vector<jlm::rvsdg::output *> & ops) const
 {

@@ -14,7 +14,7 @@
 namespace jlm::rvsdg
 {
 
-class region;
+class Region;
 
 /**
  * Prints the given rvsdg region to a string,
@@ -25,7 +25,7 @@ class region;
  * @see view(region, map)
  */
 std::string
-view(const jlm::rvsdg::region * region);
+view(const rvsdg::Region * region);
 
 /**
  * Prints the given rvsdg region to a string, and exposes the unique name given to each output.
@@ -35,7 +35,7 @@ view(const jlm::rvsdg::region * region);
  * @return the string describing the region.
  */
 std::string
-view(const jlm::rvsdg::region * region, std::unordered_map<const output *, std::string> & map);
+view(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map);
 
 /**
  * Recursively traverses and prints the given rvsdg region to the given file.
@@ -43,7 +43,7 @@ view(const jlm::rvsdg::region * region, std::unordered_map<const output *, std::
  * @param out the file to be written to.
  */
 void
-view(const jlm::rvsdg::region * region, FILE * out);
+view(const rvsdg::Region * region, FILE * out);
 
 /**
  * Recursively traverses and prints the root region of the given rvsdg graph to the given file.
@@ -57,10 +57,10 @@ view(const jlm::rvsdg::graph & graph, FILE * out)
 }
 
 std::string
-to_xml(const jlm::rvsdg::region * region);
+to_xml(const rvsdg::Region * region);
 
 void
-view_xml(const jlm::rvsdg::region * region, FILE * out);
+view_xml(const rvsdg::Region * region, FILE * out);
 
 }
 

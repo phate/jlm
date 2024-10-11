@@ -38,12 +38,12 @@ test()
   bb1->add_outedge(cfg.exit());
   cfg.exit()->append_result(bb1->last()->result(0));
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 
   /* verify pruning */
 
   prune(cfg);
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 
   assert(cfg.nnodes() == 1);
 

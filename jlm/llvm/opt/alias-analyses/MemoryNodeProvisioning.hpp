@@ -30,10 +30,10 @@ public:
   GetPointsToGraph() const noexcept = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const jlm::rvsdg::region & region) const = 0;
+  GetRegionEntryNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const jlm::rvsdg::region & region) const = 0;
+  GetRegionExitNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallEntryNodes(const CallNode & callNode) const = 0;
@@ -57,7 +57,7 @@ public:
   }
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetThetaEntryExitNodes(const jlm::rvsdg::theta_node & thetaNode) const
+  GetThetaEntryExitNodes(const rvsdg::ThetaNode & thetaNode) const
   {
     auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
     auto & exitNodes = GetRegionExitNodes(*thetaNode.subregion());
@@ -66,7 +66,7 @@ public:
   }
 
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaEntryNodes(const jlm::rvsdg::gamma_node & gammaNode) const
+  GetGammaEntryNodes(const rvsdg::GammaNode & gammaNode) const
   {
     jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
@@ -80,7 +80,7 @@ public:
   }
 
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaExitNodes(const jlm::rvsdg::gamma_node & gammaNode) const
+  GetGammaExitNodes(const rvsdg::GammaNode & gammaNode) const
   {
     jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)

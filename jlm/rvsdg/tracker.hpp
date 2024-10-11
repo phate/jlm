@@ -21,7 +21,7 @@ static const size_t tracker_nodestate_none = (size_t)-1;
 
 class graph;
 class node;
-class region;
+class Region;
 class tracker_depth_state;
 class tracker_nodestate;
 

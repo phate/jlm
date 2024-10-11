@@ -22,7 +22,7 @@ test_pullin_top()
 {
   using namespace jlm::llvm;
 
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
   jlm::tests::test_op uop({ vt }, { vt });
   jlm::tests::test_op bop({ vt, vt }, { vt });
   jlm::tests::test_op cop({ ct, vt }, { ct });
@@ -39,7 +39,7 @@ test_pullin_top()
   auto n4 = jlm::tests::create_testop(graph.root(), { c, n1 }, { ct })[0];
   auto n5 = jlm::tests::create_testop(graph.root(), { n1, n3 }, { vt })[0];
 
-  auto gamma = jlm::rvsdg::gamma_node::create(n4, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(n4, 2);
 
   gamma->add_entryvar(n4);
   auto ev = gamma->add_entryvar(n5);
@@ -60,13 +60,13 @@ static inline void
 test_pullin_bottom()
 {
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::graph graph;
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
   auto ev = gamma->add_entryvar(x);
   gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
@@ -80,7 +80,7 @@ test_pullin_bottom()
   jlm::llvm::pullin_bottom(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(jlm::rvsdg::node_output::node(xp.origin()) == gamma);
+  assert(jlm::rvsdg::output::GetNode(*xp.origin()) == gamma);
   assert(gamma->subregion(0)->nnodes() == 2);
   assert(gamma->subregion(1)->nnodes() == 2);
 }
@@ -93,19 +93,19 @@ test_pull()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto p = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::ctltype::Create(2), "");
+  auto p = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");
 
   auto croot = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
 
   /* outer gamma */
-  auto gamma1 = jlm::rvsdg::gamma_node::create(p, 2);
+  auto gamma1 = jlm::rvsdg::GammaNode::create(p, 2);
   auto ev1 = gamma1->add_entryvar(p);
   auto ev2 = gamma1->add_entryvar(croot);
 
   auto cg1 = jlm::tests::create_testop(gamma1->subregion(0), {}, { vt })[0];
 
   /* inner gamma */
-  auto gamma2 = jlm::rvsdg::gamma_node::create(ev1->argument(1), 2);
+  auto gamma2 = jlm::rvsdg::GammaNode::create(ev1->argument(1), 2);
   auto ev3 = gamma2->add_entryvar(ev2->argument(1));
   auto cg2 = jlm::tests::create_testop(gamma2->subregion(0), {}, { vt })[0];
   auto un = jlm::tests::create_testop(gamma2->subregion(1), { ev3->argument(1) }, { vt })[0];

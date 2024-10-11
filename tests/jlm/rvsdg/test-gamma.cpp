@@ -21,11 +21,11 @@ test_gamma(void)
   auto v0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
   auto v1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
   auto v2 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
-  auto v3 = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "");
+  auto v3 = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
 
-  auto gamma = gamma_node::create(pred, 3);
+  auto gamma = GammaNode::create(pred, 3);
   auto ev0 = gamma->add_entryvar(v0);
   auto ev1 = gamma->add_entryvar(v1);
   auto ev2 = gamma->add_entryvar(v2);
@@ -33,17 +33,17 @@ test_gamma(void)
 
   jlm::tests::GraphExport::Create(*gamma->output(0), "dummy");
 
-  assert(gamma && gamma->operation() == jlm::rvsdg::gamma_op(3));
+  assert(gamma && gamma->operation() == GammaOperation(3));
 
   /* test gamma copy */
 
   auto gamma2 = static_cast<structural_node *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
   view(graph.root(), stdout);
-  assert(is<gamma_op>(gamma2));
+  assert(is<GammaOperation>(gamma2));
 
   /* test entry and exit variable iterators */
 
-  auto gamma3 = gamma_node::create(v3, 2);
+  auto gamma3 = GammaNode::create(v3, 2);
   assert(gamma3->begin_entryvar() == gamma3->end_entryvar());
   assert(gamma3->begin_exitvar() == gamma3->end_exitvar());
 }
@@ -54,7 +54,7 @@ test_predicate_reduction(void)
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_predicate_reduction(true);
+  GammaOperation::normal_form(&graph)->set_predicate_reduction(true);
 
   bittype bits2(2);
 
@@ -64,7 +64,7 @@ test_predicate_reduction(void)
 
   auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
 
-  auto gamma = gamma_node::create(pred, 3);
+  auto gamma = GammaNode::create(pred, 3);
   auto ev0 = gamma->add_entryvar(v0);
   auto ev1 = gamma->add_entryvar(v1);
   auto ev2 = gamma->add_entryvar(v2);
@@ -88,12 +88,12 @@ test_invariant_reduction(void)
   auto vtype = jlm::tests::valuetype::Create();
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_invariant_reduction(true);
+  GammaOperation::normal_form(&graph)->set_invariant_reduction(true);
 
-  auto pred = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "");
+  auto pred = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(pred, 2);
+  auto gamma = GammaNode::create(pred, 2);
   auto ev = gamma->add_entryvar(v);
   gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
 
@@ -113,13 +113,13 @@ test_control_constant_reduction()
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
+  GammaOperation::normal_form(&graph)->set_control_constant_reduction(true);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(1), "x");
 
   auto c = match(1, { { 0, 0 } }, 1, 2, x);
 
-  auto gamma = gamma_node::create(c, 2);
+  auto gamma = GammaNode::create(c, 2);
 
   auto t = jlm::rvsdg::control_true(gamma->subregion(0));
   auto f = jlm::rvsdg::control_false(gamma->subregion(1));
@@ -137,12 +137,12 @@ test_control_constant_reduction()
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex1.origin());
+  auto match = output::GetNode(*ex1.origin());
   assert(match && is<match_op>(match->operation()));
   auto & match_op = to_match_op(match->operation());
   assert(match_op.default_alternative() == 0);
 
-  assert(node_output::node(ex2.origin()) == gamma);
+  assert(output::GetNode(*ex2.origin()) == gamma);
 }
 
 static void
@@ -151,13 +151,13 @@ test_control_constant_reduction2()
   using namespace jlm::rvsdg;
 
   jlm::rvsdg::graph graph;
-  gamma_op::normal_form(&graph)->set_control_constant_reduction(true);
+  GammaOperation::normal_form(&graph)->set_control_constant_reduction(true);
 
   auto import = &jlm::tests::GraphImport::Create(graph, bittype::Create(2), "import");
 
   auto c = match(2, { { 3, 2 }, { 2, 1 }, { 1, 0 } }, 3, 4, import);
 
-  auto gamma = gamma_node::create(c, 4);
+  auto gamma = GammaNode::create(c, 4);
 
   auto t1 = jlm::rvsdg::control_true(gamma->subregion(0));
   auto t2 = jlm::rvsdg::control_true(gamma->subregion(1));
@@ -172,7 +172,7 @@ test_control_constant_reduction2()
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex.origin());
+  auto match = output::GetNode(*ex.origin());
   assert(is<match_op>(match));
 }
 
@@ -184,15 +184,15 @@ TestRemoveGammaOutputsWhere()
   // Arrange
   jlm::rvsdg::graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
-  ctltype ct(2);
+  ControlType ct(2);
 
-  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "");
+  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v2 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v3 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
-  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
   auto gammaInput0 = gammaNode->add_entryvar(v0);
   auto gammaInput1 = gammaNode->add_entryvar(v1);
   auto gammaInput2 = gammaNode->add_entryvar(v2);
@@ -215,7 +215,7 @@ TestRemoveGammaOutputsWhere()
 
   // Remove gammaOutput1
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const gamma_output & output)
+      [&](const GammaOutput & output)
       {
         return output.index() == gammaOutput1->index();
       });
@@ -227,7 +227,7 @@ TestRemoveGammaOutputsWhere()
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const gamma_output & output)
+      [&](const GammaOutput & output)
       {
         return output.index() == gammaOutput2->index();
       });
@@ -246,15 +246,15 @@ TestPruneOutputs()
   // Arrange
   jlm::rvsdg::graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
-  ctltype ct(2);
+  ControlType ct(2);
 
-  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "");
+  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v2 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v3 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
-  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
   auto gammaInput0 = gammaNode->add_entryvar(v0);
   auto gammaInput1 = gammaNode->add_entryvar(v1);
   auto gammaInput2 = gammaNode->add_entryvar(v2);
@@ -295,13 +295,13 @@ TestIsInvariant()
   // Arrange
   jlm::rvsdg::graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
-  ctltype ct(2);
+  ControlType ct(2);
 
-  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "");
+  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 
-  auto gammaNode = gamma_node::create(predicate, 2);
+  auto gammaNode = GammaNode::create(predicate, 2);
   auto gammaInput0 = gammaNode->add_entryvar(v0);
   auto gammaInput1 = gammaNode->add_entryvar(v1);
   auto gammaInput2 = gammaNode->add_entryvar(v1);

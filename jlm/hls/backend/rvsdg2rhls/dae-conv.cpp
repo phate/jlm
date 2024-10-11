@@ -43,7 +43,7 @@ find_slice_output(jlm::rvsdg::output * output, std::unordered_set<jlm::rvsdg::no
     JLM_ASSERT(slice.count(no->node()));
     find_slice_node(no->node(), slice);
   }
-  else if (dynamic_cast<jlm::rvsdg::argument *>(output))
+  else if (dynamic_cast<rvsdg::RegionArgument *>(output))
   {
     if (auto be = dynamic_cast<backedge_argument *>(output))
     {
@@ -112,7 +112,7 @@ is_slice_exclusive_input_(
       return false;
     }
   }
-  else if (dynamic_cast<jlm::rvsdg::result *>(source))
+  else if (dynamic_cast<rvsdg::RegionResult *>(source))
   {
     if (auto be = dynamic_cast<backedge_result *>(source))
     {
@@ -138,11 +138,11 @@ is_slice_exclusive_input_(
 }
 
 void
-trace_to_loop_results(jlm::rvsdg::output * out, std::vector<jlm::rvsdg::result *> & results)
+trace_to_loop_results(jlm::rvsdg::output * out, std::vector<rvsdg::RegionResult *> & results)
 {
   for (auto user : *out)
   {
-    if (auto res = dynamic_cast<jlm::rvsdg::result *>(user))
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       results.push_back(res);
     }
@@ -209,7 +209,7 @@ is_slice_exclusive_(
 }
 
 void
-dump_xml(const jlm::rvsdg::region * region, const std::string & file_name)
+dump_xml(const rvsdg::Region * region, const std::string & file_name)
 {
   auto xml_file = fopen(file_name.c_str(), "w");
   jlm::rvsdg::view_xml(region, xml_file);
@@ -224,7 +224,7 @@ decouple_load(
 {
   // loadNode is always a part of loop_slice due to state edges
   auto new_loop = loop_node::create(loopNode->region(), false);
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   std::vector<backedge_argument *> backedge_args;
   // create arguments
   for (size_t i = 0; i < loopNode->subregion()->narguments(); ++i)
@@ -237,7 +237,7 @@ decouple_load(
       {
         if (loop_slice.count(ni->node()))
         {
-          jlm::rvsdg::argument * new_arg;
+          rvsdg::RegionArgument * new_arg;
           if (auto be = dynamic_cast<backedge_argument *>(arg))
           {
             new_arg = new_loop->add_backedge(arg->Type());
@@ -258,7 +258,7 @@ decouple_load(
   }
   // copy nodes
   std::vector<std::vector<jlm::rvsdg::node *>> context(loopNode->subregion()->nnodes());
-  for (auto & node : *loopNode->subregion())
+  for (auto & node : loopNode->subregion()->Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
     context[node.depth()].push_back(&node);
@@ -284,7 +284,7 @@ decouple_load(
   // redirect state edges to new loop outputs
   for (size_t i = 1; i < loadNode->noutputs() - 1; ++i)
   {
-    std::vector<jlm::rvsdg::result *> results;
+    std::vector<rvsdg::RegionResult *> results;
     trace_to_loop_results(loadNode->output(i), results);
     JLM_ASSERT(results.size() <= 2);
     for (auto res : results)
@@ -332,7 +332,7 @@ decouple_load(
   ExitResult::Create(*load_addr, *addr_output);
   // trace and remove loop input for mem data reponse
   auto mem_data_loop_out = new_load->input(new_load->ninputs() - 1)->origin();
-  auto mem_data_loop_arg = dynamic_cast<jlm::rvsdg::argument *>(mem_data_loop_out);
+  auto mem_data_loop_arg = dynamic_cast<rvsdg::RegionArgument *>(mem_data_loop_out);
   auto mem_data_loop_in = mem_data_loop_arg->input();
   auto mem_data_resp = mem_data_loop_in->origin();
   dump_xml(new_loop->subregion(), "new_loop_before_remove.rvsdg");
@@ -345,7 +345,7 @@ decouple_load(
 
   // redirect mem_req_addr to dload_out[1]
   auto old_mem_req_res =
-      dynamic_cast<jlm::rvsdg::result *>(*loadNode->output(loadNode->noutputs() - 1)->begin());
+      dynamic_cast<rvsdg::RegionResult *>(*loadNode->output(loadNode->noutputs() - 1)->begin());
   auto old_mem_req_out = old_mem_req_res->output();
   auto mem_req_in = *old_mem_req_out->begin();
   mem_req_in->divert_to(dload_out[1]);
@@ -464,7 +464,7 @@ process_loopnode(loop_node * loopNode)
 }
 
 void
-dae_conv(jlm::rvsdg::region * region)
+dae_conv(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->nodes.begin().ptr());
   bool changed;

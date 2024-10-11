@@ -25,12 +25,12 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ctltype::Create(2), "p");
+  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto gammaNode = jlm::rvsdg::gamma_node::create(p, 2);
+  auto gammaNode = jlm::rvsdg::GammaNode::create(p, 2);
 
   auto gammaInput1 = gammaNode->add_entryvar(x);
   auto gammaInput2 = gammaNode->add_entryvar(y);
@@ -79,17 +79,17 @@ TestTheta()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = FunctionType::Create(
-      { jlm::rvsdg::ctltype::Create(2), valueType, valueType, valueType },
+      { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ctltype::Create(2), "p");
+  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto thetaNode = jlm::rvsdg::theta_node::create(rvsdg.root());
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(rvsdg.root());
 
   auto thetaOutput0 = thetaNode->add_loopvar(p);
   auto thetaOutput1 = thetaNode->add_loopvar(x);

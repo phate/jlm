@@ -19,7 +19,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 jlm::rvsdg::output *
-jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * response)
+jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
 {
   if (response->region() == target)
   {
@@ -37,7 +37,7 @@ jlm::hls::route_response(jlm::rvsdg::region * target, jlm::rvsdg::output * respo
 }
 
 jlm::rvsdg::output *
-jlm::hls::route_request(jlm::rvsdg::region * target, jlm::rvsdg::output * request)
+jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
 {
   if (request->region() == target)
   {
@@ -84,7 +84,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
 const jlm::rvsdg::bitconstant_op *
 trace_channel(const jlm::rvsdg::output * dst)
 {
-  if (auto arg = dynamic_cast<const jlm::rvsdg::argument *>(dst))
+  if (auto arg = dynamic_cast<const jlm::rvsdg::RegionArgument *>(dst))
   {
     return trace_channel(arg->input()->origin());
   }
@@ -120,7 +120,7 @@ const jlm::rvsdg::output *
 trace_call(const jlm::rvsdg::output * output)
 {
   // version of trace call for rhls
-  if (auto argument = dynamic_cast<const jlm::rvsdg::argument *>(output))
+  if (auto argument = dynamic_cast<const jlm::rvsdg::RegionArgument *>(output))
   {
     auto graph = output->region()->graph();
     if (argument->region() == graph->root())
@@ -212,7 +212,7 @@ trace_function_calls(
         trace_function_calls(&arg, calls, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -235,7 +235,7 @@ find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
-  jlm::rvsdg::argument * response_function = nullptr;
+  jlm::rvsdg::RegionArgument * response_function = nullptr;
   for (size_t i = 0; i < lambda->ncvarguments(); ++i)
   {
     auto ip = lambda->cvargument(i)->input();
@@ -324,7 +324,7 @@ replace_store(jlm::rvsdg::simple_node * orig)
 
 void
 gather_mem_nodes(
-    jlm::rvsdg::region * region,
+    jlm::rvsdg::Region * region,
     std::vector<jlm::rvsdg::simple_node *> & load_nodes,
     std::vector<jlm::rvsdg::simple_node *> & store_nodes,
     std::vector<jlm::rvsdg::simple_node *> & decouple_nodes,
@@ -423,7 +423,7 @@ trace_pointer_argument(
         trace_pointer_argument(&arg, load_nodes, store_nodes, decouple_nodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -496,7 +496,7 @@ IsDecoupledFunctionPointer(
         isDecoupled |= IsDecoupledFunctionPointer(&arg, visited);
       }
     }
-    else if (auto result = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto result = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto backedgeResult = dynamic_cast<jlm::hls::backedge_result *>(result))
       {
@@ -566,12 +566,12 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // This modifies the function signature so we create a new lambda node to replace the old one
   //
   auto oldFunctionType = lambda->type();
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newArgumentTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
     newArgumentTypes.push_back(oldFunctionType.Arguments()[i]);
   }
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> newResultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newResultTypes;
   for (size_t i = 0; i < oldFunctionType.NumResults(); ++i)
   {
     newResultTypes.push_back(oldFunctionType.Results()[i]);
@@ -638,7 +638,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
       lambda->linkage(),
       lambda->attributes());
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (size_t i = 0; i < lambda->ncvarguments(); ++i)
   {
     smap.insert(
@@ -737,7 +737,7 @@ jlm::rvsdg::output *
 jlm::hls::ConnectRequestResponseMemPorts(
     const jlm::llvm::lambda::node * lambda,
     size_t argumentIndex,
-    jlm::rvsdg::substitution_map & smap,
+    rvsdg::SubstitutionMap & smap,
     const std::vector<jlm::rvsdg::simple_node *> & originalLoadNodes,
     const std::vector<jlm::rvsdg::simple_node *> & originalStoreNodes,
     const std::vector<jlm::rvsdg::simple_node *> & originalDecoupledNodes)
@@ -747,7 +747,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   // nodes in the new lambda
   //
   std::vector<jlm::rvsdg::simple_node *> loadNodes;
-  std::vector<std::shared_ptr<const jlm::rvsdg::valuetype>> loadTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::ValueType>> loadTypes;
   for (auto loadNode : originalLoadNodes)
   {
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
@@ -788,7 +788,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
     auto address = route_request(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
-    std::shared_ptr<const jlm::rvsdg::valuetype> type;
+    std::shared_ptr<const jlm::rvsdg::ValueType> type;
     if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->operation()))
     {
       type = loadOperation->GetLoadedType();
@@ -838,7 +838,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
 
 jlm::rvsdg::simple_node *
 jlm::hls::ReplaceLoad(
-    jlm::rvsdg::substitution_map & smap,
+    rvsdg::SubstitutionMap & smap,
     const jlm::rvsdg::simple_node * originalLoad,
     jlm::rvsdg::output * response)
 {
@@ -876,9 +876,7 @@ jlm::hls::ReplaceLoad(
 }
 
 jlm::rvsdg::simple_node *
-jlm::hls::ReplaceStore(
-    jlm::rvsdg::substitution_map & smap,
-    const jlm::rvsdg::simple_node * originalStore)
+jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_node * originalStore)
 {
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
@@ -906,7 +904,7 @@ jlm::hls::ReplaceStore(
 
 jlm::rvsdg::simple_node *
 ReplaceDecouple(
-    jlm::rvsdg::substitution_map & smap,
+    jlm::rvsdg::SubstitutionMap & smap,
     const jlm::llvm::lambda::node * lambda,
     jlm::rvsdg::simple_node * originalDecoupleRequest,
     jlm::rvsdg::output * response)

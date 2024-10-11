@@ -25,10 +25,10 @@ namespace jlm::rvsdg
 /**
  * Represents an import into the RVSDG of an external entity.
  */
-class GraphImport : public argument
+class GraphImport : public RegionArgument
 {
 protected:
-  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::type> type, std::string name);
+  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
 
 public:
   [[nodiscard]] const std::string &
@@ -44,7 +44,7 @@ private:
 /**
  * Represents an export from the RVSDG of an internal entity.
  */
-class GraphExport : public result
+class GraphExport : public RegionResult
 {
 protected:
   GraphExport(rvsdg::output & origin, std::string name);
@@ -67,7 +67,7 @@ public:
 
   graph();
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   root() const noexcept
   {
     return root_;
@@ -112,7 +112,7 @@ public:
 
 private:
   bool normalized_;
-  jlm::rvsdg::region * root_;
+  rvsdg::Region * root_;
   jlm::rvsdg::node_normal_form_hash node_normal_forms_;
 };
 

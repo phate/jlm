@@ -25,10 +25,10 @@ TestTracksDifferences()
   PointerObjectSet set;
   auto r0 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(0));
   auto r1 = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput(1));
-  auto a0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0));
-  auto a1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1));
-  auto a2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2));
-  auto a3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3));
+  auto a0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0), true);
+  auto a1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1), true);
+  auto a2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2), true);
+  auto a3 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3), true);
 
   // Let r0 -> a0 and r0 -> a3 before difference tracking even begins
   set.AddToPointsToSet(r0, a0);

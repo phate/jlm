@@ -23,7 +23,7 @@ structural_input::~structural_input() noexcept
 structural_input::structural_input(
     jlm::rvsdg::structural_node * node,
     jlm::rvsdg::output * origin,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {
   on_input_create(this);
@@ -40,7 +40,7 @@ structural_output::~structural_output() noexcept
 
 structural_output::structural_output(
     jlm::rvsdg::structural_node * node,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {
   on_output_create(this);
@@ -57,7 +57,7 @@ structural_node::~structural_node()
 
 structural_node::structural_node(
     const jlm::rvsdg::structural_op & op,
-    jlm::rvsdg::region * region,
+    rvsdg::Region * region,
     size_t nsubregions)
     : node(op.copy(), region)
 {
@@ -65,7 +65,7 @@ structural_node::structural_node(
     throw jlm::util::error("Number of subregions must be greater than zero.");
 
   for (size_t n = 0; n < nsubregions; n++)
-    subregions_.emplace_back(std::unique_ptr<jlm::rvsdg::region>(new jlm::rvsdg::region(this, n)));
+    subregions_.emplace_back(std::unique_ptr<rvsdg::Region>(new jlm::rvsdg::Region(this, n)));
 
   on_node_create(this);
 }

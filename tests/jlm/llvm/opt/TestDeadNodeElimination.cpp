@@ -51,7 +51,7 @@ TestGamma()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -59,7 +59,7 @@ TestGamma()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto ev1 = gamma->add_entryvar(x);
   auto ev2 = gamma->add_entryvar(y);
   auto ev3 = gamma->add_entryvar(x);
@@ -90,14 +90,14 @@ TestGamma2()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   gamma->add_entryvar(x);
 
   auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
@@ -120,7 +120,7 @@ TestTheta()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -128,7 +128,7 @@ TestTheta()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lv1 = theta->add_loopvar(x);
   auto lv2 = theta->add_loopvar(y);
@@ -163,7 +163,7 @@ TestNestedTheta()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -171,13 +171,13 @@ TestNestedTheta()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto otheta = jlm::rvsdg::theta_node::create(graph.root());
+  auto otheta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lvo1 = otheta->add_loopvar(c);
   auto lvo2 = otheta->add_loopvar(x);
   auto lvo3 = otheta->add_loopvar(y);
 
-  auto itheta = jlm::rvsdg::theta_node::create(otheta->subregion());
+  auto itheta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
 
   auto lvi1 = itheta->add_loopvar(lvo1->argument());
   auto lvi2 = itheta->add_loopvar(lvo2->argument());
@@ -207,7 +207,7 @@ TestEvolvingTheta()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -217,7 +217,7 @@ TestEvolvingTheta()
   auto x3 = &jlm::tests::GraphImport::Create(graph, vt, "x3");
   auto x4 = &jlm::tests::GraphImport::Create(graph, vt, "x4");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
 
   auto lv0 = theta->add_loopvar(c);
   auto lv1 = theta->add_loopvar(x1);
@@ -289,7 +289,8 @@ TestPhi()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto setupF1 = [&](jlm::rvsdg::region & region, phi::rvoutput & rv2, jlm::rvsdg::argument & dx)
+  auto setupF1 =
+      [&](jlm::rvsdg::Region & region, phi::rvoutput & rv2, jlm::rvsdg::RegionArgument & dx)
   {
     auto lambda1 = lambda::node::create(&region, functionType, "f1", linkage::external_linkage);
     auto f2Argument = lambda1->add_ctxvar(rv2.argument());
@@ -304,7 +305,8 @@ TestPhi()
     return lambda1->finalize({ result });
   };
 
-  auto setupF2 = [&](jlm::rvsdg::region & region, phi::rvoutput & rv1, jlm::rvsdg::argument & dy)
+  auto setupF2 =
+      [&](jlm::rvsdg::Region & region, phi::rvoutput & rv1, jlm::rvsdg::RegionArgument & dy)
   {
     auto lambda2 = lambda::node::create(&region, functionType, "f2", linkage::external_linkage);
     auto f1Argument = lambda2->add_ctxvar(rv1.argument());
@@ -319,7 +321,7 @@ TestPhi()
     return lambda2->finalize({ result });
   };
 
-  auto setupF3 = [&](jlm::rvsdg::region & region, jlm::rvsdg::argument & dz)
+  auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::RegionArgument & dz)
   {
     auto lambda3 = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
     auto zArgument = lambda3->add_ctxvar(&dz);
@@ -333,7 +335,7 @@ TestPhi()
     return lambda3->finalize({ result });
   };
 
-  auto setupF4 = [&](jlm::rvsdg::region & region)
+  auto setupF4 = [&](jlm::rvsdg::Region & region)
   {
     auto lambda = lambda::node::create(&region, functionType, "f4", linkage::external_linkage);
     return lambda->finalize({ lambda->fctargument(0) });

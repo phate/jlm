@@ -59,10 +59,10 @@ public:
   }
 
 private:
-  static inline std::vector<std::shared_ptr<const rvsdg::type>>
+  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
   create_srctypes(const FunctionType & functionType)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     for (auto & argumentType : functionType.Arguments())
       types.emplace_back(argumentType);
 
@@ -70,7 +70,7 @@ private:
   }
 
   static void
-  CheckFunctionInputType(const jlm::rvsdg::type & type)
+  CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
     if (!is<PointerType>(type))
       throw jlm::util::error("Expected pointer type.");
@@ -181,7 +181,7 @@ public:
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
-    auto argument = jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    auto argument = jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(Output_);
     /*
      * FIXME: This assumes that all recursion variables where added before the dependencies. It
      * would be better if we did not use the index for retrieving the result, but instead
@@ -197,11 +197,11 @@ public:
    *
    * @return The imported function.
    */
-  [[nodiscard]] jlm::rvsdg::argument &
+  [[nodiscard]] rvsdg::RegionArgument &
   GetImport() const noexcept
   {
     JLM_ASSERT(GetCallType() == CallType::ExternalCall);
-    return *jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    return *jlm::util::AssertedCast<rvsdg::RegionArgument>(Output_);
   }
 
   /** \brief Return origin of a call node's function input.
@@ -225,14 +225,14 @@ public:
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(jlm::rvsdg::argument & output)
+  CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
   {
     JLM_ASSERT(is<phi::rvargument>(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
   static std::unique_ptr<CallTypeClassifier>
-  CreateExternalCallClassifier(jlm::rvsdg::argument & argument)
+  CreateExternalCallClassifier(rvsdg::RegionArgument & argument)
   {
     JLM_ASSERT(argument.region() == argument.region()->graph()->root());
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
@@ -256,7 +256,7 @@ class CallNode final : public jlm::rvsdg::simple_node
 {
 private:
   CallNode(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       const CallOperation & operation,
       const std::vector<jlm::rvsdg::output *> & operands)
       : simple_node(&region, operation, operands)
@@ -388,7 +388,7 @@ public:
   [[nodiscard]] static rvsdg::simple_node *
   GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
   {
-    auto node = rvsdg::node_output::node(callNode.GetMemoryStateInput()->origin());
+    auto node = rvsdg::output::GetNode(*callNode.GetMemoryStateInput()->origin());
     return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
                                                         : nullptr;
   }
@@ -416,7 +416,7 @@ public:
   }
 
   rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<jlm::rvsdg::output *>
   Create(
@@ -429,7 +429,7 @@ public:
 
   static std::vector<jlm::rvsdg::output *>
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const CallOperation & callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -438,7 +438,7 @@ public:
 
   static CallNode &
   CreateNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const CallOperation & callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -488,7 +488,7 @@ public:
 
 private:
   static void
-  CheckFunctionInputType(const jlm::rvsdg::type & type)
+  CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
     if (!is<PointerType>(type))
       throw jlm::util::error("Expected pointer type.");

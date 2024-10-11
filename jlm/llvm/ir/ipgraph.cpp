@@ -108,14 +108,14 @@ function_node::name() const noexcept
   return name_;
 }
 
-const jlm::rvsdg::type &
+const jlm::rvsdg::Type &
 function_node::type() const noexcept
 {
   static PointerType pointerType;
   return pointerType;
 }
 
-std::shared_ptr<const jlm::rvsdg::type>
+std::shared_ptr<const jlm::rvsdg::Type>
 function_node::Type() const
 {
   return PointerType::Create();
@@ -165,7 +165,7 @@ data_node::type() const noexcept
   return pointerType;
 }
 
-std::shared_ptr<const rvsdg::type>
+std::shared_ptr<const rvsdg::Type>
 data_node::Type() const
 {
   return PointerType::Create();

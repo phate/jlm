@@ -12,8 +12,8 @@
 
 namespace jlm::rvsdg
 {
-class gamma_node;
-class theta_node;
+class GammaNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -72,14 +72,14 @@ public:
   operator=(DeadNodeElimination &&) = delete;
 
   void
-  run(jlm::rvsdg::region & region);
+  run(rvsdg::Region & region);
 
   void
   run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void
-  MarkRegion(const jlm::rvsdg::region & region);
+  MarkRegion(const rvsdg::Region & region);
 
   void
   MarkOutput(const jlm::rvsdg::output & output);
@@ -88,16 +88,16 @@ private:
   SweepRvsdg(jlm::rvsdg::graph & rvsdg) const;
 
   void
-  SweepRegion(jlm::rvsdg::region & region) const;
+  SweepRegion(rvsdg::Region & region) const;
 
   void
   SweepStructuralNode(jlm::rvsdg::structural_node & node) const;
 
   void
-  SweepGamma(rvsdg::gamma_node & gammaNode) const;
+  SweepGamma(rvsdg::GammaNode & gammaNode) const;
 
   void
-  SweepTheta(rvsdg::theta_node & thetaNode) const;
+  SweepTheta(rvsdg::ThetaNode & thetaNode) const;
 
   void
   SweepLambda(lambda::node & lambdaNode) const;

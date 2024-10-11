@@ -28,7 +28,7 @@ jlm::hls::mem_queue(llvm::RvsdgModule & rm)
 }
 
 void
-dump_xml(const jlm::rvsdg::region * region, const std::string & file_name)
+dump_xml(const jlm::rvsdg::Region * region, const std::string & file_name)
 {
   auto xml_file = fopen(file_name.c_str(), "w");
   jlm::rvsdg::view_xml(region, xml_file);
@@ -77,7 +77,7 @@ find_load_store(
         find_load_store(&arg, load_nodes, store_nodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<jlm::rvsdg::result *>(user))
+    else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
@@ -121,7 +121,8 @@ find_loop_output(jlm::rvsdg::structural_input * sti)
       for (size_t j = 0; j < 2; ++j)
       {
         JLM_ASSERT(branch_out->node()->output(j)->nusers() == 1);
-        auto result = dynamic_cast<jlm::rvsdg::result *>(*branch_out->node()->output(j)->begin());
+        auto result =
+            dynamic_cast<jlm::rvsdg::RegionResult *>(*branch_out->node()->output(j)->begin());
         if (result)
         {
           return result->output();
@@ -132,11 +133,11 @@ find_loop_output(jlm::rvsdg::structural_input * sti)
   JLM_UNREACHABLE("This should never happen");
 }
 
-std::deque<jlm::rvsdg::region *>
-get_parent_regions(jlm::rvsdg::region * region)
+std::deque<jlm::rvsdg::Region *>
+get_parent_regions(jlm::rvsdg::Region * region)
 {
-  std::deque<jlm::rvsdg::region *> regions;
-  jlm::rvsdg::region * target_region = region;
+  std::deque<jlm::rvsdg::Region *> regions;
+  jlm::rvsdg::Region * target_region = region;
   while (!dynamic_cast<const jlm::llvm::lambda::operation *>(&target_region->node()->operation()))
   {
     regions.push_front(target_region);
@@ -146,14 +147,14 @@ get_parent_regions(jlm::rvsdg::region * region)
 }
 
 jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::region * target, jlm::rvsdg::output * out)
+route_to_region(jlm::rvsdg::Region * target, jlm::rvsdg::output * out)
 {
   // create lists of nested regions
-  std::deque<jlm::rvsdg::region *> target_regions = get_parent_regions(target);
-  std::deque<jlm::rvsdg::region *> out_regions = get_parent_regions(out->region());
+  std::deque<jlm::rvsdg::Region *> target_regions = get_parent_regions(target);
+  std::deque<jlm::rvsdg::Region *> out_regions = get_parent_regions(out->region());
   JLM_ASSERT(target_regions.front() == out_regions.front());
   // remove common ancestor regions
-  jlm::rvsdg::region * common_region = nullptr;
+  jlm::rvsdg::Region * common_region = nullptr;
   while (!target_regions.empty() && !out_regions.empty()
          && target_regions.front() == out_regions.front())
   {
@@ -201,7 +202,7 @@ separate_load_edge(
     JLM_ASSERT(mem_edge->region() == addr_edge->region());
     auto user = *mem_edge->begin();
     auto addr_edge_user = *addr_edge->begin();
-    if (dynamic_cast<jlm::rvsdg::result *>(user))
+    if (dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
       // end of region reached
@@ -412,7 +413,7 @@ process_loops(jlm::rvsdg::output * state_edge)
     // each iteration should update state_edge
     JLM_ASSERT(state_edge->nusers() == 1);
     auto user = *state_edge->begin();
-    if (dynamic_cast<jlm::rvsdg::result *>(user))
+    if (dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       // end of region reached
       JLM_UNREACHABLE("This should never happen");
@@ -519,7 +520,7 @@ process_loops(jlm::rvsdg::output * state_edge)
 }
 
 void
-jlm::hls::mem_queue(jlm::rvsdg::region * region)
+jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->nodes.first());
   auto state_arg = GetMemoryStateArgument(*lambda);

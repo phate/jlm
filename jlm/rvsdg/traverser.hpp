@@ -141,12 +141,12 @@ class topdown_traverser final
 public:
   ~topdown_traverser() noexcept;
 
-  explicit topdown_traverser(jlm::rvsdg::region * region);
+  explicit topdown_traverser(rvsdg::Region * region);
 
   jlm::rvsdg::node *
   next();
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
@@ -177,7 +177,7 @@ private:
   void
   input_change(input * in, output * old_origin, output * new_origin);
 
-  jlm::rvsdg::region * region_;
+  rvsdg::Region * region_;
   traversal_tracker tracker_;
   std::vector<jlm::util::callback> callbacks_;
 };
@@ -187,12 +187,12 @@ class bottomup_traverser final
 public:
   ~bottomup_traverser() noexcept;
 
-  explicit bottomup_traverser(jlm::rvsdg::region * region, bool revisit = false);
+  explicit bottomup_traverser(rvsdg::Region * region, bool revisit = false);
 
   jlm::rvsdg::node *
   next();
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
@@ -223,7 +223,7 @@ private:
   void
   input_change(input * in, output * old_origin, output * new_origin);
 
-  jlm::rvsdg::region * region_;
+  rvsdg::Region * region_;
   traversal_tracker tracker_;
   std::vector<jlm::util::callback> callbacks_;
   traversal_nodestate new_node_state_;

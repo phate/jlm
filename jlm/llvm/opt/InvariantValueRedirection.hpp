@@ -10,8 +10,8 @@
 
 namespace jlm::rvsdg
 {
-class gamma_node;
-class theta_node;
+class GammaNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm
@@ -61,16 +61,16 @@ private:
   RedirectInRootRegion(rvsdg::graph & rvsdg);
 
   static void
-  RedirectInRegion(rvsdg::region & region);
+  RedirectInRegion(rvsdg::Region & region);
 
   static void
   RedirectInSubregions(rvsdg::structural_node & structuralNode);
 
   static void
-  RedirectGammaOutputs(rvsdg::gamma_node & gammaNode);
+  RedirectGammaOutputs(rvsdg::GammaNode & gammaNode);
 
   static void
-  RedirectThetaOutputs(rvsdg::theta_node & thetaNode);
+  RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
 
   static void
   RedirectCallOutputs(CallNode & callNode);

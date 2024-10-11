@@ -61,7 +61,7 @@ JlmToMlirConverter::ConvertOmega(const rvsdg::graph & graph)
 }
 
 ::llvm::SmallVector<::mlir::Value>
-JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
+JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
 {
   for (size_t i = 0; i < region.narguments(); ++i)
   {
@@ -90,7 +90,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::region & region, ::mlir::Block & block)
     {
       results.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
     }
-    else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(region.result(i)->origin()))
+    else if (auto arg = dynamic_cast<rvsdg::RegionArgument *>(region.result(i)->origin()))
     {
       results.push_back(block.getArgument(arg->index()));
     }
@@ -125,7 +125,7 @@ JlmToMlirConverter::GetConvertedInputs(
     {
       inputs.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
     }
-    else if (auto arg = dynamic_cast<jlm::rvsdg::argument *>(node.input(i)->origin()))
+    else if (auto arg = dynamic_cast<rvsdg::RegionArgument *>(node.input(i)->origin()))
     {
       inputs.push_back(block.getArgument(arg->index()));
     }
@@ -160,7 +160,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertLambda(*lambda, block);
   }
-  else if (auto gamma = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  else if (auto gamma = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
     return ConvertGamma(*gamma, block, inputs);
   }
@@ -432,11 +432,11 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertGamma(
-    const rvsdg::gamma_node & gammaNode,
+    const rvsdg::GammaNode & gammaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto & gammaOp = *util::AssertedCast<const rvsdg::gamma_op>(&gammaNode.operation());
+  auto & gammaOp = *util::AssertedCast<const rvsdg::GammaOperation>(&gammaNode.operation());
 
   ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
@@ -501,7 +501,7 @@ JlmToMlirConverter::ConvertTheta(
   return theta;
 }
 ::mlir::Type
-JlmToMlirConverter::ConvertType(const rvsdg::type & type)
+JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&type))
   {
@@ -515,7 +515,7 @@ JlmToMlirConverter::ConvertType(const rvsdg::type & type)
   {
     return Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
   }
-  else if (auto clt = dynamic_cast<const rvsdg::ctltype *>(&type))
+  else if (auto clt = dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
   }

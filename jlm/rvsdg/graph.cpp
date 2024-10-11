@@ -16,14 +16,14 @@ namespace jlm::rvsdg
 
 GraphImport::GraphImport(
     rvsdg::graph & graph,
-    std::shared_ptr<const rvsdg::type> type,
+    std::shared_ptr<const rvsdg::Type> type,
     std::string name)
-    : argument(graph.root(), nullptr, std::move(type)),
+    : RegionArgument(graph.root(), nullptr, std::move(type)),
       Name_(std::move(name))
 {}
 
 GraphExport::GraphExport(rvsdg::output & origin, std::string name)
-    : result(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
+    : RegionResult(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
 
@@ -36,13 +36,13 @@ graph::~graph()
 
 graph::graph()
     : normalized_(false),
-      root_(new jlm::rvsdg::region(nullptr, this))
+      root_(new rvsdg::Region(nullptr, this))
 {}
 
 std::unique_ptr<jlm::rvsdg::graph>
 graph::copy() const
 {
-  jlm::rvsdg::substitution_map smap;
+  SubstitutionMap smap;
   std::unique_ptr<jlm::rvsdg::graph> graph(new jlm::rvsdg::graph());
   root()->copy(graph->root(), smap, true, true);
   return graph;
@@ -93,9 +93,9 @@ graph::ExtractTailNodes(const graph & rvsdg)
   auto & rootRegion = *rvsdg.root();
 
   std::vector<rvsdg::node *> nodes;
-  for (auto & node : rootRegion.bottom_nodes)
+  for (auto & bottomNode : rootRegion.BottomNodes())
   {
-    nodes.push_back(&node);
+    nodes.push_back(&bottomNode);
   }
 
   for (size_t n = 0; n < rootRegion.nresults(); n++)
@@ -103,7 +103,7 @@ graph::ExtractTailNodes(const graph & rvsdg)
     auto output = rootRegion.result(n)->origin();
     if (IsOnlyExported(*output))
     {
-      nodes.push_back(rvsdg::node_output::node(output));
+      nodes.push_back(rvsdg::output::GetNode(*output));
     }
   }
 

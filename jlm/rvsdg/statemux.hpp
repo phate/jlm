@@ -31,7 +31,7 @@ public:
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       const jlm::rvsdg::simple_op & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
@@ -65,7 +65,7 @@ class mux_op final : public simple_op
 public:
   virtual ~mux_op() noexcept;
 
-  inline mux_op(std::shared_ptr<const statetype> type, size_t narguments, size_t nresults)
+  inline mux_op(std::shared_ptr<const StateType> type, size_t narguments, size_t nresults)
       : simple_op({ narguments, type }, { nresults, type })
   {}
 
@@ -93,14 +93,14 @@ is_mux_op(const jlm::rvsdg::operation & op)
 
 static inline std::vector<jlm::rvsdg::output *>
 create_state_mux(
-    std::shared_ptr<const jlm::rvsdg::type> type,
+    std::shared_ptr<const jlm::rvsdg::Type> type,
     const std::vector<jlm::rvsdg::output *> & operands,
     size_t nresults)
 {
   if (operands.empty())
     throw jlm::util::error("Insufficient number of operands.");
 
-  auto st = std::dynamic_pointer_cast<const jlm::rvsdg::statetype>(type);
+  auto st = std::dynamic_pointer_cast<const StateType>(type);
   if (!st)
     throw jlm::util::error("Expected state type.");
 
@@ -111,7 +111,7 @@ create_state_mux(
 
 static inline jlm::rvsdg::output *
 create_state_merge(
-    std::shared_ptr<const jlm::rvsdg::type> type,
+    std::shared_ptr<const jlm::rvsdg::Type> type,
     const std::vector<jlm::rvsdg::output *> & operands)
 {
   return create_state_mux(std::move(type), operands, 1)[0];
@@ -119,7 +119,7 @@ create_state_merge(
 
 static inline std::vector<jlm::rvsdg::output *>
 create_state_split(
-    std::shared_ptr<const jlm::rvsdg::type> type,
+    std::shared_ptr<const jlm::rvsdg::Type> type,
     jlm::rvsdg::output * operand,
     size_t nresults)
 {

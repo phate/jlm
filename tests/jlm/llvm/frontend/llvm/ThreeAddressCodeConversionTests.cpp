@@ -57,13 +57,13 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
   auto ipgModule = ipgraph_module::create(jlm::util::filepath(""), "", "");
   auto & ipgraph = ipgModule->ipgraph();
 
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> operandTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operandTypes;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
     operandTypes.emplace_back(operation.argument(n));
   }
 
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes;
   for (size_t n = 0; n < operation.nresults(); n++)
   {
     resultTypes.emplace_back(operation.result(n));
@@ -97,7 +97,7 @@ LoadVolatileConversion()
 
   // Assert
   auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
-  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::node_output::node(lambdaOutput));
+  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto loadVolatileNode = lambda->subregion()->nodes.first();
   assert(dynamic_cast<const LoadVolatileNode *>(loadVolatileNode));
@@ -126,7 +126,7 @@ StoreVolatileConversion()
 
   // Assert
   auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
-  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::node_output::node(lambdaOutput));
+  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto storeVolatileNode = lambda->subregion()->nodes.first();
   assert(dynamic_cast<const StoreVolatileNode *>(storeVolatileNode));

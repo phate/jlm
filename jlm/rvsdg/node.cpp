@@ -23,8 +23,8 @@ input::~input() noexcept
 
 input::input(
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::region * region,
-    std::shared_ptr<const rvsdg::type> type)
+    rvsdg::Region * region,
+    std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       origin_(origin),
       region_(region),
@@ -83,7 +83,7 @@ output::~output() noexcept
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
+output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       region_(region),
       Type_(std::move(type))
@@ -95,6 +95,13 @@ output::debug_string() const
   return jlm::util::strfmt(index());
 }
 
+rvsdg::node *
+output::GetNode(const rvsdg::output & output) noexcept
+{
+  auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
+  return nodeOutput ? nodeOutput->node() : nullptr;
+}
+
 void
 output::remove_user(jlm::rvsdg::input * user)
 {
@@ -102,10 +109,13 @@ output::remove_user(jlm::rvsdg::input * user)
 
   users_.erase(user);
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
-      region()->bottom_nodes.push_back(node);
+    {
+      bool wasAdded = region()->AddBottomNode(*node);
+      JLM_ASSERT(wasAdded);
+    }
   }
 }
 
@@ -114,10 +124,13 @@ output::add_user(jlm::rvsdg::input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
-      region()->bottom_nodes.erase(node);
+    {
+      bool wasRemoved = region()->RemoveBottomNode(*node);
+      JLM_ASSERT(wasRemoved);
+    }
   }
   users_.insert(user);
 }
@@ -149,27 +162,28 @@ namespace jlm::rvsdg
 node_input::node_input(
     jlm::rvsdg::output * origin,
     jlm::rvsdg::node * node,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
 /* node_output class */
 
-node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type)
+node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}
 
 /* node class */
 
-node::node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region)
+node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
     : depth_(0),
       graph_(region->graph()),
       region_(region),
       operation_(std::move(op))
 {
-  region->bottom_nodes.push_back(this);
+  bool wasAdded = region->AddBottomNode(*this);
+  JLM_ASSERT(wasAdded);
   region->top_nodes.push_back(this);
   region->nodes.push_back(this);
 }
@@ -177,7 +191,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * regio
 node::~node()
 {
   outputs_.clear();
-  region()->bottom_nodes.erase(this);
+  bool wasRemoved = region()->RemoveBottomNode(*this);
+  JLM_ASSERT(wasRemoved);
 
   if (ninputs() == 0)
     region()->top_nodes.erase(this);
@@ -189,7 +204,7 @@ node::~node()
 node_input *
 node::add_input(std::unique_ptr<node_input> input)
 {
-  auto producer = node_output::node(input->origin());
+  auto producer = output::GetNode(*input->origin());
 
   if (ninputs() == 0)
   {
@@ -211,7 +226,7 @@ void
 node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
-  auto producer = node_output::node(input(index)->origin());
+  auto producer = output::GetNode(*input(index)->origin());
 
   /* remove input */
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -264,7 +279,7 @@ node::recompute_depth() noexcept
   size_t new_depth = 0;
   for (size_t n = 0; n < ninputs(); n++)
   {
-    auto producer = node_output::node(input(n)->origin());
+    auto producer = output::GetNode(*input(n)->origin());
     new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
   }
   if (new_depth == depth())
@@ -288,9 +303,9 @@ node::recompute_depth() noexcept
 }
 
 jlm::rvsdg::node *
-node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  substitution_map smap;
+  SubstitutionMap smap;
 
   size_t noperands = std::min(operands.size(), ninputs());
   for (size_t n = 0; n < noperands; n++)
@@ -302,16 +317,16 @@ node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> 
 jlm::rvsdg::node *
 producer(const jlm::rvsdg::output * output) noexcept
 {
-  if (auto node = node_output::node(output))
+  if (auto node = output::GetNode(*output))
     return node;
 
-  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument *>(output));
-  auto argument = static_cast<const jlm::rvsdg::argument *>(output);
+  JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
+  auto argument = static_cast<const RegionArgument *>(output);
 
   if (!argument->input())
     return nullptr;
 
-  if (is<theta_op>(argument->region()->node())
+  if (is<ThetaOperation>(argument->region()->node())
       && (argument->region()->result(argument->index() + 1)->origin() != argument))
     return nullptr;
 

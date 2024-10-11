@@ -29,7 +29,7 @@ TestWithMatch()
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->fctargument(0));
-  auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
   auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
   auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
@@ -46,7 +46,7 @@ TestWithMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static void
@@ -55,7 +55,7 @@ TestWithoutMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ft = FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
+  auto ft = FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
@@ -65,7 +65,7 @@ TestWithoutMatch()
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-  auto gamma = jlm::rvsdg::gamma_node::create(lambda->fctargument(0), 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(lambda->fctargument(0), 2);
   auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
   auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
@@ -82,7 +82,7 @@ TestWithoutMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

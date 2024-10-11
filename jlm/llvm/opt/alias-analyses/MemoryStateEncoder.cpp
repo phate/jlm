@@ -297,7 +297,7 @@ public:
   }
 
   StateMap::MemoryNodeStatePair *
-  InsertUndefinedState(rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  InsertUndefinedState(rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     auto & undefinedState = GetOrInsertUndefinedMemoryState(region);
     return InsertState(memoryNode, undefinedState);
@@ -319,20 +319,20 @@ public:
 
   std::vector<StateMap::MemoryNodeStatePair *>
   GetStates(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     return GetStateMap(region).GetStates(memoryNodes);
   }
 
   bool
-  HasState(const rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  HasState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     return GetStateMap(region).HasState(memoryNode);
   }
 
   StateMap::MemoryNodeStatePair *
-  GetState(const rvsdg::region & region, const PointsToGraph::MemoryNode & memoryNode)
+  GetState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
     return GetStateMap(region).GetState(memoryNode);
   }
@@ -345,7 +345,7 @@ public:
   }
 
   void
-  PushRegion(const rvsdg::region & region)
+  PushRegion(const rvsdg::Region & region)
   {
     JLM_ASSERT(StateMaps_.find(&region) == StateMaps_.end());
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) == MemoryNodeCacheMaps_.end());
@@ -355,7 +355,7 @@ public:
   }
 
   void
-  PopRegion(const rvsdg::region & region)
+  PopRegion(const rvsdg::Region & region)
   {
     JLM_ASSERT(StateMaps_.find(&region) != StateMaps_.end());
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) != MemoryNodeCacheMaps_.end());
@@ -366,27 +366,27 @@ public:
 
 private:
   rvsdg::output &
-  GetOrInsertUndefinedMemoryState(rvsdg::region & region)
+  GetOrInsertUndefinedMemoryState(rvsdg::Region & region)
   {
     return HasUndefinedMemoryState(region) ? GetUndefinedMemoryState(region)
                                            : InsertUndefinedMemoryState(region);
   }
 
   bool
-  HasUndefinedMemoryState(const rvsdg::region & region) const noexcept
+  HasUndefinedMemoryState(const rvsdg::Region & region) const noexcept
   {
     return UndefinedMemoryStates_.find(&region) != UndefinedMemoryStates_.end();
   }
 
   rvsdg::output &
-  GetUndefinedMemoryState(const rvsdg::region & region) const noexcept
+  GetUndefinedMemoryState(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(HasUndefinedMemoryState(region));
     return *UndefinedMemoryStates_.find(&region)->second;
   }
 
   rvsdg::output &
-  InsertUndefinedMemoryState(rvsdg::region & region) noexcept
+  InsertUndefinedMemoryState(rvsdg::Region & region) noexcept
   {
     auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType::Create());
     UndefinedMemoryStates_[&region] = undefinedMemoryState;
@@ -394,22 +394,22 @@ private:
   }
 
   StateMap &
-  GetStateMap(const rvsdg::region & region) const noexcept
+  GetStateMap(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(StateMaps_.find(&region) != StateMaps_.end());
     return *StateMaps_.at(&region);
   }
 
   MemoryNodeCache &
-  GetMemoryNodeCache(const rvsdg::region & region) const noexcept
+  GetMemoryNodeCache(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(MemoryNodeCacheMaps_.find(&region) != MemoryNodeCacheMaps_.end());
     return *MemoryNodeCacheMaps_.at(&region);
   }
 
-  std::unordered_map<const rvsdg::region *, std::unique_ptr<StateMap>> StateMaps_;
-  std::unordered_map<const rvsdg::region *, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
-  std::unordered_map<const rvsdg::region *, rvsdg::output *> UndefinedMemoryStates_;
+  std::unordered_map<const rvsdg::Region *, std::unique_ptr<StateMap>> StateMaps_;
+  std::unordered_map<const rvsdg::Region *, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
+  std::unordered_map<const rvsdg::Region *, rvsdg::output *> UndefinedMemoryStates_;
 
   const MemoryNodeProvisioning & MemoryNodeProvisioning_;
 };
@@ -485,7 +485,7 @@ MemoryStateEncoder::Encode(
 }
 
 void
-MemoryStateEncoder::EncodeRegion(rvsdg::region & region)
+MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 {
   using namespace jlm::rvsdg;
 
@@ -522,11 +522,11 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::structural_node & structuralNode
   {
     EncodePhi(*phiNode);
   }
-  else if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&structuralNode))
+  else if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&structuralNode))
   {
     EncodeGamma(*gammaNode);
   }
-  else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&structuralNode))
+  else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&structuralNode))
   {
     EncodeTheta(*thetaNode);
   }
@@ -832,7 +832,7 @@ MemoryStateEncoder::EncodeDelta(const delta::node &)
 }
 
 void
-MemoryStateEncoder::EncodeGamma(rvsdg::gamma_node & gammaNode)
+MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode)
 {
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     Context_->GetRegionalizedStateMap().PushRegion(*gammaNode.subregion(n));
@@ -849,7 +849,7 @@ MemoryStateEncoder::EncodeGamma(rvsdg::gamma_node & gammaNode)
 }
 
 void
-MemoryStateEncoder::EncodeGammaEntry(rvsdg::gamma_node & gammaNode)
+MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
 {
   auto region = gammaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -865,7 +865,7 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::gamma_node & gammaNode)
 }
 
 void
-MemoryStateEncoder::EncodeGammaExit(rvsdg::gamma_node & gammaNode)
+MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto memoryNodes = Context_->GetMemoryNodeProvisioning().GetGammaExitNodes(gammaNode);
@@ -888,7 +888,7 @@ MemoryStateEncoder::EncodeGammaExit(rvsdg::gamma_node & gammaNode)
 }
 
 void
-MemoryStateEncoder::EncodeTheta(rvsdg::theta_node & thetaNode)
+MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
 {
   Context_->GetRegionalizedStateMap().PushRegion(*thetaNode.subregion());
 
@@ -899,14 +899,14 @@ MemoryStateEncoder::EncodeTheta(rvsdg::theta_node & thetaNode)
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
 }
 
-std::vector<rvsdg::theta_output *>
-MemoryStateEncoder::EncodeThetaEntry(rvsdg::theta_node & thetaNode)
+std::vector<rvsdg::ThetaOutput *>
+MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetThetaEntryExitNodes(thetaNode);
 
-  std::vector<rvsdg::theta_output *> thetaStateOutputs;
+  std::vector<rvsdg::ThetaOutput *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
@@ -920,8 +920,8 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::theta_node & thetaNode)
 
 void
 MemoryStateEncoder::EncodeThetaExit(
-    rvsdg::theta_node & thetaNode,
-    const std::vector<rvsdg::theta_output *> & thetaStateOutputs)
+    rvsdg::ThetaNode & thetaNode,
+    const std::vector<rvsdg::ThetaOutput *> & thetaStateOutputs)
 {
   auto subregion = thetaNode.subregion();
   auto & stateMap = Context_->GetRegionalizedStateMap();

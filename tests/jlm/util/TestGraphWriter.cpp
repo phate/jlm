@@ -49,7 +49,16 @@ TestGraphElement()
   graph.SetAttributeGraphElement("graph", graph);
   graph.SetAttributeObject("another graph", myInt);
 
+  // Check getting attributes
   assert(graph.HasAttribute("taste"));
+  assert(graph.GetAttributeString("taste") == "sweet");
+  assert(!graph.GetAttributeString("not-an-attribute"));
+  assert(graph.GetAttributeGraphElement("graph") == &graph);
+  assert(graph.GetAttributeObject("another graph") == reinterpret_cast<uintptr_t>(&myInt));
+  // Also check that one can get GraphElements based on the program object they represent
+  assert(graph.GetAttributeGraphElement("another graph") == &graph);
+
+  // Test removing attributes
   assert(graph.RemoveAttribute("taste"));
   assert(!graph.HasAttribute("taste"));
   // Removing the attribute again returns false
@@ -175,11 +184,11 @@ TestInOutNode()
   std::ostringstream out;
   node.Output(out, GraphOutputFormat::ASCII, 0);
   auto string = out.str();
-  assert(StringContains(string, "o0, o1, o2 := \"My\\nInOutNode\" o2, []"));
+  assert(StringContains(string, "out0, out1, out2 := \"My\\nInOutNode\" out2, []"));
 
   // Check that the subgraph is also printed
-  assert(StringContains(string, "ARG a0:CTX <= o2"));
-  assert(StringContains(string, "RES a0:RETURN => o0"));
+  assert(StringContains(string, "ARG arg0:CTX <= out2"));
+  assert(StringContains(string, "RES arg0:RETURN => out0"));
 
   // Check that HTML labels with newlines turn into <BR/>
   std::ostringstream out2;

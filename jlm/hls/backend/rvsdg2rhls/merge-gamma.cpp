@@ -22,14 +22,14 @@ merge_gamma(llvm::RvsdgModule & rm)
 }
 
 bool
-eliminate_gamma_ctl(rvsdg::gamma_node * gamma)
+eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
 {
   // eliminates gammas that just replicate the ctl input
   bool changed = false;
   for (size_t i = 0; i < gamma->noutputs(); ++i)
   {
     auto o = gamma->output(i);
-    if (dynamic_cast<const rvsdg::ctltype *>(&o->type()))
+    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
     {
       bool eliminate = true;
       for (size_t j = 0; j < gamma->nsubregions(); ++j)
@@ -61,7 +61,7 @@ eliminate_gamma_ctl(rvsdg::gamma_node * gamma)
 }
 
 bool
-fix_match_inversion(rvsdg::gamma_node * old_gamma)
+fix_match_inversion(rvsdg::GammaNode * old_gamma)
 {
   // inverts match and swaps regions for gammas that contain swapped control constants
   if (old_gamma->nsubregions() != 2)
@@ -73,7 +73,7 @@ fix_match_inversion(rvsdg::gamma_node * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (dynamic_cast<const rvsdg::ctltype *>(&o->type()))
+    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
     {
       ctl_cnt++;
       swapped = true;
@@ -118,9 +118,9 @@ fix_match_inversion(rvsdg::gamma_node * old_gamma)
             no->region(),
             op,
             { no->node()->input(0)->origin() })[0];
-        auto new_gamma = rvsdg::gamma_node::create(new_match, match->nalternatives());
-        rvsdg::substitution_map rmap0; // subregion 0 of the new gamma - 1 of the old
-        rvsdg::substitution_map rmap1;
+        auto new_gamma = rvsdg::GammaNode::create(new_match, match->nalternatives());
+        rvsdg::SubstitutionMap rmap0; // subregion 0 of the new gamma - 1 of the old
+        rvsdg::SubstitutionMap rmap1;
         for (auto oev = old_gamma->begin_entryvar(); oev != old_gamma->end_entryvar(); oev++)
         {
           auto nev = new_gamma->add_entryvar(oev->origin());
@@ -149,11 +149,11 @@ fix_match_inversion(rvsdg::gamma_node * old_gamma)
 }
 
 bool
-eliminate_gamma_eol(rvsdg::gamma_node * gamma)
+eliminate_gamma_eol(rvsdg::GammaNode * gamma)
 {
   // eliminates gammas that are only active at the end of the loop and have unused outputs
   // seems to be mostly loop variables
-  auto theta = dynamic_cast<rvsdg::theta_node *>(gamma->region()->node());
+  auto theta = dynamic_cast<rvsdg::ThetaNode *>(gamma->region()->node());
   if (!theta || theta->predicate()->origin() != gamma->predicate()->origin())
   {
     return false;
@@ -171,12 +171,13 @@ eliminate_gamma_eol(rvsdg::gamma_node * gamma)
       continue;
     }
     auto user = *o->begin();
-    if (auto res = dynamic_cast<rvsdg::result *>(user))
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       if (res->output() && res->output()->nusers() == 0)
       {
         // continue loop subregion
-        if (auto arg = dynamic_cast<rvsdg::argument *>(gamma->subregion(1)->result(i)->origin()))
+        if (auto arg =
+                dynamic_cast<rvsdg::RegionArgument *>(gamma->subregion(1)->result(i)->origin()))
         {
           // value is just passed through
           if (o->nusers())
@@ -192,7 +193,7 @@ eliminate_gamma_eol(rvsdg::gamma_node * gamma)
 }
 
 void
-merge_gamma(jlm::rvsdg::region * region)
+merge_gamma(rvsdg::Region * region)
 {
   bool changed = true;
   while (changed)
@@ -204,7 +205,7 @@ merge_gamma(jlm::rvsdg::region * region)
       {
         for (size_t n = 0; n < structnode->nsubregions(); n++)
           merge_gamma(structnode->subregion(n));
-        if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+        if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
           if (fix_match_inversion(gamma) || eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma)
               || merge_gamma(gamma))
@@ -228,7 +229,7 @@ is_output_of(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
 bool
 depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
 {
-  auto arg = dynamic_cast<jlm::rvsdg::argument *>(output);
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (arg)
   {
     return false;
@@ -249,12 +250,12 @@ depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
   return false;
 }
 
-jlm::rvsdg::gamma_input *
-get_entryvar(jlm::rvsdg::output * origin, jlm::rvsdg::gamma_node * gamma)
+rvsdg::GammaInput *
+get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
 {
   for (auto user : *origin)
   {
-    auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user);
+    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
     if (gi && gi->node() == gamma)
     {
       return gi;
@@ -264,11 +265,11 @@ get_entryvar(jlm::rvsdg::output * origin, jlm::rvsdg::gamma_node * gamma)
 }
 
 bool
-merge_gamma(jlm::rvsdg::gamma_node * gamma)
+merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto gi = dynamic_cast<jlm::rvsdg::gamma_input *>(user);
+    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
     if (gi && gi != gamma->predicate())
     {
       // other gamma depending on same predicate
@@ -291,14 +292,14 @@ merge_gamma(jlm::rvsdg::gamma_node * gamma)
       }
       if (can_merge)
       {
-        std::vector<jlm::rvsdg::substitution_map> rmap(gamma->nsubregions());
+        std::vector<rvsdg::SubstitutionMap> rmap(gamma->nsubregions());
         // populate argument mappings
         for (size_t i = 0; i < gamma->nentryvars(); ++i)
         {
           auto ev = gamma->entryvar(i);
           if (is_output_of(ev->origin(), other_gamma))
           {
-            auto go = dynamic_cast<jlm::rvsdg::gamma_output *>(ev->origin());
+            auto go = dynamic_cast<rvsdg::GammaOutput *>(ev->origin());
             for (size_t j = 0; j < gamma->nsubregions(); ++j)
             {
               rmap[j].insert(ev->argument(j), go->result(j)->origin());

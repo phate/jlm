@@ -23,7 +23,7 @@ bittype::debug_string() const
 }
 
 bool
-bittype::operator==(const jlm::rvsdg::type & other) const noexcept
+bittype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const bittype *>(&other);
   return type != nullptr && this->nbits() == type->nbits();

@@ -104,7 +104,7 @@ private:
    * @param region The to be annotated region.
    */
   void
-  AnnotateRegion(rvsdg::region & region);
+  AnnotateRegion(rvsdg::Region & region);
 
   void
   AnnotateSimpleNode(const rvsdg::simple_node & provider);
@@ -158,7 +158,7 @@ private:
   Propagate(const RvsdgModule & rvsdgModule);
 
   void
-  PropagateRegion(const rvsdg::region & region);
+  PropagateRegion(const rvsdg::Region & region);
 
   void
   PropagatePhi(const phi::node & phiNode);
@@ -172,7 +172,7 @@ private:
    */
   void
   AssignAndPropagateMemoryNodes(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
       const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences);
 
@@ -196,7 +196,7 @@ private:
   ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
 
   static bool
-  ShouldCreateRegionSummary(const rvsdg::region & region);
+  ShouldCreateRegionSummary(const rvsdg::Region & region);
 
   /**
    * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the

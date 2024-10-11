@@ -69,7 +69,7 @@ test_gamma()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -84,7 +84,7 @@ test_gamma()
   auto u1 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
   auto u2 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
 
-  auto gamma = jlm::rvsdg::gamma_node::create(c, 2);
+  auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
   auto ev1 = gamma->add_entryvar(u1);
   auto ev2 = gamma->add_entryvar(u2);
@@ -122,8 +122,10 @@ test_gamma()
   assert(subregion1->result(0)->origin() == subregion1->result(1)->origin());
   assert(graph.root()->result(0)->origin() == graph.root()->result(1)->origin());
 
-  auto argument0 = dynamic_cast<const jlm::rvsdg::argument *>(subregion0->result(6)->origin());
-  auto argument1 = dynamic_cast<const jlm::rvsdg::argument *>(subregion1->result(6)->origin());
+  auto argument0 =
+      dynamic_cast<const jlm::rvsdg::RegionArgument *>(subregion0->result(6)->origin());
+  auto argument1 =
+      dynamic_cast<const jlm::rvsdg::RegionArgument *>(subregion1->result(6)->origin());
   assert(argument0->input() == argument1->input());
 }
 
@@ -133,7 +135,7 @@ test_theta()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -143,7 +145,7 @@ test_theta()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv1 = theta->add_loopvar(c);
@@ -170,9 +172,9 @@ test_theta()
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto un1 = jlm::rvsdg::node_output::node(u1);
-  auto un2 = jlm::rvsdg::node_output::node(u2);
-  auto bn1 = jlm::rvsdg::node_output::node(b1);
+  auto un1 = jlm::rvsdg::output::GetNode(*u1);
+  auto un2 = jlm::rvsdg::output::GetNode(*u2);
+  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
   assert(un1->input(0)->origin() == un2->input(0)->origin());
   assert(bn1->input(0)->origin() == un1->input(0)->origin());
   assert(bn1->input(1)->origin() == region->argument(3));
@@ -186,7 +188,7 @@ test_theta2()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -196,7 +198,7 @@ test_theta2()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv1 = theta->add_loopvar(c);
@@ -230,7 +232,7 @@ test_theta3()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -240,7 +242,7 @@ test_theta3()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta1 = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta1 = jlm::rvsdg::ThetaNode::create(graph.root());
   auto r1 = theta1->subregion();
 
   auto lv1 = theta1->add_loopvar(c);
@@ -248,7 +250,7 @@ test_theta3()
   auto lv3 = theta1->add_loopvar(x);
   auto lv4 = theta1->add_loopvar(x);
 
-  auto theta2 = jlm::rvsdg::theta_node::create(r1);
+  auto theta2 = jlm::rvsdg::ThetaNode::create(r1);
   auto r2 = theta2->subregion();
   auto p = theta2->add_loopvar(lv1->argument());
   theta2->add_loopvar(lv2->argument());
@@ -289,7 +291,7 @@ test_theta4()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -300,7 +302,7 @@ test_theta4()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv1 = theta->add_loopvar(c);
@@ -342,7 +344,7 @@ test_theta5()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ctltype::Create(2);
+  auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -353,7 +355,7 @@ test_theta5()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto theta = jlm::rvsdg::theta_node::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
   auto region = theta->subregion();
 
   auto lv0 = theta->add_loopvar(c);
@@ -414,7 +416,7 @@ test_lambda()
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  auto bn1 = jlm::rvsdg::node_output::node(b1);
+  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
   assert(bn1->input(0)->origin() == bn1->input(1)->origin());
 }
 

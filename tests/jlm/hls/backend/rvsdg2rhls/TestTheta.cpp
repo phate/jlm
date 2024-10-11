@@ -30,7 +30,7 @@ TestUnknownBoundaries()
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
 
-  auto theta = jlm::rvsdg::theta_node::create(lambda->subregion());
+  auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto subregion = theta->subregion();
   auto idv = theta->add_loopvar(lambda->fctargument(0));
   auto lvs = theta->add_loopvar(lambda->fctargument(1));
@@ -57,10 +57,10 @@ TestUnknownBoundaries()
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

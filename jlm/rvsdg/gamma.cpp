@@ -14,21 +14,21 @@ namespace jlm::rvsdg
 /* gamma normal form */
 
 static bool
-is_predicate_reducible(const jlm::rvsdg::gamma_node * gamma)
+is_predicate_reducible(const GammaNode * gamma)
 {
-  auto constant = node_output::node(gamma->predicate()->origin());
+  auto constant = output::GetNode(*gamma->predicate()->origin());
   return constant && is_ctlconstant_op(constant->operation());
 }
 
 static void
-perform_predicate_reduction(jlm::rvsdg::gamma_node * gamma)
+perform_predicate_reduction(GammaNode * gamma)
 {
   auto origin = gamma->predicate()->origin();
   auto constant = static_cast<node_output *>(origin)->node();
   auto cop = static_cast<const ctlconstant_op *>(&constant->operation());
   auto alternative = cop->value().alternative();
 
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   for (auto it = gamma->begin_entryvar(); it != gamma->end_entryvar(); it++)
     smap.insert(it->argument(alternative), it->origin());
 
@@ -41,12 +41,12 @@ perform_predicate_reduction(jlm::rvsdg::gamma_node * gamma)
 }
 
 static bool
-perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
+perform_invariant_reduction(GammaNode * gamma)
 {
   bool was_normalized = true;
   for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++)
   {
-    auto argument = dynamic_cast<const jlm::rvsdg::argument *>(it->result(0)->origin());
+    auto argument = dynamic_cast<const rvsdg::RegionArgument *>(it->result(0)->origin());
     if (!argument)
       continue;
 
@@ -54,7 +54,7 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
     auto input = argument->input();
     for (n = 1; n < it->nresults(); n++)
     {
-      auto argument = dynamic_cast<const jlm::rvsdg::argument *>(it->result(n)->origin());
+      auto argument = dynamic_cast<const rvsdg::RegionArgument *>(it->result(n)->origin());
       if (!argument && argument->input() != input)
         break;
     }
@@ -70,10 +70,10 @@ perform_invariant_reduction(jlm::rvsdg::gamma_node * gamma)
 }
 
 static std::unordered_set<jlm::rvsdg::structural_output *>
-is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
+is_control_constant_reducible(GammaNode * gamma)
 {
   /* check gamma predicate */
-  auto match = node_output::node(gamma->predicate()->origin());
+  auto match = output::GetNode(*gamma->predicate()->origin());
   if (!is<match_op>(match))
     return {};
 
@@ -96,7 +96,7 @@ is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
     size_t n;
     for (n = 0; n < it->nresults(); n++)
     {
-      auto node = node_output::node(it->result(n)->origin());
+      auto node = output::GetNode(*it->result(n)->origin());
       if (!is<ctlconstant_op>(node))
         break;
 
@@ -114,7 +114,7 @@ is_control_constant_reducible(jlm::rvsdg::gamma_node * gamma)
 static void
 perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::structural_output *> & outputs)
 {
-  auto gamma = static_cast<jlm::rvsdg::gamma_node *>((*outputs.begin())->node());
+  auto gamma = static_cast<GammaNode *>((*outputs.begin())->node());
   auto origin = static_cast<node_output *>(gamma->predicate()->origin());
   auto match = origin->node();
   auto & match_op = to_match_op(match->operation());
@@ -171,8 +171,7 @@ gamma_normal_form::gamma_normal_form(
 bool
 gamma_normal_form::normalize_node(jlm::rvsdg::node * node_) const
 {
-  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::gamma_node *>(node_));
-  auto node = static_cast<jlm::rvsdg::gamma_node *>(node_);
+  auto node = util::AssertedCast<GammaNode>(node_);
 
   if (!get_mutable())
     return true;
@@ -244,42 +243,40 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
 
 /* gamma operation */
 
-gamma_op::~gamma_op() noexcept
+GammaOperation::~GammaOperation() noexcept
 {}
 
 std::string
-gamma_op::debug_string() const
+GammaOperation::debug_string() const
 {
   return "GAMMA";
 }
 
 std::unique_ptr<jlm::rvsdg::operation>
-gamma_op::copy() const
+GammaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new gamma_op(*this));
+  return std::unique_ptr<operation>(new GammaOperation(*this));
 }
 
 bool
-gamma_op::operator==(const operation & other) const noexcept
+GammaOperation::operator==(const operation & other) const noexcept
 {
-  auto op = dynamic_cast<const gamma_op *>(&other);
+  auto op = dynamic_cast<const GammaOperation *>(&other);
   return op && op->nalternatives_ == nalternatives_;
 }
 
 /* gamma input */
 
-gamma_input::~gamma_input() noexcept
-{}
+GammaInput::~GammaInput() noexcept = default;
 
 /* gamma output */
 
-gamma_output::~gamma_output() noexcept
-{}
+GammaOutput::~GammaOutput() noexcept = default;
 
 bool
-gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
+GammaOutput::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 {
-  auto argument = dynamic_cast<const rvsdg::argument *>(result(0)->origin());
+  auto argument = dynamic_cast<const rvsdg::RegionArgument *>(result(0)->origin());
   if (!argument)
   {
     return false;
@@ -289,7 +286,7 @@ gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
   auto origin = argument->input()->origin();
   for (n = 1; n < nresults(); n++)
   {
-    argument = dynamic_cast<const rvsdg::argument *>(result(n)->origin());
+    argument = dynamic_cast<const rvsdg::RegionArgument *>(result(n)->origin());
     if (argument == nullptr || argument->input()->origin() != origin)
       break;
   }
@@ -305,11 +302,10 @@ gamma_output::IsInvariant(rvsdg::output ** invariantOrigin) const noexcept
 
 /* gamma node */
 
-gamma_node::~gamma_node()
-{}
+GammaNode::~GammaNode() noexcept = default;
 
-const gamma_node::entryvar_iterator &
-gamma_node::entryvar_iterator::operator++() noexcept
+const GammaNode::entryvar_iterator &
+GammaNode::entryvar_iterator::operator++() noexcept
 {
   if (input_ == nullptr)
     return *this;
@@ -322,12 +318,12 @@ gamma_node::entryvar_iterator::operator++() noexcept
     return *this;
   }
 
-  input_ = static_cast<jlm::rvsdg::gamma_input *>(node->input(++index));
+  input_ = static_cast<GammaInput *>(node->input(++index));
   return *this;
 }
 
-const gamma_node::exitvar_iterator &
-gamma_node::exitvar_iterator::operator++() noexcept
+const GammaNode::exitvar_iterator &
+GammaNode::exitvar_iterator::operator++() noexcept
 {
   if (output_ == nullptr)
     return *this;
@@ -344,13 +340,13 @@ gamma_node::exitvar_iterator::operator++() noexcept
   return *this;
 }
 
-jlm::rvsdg::gamma_node *
-gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+GammaNode *
+GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
   /* add entry variables to new gamma */
-  std::vector<jlm::rvsdg::substitution_map> rmap(nsubregions());
+  std::vector<SubstitutionMap> rmap(nsubregions());
   for (auto oev = begin_entryvar(); oev != end_entryvar(); oev++)
   {
     auto nev = gamma->add_entryvar(smap.lookup(oev->origin()));
@@ -378,9 +374,9 @@ gamma_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & sma
 GammaArgument::~GammaArgument() noexcept = default;
 
 GammaArgument &
-GammaArgument::Copy(rvsdg::region & region, structural_input * input)
+GammaArgument::Copy(rvsdg::Region & region, structural_input * input)
 {
-  auto gammaInput = util::AssertedCast<gamma_input>(input);
+  auto gammaInput = util::AssertedCast<GammaInput>(input);
   return Create(region, *gammaInput);
 }
 
@@ -389,7 +385,7 @@ GammaResult::~GammaResult() noexcept = default;
 GammaResult &
 GammaResult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
 {
-  auto gammaOutput = util::AssertedCast<gamma_output>(output);
+  auto gammaOutput = util::AssertedCast<GammaOutput>(output);
   return GammaResult::Create(*origin.region(), origin, *gammaOutput);
 }
 
@@ -408,6 +404,6 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::gamma_op),
+      typeid(jlm::rvsdg::GammaOperation),
       gamma_node_get_default_normal_form_);
 }

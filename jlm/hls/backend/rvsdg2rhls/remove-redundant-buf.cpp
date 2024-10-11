@@ -33,7 +33,7 @@ eliminate_buf(jlm::rvsdg::output * o)
 }
 
 void
-remove_redundant_buf(jlm::rvsdg::region * region)
+remove_redundant_buf(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

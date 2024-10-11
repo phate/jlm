@@ -45,7 +45,7 @@ public:
 
 private:
   void
-  AnalyzeRegion(jlm::rvsdg::region & region)
+  AnalyzeRegion(jlm::rvsdg::Region & region)
   {
     using namespace jlm::llvm;
 

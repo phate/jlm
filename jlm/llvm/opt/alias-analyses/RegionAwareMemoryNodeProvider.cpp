@@ -45,7 +45,7 @@ public:
       return;
 
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(rvsdgModule.Rvsdg().root()));
-    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::region::NumRegions(*rvsdgModule.Rvsdg().root()));
+    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::Region::NumRegions(*rvsdgModule.Rvsdg().root()));
     AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
@@ -148,7 +148,7 @@ private:
 class RegionSummary final
 {
 public:
-  explicit RegionSummary(const rvsdg::region & region)
+  explicit RegionSummary(const rvsdg::Region & region)
       : Region_(&region)
   {}
 
@@ -228,7 +228,7 @@ public:
     StructuralNodes_.Insert(&structuralNode);
   }
 
-  [[nodiscard]] const rvsdg::region &
+  [[nodiscard]] const rvsdg::Region &
   GetRegion() const noexcept
   {
     return *Region_;
@@ -242,13 +242,13 @@ public:
   }
 
   static std::unique_ptr<RegionSummary>
-  Create(const rvsdg::region & region)
+  Create(const rvsdg::Region & region)
   {
     return std::make_unique<RegionSummary>(region);
   }
 
 private:
-  const rvsdg::region * Region_;
+  const rvsdg::Region * Region_;
   util::HashSet<const PointsToGraph::MemoryNode *> MemoryNodes_;
   util::HashSet<const rvsdg::simple_node *> UnknownMemoryNodeReferences_;
 
@@ -263,7 +263,7 @@ private:
 class RegionAwareMemoryNodeProvisioning final : public MemoryNodeProvisioning
 {
   using RegionSummaryMap =
-      std::unordered_map<const rvsdg::region *, std::unique_ptr<RegionSummary>>;
+      std::unordered_map<const rvsdg::Region *, std::unique_ptr<RegionSummary>>;
 
   class RegionSummaryConstIterator final
   {
@@ -356,14 +356,14 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::region & region) const override
+  GetRegionEntryNodes(const rvsdg::Region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::region & region) const override
+  GetRegionExitNodes(const rvsdg::Region & region) const override
   {
     auto & regionSummary = GetRegionSummary(region);
     return regionSummary.GetMemoryNodes();
@@ -438,32 +438,32 @@ public:
   }
 
   [[nodiscard]] bool
-  ContainsRegionSummary(const rvsdg::region & region) const
+  ContainsRegionSummary(const rvsdg::Region & region) const
   {
     return RegionSummaries_.find(&region) != RegionSummaries_.end();
   }
 
   bool
-  ContainsExternalFunctionNodes(const rvsdg::argument & import) const
+  ContainsExternalFunctionNodes(const rvsdg::RegionArgument & import) const
   {
     return ExternalFunctionNodes_.find(&import) != ExternalFunctionNodes_.end();
   }
 
   [[nodiscard]] RegionSummary &
-  GetRegionSummary(const rvsdg::region & region) const
+  GetRegionSummary(const rvsdg::Region & region) const
   {
     JLM_ASSERT(ContainsRegionSummary(region));
     return *RegionSummaries_.find(&region)->second;
   }
 
   [[nodiscard]] RegionSummary *
-  TryGetRegionSummary(const rvsdg::region & region) const
+  TryGetRegionSummary(const rvsdg::Region & region) const
   {
     return ContainsRegionSummary(region) ? &GetRegionSummary(region) : nullptr;
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetExternalFunctionNodes(const rvsdg::argument & import) const
+  GetExternalFunctionNodes(const rvsdg::RegionArgument & import) const
   {
     JLM_ASSERT(ContainsExternalFunctionNodes(import));
 
@@ -483,7 +483,7 @@ public:
 
   void
   AddExternalFunctionNodes(
-      const rvsdg::argument & import,
+      const rvsdg::RegionArgument & import,
       util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
   {
     JLM_ASSERT(!ContainsExternalFunctionNodes(import));
@@ -609,8 +609,9 @@ private:
 
   RegionSummaryMap RegionSummaries_;
   const PointsToGraph & PointsToGraph_;
-  std::unordered_map<const rvsdg::argument *, util::HashSet<const PointsToGraph::MemoryNode *>>
-      ExternalFunctionNodes_;
+  std::
+      unordered_map<const rvsdg::RegionArgument *, util::HashSet<const PointsToGraph::MemoryNode *>>
+          ExternalFunctionNodes_;
 };
 
 RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept = default;
@@ -667,7 +668,7 @@ RegionAwareMemoryNodeProvider::Create(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::region & region)
+RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region)
 {
   if (ShouldCreateRegionSummary(region))
   {
@@ -904,7 +905,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
 
 void
 RegionAwareMemoryNodeProvider::AssignAndPropagateMemoryNodes(
-    const rvsdg::region & region,
+    const rvsdg::Region & region,
     const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
     const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences)
 {
@@ -928,7 +929,7 @@ RegionAwareMemoryNodeProvider::AssignAndPropagateMemoryNodes(
 }
 
 void
-RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::region & region)
+RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::Region & region)
 {
   auto & regionSummary = Provisioning_->GetRegionSummary(region);
   for (auto & structuralNode : regionSummary.GetStructuralNodes().Items())
@@ -995,7 +996,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
 }
 
 bool
-RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::region & region)
+RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::Region & region)
 {
   return !region.IsRootRegion() && !is<phi_op>(region.node())
       && !is<delta::operation>(region.node());
@@ -1022,8 +1023,8 @@ RegionAwareMemoryNodeProvider::ToRegionTree(
     return std::string(depth, '-');
   };
 
-  std::function<std::string(const jlm::rvsdg::region *, size_t)> toRegionTree =
-      [&](const jlm::rvsdg::region * region, size_t depth)
+  std::function<std::string(const rvsdg::Region *, size_t)> toRegionTree =
+      [&](const rvsdg::Region * region, size_t depth)
   {
     std::string subtree;
     if (region->node())

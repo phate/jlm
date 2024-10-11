@@ -42,7 +42,7 @@ has_return_value(const llvm::cfg & cfg)
   for (size_t n = 0; n < cfg.exit()->nresults(); n++)
   {
     auto result = cfg.exit()->result(n);
-    if (rvsdg::is<rvsdg::valuetype>(result->type()))
+    if (rvsdg::is<rvsdg::ValueType>(result->type()))
       return true;
   }
 
@@ -65,7 +65,7 @@ create_return(const cfg_node * node, context & ctx)
   }
 
   auto result = cfg.exit()->result(0);
-  JLM_ASSERT(rvsdg::is<rvsdg::valuetype>(result->type()));
+  JLM_ASSERT(rvsdg::is<rvsdg::ValueType>(result->type()));
   builder.CreateRet(ctx.value(result));
 }
 
@@ -344,13 +344,37 @@ convert_attributes(const function_node & f, context & ctx)
   {
     auto argument = f.cfg()->entry()->argument(n);
 
-    if (rvsdg::is<rvsdg::statetype>(argument->type()))
+    if (rvsdg::is<rvsdg::StateType>(argument->type()))
       continue;
 
     argsets.push_back(convert_attributes(argument->attributes(), ctx));
   }
 
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
+}
+
+static std::vector<cfg_node *>
+ConvertBasicBlocks(
+    const llvm::cfg & controlFlowGraph,
+    ::llvm::Function & function,
+    jlm2llvm::context & context)
+{
+  auto nodes = breadth_first(controlFlowGraph);
+
+  uint64_t basicBlockCounter = 0;
+  for (const auto & node : nodes)
+  {
+    if (node == controlFlowGraph.entry())
+      continue;
+    if (node == controlFlowGraph.exit())
+      continue;
+
+    auto name = util::strfmt("bb", basicBlockCounter++);
+    auto * basicBlock = ::llvm::BasicBlock::Create(function.getContext(), name, &function);
+    context.insert(node, basicBlock);
+  }
+
+  return nodes;
 }
 
 static inline void
@@ -369,17 +393,8 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
   };
 
   straighten(cfg);
-  auto nodes = breadth_first(cfg);
 
-  /* create basic blocks */
-  for (const auto & node : nodes)
-  {
-    if (node == cfg.entry() || node == cfg.exit())
-      continue;
-
-    auto bb = ::llvm::BasicBlock::Create(f.getContext(), util::strfmt("bb", &node), &f);
-    ctx.insert(node, bb);
-  }
+  auto nodes = ConvertBasicBlocks(cfg, f, ctx);
 
   add_arguments(cfg, f, ctx);
 

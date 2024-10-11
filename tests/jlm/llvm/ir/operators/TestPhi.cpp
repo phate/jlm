@@ -29,7 +29,7 @@ TestPhiCreation()
       { vtype, iostatetype::Create(), MemoryStateType::Create() },
       { vtype, iostatetype::Create(), MemoryStateType::Create() });
 
-  auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
+  auto SetupEmptyLambda = [&](jlm::rvsdg::Region * region, const std::string & name)
   {
     auto lambda = lambda::node::create(region, f0type, name, linkage::external_linkage);
     auto iOStateArgument = lambda->fctargument(1);
@@ -38,7 +38,7 @@ TestPhiCreation()
     return lambda->finalize({ iOStateArgument, memoryStateArgument });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::region * region, jlm::rvsdg::argument * f2)
+  auto SetupF2 = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * f2)
   {
     auto lambda = lambda::node::create(region, f1type, "f2", linkage::external_linkage);
     auto ctxVarF2 = lambda->add_ctxvar(f2);
@@ -111,7 +111,7 @@ TestRemovePhiArgumentsWhere()
   // Act & Assert
   // Try to remove phiArgument0 even though it is used
   auto numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return argument.index() == phiOutput0->argument()->index();
       });
@@ -121,7 +121,7 @@ TestRemovePhiArgumentsWhere()
 
   // Remove phiArgument1
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return argument.index() == 1;
       });
@@ -135,7 +135,7 @@ TestRemovePhiArgumentsWhere()
 
   // Try to remove anything else, but the only dead argument, i.e, phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return argument.index() != phiArgument3->index();
       });
@@ -145,7 +145,7 @@ TestRemovePhiArgumentsWhere()
 
   // Remove everything that is dead, i.e., phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return true;
       });
