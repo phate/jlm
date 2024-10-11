@@ -356,7 +356,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto rvsdgThetaNode = rvsdg::ThetaNode::create(&rvsdgRegion);
 
-    // Add inputs to the gamma node and to all it's subregions
+    // Add loop vars to the theta node
     for (size_t i = 0; i < inputs.size(); i++)
     {
       rvsdgThetaNode->add_loopvar(inputs[i]);

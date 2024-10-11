@@ -166,7 +166,6 @@ JlmToMlirConverter::ConvertNode(
   }
   else if (auto theta = dynamic_cast<const rvsdg::ThetaNode *>(&node))
   {
-    // Loop
     return ConvertTheta(*theta, block, inputs);
   }
   else
