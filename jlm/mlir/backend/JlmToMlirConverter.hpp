@@ -169,7 +169,7 @@ private:
 
   ::mlir::Operation *
   ConvertTheta(
-      const rvsdg::theta_node & thetaNode,
+      const rvsdg::ThetaNode & thetaNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

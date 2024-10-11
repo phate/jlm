@@ -164,7 +164,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertGamma(*gamma, block, inputs);
   }
-  else if (auto theta = dynamic_cast<const rvsdg::theta_node *>(&node))
+  else if (auto theta = dynamic_cast<const rvsdg::ThetaNode *>(&node))
   {
     // Loop
     return ConvertTheta(*theta, block, inputs);
@@ -471,7 +471,7 @@ JlmToMlirConverter::ConvertGamma(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertTheta(
-    const rvsdg::theta_node & thetaNode,
+    const rvsdg::ThetaNode & thetaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {

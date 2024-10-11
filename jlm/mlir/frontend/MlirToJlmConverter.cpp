@@ -354,7 +354,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto mlirThetaNode = ::mlir::dyn_cast<::mlir::rvsdg::ThetaNode>(&mlirOperation))
   {
-    auto rvsdgThetaNode = rvsdg::theta_node::create(&rvsdgRegion);
+    auto rvsdgThetaNode = rvsdg::ThetaNode::create(&rvsdgRegion);
 
     // Add inputs to the gamma node and to all it's subregions
     for (size_t i = 0; i < inputs.size(); i++)

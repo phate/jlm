@@ -993,17 +993,17 @@ TestThetaOp()
       assert(
           thetaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
       jlm::rvsdg::node * node = thetaOutput->node();
-      assert(is<theta_op>(node->operation()));
-      auto thetaNode = dynamic_cast<const theta_node *>(node);
+      assert(is<ThetaOperation>(node->operation()));
+      auto thetaNode = dynamic_cast<const jlm::rvsdg::ThetaNode *>(node);
 
       std::cout << "Checking theta node" << std::endl;
       assert(thetaNode->ninputs() == 2);
       assert(thetaNode->nloopvars() == 2);
       assert(thetaNode->noutputs() == 2);
       assert(thetaNode->nsubregions() == 1);
-      assert(is<jlm::rvsdg::ctltype>(thetaNode->predicate()->type()));
+      assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->type()));
       auto predicateType =
-          dynamic_cast<const jlm::rvsdg::ctltype *>(&thetaNode->predicate()->type());
+          dynamic_cast<const jlm::rvsdg::ControlType *>(&thetaNode->predicate()->type());
       assert(predicateType->nalternatives() == 2);
       std::cout << predicate.getValue() << std::endl;
     }

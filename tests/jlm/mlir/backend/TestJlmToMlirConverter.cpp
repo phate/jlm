@@ -620,7 +620,7 @@ TestTheta()
     std::cout << "Theta Operation" << std::endl;
     auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
     auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
-    jlm::rvsdg::theta_node * rvsdgThetaNode = jlm::rvsdg::theta_node::create(graph->root());
+    jlm::rvsdg::ThetaNode * rvsdgThetaNode = jlm::rvsdg::ThetaNode::create(graph->root());
 
     auto predicate = jlm::rvsdg::control_constant(rvsdgThetaNode->subregion(), 2, 0);
 
