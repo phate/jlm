@@ -9,6 +9,7 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
 static int
@@ -599,8 +600,110 @@ TestGamma()
   return 0;
 }
 
+/** \brief TestTheta
+ *
+ * This test is similar to previous tests, but uses a theta operation
+ */
+static int
+TestTheta()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  nf->set_mutable(false);
+  {
+    // Create a theta operation
+    std::cout << "Theta Operation" << std::endl;
+    auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
+    auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
+    jlm::rvsdg::theta_node * rvsdgThetaNode = jlm::rvsdg::theta_node::create(graph->root());
+
+    auto predicate = jlm::rvsdg::control_constant(rvsdgThetaNode->subregion(), 2, 0);
+
+    rvsdgThetaNode->add_loopvar(entryvar1);
+    rvsdgThetaNode->add_loopvar(entryvar2);
+    rvsdgThetaNode->set_predicate(predicate);
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Checking blocks and operations count
+    std::cout << "Checking blocks and operations count" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    assert(omegaRegion.getBlocks().size() == 1);
+    auto & omegaBlock = omegaRegion.front();
+    // 1 theta + 1 predicate + 2 constants
+    assert(omegaBlock.getOperations().size() == 4);
+
+    bool thetaFound = false;
+    for (auto & operation : omegaBlock.getOperations())
+    {
+      if (mlir::isa<mlir::rvsdg::ThetaNode>(operation))
+      {
+        thetaFound = true;
+        std::cout << "Checking theta operation" << std::endl;
+        auto thetaOp = mlir::cast<mlir::rvsdg::ThetaNode>(operation);
+        // 2 loop vars
+        assert(thetaOp.getNumOperands() == 2);
+        assert(thetaOp.getNumResults() == 2);
+
+        auto & thetaBlock = thetaOp.getRegion().front();
+        auto thetaResult = thetaBlock.getTerminator();
+
+        assert(mlir::isa<mlir::rvsdg::ThetaResult>(thetaResult));
+        auto thetaResultOp = mlir::cast<mlir::rvsdg::ThetaResult>(thetaResult);
+
+        std::cout << "Checking theta predicate" << std::endl;
+
+        assert(mlir::isa<mlir::rvsdg::ConstantCtrl>(thetaResultOp.getPredicate().getDefiningOp()));
+        auto controlConstant =
+            mlir::cast<mlir::rvsdg::ConstantCtrl>(thetaResultOp.getPredicate().getDefiningOp());
+
+        assert(controlConstant.getValue() == 0);
+
+        assert(mlir::isa<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType()));
+        auto ctrlType = mlir::cast<mlir::rvsdg::RVSDG_CTRLType>(controlConstant.getType());
+        assert(ctrlType.getNumOptions() == 2);
+
+        std::cout << "Checking theta loop vars" << std::endl;
+        //! getInputs() corresponds to the loop vars
+        auto loopVars = thetaOp.getInputs();
+        assert(loopVars.size() == 2);
+        assert(mlir::isa<mlir::arith::ConstantIntOp>(loopVars[0].getDefiningOp()));
+        assert(mlir::isa<mlir::arith::ConstantIntOp>(loopVars[1].getDefiningOp()));
+        auto loopVar1 = mlir::cast<mlir::arith::ConstantIntOp>(loopVars[0].getDefiningOp());
+        auto loopVar2 = mlir::cast<mlir::arith::ConstantIntOp>(loopVars[1].getDefiningOp());
+        assert(loopVar1.value() == 5);
+        assert(loopVar2.value() == 6);
+
+        // Theta result, constant control predicate
+        assert(thetaBlock.getOperations().size() == 2);
+
+        std::cout << "Checking loop exitVars" << std::endl;
+        std::cout << thetaResultOp.getNumOperands() << std::endl;
+
+        std::cout << "Checking theta subregion" << std::endl;
+
+        // Two arguments and predicate
+        assert(thetaResultOp.getNumOperands() == 3);
+      }
+    }
+    // }
+    assert(thetaFound);
+    omega->destroy();
+  }
+  return 0;
+}
+
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirLambdaGen", TestLambda)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirAddOperationGen", TestAddOperation)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirComZeroExtGen", TestComZeroExt)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirMatchGen", TestMatch)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirGammaGen", TestGamma)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirThetaGen", TestTheta)
