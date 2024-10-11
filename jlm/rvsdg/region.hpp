@@ -84,6 +84,9 @@ public:
   virtual RegionArgument &
   Copy(rvsdg::Region & region, structural_input * input) = 0;
 
+  [[nodiscard]] std::variant<node *, Region *>
+  GetOwner() const noexcept override;
+
 private:
   structural_input * input_;
 };
@@ -142,6 +145,9 @@ public:
    */
   virtual RegionResult &
   Copy(rvsdg::output & origin, structural_output * output) = 0;
+
+  [[nodiscard]] std::variant<node *, Region *>
+  GetOwner() const noexcept override;
 
 private:
   structural_output * output_;
@@ -647,6 +653,140 @@ nsimpnodes(const rvsdg::Region * region) noexcept;
 
 size_t
 ninputs(const rvsdg::Region * region) noexcept;
+
+/**
+ * \brief Checks if this is a result of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region exit result belonging
+ * to a node of specified type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this is an input to a node
+ * or or because the node owning the region is of a different kind,
+ * or because this is the root region), returns nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetRegionParentNode(const rvsdg::input & input) noexcept
+{
+  auto region = TryGetOwnerRegion(input);
+  if (region)
+  {
+    return dynamic_cast<NodeType *>(region->node());
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Checks if this is an argument of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region entry argument belonging
+ * to a node of specified type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this is an input to a node
+ * or or because the node owning the region is of a different kind,
+ * or because this is the root region), returns nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetRegionParentNode(const rvsdg::output & output) noexcept
+{
+  auto region = TryGetOwnerRegion(output);
+  if (region)
+  {
+    return dynamic_cast<NodeType *>(region->node());
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Asserts that this is a result of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region exit result belonging
+ * to a node of specified type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws an exception.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetRegionParentNode(const rvsdg::input & input)
+{
+  auto node = TryGetRegionParentNode<NodeType>(input);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
+
+/**
+ * \brief Asserts that this is an argument of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region entry argument belonging
+ * to a node of specified type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws an exception.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetRegionParentNode(const rvsdg::output & output)
+{
+  auto node = TryGetRegionParentNode<NodeType>(output);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
 
 } // namespace
 
