@@ -410,12 +410,13 @@ mark_delta(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map({ { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
-                { std::type_index(typeid(ThetaOperation)), mark_theta },
-                { std::type_index(typeid(jlm::hls::loop_op)), mark_loop },
-                { typeid(llvm::lambda::operation), mark_lambda },
-                { typeid(llvm::phi::operation), mark_phi },
-                { typeid(llvm::delta::operation), mark_delta } });
+  static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map(
+      { { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
+        { std::type_index(typeid(ThetaOperation)), mark_theta },
+        { std::type_index(typeid(jlm::hls::loop_op)), mark_loop },
+        { typeid(llvm::lambda::operation), mark_lambda },
+        { typeid(llvm::phi::operation), mark_phi },
+        { typeid(llvm::delta::operation), mark_delta } });
 
   auto & op = node->operation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
