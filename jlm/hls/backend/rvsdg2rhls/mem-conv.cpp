@@ -332,7 +332,7 @@ gather_mem_nodes(
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    if (auto structnode = dynamic_cast<jlm::rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         gather_mem_nodes(
