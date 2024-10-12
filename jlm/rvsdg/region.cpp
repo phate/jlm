@@ -49,6 +49,23 @@ RegionArgument::GetOwner() const noexcept
   return region();
 }
 
+RegionArgument &
+RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
+{
+  return RegionArgument::Create(region, input, Type());
+}
+
+RegionArgument &
+RegionArgument::Create(
+    rvsdg::Region & region,
+    rvsdg::structural_input * input,
+    std::shared_ptr<const rvsdg::Type> type)
+{
+  auto argument = new RegionArgument(&region, input, std::move(type));
+  region.append_argument(argument);
+  return *argument;
+}
+
 RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
@@ -83,6 +100,25 @@ RegionResult::RegionResult(
 RegionResult::GetOwner() const noexcept
 {
   return region();
+}
+
+RegionResult &
+RegionResult::Copy(rvsdg::output & origin, structural_output * output)
+{
+  return RegionResult::Create(*origin.region(), origin, output, origin.Type());
+}
+
+RegionResult &
+RegionResult::Create(
+    rvsdg::Region & region,
+    rvsdg::output & origin,
+    structural_output * output,
+    std::shared_ptr<const rvsdg::Type> type)
+{
+  JLM_ASSERT(origin.region() == &region);
+  auto result = new RegionResult(&region, &origin, output, std::move(type));
+  region.append_result(result);
+  return *result;
 }
 
 Region::~Region() noexcept
