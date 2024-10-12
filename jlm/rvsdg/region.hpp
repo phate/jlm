@@ -50,13 +50,11 @@ public:
 
   ~RegionArgument() noexcept override;
 
-protected:
   RegionArgument(
       rvsdg::Region * region,
       structural_input * input,
       std::shared_ptr<const rvsdg::Type> type);
 
-public:
   RegionArgument(const RegionArgument &) = delete;
 
   RegionArgument(RegionArgument &&) = delete;
@@ -82,10 +80,34 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(rvsdg::Region & region, structural_input * input) = 0;
+  Copy(rvsdg::Region & region, structural_input * input);
 
   [[nodiscard]] std::variant<node *, Region *>
   GetOwner() const noexcept override;
+
+  /**
+   * \brief Creates region entry argument.
+   *
+   * \param region
+   *   Region to create argument for.
+   *
+   * \param input
+   *   (optional) input of parent node associated with this
+   *   argument (deprecated, will be removed soon).
+   *
+   * \param type
+   *   Result type.
+   *
+   * \returns
+   *   Reference to the created argument.
+   *
+   * Creates an argument and registers it with the given region.
+   */
+  static RegionArgument &
+  Create(
+      rvsdg::Region & region,
+      rvsdg::structural_input * input,
+      std::shared_ptr<const rvsdg::Type> type);
 
 private:
   structural_input * input_;
@@ -110,14 +132,12 @@ public:
 
   ~RegionResult() noexcept override;
 
-protected:
   RegionResult(
       rvsdg::Region * region,
       rvsdg::output * origin,
       structural_output * output,
       std::shared_ptr<const rvsdg::Type> type);
 
-public:
   RegionResult(const RegionResult &) = delete;
 
   RegionResult(RegionResult &&) = delete;
@@ -144,10 +164,38 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::output & origin, structural_output * output) = 0;
+  Copy(rvsdg::output & origin, structural_output * output);
 
   [[nodiscard]] std::variant<node *, Region *>
   GetOwner() const noexcept override;
+
+  /**
+   * \brief Create region exit result.
+   *
+   * \param region
+   *   Region to create result for.
+   *
+   * \param origin
+   *   Assigned result value.
+   *
+   * \param output
+   *   (optional) output of parent node associated with this
+   *   result (deprecated, will be removed soon).
+   *
+   * \param type
+   *   Result type
+   *
+   * \returns
+   *   Reference to the created result.
+   *
+   * Creates a result and registers it with the given region.
+   */
+  static RegionResult &
+  Create(
+      rvsdg::Region & region,
+      rvsdg::output & origin,
+      structural_output * output,
+      std::shared_ptr<const rvsdg::Type> type);
 
 private:
   structural_output * output_;
