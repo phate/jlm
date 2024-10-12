@@ -91,7 +91,7 @@ private:
   SweepRegion(rvsdg::Region & region) const;
 
   void
-  SweepStructuralNode(jlm::rvsdg::structural_node & node) const;
+  SweepStructuralNode(rvsdg::StructuralNode & node) const;
 
   void
   SweepGamma(rvsdg::GammaNode & gammaNode) const;

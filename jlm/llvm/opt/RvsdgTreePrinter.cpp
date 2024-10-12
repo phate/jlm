@@ -96,7 +96,7 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
   {
     for (auto & node : region.nodes)
     {
-      if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+      if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
         size_t numSubregionNodes = 0;
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
@@ -142,7 +142,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
 
     for (auto & node : region.nodes)
     {
-      if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+      if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
         size_t numMemoryStateInputs = 0;
         for (size_t n = 0; n < structuralNode->ninputs(); n++)

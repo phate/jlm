@@ -27,7 +27,7 @@ class node;
 class simple_node;
 class simple_op;
 class structural_input;
-class structural_node;
+class StructuralNode;
 class structural_op;
 class structural_output;
 class SubstitutionMap;
@@ -157,7 +157,7 @@ private:
  * \brief Represent acyclic RVSDG subgraphs
  *
  * Regions represent acyclic RVSDG subgraphs and are instantiated with an index in \ref
- * structural_node%s. Each region has \ref RegionArgument%s and \ref RegionResult%s that represent
+ * StructuralNode%s. Each region has \ref RegionArgument%s and \ref RegionResult%s that represent
  * the values at the beginning and end of the acyclic graph, respectively. In addition, each region
  * keeps track of the following properties:
  *
@@ -210,7 +210,7 @@ public:
 
   Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
 
-  Region(rvsdg::structural_node * node, size_t index);
+  Region(rvsdg::StructuralNode * node, size_t index);
 
   /**
    * @return Returns an iterator range for iterating through the arguments of the region.
@@ -309,7 +309,7 @@ public:
     return graph_;
   }
 
-  inline jlm::rvsdg::structural_node *
+  inline rvsdg::StructuralNode *
   node() const noexcept
   {
     return node_;
@@ -571,7 +571,7 @@ public:
    *
    * @param region The top-level region that is converted
    * @param annotationMap A map with annotations for instances of \ref Region%s or
-   * structural_node%s.
+   * StructuralNode%s.
    * @return A string containing the ASCII tree of \p region.
    */
   [[nodiscard]] static std::string
@@ -630,7 +630,7 @@ private:
 
   size_t index_;
   jlm::rvsdg::graph * graph_;
-  jlm::rvsdg::structural_node * node_;
+  rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
   region_bottom_node_list BottomNodes_;

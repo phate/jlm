@@ -27,7 +27,7 @@ ThetaOperation::copy() const
 }
 
 ThetaNode::ThetaNode(rvsdg::Region & parent)
-    : structural_node(ThetaOperation(), &parent, 1)
+    : StructuralNode(ThetaOperation(), &parent, 1)
 {
   auto predicate = control_false(subregion());
   ThetaPredicateResult::Create(*predicate);

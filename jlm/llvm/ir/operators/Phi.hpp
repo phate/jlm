@@ -45,7 +45,7 @@ class cvargument;
 class cvinput;
 class rvoutput;
 
-class node final : public jlm::rvsdg::structural_node
+class node final : public rvsdg::StructuralNode
 {
   friend class phi::builder;
 
@@ -305,7 +305,7 @@ public:
 
 private:
   node(rvsdg::Region * parent, const phi::operation & op)
-      : structural_node(op, parent, 1)
+      : StructuralNode(op, parent, 1)
   {}
 
   static phi::node *
@@ -378,7 +378,7 @@ public:
   rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   const phi::operation &

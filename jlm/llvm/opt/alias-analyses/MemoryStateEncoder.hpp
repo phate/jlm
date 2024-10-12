@@ -86,7 +86,7 @@ private:
   EncodeRegion(rvsdg::Region & region);
 
   void
-  EncodeStructuralNode(rvsdg::structural_node & structuralNode);
+  EncodeStructuralNode(rvsdg::StructuralNode & structuralNode);
 
   void
   EncodeSimpleNode(const rvsdg::simple_node & simpleNode);

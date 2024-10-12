@@ -924,7 +924,7 @@ Andersen::AnalyzeValist(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
+Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
   if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
     AnalyzeLambda(*lambdaNode);
@@ -1158,7 +1158,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
   {
     if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
       AnalyzeSimpleNode(*simpleNode);
-    else if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
       AnalyzeStructuralNode(*structuralNode);
     else
       JLM_UNREACHABLE("Unknown node type");

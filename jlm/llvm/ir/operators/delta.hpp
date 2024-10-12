@@ -127,7 +127,7 @@ class result;
  *   auto output = delta->finalize(...);
  * \endcode
  */
-class node final : public rvsdg::structural_node
+class node final : public rvsdg::StructuralNode
 {
   class cviterator;
   class cvconstiterator;
@@ -140,7 +140,7 @@ public:
 
 private:
   node(rvsdg::Region * parent, delta::operation && op)
-      : structural_node(op, parent, 1)
+      : StructuralNode(op, parent, 1)
   {}
 
 public:
@@ -153,13 +153,13 @@ public:
   rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   const delta::operation &
   operation() const noexcept
   {
-    return *static_cast<const delta::operation *>(&structural_node::operation());
+    return *static_cast<const delta::operation *>(&StructuralNode::operation());
   }
 
   [[nodiscard]] const rvsdg::ValueType &

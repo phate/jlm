@@ -110,7 +110,7 @@ private:
   AnnotateSimpleNode(const rvsdg::simple_node & provider);
 
   void
-  AnnotateStructuralNode(const rvsdg::structural_node & structuralNode);
+  AnnotateStructuralNode(const rvsdg::StructuralNode & structuralNode);
 
   void
   AnnotateLoad(const LoadNode & loadNode);
