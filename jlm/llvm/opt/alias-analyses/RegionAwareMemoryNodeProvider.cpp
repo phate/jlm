@@ -186,7 +186,7 @@ public:
     return RecursiveCalls_;
   }
 
-  const util::HashSet<const rvsdg::structural_node *> &
+  const util::HashSet<const rvsdg::StructuralNode *> &
   GetStructuralNodes() const
   {
     return StructuralNodes_;
@@ -223,7 +223,7 @@ public:
   }
 
   void
-  AddStructuralNode(const rvsdg::structural_node & structuralNode)
+  AddStructuralNode(const rvsdg::StructuralNode & structuralNode)
   {
     StructuralNodes_.Insert(&structuralNode);
   }
@@ -254,7 +254,7 @@ private:
 
   util::HashSet<const CallNode *> RecursiveCalls_;
   util::HashSet<const CallNode *> NonRecursiveCalls_;
-  util::HashSet<const rvsdg::structural_node *> StructuralNodes_;
+  util::HashSet<const rvsdg::StructuralNode *> StructuralNodes_;
 };
 
 /** \brief Memory node provisioning of region-aware memory node provider
@@ -677,7 +677,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region)
 
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       AnnotateStructuralNode(*structuralNode);
     }
@@ -830,7 +830,7 @@ RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyN
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::structural_node & structuralNode)
+RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::StructuralNode & structuralNode)
 {
   if (is<delta::operation>(&structuralNode))
   {
@@ -1046,7 +1046,7 @@ RegionAwareMemoryNodeProvider::ToRegionTree(
 
     for (const auto & node : region->nodes)
     {
-      if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+      if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
         subtree += util::strfmt(indent(depth), structuralNode->operation().debug_string(), "\n");
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)

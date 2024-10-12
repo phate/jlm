@@ -31,7 +31,7 @@ class GammaNode;
 class node;
 class Region;
 class simple_node;
-class structural_node;
+class StructuralNode;
 class ThetaNode;
 }
 
@@ -134,7 +134,7 @@ private:
   EliminateTopDownRegion(rvsdg::Region & region);
 
   void
-  EliminateTopDownStructuralNode(const rvsdg::structural_node & structuralNode);
+  EliminateTopDownStructuralNode(const rvsdg::StructuralNode & structuralNode);
 
   void
   EliminateTopDownLambda(const lambda::node & lambdaNode);

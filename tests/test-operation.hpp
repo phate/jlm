@@ -209,14 +209,14 @@ class StructuralNodeArgument;
 class StructuralNodeInput;
 class StructuralNodeOutput;
 
-class structural_node final : public rvsdg::structural_node
+class structural_node final : public rvsdg::StructuralNode
 {
 public:
   ~structural_node() override;
 
 private:
   structural_node(rvsdg::Region * parent, size_t nsubregions)
-      : rvsdg::structural_node(structural_op(), parent, nsubregions)
+      : rvsdg::StructuralNode(structural_op(), parent, nsubregions)
   {}
 
 public:

@@ -128,7 +128,7 @@ class result;
  *   auto output = lambda->finalize(...);
  * \endcode
  */
-class node final : public jlm::rvsdg::structural_node
+class node final : public rvsdg::StructuralNode
 {
 public:
   class CallSummary;
@@ -157,7 +157,7 @@ public:
 
 private:
   node(rvsdg::Region * parent, lambda::operation && op)
-      : structural_node(op, parent, 1)
+      : StructuralNode(op, parent, 1)
   {}
 
 public:
@@ -182,13 +182,13 @@ public:
   [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   [[nodiscard]] const lambda::operation &
   operation() const noexcept
   {
-    return *jlm::util::AssertedCast<const lambda::operation>(&structural_node::operation());
+    return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::operation());
   }
 
   [[nodiscard]] const jlm::llvm::FunctionType &

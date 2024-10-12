@@ -1682,7 +1682,7 @@ Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 }
 
 void
-Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
+Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
   if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
   {
@@ -1732,7 +1732,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
     {
       AnalyzeSimpleNode(*simpleNode);
     }
-    else if (auto structuralNode = dynamic_cast<const structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<const StructuralNode *>(node))
     {
       AnalyzeStructuralNode(*structuralNode);
     }

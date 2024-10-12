@@ -161,7 +161,7 @@ isForbiddenChar(char c)
 }
 
 std::string
-structural_node_to_dot(jlm::rvsdg::structural_node * structuralNode)
+structural_node_to_dot(rvsdg::StructuralNode * structuralNode)
 {
 
   std::ostringstream dot;
@@ -346,7 +346,7 @@ region_to_dot(rvsdg::Region * region)
       auto node_dot = simple_node_to_dot(simpleNode);
       dot << node_dot;
     }
-    else if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       auto node_dot = structural_node_to_dot(structuralNode);
       dot << node_dot;

@@ -286,7 +286,7 @@ pull(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         pull(gamma);

@@ -37,7 +37,7 @@ test_gamma(void)
 
   /* test gamma copy */
 
-  auto gamma2 = static_cast<structural_node *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
+  auto gamma2 = static_cast<StructuralNode *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
   view(graph.root(), stdout);
   assert(is<GammaOperation>(gamma2));
 

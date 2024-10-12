@@ -743,7 +743,7 @@ public:
   }
 };
 
-class loop_node final : public jlm::rvsdg::structural_node
+class loop_node final : public rvsdg::StructuralNode
 {
 public:
   virtual ~loop_node()
@@ -751,7 +751,7 @@ public:
 
 private:
   inline loop_node(rvsdg::Region * parent)
-      : structural_node(loop_op(), parent, 1)
+      : StructuralNode(loop_op(), parent, 1)
   {}
 
   jlm::rvsdg::node_output * _predicate_buffer;
@@ -763,7 +763,7 @@ public:
   rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   [[nodiscard]] rvsdg::RegionResult *
