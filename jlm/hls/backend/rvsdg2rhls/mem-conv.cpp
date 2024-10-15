@@ -28,9 +28,10 @@ jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
   else
   {
     auto parent_response = route_response(target->node()->region(), response);
-    auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
-    JLM_ASSERT(ln);
-    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
+    auto lambda = dynamic_cast<jlm::hls::loop_node *>(target->node());
+    JLM_ASSERT(lambda);
+    auto input =
+        jlm::rvsdg::structural_input::create(lambda, parent_response, parent_response->Type());
     auto & argument = EntryArgument::Create(*target, *input, response->Type());
     return &argument;
   }
@@ -45,9 +46,9 @@ jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
   }
   else
   {
-    auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
-    JLM_ASSERT(ln);
-    auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
+    auto lambda = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
+    JLM_ASSERT(lambda);
+    auto output = jlm::rvsdg::structural_output::create(lambda, request->Type());
     ExitResult::Create(*request, *output);
     return route_request(target, output);
   }
@@ -177,17 +178,17 @@ get_impport_function_name(jlm::rvsdg::input * input)
 // trace function ptr to its call
 void
 trace_function_calls(
-    jlm::rvsdg::output * op,
+    jlm::rvsdg::output * output,
     std::vector<jlm::rvsdg::simple_node *> & calls,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
-  if (visited.count(op))
+  if (visited.count(output))
   {
     // skip already processed outputs
     return;
   }
-  visited.insert(op);
-  for (auto user : *op)
+  visited.insert(output);
+  for (auto user : *output)
   {
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
@@ -325,9 +326,9 @@ replace_store(jlm::rvsdg::simple_node * orig)
 void
 gather_mem_nodes(
     jlm::rvsdg::Region * region,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & decouple_nodes,
+    std::vector<jlm::rvsdg::simple_node *> & loadNodes,
+    std::vector<jlm::rvsdg::simple_node *> & storeNodes,
+    std::vector<jlm::rvsdg::simple_node *> & decoupleNodes,
     std::unordered_set<jlm::rvsdg::simple_node *> exclude)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
@@ -335,12 +336,7 @@ gather_mem_nodes(
     if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gather_mem_nodes(
-            structnode->subregion(n),
-            load_nodes,
-            store_nodes,
-            decouple_nodes,
-            exclude);
+        gather_mem_nodes(structnode->subregion(n), loadNodes, storeNodes, decoupleNodes, exclude);
     }
     else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
@@ -350,69 +346,72 @@ gather_mem_nodes(
       }
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
       {
-        store_nodes.push_back(simplenode);
+        storeNodes.push_back(simplenode);
       }
       else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
       {
-        load_nodes.push_back(simplenode);
+        loadNodes.push_back(simplenode);
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
       {
         // TODO: verify this is the right type of function call
-        decouple_nodes.push_back(simplenode);
+        decoupleNodes.push_back(simplenode);
       }
     }
   }
 }
 
-// trace each input pointer to loads and stores
+/**
+ * If the output is a pointer, it traces it to all memory operations it reaches.
+ * Pointers read from memory is not traced, i.e., the output of load operations is not traced.
+ * @param output The output to trace
+ * @param loadNodes A vector containing all load nodes that are reached
+ * @param storeNodes A vector containing all store nodes that are reached
+ * @param decoupleNodes A vector containing all decoupled load nodes that are reached
+ * @param visited A set of already visited outputs
+ */
 void
-trace_pointer_argument(
-    jlm::rvsdg::output * op,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & decouple_nodes,
+TracePointer(
+    jlm::rvsdg::output * output,
+    std::vector<jlm::rvsdg::simple_node *> & loadNodes,
+    std::vector<jlm::rvsdg::simple_node *> & storeNodes,
+    std::vector<jlm::rvsdg::simple_node *> & decoupleNodes,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
-  if (!dynamic_cast<const jlm::llvm::PointerType *>(&op->type()))
+  if (!dynamic_cast<const jlm::llvm::PointerType *>(&output->type()))
   {
-    // only process pointer outputs
+    // Only process pointer outputs
     return;
   }
-  if (visited.count(op))
+  if (visited.count(output))
   {
-    // skip already processed outputs
+    // Skip already processed outputs
     return;
   }
-  visited.insert(op);
-  for (auto user : *op)
+  visited.insert(output);
+  for (auto user : *output)
   {
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
       {
-        store_nodes.push_back(simplenode);
+        storeNodes.push_back(simplenode);
       }
       else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
       {
-        load_nodes.push_back(simplenode);
+        loadNodes.push_back(simplenode);
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
       {
         // TODO: verify this is the right type of function call
-        decouple_nodes.push_back(simplenode);
+        decoupleNodes.push_back(simplenode);
       }
       else
       {
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
         {
-          trace_pointer_argument(
-              simplenode->output(i),
-              load_nodes,
-              store_nodes,
-              decouple_nodes,
-              visited);
+          TracePointer(simplenode->output(i), loadNodes, storeNodes, decoupleNodes, visited);
         }
       }
     }
@@ -420,18 +419,18 @@ trace_pointer_argument(
     {
       for (auto & arg : sti->arguments)
       {
-        trace_pointer_argument(&arg, load_nodes, store_nodes, decouple_nodes, visited);
+        TracePointer(&arg, loadNodes, storeNodes, decoupleNodes, visited);
       }
     }
     else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
-        trace_pointer_argument(ber->argument(), load_nodes, store_nodes, decouple_nodes, visited);
+        TracePointer(ber->argument(), loadNodes, storeNodes, decoupleNodes, visited);
       }
       else
       {
-        trace_pointer_argument(r->output(), load_nodes, store_nodes, decouple_nodes, visited);
+        TracePointer(r->output(), loadNodes, storeNodes, decoupleNodes, visited);
       }
     }
     else
@@ -445,12 +444,19 @@ trace_pointer_argument(
  * Decoupled loads are user specified and encoded as function calls that need special treatment.
  * This function traces the output to all nodes and checks if it is the first argument to a call
  * operation.
+ * @param output The output to check if it is a function pointer
+ * @param visited A set of already visited outputs (nodes)
+ * @return True if the output is a function pointer
  */
 bool
 IsDecoupledFunctionPointer(
     jlm::rvsdg::output * output,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
+  if (!output)
+  {
+    return false;
+  }
   if (!dynamic_cast<const jlm::llvm::PointerType *>(&output->type()))
   {
     // Only process pointer outputs
@@ -464,6 +470,7 @@ IsDecoupledFunctionPointer(
   visited.insert(output);
 
   bool isDecoupled = false;
+  // Iterate through all users of the output
   for (auto user : *output)
   {
     if (auto simpleInput = dynamic_cast<jlm::rvsdg::simple_input *>(user))
@@ -517,13 +524,13 @@ IsDecoupledFunctionPointer(
 }
 
 void
-jlm::hls::trace_pointer_arguments(
-    const jlm::llvm::lambda::node * ln,
-    port_load_store_decouple & port_nodes)
+jlm::hls::TracePointerArguments(
+    const jlm::llvm::lambda::node * lambda,
+    port_load_store_decouple & portNodes)
 {
-  for (size_t i = 0; i < ln->subregion()->narguments(); ++i)
+  for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
   {
-    auto arg = ln->subregion()->argument(i);
+    auto arg = lambda->subregion()->argument(i);
     if (dynamic_cast<const jlm::llvm::PointerType *>(&arg->type()))
     {
       // Decoupled loads are user specified and encoded as function calls that need special
@@ -535,12 +542,12 @@ jlm::hls::trace_pointer_arguments(
         continue;
       }
       visited.clear();
-      port_nodes.emplace_back();
-      trace_pointer_argument(
+      portNodes.emplace_back();
+      TracePointer(
           arg,
-          std::get<0>(port_nodes.back()),
-          std::get<1>(port_nodes.back()),
-          std::get<2>(port_nodes.back()),
+          std::get<0>(portNodes.back()),
+          std::get<1>(portNodes.back()),
+          std::get<2>(portNodes.back()),
           visited);
     }
   }
@@ -582,7 +589,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // response and request ports
   //
   port_load_store_decouple portNodes;
-  trace_pointer_arguments(lambda, portNodes);
+  TracePointerArguments(lambda, portNodes);
 
   auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(64));
   auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(64), false);
