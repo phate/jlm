@@ -21,8 +21,8 @@ typedef std::vector<std::tuple<
 /**
  * Traces all pointer arguments of a lambda node and finds all memory operations.
  * Pointers read from memory is not traced, i.e., the output of load operations is not traced.
- * @lambda The lambda node for which to trace all pointer arguments
- * @portNodes A vector where each element contains all memory operations traced from a pointer
+ * @param lambda The lambda node for which to trace all pointer arguments
+ * @param portNodes A vector where each element contains all memory operations traced from a pointer
  */
 void
 TracePointerArguments(const llvm::lambda::node * lambda, port_load_store_decouple & portNodes);
