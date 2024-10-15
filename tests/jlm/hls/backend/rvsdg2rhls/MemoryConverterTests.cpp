@@ -15,6 +15,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
+
 static inline void
 TestTraceArgument()
 {
@@ -28,30 +29,28 @@ TestTraceArgument()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = FunctionType::Create(
-      { jlm::llvm::PointerType::Create(),
-        jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
-        MemoryStateType::Create() },
-      { MemoryStateType::Create() });
+    { jlm::llvm::PointerType::Create(), jlm::llvm::PointerType::Create(), jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() },
+    { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda =
+    lambda::node::create(rvsdgModule->Rvsdg().root(), functionType, "test", linkage::external_linkage);
 
   // Load followed by store
   auto loadAddress = lambda->fctargument(0);
   auto memoryStateArgument = lambda->fctargument(3);
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress,
-      { memoryStateArgument },
-      jlm::llvm::PointerType::Create(),
-      32);
+    loadAddress,
+    { memoryStateArgument },
+    jlm::llvm::PointerType::Create(),
+    32);
 
   auto storeAddress = lambda->fctargument(1);
   auto storeData = lambda->fctargument(2);
-  auto storeOutput = StoreNonVolatileNode::Create(storeAddress, storeData, { loadOutput[1] }, 32);
+  auto storeOutput = StoreNonVolatileNode::Create(
+    storeAddress,
+    storeData,
+    { loadOutput[1] },
+    32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -63,7 +62,7 @@ TestTraceArgument()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Assert
-  assert(portNodes.size() == 2);                 // 2 pointer arguments
+  assert(portNodes.size() == 2); // 2 pointer arguments
   assert(std::get<0>(portNodes[0]).size() == 1); // 1 load for the first pointer
   assert(std::get<1>(portNodes[0]).size() == 0); // 0 store for the first pointer
   assert(std::get<2>(portNodes[0]).size() == 0); // 0 decouple for the first pointer
@@ -85,23 +84,20 @@ TestLoad()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = FunctionType::Create(
-      { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+    { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
+    { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda =
+    lambda::node::create(rvsdgModule->Rvsdg().root(), functionType, "test", linkage::external_linkage);
 
   // Single load
   auto loadAddress = lambda->fctargument(0);
   auto memoryStateArgument = lambda->fctargument(1);
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress,
-      { memoryStateArgument },
-      jlm::rvsdg::bittype::Create(32),
-      32);
+    loadAddress,
+    { memoryStateArgument },
+    jlm::rvsdg::bittype::Create(32),
+    32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[0], loadOutput[1] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -121,23 +117,19 @@ TestLoad()
   jlm::util::AssertedCast<const MemoryStateType>(&lambdaRegion->result(1)->origin()->type());
 
   // Load Address
-  auto loadNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+  auto loadNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
   jlm::util::AssertedCast<const load_op>(&loadNode->operation());
 
   // Load Data
-  loadNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+  loadNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   jlm::util::AssertedCast<const load_op>(&loadNode->operation());
 
   // Request Node
-  auto requestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
+  auto requestNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
   jlm::util::AssertedCast<const mem_req_op>(&requestNode->operation());
 
   // Response Node
-  auto responseNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
+  auto responseNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
   jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
 
   // Response source
@@ -159,27 +151,26 @@ TestLoadStore()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = FunctionType::Create(
-      { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
-        MemoryStateType::Create() },
-      { MemoryStateType::Create() });
+    { jlm::llvm::PointerType::Create(), jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() },
+    { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda =
+    lambda::node::create(rvsdgModule->Rvsdg().root(), functionType, "test", linkage::external_linkage);
 
   // Load followed by store
   auto loadAddress = lambda->fctargument(0);
   auto storeData = lambda->fctargument(1);
   auto memoryStateArgument = lambda->fctargument(2);
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress,
-      { memoryStateArgument },
-      jlm::llvm::PointerType::Create(),
-      32);
-  auto storeOutput = StoreNonVolatileNode::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
+    loadAddress,
+    { memoryStateArgument },
+    jlm::llvm::PointerType::Create(),
+    32);
+  auto storeOutput = StoreNonVolatileNode::Create(
+    loadOutput[0],
+    storeData,
+    { loadOutput[1] },
+    32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -200,28 +191,23 @@ TestLoadStore()
   jlm::util::AssertedCast<const MemoryStateType>(&lambdaRegion->result(0)->origin()->type());
 
   // Store Node
-  auto storeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+  auto storeNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
   jlm::util::AssertedCast<const store_op>(&storeNode->operation());
 
   // Request Node
-  auto firstRequestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+  auto firstRequestNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   jlm::util::AssertedCast<const mem_req_op>(&firstRequestNode->operation());
 
   // Request Node
-  auto secondRequestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
+  auto secondRequestNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
   jlm::util::AssertedCast<const mem_req_op>(&secondRequestNode->operation());
 
   // Load node
-  auto loadNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(0)->origin())->node();
+  auto loadNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(0)->origin())->node();
   jlm::util::AssertedCast<const load_op>(&loadNode->operation());
 
   // Response Node
-  auto responseNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
+  auto responseNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
   jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
 }
 
@@ -238,18 +224,11 @@ TestThetaLoad()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
-        jlm::llvm::PointerType::Create(),
-        MemoryStateType::Create() },
-      { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
+    { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32), jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
+    { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda =
+    lambda::node::create(rvsdgModule->Rvsdg().root(), functionType, "test", linkage::external_linkage);
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -276,10 +255,10 @@ TestThetaLoad()
   auto loadAddress = theta->add_loopvar(lambda->fctargument(3));
   auto memoryStateArgument = theta->add_loopvar(lambda->fctargument(4));
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress->argument(),
-      { memoryStateArgument->argument() },
-      PointerType::Create(),
-      32);
+    loadAddress->argument(),
+    { memoryStateArgument->argument() },
+    PointerType::Create(),
+    32);
   loadAddress->result()->divert_to(loadOutput[0]);
   memoryStateArgument->result()->divert_to(loadOutput[1]);
 
@@ -293,14 +272,11 @@ TestThetaLoad()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(4)->begin();
+  auto *const entryMemoryStateSplitInput = *lambdaRegion->argument(4)->begin();
   auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
-  jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
-      &entryMemoryStateSplitNode->operation());
-  auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
-  jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
-      &exitMemoryStateMergeNode->operation());
+  jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(&entryMemoryStateSplitNode->operation());
+  auto exitMemoryStateMergeNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+  jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(&exitMemoryStateMergeNode->operation());
 
   // Act
   ConvertThetaNodes(*rvsdgModule);
@@ -324,30 +300,25 @@ TestThetaLoad()
   assert(jlm::rvsdg::Region::Contains<mem_req_op>(*lambdaRegion, true));
 
   // Request Node
-  auto requestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
+  auto requestNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
   jlm::util::AssertedCast<const mem_req_op>(&requestNode->operation());
 
   // Theta Node
-  auto thetaOutput =
-      jlm::util::AssertedCast<const jlm::rvsdg::structural_output>(requestNode->input(0)->origin());
-  auto thetaNode = jlm::util::AssertedCast<const jlm::rvsdg::structural_node>(thetaOutput->node());
+  auto thetaOutput = jlm::util::AssertedCast<const jlm::rvsdg::structural_output>(requestNode->input(0)->origin());
+  auto thetaNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(thetaOutput->node());
   jlm::util::AssertedCast<const jlm::rvsdg::ThetaOperation>(&thetaNode->operation());
   // Theta Result
   auto & thetaResult = thetaOutput->results;
   assert(thetaResult.size() == 1);
   // Load Node
-  auto loadNode =
-      jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
+  auto loadNode = jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
   jlm::util::AssertedCast<const load_op>(&loadNode->operation());
   // Theta Argument
-  auto thetaArgument =
-      jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
+  auto thetaArgument = jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
   auto thetaInput = thetaArgument->input();
 
   // Response Node
-  auto responseNode =
-      jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaInput->origin())->node();
+  auto responseNode = jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaInput->origin())->node();
   jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
 
   // Lambda argument
@@ -365,4 +336,6 @@ Tests()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests", Tests)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/hls/backend/rvsdg2rhls/MemoryConverterTests",
+    Tests)
