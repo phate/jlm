@@ -858,7 +858,7 @@ TestGammaOp()
 
 /** \brief TestThetaOp
  *
- * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.
+ * This function tests the Theta operation. It creates a lambda block with a Theta operation.
  *
  */
 static int

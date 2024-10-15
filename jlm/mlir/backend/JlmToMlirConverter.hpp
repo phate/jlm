@@ -14,7 +14,6 @@
 #include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
-// #include "JLM/JLMOps.h"
 #include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
@@ -25,7 +24,6 @@
 namespace jlm::mlir
 {
 
-/// @brief
 class JlmToMlirConverter final
 {
 public:
