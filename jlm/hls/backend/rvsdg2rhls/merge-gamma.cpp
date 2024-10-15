@@ -29,7 +29,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
   for (size_t i = 0; i < gamma->noutputs(); ++i)
   {
     auto o = gamma->output(i);
-    if (dynamic_cast<const rvsdg::ctltype *>(&o->type()))
+    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
     {
       bool eliminate = true;
       for (size_t j = 0; j < gamma->nsubregions(); ++j)
@@ -73,7 +73,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (dynamic_cast<const rvsdg::ctltype *>(&o->type()))
+    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
     {
       ctl_cnt++;
       swapped = true;
@@ -201,7 +201,7 @@ merge_gamma(rvsdg::Region * region)
     changed = false;
     for (auto & node : jlm::rvsdg::topdown_traverser(region))
     {
-      if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+      if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {
         for (size_t n = 0; n < structnode->nsubregions(); n++)
           merge_gamma(structnode->subregion(n));

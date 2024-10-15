@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
@@ -100,6 +101,9 @@ public:
    */
   [[nodiscard]] static rvsdg::node *
   GetNode(const rvsdg::input & input) noexcept;
+
+  [[nodiscard]] virtual std::variant<node *, Region *>
+  GetOwner() const noexcept = 0;
 
   template<class T>
   class iterator
@@ -374,6 +378,20 @@ public:
   virtual std::string
   debug_string() const;
 
+  [[nodiscard]] virtual std::variant<node *, Region *>
+  GetOwner() const noexcept = 0;
+
+  /**
+   * Retrieve the associated node from \p output if \p output is derived from
+   * jlm::rvsdg::node_output.
+   *
+   * @param output The output from which to retrieve the node.
+   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
+   * otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::node *
+  GetNode(const rvsdg::output & output) noexcept;
+
   template<class T>
   class iterator
   {
@@ -574,6 +592,9 @@ public:
     return node_;
   }
 
+  [[nodiscard]] std::variant<rvsdg::node *, Region *>
+  GetOwner() const noexcept override;
+
 private:
   jlm::rvsdg::node * node_;
 };
@@ -597,6 +618,9 @@ public:
     auto no = dynamic_cast<const node_output *>(output);
     return no != nullptr ? no->node() : nullptr;
   }
+
+  [[nodiscard]] std::variant<rvsdg::node *, Region *>
+  GetOwner() const noexcept override;
 
 private:
   jlm::rvsdg::node * node_;
@@ -684,6 +708,27 @@ public:
 
   inline void
   recompute_depth() noexcept;
+
+  /**
+   * \brief Determines whether the node is dead.
+   *
+   * A node is considered dead if all its outputs are dead.
+   *
+   * @return True, if the node is dead, otherwise false.
+   *
+   * \see output::IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    for (auto & output : outputs_)
+    {
+      if (!output->IsDead())
+        return false;
+    }
+
+    return true;
+  }
 
 protected:
   node_input *
@@ -845,6 +890,164 @@ private:
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
 };
+
+/**
+ * \brief Checks if this is an input to a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Owning node of requested type or nullptr.
+ *
+ * Checks if the specified input belongs to a node of requested type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this as a region exit
+ * result or its owning node is not of the requested type), returns
+ * nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetOwnerNode(const rvsdg::input & input) noexcept
+{
+  auto owner = input.GetOwner();
+  if (auto node = std::get_if<rvsdg::node *>(&owner))
+  {
+    return dynamic_cast<NodeType *>(*node);
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Checks if this is an output to a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Owning node of requested type or nullptr.
+ *
+ * Checks if the specified output belongs to a node of requested type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this as a region entry
+ * argument or its owning node is not of the requested type), returns
+ * nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetOwnerNode(const rvsdg::output & output) noexcept
+{
+  auto owner = output.GetOwner();
+  if (auto node = std::get_if<rvsdg::node *>(&owner))
+  {
+    return dynamic_cast<NodeType *>(*node);
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Asserts that this is an input to a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Owning node of requested type.
+ *
+ * Checks if the specified input belongs to a node of requested type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws std::logic_error.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetOwnerNode(const rvsdg::input & input)
+{
+  auto node = TryGetOwnerNode<NodeType>(input);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
+
+/**
+ * \brief Asserts that this is an output of a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Owning node of requested type.
+ *
+ * Checks if the specified output belongs to a node of requested type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws std::logic_error.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetOwnerNode(const rvsdg::output & output)
+{
+  auto node = TryGetOwnerNode<NodeType>(output);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
+
+inline Region *
+TryGetOwnerRegion(const rvsdg::input & input) noexcept
+{
+  auto owner = input.GetOwner();
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return *region;
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+inline Region *
+TryGetOwnerRegion(const rvsdg::output & output) noexcept
+{
+  auto owner = output.GetOwner();
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return *region;
+  }
+  else
+  {
+    return nullptr;
+  }
+}
 
 static inline std::vector<jlm::rvsdg::output *>
 operands(const jlm::rvsdg::node * node)

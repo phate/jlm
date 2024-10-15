@@ -191,7 +191,7 @@ static void
 RemoveUnusedStatesInRegion(rvsdg::Region & region);
 
 static void
-RemoveUnusedStatesInStructuralNode(rvsdg::structural_node & structuralNode)
+RemoveUnusedStatesInStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
   // Remove unused states from innermost regions first
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
@@ -218,7 +218,7 @@ RemoveUnusedStatesInRegion(rvsdg::Region & region)
 {
   for (auto & node : rvsdg::topdown_traverser(&region))
   {
-    if (auto structuralNode = dynamic_cast<rvsdg::structural_node *>(node))
+    if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       RemoveUnusedStatesInStructuralNode(*structuralNode);
     }

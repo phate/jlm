@@ -21,7 +21,7 @@ test_gamma(void)
   auto v0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
   auto v1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
   auto v2 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
-  auto v3 = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "");
+  auto v3 = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
 
@@ -37,7 +37,7 @@ test_gamma(void)
 
   /* test gamma copy */
 
-  auto gamma2 = static_cast<structural_node *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
+  auto gamma2 = static_cast<StructuralNode *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
   view(graph.root(), stdout);
   assert(is<GammaOperation>(gamma2));
 
@@ -90,7 +90,7 @@ test_invariant_reduction(void)
   jlm::rvsdg::graph graph;
   GammaOperation::normal_form(&graph)->set_invariant_reduction(true);
 
-  auto pred = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "");
+  auto pred = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
   auto gamma = GammaNode::create(pred, 2);
@@ -137,12 +137,12 @@ test_control_constant_reduction()
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex1.origin());
+  auto match = output::GetNode(*ex1.origin());
   assert(match && is<match_op>(match->operation()));
   auto & match_op = to_match_op(match->operation());
   assert(match_op.default_alternative() == 0);
 
-  assert(node_output::node(ex2.origin()) == gamma);
+  assert(output::GetNode(*ex2.origin()) == gamma);
 }
 
 static void
@@ -172,7 +172,7 @@ test_control_constant_reduction2()
   graph.normalize();
   jlm::rvsdg::view(graph.root(), stdout);
 
-  auto match = node_output::node(ex.origin());
+  auto match = output::GetNode(*ex.origin());
   assert(is<match_op>(match));
 }
 
@@ -184,9 +184,9 @@ TestRemoveGammaOutputsWhere()
   // Arrange
   jlm::rvsdg::graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
-  ctltype ct(2);
+  ControlType ct(2);
 
-  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "");
+  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v2 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
@@ -246,9 +246,9 @@ TestPruneOutputs()
   // Arrange
   jlm::rvsdg::graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
-  ctltype ct(2);
+  ControlType ct(2);
 
-  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "");
+  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v2 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
@@ -295,9 +295,9 @@ TestIsInvariant()
   // Arrange
   jlm::rvsdg::graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
-  ctltype ct(2);
+  ControlType ct(2);
 
-  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "");
+  auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
   auto v1 = &jlm::tests::GraphImport::Create(rvsdg, vt, "");
 

@@ -62,7 +62,7 @@ is_theta_invariant(const jlm::rvsdg::output * output)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(output->region()->node()));
 
-  if (jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(jlm::rvsdg::node_output::node(output)))
+  if (jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(jlm::rvsdg::output::GetNode(*output)))
     return true;
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(output);
@@ -79,7 +79,7 @@ push_from_theta(jlm::rvsdg::output * output)
   if (argument)
     return argument;
 
-  auto tmp = jlm::rvsdg::node_output::node(output);
+  auto tmp = jlm::rvsdg::output::GetNode(*output);
   JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(tmp));
   JLM_ASSERT(is<rvsdg::ThetaOperation>(tmp->region()->node()));
   auto theta = static_cast<rvsdg::ThetaNode *>(tmp->region()->node());
@@ -104,7 +104,7 @@ is_idv(jlm::rvsdg::input * input)
     return false;
 
   auto tinput = static_cast<const ThetaInput *>(a->input());
-  return jlm::rvsdg::node_output::node(tinput->result()->origin()) == node;
+  return jlm::rvsdg::output::GetNode(*tinput->result()->origin()) == node;
 }
 
 std::unique_ptr<jlm::rvsdg::bitvalue_repr>
@@ -135,11 +135,11 @@ unrollinfo::create(rvsdg::ThetaNode * theta)
 {
   using namespace jlm::rvsdg;
 
-  auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
+  auto matchnode = jlm::rvsdg::output::GetNode(*theta->predicate()->origin());
   if (!is<match_op>(matchnode))
     return nullptr;
 
-  auto cmpnode = jlm::rvsdg::node_output::node(matchnode->input(0)->origin());
+  auto cmpnode = jlm::rvsdg::output::GetNode(*matchnode->input(0)->origin());
   if (!is<bitcompare_op>(cmpnode))
     return nullptr;
 
@@ -149,7 +149,7 @@ unrollinfo::create(rvsdg::ThetaNode * theta)
   if (!end)
     return nullptr;
 
-  auto armnode = jlm::rvsdg::node_output::node((end == o0 ? o1 : o0));
+  auto armnode = jlm::rvsdg::output::GetNode(*(end == o0 ? o1 : o0));
   if (!is<bitadd_op>(armnode) && !is<bitsub_op>(armnode))
     return nullptr;
   if (armnode->ninputs() != 2)
@@ -242,7 +242,7 @@ unroll_theta(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor
       to a multiple of the step value.
     */
     auto cmpnode = ui.cmpnode();
-    auto cmp = jlm::rvsdg::node_output::node(smap.lookup(cmpnode->output(0)));
+    auto cmp = jlm::rvsdg::output::GetNode(*smap.lookup(cmpnode->output(0)));
     auto input = cmp->input(0)->origin() == smap.lookup(ui.end()) ? cmp->input(0) : cmp->input(1);
     JLM_ASSERT(input->origin() == smap.lookup(ui.end()));
 
@@ -356,7 +356,7 @@ create_unrolled_theta_predicate(
   using namespace jlm::rvsdg;
 
   auto region = smap.lookup(ui.cmpnode()->output(0))->region();
-  auto cmpnode = jlm::rvsdg::node_output::node(smap.lookup(ui.cmpnode()->output(0)));
+  auto cmpnode = jlm::rvsdg::output::GetNode(*smap.lookup(ui.cmpnode()->output(0)));
   auto step = smap.lookup(ui.step());
   auto end = smap.lookup(ui.end());
   auto nbits = ui.nbits();
@@ -487,7 +487,7 @@ unroll(rvsdg::Region * region, size_t factor)
   bool unrolled = false;
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         unrolled = unroll(structnode->subregion(n), factor);

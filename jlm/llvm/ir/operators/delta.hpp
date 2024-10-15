@@ -26,7 +26,7 @@ public:
   ~operation() override;
 
   operation(
-      std::shared_ptr<const rvsdg::valuetype> type,
+      std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -81,13 +81,13 @@ public:
     return constant_;
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
     return type_;
@@ -98,7 +98,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const rvsdg::valuetype> type_;
+  std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
 class cvargument;
@@ -127,7 +127,7 @@ class result;
  *   auto output = delta->finalize(...);
  * \endcode
  */
-class node final : public rvsdg::structural_node
+class node final : public rvsdg::StructuralNode
 {
   class cviterator;
   class cvconstiterator;
@@ -140,7 +140,7 @@ public:
 
 private:
   node(rvsdg::Region * parent, delta::operation && op)
-      : structural_node(op, parent, 1)
+      : StructuralNode(op, parent, 1)
   {}
 
 public:
@@ -153,22 +153,22 @@ public:
   rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   const delta::operation &
   operation() const noexcept
   {
-    return *static_cast<const delta::operation *>(&structural_node::operation());
+    return *static_cast<const delta::operation *>(&StructuralNode::operation());
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
     return operation().type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
     return operation().Type();
@@ -282,7 +282,7 @@ public:
   static node *
   Create(
       rvsdg::Region * parent,
-      std::shared_ptr<const rvsdg::valuetype> type,
+      std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,

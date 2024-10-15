@@ -18,7 +18,7 @@ TestThetaCreation()
   jlm::rvsdg::graph graph;
   auto t = jlm::tests::valuetype::Create();
 
-  auto imp1 = &jlm::tests::GraphImport::Create(graph, ctltype::Create(2), "imp1");
+  auto imp1 = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "imp1");
   auto imp2 = &jlm::tests::GraphImport::Create(graph, t, "imp2");
   auto imp3 = &jlm::tests::GraphImport::Create(graph, t, "imp3");
 
@@ -34,7 +34,7 @@ TestThetaCreation()
 
   jlm::tests::GraphExport::Create(*theta->output(0), "exp");
   auto theta2 =
-      static_cast<jlm::rvsdg::structural_node *>(theta)->copy(graph.root(), { imp1, imp2, imp3 });
+      static_cast<jlm::rvsdg::StructuralNode *>(theta)->copy(graph.root(), { imp1, imp2, imp3 });
   jlm::rvsdg::view(graph.root(), stdout);
 
   assert(lv1->node() == theta);
@@ -57,7 +57,7 @@ TestRemoveThetaOutputsWhere()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "ctl");
+  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
@@ -107,7 +107,7 @@ TestPruneThetaOutputs()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "ctl");
+  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
@@ -142,7 +142,7 @@ TestRemoveThetaInputsWhere()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "ctl");
+  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
@@ -198,7 +198,7 @@ TestPruneThetaInputs()
   graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ctltype::Create(2), "ctl");
+  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 

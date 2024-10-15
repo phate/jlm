@@ -258,7 +258,7 @@ decouple_load(
   }
   // copy nodes
   std::vector<std::vector<jlm::rvsdg::node *>> context(loopNode->subregion()->nnodes());
-  for (auto & node : *loopNode->subregion())
+  for (auto & node : loopNode->subregion()->Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
     context[node.depth()].push_back(&node);
@@ -392,7 +392,7 @@ process_loopnode(loop_node * loopNode)
         bool can_decouple = true;
         for (auto sn : data_slice)
         {
-          if (dynamic_cast<jlm::rvsdg::structural_node *>(sn))
+          if (rvsdg::is<rvsdg::structural_op>(sn))
           {
             // data slice may not contain loops
             can_decouple = false;
@@ -420,7 +420,7 @@ process_loopnode(loop_node * loopNode)
         JLM_ASSERT(!can_decouple || !data_slice.count(simplenode));
         for (auto sn : state_slice)
         {
-          if (dynamic_cast<jlm::rvsdg::structural_node *>(sn))
+          if (rvsdg::is<rvsdg::structural_op>(sn))
           {
             // state slice may not contain loops
             can_decouple = false;

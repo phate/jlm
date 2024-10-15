@@ -70,9 +70,9 @@ test1()
   tginversion.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::node_output::node(ex1.origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::node_output::node(ex2.origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::node_output::node(ex3.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex1.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex2.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex3.origin())));
 }
 
 static inline void
@@ -117,7 +117,7 @@ test2()
   tginversion.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::node_output::node(ex.origin())));
+  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex.origin())));
 }
 
 static int

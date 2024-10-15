@@ -30,7 +30,7 @@ public:
 class ThetaInput;
 class ThetaOutput;
 
-class ThetaNode final : public structural_node
+class ThetaNode final : public StructuralNode
 {
 public:
   class loopvar_iterator
@@ -100,21 +100,21 @@ public:
   [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   [[nodiscard]] RegionResult *
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const ctltype *>(&result->type()));
+    JLM_ASSERT(dynamic_cast<const ControlType *>(&result->type()));
     return result;
   }
 
   inline void
   set_predicate(jlm::rvsdg::output * p)
   {
-    auto node = node_output::node(predicate()->origin());
+    auto node = output::GetNode(*predicate()->origin());
 
     predicate()->divert_to(p);
     if (node && !node->has_users())
@@ -407,7 +407,7 @@ public:
 
 private:
   explicit ThetaPredicateResult(rvsdg::output & origin)
-      : RegionResult(origin.region(), &origin, nullptr, ctltype::Create(2))
+      : RegionResult(origin.region(), &origin, nullptr, ControlType::Create(2))
   {
     JLM_ASSERT(is<ThetaOperation>(origin.region()->node()));
   }

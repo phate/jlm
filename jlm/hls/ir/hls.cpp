@@ -171,7 +171,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
   if (init)
   {
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
-    auto pred_arg = ln->add_backedge(jlm::rvsdg::ctltype::Create(2));
+    auto pred_arg = ln->add_backedge(rvsdg::ControlType::Create(2));
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
@@ -185,14 +185,14 @@ loop_node::create(rvsdg::Region * parent, bool init)
 void
 loop_node::set_predicate(jlm::rvsdg::output * p)
 {
-  auto node = jlm::rvsdg::node_output::node(predicate()->origin());
+  auto node = jlm::rvsdg::output::GetNode(*predicate()->origin());
   predicate()->origin()->divert_users(p);
   if (node && !node->has_users())
     remove(node);
 }
 
 std::shared_ptr<const bundletype>
-get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write)
+get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("addr", llvm::PointerType::Create());
@@ -207,7 +207,7 @@ get_mem_req_type(std::shared_ptr<const rvsdg::valuetype> elementType, bool write
 }
 
 std::shared_ptr<const bundletype>
-get_mem_res_type(std::shared_ptr<const jlm::rvsdg::valuetype> dataType)
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));

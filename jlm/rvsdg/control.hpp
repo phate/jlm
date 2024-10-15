@@ -20,14 +20,12 @@
 namespace jlm::rvsdg
 {
 
-/* control type */
-
-class ctltype final : public jlm::rvsdg::statetype
+class ControlType final : public StateType
 {
 public:
-  virtual ~ctltype() noexcept;
+  ~ControlType() noexcept override;
 
-  ctltype(size_t nalternatives);
+  explicit ControlType(size_t nalternatives);
 
   virtual std::string
   debug_string() const override;
@@ -55,7 +53,7 @@ public:
    * the specified number of alternatives. The returned instance
    * will usually be a static singleton for the type.
    */
-  static std::shared_ptr<const ctltype>
+  static std::shared_ptr<const ControlType>
   Create(std::size_t nalternatives);
 
 private:
@@ -65,7 +63,7 @@ private:
 static inline bool
 is_ctltype(const jlm::rvsdg::Type & type) noexcept
 {
-  return dynamic_cast<const ctltype *>(&type) != nullptr;
+  return dynamic_cast<const ControlType *>(&type) != nullptr;
 }
 
 /* control value representation */
@@ -108,10 +106,10 @@ private:
 
 struct ctltype_of_value
 {
-  std::shared_ptr<const ctltype>
+  std::shared_ptr<const ControlType>
   operator()(const ctlvalue_repr & repr) const
   {
-    return ctltype::Create(repr.nalternatives());
+    return ControlType::Create(repr.nalternatives());
   }
 };
 
@@ -124,7 +122,8 @@ struct ctlformat_value
   }
 };
 
-typedef domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value> ctlconstant_op;
+typedef domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_value>
+    ctlconstant_op;
 
 static inline bool
 is_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
@@ -172,7 +171,7 @@ public:
   inline uint64_t
   nalternatives() const noexcept
   {
-    return std::static_pointer_cast<const ctltype>(result(0))->nalternatives();
+    return std::static_pointer_cast<const ControlType>(result(0))->nalternatives();
   }
 
   inline uint64_t
@@ -247,7 +246,11 @@ match(
     jlm::rvsdg::output * operand);
 
 // declare explicit instantiation
-extern template class domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
+extern template class domain_const_op<
+    ControlType,
+    ctlvalue_repr,
+    ctlformat_value,
+    ctltype_of_value>;
 
 static inline const match_op &
 to_match_op(const jlm::rvsdg::operation & op) noexcept

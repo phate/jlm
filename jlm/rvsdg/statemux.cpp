@@ -44,7 +44,7 @@ is_mux_mux_reducible(const std::vector<jlm::rvsdg::output *> & ops)
 
   for (const auto & operand : operands)
   {
-    auto node = node_output::node(operand);
+    auto node = output::GetNode(*operand);
     if (!node || !is_mux_op(node->operation()))
       continue;
 
@@ -90,7 +90,7 @@ perform_mux_mux_reduction(
   std::vector<jlm::rvsdg::output *> new_operands;
   for (const auto & operand : old_operands)
   {
-    if (jlm::rvsdg::node_output::node(operand) == muxnode && !reduced)
+    if (jlm::rvsdg::output::GetNode(*operand) == muxnode && !reduced)
     {
       reduced = true;
       auto tmp = operands(muxnode);
@@ -98,7 +98,7 @@ perform_mux_mux_reduction(
       continue;
     }
 
-    if (jlm::rvsdg::node_output::node(operand) != muxnode)
+    if (jlm::rvsdg::output::GetNode(*operand) != muxnode)
       new_operands.push_back(operand);
   }
 

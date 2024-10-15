@@ -95,6 +95,13 @@ output::debug_string() const
   return jlm::util::strfmt(index());
 }
 
+rvsdg::node *
+output::GetNode(const rvsdg::output & output) noexcept
+{
+  auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
+  return nodeOutput ? nodeOutput->node() : nullptr;
+}
+
 void
 output::remove_user(jlm::rvsdg::input * user)
 {
@@ -102,10 +109,13 @@ output::remove_user(jlm::rvsdg::input * user)
 
   users_.erase(user);
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
-      region()->bottom_nodes.push_back(node);
+    {
+      bool wasAdded = region()->AddBottomNode(*node);
+      JLM_ASSERT(wasAdded);
+    }
   }
 }
 
@@ -114,10 +124,13 @@ output::add_user(jlm::rvsdg::input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
-      region()->bottom_nodes.erase(node);
+    {
+      bool wasRemoved = region()->RemoveBottomNode(*node);
+      JLM_ASSERT(wasRemoved);
+    }
   }
   users_.insert(user);
 }
@@ -154,12 +167,24 @@ node_input::node_input(
       node_(node)
 {}
 
+[[nodiscard]] std::variant<node *, Region *>
+node_input::GetOwner() const noexcept
+{
+  return node_;
+}
+
 /* node_output class */
 
 node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}
+
+[[nodiscard]] std::variant<node *, Region *>
+node_output::GetOwner() const noexcept
+{
+  return node_;
+}
 
 /* node class */
 
@@ -169,7 +194,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
       region_(region),
       operation_(std::move(op))
 {
-  region->bottom_nodes.push_back(this);
+  bool wasAdded = region->AddBottomNode(*this);
+  JLM_ASSERT(wasAdded);
   region->top_nodes.push_back(this);
   region->nodes.push_back(this);
 }
@@ -177,7 +203,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
 node::~node()
 {
   outputs_.clear();
-  region()->bottom_nodes.erase(this);
+  bool wasRemoved = region()->RemoveBottomNode(*this);
+  JLM_ASSERT(wasRemoved);
 
   if (ninputs() == 0)
     region()->top_nodes.erase(this);
@@ -189,7 +216,7 @@ node::~node()
 node_input *
 node::add_input(std::unique_ptr<node_input> input)
 {
-  auto producer = node_output::node(input->origin());
+  auto producer = output::GetNode(*input->origin());
 
   if (ninputs() == 0)
   {
@@ -211,7 +238,7 @@ void
 node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
-  auto producer = node_output::node(input(index)->origin());
+  auto producer = output::GetNode(*input(index)->origin());
 
   /* remove input */
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -264,7 +291,7 @@ node::recompute_depth() noexcept
   size_t new_depth = 0;
   for (size_t n = 0; n < ninputs(); n++)
   {
-    auto producer = node_output::node(input(n)->origin());
+    auto producer = output::GetNode(*input(n)->origin());
     new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
   }
   if (new_depth == depth())
@@ -302,7 +329,7 @@ node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 jlm::rvsdg::node *
 producer(const jlm::rvsdg::output * output) noexcept
 {
-  if (auto node = node_output::node(output))
+  if (auto node = output::GetNode(*output))
     return node;
 
   JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
@@ -326,4 +353,71 @@ normalize(jlm::rvsdg::node * node)
   return nf->normalize_node(node);
 }
 
+/**
+  \page def_use_inspection Inspecting the graph and matching against different operations
+
+  When inspecting the graph for analysis it is necessary to identify
+  different nodes/operations and structures. Depending on the direction,
+  the two fundamental questions of interest are:
+
+  - what is the origin of a value, what operation is computing it?
+  - what are the users of a particular value, what operations depend on it?
+
+  This requires resolving the type of operation a specific \ref rvsdg::input
+  or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
+
+  - the output of a node representing an operation
+  - the entry argument into a region
+
+  Likewise, every \ref rvsdg::input is one of the following:
+
+  - the input of a node representing an operation
+  - the exit result of a region
+
+  Analysis code can determine which of the two is the case using
+  \ref rvsdg::output::GetOwner and \ref rvsdg::input::GetOwner, respectively,
+  and then branch deeper based on its results. For convenience, code
+  can more directly match against the specific kinds of nodes using
+  the following convenience functions:
+
+  - \ref rvsdg::TryGetOwnerNode checks if the owner of an output/input
+    is a graph node of the requested kind
+  - \ref rvsdg::TryGetRegionParentNode checks if the output/input is
+    a region entry argument / exit result, and if the parent node
+    of the region is of the requested kind
+
+  Example:
+  \code
+  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(def))
+  {
+    // This is an output of a lambda node -- so this must
+    // be a function definition.
+  }
+  else if (auto gamma = rvsdg::TryGetOwnerNode<GammaNode>(def))
+  {
+    // This is an output of a gamma node -- so it is potentially
+    // dependent on evaluating a condition.
+  }
+  else if (auto gamma = rvsdg::TryGetRegionParentNode<GammaNode>(def))
+  {
+    // This is an entry argument to a region inside a gamma node.
+  }
+  \endcode
+
+  Similarly, the following variants of the accessor functions
+  assert that the nodes are of requested type and will throw
+  an exception otherwise:
+
+  - \ref rvsdg::AssertGetOwnerNode asserts that the owner of an
+    output/input is a graph node of the requested kind and
+    returns it.
+  - \ref rvsdg::AssertGetRegionParentNode asserts that the
+    output/input is a region entry argument / exit result,
+    and that the parent node of the region is of the requested
+    kind
+
+  These are mostly suitable for unit tests rather, or for the
+  rare circumstances that the type of node can be assumed to
+  be known statically.
+*/
 }

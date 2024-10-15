@@ -199,7 +199,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    auto node = jlm::rvsdg::node_output::node(Output_);
+    auto node = jlm::rvsdg::output::GetNode(*Output_);
     auto index = Output_->index();
 
     if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node))
@@ -241,13 +241,13 @@ public:
 
     if (is<rvsdg::ThetaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (is<rvsdg::GammaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::node_output::node(Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -269,7 +269,7 @@ public:
     }
 
     return jlm::util::strfmt(
-        jlm::rvsdg::node_output::node(Output_)->operation().debug_string(),
+        jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string(),
         ":",
         index);
   }
@@ -1682,7 +1682,7 @@ Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 }
 
 void
-Steensgaard::AnalyzeStructuralNode(const jlm::rvsdg::structural_node & node)
+Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
   if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
   {
@@ -1732,7 +1732,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
     {
       AnalyzeSimpleNode(*simpleNode);
     }
-    else if (auto structuralNode = dynamic_cast<const structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<const StructuralNode *>(node))
     {
       AnalyzeStructuralNode(*structuralNode);
     }

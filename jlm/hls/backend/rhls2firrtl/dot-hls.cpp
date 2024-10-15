@@ -171,7 +171,7 @@ DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::Type & type, bo
 {
   auto color = "black";
   JLM_ASSERT(src != "" && snk != "");
-  if (dynamic_cast<const jlm::rvsdg::ctltype *>(&type))
+  if (dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     color = "green";
   }

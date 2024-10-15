@@ -479,7 +479,7 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   {
     return Builder_->getType<::mlir::rvsdg::MemStateEdgeType>();
   }
-  else if (auto clt = dynamic_cast<const rvsdg::ctltype *>(&type))
+  else if (auto clt = dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
   }

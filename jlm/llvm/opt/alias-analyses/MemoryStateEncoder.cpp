@@ -496,7 +496,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
     {
       EncodeSimpleNode(*simpleNode);
     }
-    else if (auto structuralNode = dynamic_cast<structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<StructuralNode *>(node))
     {
       EncodeStructuralNode(*structuralNode);
     }
@@ -508,7 +508,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 }
 
 void
-MemoryStateEncoder::EncodeStructuralNode(rvsdg::structural_node & structuralNode)
+MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
   if (auto lambdaNode = dynamic_cast<const lambda::node *>(&structuralNode))
   {

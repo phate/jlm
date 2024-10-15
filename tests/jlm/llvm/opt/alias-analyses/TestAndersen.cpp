@@ -1059,13 +1059,13 @@ TestConstructPointsToGraph()
 
   // Arrange a very standard set of memory objects and registers
   PointerObjectSet set;
-  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode());
+  auto alloca0 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(), true);
   auto allocaR = set.CreateRegisterPointerObject(rvsdg.GetAllocaOutput());
   auto import0 = set.CreateImportMemoryObject(rvsdg.GetImportOutput());
   auto importR = set.CreateRegisterPointerObject(rvsdg.GetImportOutput());
   auto lambda0 = set.CreateFunctionMemoryObject(rvsdg.GetLambdaNode());
   auto lambdaR = set.CreateRegisterPointerObject(rvsdg.GetLambdaOutput());
-  auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode());
+  auto malloc0 = set.CreateMallocMemoryObject(rvsdg.GetMallocNode(), true);
   auto mallocR = set.CreateRegisterPointerObject(rvsdg.GetMallocOutput());
   set.AddToPointsToSet(allocaR, alloca0);
   set.AddToPointsToSet(importR, import0);
@@ -1073,7 +1073,7 @@ TestConstructPointsToGraph()
   set.AddToPointsToSet(mallocR, malloc0);
 
   // Make an exception for the delta node: Map its output to importR's PointerObject instead
-  [[maybe_unused]] auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode());
+  [[maybe_unused]] auto delta0 = set.CreateGlobalMemoryObject(rvsdg.GetDeltaNode(), true);
   set.MapRegisterToExistingPointerObject(rvsdg.GetDeltaOutput(), importR);
 
   // Make alloca0 point to lambda0
@@ -1123,15 +1123,20 @@ TestConstructPointsToGraph()
   // But it does share pointees with the other nodes
   assert(TargetsExactly(mallocNode, { &lambdaNode }));
 
-  // deltaNode has escaped, and should be pointed to by mallocR and itself, as well as import0
-  assert(deltaNode.NumSources() == 3);
+  // deltaNode has escaped, and should be pointed to by mallocR and itself
+  assert(deltaNode.NumSources() == 2);
 
   auto & externalMemory = ptg->GetExternalMemoryNode();
-  // deltaNode and importNode point to everything that has escaped
+  // deltaNode points to everything that has escaped
   assert(TargetsExactly(deltaNode, { &deltaNode, &importNode, &externalMemory }));
-  assert(TargetsExactly(importNode, { &deltaNode, &importNode, &externalMemory }));
+  // importNode points to nothing, as it is not marked "CanPoint"
+  assert(TargetsExactly(importNode, {}));
   // mallocR points to mallocNode, as well as everything that has escaped
   assert(TargetsExactly(mallocRNode, { &mallocNode, &deltaNode, &importNode, &externalMemory }));
+
+  // Adding up the out-edges for all nodes
+  auto [_, numPointsToRelations] = ptg->NumEdges();
+  assert(numPointsToRelations == 2 * 3 + 1 + 1 + 1 + 3 + 4);
 
   return 0;
 }

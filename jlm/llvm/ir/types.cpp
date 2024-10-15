@@ -20,7 +20,7 @@ FunctionType::~FunctionType() noexcept = default;
 FunctionType::FunctionType(
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes)
-    : jlm::rvsdg::valuetype(),
+    : jlm::rvsdg::ValueType(),
       ResultTypes_(std::move(resultTypes)),
       ArgumentTypes_(std::move(argumentTypes))
 {}
@@ -28,7 +28,7 @@ FunctionType::FunctionType(
 FunctionType::FunctionType(const FunctionType & rhs) = default;
 
 FunctionType::FunctionType(FunctionType && other) noexcept
-    : jlm::rvsdg::valuetype(other),
+    : jlm::rvsdg::ValueType(other),
       ResultTypes_(std::move(other.ResultTypes_)),
       ArgumentTypes_(std::move(other.ArgumentTypes_))
 {}

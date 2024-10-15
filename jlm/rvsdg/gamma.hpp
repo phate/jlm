@@ -109,7 +109,7 @@ private:
 class GammaInput;
 class GammaOutput;
 
-class GammaNode : public structural_node
+class GammaNode : public StructuralNode
 {
 public:
   ~GammaNode() noexcept override;
@@ -451,10 +451,10 @@ public:
 /* gamma node method definitions */
 
 inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
-    : structural_node(GammaOperation(nalternatives), predicate->region(), nalternatives)
+    : StructuralNode(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(
-      std::unique_ptr<node_input>(new GammaInput(this, predicate, ctltype::Create(nalternatives))));
+  node::add_input(std::unique_ptr<node_input>(
+      new GammaInput(this, predicate, ControlType::Create(nalternatives))));
 }
 
 /**
@@ -514,7 +514,7 @@ private:
 inline GammaInput *
 GammaNode::predicate() const noexcept
 {
-  return util::AssertedCast<GammaInput>(structural_node::input(0));
+  return util::AssertedCast<GammaInput>(StructuralNode::input(0));
 }
 
 inline GammaInput *

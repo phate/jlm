@@ -43,6 +43,29 @@ RegionArgument::RegionArgument(
   }
 }
 
+[[nodiscard]] std::variant<node *, Region *>
+RegionArgument::GetOwner() const noexcept
+{
+  return region();
+}
+
+RegionArgument &
+RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
+{
+  return RegionArgument::Create(region, input, Type());
+}
+
+RegionArgument &
+RegionArgument::Create(
+    rvsdg::Region & region,
+    rvsdg::structural_input * input,
+    std::shared_ptr<const rvsdg::Type> type)
+{
+  auto argument = new RegionArgument(&region, input, std::move(type));
+  region.append_argument(argument);
+  return *argument;
+}
+
 RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
@@ -73,6 +96,31 @@ RegionResult::RegionResult(
   }
 }
 
+[[nodiscard]] std::variant<node *, Region *>
+RegionResult::GetOwner() const noexcept
+{
+  return region();
+}
+
+RegionResult &
+RegionResult::Copy(rvsdg::output & origin, structural_output * output)
+{
+  return RegionResult::Create(*origin.region(), origin, output, origin.Type());
+}
+
+RegionResult &
+RegionResult::Create(
+    rvsdg::Region & region,
+    rvsdg::output & origin,
+    structural_output * output,
+    std::shared_ptr<const rvsdg::Type> type)
+{
+  JLM_ASSERT(origin.region() == &region);
+  auto result = new RegionResult(&region, &origin, output, std::move(type));
+  region.append_result(result);
+  return *result;
+}
+
 Region::~Region() noexcept
 {
   on_region_destroy(this);
@@ -83,7 +131,7 @@ Region::~Region() noexcept
   prune(false);
   JLM_ASSERT(nodes.empty());
   JLM_ASSERT(top_nodes.empty());
-  JLM_ASSERT(bottom_nodes.empty());
+  JLM_ASSERT(NumBottomNodes() == 0);
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
@@ -97,7 +145,7 @@ Region::Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph)
   on_region_create(this);
 }
 
-Region::Region(jlm::rvsdg::structural_node * node, size_t index)
+Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
       node_(node)
@@ -177,6 +225,29 @@ Region::remove_node(jlm::rvsdg::node * node)
   delete node;
 }
 
+bool
+Region::AddBottomNode(rvsdg::node & node)
+{
+  if (node.region() != this)
+    return false;
+
+  if (!node.IsDead())
+    return false;
+
+  // FIXME: We should check that a node is not already part of the bottom nodes before adding it.
+  BottomNodes_.push_back(&node);
+
+  return true;
+}
+
+bool
+Region::RemoveBottomNode(rvsdg::node & node)
+{
+  auto numBottomNodes = NumBottomNodes();
+  BottomNodes_.erase(&node);
+  return numBottomNodes != NumBottomNodes();
+}
+
 void
 Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const
 {
@@ -227,15 +298,15 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 void
 Region::prune(bool recursive)
 {
-  while (bottom_nodes.first())
-    remove_node(bottom_nodes.first());
+  while (BottomNodes_.first())
+    remove_node(BottomNodes_.first());
 
   if (!recursive)
     return;
 
   for (const auto & node : nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t n = 0; n < snode->nsubregions(); n++)
         snode->subregion(n)->prune(recursive);
@@ -248,7 +319,7 @@ Region::normalize(bool recursive)
 {
   for (auto node : jlm::rvsdg::topdown_traverser(this))
   {
-    if (auto structnode = dynamic_cast<const jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         structnode->subregion(n)->normalize(recursive);
@@ -271,7 +342,7 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
   size_t numRegions = 1;
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
@@ -325,7 +396,7 @@ Region::ToTree(
   indentationString = std::string(indentationDepth, indentationChar);
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       auto nodeString = structuralNode->operation().debug_string();
       auto annotationString = GetAnnotationString(
@@ -407,7 +478,7 @@ nnodes(const jlm::rvsdg::Region * region) noexcept
   size_t n = region->nnodes();
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += nnodes(snode->subregion(r));
@@ -423,7 +494,7 @@ nstructnodes(const rvsdg::Region * region) noexcept
   size_t n = 0;
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += nstructnodes(snode->subregion(r));
@@ -440,7 +511,7 @@ nsimpnodes(const rvsdg::Region * region) noexcept
   size_t n = 0;
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += nsimpnodes(snode->subregion(r));
@@ -460,7 +531,7 @@ ninputs(const rvsdg::Region * region) noexcept
   size_t n = region->nresults();
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += ninputs(snode->subregion(r));

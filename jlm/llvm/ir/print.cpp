@@ -59,7 +59,7 @@ emit_function_node(const ipgraph_node & clg_node)
   std::string cfg = node.cfg() ? cfg::ToAscii(*node.cfg()) : "";
   std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
 
-  return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "}\n";
+  return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "\n}\n";
 }
 
 static std::string

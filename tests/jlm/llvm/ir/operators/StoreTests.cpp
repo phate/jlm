@@ -194,7 +194,7 @@ TestCopy()
   auto storeResults = StoreNonVolatileNode::Create(address1, value1, { memoryState1 }, 4);
 
   // Act
-  auto node = jlm::rvsdg::node_output::node(storeResults[0]);
+  auto node = jlm::rvsdg::output::GetNode(*storeResults[0]);
   auto storeNode = jlm::util::AssertedCast<const StoreNonVolatileNode>(node);
   auto copiedNode = storeNode->copy(graph.root(), { address2, value2, memoryState2 });
 
@@ -242,12 +242,12 @@ TestStoreMuxReduction()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto muxnode = jlm::rvsdg::node_output::node(ex.origin());
+  auto muxnode = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(is<MemoryStateMergeOperation>(muxnode));
   assert(muxnode->ninputs() == 3);
-  auto n0 = jlm::rvsdg::node_output::node(muxnode->input(0)->origin());
-  auto n1 = jlm::rvsdg::node_output::node(muxnode->input(1)->origin());
-  auto n2 = jlm::rvsdg::node_output::node(muxnode->input(2)->origin());
+  auto n0 = jlm::rvsdg::output::GetNode(*muxnode->input(0)->origin());
+  auto n1 = jlm::rvsdg::output::GetNode(*muxnode->input(1)->origin());
+  auto n2 = jlm::rvsdg::output::GetNode(*muxnode->input(2)->origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n0->operation()));
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n1->operation()));
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n2->operation()));
@@ -288,7 +288,7 @@ TestMultipleOriginReduction()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   // Assert
-  auto node = jlm::rvsdg::node_output::node(ex.origin());
+  auto node = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(node->operation()) && node->ninputs() == 3);
 }
 
@@ -374,7 +374,7 @@ TestStoreStoreReduction()
 
   // Assert
   assert(graph.root()->nnodes() == 1);
-  assert(jlm::rvsdg::node_output::node(ex.origin())->input(1)->origin() == v2);
+  assert(jlm::rvsdg::output::GetNode(*ex.origin())->input(1)->origin() == v2);
 }
 
 static int

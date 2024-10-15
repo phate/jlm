@@ -96,7 +96,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
   {
     auto gammaOutput = gammaNode.output(i);
-    if (rvsdg::is<rvsdg::statetype>(gammaOutput->type()))
+    if (rvsdg::is<rvsdg::StateType>(gammaOutput->type()))
     {
       // don't allow state outputs since they imply operations with side effects
       return false;
@@ -134,7 +134,7 @@ static void
 ConvertGammaNodesInRegion(rvsdg::Region & region);
 
 static void
-ConvertGammaNodesInStructuralNode(rvsdg::structural_node & structuralNode)
+ConvertGammaNodesInStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
@@ -159,7 +159,7 @@ ConvertGammaNodesInRegion(rvsdg::Region & region)
 {
   for (auto & node : rvsdg::topdown_traverser(&region))
   {
-    if (auto structuralNode = dynamic_cast<rvsdg::structural_node *>(node))
+    if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       ConvertGammaNodesInStructuralNode(*structuralNode);
     }

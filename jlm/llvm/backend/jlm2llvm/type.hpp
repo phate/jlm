@@ -62,7 +62,7 @@ convert_type(const arraytype & type, context & ctx)
 }
 
 static inline ::llvm::IntegerType *
-convert_type(const rvsdg::ctltype & type, context & ctx)
+convert_type(const rvsdg::ControlType & type, context & ctx)
 {
   auto t = convert_type(*static_cast<const rvsdg::Type *>(&type), ctx);
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::IntegerTyID);

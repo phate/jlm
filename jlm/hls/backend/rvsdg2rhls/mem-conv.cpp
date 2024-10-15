@@ -333,7 +333,7 @@ gather_mem_nodes(
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<jlm::rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         gather_mem_nodes(structnode->subregion(n), loadNodes, storeNodes, decoupleNodes, exclude);
@@ -754,7 +754,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   // nodes in the new lambda
   //
   std::vector<jlm::rvsdg::simple_node *> loadNodes;
-  std::vector<std::shared_ptr<const jlm::rvsdg::valuetype>> loadTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::ValueType>> loadTypes;
   for (auto loadNode : originalLoadNodes)
   {
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
@@ -795,7 +795,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
     auto address = route_request(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
-    std::shared_ptr<const jlm::rvsdg::valuetype> type;
+    std::shared_ptr<const jlm::rvsdg::ValueType> type;
     if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->operation()))
     {
       type = loadOperation->GetLoadedType();

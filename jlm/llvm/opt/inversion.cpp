@@ -51,7 +51,7 @@ public:
 static rvsdg::GammaNode *
 is_applicable(const rvsdg::ThetaNode * theta)
 {
-  auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
+  auto matchnode = jlm::rvsdg::output::GetNode(*theta->predicate()->origin());
   if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchnode))
     return nullptr;
 
@@ -79,7 +79,7 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
   pullin_bottom(gamma);
   for (const auto & lv : *theta)
   {
-    if (jlm::rvsdg::node_output::node(lv->result()->origin()) != gamma)
+    if (jlm::rvsdg::output::GetNode(*lv->result()->origin()) != gamma)
     {
       auto ev = gamma->add_entryvar(lv->result()->origin());
       JLM_ASSERT(ev->narguments() == 2);
@@ -91,7 +91,7 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
 }
 
 static std::vector<std::vector<jlm::rvsdg::node *>>
-collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structural_node * gnode)
+collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(tnode));
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
@@ -291,7 +291,7 @@ invert(rvsdg::Region * region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       for (size_t r = 0; r < structnode->nsubregions(); r++)
         invert(structnode->subregion(r));

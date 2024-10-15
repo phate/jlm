@@ -30,6 +30,7 @@ public:
   /**
    * Environment variable that when set, triggers analyzing the program with every single
    * valid combination of Configuration flags.
+   * Must be set to a number, that determines how many times each config is used.
    */
   static inline const char * const ENV_TEST_ALL_CONFIGS = "JLM_ANDERSEN_TEST_ALL_CONFIGS";
 
@@ -394,7 +395,7 @@ private:
   AnalyzeValist(const rvsdg::simple_node & node);
 
   void
-  AnalyzeStructuralNode(const rvsdg::structural_node & node);
+  AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
   AnalyzeLambda(const lambda::node & node);
