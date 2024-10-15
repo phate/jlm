@@ -31,7 +31,6 @@
 namespace jlm::mlir
 {
 
-/// @brief
 class JlmToMlirConverter final
 {
 public:
