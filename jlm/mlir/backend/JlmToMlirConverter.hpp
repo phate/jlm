@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
 #include <JLM/JLMDialect.h>
@@ -161,6 +162,12 @@ private:
   ::mlir::Operation *
   ConvertGamma(
       const rvsdg::GammaNode & gammaNode,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  ::mlir::Operation *
+  ConvertTheta(
+      const rvsdg::ThetaNode & thetaNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

@@ -352,6 +352,22 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdgGammaNode;
   }
+  else if (auto mlirThetaNode = ::mlir::dyn_cast<::mlir::rvsdg::ThetaNode>(&mlirOperation))
+  {
+    auto rvsdgThetaNode = rvsdg::ThetaNode::create(&rvsdgRegion);
+
+    // Add loop vars to the theta node
+    for (size_t i = 0; i < inputs.size(); i++)
+    {
+      rvsdgThetaNode->add_loopvar(inputs[i]);
+    }
+
+    auto regionResults = ConvertRegion(mlirThetaNode.getRegion(), *rvsdgThetaNode->subregion());
+
+    rvsdgThetaNode->set_predicate(regionResults[0]);
+
+    return rvsdgThetaNode;
+  }
   else if (auto mlirMatch = ::mlir::dyn_cast<::mlir::rvsdg::Match>(&mlirOperation))
   {
     std::unordered_map<uint64_t, uint64_t> mapping;
@@ -381,7 +397,8 @@ MlirToJlmConverter::ConvertOperation(
   else if (
       ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation))
+      || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
+      || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation))
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node
     return nullptr;
