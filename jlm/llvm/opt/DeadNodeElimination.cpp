@@ -329,7 +329,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
         continue;
       }
 
-      if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+      if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {
         SweepStructuralNode(*structuralNode);
       }
@@ -340,7 +340,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 }
 
 void
-DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) const
+DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 {
   auto sweepGamma = [](auto & d, auto & n)
   {
@@ -365,7 +365,7 @@ DeadNodeElimination::SweepStructuralNode(jlm::rvsdg::structural_node & node) con
 
   static std::unordered_map<
       std::type_index,
-      std::function<void(const DeadNodeElimination &, jlm::rvsdg::structural_node &)>>
+      std::function<void(const DeadNodeElimination &, rvsdg::StructuralNode &)>>
       map({ { typeid(rvsdg::GammaOperation), sweepGamma },
             { typeid(rvsdg::ThetaOperation), sweepTheta },
             { typeid(lambda::operation), sweepLambda },

@@ -515,7 +515,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
     {
       EliminateTopDownSimpleNode(*simpleNode);
     }
-    else if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {
       EliminateTopDownStructuralNode(*structuralNode);
     }
@@ -528,7 +528,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
 
 void
 TopDownMemoryNodeEliminator::EliminateTopDownStructuralNode(
-    const rvsdg::structural_node & structuralNode)
+    const rvsdg::StructuralNode & structuralNode)
 {
   if (auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&structuralNode))
   {

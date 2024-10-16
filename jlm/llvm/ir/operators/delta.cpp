@@ -107,7 +107,7 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
 cvinput *
 node::input(size_t n) const noexcept
 {
-  return static_cast<cvinput *>(structural_node::input(n));
+  return static_cast<cvinput *>(StructuralNode::input(n));
 }
 
 cvargument *
@@ -119,7 +119,7 @@ node::cvargument(size_t n) const noexcept
 delta::output *
 node::output() const noexcept
 {
-  return static_cast<delta::output *>(structural_node::output(0));
+  return static_cast<delta::output *>(StructuralNode::output(0));
 }
 
 delta::result *
