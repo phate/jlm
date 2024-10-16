@@ -111,6 +111,11 @@ TestLoad()
   MemoryConverter(*rvsdgModule);
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
+  // Memory Converter replaces the lambda so we start from the root of the graph
+  auto region = rvsdgModule->Rvsdg().root();
+  assert(region->nnodes() == 1);
+  lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+
   // Assert
   auto lambdaRegion = lambda->subregion();
   assert(lambdaRegion->nnodes() == 3);
@@ -188,6 +193,11 @@ TestLoadStore()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   MemoryConverter(*rvsdgModule);
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
+
+  // Memory Converter replaces the lambda so we start from the root of the graph
+  auto region = rvsdgModule->Rvsdg().root();
+  assert(region->nnodes() == 1);
+  lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -320,6 +330,13 @@ TestThetaLoad()
   MemoryConverter(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
+
+  // Memory Converter replaces the lambda so we start from the root of the graph
+  auto region = rvsdgModule->Rvsdg().root();
+  assert(region->nnodes() == 1);
+  lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+  lambdaRegion = lambda->subregion();
+
   assert(jlm::rvsdg::Region::Contains<mem_resp_op>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::Contains<mem_req_op>(*lambdaRegion, true));
 
@@ -328,19 +345,19 @@ TestThetaLoad()
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
   jlm::util::AssertedCast<const mem_req_op>(&requestNode->operation());
 
-  // Theta Node
-  auto thetaOutput =
+  // HLS_LOOP Node
+  auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::structural_output>(requestNode->input(0)->origin());
-  auto thetaNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(thetaOutput->node());
-  jlm::util::AssertedCast<const jlm::rvsdg::ThetaOperation>(&thetaNode->operation());
-  // Theta Result
-  auto & thetaResult = thetaOutput->results;
+  auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
+  jlm::util::AssertedCast<const loop_op>(&loopNode->operation());
+  // Loop Result
+  auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);
   // Load Node
   auto loadNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
   jlm::util::AssertedCast<const load_op>(&loadNode->operation());
-  // Theta Argument
+  // Loop Argument
   auto thetaArgument =
       jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
   auto thetaInput = thetaArgument->input();
