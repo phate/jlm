@@ -356,7 +356,7 @@ TestThetaLoad()
   // Load Node
   auto loadNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
-  jlm::util::AssertedCast<const load_op>(&loadNode->operation());
+  jlm::util::AssertedCast<const decoupled_load_op>(&loadNode->operation());
   // Loop Argument
   auto thetaArgument =
       jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
