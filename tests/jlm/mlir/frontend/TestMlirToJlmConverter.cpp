@@ -856,8 +856,165 @@ TestGammaOp()
   return 0;
 }
 
+/** \brief TestThetaOp
+ *
+ * This function tests the Theta operation. It creates a lambda block with a Theta operation.
+ *
+ */
+static int
+TestThetaOp()
+{
+  {
+    using namespace mlir::rvsdg;
+    using namespace mlir::jlm;
+
+    // Setup MLIR Context and load dialects
+    std::cout << "Creating MLIR context" << std::endl;
+    auto context = std::make_unique<mlir::MLIRContext>();
+    context->getOrLoadDialect<RVSDGDialect>();
+    context->getOrLoadDialect<JLMDialect>();
+    context->getOrLoadDialect<mlir::arith::ArithDialect>();
+    auto Builder_ = std::make_unique<mlir::OpBuilder>(context.get());
+
+    auto omega = Builder_->create<OmegaNode>(Builder_->getUnknownLoc());
+    auto & omegaRegion = omega.getRegion();
+    auto * omegaBlock = new mlir::Block;
+    omegaRegion.push_back(omegaBlock);
+
+    // Handle function arguments
+    std::cout << "Creating function arguments" << std::endl;
+    ::llvm::SmallVector<mlir::Type> arguments;
+    arguments.push_back(Builder_->getType<IOStateEdgeType>());
+    arguments.push_back(Builder_->getType<MemStateEdgeType>());
+    ::llvm::ArrayRef argumentsArray(arguments);
+
+    // Handle function results
+    std::cout << "Creating function results" << std::endl;
+    ::llvm::SmallVector<mlir::Type> results;
+    results.push_back(Builder_->getType<IOStateEdgeType>());
+    results.push_back(Builder_->getType<MemStateEdgeType>());
+    ::llvm::ArrayRef resultsArray(results);
+
+    // LambdaNodes return a LambdaRefType
+    std::cout << "Creating LambdaRefType" << std::endl;
+    ::llvm::SmallVector<mlir::Type> lambdaRef;
+    auto refType = Builder_->getType<LambdaRefType>(argumentsArray, resultsArray);
+    lambdaRef.push_back(refType);
+
+    // Add function attributes
+    std::cout << "Creating function attributes" << std::endl;
+    ::llvm::SmallVector<mlir::NamedAttribute> attributes;
+    auto attributeName = Builder_->getStringAttr("sym_name");
+    auto attributeValue = Builder_->getStringAttr("test");
+    auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
+    attributes.push_back(symbolName);
+    ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
+
+    // Add inputs to the function
+    ::llvm::SmallVector<mlir::Value> inputs;
+
+    // Create the lambda node and add it to the region/block it resides in
+    std::cout << "Creating LambdaNode" << std::endl;
+    auto lambda =
+        Builder_->create<LambdaNode>(Builder_->getUnknownLoc(), lambdaRef, inputs, attributesRef);
+    omegaBlock->push_back(lambda);
+    auto & lambdaRegion = lambda.getRegion();
+    auto * lambdaBlock = new mlir::Block;
+    lambdaRegion.push_back(lambdaBlock);
+
+    // Add arguments to the region
+    std::cout << "Adding arguments to the region" << std::endl;
+    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+
+    ::llvm::SmallVector<::mlir::NamedAttribute> thetaAttributes;
+    ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
+    typeRangeOuput.push_back(Builder_->getType<IOStateEdgeType>());
+    typeRangeOuput.push_back(Builder_->getType<MemStateEdgeType>());
+    ::mlir::rvsdg::ThetaNode theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
+        Builder_->getUnknownLoc(),
+        ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
+        ::mlir::ValueRange(::llvm::ArrayRef<::mlir::Value>(
+            { lambdaBlock->getArgument(0), lambdaBlock->getArgument(1) })), // Inputs
+        thetaAttributes);
+    lambdaBlock->push_back(theta);
+
+    auto & thetaBlock = theta.getRegion().emplaceBlock();
+    auto predicate = Builder_->create<mlir::rvsdg::ConstantCtrl>(
+        Builder_->getUnknownLoc(),
+        Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(2),
+        0);
+    thetaBlock.push_back(predicate);
+
+    auto thetaResult = Builder_->create<::mlir::rvsdg::ThetaResult>(
+        Builder_->getUnknownLoc(),
+        predicate,
+        ::llvm::SmallVector<mlir::Value>(theta.getInputs()));
+    thetaBlock.push_back(thetaResult);
+
+    // Handle the result of the lambda
+    ::llvm::SmallVector<mlir::Value> regionResults;
+    regionResults.push_back(theta->getResult(0));
+    regionResults.push_back(theta->getResult(1));
+    std::cout << "Creating LambdaResult" << std::endl;
+    auto lambdaResult = Builder_->create<LambdaResult>(Builder_->getUnknownLoc(), regionResults);
+    lambdaBlock->push_back(lambdaResult);
+
+    // Handle the result of the omega
+    std::cout << "Creating OmegaResult" << std::endl;
+    ::llvm::SmallVector<mlir::Value> omegaRegionResults;
+    omegaRegionResults.push_back(lambda);
+    auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
+    omegaBlock->push_back(omegaResult);
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = rvsdgModule->Rvsdg().root();
+
+    {
+      using namespace jlm::rvsdg;
+
+      assert(region->nnodes() == 1);
+
+      // Get the lambda block
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+
+      auto lambdaRegion = convertedLambda->subregion();
+
+      // Just the theta node
+      assert(lambdaRegion->nnodes() == 1);
+
+      jlm::rvsdg::node_output * thetaOutput;
+      assert(
+          thetaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
+      jlm::rvsdg::node * node = thetaOutput->node();
+      assert(is<ThetaOperation>(node->operation()));
+      auto thetaNode = dynamic_cast<const jlm::rvsdg::ThetaNode *>(node);
+
+      std::cout << "Checking theta node" << std::endl;
+      assert(thetaNode->ninputs() == 2);
+      assert(thetaNode->nloopvars() == 2);
+      assert(thetaNode->noutputs() == 2);
+      assert(thetaNode->nsubregions() == 1);
+      assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->type()));
+      auto predicateType =
+          dynamic_cast<const jlm::rvsdg::ControlType *>(&thetaNode->predicate()->type());
+      assert(predicateType->nalternatives() == 2);
+      std::cout << predicate.getValue() << std::endl;
+    }
+  }
+
+  return 0;
+}
+
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgLambdaGen", TestLambda)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgDivOperationGen", TestDivOperation)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgCompZeroExtGen", TestCompZeroExt)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestMatchGen", TestMatchOp)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestGammaGen", TestGammaOp)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestThetaGen", TestThetaOp)
