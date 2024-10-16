@@ -13,7 +13,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include "JLM/JLMOps.h"
+#include <JLM/JLMOps.h>
 #include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>

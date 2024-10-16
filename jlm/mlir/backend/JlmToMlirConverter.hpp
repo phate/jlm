@@ -19,7 +19,7 @@
 #include <RVSDG/RVSDGPasses.h>
 
 // MLIR JLM dialects
-#include "JLM/JLMOps.h"
+#include <JLM/JLMOps.h>
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
