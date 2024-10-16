@@ -43,6 +43,29 @@ RegionArgument::RegionArgument(
   }
 }
 
+[[nodiscard]] std::variant<node *, Region *>
+RegionArgument::GetOwner() const noexcept
+{
+  return region();
+}
+
+RegionArgument &
+RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
+{
+  return RegionArgument::Create(region, input, Type());
+}
+
+RegionArgument &
+RegionArgument::Create(
+    rvsdg::Region & region,
+    rvsdg::structural_input * input,
+    std::shared_ptr<const rvsdg::Type> type)
+{
+  auto argument = new RegionArgument(&region, input, std::move(type));
+  region.append_argument(argument);
+  return *argument;
+}
+
 RegionResult::~RegionResult() noexcept
 {
   on_input_destroy(this);
@@ -73,6 +96,31 @@ RegionResult::RegionResult(
   }
 }
 
+[[nodiscard]] std::variant<node *, Region *>
+RegionResult::GetOwner() const noexcept
+{
+  return region();
+}
+
+RegionResult &
+RegionResult::Copy(rvsdg::output & origin, structural_output * output)
+{
+  return RegionResult::Create(*origin.region(), origin, output, origin.Type());
+}
+
+RegionResult &
+RegionResult::Create(
+    rvsdg::Region & region,
+    rvsdg::output & origin,
+    structural_output * output,
+    std::shared_ptr<const rvsdg::Type> type)
+{
+  JLM_ASSERT(origin.region() == &region);
+  auto result = new RegionResult(&region, &origin, output, std::move(type));
+  region.append_result(result);
+  return *result;
+}
+
 Region::~Region() noexcept
 {
   on_region_destroy(this);
@@ -97,7 +145,7 @@ Region::Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph)
   on_region_create(this);
 }
 
-Region::Region(jlm::rvsdg::structural_node * node, size_t index)
+Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
       node_(node)
@@ -258,7 +306,7 @@ Region::prune(bool recursive)
 
   for (const auto & node : nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t n = 0; n < snode->nsubregions(); n++)
         snode->subregion(n)->prune(recursive);
@@ -271,7 +319,7 @@ Region::normalize(bool recursive)
 {
   for (auto node : jlm::rvsdg::topdown_traverser(this))
   {
-    if (auto structnode = dynamic_cast<const jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         structnode->subregion(n)->normalize(recursive);
@@ -294,7 +342,7 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
   size_t numRegions = 1;
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
@@ -348,7 +396,7 @@ Region::ToTree(
   indentationString = std::string(indentationDepth, indentationChar);
   for (auto & node : region.nodes)
   {
-    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(&node))
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       auto nodeString = structuralNode->operation().debug_string();
       auto annotationString = GetAnnotationString(
@@ -430,7 +478,7 @@ nnodes(const jlm::rvsdg::Region * region) noexcept
   size_t n = region->nnodes();
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += nnodes(snode->subregion(r));
@@ -446,7 +494,7 @@ nstructnodes(const rvsdg::Region * region) noexcept
   size_t n = 0;
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += nstructnodes(snode->subregion(r));
@@ -463,7 +511,7 @@ nsimpnodes(const rvsdg::Region * region) noexcept
   size_t n = 0;
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += nsimpnodes(snode->subregion(r));
@@ -483,7 +531,7 @@ ninputs(const rvsdg::Region * region) noexcept
   size_t n = region->nresults();
   for (const auto & node : region->nodes)
   {
-    if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
+    if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
       for (size_t r = 0; r < snode->nsubregions(); r++)
         n += ninputs(snode->subregion(r));

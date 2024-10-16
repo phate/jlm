@@ -399,7 +399,7 @@ push(rvsdg::Region * region)
 {
   for (auto node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto strnode = dynamic_cast<const jlm::rvsdg::structural_node *>(node))
+    if (auto strnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < strnode->nsubregions(); n++)
         push(strnode->subregion(n));

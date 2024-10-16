@@ -47,7 +47,7 @@ static void
 ConvertThetaNodesInRegion(rvsdg::Region & region);
 
 static void
-ConvertThetaNodesInStructuralNode(jlm::rvsdg::structural_node & structuralNode)
+ConvertThetaNodesInStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
@@ -65,7 +65,7 @@ ConvertThetaNodesInRegion(rvsdg::Region & region)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(&region))
   {
-    if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       ConvertThetaNodesInStructuralNode(*structuralNode);
     }

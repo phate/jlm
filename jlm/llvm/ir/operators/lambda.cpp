@@ -116,13 +116,13 @@ node::fctresults() const
 cvinput *
 node::input(size_t n) const noexcept
 {
-  return util::AssertedCast<cvinput>(structural_node::input(n));
+  return util::AssertedCast<cvinput>(StructuralNode::input(n));
 }
 
 lambda::output *
 node::output() const noexcept
 {
-  return util::AssertedCast<lambda::output>(structural_node::output(0));
+  return util::AssertedCast<lambda::output>(StructuralNode::output(0));
 }
 
 lambda::fctargument *

@@ -27,7 +27,7 @@ class node;
 class simple_node;
 class simple_op;
 class structural_input;
-class structural_node;
+class StructuralNode;
 class structural_op;
 class structural_output;
 class SubstitutionMap;
@@ -50,13 +50,11 @@ public:
 
   ~RegionArgument() noexcept override;
 
-protected:
   RegionArgument(
       rvsdg::Region * region,
       structural_input * input,
       std::shared_ptr<const rvsdg::Type> type);
 
-public:
   RegionArgument(const RegionArgument &) = delete;
 
   RegionArgument(RegionArgument &&) = delete;
@@ -82,7 +80,34 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(rvsdg::Region & region, structural_input * input) = 0;
+  Copy(rvsdg::Region & region, structural_input * input);
+
+  [[nodiscard]] std::variant<node *, Region *>
+  GetOwner() const noexcept override;
+
+  /**
+   * \brief Creates region entry argument.
+   *
+   * \param region
+   *   Region to create argument for.
+   *
+   * \param input
+   *   (optional) input of parent node associated with this
+   *   argument (deprecated, will be removed soon).
+   *
+   * \param type
+   *   Result type.
+   *
+   * \returns
+   *   Reference to the created argument.
+   *
+   * Creates an argument and registers it with the given region.
+   */
+  static RegionArgument &
+  Create(
+      rvsdg::Region & region,
+      rvsdg::structural_input * input,
+      std::shared_ptr<const rvsdg::Type> type);
 
 private:
   structural_input * input_;
@@ -107,14 +132,12 @@ public:
 
   ~RegionResult() noexcept override;
 
-protected:
   RegionResult(
       rvsdg::Region * region,
       rvsdg::output * origin,
       structural_output * output,
       std::shared_ptr<const rvsdg::Type> type);
 
-public:
   RegionResult(const RegionResult &) = delete;
 
   RegionResult(RegionResult &&) = delete;
@@ -141,7 +164,38 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::output & origin, structural_output * output) = 0;
+  Copy(rvsdg::output & origin, structural_output * output);
+
+  [[nodiscard]] std::variant<node *, Region *>
+  GetOwner() const noexcept override;
+
+  /**
+   * \brief Create region exit result.
+   *
+   * \param region
+   *   Region to create result for.
+   *
+   * \param origin
+   *   Assigned result value.
+   *
+   * \param output
+   *   (optional) output of parent node associated with this
+   *   result (deprecated, will be removed soon).
+   *
+   * \param type
+   *   Result type
+   *
+   * \returns
+   *   Reference to the created result.
+   *
+   * Creates a result and registers it with the given region.
+   */
+  static RegionResult &
+  Create(
+      rvsdg::Region & region,
+      rvsdg::output & origin,
+      structural_output * output,
+      std::shared_ptr<const rvsdg::Type> type);
 
 private:
   structural_output * output_;
@@ -151,7 +205,7 @@ private:
  * \brief Represent acyclic RVSDG subgraphs
  *
  * Regions represent acyclic RVSDG subgraphs and are instantiated with an index in \ref
- * structural_node%s. Each region has \ref RegionArgument%s and \ref RegionResult%s that represent
+ * StructuralNode%s. Each region has \ref RegionArgument%s and \ref RegionResult%s that represent
  * the values at the beginning and end of the acyclic graph, respectively. In addition, each region
  * keeps track of the following properties:
  *
@@ -204,7 +258,7 @@ public:
 
   Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
 
-  Region(rvsdg::structural_node * node, size_t index);
+  Region(rvsdg::StructuralNode * node, size_t index);
 
   /**
    * @return Returns an iterator range for iterating through the arguments of the region.
@@ -303,7 +357,7 @@ public:
     return graph_;
   }
 
-  inline jlm::rvsdg::structural_node *
+  inline rvsdg::StructuralNode *
   node() const noexcept
   {
     return node_;
@@ -565,7 +619,7 @@ public:
    *
    * @param region The top-level region that is converted
    * @param annotationMap A map with annotations for instances of \ref Region%s or
-   * structural_node%s.
+   * StructuralNode%s.
    * @return A string containing the ASCII tree of \p region.
    */
   [[nodiscard]] static std::string
@@ -624,7 +678,7 @@ private:
 
   size_t index_;
   jlm::rvsdg::graph * graph_;
-  jlm::rvsdg::structural_node * node_;
+  rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
   region_bottom_node_list BottomNodes_;
@@ -647,6 +701,140 @@ nsimpnodes(const rvsdg::Region * region) noexcept;
 
 size_t
 ninputs(const rvsdg::Region * region) noexcept;
+
+/**
+ * \brief Checks if this is a result of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region exit result belonging
+ * to a node of specified type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this is an input to a node
+ * or or because the node owning the region is of a different kind,
+ * or because this is the root region), returns nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetRegionParentNode(const rvsdg::input & input) noexcept
+{
+  auto region = TryGetOwnerRegion(input);
+  if (region)
+  {
+    return dynamic_cast<NodeType *>(region->node());
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Checks if this is an argument of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region entry argument belonging
+ * to a node of specified type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this is an input to a node
+ * or or because the node owning the region is of a different kind,
+ * or because this is the root region), returns nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetRegionParentNode(const rvsdg::output & output) noexcept
+{
+  auto region = TryGetOwnerRegion(output);
+  if (region)
+  {
+    return dynamic_cast<NodeType *>(region->node());
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Asserts that this is a result of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region exit result belonging
+ * to a node of specified type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws an exception.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetRegionParentNode(const rvsdg::input & input)
+{
+  auto node = TryGetRegionParentNode<NodeType>(input);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
+
+/**
+ * \brief Asserts that this is an argument of a region inside a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Node of requested type to which the region belongs.
+ *
+ * Checks if the specified input is a region entry argument belonging
+ * to a node of specified type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws an exception.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetRegionParentNode(const rvsdg::output & output)
+{
+  auto node = TryGetRegionParentNode<NodeType>(output);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
 
 } // namespace
 

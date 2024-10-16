@@ -57,7 +57,7 @@ node_to_string(
   }
   s += "\n";
 
-  if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(node))
+  if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(node))
   {
     for (size_t n = 0; n < snode->nsubregions(); n++)
       s += region_to_string(snode->subregion(n), depth + 1, map);
@@ -297,7 +297,7 @@ convert_simple_node(const jlm::rvsdg::simple_node * node)
 }
 
 static inline std::string
-convert_structural_node(const jlm::rvsdg::structural_node * node)
+convert_structural_node(const rvsdg::StructuralNode * node)
 {
   std::string s;
   s += node_starttag(id(node), "", type(node));
@@ -327,7 +327,7 @@ convert_node(const jlm::rvsdg::node * node)
   if (auto n = dynamic_cast<const simple_node *>(node))
     return convert_simple_node(n);
 
-  if (auto n = dynamic_cast<const structural_node *>(node))
+  if (auto n = dynamic_cast<const StructuralNode *>(node))
     return convert_structural_node(n);
 
   JLM_ASSERT(0);

@@ -290,7 +290,7 @@ static void
 mark(jlm::rvsdg::Region *, cnectx &);
 
 static void
-mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
+mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node->operation()));
 
@@ -316,7 +316,7 @@ mark_gamma(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
+mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(is<jlm::rvsdg::ThetaOperation>(node));
   auto theta = static_cast<const rvsdg::ThetaNode *>(node);
@@ -340,7 +340,7 @@ mark_theta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_loop(const rvsdg::structural_node * node, cnectx & ctx)
+mark_loop(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(rvsdg::is<hls::loop_op>(node));
   auto loop = static_cast<const jlm::hls::loop_node *>(node);
@@ -362,7 +362,7 @@ mark_loop(const rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_lambda(const jlm::rvsdg::structural_node * node, cnectx & ctx)
+mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(jlm::rvsdg::is<llvm::lambda::operation>(node));
 
@@ -382,7 +382,7 @@ mark_lambda(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_phi(const jlm::rvsdg::structural_node * node, cnectx & ctx)
+mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(is<llvm::phi::operation>(node));
 
@@ -402,22 +402,21 @@ mark_phi(const jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-mark_delta(const jlm::rvsdg::structural_node * node, cnectx & ctx)
+mark_delta(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(jlm::rvsdg::is<llvm::delta::operation>(node));
 }
 
 static void
-mark(const jlm::rvsdg::structural_node * node, cnectx & ctx)
+mark(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  static std::
-      unordered_map<std::type_index, void (*)(const jlm::rvsdg::structural_node *, cnectx &)>
-          map({ { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
-                { std::type_index(typeid(ThetaOperation)), mark_theta },
-                { std::type_index(typeid(jlm::hls::loop_op)), mark_loop },
-                { typeid(llvm::lambda::operation), mark_lambda },
-                { typeid(llvm::phi::operation), mark_phi },
-                { typeid(llvm::delta::operation), mark_delta } });
+  static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map(
+      { { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
+        { std::type_index(typeid(ThetaOperation)), mark_theta },
+        { std::type_index(typeid(jlm::hls::loop_op)), mark_loop },
+        { typeid(llvm::lambda::operation), mark_lambda },
+        { typeid(llvm::phi::operation), mark_phi },
+        { typeid(llvm::delta::operation), mark_delta } });
 
   auto & op = node->operation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
@@ -471,7 +470,7 @@ mark(rvsdg::Region * region, cnectx & ctx)
     if (auto simple = dynamic_cast<const jlm::rvsdg::simple_node *>(node))
       mark(simple, ctx);
     else
-      mark(static_cast<const jlm::rvsdg::structural_node *>(node), ctx);
+      mark(static_cast<const rvsdg::StructuralNode *>(node), ctx);
   }
 }
 
@@ -504,7 +503,7 @@ static void
 divert(rvsdg::Region *, cnectx &);
 
 static void
-divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
+divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node));
   auto gamma = static_cast<GammaNode *>(node);
@@ -522,7 +521,7 @@ divert_gamma(jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_theta(jlm::rvsdg::structural_node * node, cnectx & ctx)
+divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(is<jlm::rvsdg::ThetaOperation>(node));
   auto theta = static_cast<rvsdg::ThetaNode *>(node);
@@ -539,7 +538,7 @@ divert_theta(jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_loop(rvsdg::structural_node * node, cnectx & ctx)
+divert_loop(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(rvsdg::is<hls::loop_op>(node));
   auto subregion = node->subregion(0);
@@ -547,7 +546,7 @@ divert_loop(rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_lambda(jlm::rvsdg::structural_node * node, cnectx & ctx)
+divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(jlm::rvsdg::is<llvm::lambda::operation>(node));
 
@@ -556,7 +555,7 @@ divert_lambda(jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_phi(jlm::rvsdg::structural_node * node, cnectx & ctx)
+divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(is<llvm::phi::operation>(node));
 
@@ -565,15 +564,15 @@ divert_phi(jlm::rvsdg::structural_node * node, cnectx & ctx)
 }
 
 static void
-divert_delta(jlm::rvsdg::structural_node * node, cnectx & ctx)
+divert_delta(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   JLM_ASSERT(jlm::rvsdg::is<llvm::delta::operation>(node));
 }
 
 static void
-divert(jlm::rvsdg::structural_node * node, cnectx & ctx)
+divert(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  static std::unordered_map<std::type_index, void (*)(jlm::rvsdg::structural_node *, cnectx &)> map(
+  static std::unordered_map<std::type_index, void (*)(rvsdg::StructuralNode *, cnectx &)> map(
       { { std::type_index(typeid(rvsdg::GammaOperation)), divert_gamma },
         { std::type_index(typeid(ThetaOperation)), divert_theta },
         { std::type_index(typeid(jlm::hls::loop_op)), divert_loop },
@@ -594,7 +593,7 @@ divert(rvsdg::Region * region, cnectx & ctx)
     if (auto simple = dynamic_cast<jlm::rvsdg::simple_node *>(node))
       divert_outputs(simple, ctx);
     else
-      divert(static_cast<jlm::rvsdg::structural_node *>(node), ctx);
+      divert(static_cast<rvsdg::StructuralNode *>(node), ctx);
   }
 }
 

@@ -2517,7 +2517,7 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
       else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
       {
         // Check if we the input of one loop_node is connected to the output of another
-        // structural_node, i.e., if the input is connected to the output of another loop_node
+        // StructuralNode, i.e., if the input is connected to the output of another loop_node
         return TraceStructuralOutput(o);
       }
       // Else we have reached the source
