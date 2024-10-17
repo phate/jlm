@@ -287,7 +287,7 @@ mem_sep_argument(rvsdg::Region * region)
   }
   auto state_user = *state_arg->begin();
   port_load_store_decouple port_nodes;
-  trace_pointer_arguments(lambda, port_nodes);
+  TracePointerArguments(lambda, port_nodes);
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
   auto state_result = GetMemoryStateResult(*lambda);
