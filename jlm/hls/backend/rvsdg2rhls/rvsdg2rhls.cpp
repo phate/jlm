@@ -417,25 +417,41 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   llvm::DeadNodeElimination llvmDne;
   llvmDne.run(rhls, statisticsCollector);
 
+  dump_dot(rhls, "1-base.dot");
   mem_sep_argument(rhls);
+  dump_dot(rhls, "2-mem_sep.dot");
   remove_unused_state(rhls);
+  dump_dot(rhls, "3-unused_state.dot");
   // main conversion steps
   distribute_constants(rhls);
+  dump_dot(rhls, "4-distributed_constants.dot");
   ConvertGammaNodes(rhls);
+  dump_dot(rhls, "5-gamma.dot");
   ConvertThetaNodes(rhls);
+  dump_dot(rhls, "6-theta.dot");
   hls::cne hlsCne;
   hlsCne.run(rhls, statisticsCollector);
+  dump_dot(rhls, "7-cne.dot");
   // rhls optimization
   dne(rhls);
+  dump_dot(rhls, "8-dne.dot");
   alloca_conv(rhls);
+  dump_dot(rhls, "9-alloca.dot");
   mem_queue(rhls);
+  dump_dot(rhls, "10-mem_queue.dot");
   MemoryConverter(rhls);
+  dump_dot(rhls, "11-MemoryConverter.dot");
   memstate_conv(rhls);
+  dump_dot(rhls, "12-memstate_conv.dot");
   remove_redundant_buf(rhls);
+  dump_dot(rhls, "13-redundant.dot");
   // enforce 1:1 input output relationship
   add_sinks(rhls);
+  dump_dot(rhls, "14-sinks.dot");
   add_forks(rhls);
+  dump_dot(rhls, "15-forks.dot");
   add_buffers(rhls, true);
+  dump_dot(rhls, "16-buffers.dot");
   // ensure that all rhls rules are met
   check_rhls(rhls);
 }

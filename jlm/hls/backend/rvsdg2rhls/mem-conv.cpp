@@ -28,10 +28,9 @@ jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
   else
   {
     auto parent_response = route_response(target->node()->region(), response);
-    auto lambda = dynamic_cast<jlm::hls::loop_node *>(target->node());
-    JLM_ASSERT(lambda);
-    auto input =
-        jlm::rvsdg::structural_input::create(lambda, parent_response, parent_response->Type());
+    auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
+    JLM_ASSERT(ln);
+    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
     auto & argument = EntryArgument::Create(*target, *input, response->Type());
     return &argument;
   }
@@ -46,9 +45,9 @@ jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
   }
   else
   {
-    auto lambda = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
-    JLM_ASSERT(lambda);
-    auto output = jlm::rvsdg::structural_output::create(lambda, request->Type());
+    auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
+    JLM_ASSERT(ln);
+    auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
     ExitResult::Create(*request, *output);
     return route_request(target, output);
   }

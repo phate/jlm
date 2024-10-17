@@ -15,7 +15,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static inline void
+static int
 TestTraceArgument()
 {
   using namespace jlm::llvm;
@@ -70,9 +70,11 @@ TestTraceArgument()
   assert(std::get<0>(portNodes[1]).size() == 0); // 0 load for the first pointer
   assert(std::get<1>(portNodes[1]).size() == 1); // 1 store for the second pointer
   assert(std::get<2>(portNodes[1]).size() == 0); // 0 load for the first pointer
+
+  return 0;
 }
 
-static inline void
+static int
 TestLoad()
 {
   using namespace jlm::llvm;
@@ -149,9 +151,11 @@ TestLoad()
   auto responseSource = responseNode->input(0)->origin();
   auto regionArgument = jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(responseSource);
   assert(regionArgument->index() == 2);
+
+  return 0;
 }
 
-static inline void
+static int
 TestLoadStore()
 {
   using namespace jlm::llvm;
@@ -233,9 +237,11 @@ TestLoadStore()
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
   jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
+
+  return 0;
 }
 
-static inline void
+static int
 TestThetaLoad()
 {
   using namespace jlm::llvm;
@@ -369,17 +375,11 @@ TestThetaLoad()
 
   // Lambda argument
   jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin());
-}
-
-static int
-Tests()
-{
-  TestTraceArgument();
-  TestLoad();
-  TestLoadStore();
-  TestThetaLoad();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests", Tests)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-1", TestTraceArgument)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-2", TestLoad)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-3", TestLoadStore)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-4", TestThetaLoad)
