@@ -28,10 +28,10 @@ TestWithMatch()
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->fctargument(0));
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
-  auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
-  auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
+  auto ev1 = gamma->add_entryvar(lambda->GetFunctionArguments()[1]);
+  auto ev2 = gamma->add_entryvar(lambda->GetFunctionArguments()[2]);
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });
@@ -65,9 +65,9 @@ TestWithoutMatch()
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
 
-  auto gamma = jlm::rvsdg::GammaNode::create(lambda->fctargument(0), 2);
-  auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
-  auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
+  auto gamma = jlm::rvsdg::GammaNode::create(lambda->GetFunctionArguments()[0], 2);
+  auto ev1 = gamma->add_entryvar(lambda->GetFunctionArguments()[1]);
+  auto ev2 = gamma->add_entryvar(lambda->GetFunctionArguments()[2]);
   auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
 
   auto f = lambda->finalize({ ex });

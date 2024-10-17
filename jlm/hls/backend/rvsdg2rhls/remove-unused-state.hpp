@@ -15,10 +15,10 @@ namespace jlm::hls
 {
 
 bool
-is_passthrough(const rvsdg::RegionArgument * arg);
+is_passthrough(const rvsdg::output * arg);
 
 bool
-is_passthrough(const rvsdg::RegionResult * res);
+is_passthrough(const rvsdg::input * res);
 
 llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln);

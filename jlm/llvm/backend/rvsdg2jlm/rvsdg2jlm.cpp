@@ -127,27 +127,27 @@ create_cfg(const lambda::node & lambda, context & ctx)
   ctx.set_cfg(cfg.get());
 
   /* add arguments */
-  size_t n = 0;
-  for (auto & fctarg : lambda.fctarguments())
+  for (auto fctarg : lambda.GetFunctionArguments())
   {
-    auto name = util::strfmt("_a", n++, "_");
-    auto argument = llvm::argument::create(name, fctarg.Type(), fctarg.attributes());
+    auto name = util::strfmt("_a", fctarg->index(), "_");
+    auto argument =
+        llvm::argument::create(name, fctarg->Type(), lambda.GetArgumentAttributes(*fctarg));
     auto v = cfg->entry()->append_argument(std::move(argument));
-    ctx.insert(&fctarg, v);
+    ctx.insert(fctarg, v);
   }
 
   /* add context variables */
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    auto v = ctx.variable(cv.origin());
-    ctx.insert(cv.argument(), v);
+    auto v = ctx.variable(cv.input->origin());
+    ctx.insert(cv.inner, v);
   }
 
   convert_region(*lambda.subregion(), ctx);
 
   /* add results */
-  for (auto & result : lambda.fctresults())
-    cfg->exit()->append_result(ctx.variable(result.origin()));
+  for (auto result : lambda.GetFunctionResults())
+    cfg->exit()->append_result(ctx.variable(result->origin()));
 
   ctx.lpbb()->add_outedge(cfg->exit());
   ctx.set_lpbb(nullptr);
