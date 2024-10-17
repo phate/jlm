@@ -4,8 +4,6 @@ description: "Builds CIRCT, which is used for the HLS backend"
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-
     - name: "Get the commit used for building CIRCT and use it as the cache key"
       id: get-circt-hash
       run: |
@@ -37,6 +35,8 @@ runs:
       shell: bash
 
     - name: "Save CIRCT to the cache"
+      if: steps.cache-circt.outputs.cache-hit != 'true'
+      run: |
       id: save-cache-circt
       uses: actions/cache/save@v4
       with:
