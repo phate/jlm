@@ -36,7 +36,6 @@ runs:
 
     - name: "Save CIRCT to the cache"
       if: steps.cache-circt.outputs.cache-hit != 'true'
-      run: |
       id: save-cache-circt
       uses: actions/cache/save@v4
       with:
