@@ -4,6 +4,13 @@ description: "Builds CIRCT, which is used for the HLS backend"
 runs:
   using: "composite"
   steps:
+    - name: "Install LLVM, Clang, MLIR, and Ninja"
+      uses: ./.github/actions/InstallPackages
+      with:
+        install-llvm: true
+        install-mlir: true
+        install-ninja: true
+
     - name: "Get the commit used for building CIRCT and use it as the cache key"
       id: get-circt-hash
       run: |
@@ -11,20 +18,12 @@ runs:
       shell: bash
 
     - name: "Try to fetch CIRCT from the cache"
-      id: cache-circt
-      uses: actions/cache@v4
+      id: restore-cache-circt
+      uses: actions/cache/restore@v4
       with:
-        save-always: true
         path: |
           ${{ github.workspace }}/build-circt/circt
         key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
-
-    - name: "Install LLVM, Clang, MLIR, and Ninja"
-      uses: ./.github/actions/InstallPackages
-      with:
-        install-llvm: true
-        install-mlir: true
-        install-ninja: true
 
     - name: "Build CIRCT if we didn't hit in the cache"
       if: steps.cache-circt.outputs.cache-hit != 'true'
@@ -34,3 +33,11 @@ runs:
           --install-path ${{ github.workspace }}/build-circt/circt \
           --llvm-lit-path ~/.local/bin/lit
       shell: bash
+
+    - name: "Save CIRCT to the cache"
+      id: save-cache-circt
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ github.workspace }}/build-circt/circt
+        key: ${{ steps.restore-cache-circt.outputs.cache-primary-key }}
