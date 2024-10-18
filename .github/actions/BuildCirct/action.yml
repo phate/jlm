@@ -35,6 +35,7 @@ runs:
       shell: bash
 
     - name: "Save CIRCT to the cache"
+      if: steps.restore-cache-circt.outputs.cache-hit != 'true'
       id: save-cache-circt
       uses: actions/cache/save@v4
       with:
