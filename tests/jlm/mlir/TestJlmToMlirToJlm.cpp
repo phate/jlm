@@ -69,4 +69,4 @@ TestUndef()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirUndefGen", TestUndef)
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirUndefGen", TestUndef)
