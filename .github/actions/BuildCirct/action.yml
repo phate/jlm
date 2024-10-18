@@ -26,7 +26,7 @@ runs:
         key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
 
     - name: "Build CIRCT if we didn't hit in the cache"
-      if: steps.cache-circt.outputs.cache-hit != 'true'
+      if: steps.restore-cache-circt.outputs.cache-hit != 'true'
       run: |
         ./scripts/build-circt.sh \
           --build-path ${{ github.workspace }}/build-circt \
