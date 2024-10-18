@@ -70,8 +70,10 @@ Andersen::Configuration::GetAllConfigurations()
   {
     config.EnablePreferImplicitPointees(false);
     configs.push_back(config);
+#ifndef ANDERSEN_NO_FLAGS
     config.EnablePreferImplicitPointees(true);
     configs.push_back(config);
+#endif
   };
   auto PickDifferencePropagation = [&](Configuration config)
   {
@@ -439,20 +441,31 @@ public:
 
     size_t numExplicitPointees = 0;
     size_t numExplicitPointsToRelations = 0;
+#ifndef ANDERSEN_NO_FLAGS
     size_t numExplicitPointeeRelationsAmongPrecise = 0;
+#endif
 
     size_t numPointsToExternalFlags = 0;
     size_t numPointsToExternalRelations = 0;
+#ifndef ANDERSEN_NO_FLAGS
     size_t numPointeesEscapingFlags = 0;
     size_t numPointeesEscapingRelations = 0;
+#endif
 
+#ifndef ANDERSEN_NO_FLAGS
     size_t numDoubledUpPointees = 0;
     size_t numDoubledUpPointsToRelations = 0;
+#endif
 
     std::vector<bool> unificationHasCanPoint(set.NumPointerObjects(), false);
 
     for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
     {
+#ifdef ANDERSEN_NO_FLAGS
+      // Do not count outgoing edges from the external object
+      if (set.GetExternalObject() == i)
+        continue;
+#endif
       if (set.HasEscaped(i))
       {
         if (set.CanPoint(i))
@@ -466,6 +479,14 @@ public:
       if (set.CanPoint(i))
       {
         numExplicitPointsToRelations += pointees.Size();
+#ifdef ANDERSEN_NO_FLAGS
+        // We do not want to count the explicit pointer to the external node
+        if (pointees.Contains(set.GetExternalObject()))
+        {
+          numExplicitPointsToRelations--;
+          numPointsToExternalRelations++;
+        }
+#else
         numPointeesEscapingRelations += set.HasPointeesEscaping(i);
 
         if (set.IsPointingToExternal(i))
@@ -483,6 +504,7 @@ public:
           // pointers that do not also point to external.
           numExplicitPointeeRelationsAmongPrecise += pointees.Size();
         }
+#endif
 
         // This unification has at least one CanPoint member
         unificationHasCanPoint[set.GetUnificationRoot(i)] = true;
@@ -494,18 +516,28 @@ public:
         continue;
 
       numUnificationRoots++;
+#ifndef ANDERSEN_NO_FLAGS
       if (set.IsPointingToExternal(i))
         numPointsToExternalFlags++;
       if (set.HasPointeesEscaping(i))
         numPointeesEscapingFlags++;
+#endif
 
       numExplicitPointees += pointees.Size();
-
+#ifdef ANDERSEN_NO_FLAGS
+      // We do not want to count the explicit pointer to the external node
+      if (pointees.Contains(set.GetExternalObject()))
+      {
+        numExplicitPointees--;
+        numPointsToExternalFlags++;
+      }
+#else
       // If the PointsToExternal flag is set, any explicit pointee that has escaped is doubled up
       if (set.IsPointingToExternal(i))
         for (auto pointee : pointees.Items())
           if (set.HasEscaped(pointee))
             numDoubledUpPointees++;
+#endif
     }
 
     // Now find unifications where no member is marked CanPoint, as any explicit pointee is a waste
@@ -527,12 +559,15 @@ public:
 
     AddMeasurement(NumExplicitPointees_, numExplicitPointees);
     AddMeasurement(NumExplicitPointsToRelations_, numExplicitPointsToRelations);
+#ifndef ANDERSEN_NO_FLAGS
     AddMeasurement(
         NumExplicitPointsToRelationsAmongPrecise_,
         numExplicitPointeeRelationsAmongPrecise);
+#endif
 
     AddMeasurement(NumPointsToExternalFlags_, numPointsToExternalFlags);
     AddMeasurement(NumPointsToExternalRelations_, numPointsToExternalRelations);
+#ifndef ANDERSEN_NO_FLAGS
     AddMeasurement(NumPointeesEscapingFlags_, numPointeesEscapingFlags);
     AddMeasurement(NumPointeesEscapingRelations_, numPointeesEscapingRelations);
 
@@ -541,11 +576,16 @@ public:
     size_t numPointsToRelations =
         numExplicitPointsToRelations - numDoubledUpPointsToRelations
         + numPointsToExternalRelations * (numCanPointEscaped + numCantPointEscaped);
+#else
+    size_t numPointsToRelations = numExplicitPointsToRelations;
+#endif
 
     AddMeasurement(NumPointsToRelations_, numPointsToRelations);
 
+#ifndef ANDERSEN_NO_FLAGS
     AddMeasurement(NumDoubledUpPointees_, numDoubledUpPointees);
     AddMeasurement(NumDoubledUpPointsToRelations_, numDoubledUpPointsToRelations);
+#endif
 
     AddMeasurement(NumCantPointUnifications_, numCantPointUnifications);
     AddMeasurement(NumCantPointExplicitPointees_, numCantPointExplicitPointees);
@@ -1342,6 +1382,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
+  // TODO: Do not skip constructing the PointsToGraph
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
 
   statistics->StopAndersenStatistics();
@@ -1393,7 +1434,10 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   // Cleanup
   Constraints_.reset();
   Set_.reset();
+
+  // TODO: Return the actual points-to graph
   return result;
+  // return PointsToGraph::Create();
 }
 
 std::unique_ptr<PointsToGraph>
@@ -1416,12 +1460,16 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // This vector has the same indexing as the nodes themselves, register nodes become nullptr.
   std::vector<PointsToGraph::MemoryNode *> memoryNodes(set.NumPointerObjects());
 
+#ifdef ANDERSEN_NO_FLAGS
+  memoryNodes[set.GetExternalObject()] = &pointsToGraph->GetExternalMemoryNode();
+#else
   // Nodes that should point to external in the final graph.
   // They also get explicit edges connecting them to all escaped memory nodes.
   std::vector<PointsToGraph::Node *> pointsToExternal;
 
   // A list of all memory nodes that have been marked as escaped
   std::vector<PointsToGraph::MemoryNode *> escapedMemoryNodes;
+#endif
 
   // First all memory nodes are created
   for (auto [allocaNode, pointerObjectIndex] : set.GetAllocaMap())
@@ -1454,9 +1502,11 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // PointerObject's points-to set.
   auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObjectIndex index)
   {
+#ifndef ANDERSEN_NO_FLAGS
     // Add all PointsToGraph nodes who should point to external to the list
     if (set.IsPointingToExternal(index))
       pointsToExternal.push_back(&node);
+#endif
 
     for (const auto targetIdx : set.GetPointsToSet(index).Items())
     {
@@ -1487,6 +1537,12 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // Also checks and informs the PointsToGraph which memory nodes are marked as escaping the module
   for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
+#ifdef ANDERSEN_NO_FLAGS
+    // Do not add out-edges from the external node, despite it being "CanPoint()"
+    // This is just due to the fact that escaped objects are marked
+    if (idx == set.GetExternalObject())
+      continue;
+#endif
     if (memoryNodes[idx] == nullptr)
       continue; // Skip all nodes that are not MemoryNodes
 
@@ -1497,10 +1553,13 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     if (set.HasEscaped(idx))
     {
       memoryNodes[idx]->MarkAsModuleEscaping();
+#ifndef ANDERSEN_NO_FLAGS
       escapedMemoryNodes.push_back(memoryNodes[idx]);
+#endif
     }
   }
 
+#ifndef ANDERSEN_NO_FLAGS
   // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
   statistics.StartExternalToAllEscapedStatistics();
   for (const auto source : pointsToExternal)
@@ -1513,6 +1572,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
   statistics.StopExternalToAllEscapedStatistics();
+#endif
 
   // We do not use the unknown node, and do not give the external node any targets
   JLM_ASSERT(pointsToGraph->GetExternalMemoryNode().NumTargets() == 0);

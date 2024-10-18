@@ -12,6 +12,7 @@
 
 #include <cassert>
 
+#ifndef ANDERSEN_NO_FLAGS
 static bool
 StringContains(std::string_view haystack, std::string_view needle)
 {
@@ -909,3 +910,4 @@ TestPointerObjectSet()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointerObjectSet", TestPointerObjectSet)
+#endif

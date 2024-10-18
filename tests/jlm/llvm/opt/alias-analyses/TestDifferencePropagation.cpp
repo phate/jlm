@@ -12,6 +12,7 @@
 
 #include <cassert>
 
+#ifndef ANDERSEN_NO_FLAGS
 static int
 TestTracksDifferences()
 {
@@ -112,3 +113,4 @@ TestTracksDifferences()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestDifferencePropagation-TestTracksDifferences",
     TestTracksDifferences)
+#endif

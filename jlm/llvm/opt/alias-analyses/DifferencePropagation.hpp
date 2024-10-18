@@ -29,8 +29,10 @@ public:
   {
     NewPointees_.resize(Set_.NumPointerObjects());
     NewPointeesTracked_.resize(Set_.NumPointerObjects(), false);
+#ifndef ANDERSEN_NO_FLAGS
     PointsToExternalFlagSeen_.resize(Set_.NumPointerObjects(), false);
     PointeesEscapeFlagSeen_.resize(Set_.NumPointerObjects(), false);
+#endif
   }
 
   [[nodiscard]] bool
@@ -122,6 +124,7 @@ public:
     NewPointees_[index].Clear();
   }
 
+#ifndef ANDERSEN_NO_FLAGS
   /**
    * If the given PointerObject has the PointsToExternal flag now,
    * and MarkPointsToExternalAsHandled(index) has not been called, return true. Otherwise false.
@@ -185,6 +188,7 @@ public:
     JLM_ASSERT(Set_.HasPointeesEscaping(index));
     PointeesEscapeFlagSeen_[index] = true;
   }
+#endif
 
   /**
    * Performs conservative clearing of tracked differences, after unification.
@@ -207,10 +211,12 @@ public:
     NewPointees_[root].Clear();
     NewPointeesTracked_[root] = false;
 
+#ifndef ANDERSEN_NO_FLAGS
     PointsToExternalFlagSeen_[root] =
         PointsToExternalFlagSeen_[root] && PointsToExternalFlagSeen_[nonRoot];
     PointeesEscapeFlagSeen_[root] =
         PointeesEscapeFlagSeen_[root] && PointeesEscapeFlagSeen_[nonRoot];
+#endif
   }
 
 private:
@@ -225,11 +231,13 @@ private:
   // Becomes false again when unification fully resets difference propagation
   std::vector<bool> NewPointeesTracked_;
 
+#ifndef ANDERSEN_NO_FLAGS
   // These are set to true after the _IsNew have returned true
   // When two PointerObjects a and b are unified, the flag only remains "seen",
   // if the flag has already been "seen" on both a and b.
   std::vector<bool> PointsToExternalFlagSeen_;
   std::vector<bool> PointeesEscapeFlagSeen_;
+#endif
 };
 
 }
