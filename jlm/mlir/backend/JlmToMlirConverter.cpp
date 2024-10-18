@@ -341,7 +341,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::Undef>(
         Builder_->getUnknownLoc(),
-        ConvertType(*undefOp->result(0).get()));
+        ConvertType(undefOp->GetType()));
   }
   else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
   {
