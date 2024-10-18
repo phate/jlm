@@ -104,7 +104,7 @@ Andersen::Configuration::GetAllConfigurations()
     PickHybridCycleDetection(config);
     config.EnableOnlineCycleDetection(true);
     // OnlineCD can not be combined with HybridCD or LazyCD
-    configs.push_back(config);
+    PickDifferencePropagation(config);
   };
   auto PickWorklistPolicy = [&](Configuration config)
   {
