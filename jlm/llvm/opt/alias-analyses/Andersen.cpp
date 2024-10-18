@@ -160,6 +160,11 @@ class Andersen::Statistics final : public util::Statistics
   // A PointerObject of Register kind can represent multiple outputs in RVSDG. Sum them up.
   static constexpr const char * NumRegistersMappedToPointerObject_ =
       "#RegistersMappedToPointerObject";
+  static constexpr const char * NumAllocaPointerObjects = "#AllocaPointerObjects";
+  static constexpr const char * NumMallocPointerObjects = "#MallocPointerObjects";
+  static constexpr const char * NumGlobalPointerObjects = "#GlobalPointerObjects";
+  static constexpr const char * NumFunctionPointerObjects = "#FunctionPointerObjects";
+  static constexpr const char * NumImportPointerObjects = "#ImportPointerObjects";
 
   static constexpr const char * NumBaseConstraints_ = "#BaseConstraints";
   static constexpr const char * NumSupersetConstraints_ = "#SupersetConstraints";
@@ -259,9 +264,11 @@ class Andersen::Statistics final : public util::Statistics
       "PointsToGraphConstructionExternalToEscapedTimer";
 
 public:
-  ~Statistics() override = default;
+  ~
+  Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit
+  Statistics(const util::filepath & sourceFile)
       : util::Statistics(Statistics::Id::AndersenAnalysis, sourceFile)
   {}
 
@@ -285,12 +292,30 @@ public:
   {
     GetTimer(SetAndConstraintBuildingTimer_).stop();
 
+    // Measure the number of pointer objects of different kinds
     AddMeasurement(NumPointerObjects_, set.NumPointerObjects());
     AddMeasurement(NumMemoryPointerObjects_, set.NumMemoryPointerObjects());
     AddMeasurement(NumMemoryPointerObjectsCanPoint_, set.NumMemoryPointerObjectsCanPoint());
     AddMeasurement(NumRegisterPointerObjects_, set.NumRegisterPointerObjects());
     AddMeasurement(NumRegistersMappedToPointerObject_, set.GetRegisterMap().size());
 
+    AddMeasurement(
+        NumAllocaPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::AllocaMemoryObject));
+    AddMeasurement(
+        NumMallocPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::MallocMemoryObject));
+    AddMeasurement(
+        NumGlobalPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::GlobalMemoryObject));
+    AddMeasurement(
+        NumFunctionPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::FunctionMemoryObject));
+    AddMeasurement(
+        NumImportPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::ImportMemoryObject));
+
+    // Count the number of constraints of different kinds
     size_t numSupersetConstraints = 0;
     size_t numStoreConstraints = 0;
     size_t numLoadConstraints = 0;
