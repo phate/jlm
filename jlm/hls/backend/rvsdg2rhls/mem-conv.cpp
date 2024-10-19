@@ -719,7 +719,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);
-  newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->nodes.first());
+  newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->Nodes().begin().ptr());
 
   // Go through in reverse since we are removing things
   for (int i = newLambda->ncvarguments() - 1; i >= 0; --i)

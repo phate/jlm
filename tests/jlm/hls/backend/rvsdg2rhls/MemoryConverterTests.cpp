@@ -73,6 +73,7 @@ TestTraceArgument()
 
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-1", TestTraceArgument)
 
 static int
 TestLoad()
@@ -154,6 +155,7 @@ TestLoad()
 
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-2", TestLoad)
 
 static int
 TestLoadStore()
@@ -240,6 +242,7 @@ TestLoadStore()
 
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-3", TestLoadStore)
 
 static int
 TestThetaLoad()
@@ -378,8 +381,4 @@ TestThetaLoad()
 
   return 0;
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-1", TestTraceArgument)
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-2", TestLoad)
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-3", TestLoadStore)
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-4", TestThetaLoad)
