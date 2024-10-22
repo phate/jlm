@@ -94,7 +94,7 @@ private:
   AnalyzeSimpleNode(const rvsdg::simple_node & node);
 
   void
-  AnalyzeStructuralNode(const rvsdg::structural_node & node);
+  AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
   AnalyzeAlloca(const rvsdg::simple_node & node);

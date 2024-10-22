@@ -332,7 +332,7 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
   auto node = rvsdg::input::GetNode(*i);
   JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
-  auto theta = static_cast<const rvsdg::structural_node *>(node);
+  auto theta = static_cast<const rvsdg::StructuralNode *>(node);
   auto input = static_cast<const rvsdg::structural_input *>(i);
   auto output = theta->output(input->index());
 
@@ -353,7 +353,7 @@ static inline void
 convert_theta_node(const rvsdg::node & node, context & ctx)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(&node));
-  auto subregion = static_cast<const rvsdg::structural_node *>(&node)->subregion(0);
+  auto subregion = static_cast<const rvsdg::StructuralNode *>(&node)->subregion(0);
   auto predicate = subregion->result(0)->origin();
 
   auto pre_entry = ctx.lpbb();
@@ -428,7 +428,7 @@ static inline void
 convert_phi_node(const rvsdg::node & node, context & ctx)
 {
   JLM_ASSERT(rvsdg::is<phi::operation>(&node));
-  auto phi = static_cast<const rvsdg::structural_node *>(&node);
+  auto phi = static_cast<const rvsdg::StructuralNode *>(&node);
   auto subregion = phi->subregion(0);
   auto & module = ctx.module();
   auto & ipg = module.ipgraph();

@@ -125,7 +125,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 }
 
 void
-InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structuralNode)
+InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structuralNode)
 {
   auto isGammaNode = is<rvsdg::GammaOperation>(&structuralNode);
   auto isThetaNode = is<rvsdg::ThetaOperation>(&structuralNode);

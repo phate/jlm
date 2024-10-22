@@ -30,7 +30,7 @@ public:
 class ThetaInput;
 class ThetaOutput;
 
-class ThetaNode final : public structural_node
+class ThetaNode final : public StructuralNode
 {
 public:
   class loopvar_iterator
@@ -100,7 +100,7 @@ public:
   [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
   [[nodiscard]] RegionResult *

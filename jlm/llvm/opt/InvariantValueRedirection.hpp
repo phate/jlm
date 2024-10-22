@@ -64,7 +64,7 @@ private:
   RedirectInRegion(rvsdg::Region & region);
 
   static void
-  RedirectInSubregions(rvsdg::structural_node & structuralNode);
+  RedirectInSubregions(rvsdg::StructuralNode & structuralNode);
 
   static void
   RedirectGammaOutputs(rvsdg::GammaNode & gammaNode);

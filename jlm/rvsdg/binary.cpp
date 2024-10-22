@@ -429,7 +429,7 @@ flattened_binary_op::reduce(
       node->output(0)->divert_users(output);
       remove(node);
     }
-    else if (auto structnode = dynamic_cast<const structural_node *>(node))
+    else if (auto structnode = dynamic_cast<const StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         reduce(structnode->subregion(n), reduction);

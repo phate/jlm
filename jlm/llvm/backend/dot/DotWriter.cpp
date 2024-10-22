@@ -172,7 +172,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
       AttachNodeOutput(node.GetOutputPort(i), *rvsdgNode->output(i), typeGraph);
 
     // Structural nodes also have subgraphs
-    if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(rvsdgNode))
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(rvsdgNode))
     {
       for (size_t i = 0; i < structuralNode->nsubregions(); i++)
       {
