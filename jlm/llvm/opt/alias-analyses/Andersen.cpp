@@ -1383,7 +1383,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   }
 
   // TODO: Do not skip constructing the PointsToGraph
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+  // auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
 
   statistics->StopAndersenStatistics();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -1392,7 +1392,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   if (testAllConfigsIterations || doubleCheck)
   {
     if (doubleCheck)
-      std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
+      std::cout << "Double checking Andersen analysis using naive solving" << std::endl;
 
     // If double-checking, only use the naive configuration. Otherwise, try all configurations
     std::vector<Configuration> configs;
@@ -1409,6 +1409,8 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     {
       for (const auto & config : configs)
       {
+        std::cout << "Solving with " << config.ToString() << std::endl;
+
         // Create a clone of the unsolved pointer object set and constraint set
         auto workingCopy = copy.second->Clone();
         // These statistics will only contain solving data
@@ -1436,8 +1438,8 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   Set_.reset();
 
   // TODO: Return the actual points-to graph
-  return result;
-  // return PointsToGraph::Create();
+  // return result;
+  return PointsToGraph::Create();
 }
 
 std::unique_ptr<PointsToGraph>
