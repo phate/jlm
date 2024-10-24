@@ -1354,6 +1354,9 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   size_t testAllConfigsIterations = 0;
   if (auto testAllConfigsString = std::getenv(ENV_TEST_ALL_CONFIGS))
     testAllConfigsIterations = std::stoi(testAllConfigsString);
+  std::optional<size_t> useExactConfig;
+  if (auto useExactConfigString = std::getenv(ENV_USE_EXACT_CONFIG))
+    useExactConfig = std::stoi(useExactConfigString);
   const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
 
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
@@ -1370,18 +1373,26 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   if (dumpGraphs)
     Constraints_->DrawSubsetGraph(writer);
 
-  SolveConstraints(*Constraints_, Config_, *statistics);
+  auto config = Config_;
+  if (useExactConfig.has_value())
+  {
+    auto allConfigs = Configuration::GetAllConfigurations();
+    config = allConfigs.at(*useExactConfig);
+  }
+
+  SolveConstraints(*Constraints_, config, *statistics);
   statistics->AddStatisticsFromSolution(*Set_);
 
   if (dumpGraphs)
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
-    graph.AppendToLabel("After Solving with " + Config_.ToString());
+    graph.AppendToLabel("After Solving with " + config.ToString());
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
   // TODO: Do not skip constructing the PointsToGraph
   // auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+  auto result = PointsToGraph::Create();
 
   statistics->StopAndersenStatistics();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -1441,9 +1452,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   Constraints_.reset();
   Set_.reset();
 
-  // TODO: Return the actual points-to graph
-  // return result;
-  return PointsToGraph::Create();
+  return result;
 }
 
 std::unique_ptr<PointsToGraph>
