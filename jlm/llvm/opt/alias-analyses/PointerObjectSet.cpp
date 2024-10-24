@@ -48,7 +48,15 @@ PointerObjectSet::AddPointerObject(PointerObjectKind kind, bool canPoint)
     PointerObjectRank_.push_back(0);
   }
   PointsToSets_.emplace_back(); // Add empty points-to set
-  return PointerObjects_.size() - 1;
+  const auto result = PointerObjects_.size() - 1;
+
+#ifdef ANDERSEN_NO_FLAGS
+  if (!canPoint)
+  {
+    UnifyPointerObjects(result, GetExternalObject());
+  }
+#endif
+  return result;
 }
 
 size_t

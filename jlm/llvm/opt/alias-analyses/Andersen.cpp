@@ -266,11 +266,9 @@ class Andersen::Statistics final : public util::Statistics
       "PointsToGraphConstructionExternalToEscapedTimer";
 
 public:
-  ~
-  Statistics() override = default;
+  ~Statistics() override = default;
 
-  explicit
-  Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::filepath & sourceFile)
       : util::Statistics(Statistics::Id::AndersenAnalysis, sourceFile)
   {}
 
@@ -1405,11 +1403,17 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
     // Otherwise, do it at least once
     const auto iterations = std::max<size_t>(testAllConfigsIterations, 1);
 
+    // for easy progress counting
+    size_t progress = 0;
+    const size_t totalConfigs = iterations * configs.size();
+
     for (size_t i = 0; i < iterations; i++)
     {
       for (const auto & config : configs)
       {
-        std::cout << "Solving with " << config.ToString() << std::endl;
+        progress++;
+        std::cout << "[" << progress << "/" << totalConfigs << "] Solving with "
+                  << config.ToString() << std::endl;
 
         // Create a clone of the unsolved pointer object set and constraint set
         auto workingCopy = copy.second->Clone();
