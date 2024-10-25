@@ -126,8 +126,10 @@ Andersen::Configuration::GetAllConfigurations()
   {
     config.EnableOfflineConstraintNormalization(false);
     configs.push_back(config);
+    /*
     config.EnableOfflineConstraintNormalization(true);
     configs.push_back(config);
+    */
   };
   auto PickSolver = [&](Configuration config)
   {
