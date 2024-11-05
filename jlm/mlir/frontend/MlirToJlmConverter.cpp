@@ -16,6 +16,11 @@
 
 #include <jlm/llvm/ir/operators/operators.hpp>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+
 namespace jlm::mlir
 {
 
@@ -316,6 +321,55 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*jlmUndefOutput);
   }
 
+  // Memory operations
+
+  else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
+  {
+    auto outputType = AllocaOp.getValueType();
+    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
+    auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
+
+    auto jlmBitType = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
+    auto bitTypePrt = std::make_shared<const jlm::rvsdg::bittype>(jlmBitType->nbits());
+
+    auto allocaOp = jlm::llvm::alloca_op(jlmValueType, bitTypePrt, AllocaOp.getAlignment());
+
+    auto operands = std::vector(inputs.begin(), inputs.end());
+
+    return &rvsdg::SimpleNode::Create(rvsdgRegion, allocaOp, operands);
+  }
+  else if (auto MemstateMergeOp = ::mlir::dyn_cast<::mlir::rvsdg::MemStateMerge>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto memoryStateMergeOutput = jlm::llvm::MemoryStateMergeOperation::Create(operands);
+    return rvsdg::output::GetNode(*memoryStateMergeOutput);
+  }
+  else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
+  {
+    auto address = inputs[0];
+    auto value = inputs[1];
+    auto memoryStateInputs = std::vector(std::next(std::next(inputs.begin())), inputs.end());
+    auto & storeNode = jlm::llvm::StoreNonVolatileNode::CreateNode(
+        *address,
+        *value,
+        memoryStateInputs,
+        StoreOp.getAlignment());
+    return &storeNode;
+  }
+  else if (auto LoadOp = ::mlir::dyn_cast<::mlir::jlm::Load>(&mlirOperation))
+  {
+    auto address = inputs[0];
+    auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
+    auto outputType = LoadOp.getOutput().getType();
+    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
+    auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
+    auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
+        *address,
+        memoryStateInputs,
+        jlmValueType,
+        LoadOp.getAlignment());
+    return &loadNode;
+  }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
@@ -491,6 +545,10 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   else if (::mlir::isa<::mlir::rvsdg::IOStateEdgeType>(type))
   {
     return std::make_unique<llvm::IOStateType>();
+  }
+  else if (::mlir::isa<::mlir::rvsdg::RVSDGPointerType>(type))
+  {
+    return std::make_unique<llvm::PointerType>();
   }
   else
   {
