@@ -733,15 +733,19 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
-  if (!IsOrContainsPointerType(outputRegister.type()))
+  if (IsOrContainsPointerType(outputRegister.type()))
   {
-    // TODO: When reading address as an integer, some of address' target might still pointers,
-    // which should now be considered as having escaped
-    return;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
   }
-
-  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
-  Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
+  else
+  {
+#ifdef ANDERSEN_NO_FLAGS
+    Constraints_->AddConstraint(LoadConstraint(Set_->GetExternalObject(), addressRegisterPO));
+#else
+    Set_->MarkAsLoadingAsScalar(addressRegisterPO);
+#endif
+  }
 }
 
 void
@@ -750,18 +754,22 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
   const auto & addressRegister = *storeNode.GetAddressInput().origin();
   const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
-  // If the written value is not a pointer, be conservative and mark the address
-  if (!IsOrContainsPointerType(valueRegister.type()))
-  {
-    // TODO: We are writing an integer to *address,
-    // which really should mark all of address' targets as pointing to external
-    // in case they are ever read as pointers.
-    return;
-  }
-
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
-  const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
-  Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
+
+  // If the written value is not a pointer, be conservative and mark the address
+  if (IsOrContainsPointerType(valueRegister.type()))
+  {
+    const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
+    Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
+  }
+  else
+  {
+#ifdef ANDERSEN_NO_FLAGS
+    Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, Set_->GetExternalObject()));
+#else
+    Set_->MarkAsStoringAsScalar(addressRegisterPO);
+#endif
+  }
 }
 
 void

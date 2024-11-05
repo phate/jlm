@@ -83,6 +83,14 @@ class PointerObjectSet final
     // The unification root is the source of truth for this flag!
     // This flag is implied by HasEscaped
     uint8_t PointsToExternal : 1;
+
+    // If set, any pointee of this object should point to external.
+    // The unification root is the source of truth for this flag!
+    uint8_t StoredAsScalar : 1;
+
+    // If set, any pointee of this object should mark its pointees as escaping.
+    // The unification root is the source of truth for this flag!
+    uint8_t LoadedAsScalar : 1;
 #endif
 
     explicit PointerObject(PointerObjectKind kind, bool canPoint)
@@ -92,7 +100,9 @@ class PointerObjectSet final
           ,
           HasEscaped(0),
           PointeesEscaping(0),
-          PointsToExternal(0)
+          PointsToExternal(0),
+          StoredAsScalar(0),
+          LoadedAsScalar(0)
 #endif
     {
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
@@ -415,6 +425,35 @@ public:
    */
   [[nodiscard]] bool
   CanTrackPointeesImplicitly(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as holding the target of a scalar store.
+   * @return true if the flags was changed by this operation, false otherwise
+   */
+  bool
+  MarkAsStoringAsScalar(PointerObjectIndex index);
+
+  /**
+   * @return true if the PointerObject with the given \p index is the target of a scalar store,
+   * false otherwise. If it is, any pointee of \p index will be marked as pointing to external.
+   */
+  [[nodiscard]] bool
+  IsStoredAsScalar(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as holding the target of a scalar load.
+   * @return true if the flags was changed by this operation, false otherwise
+   */
+  bool
+  MarkAsLoadingAsScalar(PointerObjectIndex index);
+
+  /**
+   * @return true if the PointerObject with the given \p index is the target of a scalar load, false otherwise.
+   * If it is, any pointee of \p index will be marked as making its pointees escape.
+   */
+  [[nodiscard]] bool
+  IsLoadedAsScalar(PointerObjectIndex index) const noexcept;
+
 #endif
 
   /**

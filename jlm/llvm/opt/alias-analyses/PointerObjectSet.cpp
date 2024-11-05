@@ -327,6 +327,38 @@ PointerObjectSet::CanTrackPointeesImplicitly(PointerObjectIndex index) const noe
   auto root = GetUnificationRoot(index);
   return PointerObjects_[root].CanTrackPointeesImplicitly();
 }
+
+bool
+PointerObjectSet::MarkAsStoringAsScalar(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  if (PointerObjects_[root].StoredAsScalar)
+    return false;
+  PointerObjects_[root].StoredAsScalar = true;
+  return true;
+}
+
+[[nodiscard]] bool
+PointerObjectSet::IsStoredAsScalar(PointerObjectIndex index) const noexcept
+{
+  return PointerObjects_[GetUnificationRoot(index)].StoredAsScalar;
+}
+
+bool
+PointerObjectSet::MarkAsLoadingAsScalar(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  if (PointerObjects_[root].LoadedAsScalar)
+    return false;
+  PointerObjects_[root].LoadedAsScalar = true;
+  return true;
+}
+
+[[nodiscard]] bool
+PointerObjectSet::IsLoadedAsScalar(PointerObjectIndex index) const noexcept
+{
+  return PointerObjects_[GetUnificationRoot(index)].LoadedAsScalar;
+}
 #endif
 
 PointerObjectIndex
@@ -380,6 +412,10 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
     MarkAsPointingToExternal(newRoot);
   if (HasPointeesEscaping(oldRoot))
     MarkAsPointeesEscaping(newRoot);
+  if (IsStoredAsScalar(oldRoot))
+    MarkAsStoringAsScalar(newRoot);
+  if (IsLoadedAsScalar(oldRoot))
+    MarkAsLoadingAsScalar(newRoot);
 #endif
 
   // Perform the actual unification
@@ -806,16 +842,37 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
 bool
 EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
 {
-  std::queue<PointerObjectIndex> pointeeEscapers;
+  bool modified = false;
 
-  // First add all unification roots marked as PointeesEscaping
+  // First handle all unification roots marked as storing or loading scalars
+  for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
+  {
+    if (!set.IsUnificationRoot(idx))
+      continue;
+
+    if (set.IsStoredAsScalar(idx))
+    {
+      for (auto pointee : set.GetPointsToSet(idx).Items())
+      {
+        modified |= set.MarkAsPointingToExternal(pointee);
+      }
+    }
+    if (set.IsLoadedAsScalar(idx))
+    {
+      for (auto pointee : set.GetPointsToSet(idx).Items())
+      {
+        modified |= set.MarkAsPointeesEscaping(pointee);
+      }
+    }
+  }
+
+  std::queue<PointerObjectIndex> pointeeEscapers;
+  // Add all unification roots marked as PointeesEscaping to the queue
   for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
     if (set.IsUnificationRoot(idx) && set.HasPointeesEscaping(idx))
       pointeeEscapers.push(idx);
   }
-
-  bool modified = false;
 
   // For all pointee escapers, check if they point to any PointerObjects not marked as escaped
   while (!pointeeEscapers.empty())
@@ -1017,6 +1074,10 @@ PointerObjectConstraintSet::NumFlagConstraints() const noexcept
     if (Set_.IsPointingToExternal(i))
       numFlagConstraints++;
     if (Set_.HasPointeesEscaping(i))
+      numFlagConstraints++;
+    if (Set_.IsStoredAsScalar(i))
+      numFlagConstraints++;
+    if (Set_.IsLoadedAsScalar(i))
       numFlagConstraints++;
 #endif
   }
@@ -2070,6 +2131,16 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
 #endif
     }
 
+#ifndef ANDERSEN_NO_FLAGS
+    if (Set_.IsStoredAsScalar(node))
+    {
+      for (const auto pointee : newPointees.Items())
+      {
+        MarkAsPointsToExternal(pointee);
+      }
+    }
+#endif
+
     // Loads on the form value = *n.
     for (const auto value : loadConstraints[node].Items())
     {
@@ -2082,6 +2153,16 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         MarkAsPointsToExternal(value);
 #endif
     }
+
+#ifndef ANDERSEN_NO_FLAGS
+    if (Set_.IsLoadedAsScalar(node))
+    {
+      for (const auto pointee : newPointees.Items())
+      {
+        MarkAsPointeesEscaping(pointee);
+      }
+    }
+#endif
 
     // Function calls on the form (*n)()
     for (const auto callNode : callConstraints[node].Items())
