@@ -529,8 +529,8 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*alloca_op->result(1)),                               // memstate
         ConvertType(alloca_op->value_type()),                             // value type
         inputs[0],                                                        // size
-        alloca_op->alignment(),                                           // alignment
-        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
+        alloca_op->alignment()                                           // alignment
+    );
   }
   else if (auto malloc_op = dynamic_cast<const jlm::llvm::malloc_op *>(&operation))
   {
