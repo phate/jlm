@@ -175,7 +175,8 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * NumStoreConstraints_ = "#StoreConstraints";
   static constexpr const char * NumLoadConstraints_ = "#LoadConstraints";
   static constexpr const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
-  static constexpr const char * NumFlagConstraints_ = "#FlagConstraints";
+  static constexpr const char * NumScalarFlagConstraints_ = "#ScalarFlagConstraints";
+  static constexpr const char * NumOtherFlagConstraints_ = "#OtherFlagConstraints";
 
   static constexpr const char * Configuration_ = "Configuration";
 
@@ -334,7 +335,9 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
-    AddMeasurement(NumFlagConstraints_, constraints.NumFlagConstraints());
+    const auto [scalarFlags, otherFlags] = constraints.NumFlagConstraints();
+    AddMeasurement(NumScalarFlagConstraints_, scalarFlags);
+    AddMeasurement(NumOtherFlagConstraints_, otherFlags);
   }
 
   void

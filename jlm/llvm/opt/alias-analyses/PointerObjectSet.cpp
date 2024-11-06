@@ -1058,30 +1058,31 @@ PointerObjectConstraintSet::NumBaseConstraints() const noexcept
   return numBaseConstraints;
 }
 
-size_t
+std::pair<size_t, size_t>
 PointerObjectConstraintSet::NumFlagConstraints() const noexcept
 {
-  size_t numFlagConstraints = 0;
+  size_t numScalarFlagConstraints = 0;
+  size_t numOtherFlagConstraints = 0;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
     if (Set_.HasEscaped(i))
-      numFlagConstraints++;
+      numOtherFlagConstraints++;
 
 #ifndef ANDERSEN_NO_FLAGS
     if (!Set_.IsUnificationRoot(i))
       continue;
 
     if (Set_.IsPointingToExternal(i))
-      numFlagConstraints++;
+      numOtherFlagConstraints++;
     if (Set_.HasPointeesEscaping(i))
-      numFlagConstraints++;
+      numOtherFlagConstraints++;
     if (Set_.IsStoredAsScalar(i))
-      numFlagConstraints++;
+      numScalarFlagConstraints++;
     if (Set_.IsLoadedAsScalar(i))
-      numFlagConstraints++;
+      numScalarFlagConstraints++;
 #endif
   }
-  return numFlagConstraints;
+  return {numScalarFlagConstraints, numOtherFlagConstraints};
 }
 
 /**

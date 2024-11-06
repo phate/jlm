@@ -1060,9 +1060,12 @@ public:
   NumBaseConstraints() const noexcept;
 
   /**
-   * @return the number of flag constraints, including memory objects that are not pointees.
+   * Gets the number of flag constraints, among all PointerObjetcs.
+   * Flags that are unified are only counted once (on the unification root).
+   * The count is divided into two: flags for loads/stores of scalar, and the other flags
+   * @return a pair (num flags on scalar operations, num other flags)
    */
-  [[nodiscard]] size_t
+  [[nodiscard]] std::pair<size_t, size_t>
   NumFlagConstraints() const noexcept;
 
   /**
