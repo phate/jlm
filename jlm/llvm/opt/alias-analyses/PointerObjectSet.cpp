@@ -2133,7 +2133,8 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
 
 #ifndef ANDERSEN_NO_FLAGS
-    if (Set_.IsStoredAsScalar(node))
+    // If node has the stored as scalar constraint, but does not make its pointees escape outright
+    if (Set_.IsStoredAsScalar(node) && !Set_.HasPointeesEscaping(node))
     {
       for (const auto pointee : newPointees.Items())
       {
@@ -2156,7 +2157,8 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
 
 #ifndef ANDERSEN_NO_FLAGS
-    if (Set_.IsLoadedAsScalar(node))
+    // If node has the loaded as scalar constraint, but does not make its pointees escape outright
+    if (Set_.IsLoadedAsScalar(node) && !Set_.HasPointeesEscaping(node))
     {
       for (const auto pointee : newPointees.Items())
       {
