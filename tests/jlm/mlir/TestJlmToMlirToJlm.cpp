@@ -13,11 +13,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-#include <jlm/rvsdg/FunctionType.hpp>
-#include <jlm/rvsdg/nullary.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 
 static int
 TestUndef()
