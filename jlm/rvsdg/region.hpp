@@ -302,7 +302,7 @@ public:
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
   {
-    return {TopNodes_.begin(), TopNodes_.end()};
+    return { TopNodes_.begin(), TopNodes_.end() };
   }
 
   /**
@@ -311,7 +311,7 @@ public:
   [[nodiscard]] TopNodeConstRange
   TopNodes() const noexcept
   {
-    return {TopNodes_.begin(), TopNodes_.end()};
+    return { TopNodes_.begin(), TopNodes_.end() };
   }
 
   /**
@@ -548,7 +548,7 @@ public:
    * no need to invoke it manually.
    */
   bool
-  AddTopNode(rvsdg::node& node);
+  AddTopNode(rvsdg::node & node);
 
   /**
    * \brief Adds \p node to the bottom nodes of the region.
@@ -576,7 +576,7 @@ public:
    * invoke it manually.
    */
   bool
-  RemoveTopNode(rvsdg::node& node);
+  RemoveTopNode(rvsdg::node & node);
 
   /**
    * Removes \p node from the bottom nodes in the region.
