@@ -130,7 +130,7 @@ Region::~Region() noexcept
 
   prune(false);
   JLM_ASSERT(nodes.empty());
-  JLM_ASSERT(top_nodes.empty());
+  JLM_ASSERT(NumTopNodes() == 0);
   JLM_ASSERT(NumBottomNodes() == 0);
 
   while (arguments_.size())
@@ -226,6 +226,21 @@ Region::remove_node(jlm::rvsdg::node * node)
 }
 
 bool
+Region::AddTopNode(rvsdg::node & node)
+{
+  if (node.region() != this)
+    return false;
+
+  if (node.ninputs() != 0)
+    return false;
+
+  // FIXME: We should check that a node is not already part of the top nodes before adding it.
+  TopNodes_.push_back(&node);
+
+  return true;
+}
+
+bool
 Region::AddBottomNode(rvsdg::node & node)
 {
   if (node.region() != this)
@@ -246,6 +261,14 @@ Region::RemoveBottomNode(rvsdg::node & node)
   auto numBottomNodes = NumBottomNodes();
   BottomNodes_.erase(&node);
   return numBottomNodes != NumBottomNodes();
+}
+
+bool
+Region::RemoveTopNode(rvsdg::node & node)
+{
+  auto numTopNodes = NumTopNodes();
+  TopNodes_.erase(&node);
+  return numTopNodes != NumTopNodes();
 }
 
 void

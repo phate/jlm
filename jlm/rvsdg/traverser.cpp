@@ -22,7 +22,7 @@ topdown_traverser::topdown_traverser(rvsdg::Region * region)
     : region_(region),
       tracker_(region->graph())
 {
-  for (auto & node : region->top_nodes)
+  for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
 
   for (size_t n = 0; n < region->narguments(); n++)

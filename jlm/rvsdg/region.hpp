@@ -302,7 +302,7 @@ public:
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
   {
-    return { top_nodes.begin(), top_nodes.end() };
+    return {TopNodes_.begin(), TopNodes_.end()};
   }
 
   /**
@@ -311,7 +311,7 @@ public:
   [[nodiscard]] TopNodeConstRange
   TopNodes() const noexcept
   {
-    return { top_nodes.begin(), top_nodes.end() };
+    return {TopNodes_.begin(), TopNodes_.end()};
   }
 
   /**
@@ -514,6 +514,15 @@ public:
   }
 
   /**
+   * @return The number of top nodes in the region.
+   */
+  [[nodiscard]] size_t
+  NumTopNodes() const noexcept
+  {
+    return TopNodes_.size();
+  }
+
+  /**
    * @return The number of bottom nodes in the region.
    */
   [[nodiscard]] size_t
@@ -524,6 +533,22 @@ public:
 
   void
   remove_node(jlm::rvsdg::node * node);
+
+  /**
+   * \brief Adds \p node to the top nodes of the region.
+   *
+   * The node \p node is only added to the top nodes of this region, iff:
+   * 1. The node \p node belongs to the same region instance.
+   * 2. The node \p node has no inputs.
+   *
+   * @param node The node that is added.
+   * @return True, if \p node was added, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is created. There is
+   * no need to invoke it manually.
+   */
+  bool
+  AddTopNode(rvsdg::node& node);
 
   /**
    * \brief Adds \p node to the bottom nodes of the region.
@@ -540,6 +565,18 @@ public:
    */
   bool
   AddBottomNode(rvsdg::node & node);
+
+  /**
+   * Removes \p node from the top nodes in the region.
+   *
+   * @param node The node that is removed.
+   * @return True, if \p node was a top node and removed, otherwise false.
+   *
+   * @note This method is automatically invoked when inputs are added to a node. There is no need to
+   * invoke it manually.
+   */
+  bool
+  RemoveTopNode(rvsdg::node& node);
 
   /**
    * Removes \p node from the bottom nodes in the region.
@@ -650,8 +687,6 @@ public:
 
   region_nodes_list nodes;
 
-  region_top_node_list top_nodes;
-
 private:
   static void
   ToTree(
@@ -682,6 +717,7 @@ private:
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
   region_bottom_node_list BottomNodes_;
+  region_top_node_list TopNodes_;
 };
 
 static inline void

@@ -165,8 +165,8 @@ push(rvsdg::GammaNode * gamma)
   {
     auto region = gamma->subregion(r);
 
-    /* push out all nullary nodes */
-    for (auto & node : region->top_nodes)
+    // push out all nullary nodes
+    for (auto & node : region->TopNodes())
     {
       if (!has_side_effects(&node))
         copy_from_gamma(&node, r);
@@ -233,8 +233,8 @@ push_top(rvsdg::ThetaNode * theta)
 {
   auto subregion = theta->subregion();
 
-  /* push out all nullary nodes */
-  for (auto & node : subregion->top_nodes)
+  // push out all nullary nodes
+  for (auto & node : subregion->TopNodes())
   {
     if (!has_side_effects(&node))
       copy_from_theta(&node);
