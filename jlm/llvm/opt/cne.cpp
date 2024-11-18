@@ -389,7 +389,7 @@ mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
 {
   if (node->ninputs() == 0)
   {
-    for (const auto & other : node->region()->top_nodes)
+    for (const auto & other : node->region()->TopNodes())
     {
       if (&other != node && node->operation() == other.operation())
       {

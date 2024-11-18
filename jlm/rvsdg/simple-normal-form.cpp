@@ -31,7 +31,7 @@ node_cse(
   }
   else
   {
-    for (auto & node : region->top_nodes)
+    for (auto & node : region->TopNodes())
     {
       if (cse_test(&node))
         return &node;
