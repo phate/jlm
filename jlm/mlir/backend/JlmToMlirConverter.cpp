@@ -337,6 +337,12 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(node.output(0)->type()), // Control, ouput type
         ctlOp->value().alternative());
   }
+  else if (auto undefOp = dynamic_cast<const jlm::llvm::UndefValueOperation *>(&node.operation()))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Undef>(
+        Builder_->getUnknownLoc(),
+        ConvertType(undefOp->GetType()));
+  }
   else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
   {
     // ** region Create the MLIR mapping vector **
