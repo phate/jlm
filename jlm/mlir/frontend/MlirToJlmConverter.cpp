@@ -308,6 +308,14 @@ MlirToJlmConverter::ConvertOperation(
     return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
   }
 
+  else if (auto UndefOp = ::mlir::dyn_cast<::mlir::jlm::Undef>(&mlirOperation))
+  {
+    auto type = UndefOp.getResult().getType();
+    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
+    auto jlmUndefOutput = jlm::llvm::UndefValueOperation::Create(rvsdgRegion, jlmType);
+    return rvsdg::output::GetNode(*jlmUndefOutput);
+  }
+
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {

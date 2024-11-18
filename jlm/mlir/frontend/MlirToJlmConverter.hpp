@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/theta.hpp>
 
 #include <JLM/JLMDialect.h>
+#include <JLM/JLMOps.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
