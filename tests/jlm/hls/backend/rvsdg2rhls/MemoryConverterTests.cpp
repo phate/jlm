@@ -117,7 +117,7 @@ TestLoad()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = rvsdgModule->Rvsdg().root();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -203,7 +203,7 @@ TestLoadStore()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = rvsdgModule->Rvsdg().root();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -343,7 +343,7 @@ TestThetaLoad()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = rvsdgModule->Rvsdg().root();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
   assert(jlm::rvsdg::Region::Contains<mem_resp_op>(*lambdaRegion, true));

@@ -105,7 +105,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
 
   for (size_t i = 0; i < gammaNode.nsubregions(); ++i)
   {
-    for (auto & node : gammaNode.subregion(i)->nodes)
+    for (auto & node : gammaNode.subregion(i)->Nodes())
     {
       if (rvsdg::is<rvsdg::ThetaOperation>(&node) || rvsdg::is<hls::loop_op>(&node))
       {

@@ -101,7 +101,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
   // it is irrelevant in which order we handle the nodes.
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&node))
     {

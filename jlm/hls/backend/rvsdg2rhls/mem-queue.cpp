@@ -522,7 +522,7 @@ process_loops(jlm::rvsdg::output * state_edge)
 void
 jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->nodes.first());
+  auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->Nodes().begin().ptr());
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
   {

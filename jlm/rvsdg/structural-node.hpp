@@ -148,7 +148,7 @@ template<class Operation>
 bool
 Region::Contains(const rvsdg::Region & region, bool checkSubregions)
 {
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     if (is<Operation>(&node))
     {

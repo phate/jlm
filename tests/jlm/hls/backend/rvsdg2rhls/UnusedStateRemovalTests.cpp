@@ -159,7 +159,7 @@ TestLambda()
 
   // Assert
   assert(rvsdg.root()->nnodes() == 1);
-  auto & newLambdaNode = dynamic_cast<const lambda::node &>(*rvsdg.root()->nodes.begin());
+  auto & newLambdaNode = dynamic_cast<const lambda::node &>(*rvsdg.root()->Nodes().begin());
   assert(newLambdaNode.ninputs() == 2);
   assert(newLambdaNode.subregion()->narguments() == 3);
   assert(newLambdaNode.subregion()->nresults() == 2);

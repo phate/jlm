@@ -24,7 +24,7 @@ static size_t
 nthetas(jlm::rvsdg::Region * region)
 {
   size_t n = 0;
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(&node))
       n++;

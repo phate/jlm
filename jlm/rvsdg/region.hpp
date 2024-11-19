@@ -320,7 +320,7 @@ public:
   [[nodiscard]] NodeRange
   Nodes() noexcept
   {
-    return { nodes.begin(), nodes.end() };
+    return { Nodes_.begin(), Nodes_.end() };
   }
 
   /**
@@ -329,7 +329,7 @@ public:
   [[nodiscard]] NodeConstRange
   Nodes() const noexcept
   {
-    return { nodes.begin(), nodes.end() };
+    return { Nodes_.begin(), Nodes_.end() };
   }
 
   /**
@@ -510,7 +510,7 @@ public:
   inline size_t
   nnodes() const noexcept
   {
-    return nodes.size();
+    return Nodes_.size();
   }
 
   /**
@@ -567,6 +567,20 @@ public:
   AddBottomNode(rvsdg::node & node);
 
   /**
+   * \brief Adds \p node to the region.
+   *
+   * The node \p node is only added to this region, iff \p node belongs to the same region instance.
+   *
+   * @param node The node that is added.
+   * @return True, if \p node was added, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is created. There is no need to invoke
+   * it manually.
+   */
+  bool
+  AddNode(rvsdg::node & node);
+
+  /**
    * Removes \p node from the top nodes in the region.
    *
    * @param node The node that is removed.
@@ -589,6 +603,18 @@ public:
    */
   bool
   RemoveBottomNode(rvsdg::node & node);
+
+  /**
+   * Remove \p node from the region.
+   *
+   * @param node The node that is removed.
+   * @return True, if \p node was removed, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is deleted. There is no need to invoke
+   * it manually.
+   */
+  bool
+  RemoveNode(rvsdg::node & node);
 
   /**
     \brief Copy a region with substitutions
@@ -685,8 +711,6 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
-  region_nodes_list nodes;
-
 private:
   static void
   ToTree(
@@ -718,6 +742,7 @@ private:
   std::vector<RegionArgument *> arguments_;
   region_bottom_node_list BottomNodes_;
   region_top_node_list TopNodes_;
+  region_nodes_list Nodes_;
 };
 
 static inline void

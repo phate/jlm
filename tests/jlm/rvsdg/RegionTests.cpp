@@ -357,7 +357,7 @@ ToTree_EmptyRvsdgWithAnnotations()
   graph rvsdg;
 
   AnnotationMap annotationMap;
-  annotationMap.AddAnnotation(rvsdg.root(), Annotation("NumNodes", rvsdg.root()->nodes.size()));
+  annotationMap.AddAnnotation(rvsdg.root(), Annotation("NumNodes", rvsdg.root()->nnodes()));
 
   // Act
   auto tree = Region::ToTree(*rvsdg.root(), annotationMap);
@@ -418,7 +418,7 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
   auto subregion2 = structuralNode2->subregion(2);
 
   AnnotationMap annotationMap;
-  annotationMap.AddAnnotation(subregion2, Annotation("NumNodes", subregion2->nodes.size()));
+  annotationMap.AddAnnotation(subregion2, Annotation("NumNodes", subregion2->nnodes()));
   annotationMap.AddAnnotation(subregion2, Annotation("NumArguments", subregion2->narguments()));
 
   // Act

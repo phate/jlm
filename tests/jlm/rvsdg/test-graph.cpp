@@ -16,7 +16,7 @@
 static bool
 region_contains_node(const jlm::rvsdg::Region * region, const jlm::rvsdg::node * n)
 {
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (&node == n)
       return true;
@@ -160,7 +160,7 @@ Copy()
   assert(is<TestGraphArgument>(copiedArgument));
 
   assert(newGraph->root()->nnodes() == 1);
-  auto copiedNode = newGraph->root()->nodes.first();
+  auto copiedNode = newGraph->root()->Nodes().begin().ptr();
   assert(copiedNode->ninputs() == 1 && copiedNode->noutputs() == 1);
   assert(copiedNode->input(0)->origin() == copiedArgument);
 

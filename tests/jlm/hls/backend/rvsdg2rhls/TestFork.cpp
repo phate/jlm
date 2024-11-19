@@ -58,12 +58,12 @@ TestFork()
   {
     auto omegaRegion = rm.Rvsdg().root();
     assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->nodes.first());
+    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
     assert(is<lambda::operation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
-    auto loop = util::AssertedCast<hls::loop_node>(lambdaRegion->nodes.first());
+    auto loop = util::AssertedCast<hls::loop_node>(lambdaRegion->Nodes().begin().ptr());
     assert(is<hls::loop_op>(loop));
 
     // Traverse the rvsgd graph upwards to check connections
@@ -124,7 +124,7 @@ TestConstantFork()
   {
     auto omegaRegion = rm.Rvsdg().root();
     assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->nodes.first());
+    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
     assert(is<lambda::operation>(lambda));
 
     auto lambdaRegion = lambda->subregion();

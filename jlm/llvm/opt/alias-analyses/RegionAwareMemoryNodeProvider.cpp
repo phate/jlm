@@ -675,7 +675,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region)
     Provisioning_->AddRegionSummary(RegionSummary::Create(region));
   }
 
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -1044,7 +1044,7 @@ RegionAwareMemoryNodeProvider::ToRegionTree(
       subtree += util::strfmt(indent(depth), "MemoryNodes: ", toString(memoryNodes), "\n");
     }
 
-    for (const auto & node : region->nodes)
+    for (const auto & node : region->Nodes())
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
