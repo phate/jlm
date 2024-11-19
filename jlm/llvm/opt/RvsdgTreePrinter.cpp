@@ -8,6 +8,7 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <algorithm>
 #include <fstream>
 
 namespace jlm::llvm
