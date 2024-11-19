@@ -196,7 +196,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
 {
   bool wasAdded = region->AddBottomNode(*this);
   JLM_ASSERT(wasAdded);
-  region->top_nodes.push_back(this);
+  wasAdded = region->AddTopNode(*this);
+  JLM_ASSERT(wasAdded);
   region->nodes.push_back(this);
 }
 
@@ -207,7 +208,10 @@ node::~node()
   JLM_ASSERT(wasRemoved);
 
   if (ninputs() == 0)
-    region()->top_nodes.erase(this);
+  {
+    wasRemoved = region()->RemoveTopNode(*this);
+    JLM_ASSERT(wasRemoved);
+  }
   inputs_.clear();
 
   region()->nodes.erase(this);
@@ -221,7 +225,8 @@ node::add_input(std::unique_ptr<node_input> input)
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    region()->top_nodes.erase(this);
+    const auto wasRemoved = region()->RemoveTopNode(*this);
+    JLM_ASSERT(wasRemoved);
   }
 
   input->index_ = ninputs();
@@ -262,7 +267,8 @@ node::RemoveInput(size_t index)
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    region()->top_nodes.push_back(this);
+    const auto wasAdded = region()->AddTopNode(*this);
+    JLM_ASSERT(wasAdded);
   }
 }
 
