@@ -139,7 +139,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 void
 BaseHLS::create_node_names(rvsdg::Region * r)
 {
-  for (auto & node : r->nodes)
+  for (auto & node : r->Nodes())
   {
     if (dynamic_cast<jlm::rvsdg::simple_node *>(&node))
     {
@@ -161,7 +161,7 @@ const jlm::llvm::lambda::node *
 BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 {
   auto region = rm.Rvsdg().root();
-  auto ln = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto ln = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   if (region->nnodes() == 1 && ln)
   {
     return ln;

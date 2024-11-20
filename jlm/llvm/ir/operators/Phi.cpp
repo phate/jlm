@@ -100,7 +100,7 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
   std::function<void(const phi::node &, std::vector<lambda::node *> &)> extractLambdaNodes =
       [&](auto & phiNode, auto & lambdaNodes)
   {
-    for (auto & node : phiNode.subregion()->nodes)
+    for (auto & node : phiNode.subregion()->Nodes())
     {
       if (auto lambdaNode = dynamic_cast<lambda::node *>(&node))
       {

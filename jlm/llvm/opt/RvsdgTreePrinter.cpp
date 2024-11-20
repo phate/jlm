@@ -95,7 +95,7 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
 
   std::function<size_t(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
-    for (auto & node : region.nodes)
+    for (auto & node : region.Nodes())
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
@@ -141,7 +141,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
         std::count_if(resultRange.begin(), resultRange.end(), IsMemoryStateInput);
     annotationMap.AddAnnotation(&region, { resultLabel, numMemoryStateResults });
 
-    for (auto & node : region.nodes)
+    for (auto & node : region.Nodes())
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {

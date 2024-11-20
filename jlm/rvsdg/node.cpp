@@ -198,7 +198,8 @@ node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
   JLM_ASSERT(wasAdded);
   wasAdded = region->AddTopNode(*this);
   JLM_ASSERT(wasAdded);
-  region->nodes.push_back(this);
+  wasAdded = region->AddNode(*this);
+  JLM_ASSERT(wasAdded);
 }
 
 node::~node()
@@ -214,7 +215,8 @@ node::~node()
   }
   inputs_.clear();
 
-  region()->nodes.erase(this);
+  wasRemoved = region()->RemoveNode(*this);
+  JLM_ASSERT(wasRemoved);
 }
 
 node_input *

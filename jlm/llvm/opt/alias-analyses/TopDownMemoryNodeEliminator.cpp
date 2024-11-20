@@ -618,7 +618,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
   {
     std::vector<const lambda::node *> lambdaNodes;
     util::HashSet<const PointsToGraph::MemoryNode *> liveNodes;
-    for (auto & node : phiSubregion.nodes)
+    for (auto & node : phiSubregion.Nodes())
     {
       if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
       {
@@ -924,7 +924,7 @@ TopDownMemoryNodeEliminator::CheckInvariants(
                                    std::vector<const rvsdg::Region *> & regions,
                                    std::vector<const CallNode *> & callNodes)
   {
-    for (auto & node : rootRegion.nodes)
+    for (auto & node : rootRegion.Nodes())
     {
       if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
       {

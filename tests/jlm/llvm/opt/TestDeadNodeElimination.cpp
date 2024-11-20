@@ -78,7 +78,7 @@ TestGamma()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   assert(gamma->noutputs() == 2);
-  assert(gamma->subregion(1)->nodes.empty());
+  assert(gamma->subregion(1)->nnodes() == 0);
   assert(gamma->subregion(1)->narguments() == 2);
   assert(gamma->ninputs() == 3);
   assert(graph.root()->narguments() == 2);
@@ -153,7 +153,7 @@ TestTheta()
   //	jlm::rvsdg::view(graph.root(), stdout);
 
   assert(theta->noutputs() == 3);
-  assert(theta->subregion()->nodes.size() == 1);
+  assert(theta->subregion()->nnodes() == 1);
   assert(graph.root()->narguments() == 2);
 }
 
@@ -270,7 +270,7 @@ TestLambda()
   RunDeadNodeElimination(rm);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(lambda->subregion()->nodes.empty());
+  assert(lambda->subregion()->nnodes() == 0);
   assert(graph.root()->narguments() == 1);
 }
 

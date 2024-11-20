@@ -98,7 +98,7 @@ collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNod
   JLM_ASSERT(gnode->region()->node() == tnode);
 
   std::vector<std::vector<jlm::rvsdg::node *>> nodes;
-  for (auto & node : tnode->subregion(0)->nodes)
+  for (auto & node : tnode->subregion(0)->Nodes())
   {
     if (&node == gnode)
       continue;

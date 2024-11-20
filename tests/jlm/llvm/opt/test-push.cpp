@@ -51,7 +51,7 @@ test_gamma()
   pushout.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(graph.root()->nodes.size() == 3);
+  assert(graph.root()->nnodes() == 3);
 }
 
 static inline void
@@ -99,7 +99,7 @@ test_theta()
   pushout.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(graph.root()->nodes.size() == 3);
+  assert(graph.root()->nnodes() == 3);
 }
 
 static inline void

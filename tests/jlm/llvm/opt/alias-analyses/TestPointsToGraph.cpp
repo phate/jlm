@@ -49,7 +49,7 @@ private:
   {
     using namespace jlm::llvm;
 
-    for (auto & node : region.nodes)
+    for (auto & node : region.Nodes())
     {
       if (jlm::rvsdg::is<alloca_op>(&node))
       {

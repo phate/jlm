@@ -57,7 +57,7 @@ TestUndef()
 
       // Get the undef op
       auto convertedUndef =
-          dynamic_cast<const UndefValueOperation *>(&region->nodes.first()->operation());
+          dynamic_cast<const UndefValueOperation *>(&region->Nodes().begin()->operation());
 
       assert(convertedUndef != nullptr);
 

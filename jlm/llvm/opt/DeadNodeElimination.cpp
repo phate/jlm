@@ -314,7 +314,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
   region.prune(false);
 
   std::vector<std::vector<jlm::rvsdg::node *>> nodesTopDown(region.nnodes());
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     nodesTopDown[node.depth()].push_back(&node);
   }

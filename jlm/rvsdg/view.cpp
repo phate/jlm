@@ -95,7 +95,7 @@ region_body(
     std::unordered_map<const output *, std::string> & map)
 {
   std::vector<std::vector<const jlm::rvsdg::node *>> context;
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (node.depth() >= context.size())
       context.resize(node.depth() + 1);
@@ -343,7 +343,7 @@ convert_region(const rvsdg::Region * region)
   for (size_t n = 0; n < region->narguments(); n++)
     s += argument_tag(id(region->argument(n)));
 
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
     s += convert_node(&node);
 
   for (size_t n = 0; n < region->nresults(); n++)

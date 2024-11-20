@@ -466,7 +466,7 @@ process_loopnode(loop_node * loopNode)
 void
 dae_conv(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->Nodes().begin().ptr());
   bool changed;
   do
   {

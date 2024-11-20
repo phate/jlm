@@ -133,7 +133,7 @@ route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
 void
 mem_sep_independent(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
@@ -277,7 +277,7 @@ trace_edge(
 void
 mem_sep_argument(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)

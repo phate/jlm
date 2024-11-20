@@ -1253,7 +1253,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<CallExitMemoryStateSplitOperation>(*callXExitSplit, 1, 13));
 
     jlm::rvsdg::node * undefNode = nullptr;
-    for (auto & node : test.GetLambdaTest().subregion()->nodes)
+    for (auto & node : test.GetLambdaTest().subregion()->Nodes())
     {
       if (is<UndefValueOperation>(&node))
       {
@@ -1288,7 +1288,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     assert(is<CallExitMemoryStateSplitOperation>(*callXExitSplit, 1, 13));
 
     jlm::rvsdg::node * undefNode = nullptr;
-    for (auto & node : test.GetLambdaTest2().subregion()->nodes)
+    for (auto & node : test.GetLambdaTest2().subregion()->Nodes())
     {
       if (is<UndefValueOperation>(&node))
       {

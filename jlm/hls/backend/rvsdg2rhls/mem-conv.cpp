@@ -565,7 +565,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
 
   auto root = rm.Rvsdg().root();
-  auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->nodes.begin().ptr());
+  auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->Nodes().begin().ptr());
 
   //
   // Converting loads and stores to explicitly use memory ports
