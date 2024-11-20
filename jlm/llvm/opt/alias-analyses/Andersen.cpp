@@ -104,7 +104,7 @@ Andersen::Configuration::GetAllConfigurations()
     PickHybridCycleDetection(config);
     config.EnableOnlineCycleDetection(true);
     // OnlineCD can not be combined with HybridCD or LazyCD
-    configs.push_back(config);
+    PickDifferencePropagation(config);
   };
   auto PickWorklistPolicy = [&](Configuration config)
   {
@@ -160,13 +160,19 @@ class Andersen::Statistics final : public util::Statistics
   // A PointerObject of Register kind can represent multiple outputs in RVSDG. Sum them up.
   static constexpr const char * NumRegistersMappedToPointerObject_ =
       "#RegistersMappedToPointerObject";
+  static constexpr const char * NumAllocaPointerObjects = "#AllocaPointerObjects";
+  static constexpr const char * NumMallocPointerObjects = "#MallocPointerObjects";
+  static constexpr const char * NumGlobalPointerObjects = "#GlobalPointerObjects";
+  static constexpr const char * NumFunctionPointerObjects = "#FunctionPointerObjects";
+  static constexpr const char * NumImportPointerObjects = "#ImportPointerObjects";
 
   static constexpr const char * NumBaseConstraints_ = "#BaseConstraints";
   static constexpr const char * NumSupersetConstraints_ = "#SupersetConstraints";
   static constexpr const char * NumStoreConstraints_ = "#StoreConstraints";
   static constexpr const char * NumLoadConstraints_ = "#LoadConstraints";
   static constexpr const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
-  static constexpr const char * NumFlagConstraints_ = "#FlagConstraints";
+  static constexpr const char * NumScalarFlagConstraints_ = "#ScalarFlagConstraints";
+  static constexpr const char * NumOtherFlagConstraints_ = "#OtherFlagConstraints";
 
   static constexpr const char * Configuration_ = "Configuration";
 
@@ -285,12 +291,30 @@ public:
   {
     GetTimer(SetAndConstraintBuildingTimer_).stop();
 
+    // Measure the number of pointer objects of different kinds
     AddMeasurement(NumPointerObjects_, set.NumPointerObjects());
     AddMeasurement(NumMemoryPointerObjects_, set.NumMemoryPointerObjects());
     AddMeasurement(NumMemoryPointerObjectsCanPoint_, set.NumMemoryPointerObjectsCanPoint());
     AddMeasurement(NumRegisterPointerObjects_, set.NumRegisterPointerObjects());
     AddMeasurement(NumRegistersMappedToPointerObject_, set.GetRegisterMap().size());
 
+    AddMeasurement(
+        NumAllocaPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::AllocaMemoryObject));
+    AddMeasurement(
+        NumMallocPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::MallocMemoryObject));
+    AddMeasurement(
+        NumGlobalPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::GlobalMemoryObject));
+    AddMeasurement(
+        NumFunctionPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::FunctionMemoryObject));
+    AddMeasurement(
+        NumImportPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::ImportMemoryObject));
+
+    // Count the number of constraints of different kinds
     size_t numSupersetConstraints = 0;
     size_t numStoreConstraints = 0;
     size_t numLoadConstraints = 0;
@@ -307,7 +331,9 @@ public:
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
-    AddMeasurement(NumFlagConstraints_, constraints.NumFlagConstraints());
+    const auto [scalarFlags, otherFlags] = constraints.NumFlagConstraints();
+    AddMeasurement(NumScalarFlagConstraints_, scalarFlags);
+    AddMeasurement(NumOtherFlagConstraints_, otherFlags);
   }
 
   void
@@ -668,15 +694,15 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
-  if (!IsOrContainsPointerType(outputRegister.type()))
+  if (IsOrContainsPointerType(outputRegister.type()))
   {
-    // TODO: When reading address as an integer, some of address' target might still pointers,
-    // which should now be considered as having escaped
-    return;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
   }
-
-  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
-  Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
+  else
+  {
+    Set_->MarkAsLoadingAsScalar(addressRegisterPO);
+  }
 }
 
 void
@@ -685,18 +711,18 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
   const auto & addressRegister = *storeNode.GetAddressInput().origin();
   const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
-  // If the written value is not a pointer, be conservative and mark the address
-  if (!IsOrContainsPointerType(valueRegister.type()))
-  {
-    // TODO: We are writing an integer to *address,
-    // which really should mark all of address' targets as pointing to external
-    // in case they are ever read as pointers.
-    return;
-  }
-
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
-  const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
-  Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
+
+  // If the written value is not a pointer, be conservative and mark the address
+  if (IsOrContainsPointerType(valueRegister.type()))
+  {
+    const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
+    Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
+  }
+  else
+  {
+    Set_->MarkAsStoringAsScalar(addressRegisterPO);
+  }
 }
 
 void
@@ -1291,6 +1317,9 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   size_t testAllConfigsIterations = 0;
   if (auto testAllConfigsString = std::getenv(ENV_TEST_ALL_CONFIGS))
     testAllConfigsIterations = std::stoi(testAllConfigsString);
+  std::optional<size_t> useExactConfig;
+  if (auto useExactConfigString = std::getenv(ENV_USE_EXACT_CONFIG))
+    useExactConfig = std::stoi(useExactConfigString);
   const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
 
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
@@ -1307,13 +1336,20 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   if (dumpGraphs)
     Constraints_->DrawSubsetGraph(writer);
 
-  SolveConstraints(*Constraints_, Config_, *statistics);
+  auto config = Config_;
+  if (useExactConfig.has_value())
+  {
+    auto allConfigs = Configuration::GetAllConfigurations();
+    config = allConfigs.at(*useExactConfig);
+  }
+
+  SolveConstraints(*Constraints_, config, *statistics);
   statistics->AddStatisticsFromSolution(*Set_);
 
   if (dumpGraphs)
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
-    graph.AppendToLabel("After Solving with " + Config_.ToString());
+    graph.AppendToLabel("After Solving with " + config.ToString());
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 

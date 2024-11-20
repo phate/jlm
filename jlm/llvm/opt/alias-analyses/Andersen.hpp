@@ -35,6 +35,13 @@ public:
   static inline const char * const ENV_TEST_ALL_CONFIGS = "JLM_ANDERSEN_TEST_ALL_CONFIGS";
 
   /**
+   * Alternative to testing all configs, this environment variable specifies exactly which config to
+   * use. It must be an index into the Configuration::GetAllConfigurations() vector.
+   * Should likely not be combined with ENV_TEST_ALL_CONFIGS or ENV_DOUBLE_CHECK
+   */
+  static inline const char * const ENV_USE_EXACT_CONFIG = "JLM_ANDERSEN_USE_EXACT_CONFIG";
+
+  /**
    * Environment variable that will trigger double checking of the analysis.
    * If ENV_TEST_ALL_CONFIGS is set, the output is double checked against them all.
    * Otherwise, the output is double checked only against the default naive solver.

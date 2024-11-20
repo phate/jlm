@@ -494,11 +494,131 @@ TestEscapedFunctionConstraint()
 
   // Use both EscapedFunctionConstraint and EscapeFlagConstraint to propagate flags
   result = EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(set);
-  result &= EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(result);
 
+  // Now the return value is marked as all pointees escaping, so make that happen
+  result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
   // Now the local function has been marked as escaped as well, since it is the return value
   assert(result);
   assert(set.HasEscaped(localFunctionPO));
+}
+
+static void
+TestStoredAsScalarFlag()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::NAllocaNodesTest rvsdg(3);
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  const auto p0 = set.CreateDummyRegisterPointerObject();
+  const auto p1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0), true);
+  const auto p11 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1), true);
+  const auto p2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2), true);
+
+  set.AddToPointsToSet(p0, p1);
+  set.AddToPointsToSet(p1, p11);
+  set.AddToPointsToSet(p0, p2);
+
+  bool result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(!result);
+
+  set.MarkAsStoringAsScalar(p0);
+  result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(result);
+
+  // p0 should only have the single stored as scalar flag
+  assert(!set.HasEscaped(p0));
+  assert(!set.HasPointeesEscaping(p0));
+  assert(!set.IsPointingToExternal(p0));
+  assert(!set.IsLoadedAsScalar(p0));
+  assert(set.IsStoredAsScalar(p0));
+
+  // p1 and p2 should both point to external, but not any other flags
+  assert(!set.HasEscaped(p1));
+  assert(!set.HasPointeesEscaping(p1));
+  assert(set.IsPointingToExternal(p1));
+  assert(!set.IsLoadedAsScalar(p1));
+  assert(!set.IsStoredAsScalar(p1));
+
+  assert(!set.HasEscaped(p2));
+  assert(!set.HasPointeesEscaping(p2));
+  assert(set.IsPointingToExternal(p2));
+  assert(!set.IsLoadedAsScalar(p2));
+  assert(!set.IsStoredAsScalar(p2));
+
+  // p11 should have no flags
+  assert(!set.HasEscaped(p11));
+  assert(!set.HasPointeesEscaping(p11));
+  assert(!set.IsPointingToExternal(p11));
+  assert(!set.IsLoadedAsScalar(p11));
+  assert(!set.IsStoredAsScalar(p11));
+
+  // Applying again does nothing
+  result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(!result);
+}
+
+static void
+TestLoadedAsScalarFlag()
+{
+  using namespace jlm::llvm::aa;
+
+  jlm::tests::NAllocaNodesTest rvsdg(5);
+  rvsdg.InitializeTest();
+
+  PointerObjectSet set;
+  const auto p0 = set.CreateDummyRegisterPointerObject();
+  const auto p1 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(0), true);
+  const auto p11 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(1), true);
+  const auto p12 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(2), true);
+  const auto p2 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(3), true);
+  const auto p21 = set.CreateAllocaMemoryObject(rvsdg.GetAllocaNode(4), true);
+
+  set.AddToPointsToSet(p0, p1);
+  set.AddToPointsToSet(p1, p11);
+  set.AddToPointsToSet(p1, p12);
+  set.AddToPointsToSet(p0, p2);
+  set.AddToPointsToSet(p2, p21);
+
+  bool result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(!result);
+
+  set.MarkAsLoadingAsScalar(p0);
+  result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(result);
+
+  // p0 should only have the single loaded as scalar flag
+  assert(!set.HasEscaped(p0));
+  assert(!set.HasPointeesEscaping(p0));
+  assert(!set.IsPointingToExternal(p0));
+  assert(!set.IsStoredAsScalar(p0));
+  assert(set.IsLoadedAsScalar(p0));
+
+  // p1 should only have the pointees escape flag
+  assert(!set.HasEscaped(p1));
+  assert(set.HasPointeesEscaping(p1));
+  assert(!set.IsPointingToExternal(p1));
+  assert(!set.IsStoredAsScalar(p1));
+  assert(!set.IsLoadedAsScalar(p1));
+
+  // p11, p12, p21 should have escaped, but not be flagged using the store or load flags
+  assert(set.HasEscaped(p11));
+  assert(!set.IsLoadedAsScalar(p11));
+  assert(!set.IsStoredAsScalar(p11));
+
+  assert(set.HasEscaped(p12));
+  assert(!set.IsLoadedAsScalar(p12));
+  assert(!set.IsStoredAsScalar(p12));
+
+  assert(set.HasEscaped(p21));
+  assert(!set.IsLoadedAsScalar(p21));
+  assert(!set.IsStoredAsScalar(p21));
+
+  // Applying again does nothing
+  result = EscapeFlagConstraint::PropagateEscapedFlagsDirectly(set);
+  assert(!result);
 }
 
 static void
@@ -878,6 +998,8 @@ TestPointerObjectSet()
   TestStoreConstraintDirectly();
   TestLoadConstraintDirectly();
   TestEscapedFunctionConstraint();
+  TestStoredAsScalarFlag();
+  TestLoadedAsScalarFlag();
   TestFunctionCallConstraint();
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();

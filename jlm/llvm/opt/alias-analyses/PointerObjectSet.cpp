@@ -301,6 +301,38 @@ PointerObjectSet::CanTrackPointeesImplicitly(PointerObjectIndex index) const noe
   return PointerObjects_[root].CanTrackPointeesImplicitly();
 }
 
+bool
+PointerObjectSet::MarkAsStoringAsScalar(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  if (PointerObjects_[root].StoredAsScalar)
+    return false;
+  PointerObjects_[root].StoredAsScalar = true;
+  return true;
+}
+
+[[nodiscard]] bool
+PointerObjectSet::IsStoredAsScalar(PointerObjectIndex index) const noexcept
+{
+  return PointerObjects_[GetUnificationRoot(index)].StoredAsScalar;
+}
+
+bool
+PointerObjectSet::MarkAsLoadingAsScalar(PointerObjectIndex index)
+{
+  auto root = GetUnificationRoot(index);
+  if (PointerObjects_[root].LoadedAsScalar)
+    return false;
+  PointerObjects_[root].LoadedAsScalar = true;
+  return true;
+}
+
+[[nodiscard]] bool
+PointerObjectSet::IsLoadedAsScalar(PointerObjectIndex index) const noexcept
+{
+  return PointerObjects_[GetUnificationRoot(index)].LoadedAsScalar;
+}
+
 PointerObjectIndex
 PointerObjectSet::GetUnificationRoot(PointerObjectIndex index) const noexcept
 {
@@ -351,6 +383,10 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
     MarkAsPointingToExternal(newRoot);
   if (HasPointeesEscaping(oldRoot))
     MarkAsPointeesEscaping(newRoot);
+  if (IsStoredAsScalar(oldRoot))
+    MarkAsStoringAsScalar(newRoot);
+  if (IsLoadedAsScalar(oldRoot))
+    MarkAsLoadingAsScalar(newRoot);
 
   // Perform the actual unification
   PointerObjectParents_[oldRoot] = newRoot;
@@ -753,16 +789,37 @@ FunctionCallConstraint::ApplyDirectly(PointerObjectSet & set)
 bool
 EscapeFlagConstraint::PropagateEscapedFlagsDirectly(PointerObjectSet & set)
 {
-  std::queue<PointerObjectIndex> pointeeEscapers;
+  bool modified = false;
 
-  // First add all unification roots marked as PointeesEscaping
+  // First handle all unification roots marked as storing or loading scalars
+  for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
+  {
+    if (!set.IsUnificationRoot(idx))
+      continue;
+
+    if (set.IsStoredAsScalar(idx))
+    {
+      for (auto pointee : set.GetPointsToSet(idx).Items())
+      {
+        modified |= set.MarkAsPointingToExternal(pointee);
+      }
+    }
+    if (set.IsLoadedAsScalar(idx))
+    {
+      for (auto pointee : set.GetPointsToSet(idx).Items())
+      {
+        modified |= set.MarkAsPointeesEscaping(pointee);
+      }
+    }
+  }
+
+  std::queue<PointerObjectIndex> pointeeEscapers;
+  // Add all unification roots marked as PointeesEscaping to the queue
   for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
     if (set.IsUnificationRoot(idx) && set.HasPointeesEscaping(idx))
       pointeeEscapers.push(idx);
   }
-
-  bool modified = false;
 
   // For all pointee escapers, check if they point to any PointerObjects not marked as escaped
   while (!pointeeEscapers.empty())
@@ -927,24 +984,29 @@ PointerObjectConstraintSet::NumBaseConstraints() const noexcept
   return numBaseConstraints;
 }
 
-size_t
+std::pair<size_t, size_t>
 PointerObjectConstraintSet::NumFlagConstraints() const noexcept
 {
-  size_t numFlagConstraints = 0;
+  size_t numScalarFlagConstraints = 0;
+  size_t numOtherFlagConstraints = 0;
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
     if (Set_.HasEscaped(i))
-      numFlagConstraints++;
+      numOtherFlagConstraints++;
 
     if (!Set_.IsUnificationRoot(i))
       continue;
 
     if (Set_.IsPointingToExternal(i))
-      numFlagConstraints++;
+      numOtherFlagConstraints++;
     if (Set_.HasPointeesEscaping(i))
-      numFlagConstraints++;
+      numOtherFlagConstraints++;
+    if (Set_.IsStoredAsScalar(i))
+      numScalarFlagConstraints++;
+    if (Set_.IsLoadedAsScalar(i))
+      numScalarFlagConstraints++;
   }
-  return numFlagConstraints;
+  return { numScalarFlagConstraints, numOtherFlagConstraints };
 }
 
 /**
@@ -1946,6 +2008,15 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
         MarkAsPointeesEscaping(value);
     }
 
+    // If node has the stored as scalar constraint, but does not make its pointees escape outright
+    if (Set_.IsStoredAsScalar(node) && !Set_.HasPointeesEscaping(node))
+    {
+      for (const auto pointee : newPointees.Items())
+      {
+        MarkAsPointsToExternal(pointee);
+      }
+    }
+
     // Loads on the form value = *n.
     for (const auto value : loadConstraints[node].Items())
     {
@@ -1956,6 +2027,15 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       // If P(n) contains "external", the loaded value may also point to external
       if (newPointsToExternal)
         MarkAsPointsToExternal(value);
+    }
+
+    // If node has the loaded as scalar constraint, but does not make its pointees escape outright
+    if (Set_.IsLoadedAsScalar(node) && !Set_.HasPointeesEscaping(node))
+    {
+      for (const auto pointee : newPointees.Items())
+      {
+        MarkAsPointeesEscaping(pointee);
+      }
     }
 
     // Function calls on the form (*n)()
