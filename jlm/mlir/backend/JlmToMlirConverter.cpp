@@ -19,6 +19,7 @@
 #include <mlir/IR/Builders.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
@@ -443,6 +444,15 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(node.output(0)->type()),
         inputs);
   }
+  else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::GEPOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*op->result(0)),                                      // resultType
+        ConvertType(op->GetPointeeType()),                                // elementType
+        inputs[0],                                                        // basePtr
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
+  }
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
@@ -656,7 +666,13 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   }
   else if (rvsdg::is<llvm::PointerType>(type))
   {
-    return Builder_->getType<::mlir::rvsdg::RVSDGPointerType>(::mlir::Type());
+    return Builder_->getType<::mlir::LLVM::LLVMPointerType>();
+  }
+  else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(&type))
+  {
+    return Builder_->getType<::mlir::LLVM::LLVMArrayType>(
+        ConvertType(arrayType->element_type()),
+        arrayType->nelements());
   }
   else
   {

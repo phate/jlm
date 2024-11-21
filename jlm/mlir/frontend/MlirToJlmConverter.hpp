@@ -19,6 +19,7 @@
 #include <RVSDG/RVSDGPasses.h>
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -35,6 +36,8 @@ public:
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     // Load the Arith dialect
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
+    // Load the LLVM dialect
+    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
   }
 
   MlirToJlmConverter(const MlirToJlmConverter &) = delete;
