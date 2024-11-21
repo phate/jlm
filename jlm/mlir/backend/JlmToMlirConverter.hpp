@@ -109,15 +109,22 @@ public:
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
+<<<<<<< HEAD
    * Converts a floating point binary operation to an MLIR operation.
    * \param op The jlm::llvm::fpbin_op to be converted
    * \param inputs The inputs to the jlm::llvm::fpbin_op.
+=======
+   * Converts an fpbin_op to an MLIR operation.
+   * \param op The fpbin_op to be converted
+   * \param inputs The inputs to the fpbin_op .
+>>>>>>> 1470225d (roundtrip floating point and sext operations)
    * \return The converted MLIR operation.
    */
   ::mlir::Operation *
   ConvertFpBinaryNode(const jlm::llvm::fpbin_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
+<<<<<<< HEAD
    * Converts an fpcmp_op to an MLIR operation.
    * \param op The fpcmp_op to be converted.
    * \param inputs The inputs to the fpcmp_op.
@@ -127,6 +134,8 @@ public:
   ConvertFpCompareNode(const jlm::llvm::fpcmp_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
+=======
+>>>>>>> 1470225d (roundtrip floating point and sext operations)
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
    * \param bitOp The RVSDG bitbinary_op to be converted
    * \param inputs The inputs to the bitbinary_op.
@@ -203,6 +212,7 @@ public:
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
+<<<<<<< HEAD
    * Converts an RVSDG delta node to an MLIR RVSDG DeltaNode.
    * \param node The RVSDG delta node to be converted
    * \param block The MLIR RVSDG block to insert the delta node.
@@ -219,11 +229,17 @@ public:
    * Converts an RVSDG floating point size to an MLIR floating point type.
    * \param size The jlm::llvm::fpsize to be converted.
    * \result The corresponding mlir::FloatType.
+=======
+   * Converts an RVSDG FP size to an MLIR FP type.
+   * \param size The RVSDG FP size to be converted.
+   * \result The corresponding MLIR FP type.
+>>>>>>> 1470225d (roundtrip floating point and sext operations)
    */
   ::mlir::FloatType
   ConvertFPType(const llvm::fpsize size);
 
   /**
+<<<<<<< HEAD
    * Converts an JLM function type to an MLIR LLVM function type.
    * \param functionType The JLM function type to be converted.
    * \result The corresponding MLIR LLVM function type.
@@ -232,6 +248,8 @@ public:
   ConvertFunctionType(const jlm::rvsdg::FunctionType & functionType);
 
   /**
+=======
+>>>>>>> 1470225d (roundtrip floating point and sext operations)
    * Converts an RVSDG type to an MLIR RVSDG type.
    * \param type The RVSDG type to be converted.
    * \result The corresponding MLIR RVSDG type.

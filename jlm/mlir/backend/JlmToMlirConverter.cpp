@@ -403,6 +403,11 @@ JlmToMlirConverter::ConvertSimpleNode(
         value,
         integerConstOp->Representation().nbits());
   }
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  {
+    MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+
   else if (rvsdg::is<jlm::llvm::IntegerBinaryOperation>(operation))
   {
     MlirOp = ConvertIntegerBinaryOperation(
