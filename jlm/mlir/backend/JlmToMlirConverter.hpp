@@ -24,6 +24,7 @@
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -37,6 +38,7 @@ public:
     Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
+    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
 

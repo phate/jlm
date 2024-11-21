@@ -17,6 +17,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -435,6 +436,19 @@ MlirToJlmConverter::ConvertOperation(
         LoadOp.getAlignment());
     return &loadNode;
   }
+  else if (auto GepOp = ::mlir::dyn_cast<::mlir::LLVM::GEPOp>(&mlirOperation))
+  {
+    auto elemType = GepOp.getElemType();
+    std::shared_ptr<jlm::rvsdg::Type> pointeeType = ConvertType(elemType);
+    auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
+
+    auto jlmGepOp = jlm::llvm::GetElementPtrOperation::Create(
+        inputs[0],
+        std::vector(std::next(inputs.begin()), inputs.end()),
+        pointeeValueType,
+        llvm::PointerType::Create());
+    return rvsdg::output::GetNode(*jlmGepOp);
+  }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
@@ -652,9 +666,16 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   {
     return std::make_unique<llvm::iostatetype>();
   }
-  else if (::mlir::isa<::mlir::rvsdg::RVSDGPointerType>(type))
+  else if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
   {
     return std::make_unique<llvm::PointerType>();
+  }
+  else if (auto arrayType = ::mlir::dyn_cast<::mlir::LLVM::LLVMArrayType>(type))
+  {
+    auto mlirElementType = arrayType.getElementType();
+    std::shared_ptr<rvsdg::Type> elementType = ConvertType(mlirElementType);
+    auto elemenValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(elementType);
+    return std::make_unique<llvm::arraytype>(elemenValueType, arrayType.getNumElements());
   }
   else
   {
