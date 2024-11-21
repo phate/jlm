@@ -186,10 +186,14 @@ private:
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.
    * \param mlirLambda The MLIR lambda opeation to the converted
    * \param rvsdgRegion The RVSDG region that the lambda node will reside in.
+   * \param inputs The inputs for the RVSDG node.
    * \result The converted Lambda node.
    */
   rvsdg::Node *
-  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion);
+  ConvertLambda(
+      ::mlir::Operation & mlirLambda,
+      rvsdg::Region & rvsdgRegion,
+      const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR type into an RVSDG type.

@@ -162,10 +162,14 @@ private:
    * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode.
    * \param node The RVSDG lambda node to be converted
    * \param block The MLIR RVSDG block to insert the lambda node.
+   * \param inputs The inputs to the lambda::node.
    * \return The converted MLIR RVSDG LambdaNode.
    */
   ::mlir::Operation *
-  ConvertLambda(const rvsdg::LambdaNode & node, ::mlir::Block & block);
+  ConvertLambda(
+      const rvsdg::LambdaNode & node,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG gamma node to an MLIR RVSDG GammaNode.
@@ -193,6 +197,14 @@ private:
    */
   ::mlir::FloatType
   ConvertFPType(const llvm::fpsize size);
+
+  /**
+   * Converts an JLM function type to an MLIR LLVM function type.
+   * \param functionType The JLM function type to be converted.
+   * \result The corresponding MLIR LLVM function type.
+   */
+  ::mlir::FunctionType
+  ConvertFunctionType(const jlm::rvsdg::FunctionType & functionType);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.

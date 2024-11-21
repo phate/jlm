@@ -18,6 +18,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -370,7 +371,31 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (::mlir::isa<::mlir::rvsdg::LambdaNode>(&mlirOperation))
   {
-    return ConvertLambda(mlirOperation, rvsdgRegion);
+    return ConvertLambda(mlirOperation, rvsdgRegion, inputs);
+  }
+  else if (auto callOp = ::mlir::dyn_cast<::mlir::jlm::Call>(&mlirOperation))
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
+    for (auto arg : callOp.getArgs())
+    {
+      auto type = arg.getType();
+      argumentTypes.push_back(ConvertType(type));
+    }
+    argumentTypes.push_back(llvm::IOStateType::Create());
+    argumentTypes.push_back(llvm::MemoryStateType::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
+    for (auto res : callOp.getResults())
+    {
+      auto type = res.getType();
+      resultTypes.push_back(ConvertType(type));
+    }
+
+    auto callOperation =
+        llvm::CallOperation(std::make_shared<rvsdg::FunctionType>(argumentTypes, resultTypes));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        callOperation,
+        std::vector<jlm::rvsdg::output *>(inputs.begin(), inputs.end()));
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIntOp>(&mlirOperation))
   {
@@ -616,29 +641,32 @@ MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & 
   ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
-rvsdg::Node *
-MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion)
+jlm::rvsdg::Node *
+MlirToJlmConverter::ConvertLambda(
+    ::mlir::Operation & mlirOperation,
+    rvsdg::Region & rvsdgRegion,
+    const ::llvm::SmallVector<rvsdg::output *> & inputs)
 {
   // Get the name of the function
-  auto functionNameAttribute = mlirLambda.getAttr(::llvm::StringRef("sym_name"));
+  auto functionNameAttribute = mlirOperation.getAttr(::llvm::StringRef("sym_name"));
   JLM_ASSERT(functionNameAttribute != nullptr);
   auto functionName = ::mlir::cast<::mlir::StringAttr>(functionNameAttribute);
 
-  // A lambda node has only the function signature as the result
-  JLM_ASSERT(mlirLambda.getNumResults() == 1);
-  auto result = mlirLambda.getResult(0).getType();
-
-  JLM_ASSERT(result.getTypeID() == ::mlir::rvsdg::LambdaRefType::getTypeID());
+  auto lambdaOp = ::mlir::dyn_cast<::mlir::rvsdg::LambdaNode>(&mlirOperation);
+  auto & lambdaRegion = lambdaOp.getRegion();
+  auto numNonContextVars = lambdaRegion.getNumArguments() - lambdaOp.getNumOperands();
+  auto & lambdaBlock = lambdaRegion.front();
+  auto lamdbaTerminator = lambdaBlock.getTerminator();
 
   // Create the RVSDG function signature
-  auto lambdaRefType = ::mlir::cast<::mlir::rvsdg::LambdaRefType>(result);
   std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
-  for (auto argumentType : lambdaRefType.getParameterTypes())
+  for (size_t argumentIndex = 0; argumentIndex < numNonContextVars; argumentIndex++)
   {
-    argumentTypes.push_back(ConvertType(argumentType));
+    auto type = lambdaRegion.getArgument(argumentIndex).getType();
+    argumentTypes.push_back(ConvertType(type));
   }
   std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
-  for (auto returnType : lambdaRefType.getReturnTypes())
+  for (auto returnType : lamdbaTerminator->getOperandTypes())
   {
     resultTypes.push_back(ConvertType(returnType));
   }
@@ -653,8 +681,13 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region 
           functionName.getValue().str(),
           llvm::linkage::external_linkage));
 
-  auto lambdaRegion = rvsdgLambda->subregion();
-  auto regionResults = ConvertRegion(mlirLambda.getRegion(0), *lambdaRegion);
+  for (auto input : inputs)
+  {
+    rvsdgLambda->AddContextVar(*input);
+  }
+
+  auto jlmLambdaRegion = rvsdgLambda->subregion();
+  auto regionResults = ConvertRegion(lambdaRegion, *jlmLambdaRegion);
 
   rvsdgLambda->finalize(std::vector<rvsdg::output *>(regionResults.begin(), regionResults.end()));
 

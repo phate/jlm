@@ -6,7 +6,6 @@
 
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
-#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -19,6 +18,7 @@
 #include <mlir/IR/Builders.h>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
@@ -169,7 +169,7 @@ JlmToMlirConverter::ConvertNode(
   }
   else if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
-    return ConvertLambda(*lambda, block);
+    return ConvertLambda(*lambda, block, inputs);
   }
   else if (auto gamma = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
@@ -482,6 +482,29 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0],                           // input
         ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
+  else if (auto callOp = dynamic_cast<const jlm::llvm::CallOperation *>(&operation))
+  {
+    auto functionType = *callOp->GetFunctionType();
+    ::llvm::SmallVector<::mlir::Type> argumentTypes;
+    for (size_t i = 0; i < functionType.NumArguments(); i++)
+    {
+      argumentTypes.push_back(ConvertType(functionType.ArgumentType(i)));
+    }
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < functionType.NumResults(); i++)
+    {
+      resultTypes.push_back(ConvertType(functionType.ResultType(i)));
+    }
+    MlirOp = Builder_->create<::mlir::jlm::Call>(
+        Builder_->getUnknownLoc(),
+        resultTypes,
+        inputs[0], // func ptr
+        ::mlir::ValueRange(
+            { std::next(inputs.begin()), std::prev(std::prev(inputs.end())) }), // args
+        inputs[inputs.size() - 2],                                              // io
+        inputs[inputs.size() - 1]                                               // mem
+    );
+  }
   // ** endregion structural nodes **
   else
   {
@@ -494,30 +517,11 @@ JlmToMlirConverter::ConvertSimpleNode(
 }
 
 ::mlir::Operation *
-JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::Block & block)
+JlmToMlirConverter::ConvertLambda(
+    const rvsdg::LambdaNode & lambdaNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  ::llvm::SmallVector<::mlir::Type> arguments;
-  for (auto arg : lambdaNode.GetFunctionArguments())
-  {
-    arguments.push_back(ConvertType(arg->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::Type> results;
-  for (auto res : lambdaNode.GetFunctionResults())
-  {
-    results.push_back(ConvertType(res->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::Type> lambdaRef;
-  auto refType = Builder_->getType<::mlir::rvsdg::LambdaRefType>(
-      ::llvm::ArrayRef(arguments),
-      ::llvm::ArrayRef(results));
-  lambdaRef.push_back(refType);
-
-  ::llvm::SmallVector<::mlir::Value> inputs;
-  // TODO
-  // Populate the inputs
-
   // Add function attributes, e.g., the function name and linkage
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
@@ -533,7 +537,7 @@ JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
-      lambdaRef,
+      Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
       inputs,
       ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
   block.push_back(lambda);
@@ -639,6 +643,22 @@ JlmToMlirConverter::ConvertFPType(const llvm::fpsize size)
         llvm::FloatingPointType(size).debug_string());
     JLM_UNREACHABLE(message.c_str());
   }
+}
+
+::mlir::FunctionType
+JlmToMlirConverter::ConvertFunctionType(const jlm::rvsdg::FunctionType & functionType)
+{
+  ::llvm::SmallVector<::mlir::Type> argumentTypes;
+  for (size_t i = 0; i < functionType.NumArguments(); i++)
+  {
+    argumentTypes.push_back(ConvertType(functionType.ArgumentType(i)));
+  }
+  ::llvm::SmallVector<::mlir::Type> resultTypes;
+  for (size_t i = 0; i < functionType.NumResults(); i++)
+  {
+    resultTypes.push_back(ConvertType(functionType.ResultType(i)));
+  }
+  return Builder_->getFunctionType(argumentTypes, resultTypes);
 }
 
 ::mlir::Type
