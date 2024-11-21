@@ -127,6 +127,18 @@ private:
       size_t nbits);
 
   /**
+   * Converts an MLIR fp binary operation into an RVSDG node.
+   * \param mlirOperation The MLIR operation to be converted.
+   * \param inputs The inputs for the RVSDG node.
+   * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
+   */
+  rvsdg::node *
+  ConvertFPBinaryNode(
+      const ::mlir::Operation & mlirOperation,
+      rvsdg::Region & rvsdgRegion,
+      const ::llvm::SmallVector<rvsdg::output *> & inputs);
+
+  /**
    * Converts an MLIR integer binary operation into an RVSDG node.
    * \param mlirOperation The MLIR operation to be converted.
    * \param inputs The inputs for the RVSDG node.
@@ -149,6 +161,14 @@ private:
       ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
+
+  /**
+   * Converts a floating point size to jlm::llvm::fpsize.
+   * \param size unsinged int representing the size.
+   * \result The fpsize.
+   */
+  llvm::fpsize
+  ConvertFPSize(unsigned int size);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
