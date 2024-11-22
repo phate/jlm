@@ -13,14 +13,14 @@ namespace jlm::rvsdg
 
 /* structural input */
 
-structural_input::~structural_input() noexcept
+StructuralInput::~StructuralInput() noexcept
 {
   JLM_ASSERT(arguments.empty());
 
   on_input_destroy(this);
 }
 
-structural_input::structural_input(
+StructuralInput::StructuralInput(
     rvsdg::StructuralNode * node,
     jlm::rvsdg::output * origin,
     std::shared_ptr<const rvsdg::Type> type)
@@ -68,8 +68,8 @@ StructuralNode::StructuralNode(
   on_node_create(this);
 }
 
-structural_input *
-StructuralNode::append_input(std::unique_ptr<structural_input> input)
+StructuralInput *
+StructuralNode::append_input(std::unique_ptr<StructuralInput> input)
 {
   if (input->node() != this)
     throw jlm::util::error("Appending input to wrong node.");
@@ -80,7 +80,7 @@ StructuralNode::append_input(std::unique_ptr<structural_input> input)
     return this->input(index);
 
   auto sinput = std::unique_ptr<node_input>(input.release());
-  return static_cast<structural_input *>(node::add_input(std::move(sinput)));
+  return static_cast<StructuralInput *>(add_input(std::move(sinput)));
 }
 
 StructuralOutput *

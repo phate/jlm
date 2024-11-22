@@ -62,7 +62,7 @@ get_dot_name(jlm::rvsdg::input * input)
   {
     return jlm::util::strfmt(get_dot_name(ni->node()), ":", "i", hex((intptr_t)input));
   }
-  else if (dynamic_cast<jlm::rvsdg::structural_input *>(input))
+  else if (dynamic_cast<rvsdg::StructuralInput *>(input))
   {
     return jlm::util::strfmt("si", hex((intptr_t)input), ":", "default");
   }
@@ -105,7 +105,7 @@ result_to_dot(rvsdg::RegionResult * result)
 }
 
 std::string
-structural_input_to_dot(jlm::rvsdg::structural_input * structuralInput)
+structural_input_to_dot(rvsdg::StructuralInput * structuralInput)
 {
   auto display_name = jlm::util::strfmt("si", structuralInput->index());
   auto dot_name = jlm::util::strfmt("si", hex((intptr_t)structuralInput));

@@ -73,7 +73,7 @@ private:
           }
         }
       }
-      else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+      else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(user))
       {
         for (auto & arg : sti->arguments)
         {

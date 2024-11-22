@@ -27,7 +27,7 @@ ArgumentNodeMismatch()
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
 
-  auto structuralInput = structural_input::create(structuralNode1, import, valueType);
+  auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
 
   // Act
   bool inputErrorHandlerCalled = false;
@@ -62,7 +62,7 @@ ArgumentInputTypeMismatch()
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "import");
 
   auto structuralNode = structural_node::create(rvsdg.root(), 1);
-  auto structuralInput = jlm::rvsdg::structural_input::create(structuralNode, x, valueType);
+  auto structuralInput = jlm::rvsdg::StructuralInput::create(structuralNode, x, valueType);
 
   // Act & Assert
   bool exceptionWasCaught = false;

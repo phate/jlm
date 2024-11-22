@@ -317,7 +317,7 @@ public:
 
 /* gamma input */
 
-class GammaInput final : public structural_input
+class GammaInput final : public StructuralInput
 {
   friend GammaNode;
 
@@ -326,14 +326,14 @@ public:
 
 private:
   GammaInput(GammaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::Type> type)
-      : structural_input(node, origin, std::move(type))
+      : StructuralInput(node, origin, std::move(type))
   {}
 
 public:
   GammaNode *
   node() const noexcept
   {
-    return static_cast<GammaNode *>(structural_input::node());
+    return static_cast<GammaNode *>(StructuralInput::node());
   }
 
   inline argument_list::iterator
@@ -468,7 +468,7 @@ public:
   ~GammaArgument() noexcept override;
 
   GammaArgument &
-  Copy(rvsdg::Region & region, structural_input * input) override;
+  Copy(rvsdg::Region & region, StructuralInput * input) override;
 
 private:
   GammaArgument(rvsdg::Region & region, GammaInput & input)

@@ -405,7 +405,7 @@ public:
 
 /** \brief Lambda context variable input
  */
-class cvinput final : public jlm::rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -414,7 +414,7 @@ public:
 
 private:
   cvinput(lambda::node * node, jlm::rvsdg::output * origin)
-      : structural_input(node, origin, origin->Type())
+      : StructuralInput(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -431,7 +431,7 @@ public:
   [[nodiscard]] lambda::node *
   node() const noexcept
   {
-    return jlm::util::AssertedCast<lambda::node>(structural_input::node());
+    return jlm::util::AssertedCast<lambda::node>(StructuralInput::node());
   }
 };
 
@@ -526,7 +526,7 @@ public:
   }
 
   fctargument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   fctargument(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
@@ -603,7 +603,7 @@ public:
   ~cvargument() override;
 
   cvargument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   cvargument(rvsdg::Region * region, cvinput * input)

@@ -24,7 +24,7 @@ RegionArgument::~RegionArgument() noexcept
 
 RegionArgument::RegionArgument(
     rvsdg::Region * region,
-    jlm::rvsdg::structural_input * input,
+    StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
     : output(region, std::move(type)),
       input_(input)
@@ -50,7 +50,7 @@ RegionArgument::GetOwner() const noexcept
 }
 
 RegionArgument &
-RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
+RegionArgument::Copy(Region & region, StructuralInput * input)
 {
   return RegionArgument::Create(region, input, Type());
 }
@@ -58,7 +58,7 @@ RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
 RegionArgument &
 RegionArgument::Create(
     rvsdg::Region & region,
-    rvsdg::structural_input * input,
+    StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
 {
   auto argument = new RegionArgument(&region, input, std::move(type));

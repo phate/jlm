@@ -50,7 +50,7 @@ ThetaOutput::~ThetaOutput() noexcept
 ThetaArgument::~ThetaArgument() noexcept = default;
 
 ThetaArgument &
-ThetaArgument::Copy(rvsdg::Region & region, structural_input * input)
+ThetaArgument::Copy(rvsdg::Region & region, StructuralInput * input)
 {
   auto thetaInput = util::AssertedCast<ThetaInput>(input);
   return ThetaArgument::Create(region, *thetaInput);

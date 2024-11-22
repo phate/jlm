@@ -40,7 +40,7 @@ test_recursive_prune()
   auto n2 = jlm::tests::test_op::create(graph.root(), { imp }, { t });
 
   auto n3 = jlm::tests::structural_node::create(graph.root(), 1);
-  structural_input::create(n3, imp, t);
+  StructuralInput::create(n3, imp, t);
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
   auto n4 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
   auto n5 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });

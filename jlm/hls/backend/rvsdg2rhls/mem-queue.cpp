@@ -70,7 +70,7 @@ find_load_store(
         find_load_store(simplenode->output(i), load_nodes, store_nodes, visited);
       }
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : sti->arguments)
       {
@@ -96,7 +96,7 @@ find_load_store(
 }
 
 jlm::rvsdg::StructuralOutput *
-find_loop_output(jlm::rvsdg::structural_input * sti)
+find_loop_output(jlm::rvsdg::StructuralInput * sti)
 {
   auto sti_arg = sti->arguments.first();
   JLM_ASSERT(sti_arg->nusers() == 1);
@@ -207,7 +207,7 @@ separate_load_edge(
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
       // end of region reached
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       auto loop_node = dynamic_cast<jlm::hls::loop_node *>(sti->node());
       JLM_ASSERT(loop_node);
@@ -455,7 +455,7 @@ process_loops(jlm::rvsdg::output * state_edge)
         state_edge = sn->output(0);
       }
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       auto ln = dynamic_cast<jlm::hls::loop_node *>(sti->node());
       JLM_ASSERT(ln);

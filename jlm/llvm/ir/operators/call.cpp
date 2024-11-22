@@ -20,11 +20,11 @@ using InvariantOutputMap = std::unordered_map<const rvsdg::output *, rvsdg::inpu
 static rvsdg::input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
 
-static rvsdg::structural_input *
+static rvsdg::StructuralInput *
 invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariantOutputs)
 {
   size_t n;
-  rvsdg::structural_input * input = nullptr;
+  rvsdg::StructuralInput * input = nullptr;
   for (n = 0; n < output.nresults(); n++)
   {
     auto origin = output.result(n)->origin();

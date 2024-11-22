@@ -32,7 +32,7 @@ class GraphImport final : public rvsdg::GraphImport
 
 public:
   GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   static GraphImport &
   Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
@@ -242,7 +242,7 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class StructuralNodeInput final : public rvsdg::structural_input
+class StructuralNodeInput final : public rvsdg::StructuralInput
 {
   friend structural_node;
 
@@ -254,7 +254,7 @@ private:
       structural_node & node,
       rvsdg::output & origin,
       std::shared_ptr<const rvsdg::Type> type)
-      : rvsdg::structural_input(&node, &origin, std::move(type))
+      : StructuralInput(&node, &origin, std::move(type))
   {}
 
 public:
@@ -301,7 +301,7 @@ public:
   ~StructuralNodeArgument() noexcept override;
 
   StructuralNodeArgument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   StructuralNodeArgument(
@@ -483,14 +483,14 @@ class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 private:
   TestGraphArgument(
       rvsdg::Region & region,
-      jlm::rvsdg::structural_input * input,
+      rvsdg::StructuralInput * input,
       std::shared_ptr<const jlm::rvsdg::Type> type)
       : jlm::rvsdg::RegionArgument(&region, input, type)
   {}
 
 public:
   TestGraphArgument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override
   {
     return Create(region, input, Type());
   }
@@ -498,7 +498,7 @@ public:
   static TestGraphArgument &
   Create(
       rvsdg::Region & region,
-      jlm::rvsdg::structural_input * input,
+      rvsdg::StructuralInput * input,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto graphArgument = new TestGraphArgument(region, input, std::move(type));

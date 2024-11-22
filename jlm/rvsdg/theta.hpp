@@ -247,7 +247,7 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class ThetaInput final : public structural_input
+class ThetaInput final : public StructuralInput
 {
   friend ThetaNode;
   friend ThetaOutput;
@@ -256,14 +256,14 @@ public:
   ~ThetaInput() noexcept override;
 
   ThetaInput(ThetaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::Type> type)
-      : structural_input(node, origin, std::move(type)),
+      : StructuralInput(node, origin, std::move(type)),
         output_(nullptr)
   {}
 
   ThetaNode *
   node() const noexcept
   {
-    return static_cast<ThetaNode *>(structural_input::node());
+    return static_cast<ThetaNode *>(StructuralInput::node());
   }
 
   ThetaOutput *
@@ -345,7 +345,7 @@ public:
   ~ThetaArgument() noexcept override;
 
   ThetaArgument &
-  Copy(rvsdg::Region & region, structural_input * input) override;
+  Copy(rvsdg::Region & region, StructuralInput * input) override;
 
 private:
   ThetaArgument(rvsdg::Region & region, ThetaInput & input)
