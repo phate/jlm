@@ -47,7 +47,7 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 }
 
 ::mlir::rvsdg::OmegaNode
-JlmToMlirConverter::ConvertOmega(const rvsdg::graph & graph)
+JlmToMlirConverter::ConvertOmega(const rvsdg::Graph & graph)
 {
   auto omega = Builder_->create<::mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
   auto & omegaBlock = omega.getRegion().emplaceBlock();

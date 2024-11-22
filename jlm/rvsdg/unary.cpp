@@ -18,7 +18,7 @@ unary_normal_form::~unary_normal_form() noexcept
 unary_normal_form::unary_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
     : simple_normal_form(operator_class, parent, graph),
       enable_reducible_(true)
 {
@@ -101,7 +101,7 @@ jlm::rvsdg::node_normal_form *
 unary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   jlm::rvsdg::node_normal_form * nf =
       new jlm::rvsdg::unary_normal_form(operator_class, parent, graph);

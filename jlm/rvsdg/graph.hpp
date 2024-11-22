@@ -28,7 +28,7 @@ namespace jlm::rvsdg
 class GraphImport : public RegionArgument
 {
 protected:
-  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
+  GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
 
 public:
   [[nodiscard]] const std::string &
@@ -60,12 +60,12 @@ private:
   std::string Name_;
 };
 
-class graph
+class Graph
 {
 public:
-  ~graph();
+  ~Graph();
 
-  graph();
+  Graph();
 
   [[nodiscard]] rvsdg::Region *
   root() const noexcept
@@ -86,7 +86,7 @@ public:
     normalized_ = true;
   }
 
-  std::unique_ptr<jlm::rvsdg::graph>
+  [[nodiscard]] std::unique_ptr<Graph>
   copy() const;
 
   jlm::rvsdg::node_normal_form *
@@ -108,7 +108,7 @@ public:
    * @return A vector of tail nodes.
    */
   static std::vector<rvsdg::node *>
-  ExtractTailNodes(const graph & rvsdg);
+  ExtractTailNodes(const Graph & rvsdg);
 
 private:
   bool normalized_;

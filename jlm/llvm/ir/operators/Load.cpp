@@ -564,7 +564,7 @@ load_normal_form::~load_normal_form()
 load_normal_form::load_normal_form(
     const std::type_info & opclass,
     rvsdg::node_normal_form * parent,
-    rvsdg::graph * graph) noexcept
+    rvsdg::Graph * graph) noexcept
     : simple_normal_form(opclass, parent, graph),
       enable_load_mux_(false),
       enable_load_store_(false),
@@ -671,7 +671,7 @@ static jlm::rvsdg::node_normal_form *
 create_load_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::llvm::load_normal_form(opclass, parent, graph);
 }

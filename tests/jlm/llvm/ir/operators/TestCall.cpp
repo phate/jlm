@@ -26,7 +26,7 @@ TestCopy()
       { valueType, iostatetype::Create(), MemoryStateType::Create() },
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   auto function1 = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "function1");
   auto value1 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value1");
   auto iOState1 = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "iOState1");
@@ -63,7 +63,7 @@ TestCallNodeAccessors()
       { valueType, iostatetype::Create(), MemoryStateType::Create() },
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   auto f = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "function");
   auto v = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
   auto i = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "IOState");

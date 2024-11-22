@@ -77,7 +77,7 @@ test_unrollinfo()
   jlm::rvsdg::bitsub_op sub(32);
 
   {
-    jlm::rvsdg::graph graph;
+    jlm::rvsdg::Graph graph;
     auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
     auto theta = create_theta(slt, add, x, x, x);
     auto ui = jlm::llvm::unrollinfo::create(theta);
@@ -92,7 +92,7 @@ test_unrollinfo()
   }
 
   {
-    jlm::rvsdg::graph graph;
+    jlm::rvsdg::Graph graph;
     auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
     nf->set_mutable(false);
 
@@ -146,7 +146,7 @@ test_known_boundaries()
   jlm::rvsdg::bitsub_op sub(32);
 
   {
-    jlm::rvsdg::graph graph;
+    jlm::rvsdg::Graph graph;
     auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
     nf->set_mutable(false);
 
@@ -166,7 +166,7 @@ test_known_boundaries()
   }
 
   {
-    jlm::rvsdg::graph graph;
+    jlm::rvsdg::Graph graph;
     auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
     nf->set_mutable(false);
 
@@ -186,7 +186,7 @@ test_known_boundaries()
   }
 
   {
-    jlm::rvsdg::graph graph;
+    jlm::rvsdg::Graph graph;
     auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
     nf->set_mutable(false);
 
@@ -207,7 +207,7 @@ test_known_boundaries()
   }
 
   {
-    jlm::rvsdg::graph graph;
+    jlm::rvsdg::Graph graph;
     auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
     nf->set_mutable(false);
 

@@ -27,7 +27,7 @@ public:
   binary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   virtual bool
   normalize_node(jlm::rvsdg::node * node) const override;
@@ -104,7 +104,7 @@ public:
   flattened_binary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   virtual bool
   normalize_node(jlm::rvsdg::node * node) const override;
@@ -160,7 +160,7 @@ public:
   is_commutative() const noexcept;
 
   static jlm::rvsdg::binary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::binary_normal_form *>(
         graph->node_normal_form(typeid(binary_op)));
@@ -208,7 +208,7 @@ public:
   }
 
   static jlm::rvsdg::flattened_binary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<flattened_binary_normal_form *>(
         graph->node_normal_form(typeid(flattened_binary_op)));
@@ -223,7 +223,7 @@ public:
   reduce(rvsdg::Region * region, const flattened_binary_op::reduction & reduction);
 
   static inline void
-  reduce(jlm::rvsdg::graph * graph, const flattened_binary_op::reduction & reduction)
+  reduce(Graph * graph, const flattened_binary_op::reduction & reduction)
   {
     reduce(graph->root(), reduction);
   }

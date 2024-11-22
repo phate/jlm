@@ -68,7 +68,7 @@ TestRvsdgCreator()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
 
   auto address = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "p");
   auto memoryState = &jlm::tests::GraphImport::Create(rvsdg, MemoryStateType::Create(), "m");

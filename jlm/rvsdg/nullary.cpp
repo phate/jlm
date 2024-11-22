@@ -19,7 +19,7 @@ public:
   nullary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph)
+      Graph * graph)
       : simple_normal_form(operator_class, parent, graph)
   {}
 };
@@ -38,7 +38,7 @@ jlm::rvsdg::node_normal_form *
 nullary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::nullary_normal_form(operator_class, parent, graph);
 }

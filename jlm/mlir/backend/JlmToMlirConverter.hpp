@@ -74,7 +74,7 @@ private:
    * \return An MLIR RVSDG OmegaNode.
    */
   ::mlir::rvsdg::OmegaNode
-  ConvertOmega(const rvsdg::graph & graph);
+  ConvertOmega(const rvsdg::Graph & graph);
 
   /**
    * Converts all nodes in an RVSDG region. Conversion of structural nodes cause their regions to

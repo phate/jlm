@@ -27,7 +27,7 @@ public:
   {}
 
   void
-  Start(const rvsdg::graph & graph)
+  Start(const rvsdg::Graph & graph)
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddTimer(Label::Timer).start();

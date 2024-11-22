@@ -12,7 +12,7 @@ using namespace std::placeholders;
 namespace
 {
 
-typedef std::unordered_set<const jlm::rvsdg::graph *> tracker_set;
+typedef std::unordered_set<const jlm::rvsdg::Graph *> tracker_set;
 
 tracker_set *
 active_trackers()
@@ -42,7 +42,7 @@ namespace jlm::rvsdg
 {
 
 bool
-has_active_trackers(const jlm::rvsdg::graph * graph)
+has_active_trackers(const Graph * graph)
 {
   auto at = active_trackers();
   return at->find(graph) != at->end();
@@ -163,7 +163,7 @@ tracker::~tracker() noexcept
   unregister_tracker(this);
 }
 
-tracker::tracker(jlm::rvsdg::graph * graph, size_t nstates)
+tracker::tracker(Graph * graph, size_t nstates)
     : graph_(graph),
       states_(nstates)
 {

@@ -141,7 +141,7 @@ jlm::rvsdg::node_normal_form *
 node_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::node_normal_form(operator_class, parent, graph);
 }

@@ -17,7 +17,7 @@ TestPhiCreation()
 {
   using namespace jlm::llvm;
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
 
   auto vtype = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();

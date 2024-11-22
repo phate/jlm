@@ -19,7 +19,7 @@ types_bitstring_arithmetic_test_bitand(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -47,7 +47,7 @@ types_bitstring_arithmetic_test_bitashr(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -86,7 +86,7 @@ types_bitstring_arithmetic_test_bitdifference(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -109,7 +109,7 @@ types_bitstring_arithmetic_test_bitnegate(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto c0 = create_bitconstant(graph.root(), 32, 3);
@@ -137,7 +137,7 @@ types_bitstring_arithmetic_test_bitnot(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto c0 = create_bitconstant(graph.root(), 32, 3);
@@ -165,7 +165,7 @@ types_bitstring_arithmetic_test_bitor(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -193,7 +193,7 @@ types_bitstring_arithmetic_test_bitproduct(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -222,7 +222,7 @@ types_bitstring_arithmetic_test_bitshiproduct(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -245,7 +245,7 @@ types_bitstring_arithmetic_test_bitshl(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -277,7 +277,7 @@ types_bitstring_arithmetic_test_bitshr(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -309,7 +309,7 @@ types_bitstring_arithmetic_test_bitsmod(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -338,7 +338,7 @@ types_bitstring_arithmetic_test_bitsquotient(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -367,7 +367,7 @@ types_bitstring_arithmetic_test_bitsum(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -396,7 +396,7 @@ types_bitstring_arithmetic_test_bituhiproduct(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -419,7 +419,7 @@ types_bitstring_arithmetic_test_bitumod(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -448,7 +448,7 @@ types_bitstring_arithmetic_test_bituquotient(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -477,7 +477,7 @@ types_bitstring_arithmetic_test_bitxor(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -521,7 +521,7 @@ types_bitstring_comparison_test_bitequal(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -555,7 +555,7 @@ types_bitstring_comparison_test_bitnotequal(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -589,7 +589,7 @@ types_bitstring_comparison_test_bitsgreater(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -627,7 +627,7 @@ types_bitstring_comparison_test_bitsgreatereq(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -668,7 +668,7 @@ types_bitstring_comparison_test_bitsless(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -706,7 +706,7 @@ types_bitstring_comparison_test_bitslesseq(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -747,7 +747,7 @@ types_bitstring_comparison_test_bitugreater(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -785,7 +785,7 @@ types_bitstring_comparison_test_bitugreatereq(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -826,7 +826,7 @@ types_bitstring_comparison_test_bituless(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -864,7 +864,7 @@ types_bitstring_comparison_test_bitulesseq(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -933,7 +933,7 @@ types_bitstring_test_constant(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto b1 = output::GetNode(*create_bitconstant(graph.root(), "00110011"));
   auto b2 = output::GetNode(*create_bitconstant(graph.root(), 8, 204));
@@ -969,7 +969,7 @@ types_bitstring_test_normalize(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   bittype bits32(32);
   auto imp = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "imp");
@@ -1028,7 +1028,7 @@ types_bitstring_test_reduction(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto a = create_bitconstant(graph.root(), "1100");
   auto b = create_bitconstant(graph.root(), "1010");
@@ -1082,7 +1082,7 @@ types_bitstring_test_slice_concat(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto base_const1 = create_bitconstant(graph.root(), "00110111");
   auto base_const2 = create_bitconstant(graph.root(), "11001000");

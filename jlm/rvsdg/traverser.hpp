@@ -15,7 +15,7 @@
 namespace jlm::rvsdg
 {
 
-class graph;
+class Graph;
 class input;
 class output;
 
@@ -86,7 +86,7 @@ enum class traversal_nodestate
 class traversal_tracker final
 {
 public:
-  inline traversal_tracker(jlm::rvsdg::graph * graph);
+  inline traversal_tracker(Graph * graph);
 
   inline traversal_nodestate
   get_nodestate(jlm::rvsdg::node * node);
@@ -231,7 +231,7 @@ private:
 
 /* traversal tracker implementation */
 
-traversal_tracker::traversal_tracker(jlm::rvsdg::graph * graph)
+traversal_tracker::traversal_tracker(Graph * graph)
     : tracker_(graph, 2)
 {}
 

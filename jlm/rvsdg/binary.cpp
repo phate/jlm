@@ -58,7 +58,7 @@ binary_normal_form::~binary_normal_form() noexcept
 binary_normal_form::binary_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
     : simple_normal_form(operator_class, parent, graph),
       enable_reducible_(true),
       enable_reorder_(true),
@@ -281,7 +281,7 @@ flattened_binary_normal_form::~flattened_binary_normal_form() noexcept
 flattened_binary_normal_form::flattened_binary_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
     : simple_normal_form(operator_class, parent, graph)
 {}
 
@@ -449,7 +449,7 @@ jlm::rvsdg::node_normal_form *
 binary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::binary_normal_form(operator_class, parent, graph);
 }
@@ -458,7 +458,7 @@ jlm::rvsdg::node_normal_form *
 flattened_binary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::flattened_binary_normal_form(operator_class, parent, graph);
 }

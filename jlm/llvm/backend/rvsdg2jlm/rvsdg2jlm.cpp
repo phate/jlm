@@ -31,7 +31,7 @@ public:
   {}
 
   void
-  start(const rvsdg::graph & graph) noexcept
+  start(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(Label::Timer).start();
@@ -538,14 +538,14 @@ convert_node(const rvsdg::node & node, context & ctx)
 }
 
 static void
-convert_nodes(const rvsdg::graph & graph, context & ctx)
+convert_nodes(const rvsdg::Graph & graph, context & ctx)
 {
   for (const auto & node : rvsdg::topdown_traverser(graph.root()))
     convert_node(*node, ctx);
 }
 
 static void
-convert_imports(const rvsdg::graph & graph, ipgraph_module & im, context & ctx)
+convert_imports(const rvsdg::Graph & graph, ipgraph_module & im, context & ctx)
 {
   auto & ipg = im.ipgraph();
 

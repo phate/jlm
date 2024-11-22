@@ -111,7 +111,7 @@ mux_normal_form::~mux_normal_form() noexcept
 mux_normal_form::mux_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    Graph * graph) noexcept
     : simple_normal_form(opclass, parent, graph),
       enable_mux_mux_(false),
       enable_multiple_origin_(false)
@@ -204,7 +204,7 @@ static jlm::rvsdg::node_normal_form *
 create_mux_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::mux_normal_form(opclass, parent, graph);
 }

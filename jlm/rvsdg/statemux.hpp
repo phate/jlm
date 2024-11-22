@@ -24,7 +24,7 @@ public:
   mux_normal_form(
       const std::type_info & opclass,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      Graph * graph) noexcept;
 
   virtual bool
   normalize_node(jlm::rvsdg::node * node) const override;
@@ -79,7 +79,7 @@ public:
   copy() const override;
 
   static jlm::rvsdg::mux_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::mux_normal_form *>(graph->node_normal_form(typeid(mux_op)));
   }

@@ -65,7 +65,7 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule)
 }
 
 util::AnnotationMap
-RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::graph & rvsdg) const
+RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
 {
   util::AnnotationMap annotationMap;
   for (auto annotation : Configuration_.RequiredAnnotations().Items())
@@ -88,7 +88,7 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::graph & rvsdg) const
 
 void
 RvsdgTreePrinter::AnnotateNumRvsdgNodes(
-    const rvsdg::graph & rvsdg,
+    const rvsdg::Graph & rvsdg,
     util::AnnotationMap & annotationMap)
 {
   static std::string_view label("NumRvsdgNodes");
@@ -121,7 +121,7 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
 
 void
 RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
-    const rvsdg::graph & rvsdg,
+    const rvsdg::Graph & rvsdg,
     util::AnnotationMap & annotationMap)
 {
   std::string_view argumentLabel("NumMemoryStateTypeArguments");

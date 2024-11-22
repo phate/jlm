@@ -56,7 +56,7 @@ TestCopy()
   auto valueType = jlm::tests::valuetype::Create();
   auto pointerType = PointerType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto address1 = &jlm::tests::GraphImport::Create(graph, pointerType, "address1");
   auto memoryState1 = &jlm::tests::GraphImport::Create(graph, memoryType, "memoryState1");
 
@@ -85,7 +85,7 @@ TestLoadAllocaReduction()
   auto mt = MemoryStateType::Create();
   auto bt = jlm::rvsdg::bittype::Create(32);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_alloca_reducible(false);
@@ -128,7 +128,7 @@ TestMultipleOriginReduction()
   auto vt = jlm::tests::valuetype::Create();
   auto pt = PointerType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_multiple_origin_reducible(false);
@@ -163,7 +163,7 @@ TestLoadStoreStateReduction()
   // Arrange
   auto bt = jlm::rvsdg::bittype::Create(32);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_store_state_reducible(false);
@@ -211,7 +211,7 @@ TestLoadStoreReduction()
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_store_reducible(false);
@@ -251,7 +251,7 @@ TestLoadLoadReduction()
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
 
@@ -408,7 +408,7 @@ NodeCopy()
   auto memoryType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto & address1 = jlm::tests::GraphImport::Create(graph, pointerType, "address1");
   auto & iOState1 = jlm::tests::GraphImport::Create(graph, iOStateType, "iOState1");
   auto & memoryState1 = jlm::tests::GraphImport::Create(graph, memoryType, "memoryState1");

@@ -154,7 +154,7 @@ gamma_normal_form::~gamma_normal_form() noexcept
 gamma_normal_form::gamma_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    Graph * graph) noexcept
     : structural_normal_form(operator_class, parent, graph),
       enable_predicate_reduction_(false),
       enable_invariant_reduction_(false),
@@ -395,7 +395,7 @@ jlm::rvsdg::node_normal_form *
 gamma_node_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::gamma_normal_form(operator_class, parent, graph);
 }
