@@ -25,8 +25,8 @@ test_node_copy(void)
   auto n1 = jlm::tests::structural_node::create(graph.root(), 3);
   auto i1 = structural_input::create(n1, s, stype);
   auto i2 = structural_input::create(n1, v, vtype);
-  auto o1 = structural_output::create(n1, stype);
-  auto o2 = structural_output::create(n1, vtype);
+  auto o1 = StructuralOutput::create(n1, stype);
+  auto o2 = StructuralOutput::create(n1, vtype);
 
   auto & a1 = TestGraphArgument::Create(*n1->subregion(0), i1, stype);
   auto & a2 = TestGraphArgument::Create(*n1->subregion(0), i2, vtype);

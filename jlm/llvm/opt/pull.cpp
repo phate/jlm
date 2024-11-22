@@ -180,7 +180,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
         auto input = node->input(i);
         if (jlm::rvsdg::output::GetNode(*input->origin()) == gamma)
         {
-          auto output = static_cast<jlm::rvsdg::structural_output *>(input->origin());
+          auto output = static_cast<rvsdg::StructuralOutput *>(input->origin());
           operands.push_back(gamma->subregion(r)->result(output->index())->origin());
         }
         else

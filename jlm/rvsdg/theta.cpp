@@ -59,7 +59,7 @@ ThetaArgument::Copy(rvsdg::Region & region, structural_input * input)
 ThetaResult::~ThetaResult() noexcept = default;
 
 ThetaResult &
-ThetaResult::Copy(rvsdg::output & origin, structural_output * output)
+ThetaResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   auto thetaOutput = util::AssertedCast<ThetaOutput>(output);
   return ThetaResult::Create(origin, *thetaOutput);
@@ -68,7 +68,7 @@ ThetaResult::Copy(rvsdg::output & origin, structural_output * output)
 ThetaPredicateResult::~ThetaPredicateResult() noexcept = default;
 
 ThetaPredicateResult &
-ThetaPredicateResult::Copy(rvsdg::output & origin, structural_output * output)
+ThetaPredicateResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return ThetaPredicateResult::Create(origin);

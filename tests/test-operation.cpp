@@ -15,7 +15,7 @@ GraphImport::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
 }
 
 GraphExport &
-GraphExport::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+GraphExport::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return GraphExport::Create(origin, Name());
@@ -181,7 +181,7 @@ structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) con
   /* copy outputs */
   for (size_t n = 0; n < noutputs(); n++)
   {
-    auto new_output = rvsdg::structural_output::create(node, output(n)->Type());
+    auto new_output = rvsdg::StructuralOutput::create(node, output(n)->Type());
     smap.insert(output(n), new_output);
   }
 
@@ -252,7 +252,7 @@ StructuralNodeArgument::Copy(rvsdg::Region & region, rvsdg::structural_input * i
 StructuralNodeResult::~StructuralNodeResult() noexcept = default;
 
 StructuralNodeResult &
-StructuralNodeResult::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+StructuralNodeResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   auto structuralNodeOutput = util::AssertedCast<StructuralNodeOutput>(output);
   return structuralNodeOutput != nullptr ? Create(origin, *structuralNodeOutput) : Create(origin);

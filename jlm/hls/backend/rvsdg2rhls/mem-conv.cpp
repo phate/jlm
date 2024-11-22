@@ -47,7 +47,7 @@ jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
   {
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
-    auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
+    auto output = rvsdg::StructuralOutput::create(ln, request->Type());
     ExitResult::Create(*request, *output);
     return route_request(target, output);
   }
@@ -134,7 +134,7 @@ trace_call(const jlm::rvsdg::output * output)
     }
     return trace_call(argument->input());
   }
-  else if (auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(output))
+  else if (auto so = dynamic_cast<const jlm::rvsdg::StructuralOutput *>(output))
   {
     for (auto & r : so->results)
     {

@@ -44,7 +44,7 @@ get_dot_name(jlm::rvsdg::output * output)
   {
     return jlm::util::strfmt(get_dot_name(no->node()), ":", "o", hex((intptr_t)output));
   }
-  else if (dynamic_cast<jlm::rvsdg::structural_output *>(output))
+  else if (dynamic_cast<rvsdg::StructuralOutput *>(output))
   {
     return jlm::util::strfmt("so", hex((intptr_t)output), ":", "default");
   }
@@ -113,7 +113,7 @@ structural_input_to_dot(jlm::rvsdg::structural_input * structuralInput)
 }
 
 std::string
-structural_output_to_dot(jlm::rvsdg::structural_output * structuralOutput)
+structural_output_to_dot(rvsdg::StructuralOutput * structuralOutput)
 {
   auto display_name = jlm::util::strfmt("so", structuralOutput->index());
   auto dot_name = jlm::util::strfmt("so", hex((intptr_t)structuralOutput));

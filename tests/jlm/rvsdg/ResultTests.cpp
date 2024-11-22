@@ -31,7 +31,7 @@ ResultNodeMismatch()
 
   auto & argument =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);
-  auto structuralOutput = structural_output::create(structuralNode1, valueType);
+  auto structuralOutput = StructuralOutput::create(structuralNode1, valueType);
 
   // Act
   bool outputErrorHandlerCalled = false;
@@ -66,7 +66,7 @@ ResultInputTypeMismatch()
   jlm::rvsdg::graph rvsdg;
 
   auto structuralNode = structural_node::create(rvsdg.root(), 1);
-  auto structuralOutput = jlm::rvsdg::structural_output::create(structuralNode, valueType);
+  auto structuralOutput = jlm::rvsdg::StructuralOutput::create(structuralNode, valueType);
 
   // Act & Assert
   bool exceptionWasCaught = false;

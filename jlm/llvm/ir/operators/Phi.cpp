@@ -193,7 +193,7 @@ rvresult::~rvresult()
 {}
 
 rvresult &
-rvresult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+rvresult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   auto phiOutput = util::AssertedCast<rvoutput>(output);
   return *rvresult::create(origin.region(), &origin, phiOutput, origin.Type());

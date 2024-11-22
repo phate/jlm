@@ -692,7 +692,7 @@ public:
   }
 
   backedge_result &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   backedge_result(jlm::rvsdg::output * origin)
@@ -722,7 +722,7 @@ public:
   ~ExitResult() noexcept override;
 
 private:
-  ExitResult(rvsdg::output & origin, rvsdg::structural_output & output)
+  ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output)
       : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
   {
     JLM_ASSERT(rvsdg::is<loop_op>(origin.region()->node()));
@@ -730,12 +730,12 @@ private:
 
 public:
   ExitResult &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
   static ExitResult &
-  Create(rvsdg::output & origin, rvsdg::structural_output & output)
+  Create(rvsdg::output & origin, rvsdg::StructuralOutput & output)
   {
     auto result = new ExitResult(origin, output);
     origin.region()->append_result(result);
@@ -786,7 +786,7 @@ public:
   backedge_argument *
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
-  jlm::rvsdg::structural_output *
+  rvsdg::StructuralOutput *
   add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer = nullptr);
 
   jlm::rvsdg::output *

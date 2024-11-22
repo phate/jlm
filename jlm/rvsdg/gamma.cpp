@@ -69,7 +69,7 @@ perform_invariant_reduction(GammaNode * gamma)
   return was_normalized;
 }
 
-static std::unordered_set<jlm::rvsdg::structural_output *>
+static std::unordered_set<StructuralOutput *>
 is_control_constant_reducible(GammaNode * gamma)
 {
   /* check gamma predicate */
@@ -87,7 +87,7 @@ is_control_constant_reducible(GammaNode * gamma)
     return {};
 
   /* check for constants */
-  std::unordered_set<jlm::rvsdg::structural_output *> outputs;
+  std::unordered_set<StructuralOutput *> outputs;
   for (auto it = gamma->begin_exitvar(); it != gamma->end_exitvar(); it++)
   {
     if (!is_ctltype(it->type()))
@@ -112,7 +112,7 @@ is_control_constant_reducible(GammaNode * gamma)
 }
 
 static void
-perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::structural_output *> & outputs)
+perform_control_constant_reduction(std::unordered_set<StructuralOutput *> & outputs)
 {
   auto gamma = static_cast<GammaNode *>((*outputs.begin())->node());
   auto origin = static_cast<node_output *>(gamma->predicate()->origin());
@@ -383,7 +383,7 @@ GammaArgument::Copy(rvsdg::Region & region, structural_input * input)
 GammaResult::~GammaResult() noexcept = default;
 
 GammaResult &
-GammaResult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+GammaResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   auto gammaOutput = util::AssertedCast<GammaOutput>(output);
   return GammaResult::Create(*origin.region(), origin, *gammaOutput);

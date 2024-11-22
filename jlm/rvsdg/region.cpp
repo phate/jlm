@@ -77,7 +77,7 @@ RegionResult::~RegionResult() noexcept
 RegionResult::RegionResult(
     rvsdg::Region * region,
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
+    StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
     : input(origin, region, std::move(type)),
       output_(output)
@@ -103,7 +103,7 @@ RegionResult::GetOwner() const noexcept
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::output & origin, structural_output * output)
+RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   return RegionResult::Create(*origin.region(), origin, output, origin.Type());
 }
@@ -112,7 +112,7 @@ RegionResult &
 RegionResult::Create(
     rvsdg::Region & region,
     rvsdg::output & origin,
-    structural_output * output,
+    StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
   JLM_ASSERT(origin.region() == &region);
@@ -331,7 +331,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
       auto oldResult = result(n);
       auto newOrigin = smap.lookup(oldResult->origin());
       JLM_ASSERT(newOrigin != nullptr);
-      auto newOutput = dynamic_cast<structural_output *>(smap.lookup(oldResult->output()));
+      auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
       oldResult->Copy(*newOrigin, newOutput);
     }
   }

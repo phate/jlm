@@ -202,8 +202,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   auto n2 = jlm::rvsdg::output::GetNode(*o2);
   if (is<jlm::rvsdg::ThetaOperation>(n1) && is<jlm::rvsdg::ThetaOperation>(n2) && n1 == n2)
   {
-    auto so1 = static_cast<jlm::rvsdg::structural_output *>(o1);
-    auto so2 = static_cast<jlm::rvsdg::structural_output *>(o2);
+    auto so1 = static_cast<StructuralOutput *>(o1);
+    auto so2 = static_cast<StructuralOutput *>(o2);
     vs.insert(o1, o2);
     auto r1 = so1->results.first();
     auto r2 = so2->results.first();
@@ -225,8 +225,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
 
   if (rvsdg::is<rvsdg::GammaOperation>(n1) && n1 == n2)
   {
-    auto so1 = static_cast<jlm::rvsdg::structural_output *>(o1);
-    auto so2 = static_cast<jlm::rvsdg::structural_output *>(o2);
+    auto so1 = static_cast<StructuralOutput *>(o1);
+    auto so2 = static_cast<StructuralOutput *>(o2);
     auto r1 = so1->results.begin();
     auto r2 = so2->results.begin();
     for (; r1 != so1->results.end(); r1++, r2++)
