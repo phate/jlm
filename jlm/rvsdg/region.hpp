@@ -38,7 +38,7 @@ class SubstitutionMap;
  * Region arguments represent the initial values of the region's acyclic graph. These values
  * are mapped to the arguments throughout the execution, and the concrete semantics of this mapping
  * depends on the structural node the region is part of. A region argument is either linked
- * with a \ref structural_input or is a standalone argument.
+ * with a \ref StructuralInput or is a standalone argument.
  */
 class RegionArgument : public output
 {
