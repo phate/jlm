@@ -14,10 +14,7 @@
 namespace jlm::rvsdg
 {
 
-GraphImport::GraphImport(
-    Graph & graph,
-    std::shared_ptr<const rvsdg::Type> type,
-    std::string name)
+GraphImport::GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
     : RegionArgument(graph.root(), nullptr, std::move(type)),
       Name_(std::move(name))
 {}
