@@ -21,7 +21,7 @@ ResultNodeMismatch()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
@@ -63,7 +63,7 @@ ResultInputTypeMismatch()
   auto valueType = jlm::tests::valuetype::Create();
   auto stateType = jlm::tests::statetype::Create();
 
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
 
   auto structuralNode = structural_node::create(rvsdg.root(), 1);
   auto structuralOutput = jlm::rvsdg::StructuralOutput::create(structuralNode, valueType);

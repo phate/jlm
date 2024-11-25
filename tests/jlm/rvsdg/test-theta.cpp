@@ -15,7 +15,7 @@ TestThetaCreation()
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto t = jlm::tests::valuetype::Create();
 
   auto imp1 = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "imp1");
@@ -54,7 +54,7 @@ TestRemoveThetaOutputsWhere()
   using namespace jlm::rvsdg;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
@@ -104,7 +104,7 @@ TestPruneThetaOutputs()
   using namespace jlm::rvsdg;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
@@ -139,7 +139,7 @@ TestRemoveThetaInputsWhere()
   using namespace jlm::rvsdg;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
@@ -195,7 +195,7 @@ TestPruneThetaInputs()
   using namespace jlm::rvsdg;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
 
   auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");

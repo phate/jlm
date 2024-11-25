@@ -27,14 +27,14 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph) noexcept
+  start(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgInputsBefore, jlm::rvsdg::ninputs(graph.root()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  end(const jlm::rvsdg::graph & graph) noexcept
+  end(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgInputsAfter, jlm::rvsdg::ninputs(graph.root()));
     GetTimer(Label::Timer).stop();

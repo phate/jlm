@@ -15,7 +15,7 @@ TestOutputRemoval()
   using namespace jlm;
 
   // Arrange
-  rvsdg::graph rvsdg;
+  rvsdg::Graph rvsdg;
   auto valueType = tests::valuetype::Create();
 
   auto structuralNode = tests::structural_node::create(rvsdg.root(), 1);

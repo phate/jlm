@@ -87,7 +87,7 @@ private:
   }
 
   void
-  AnalyzeImports(const jlm::rvsdg::graph & rvsdg)
+  AnalyzeImports(const jlm::rvsdg::Graph & rvsdg)
   {
     using namespace jlm::llvm;
 

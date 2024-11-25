@@ -103,7 +103,7 @@ public:
   {}
 
   void
-  StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartMarkStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
@@ -123,7 +123,7 @@ public:
   }
 
   void
-  StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StopSweepStatistics(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(SweepTimerLabel_).stop();
     AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
@@ -294,7 +294,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 }
 
 void
-DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & rvsdg) const
+DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
 {
   SweepRegion(*rvsdg.root());
 

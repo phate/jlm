@@ -19,7 +19,7 @@ test_flattened_binary_reduction()
 
   /* test paralell reduction */
   {
-    jlm::rvsdg::graph graph;
+    Graph graph;
     auto i0 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i1 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
@@ -53,7 +53,7 @@ test_flattened_binary_reduction()
 
   /* test linear reduction */
   {
-    jlm::rvsdg::graph graph;
+    Graph graph;
     auto i0 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i1 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");

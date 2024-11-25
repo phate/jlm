@@ -13,7 +13,7 @@
 
 namespace jlm::rvsdg
 {
-class graph;
+class Graph;
 class input;
 class output;
 }
@@ -131,7 +131,7 @@ private:
    * @return An instance of \ref AnnotationMap.
    */
   [[nodiscard]] util::AnnotationMap
-  ComputeAnnotationMap(const rvsdg::graph & rvsdg) const;
+  ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const;
 
   /**
    * Adds an annotation to \p annotationMap that indicates the number of RVSDG nodes for regions
@@ -143,7 +143,7 @@ private:
    * @see NumRvsdgNodes
    */
   static void
-  AnnotateNumRvsdgNodes(const rvsdg::graph & rvsdg, util::AnnotationMap & annotationMap);
+  AnnotateNumRvsdgNodes(const rvsdg::Graph & rvsdg, util::AnnotationMap & annotationMap);
 
   /**
    * Adds an annotation to \p annotationMap that indicates the number of inputs/outputs of type
@@ -156,7 +156,7 @@ private:
    */
   static void
   AnnotateNumMemoryStateInputsOutputs(
-      const rvsdg::graph & rvsdg,
+      const rvsdg::Graph & rvsdg,
       util::AnnotationMap & annotationMap);
 
   void

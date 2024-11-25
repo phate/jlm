@@ -18,7 +18,7 @@ test_node_copy(void)
   auto stype = jlm::tests::statetype::Create();
   auto vtype = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
@@ -96,7 +96,7 @@ test_node_depth()
 {
   auto vt = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto null = jlm::tests::test_op::create(graph.root(), {}, { vt });
@@ -123,7 +123,7 @@ static void
 TestRemoveOutputsWhere()
 {
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
 
   auto valueType = jlm::tests::valuetype::Create();
   auto & node1 =
@@ -186,7 +186,7 @@ static void
 TestRemoveInputsWhere()
 {
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 

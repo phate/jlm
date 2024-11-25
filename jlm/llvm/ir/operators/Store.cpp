@@ -309,7 +309,7 @@ store_normal_form::~store_normal_form()
 store_normal_form::store_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    rvsdg::Graph * graph) noexcept
     : simple_normal_form(opclass, parent, graph),
       enable_store_mux_(false),
       enable_store_store_(false),
@@ -467,7 +467,7 @@ static jlm::rvsdg::node_normal_form *
 create_store_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::llvm::store_normal_form(opclass, parent, graph);
 }

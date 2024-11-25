@@ -14,7 +14,7 @@ test_main()
 
   auto t = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto i = &jlm::tests::GraphImport::Create(graph, t, "i");
 
   auto o1 = jlm::tests::test_op::create(graph.root(), {}, { t })->output(0);

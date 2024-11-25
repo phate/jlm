@@ -914,7 +914,7 @@ public:
   {}
 
   void
-  StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartSteensgaardStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(AnalysisTimerLabel_).start();
@@ -1744,7 +1744,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
 }
 
 void
-Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
+Steensgaard::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
   AnalyzeImports(graph);
   AnalyzeRegion(*graph.root());
@@ -1752,7 +1752,7 @@ Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 }
 
 void
-Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
+Steensgaard::AnalyzeImports(const rvsdg::Graph & graph)
 {
   auto rootRegion = graph.root();
   for (size_t n = 0; n < rootRegion->narguments(); n++)
@@ -1769,7 +1769,7 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
 }
 
 void
-Steensgaard::AnalyzeExports(const rvsdg::graph & graph)
+Steensgaard::AnalyzeExports(const rvsdg::Graph & graph)
 {
   auto rootRegion = graph.root();
 

@@ -25,7 +25,7 @@ public:
   load_normal_form(
       const std::type_info & opclass,
       rvsdg::node_normal_form * parent,
-      rvsdg::graph * graph) noexcept;
+      rvsdg::Graph * graph) noexcept;
 
   virtual bool
   normalize_node(rvsdg::node * node) const override;
@@ -462,7 +462,7 @@ public:
   NumMemoryStates() const noexcept override;
 
   static load_normal_form *
-  GetNormalForm(rvsdg::graph * graph) noexcept
+  GetNormalForm(rvsdg::Graph * graph) noexcept
   {
     return jlm::util::AssertedCast<load_normal_form>(
         graph->node_normal_form(typeid(LoadNonVolatileOperation)));

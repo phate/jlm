@@ -969,7 +969,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
     }
   };
 
-  auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
+  auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
@@ -1004,7 +1004,7 @@ RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::Region & r
 
 std::string
 RegionAwareMemoryNodeProvider::ToRegionTree(
-    const rvsdg::graph & rvsdg,
+    const rvsdg::Graph & rvsdg,
     const RegionAwareMemoryNodeProvisioning & provisioning)
 {
   auto toString = [](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)

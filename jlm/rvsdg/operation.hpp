@@ -16,7 +16,7 @@
 namespace jlm::rvsdg
 {
 
-class graph;
+class Graph;
 class node;
 class node_normal_form;
 class output;
@@ -45,7 +45,7 @@ public:
   }
 
   static jlm::rvsdg::node_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept;
+  normal_form(Graph * graph) noexcept;
 };
 
 template<class T>
@@ -86,7 +86,7 @@ public:
   result(size_t index) const noexcept;
 
   static jlm::rvsdg::simple_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept;
+  normal_form(Graph * graph) noexcept;
 
 private:
   std::vector<std::shared_ptr<const rvsdg::Type>> operands_;
@@ -102,7 +102,7 @@ public:
   operator==(const operation & other) const noexcept override;
 
   static jlm::rvsdg::structural_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept;
+  normal_form(Graph * graph) noexcept;
 };
 
 }

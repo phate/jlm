@@ -137,7 +137,7 @@ Region::~Region() noexcept
     RemoveArgument(arguments_.size() - 1);
 }
 
-Region::Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph)
+Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
       node_(nullptr)

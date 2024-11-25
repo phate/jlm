@@ -58,7 +58,7 @@ public:
 
 private:
   static void
-  RedirectInRootRegion(rvsdg::graph & rvsdg);
+  RedirectInRootRegion(rvsdg::Graph & rvsdg);
 
   static void
   RedirectInRegion(rvsdg::Region & region);

@@ -23,7 +23,7 @@ public:
   {}
 
   void
-  Start(const rvsdg::graph & graph) noexcept
+  Start(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(Label::Timer).start();
@@ -863,7 +863,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
 void
 TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(const RvsdgModule & rvsdgModule)
 {
-  auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
+  auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))

@@ -19,14 +19,14 @@ namespace jlm::rvsdg
 
 static const size_t tracker_nodestate_none = (size_t)-1;
 
-class graph;
+class Graph;
 class node;
 class Region;
 class tracker_depth_state;
 class tracker_nodestate;
 
 bool
-has_active_trackers(const jlm::rvsdg::graph * graph);
+has_active_trackers(const Graph * graph);
 
 /* Track states of nodes within the graph. Each node can logically be in
  * one of the numbered states, plus another "initial" state. All nodes are
@@ -36,7 +36,7 @@ struct tracker
 public:
   ~tracker() noexcept;
 
-  tracker(jlm::rvsdg::graph * graph, size_t nstates);
+  tracker(Graph * graph, size_t nstates);
 
   /* get state of the node */
   ssize_t
@@ -54,7 +54,7 @@ public:
   jlm::rvsdg::node *
   peek_bottom(size_t state) const;
 
-  inline jlm::rvsdg::graph *
+  [[nodiscard]] Graph *
   graph() const noexcept
   {
     return graph_;
@@ -70,7 +70,7 @@ private:
   void
   node_destroy(jlm::rvsdg::node * node);
 
-  jlm::rvsdg::graph * graph_;
+  jlm::rvsdg::Graph * graph_;
 
   /* FIXME: need RAII idiom for state reservation */
   std::vector<std::unique_ptr<tracker_depth_state>> states_;

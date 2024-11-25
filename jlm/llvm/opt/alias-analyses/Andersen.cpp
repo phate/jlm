@@ -272,7 +272,7 @@ public:
   {}
 
   void
-  StartAndersenStatistics(const rvsdg::graph & graph) noexcept
+  StartAndersenStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(AnalysisTimer_).start();
@@ -1199,7 +1199,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 }
 
 void
-Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
+Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
   auto & rootRegion = *graph.root();
 

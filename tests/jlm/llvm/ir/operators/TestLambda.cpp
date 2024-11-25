@@ -487,7 +487,7 @@ TestCallSummaryComputationLambdaResult()
   using namespace jlm::llvm;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
 
   auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
