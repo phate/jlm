@@ -90,7 +90,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
   {
     result += "o";
   }
-  else if (dynamic_cast<const jlm::rvsdg::structural_output *>(port))
+  else if (dynamic_cast<const rvsdg::StructuralOutput *>(port))
   {
     result += "so";
   }

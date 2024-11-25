@@ -598,7 +598,7 @@ public:
 class rvargument;
 class rvresult;
 
-class rvoutput final : public jlm::rvsdg::structural_output
+class rvoutput final : public rvsdg::StructuralOutput
 {
   friend class phi::builder;
 
@@ -607,7 +607,7 @@ public:
 
 private:
   rvoutput(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type)),
+      : StructuralOutput(node, std::move(type)),
         argument_(argument)
   {}
 
@@ -640,7 +640,7 @@ public:
   phi::node *
   node() const noexcept
   {
-    return static_cast<phi::node *>(structural_output::node());
+    return static_cast<phi::node *>(StructuralOutput::node());
   }
 
 private:
@@ -779,7 +779,7 @@ private:
   operator=(rvresult &&) = delete;
 
   rvresult &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static rvresult *
   create(

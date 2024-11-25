@@ -29,7 +29,7 @@ class simple_op;
 class structural_input;
 class StructuralNode;
 class structural_op;
-class structural_output;
+class StructuralOutput;
 class SubstitutionMap;
 
 /**
@@ -120,7 +120,7 @@ private:
  * can be mapped back to the region arguments or the corresponding structural outputs
  * throughout the execution, but the concrete semantics of this mapping
  * depends on the structural node the region is part of. A region result is either linked
- * with a \ref structural_output or is a standalone result.
+ * with a \ref StructuralOutput or is a standalone result.
  */
 class RegionResult : public input
 {
@@ -135,7 +135,7 @@ public:
   RegionResult(
       rvsdg::Region * region,
       rvsdg::output * origin,
-      structural_output * output,
+      StructuralOutput * output,
       std::shared_ptr<const rvsdg::Type> type);
 
   RegionResult(const RegionResult &) = delete;
@@ -148,7 +148,7 @@ public:
   RegionResult &
   operator=(RegionResult &&) = delete;
 
-  [[nodiscard]] structural_output *
+  [[nodiscard]] StructuralOutput *
   output() const noexcept
   {
     return output_;
@@ -164,7 +164,7 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::output & origin, structural_output * output);
+  Copy(rvsdg::output & origin, StructuralOutput * output);
 
   [[nodiscard]] std::variant<node *, Region *>
   GetOwner() const noexcept override;
@@ -194,11 +194,11 @@ public:
   Create(
       rvsdg::Region & region,
       rvsdg::output & origin,
-      structural_output * output,
+      StructuralOutput * output,
       std::shared_ptr<const rvsdg::Type> type);
 
 private:
-  structural_output * output_;
+  StructuralOutput * output_;
 };
 
 /**

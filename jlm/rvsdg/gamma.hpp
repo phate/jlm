@@ -378,7 +378,7 @@ public:
 
 /* gamma output */
 
-class GammaOutput final : public structural_output
+class GammaOutput final : public StructuralOutput
 {
   friend GammaNode;
 
@@ -386,13 +386,13 @@ public:
   ~GammaOutput() noexcept override;
 
   GammaOutput(GammaNode * node, std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type))
+      : StructuralOutput(node, std::move(type))
   {}
 
   GammaNode *
   node() const noexcept
   {
-    return static_cast<GammaNode *>(structural_output::node());
+    return static_cast<GammaNode *>(StructuralOutput::node());
   }
 
   inline result_list::iterator
@@ -500,7 +500,7 @@ private:
   {}
 
   GammaResult &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, StructuralOutput * output) override;
 
   static GammaResult &
   Create(rvsdg::Region & region, rvsdg::output & origin, GammaOutput & gammaOutput)

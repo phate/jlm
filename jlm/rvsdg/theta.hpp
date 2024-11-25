@@ -292,7 +292,7 @@ is_invariant(const ThetaInput * input) noexcept
   return input->result()->origin() == input->argument();
 }
 
-class ThetaOutput final : public structural_output
+class ThetaOutput final : public StructuralOutput
 {
   friend ThetaNode;
   friend ThetaInput;
@@ -301,14 +301,14 @@ public:
   ~ThetaOutput() noexcept override;
 
   ThetaOutput(ThetaNode * node, const std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type)),
+      : StructuralOutput(node, std::move(type)),
         input_(nullptr)
   {}
 
   ThetaNode *
   node() const noexcept
   {
-    return static_cast<ThetaNode *>(structural_output::node());
+    return static_cast<ThetaNode *>(StructuralOutput::node());
   }
 
   [[nodiscard]] ThetaInput *
@@ -374,7 +374,7 @@ public:
   ~ThetaResult() noexcept override;
 
   ThetaResult &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, StructuralOutput * output) override;
 
 private:
   ThetaResult(rvsdg::output & origin, ThetaOutput & thetaOutput)
@@ -403,7 +403,7 @@ public:
   ~ThetaPredicateResult() noexcept override;
 
   ThetaPredicateResult &
-  Copy(rvsdg::output & origin, structural_output * output) override;
+  Copy(rvsdg::output & origin, StructuralOutput * output) override;
 
 private:
   explicit ThetaPredicateResult(rvsdg::output & origin)

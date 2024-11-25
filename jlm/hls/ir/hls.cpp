@@ -51,7 +51,7 @@ backedge_argument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * i
 }
 
 backedge_result &
-backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *backedge_result::create(&origin);
@@ -60,16 +60,16 @@ backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * ou
 ExitResult::~ExitResult() noexcept = default;
 
 ExitResult &
-ExitResult::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   return Create(origin, *output);
 }
 
-jlm::rvsdg::structural_output *
+rvsdg::StructuralOutput *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
   auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
-  auto output = jlm::rvsdg::structural_output::create(this, origin->Type());
+  auto output = rvsdg::StructuralOutput::create(this, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
   auto argument_loop = add_backedge(origin->Type());
@@ -117,7 +117,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
-    auto out = jlm::rvsdg::structural_output::create(loop, output(i)->Type());
+    auto out = rvsdg::StructuralOutput::create(loop, output(i)->Type());
     smap.insert(output(i), out);
     smap.insert(output(i), out);
   }

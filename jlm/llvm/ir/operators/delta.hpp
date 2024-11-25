@@ -377,7 +377,7 @@ class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput>
 
 /** \brief Delta output
  */
-class output final : public rvsdg::structural_output
+class output final : public rvsdg::StructuralOutput
 {
   friend ::jlm::llvm::delta::node;
 
@@ -385,7 +385,7 @@ public:
   ~output() override;
 
   output(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type))
+      : StructuralOutput(node, std::move(type))
   {}
 
 private:
@@ -400,7 +400,7 @@ public:
   delta::node *
   node() const noexcept
   {
-    return static_cast<delta::node *>(structural_output::node());
+    return static_cast<delta::node *>(StructuralOutput::node());
   }
 };
 
@@ -447,7 +447,7 @@ public:
   ~result() override;
 
   result &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   explicit result(rvsdg::output * origin)

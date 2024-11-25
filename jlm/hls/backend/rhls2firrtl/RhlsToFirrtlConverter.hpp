@@ -261,7 +261,7 @@ private:
   jlm::rvsdg::output *
   TraceArgument(rvsdg::RegionArgument * arg);
   jlm::rvsdg::simple_output *
-  TraceStructuralOutput(jlm::rvsdg::structural_output * out);
+  TraceStructuralOutput(rvsdg::StructuralOutput * out);
 
   void
   InitializeMemReq(circt::firrtl::FModuleOp module);

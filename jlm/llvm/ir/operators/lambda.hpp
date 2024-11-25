@@ -477,7 +477,7 @@ class node::cvconstiterator final : public jlm::rvsdg::input::constiterator<cvin
 
 /** \brief Lambda output
  */
-class output final : public jlm::rvsdg::structural_output
+class output final : public rvsdg::StructuralOutput
 {
   friend ::jlm::llvm::lambda::node;
 
@@ -485,7 +485,7 @@ public:
   ~output() override;
 
   output(lambda::node * node, std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type))
+      : StructuralOutput(node, std::move(type))
   {}
 
 private:
@@ -500,7 +500,7 @@ public:
   lambda::node *
   node() const noexcept
   {
-    return jlm::util::AssertedCast<lambda::node>(structural_output::node());
+    return jlm::util::AssertedCast<lambda::node>(StructuralOutput::node());
   }
 };
 
@@ -636,7 +636,7 @@ public:
   ~result() override;
 
   result &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   explicit result(jlm::rvsdg::output * origin)

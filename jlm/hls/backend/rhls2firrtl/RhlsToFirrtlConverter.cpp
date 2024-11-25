@@ -2514,7 +2514,7 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
         // Need to find the source of the outer regions argument
         return TraceArgument(o);
       }
-      else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+      else if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
       {
         // Check if we the input of one loop_node is connected to the output of another
         // StructuralNode, i.e., if the input is connected to the output of another loop_node
@@ -2593,7 +2593,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       {
         origin = TraceArgument(o);
       }
-      if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+      if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
       {
         // Need to trace through the region to find the source node
         origin = TraceStructuralOutput(o);
@@ -2658,7 +2658,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
         {
           origin = TraceArgument(o);
         }
-        if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+        if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
         {
           // Need to trace through the region to find the source node
           origin = TraceStructuralOutput(o);
@@ -2701,7 +2701,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       // We have found the source output
       output = o;
     }
-    else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+    else if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
     {
       // Need to trace through the region to find the source node
       output = TraceStructuralOutput(o);
@@ -2778,7 +2778,7 @@ RhlsToFirrtlConverter::createInstances(
 // Trace a structural output back to the "node" generating the value
 // Returns the output of the node
 jlm::rvsdg::simple_output *
-RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * output)
+RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 {
   auto node = output->node();
 
@@ -2790,7 +2790,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
   }
   JLM_ASSERT(output->results.size() == 1);
   auto origin = output->results.begin().ptr()->origin();
-  if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+  if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
   {
     // Need to trace the output of the nested structural node
     return TraceStructuralOutput(o);

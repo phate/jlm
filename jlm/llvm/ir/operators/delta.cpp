@@ -185,7 +185,7 @@ result::~result()
 {}
 
 result &
-result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *result::create(&origin);

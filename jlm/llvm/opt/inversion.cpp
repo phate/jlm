@@ -130,10 +130,10 @@ to_argument(jlm::rvsdg::output * output)
   return dynamic_cast<rvsdg::RegionArgument *>(output);
 }
 
-static jlm::rvsdg::structural_output *
+static rvsdg::StructuralOutput *
 to_structural_output(jlm::rvsdg::output * output)
 {
-  return dynamic_cast<jlm::rvsdg::structural_output *>(output);
+  return dynamic_cast<rvsdg::StructuralOutput *>(output);
 }
 
 static void

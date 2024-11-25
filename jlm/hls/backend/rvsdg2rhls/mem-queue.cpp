@@ -95,7 +95,7 @@ find_load_store(
   }
 }
 
-jlm::rvsdg::structural_output *
+jlm::rvsdg::StructuralOutput *
 find_loop_output(jlm::rvsdg::structural_input * sti)
 {
   auto sti_arg = sti->arguments.first();

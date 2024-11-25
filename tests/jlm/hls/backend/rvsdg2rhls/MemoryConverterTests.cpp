@@ -356,7 +356,7 @@ TestThetaLoad()
 
   // HLS_LOOP Node
   auto loopOutput =
-      jlm::util::AssertedCast<const jlm::rvsdg::structural_output>(requestNode->input(0)->origin());
+      jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
   jlm::util::AssertedCast<const loop_op>(&loopNode->operation());
   // Loop Result

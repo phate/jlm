@@ -148,7 +148,7 @@ inline_calls(rvsdg::Region * region)
     else if (dynamic_cast<const llvm::CallOperation *>(&(node->operation())))
     {
       auto traced = jlm::hls::trace_call(node->input(0));
-      auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(traced);
+      auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
       if (!so)
       {
         if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
@@ -162,7 +162,7 @@ inline_calls(rvsdg::Region * region)
         }
       }
       JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
-      auto ln = dynamic_cast<const jlm::rvsdg::structural_output *>(traced)->node();
+      auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
       llvm::inlineCall(
           dynamic_cast<jlm::rvsdg::simple_node *>(node),
           dynamic_cast<const llvm::lambda::node *>(ln));

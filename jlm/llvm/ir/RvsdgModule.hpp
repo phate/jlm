@@ -78,7 +78,7 @@ private:
 
 public:
   GraphExport &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static GraphExport &
   Create(rvsdg::output & origin, std::string name)

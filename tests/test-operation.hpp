@@ -55,7 +55,7 @@ class GraphExport final : public rvsdg::GraphExport
 
 public:
   GraphExport &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static GraphExport &
   Create(rvsdg::output & origin, std::string name)
@@ -280,7 +280,7 @@ public:
   }
 };
 
-class StructuralNodeOutput final : public rvsdg::structural_output
+class StructuralNodeOutput final : public rvsdg::StructuralOutput
 {
   friend structural_node;
 
@@ -289,7 +289,7 @@ public:
 
 private:
   StructuralNodeOutput(structural_node & node, std::shared_ptr<const rvsdg::Type> type)
-      : rvsdg::structural_output(&node, std::move(type))
+      : StructuralOutput(&node, std::move(type))
   {}
 };
 
@@ -336,7 +336,7 @@ public:
   ~StructuralNodeResult() noexcept override;
 
   StructuralNodeResult &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   StructuralNodeResult(rvsdg::output & origin, StructuralNodeOutput * output)
@@ -513,26 +513,23 @@ private:
   TestGraphResult(
       rvsdg::Region & region,
       jlm::rvsdg::output & origin,
-      jlm::rvsdg::structural_output * output)
+      rvsdg::StructuralOutput * output)
       : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
   {}
 
-  TestGraphResult(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+  TestGraphResult(rvsdg::output & origin, rvsdg::StructuralOutput * output)
       : TestGraphResult(*origin.region(), origin, output)
   {}
 
 public:
   TestGraphResult &
-  Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override
   {
     return Create(origin, output);
   }
 
   static TestGraphResult &
-  Create(
-      rvsdg::Region & region,
-      jlm::rvsdg::output & origin,
-      jlm::rvsdg::structural_output * output)
+  Create(rvsdg::Region & region, jlm::rvsdg::output & origin, rvsdg::StructuralOutput * output)
   {
     auto graphResult = new TestGraphResult(region, origin, output);
     origin.region()->append_result(graphResult);
@@ -540,7 +537,7 @@ public:
   }
 
   static TestGraphResult &
-  Create(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+  Create(rvsdg::output & origin, rvsdg::StructuralOutput * output)
   {
     return Create(*origin.region(), origin, output);
   }
