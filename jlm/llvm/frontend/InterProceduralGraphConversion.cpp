@@ -303,7 +303,7 @@ public:
   }
 
   void
-  End(const rvsdg::graph & graph) noexcept
+  End(const rvsdg::Graph & graph) noexcept
   {
     AddTimer(Label::Timer).stop();
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
@@ -1095,7 +1095,7 @@ ConvertInterProceduralGraphNode(
 static void
 ConvertStronglyConnectedComponent(
     const std::unordered_set<const ipgraph_node *> & stronglyConnectedComponent,
-    rvsdg::graph & graph,
+    rvsdg::Graph & graph,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {

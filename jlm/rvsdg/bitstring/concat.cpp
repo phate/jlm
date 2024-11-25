@@ -86,7 +86,7 @@ class concat_normal_form final : public simple_normal_form
 public:
   virtual ~concat_normal_form() noexcept;
 
-  concat_normal_form(jlm::rvsdg::node_normal_form * parent, jlm::rvsdg::graph * graph)
+  concat_normal_form(jlm::rvsdg::node_normal_form * parent, Graph * graph)
       : simple_normal_form(typeid(bitconcat_op), parent, graph),
         enable_reducible_(true),
         enable_flatten_(true)
@@ -233,7 +233,7 @@ static node_normal_form *
 get_default_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
 {
   return new concat_normal_form(parent, graph);
 }

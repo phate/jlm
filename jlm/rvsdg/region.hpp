@@ -256,7 +256,7 @@ class Region
 public:
   ~Region() noexcept;
 
-  Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
+  Region(rvsdg::Region * parent, Graph * graph);
 
   Region(rvsdg::StructuralNode * node, size_t index);
 
@@ -351,7 +351,7 @@ public:
     return { BottomNodes_.begin(), BottomNodes_.end() };
   }
 
-  inline jlm::rvsdg::graph *
+  [[nodiscard]] Graph *
   graph() const noexcept
   {
     return graph_;
@@ -736,7 +736,7 @@ private:
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
   size_t index_;
-  jlm::rvsdg::graph * graph_;
+  Graph * graph_;
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;

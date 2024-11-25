@@ -62,7 +62,7 @@ test_pullin_bottom()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 

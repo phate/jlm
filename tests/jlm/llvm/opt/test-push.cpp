@@ -111,7 +111,7 @@ test_push_theta_bottom()
   auto pt = PointerType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");

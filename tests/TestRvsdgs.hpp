@@ -26,7 +26,7 @@ public:
     return *module_;
   }
 
-  const jlm::rvsdg::graph &
+  const rvsdg::Graph &
   graph()
   {
     return module().Rvsdg();

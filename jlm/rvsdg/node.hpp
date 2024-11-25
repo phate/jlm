@@ -26,7 +26,7 @@ namespace base
 class type;
 }
 
-class graph;
+class Graph;
 class node_normal_form;
 class output;
 class SubstitutionMap;
@@ -822,7 +822,7 @@ protected:
   }
 
 public:
-  inline jlm::rvsdg::graph *
+  [[nodiscard]] Graph *
   graph() const noexcept
   {
     return graph_;
@@ -884,7 +884,7 @@ public:
 
 private:
   size_t depth_;
-  jlm::rvsdg::graph * graph_;
+  Graph * graph_;
   rvsdg::Region * region_;
   std::unique_ptr<jlm::rvsdg::operation> operation_;
   std::vector<std::unique_ptr<node_input>> inputs_;

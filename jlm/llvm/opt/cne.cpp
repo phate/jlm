@@ -28,7 +28,7 @@ public:
   {}
 
   void
-  start_mark_stat(const jlm::rvsdg::graph & graph) noexcept
+  start_mark_stat(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
@@ -48,7 +48,7 @@ public:
   }
 
   void
-  end_divert_stat(const jlm::rvsdg::graph & graph) noexcept
+  end_divert_stat(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
     AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));

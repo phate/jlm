@@ -208,7 +208,7 @@ private:
    * @return A string that contains the region tree.
    */
   static std::string
-  ToRegionTree(const rvsdg::graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
+  ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
 
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 };

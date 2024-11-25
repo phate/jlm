@@ -16,7 +16,7 @@ test_gamma(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto cmp = &jlm::tests::GraphImport::Create(graph, bittype::Create(2), "");
   auto v0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
   auto v1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
@@ -53,7 +53,7 @@ test_predicate_reduction(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   GammaOperation::normal_form(&graph)->set_predicate_reduction(true);
 
   bittype bits2(2);
@@ -87,7 +87,7 @@ test_invariant_reduction(void)
 
   auto vtype = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   GammaOperation::normal_form(&graph)->set_invariant_reduction(true);
 
   auto pred = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
@@ -112,7 +112,7 @@ test_control_constant_reduction()
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   GammaOperation::normal_form(&graph)->set_control_constant_reduction(true);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(1), "x");
@@ -150,7 +150,7 @@ test_control_constant_reduction2()
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   GammaOperation::normal_form(&graph)->set_control_constant_reduction(true);
 
   auto import = &jlm::tests::GraphImport::Create(graph, bittype::Create(2), "import");
@@ -182,7 +182,7 @@ TestRemoveGammaOutputsWhere()
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  Graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
   ControlType ct(2);
 
@@ -244,7 +244,7 @@ TestPruneOutputs()
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  Graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
   ControlType ct(2);
 
@@ -293,7 +293,7 @@ TestIsInvariant()
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  Graph rvsdg;
   auto vt = jlm::tests::valuetype::Create();
   ControlType ct(2);
 

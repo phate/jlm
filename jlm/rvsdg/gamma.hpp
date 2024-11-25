@@ -25,7 +25,7 @@ public:
   gamma_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      Graph * graph) noexcept;
 
   virtual bool
   normalize_node(jlm::rvsdg::node * node) const override;
@@ -94,7 +94,7 @@ public:
   operator==(const operation & other) const noexcept override;
 
   static jlm::rvsdg::gamma_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::gamma_normal_form *>(
         graph->node_normal_form(typeid(GammaOperation)));

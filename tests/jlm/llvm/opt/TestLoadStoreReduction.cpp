@@ -25,7 +25,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_store_reducible(false);

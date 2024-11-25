@@ -26,7 +26,7 @@ namespace jlm::tests
  */
 class GraphImport final : public rvsdg::GraphImport
 {
-  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+  GraphImport(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
       : rvsdg::GraphImport(graph, std::move(type), std::move(name))
   {}
 
@@ -35,7 +35,7 @@ public:
   Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
 
   static GraphImport &
-  Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+  Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
   {
     auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
     graph.root()->append_argument(graphImport);

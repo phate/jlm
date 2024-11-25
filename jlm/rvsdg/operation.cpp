@@ -15,7 +15,7 @@ operation::~operation() noexcept
 {}
 
 jlm::rvsdg::node_normal_form *
-operation::normal_form(jlm::rvsdg::graph * graph) noexcept
+operation::normal_form(Graph * graph) noexcept
 {
   return graph->node_normal_form(typeid(operation));
 }
@@ -52,7 +52,7 @@ simple_op::result(size_t index) const noexcept
 }
 
 jlm::rvsdg::simple_normal_form *
-simple_op::normal_form(jlm::rvsdg::graph * graph) noexcept
+simple_op::normal_form(Graph * graph) noexcept
 {
   return static_cast<jlm::rvsdg::simple_normal_form *>(graph->node_normal_form(typeid(simple_op)));
 }
@@ -66,7 +66,7 @@ structural_op::operator==(const operation & other) const noexcept
 }
 
 jlm::rvsdg::structural_normal_form *
-structural_op::normal_form(jlm::rvsdg::graph * graph) noexcept
+structural_op::normal_form(Graph * graph) noexcept
 {
   return static_cast<structural_normal_form *>(graph->node_normal_form(typeid(structural_op)));
 }

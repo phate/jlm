@@ -25,7 +25,7 @@ public:
   unary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   virtual bool
   normalize_node(jlm::rvsdg::node * node) const override;
@@ -72,7 +72,7 @@ public:
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const = 0;
 
   static jlm::rvsdg::unary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::unary_normal_form *>(graph->node_normal_form(typeid(unary_op)));
   }

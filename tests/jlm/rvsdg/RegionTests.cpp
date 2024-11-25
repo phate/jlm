@@ -20,7 +20,7 @@ IteratorRanges()
   // Arrange
   auto valueType = valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
 
   auto structuralNode = structural_node::create(graph.root(), 1);
   auto & subregion = *structuralNode->subregion(0);
@@ -91,7 +91,7 @@ Contains()
   // Arrange
   auto valueType = valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
@@ -124,7 +124,7 @@ static int
 IsRootRegion()
 {
   // Arrange
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
 
   auto structuralNode = jlm::tests::structural_node::create(graph.root(), 1);
 
@@ -146,7 +146,7 @@ NumRegions_EmptyRvsdg()
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   // Act & Assert
   assert(Region::NumRegions(*graph.root()) == 1);
@@ -165,7 +165,7 @@ NumRegions_NonEmptyRvsdg()
   using namespace jlm::rvsdg;
 
   // Arrange
-  jlm::rvsdg::graph graph;
+  const Graph graph;
   auto structuralNode = jlm::tests::structural_node::create(graph.root(), 4);
   jlm::tests::structural_node::create(structuralNode->subregion(0), 2);
   jlm::tests::structural_node::create(structuralNode->subregion(3), 5);
@@ -187,7 +187,7 @@ RemoveResultsWhere()
   using namespace jlm::tests;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
@@ -242,7 +242,7 @@ RemoveArgumentsWhere()
   using namespace jlm::tests;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
@@ -296,7 +296,7 @@ PruneArguments()
   using namespace jlm::tests;
 
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(rvsdg.root(), &rvsdg);
 
   auto valueType = jlm::tests::valuetype::Create();
@@ -333,7 +333,7 @@ ToTree_EmptyRvsdg()
   using namespace jlm::rvsdg;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
 
   // Act
   auto tree = Region::ToTree(*rvsdg.root());
@@ -354,7 +354,7 @@ ToTree_EmptyRvsdgWithAnnotations()
   using namespace jlm::util;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
 
   AnnotationMap annotationMap;
   annotationMap.AddAnnotation(rvsdg.root(), Annotation("NumNodes", rvsdg.root()->nnodes()));
@@ -379,7 +379,7 @@ ToTree_RvsdgWithStructuralNodes()
   using namespace jlm::rvsdg;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
   auto structuralNode = jlm::tests::structural_node::create(rvsdg.root(), 2);
   jlm::tests::structural_node::create(structuralNode->subregion(0), 1);
   jlm::tests::structural_node::create(structuralNode->subregion(1), 3);
@@ -412,7 +412,7 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
   using namespace jlm::util;
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
   auto structuralNode1 = jlm::tests::structural_node::create(rvsdg.root(), 2);
   auto structuralNode2 = jlm::tests::structural_node::create(structuralNode1->subregion(1), 3);
   auto subregion2 = structuralNode2->subregion(2);
@@ -451,7 +451,7 @@ BottomNodeTests()
   auto valueType = valuetype::Create();
 
   // Arrange
-  graph rvsdg;
+  Graph rvsdg;
 
   // Act & Assert
   // A newly created node without any users should automatically be added to the bottom nodes

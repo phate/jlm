@@ -60,7 +60,7 @@ InvariantValueRedirection::run(
 }
 
 void
-InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
+InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 {
   // We require a topdown traversal in the root region to ensure that a lambda node is visited
   // before its call nodes. This ensures that all invariant values are redirected in the lambda

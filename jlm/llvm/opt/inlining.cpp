@@ -25,14 +25,14 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph)
+  start(const rvsdg::Graph & graph)
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  stop(const jlm::rvsdg::graph & graph)
+  stop(const rvsdg::Graph & graph)
   {
     AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
     GetTimer(Label::Timer).stop();
@@ -142,7 +142,7 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
 }
 
 static void
-inlining(jlm::rvsdg::graph & rvsdg)
+inlining(rvsdg::Graph & rvsdg)
 {
   for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
   {

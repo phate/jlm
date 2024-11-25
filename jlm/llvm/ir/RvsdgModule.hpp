@@ -22,7 +22,7 @@ class GraphImport final : public rvsdg::GraphImport
 {
 private:
   GraphImport(
-      rvsdg::graph & graph,
+      rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::ValueType> valueType,
       std::string name,
       llvm::linkage linkage)
@@ -49,7 +49,7 @@ public:
 
   static GraphImport &
   Create(
-      rvsdg::graph & graph,
+      rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::ValueType> valueType,
       std::string name,
       llvm::linkage linkage)

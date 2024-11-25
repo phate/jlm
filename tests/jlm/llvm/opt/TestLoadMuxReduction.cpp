@@ -23,7 +23,7 @@ TestSuccess()
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
@@ -77,7 +77,7 @@ TestWrongNumberOfOperands()
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);
@@ -122,7 +122,7 @@ TestLoadWithoutStates()
   auto valueType = jlm::tests::valuetype::Create();
   auto pointerType = PointerType::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(false);
   nf->set_load_mux_reducible(false);

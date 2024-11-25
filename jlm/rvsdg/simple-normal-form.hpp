@@ -21,7 +21,7 @@ public:
   simple_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      Graph * graph) noexcept;
 
   virtual bool
   normalize_node(jlm::rvsdg::node * node) const override;
