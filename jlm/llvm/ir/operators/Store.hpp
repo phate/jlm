@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeReduction.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
@@ -567,6 +568,70 @@ private:
 
     throw jlm::util::error("Expected value type.");
   }
+};
+
+class StoreMuxReduction final : public rvsdg::NodeNormalization<StoreNonVolatileOperation>
+{
+public:
+  ~StoreMuxReduction() override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+};
+
+class StoreStoreReduction final : public rvsdg::NodeNormalization<StoreNonVolatileOperation>
+{
+public:
+  ~StoreStoreReduction() override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+};
+
+class StoreAllocaReduction final : public rvsdg::NodeNormalization<StoreNonVolatileOperation>
+{
+public:
+  ~StoreAllocaReduction() override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+};
+
+class StoreDuplicateStateReduction final : public rvsdg::NodeNormalization<StoreNonVolatileOperation>
+{
+public:
+  ~StoreDuplicateStateReduction() override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
 };
 
 }

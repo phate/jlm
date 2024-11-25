@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeReduction.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
@@ -573,6 +574,204 @@ public:
   {
     return *(new LoadNonVolatileNode(region, loadOperation, operands));
   }
+};
+
+/**
+ * sx1 = MemStateMerge si1 ... siM
+ * v sl1 = LoadNonVolatile a sx1
+ * =>
+ * v sl1 ... slM = LoadNonVolatile a si1 ... siM
+ * sx1 = MemStateMerge sl1 ... slM
+ *
+ * FIXME: The reduction can be generalized: A load node can have multiple operands from different
+ * merge nodes.
+ */
+class LoadMuxReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOperation>
+{
+public:
+  ~LoadMuxReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> & operands)
+      override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  static LoadMuxReduction &
+  GetInstance() noexcept;
+
+private:
+  LoadMuxReduction() noexcept;
+};
+
+/**
+ * If the producer of a load's address is an alloca, then we can remove
+ * all state edges originating from other alloca operations.
+ *
+ *  a1 s1 = alloca ...
+ *  a2 s2 = alloca ...
+ *  s3 = mux_op s1
+ *  v sl1 sl2 sl3 = LoadNonVolatile a1 s1 s2 s3
+ *  =>
+ *  ...
+ *  v sl1 sl3 = LoadNonVolatile a1 s1 s3
+ */
+class LoadAllocaReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOperation>
+{
+public:
+  ~LoadAllocaReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> & operands)
+      override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  static LoadAllocaReduction &
+  GetInstance() noexcept;
+
+private:
+  LoadAllocaReduction() noexcept;
+};
+
+/**
+ * s2 = StoreNonVolatile a v1 s1
+ * v2 s3 = LoadNonVolatile a s2
+ * ... = any_op v2
+ * =>
+ * s2 = StoreNonVolatile a v1 s1
+ * ... = any_op v1
+ */
+class LoadStoreReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOperation>
+{
+public:
+  ~LoadStoreReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const LoadNonVolatileOperation & loadOperation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  static LoadStoreReduction &
+  GetInstance() noexcept;
+
+private:
+  LoadStoreReduction() noexcept;
+};
+
+/**
+ *  a1 sa1 = Alloca ...
+ *  a2 sa2 = Alloca ...
+ *  ss1 = StoreNonVolatile a1 ... sa1
+ *  ss2 = StoreNonVolatile a2 ... sa2
+ *  ... = LoadNonVolatile a1 ss1 ss2
+ *  =>
+ *  ...
+ *  ... = LoadNonVolatile a1 ss1
+ */
+class LoadStoreStateReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOperation>
+{
+public:
+  ~LoadStoreStateReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  static LoadStoreStateReduction &
+  GetInstance() noexcept;
+
+private:
+  LoadStoreStateReduction() noexcept;
+
+  static bool
+  IsReducibleState(const rvsdg::output * state, const rvsdg::node * loadAlloca);
+};
+
+/**
+ * v so1 so2 so3 = LoadNonVolatile a si1 si1 si1
+ * =>
+ * v so1 = LoadNonVolatile a si1
+ */
+class LoadDuplicateStateReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOperation>
+{
+public:
+  ~LoadDuplicateStateReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  static LoadDuplicateStateReduction &
+  GetInstance() noexcept;
+
+private:
+  LoadDuplicateStateReduction() noexcept;
+};
+
+/**
+ *  _ so1 = LoadNonVolatile _ si1
+ *  _ so2 = LoadNonVolatile _ so1
+ *  _ so3 = LoadNonVolatile _ so2
+ *  =>
+ *  _ so1 = LoadNonVolatile _ si1
+ *  _ so2 = LoadNonVolatile _ si1
+ *  _ so3 = LoadNonVolatile _ si1
+ */
+class LoadLoadStateReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOperation>
+{
+public:
+  ~LoadLoadStateReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  std::vector<rvsdg::output *>
+  ApplyNormalization(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands) override;
+
+  static LoadLoadStateReduction &
+  GetInstance() noexcept;
+
+private:
+  LoadLoadStateReduction() noexcept;
+
+  // FIXME: This function returns the corresponding state input for a state output of a load
+  // node. It should be part of a load node class.
+  static rvsdg::input &
+  GetLoadStateInput(const rvsdg::output & output);
+
+  static rvsdg::output &
+  ReduceState(
+      size_t index,
+      rvsdg::output & operand,
+      std::vector<std::vector<rvsdg::output *>> & mxStates);
 };
 
 }

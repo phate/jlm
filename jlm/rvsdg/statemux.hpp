@@ -8,6 +8,7 @@
 #define JLM_RVSDG_STATEMUX_HPP
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeReduction.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
@@ -125,6 +126,39 @@ create_state_split(
 {
   return create_state_mux(std::move(type), { operand }, nresults);
 }
+
+class MuxMuxReduction final : public NodeNormalization<mux_op>
+{
+public:
+  ~MuxMuxReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(const mux_op & operation, const std::vector<output *> & operands) override;
+
+  std::vector<output *>
+  ApplyNormalization(const mux_op & operation, const std::vector<output *> & operands) override;
+
+private:
+  void
+  ResetState()
+  {
+    MuxNode_ = nullptr;
+  }
+
+  node * MuxNode_{};
+};
+
+class MuxDuplicateOriginReduction final : public NodeNormalization<mux_op>
+{
+public:
+  ~MuxDuplicateOriginReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(const mux_op & operation, const std::vector<output *> & operands) override;
+
+  std::vector<output *>
+  ApplyNormalization(const mux_op & operation, const std::vector<output *> & operands) override;
+};
 
 }
 

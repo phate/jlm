@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/statemux.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::rvsdg
 {
@@ -35,75 +36,87 @@ mux_op::copy() const
   return std::unique_ptr<jlm::rvsdg::operation>(new mux_op(*this));
 }
 
-/* mux normal form */
+MuxMuxReduction::~MuxMuxReduction() noexcept = default;
 
-static jlm::rvsdg::node *
-is_mux_mux_reducible(const std::vector<jlm::rvsdg::output *> & ops)
+bool
+MuxMuxReduction::IsApplicable(const mux_op & operation, const std::vector<output *> & operands)
 {
-  std::unordered_set<jlm::rvsdg::output *> operands(ops.begin(), ops.end());
+  ResetState();
+
+  const util::HashSet<output *> operandSet(operands.begin(), operands.end());
 
   for (const auto & operand : operands)
   {
-    auto node = output::GetNode(*operand);
+    const auto node = output::GetNode(*operand);
     if (!node || !is_mux_op(node->operation()))
       continue;
 
     size_t n;
     for (n = 0; n < node->noutputs(); n++)
     {
-      auto output = node->output(n);
-      if (operands.find(output) == operands.end() || output->nusers() != 1)
+      if (const auto output = node->output(n);
+          !operandSet.Contains(output) || output->nusers() != 1)
         break;
     }
     if (n == node->noutputs())
-      return node;
+    {
+      MuxNode_ = node;
+      return true;
+    }
   }
 
-  return nullptr;
+  return false;
 }
 
-static bool
-is_multiple_origin_reducible(const std::vector<jlm::rvsdg::output *> & operands)
+std::vector<output *>
+MuxMuxReduction::ApplyNormalization(const mux_op & operation, const std::vector<output *> & operands)
 {
-  std::unordered_set<jlm::rvsdg::output *> set(operands.begin(), operands.end());
-  return set.size() != operands.size();
-}
-
-static std::vector<jlm::rvsdg::output *>
-perform_multiple_origin_reduction(
-    const jlm::rvsdg::mux_op & op,
-    const std::vector<jlm::rvsdg::output *> & operands)
-{
-  std::unordered_set<jlm::rvsdg::output *> set(operands.begin(), operands.end());
-  return create_state_mux(op.result(0), { set.begin(), set.end() }, op.nresults());
-}
-
-static std::vector<jlm::rvsdg::output *>
-perform_mux_mux_reduction(
-    const jlm::rvsdg::mux_op & op,
-    const jlm::rvsdg::node * muxnode,
-    const std::vector<jlm::rvsdg::output *> & old_operands)
-{
-  JLM_ASSERT(is_mux_op(muxnode->operation()));
+  JLM_ASSERT(is_mux_op(MuxNode_->operation()));
 
   bool reduced = false;
-  std::vector<jlm::rvsdg::output *> new_operands;
-  for (const auto & operand : old_operands)
+  std::vector<output *> newOperands;
+  for (const auto & operand : operands)
   {
-    if (jlm::rvsdg::output::GetNode(*operand) == muxnode && !reduced)
+    if (output::GetNode(*operand) == MuxNode_ && !reduced)
     {
       reduced = true;
-      auto tmp = operands(muxnode);
-      new_operands.insert(new_operands.end(), tmp.begin(), tmp.end());
+      auto tmp = rvsdg::operands(MuxNode_);
+      newOperands.insert(newOperands.end(), tmp.begin(), tmp.end());
       continue;
     }
 
-    if (jlm::rvsdg::output::GetNode(*operand) != muxnode)
-      new_operands.push_back(operand);
+    if (output::GetNode(*operand) != MuxNode_)
+      newOperands.push_back(operand);
   }
 
-  return create_state_mux(op.result(0), new_operands, op.nresults());
+  return create_state_mux(operation.result(0), newOperands, operation.nresults());
 }
+
+MuxDuplicateOriginReduction::~MuxDuplicateOriginReduction() noexcept = default;
+
+bool
+MuxDuplicateOriginReduction::IsApplicable(
+    const mux_op & operation,
+    const std::vector<output *> & operands)
+{
+  const util::HashSet<output *> set(operands.begin(), operands.end());
+  return set.Size() != operands.size();
+}
+
+std::vector<output *>
+MuxDuplicateOriginReduction::ApplyNormalization(
+    const mux_op & operation,
+    const std::vector<output *> & operands)
+{
+  const util::HashSet<output *> set(operands.begin(), operands.end());
+  return create_state_mux(
+      operation.result(0),
+      { set.Items().begin(), set.Items().end() },
+      operation.nresults());
+}
+
+static MuxMuxReduction muxMuxReduction;
+static MuxDuplicateOriginReduction muxDuplicateOriginReduction;
 
 mux_normal_form::~mux_normal_form() noexcept
 {}
@@ -124,22 +137,23 @@ bool
 mux_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
   JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op *>(&node->operation()));
-  auto op = static_cast<const jlm::rvsdg::mux_op *>(&node->operation());
+  const auto & operation = *util::AssertedCast<const mux_op>(&node->operation());
+  const auto operands = rvsdg::operands(node);
 
   if (!get_mutable())
     return true;
 
-  auto muxnode = is_mux_mux_reducible(operands(node));
-  if (get_mux_mux_reducible() && muxnode)
+  if (get_mux_mux_reducible() && muxMuxReduction.IsApplicable(operation, operands))
   {
-    divert_users(node, perform_mux_mux_reduction(*op, muxnode, operands(node)));
+    divert_users(node, muxMuxReduction.ApplyNormalization(operation, operands));
     remove(node);
     return false;
   }
 
-  if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands(node)))
+  if (get_multiple_origin_reducible()
+      && muxDuplicateOriginReduction.IsApplicable(operation, operands))
   {
-    divert_users(node, perform_multiple_origin_reduction(*op, operands(node)));
+    divert_users(node, muxDuplicateOriginReduction.ApplyNormalization(operation, operands));
     remove(node);
     return false;
   }
@@ -149,22 +163,22 @@ mux_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
 std::vector<jlm::rvsdg::output *>
 mux_normal_form::normalized_create(
-    rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
-    const std::vector<jlm::rvsdg::output *> & operands) const
+    Region * region,
+    const simple_op & op,
+    const std::vector<output *> & operands) const
 {
   JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op *>(&op));
-  auto mop = static_cast<const jlm::rvsdg::mux_op *>(&op);
+  const auto & operation = *util::AssertedCast<const mux_op>(&op);
 
   if (!get_mutable())
     return simple_normal_form::normalized_create(region, op, operands);
 
-  auto muxnode = is_mux_mux_reducible(operands);
-  if (get_mux_mux_reducible() && muxnode)
-    return perform_mux_mux_reduction(*mop, muxnode, operands);
+  if (get_mux_mux_reducible() && muxMuxReduction.IsApplicable(operation, operands))
+    return muxMuxReduction.ApplyNormalization(operation, operands);
 
-  if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
-    return perform_multiple_origin_reduction(*mop, operands);
+  if (get_multiple_origin_reducible()
+      && muxDuplicateOriginReduction.IsApplicable(operation, operands))
+    return muxDuplicateOriginReduction.ApplyNormalization(operation, operands);
 
   return simple_normal_form::normalized_create(region, op, operands);
 }

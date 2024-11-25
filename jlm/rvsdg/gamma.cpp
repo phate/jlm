@@ -11,6 +11,128 @@
 namespace jlm::rvsdg
 {
 
+GammaPredicateReduction::~GammaPredicateReduction() noexcept = default;
+
+bool
+GammaPredicateReduction::IsApplicable(const rvsdg::node & node)
+{
+  const auto gammaNode = dynamic_cast<const GammaNode *>(&node);
+  if (gammaNode == nullptr)
+    return false;
+
+  const auto constant = output::GetNode(*gammaNode->predicate()->origin());
+  return constant && is_ctlconstant_op(constant->operation());
+}
+
+void
+GammaPredicateReduction::ApplyReduction(rvsdg::node & node)
+{
+  const auto gammaNode = util::AssertedCast<GammaNode>(&node);
+
+  const auto origin = gammaNode->predicate()->origin();
+  const auto constant = static_cast<node_output *>(origin)->node();
+  const auto cop = static_cast<const ctlconstant_op *>(&constant->operation());
+  const auto alternative = cop->value().alternative();
+
+  SubstitutionMap substitutionMap;
+  for (auto it = gammaNode->begin_entryvar(); it != gammaNode->end_entryvar(); it++)
+    substitutionMap.insert(it->argument(alternative), it->origin());
+
+  gammaNode->subregion(alternative)->copy(gammaNode->region(), substitutionMap, false, false);
+
+  for (auto it = gammaNode->begin_exitvar(); it != gammaNode->end_exitvar(); it++)
+    it->divert_users(substitutionMap.lookup(it->result(alternative)->origin()));
+
+  remove(gammaNode);
+}
+
+GammaControlConstantReduction::~GammaControlConstantReduction() noexcept = default;
+
+bool
+GammaControlConstantReduction::IsApplicable(const rvsdg::node & node)
+{
+  ResetState();
+
+  const auto gammaNode = dynamic_cast<const GammaNode *>(&node);
+  if (gammaNode == nullptr)
+    return false;
+
+  // check gamma predicate
+  const auto match = output::GetNode(*gammaNode->predicate()->origin());
+  if (!is<match_op>(match))
+    return false;
+
+  // check number of alternatives
+  const auto match_op = static_cast<const jlm::rvsdg::match_op *>(&match->operation());
+  std::unordered_set<uint64_t> set({ match_op->default_alternative() });
+  for (const auto & [fst, snd] : *match_op)
+    set.insert(snd);
+
+  if (set.size() != gammaNode->nsubregions())
+    return false;
+
+  // check for control constants
+  for (auto it = gammaNode->begin_exitvar(); it != gammaNode->end_exitvar(); ++it)
+  {
+    if (!is_ctltype(it->type()))
+      continue;
+
+    size_t n;
+    for (n = 0; n < it->nresults(); n++)
+    {
+      const auto constantNode = output::GetNode(*it->result(n)->origin());
+      if (!is<ctlconstant_op>(constantNode))
+        break;
+
+      const auto op = static_cast<const ctlconstant_op *>(&constantNode->operation());
+      if (op->value().nalternatives() != 2)
+        break;
+    }
+    if (n == it->nresults())
+      Outputs_.Insert(it.output());
+  }
+
+  return true;
+}
+
+void
+GammaControlConstantReduction::ApplyReduction(rvsdg::node & node)
+{
+  const auto gammaNode = util::AssertedCast<GammaNode>(&node);
+  const auto predicateOrigin = static_cast<node_output *>(gammaNode->predicate()->origin());
+  const auto matchNode = predicateOrigin->node();
+  auto & matchOperation = to_match_op(matchNode->operation());
+
+  std::unordered_map<uint64_t, uint64_t> map;
+  for (const auto & [fst, snd] : matchOperation)
+    map[snd] = fst;
+
+  for (auto xv = gammaNode->begin_exitvar(); xv != gammaNode->end_exitvar(); xv++)
+  {
+    if (!Outputs_.Contains(xv.output()))
+      continue;
+
+    size_t defaultAlternative = 0;
+    size_t numAlternatives = 0;
+    std::unordered_map<uint64_t, uint64_t> newMapping;
+    for (size_t n = 0; n < xv->nresults(); n++)
+    {
+      const auto origin = static_cast<node_output *>(xv->result(n)->origin());
+      auto & value = to_ctlconstant_op(origin->node()->operation()).value();
+      numAlternatives = value.nalternatives();
+      if (map.find(n) != map.end())
+        newMapping[map[n]] = value.alternative();
+      else
+        defaultAlternative = value.alternative();
+    }
+
+    const auto origin = matchNode->input(0)->origin();
+    const auto m =
+        match(matchOperation.nbits(), newMapping, defaultAlternative, numAlternatives, origin);
+    xv->divert_users(m);
+  }
+}
+
 /* gamma normal form */
 
 static bool

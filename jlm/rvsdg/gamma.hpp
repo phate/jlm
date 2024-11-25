@@ -9,8 +9,10 @@
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeReduction.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/structural-normal-form.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::rvsdg
 {
@@ -581,6 +583,39 @@ GammaNode::RemoveGammaOutputsWhere(const F & match)
     }
   }
 }
+
+class GammaPredicateReduction final : NodeReduction
+{
+public:
+  ~GammaPredicateReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(const rvsdg::node & node) override;
+
+  void
+  ApplyReduction(rvsdg::node & node) override;
+};
+
+class GammaControlConstantReduction final : NodeReduction
+{
+public:
+  ~GammaControlConstantReduction() noexcept override;
+
+  [[nodiscard]] bool
+  IsApplicable(const rvsdg::node & node) override;
+
+  void
+  ApplyReduction(rvsdg::node & node) override;
+
+private:
+  void
+  ResetState()
+  {
+    Outputs_ = {};
+  }
+
+  util::HashSet<structural_output *> Outputs_ = {};
+};
 
 }
 
