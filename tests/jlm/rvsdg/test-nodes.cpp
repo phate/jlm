@@ -23,8 +23,8 @@ test_node_copy(void)
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
   auto n1 = jlm::tests::structural_node::create(graph.root(), 3);
-  auto i1 = structural_input::create(n1, s, stype);
-  auto i2 = structural_input::create(n1, v, vtype);
+  auto i1 = StructuralInput::create(n1, s, stype);
+  auto i2 = StructuralInput::create(n1, v, vtype);
   auto o1 = StructuralOutput::create(n1, stype);
   auto o2 = StructuralOutput::create(n1, vtype);
 

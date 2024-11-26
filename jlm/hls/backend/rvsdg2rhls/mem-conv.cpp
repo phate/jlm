@@ -30,7 +30,7 @@ jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
     auto parent_response = route_response(target->node()->region(), response);
     auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
     JLM_ASSERT(ln);
-    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
+    auto input = rvsdg::StructuralInput::create(ln, parent_response, parent_response->Type());
     auto & argument = EntryArgument::Create(*target, *input, response->Type());
     return &argument;
   }
@@ -205,7 +205,7 @@ trace_function_calls(
         }
       }
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : sti->arguments)
       {
@@ -414,7 +414,7 @@ TracePointer(
         }
       }
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : sti->arguments)
       {
@@ -495,7 +495,7 @@ IsDecoupledFunctionPointer(
         }
       }
     }
-    else if (auto structuralInput = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto structuralInput = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : structuralInput->arguments)
       {

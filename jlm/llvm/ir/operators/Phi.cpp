@@ -169,7 +169,7 @@ rvargument::~rvargument()
 {}
 
 rvargument &
-rvargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+rvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
   return *rvargument::create(&region, Type());
@@ -181,7 +181,7 @@ cvargument::~cvargument()
 {}
 
 cvargument &
-cvargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   auto phiInput = util::AssertedCast<cvinput>(input);
   return *cvargument::create(&region, phiInput, Type());

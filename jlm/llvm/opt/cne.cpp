@@ -255,7 +255,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, cnectx & ctx)
 }
 
 static void
-mark_arguments(jlm::rvsdg::structural_input * i1, jlm::rvsdg::structural_input * i2, cnectx & ctx)
+mark_arguments(rvsdg::StructuralInput * i1, rvsdg::StructuralInput * i2, cnectx & ctx)
 {
   JLM_ASSERT(i1->node() && i1->node() == i2->node());
   JLM_ASSERT(i1->arguments.size() == i2->arguments.size());

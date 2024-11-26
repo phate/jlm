@@ -620,21 +620,21 @@ public:
 private:
   EntryArgument(
       rvsdg::Region & region,
-      rvsdg::structural_input & input,
+      rvsdg::StructuralInput & input,
       const std::shared_ptr<const rvsdg::Type> type)
       : rvsdg::RegionArgument(&region, &input, std::move(type))
   {}
 
 public:
   EntryArgument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
   static EntryArgument &
   Create(
       rvsdg::Region & region,
-      rvsdg::structural_input & input,
+      rvsdg::StructuralInput & input,
       const std::shared_ptr<const rvsdg::Type> type)
   {
     auto argument = new EntryArgument(region, input, std::move(type));
@@ -658,7 +658,7 @@ public:
   }
 
   backedge_argument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   backedge_argument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)

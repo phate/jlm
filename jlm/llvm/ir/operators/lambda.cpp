@@ -418,7 +418,7 @@ output::~output() = default;
 fctargument::~fctargument() = default;
 
 fctargument &
-fctargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+fctargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
   return *fctargument::create(&region, Type());
@@ -429,7 +429,7 @@ fctargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
 cvargument::~cvargument() = default;
 
 cvargument &
-cvargument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   auto lambdaInput = util::AssertedCast<lambda::cvinput>(input);
   return *cvargument::create(&region, lambdaInput);

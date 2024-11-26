@@ -38,13 +38,13 @@ bundletype::ComputeHash() const noexcept
 EntryArgument::~EntryArgument() noexcept = default;
 
 EntryArgument &
-EntryArgument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   return EntryArgument::Create(region, *input, Type());
 }
 
 backedge_argument &
-backedge_argument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
+backedge_argument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
   return *backedge_argument::create(&region, Type());
@@ -68,7 +68,7 @@ ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 rvsdg::StructuralOutput *
 loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
+  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
   auto output = rvsdg::StructuralOutput::create(this, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
@@ -91,7 +91,7 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
 jlm::rvsdg::output *
 loop_node::add_loopconst(jlm::rvsdg::output * origin)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
+  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
   auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), argument_in)[0];
@@ -109,7 +109,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
-    auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->Type());
+    auto inp = rvsdg::StructuralInput::create(loop, in_origin, in_origin->Type());
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto & narg = EntryArgument::Create(*loop->subregion(), *inp, oarg->Type());

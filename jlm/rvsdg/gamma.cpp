@@ -374,7 +374,7 @@ GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 GammaArgument::~GammaArgument() noexcept = default;
 
 GammaArgument &
-GammaArgument::Copy(rvsdg::Region & region, structural_input * input)
+GammaArgument::Copy(rvsdg::Region & region, StructuralInput * input)
 {
   auto gammaInput = util::AssertedCast<GammaInput>(input);
   return Create(region, *gammaInput);

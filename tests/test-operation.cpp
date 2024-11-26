@@ -9,7 +9,7 @@ namespace jlm::tests
 {
 
 GraphImport &
-GraphImport::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   return GraphImport::Create(*region.graph(), Type(), Name());
 }
@@ -174,7 +174,7 @@ structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) con
   {
     auto origin = smap.lookup(input(n)->origin());
     auto neworigin = origin ? origin : input(n)->origin();
-    auto new_input = rvsdg::structural_input::create(node, neworigin, input(n)->Type());
+    auto new_input = rvsdg::StructuralInput::create(node, neworigin, input(n)->Type());
     smap.insert(input(n), new_input);
   }
 
@@ -242,7 +242,7 @@ StructuralNodeOutput::~StructuralNodeOutput() noexcept = default;
 StructuralNodeArgument::~StructuralNodeArgument() noexcept = default;
 
 StructuralNodeArgument &
-StructuralNodeArgument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+StructuralNodeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   auto structuralNodeInput = util::AssertedCast<StructuralNodeInput>(input);
   return structuralNodeInput != nullptr ? Create(region, *structuralNodeInput)

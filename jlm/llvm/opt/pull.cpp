@@ -101,8 +101,8 @@ pullin_node(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
     {
       for (const auto & user : *node->output(o))
       {
-        JLM_ASSERT(dynamic_cast<jlm::rvsdg::structural_input *>(user));
-        auto sinput = static_cast<jlm::rvsdg::structural_input *>(user);
+        JLM_ASSERT(dynamic_cast<jlm::rvsdg::StructuralInput *>(user));
+        auto sinput = static_cast<rvsdg::StructuralInput *>(user);
         auto argument = gamma->subregion(r)->argument(sinput->index() - 1);
         argument->divert_users(copy->output(o));
       }

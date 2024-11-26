@@ -27,7 +27,7 @@ ResultNodeMismatch()
   auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
   auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
 
-  auto structuralInput = structural_input::create(structuralNode1, import, valueType);
+  auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
 
   auto & argument =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);

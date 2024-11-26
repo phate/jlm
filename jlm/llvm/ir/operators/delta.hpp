@@ -305,7 +305,7 @@ public:
 
 /** \brief Delta context variable input
  */
-class cvinput final : public rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend ::jlm::llvm::delta::node;
 
@@ -314,7 +314,7 @@ public:
 
 private:
   cvinput(delta::node * node, rvsdg::output * origin)
-      : structural_input(node, origin, origin->Type())
+      : StructuralInput(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -331,7 +331,7 @@ public:
   delta::node *
   node() const noexcept
   {
-    return static_cast<delta::node *>(structural_input::node());
+    return static_cast<delta::node *>(StructuralInput::node());
   }
 };
 
@@ -414,7 +414,7 @@ public:
   ~cvargument() override;
 
   cvargument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   cvargument(rvsdg::Region * region, cvinput * input)

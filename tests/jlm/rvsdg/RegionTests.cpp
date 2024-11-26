@@ -95,13 +95,13 @@ Contains()
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = structural_node::create(graph.root(), 1);
-  auto structuralInput1 = jlm::rvsdg::structural_input::create(structuralNode1, import, valueType);
+  auto structuralInput1 = jlm::rvsdg::StructuralInput::create(structuralNode1, import, valueType);
   auto & regionArgument1 =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput1, valueType);
   unary_op::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
 
   auto structuralNode2 = structural_node::create(graph.root(), 1);
-  auto structuralInput2 = jlm::rvsdg::structural_input::create(structuralNode2, import, valueType);
+  auto structuralInput2 = jlm::rvsdg::StructuralInput::create(structuralNode2, import, valueType);
   auto & regionArgument2 =
       TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput2, valueType);
   binary_op::create(valueType, valueType, &regionArgument2, &regionArgument2);

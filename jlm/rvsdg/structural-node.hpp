@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 
 /* structural node */
 
-class structural_input;
+class StructuralInput;
 class structural_op;
 class StructuralOutput;
 
@@ -44,14 +44,14 @@ public:
     return subregions_[index].get();
   }
 
-  inline jlm::rvsdg::structural_input *
+  [[nodiscard]] inline StructuralInput *
   input(size_t index) const noexcept;
 
   [[nodiscard]] inline StructuralOutput *
   output(size_t index) const noexcept;
 
-  structural_input *
-  append_input(std::unique_ptr<structural_input> input);
+  StructuralInput *
+  append_input(std::unique_ptr<StructuralInput> input);
 
   StructuralOutput *
   append_output(std::unique_ptr<StructuralOutput> output);
@@ -69,25 +69,25 @@ private:
 typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
     argument_list;
 
-class structural_input : public node_input
+class StructuralInput : public node_input
 {
   friend StructuralNode;
 
 public:
-  virtual ~structural_input() noexcept;
+  ~StructuralInput() noexcept override;
 
-  structural_input(
+  StructuralInput(
       StructuralNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
-  static structural_input *
+  static StructuralInput *
   create(
       StructuralNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto input = std::make_unique<structural_input>(node, origin, std::move(type));
+    auto input = std::make_unique<StructuralInput>(node, origin, std::move(type));
     return node->append_input(std::move(input));
   }
 
@@ -132,10 +132,10 @@ public:
 
 /* structural node method definitions */
 
-inline jlm::rvsdg::structural_input *
+inline StructuralInput *
 StructuralNode::input(size_t index) const noexcept
 {
-  return static_cast<structural_input *>(node::input(index));
+  return static_cast<StructuralInput *>(node::input(index));
 }
 
 inline StructuralOutput *

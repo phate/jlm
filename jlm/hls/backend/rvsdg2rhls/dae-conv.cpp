@@ -246,7 +246,7 @@ decouple_load(
           else
           {
             auto new_in =
-                jlm::rvsdg::structural_input::create(new_loop, arg->input()->origin(), arg->Type());
+                rvsdg::StructuralInput::create(new_loop, arg->input()->origin(), arg->Type());
             smap.insert(arg->input(), new_in);
             new_arg = &EntryArgument::Create(*new_loop->subregion(), *new_in, arg->Type());
           }
@@ -358,7 +358,7 @@ decouple_load(
   // use a buffer here to make ready logic for response easy and consistent
   auto buf = buffer_op::create(*dload_out[0], 2, true)[0];
   // replace data output of loadNode
-  auto old_data_in = jlm::rvsdg::structural_input::create(loopNode, buf, dload_out[0]->Type());
+  auto old_data_in = rvsdg::StructuralInput::create(loopNode, buf, dload_out[0]->Type());
   auto & old_data_arg =
       EntryArgument::Create(*loopNode->subregion(), *old_data_in, dload_out[0]->Type());
   loadNode->output(0)->divert_users(&old_data_arg);

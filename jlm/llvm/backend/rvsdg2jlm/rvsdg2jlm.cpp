@@ -333,7 +333,7 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
   auto node = rvsdg::input::GetNode(*i);
   JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
   auto theta = static_cast<const rvsdg::StructuralNode *>(node);
-  auto input = static_cast<const rvsdg::structural_input *>(i);
+  auto input = static_cast<const rvsdg::StructuralInput *>(i);
   auto output = theta->output(input->index());
 
   /* FIXME: solely decide on the input instead of using the variable */

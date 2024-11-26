@@ -547,7 +547,7 @@ private:
 
 /* phi context variable input class */
 
-class cvinput final : public jlm::rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend class phi::node;
 
@@ -558,7 +558,7 @@ public:
       phi::node * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
-      : structural_input(node, origin, std::move(type))
+      : StructuralInput(node, origin, std::move(type))
   {}
 
 private:
@@ -589,7 +589,7 @@ public:
   phi::node *
   node() const noexcept
   {
-    return static_cast<phi::node *>(structural_input::node());
+    return static_cast<phi::node *>(StructuralInput::node());
   }
 };
 
@@ -698,7 +698,7 @@ public:
   }
 
   rvargument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   rvoutput * output_;
@@ -732,7 +732,7 @@ private:
   operator=(cvargument &&) = delete;
 
   cvargument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   static cvargument *
   create(rvsdg::Region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::Type> type)

@@ -16,7 +16,7 @@ namespace jlm::rvsdg
 
 class output;
 class Region;
-class structural_input;
+class StructuralInput;
 
 class SubstitutionMap final
 {
@@ -34,7 +34,7 @@ public:
   }
 
   bool
-  contains(const structural_input & original) const noexcept
+  contains(const StructuralInput & original) const noexcept
   {
     return structinput_map_.find(&original) != structinput_map_.end();
   }
@@ -57,8 +57,8 @@ public:
     return *region_map_.find(&original)->second;
   }
 
-  structural_input &
-  lookup(const structural_input & original) const
+  [[nodiscard]] StructuralInput &
+  lookup(const StructuralInput & original) const
   {
     if (!contains(original))
       throw jlm::util::error("Structural input not in substitution map.");
@@ -80,8 +80,8 @@ public:
     return i != region_map_.end() ? i->second : nullptr;
   }
 
-  inline jlm::rvsdg::structural_input *
-  lookup(const jlm::rvsdg::structural_input * original) const noexcept
+  StructuralInput *
+  lookup(const StructuralInput * original) const noexcept
   {
     auto i = structinput_map_.find(original);
     return i != structinput_map_.end() ? i->second : nullptr;
@@ -100,7 +100,7 @@ public:
   }
 
   inline void
-  insert(const jlm::rvsdg::structural_input * original, jlm::rvsdg::structural_input * substitute)
+  insert(const StructuralInput * original, StructuralInput * substitute)
   {
     structinput_map_[original] = substitute;
   }
@@ -108,8 +108,7 @@ public:
 private:
   std::unordered_map<const rvsdg::Region *, rvsdg::Region *> region_map_;
   std::unordered_map<const jlm::rvsdg::output *, jlm::rvsdg::output *> output_map_;
-  std::unordered_map<const jlm::rvsdg::structural_input *, jlm::rvsdg::structural_input *>
-      structinput_map_;
+  std::unordered_map<const StructuralInput *, StructuralInput *> structinput_map_;
 };
 
 }

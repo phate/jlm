@@ -26,7 +26,7 @@ namespace jlm::rvsdg
 class node;
 class simple_node;
 class simple_op;
-class structural_input;
+class StructuralInput;
 class StructuralNode;
 class structural_op;
 class StructuralOutput;
@@ -38,7 +38,7 @@ class SubstitutionMap;
  * Region arguments represent the initial values of the region's acyclic graph. These values
  * are mapped to the arguments throughout the execution, and the concrete semantics of this mapping
  * depends on the structural node the region is part of. A region argument is either linked
- * with a \ref structural_input or is a standalone argument.
+ * with a \ref StructuralInput or is a standalone argument.
  */
 class RegionArgument : public output
 {
@@ -52,7 +52,7 @@ public:
 
   RegionArgument(
       rvsdg::Region * region,
-      structural_input * input,
+      StructuralInput * input,
       std::shared_ptr<const rvsdg::Type> type);
 
   RegionArgument(const RegionArgument &) = delete;
@@ -65,7 +65,7 @@ public:
   RegionArgument &
   operator=(RegionArgument &&) = delete;
 
-  [[nodiscard]] structural_input *
+  [[nodiscard]] StructuralInput *
   input() const noexcept
   {
     return input_;
@@ -80,7 +80,7 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(rvsdg::Region & region, structural_input * input);
+  Copy(Region & region, StructuralInput * input);
 
   [[nodiscard]] std::variant<node *, Region *>
   GetOwner() const noexcept override;
@@ -104,13 +104,10 @@ public:
    * Creates an argument and registers it with the given region.
    */
   static RegionArgument &
-  Create(
-      rvsdg::Region & region,
-      rvsdg::structural_input * input,
-      std::shared_ptr<const rvsdg::Type> type);
+  Create(rvsdg::Region & region, StructuralInput * input, std::shared_ptr<const rvsdg::Type> type);
 
 private:
-  structural_input * input_;
+  StructuralInput * input_;
 };
 
 /**
