@@ -17,7 +17,7 @@ check_rhls(rvsdg::Region * sr)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (rvsdg::is<rvsdg::structural_op>(node))
+    if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
       if (auto ln = dynamic_cast<hls::loop_node *>(node))
       {

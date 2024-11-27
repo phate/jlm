@@ -29,7 +29,7 @@ namespace lambda
  *
  * A lambda operation determines a lambda's name and \ref FunctionType "function type".
  */
-class operation final : public jlm::rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;

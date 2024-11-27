@@ -15,7 +15,7 @@
 namespace jlm::rvsdg
 {
 
-class ThetaOperation final : public structural_op
+class ThetaOperation final : public StructuralOperation
 {
 public:
   ~ThetaOperation() noexcept override;

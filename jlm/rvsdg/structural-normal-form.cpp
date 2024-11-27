@@ -34,6 +34,6 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::structural_op),
+      typeid(jlm::rvsdg::StructuralOperation),
       get_default_normal_form);
 }

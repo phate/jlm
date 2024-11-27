@@ -391,7 +391,7 @@ process_loopnode(loop_node * loopNode)
         bool can_decouple = true;
         for (auto sn : data_slice)
         {
-          if (rvsdg::is<rvsdg::structural_op>(sn))
+          if (rvsdg::is<rvsdg::StructuralOperation>(sn))
           {
             // data slice may not contain loops
             can_decouple = false;
@@ -419,7 +419,7 @@ process_loopnode(loop_node * loopNode)
         JLM_ASSERT(!can_decouple || !data_slice.count(simplenode));
         for (auto sn : state_slice)
         {
-          if (rvsdg::is<rvsdg::structural_op>(sn))
+          if (rvsdg::is<rvsdg::StructuralOperation>(sn))
           {
             // state slice may not contain loops
             can_decouple = false;
