@@ -33,7 +33,7 @@ public:
   virtual std::vector<rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const rvsdg::simple_op & op,
+      const rvsdg::SimpleOperation & op,
       const std::vector<rvsdg::output *> & operands) const override;
 
   inline void
@@ -123,14 +123,14 @@ private:
  * @see LoadVolatileOperation
  * @see LoadNonVolatileOperation
  */
-class LoadOperation : public rvsdg::simple_op
+class LoadOperation : public rvsdg::SimpleOperation
 {
 protected:
   LoadOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
-      : simple_op(operandTypes, resultTypes),
+      : SimpleOperation(operandTypes, resultTypes),
         Alignment_(alignment)
   {
     JLM_ASSERT(!operandTypes.empty() && !resultTypes.empty());

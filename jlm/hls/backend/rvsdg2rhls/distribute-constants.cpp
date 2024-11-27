@@ -15,7 +15,7 @@ namespace jlm
 {
 
 void
-distribute_constant(const rvsdg::simple_op & op, rvsdg::simple_output * out)
+distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * out)
 {
   JLM_ASSERT(jlm::hls::is_constant(out->node()));
   bool changed = true;

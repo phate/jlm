@@ -32,7 +32,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
   virtual void
@@ -60,13 +60,13 @@ private:
 
 /* mux operation */
 
-class mux_op final : public simple_op
+class mux_op final : public SimpleOperation
 {
 public:
   virtual ~mux_op() noexcept;
 
   inline mux_op(std::shared_ptr<const StateType> type, size_t narguments, size_t nresults)
-      : simple_op({ narguments, type }, { nresults, type })
+      : SimpleOperation({ narguments, type }, { nresults, type })
   {}
 
   virtual bool

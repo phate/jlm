@@ -632,7 +632,7 @@ load_normal_form::normalize_node(rvsdg::node * node) const
 std::vector<rvsdg::output *>
 load_normal_form::normalized_create(
     rvsdg::Region * region,
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<rvsdg::output *> & operands) const
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(op));

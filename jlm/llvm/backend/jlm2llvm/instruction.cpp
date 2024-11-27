@@ -26,14 +26,14 @@ namespace jlm2llvm
 
 ::llvm::Value *
 convert_operation(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & arguments,
     ::llvm::IRBuilder<> & builder,
     context & ctx);
 
 static inline ::llvm::Value *
 convert_assignment(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -44,7 +44,7 @@ convert_assignment(
 
 static inline ::llvm::Value *
 convert_bitsbinary(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -74,7 +74,7 @@ convert_bitsbinary(
 
 static inline ::llvm::Value *
 convert_bitscompare(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -112,7 +112,7 @@ convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
 
 static inline ::llvm::Value *
 convert_bitconstant(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -130,7 +130,7 @@ convert_bitconstant(
 
 static inline ::llvm::Value *
 convert_ctlconstant(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -155,7 +155,7 @@ convert(
 
 static inline ::llvm::Value *
 convert_undef(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -224,7 +224,7 @@ is_identity_mapping(const rvsdg::match_op & op)
 
 static inline ::llvm::Value *
 convert_match(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -249,7 +249,7 @@ convert_match(
 
 static inline ::llvm::Value *
 convert_branch(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -260,7 +260,7 @@ convert_branch(
 
 static inline ::llvm::Value *
 convert_phi(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -339,7 +339,7 @@ CreateStoreInstruction(
 
 static inline ::llvm::Value *
 convert_store(
-    const rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -368,7 +368,7 @@ convert(
 
 static inline ::llvm::Value *
 convert_alloca(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -384,7 +384,7 @@ convert_alloca(
 
 static inline ::llvm::Value *
 convert_getelementptr(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -523,7 +523,7 @@ convert(
 
 static inline ::llvm::Value *
 convert_ptrcmp(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -547,7 +547,7 @@ convert_ptrcmp(
 
 static inline ::llvm::Value *
 convert_fpcmp(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -581,7 +581,7 @@ convert_fpcmp(
 
 static inline ::llvm::Value *
 convert_fpbin(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -604,7 +604,7 @@ convert_fpbin(
 
 static ::llvm::Value *
 convert_fpneg(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -616,7 +616,7 @@ convert_fpneg(
 
 static inline ::llvm::Value *
 convert_valist(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -653,7 +653,7 @@ convert(
 
 static inline ::llvm::Value *
 convert_select(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -672,7 +672,7 @@ convert_select(
 
 static inline ::llvm::Value *
 convert_ctl2bits(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -683,7 +683,7 @@ convert_ctl2bits(
 
 static ::llvm::Value *
 convert_constantvector(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -699,7 +699,7 @@ convert_constantvector(
 
 static ::llvm::Value *
 convert_constantdatavector(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -758,7 +758,7 @@ convert_constantdatavector(
 
 static ::llvm::Value *
 convert_extractelement(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -781,7 +781,7 @@ convert(
 
 static ::llvm::Value *
 convert_insertelement(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -796,7 +796,7 @@ convert_insertelement(
 
 static ::llvm::Value *
 convert_vectorunary(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -808,7 +808,7 @@ convert_vectorunary(
 
 static ::llvm::Value *
 convert_vectorbinary(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -834,7 +834,7 @@ convert(
 template<::llvm::Instruction::CastOps OPCODE>
 static ::llvm::Value *
 convert_cast(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1004,7 +1004,7 @@ convert(
 template<class OP>
 static ::llvm::Value *
 convert(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1015,7 +1015,7 @@ convert(
 
 ::llvm::Value *
 convert_operation(
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & arguments,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1028,7 +1028,7 @@ convert_operation(
 
   static std::unordered_map<
       std::type_index,
-      ::llvm::Value * (*)(const rvsdg::simple_op &,
+      ::llvm::Value * (*)(const rvsdg::SimpleOperation &,
                           const std::vector<const variable *> &,
                           ::llvm::IRBuilder<> &,
                           context & ctx)>

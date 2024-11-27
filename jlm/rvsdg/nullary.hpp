@@ -20,13 +20,13 @@ class output;
 /**
   \brief Nullary operator (operator taking no formal arguments)
 */
-class nullary_op : public simple_op
+class nullary_op : public SimpleOperation
 {
 public:
   virtual ~nullary_op() noexcept;
 
   inline explicit nullary_op(std::shared_ptr<const jlm::rvsdg::Type> result)
-      : simple_op({}, { std::move(result) })
+      : SimpleOperation({}, { std::move(result) })
   {}
 };
 

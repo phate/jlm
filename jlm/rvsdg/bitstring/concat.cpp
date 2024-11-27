@@ -146,7 +146,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override
   {
     std::vector<jlm::rvsdg::output *> new_args;

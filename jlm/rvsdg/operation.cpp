@@ -22,39 +22,38 @@ operation::normal_form(Graph * graph) noexcept
 
 /* simple operation */
 
-simple_op::~simple_op()
-{}
+SimpleOperation::~SimpleOperation() noexcept = default;
 
 size_t
-simple_op::narguments() const noexcept
+SimpleOperation::narguments() const noexcept
 {
   return operands_.size();
 }
 
 const std::shared_ptr<const rvsdg::Type> &
-simple_op::argument(size_t index) const noexcept
+SimpleOperation::argument(size_t index) const noexcept
 {
   JLM_ASSERT(index < narguments());
   return operands_[index];
 }
 
 size_t
-simple_op::nresults() const noexcept
+SimpleOperation::nresults() const noexcept
 {
   return results_.size();
 }
 
 const std::shared_ptr<const rvsdg::Type> &
-simple_op::result(size_t index) const noexcept
+SimpleOperation::result(size_t index) const noexcept
 {
   JLM_ASSERT(index < nresults());
   return results_[index];
 }
 
 jlm::rvsdg::simple_normal_form *
-simple_op::normal_form(Graph * graph) noexcept
+SimpleOperation::normal_form(Graph * graph) noexcept
 {
-  return static_cast<jlm::rvsdg::simple_normal_form *>(graph->node_normal_form(typeid(simple_op)));
+  return static_cast<simple_normal_form *>(graph->node_normal_form(typeid(SimpleOperation)));
 }
 
 /* structural operation */

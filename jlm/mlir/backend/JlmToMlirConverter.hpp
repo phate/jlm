@@ -121,7 +121,7 @@ private:
    */
   ::mlir::Operation *
   ConvertBitBinaryNode(
-      const jlm::rvsdg::simple_op & bitOp,
+      const rvsdg::SimpleOperation & bitOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
@@ -131,7 +131,7 @@ private:
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
-  BitCompareNode(const jlm::rvsdg::simple_op & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
+  BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG simple_node to an MLIR RVSDG operation.

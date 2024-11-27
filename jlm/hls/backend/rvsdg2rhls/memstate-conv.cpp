@@ -47,7 +47,7 @@ memstate_conv(rvsdg::Region * region)
         }
         remove(simplenode);
       }
-      // exit is handled as normal simple_op
+      // exit is handled as normal SimpleOperation
     }
   }
 }

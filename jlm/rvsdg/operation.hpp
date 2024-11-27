@@ -61,12 +61,12 @@ is(const jlm::rvsdg::operation & operation) noexcept
 
 /* simple operation */
 
-class simple_op : public operation
+class SimpleOperation : public operation
 {
 public:
-  virtual ~simple_op();
+  ~SimpleOperation() noexcept override;
 
-  simple_op(
+  SimpleOperation(
       std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
       std::vector<std::shared_ptr<const jlm::rvsdg::Type>> results)
       : operands_(std::move(operands)),

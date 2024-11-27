@@ -90,7 +90,7 @@ create_initialization(const delta::node * delta, context & ctx)
       operands.push_back(ctx.variable(node->input(n)->origin()));
 
     /* convert node to tac */
-    auto & op = *static_cast<const rvsdg::simple_op *>(&node->operation());
+    auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->operation());
     tacs.push_back(tac::create(op, operands));
     ctx.insert(output, tacs.back()->result(0));
   }
@@ -161,13 +161,13 @@ create_cfg(const lambda::node & lambda, context & ctx)
 static inline void
 convert_simple_node(const rvsdg::node & node, context & ctx)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::simple_op *>(&node.operation()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::SimpleOperation *>(&node.operation()));
 
   std::vector<const variable *> operands;
   for (size_t n = 0; n < node.ninputs(); n++)
     operands.push_back(ctx.variable(node.input(n)->origin()));
 
-  auto & op = *static_cast<const rvsdg::simple_op *>(&node.operation());
+  auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node.operation());
   ctx.lpbb()->append_last(tac::create(op, operands));
 
   for (size_t n = 0; n < node.noutputs(); n++)
@@ -526,7 +526,7 @@ convert_node(const rvsdg::node & node, context & ctx)
                 { typeid(phi::operation), convert_phi_node },
                 { typeid(delta::operation), convert_delta_node } });
 
-  if (dynamic_cast<const rvsdg::simple_op *>(&node.operation()))
+  if (dynamic_cast<const rvsdg::SimpleOperation *>(&node.operation()))
   {
     convert_simple_node(node, ctx);
     return;

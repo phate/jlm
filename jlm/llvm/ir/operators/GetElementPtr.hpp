@@ -20,7 +20,7 @@ namespace jlm::llvm
  * FIXME: We currently do not support vector of pointers for the baseAddress.
  *
  */
-class GetElementPtrOperation final : public rvsdg::simple_op
+class GetElementPtrOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~GetElementPtrOperation() noexcept override;
@@ -29,7 +29,7 @@ public:
   GetElementPtrOperation(
       const std::vector<std::shared_ptr<const rvsdg::bittype>> & offsetTypes,
       std::shared_ptr<const rvsdg::ValueType> pointeeType)
-      : simple_op(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
+      : SimpleOperation(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
         PointeeType_(std::move(pointeeType))
   {}
 

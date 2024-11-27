@@ -82,7 +82,7 @@ simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 simple_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
   jlm::rvsdg::node * node = nullptr;
@@ -122,6 +122,6 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::simple_op),
+      typeid(jlm::rvsdg::SimpleOperation),
       get_default_normal_form);
 }

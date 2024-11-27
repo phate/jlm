@@ -11,7 +11,7 @@
 namespace jlm::rvsdg
 {
 
-class simple_op;
+class SimpleOperation;
 
 class simple_normal_form : public node_normal_form
 {
@@ -29,7 +29,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const;
 
   virtual void

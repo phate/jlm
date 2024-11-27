@@ -16,11 +16,11 @@ namespace jlm::llvm
 /**
  * Abstract base class for all memory state operations.
  */
-class MemoryStateOperation : public rvsdg::simple_op
+class MemoryStateOperation : public rvsdg::SimpleOperation
 {
 protected:
   MemoryStateOperation(size_t numOperands, size_t numResults)
-      : simple_op(
+      : SimpleOperation(
             { numOperands, MemoryStateType::Create() },
             { numResults, MemoryStateType::Create() })
   {}

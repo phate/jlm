@@ -384,7 +384,7 @@ store_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 store_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & ops) const
 {
   JLM_ASSERT(is<StoreNonVolatileOperation>(op));
