@@ -150,7 +150,7 @@ mux_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 mux_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & operands) const
 {
   JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op *>(&op));

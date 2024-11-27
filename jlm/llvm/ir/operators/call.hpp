@@ -19,13 +19,13 @@ namespace jlm::llvm
 /** \brief Call operation class
  *
  */
-class CallOperation final : public jlm::rvsdg::simple_op
+class CallOperation final : public jlm::rvsdg::SimpleOperation
 {
 public:
   ~CallOperation() override;
 
   explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
-      : simple_op(create_srctypes(*functionType), functionType->Results()),
+      : SimpleOperation(create_srctypes(*functionType), functionType->Results()),
         FunctionType_(std::move(functionType))
   {}
 

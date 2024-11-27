@@ -26,7 +26,7 @@ class cfg_node;
 
 /* phi operator */
 
-class phi_op final : public jlm::rvsdg::simple_op
+class phi_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~phi_op() noexcept;
@@ -34,7 +34,7 @@ public:
   inline phi_op(
       const std::vector<llvm::cfg_node *> & nodes,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ nodes.size(), type }, { type }),
+      : SimpleOperation({ nodes.size(), type }, { type }),
         nodes_(nodes)
   {}
 
@@ -97,13 +97,13 @@ private:
 
 /* assignment operator */
 
-class assignment_op final : public jlm::rvsdg::simple_op
+class assignment_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~assignment_op() noexcept;
 
   explicit inline assignment_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : simple_op({ type, type }, {})
+      : SimpleOperation({ type, type }, {})
   {}
 
   assignment_op(const assignment_op &) = default;
@@ -131,13 +131,13 @@ public:
 
 /* select operator */
 
-class select_op final : public jlm::rvsdg::simple_op
+class select_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~select_op() noexcept;
 
   explicit select_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ jlm::rvsdg::bittype::Create(1), type, type }, { type })
+      : SimpleOperation({ jlm::rvsdg::bittype::Create(1), type, type }, { type })
   {}
 
   virtual bool
@@ -171,7 +171,7 @@ public:
 
 /* vector select operator */
 
-class vectorselect_op final : public jlm::rvsdg::simple_op
+class vectorselect_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~vectorselect_op() noexcept;
@@ -180,7 +180,7 @@ private:
   vectorselect_op(
       const std::shared_ptr<const vectortype> & pt,
       const std::shared_ptr<const vectortype> & vt)
-      : jlm::rvsdg::simple_op({ pt, vt, vt }, { vt })
+      : SimpleOperation({ pt, vt, vt }, { vt })
   {}
 
 public:
@@ -364,7 +364,7 @@ public:
 
 /* ctl2bits operator */
 
-class ctl2bits_op final : public jlm::rvsdg::simple_op
+class ctl2bits_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ctl2bits_op() noexcept;
@@ -372,7 +372,7 @@ public:
   inline ctl2bits_op(
       std::shared_ptr<const rvsdg::ControlType> srctype,
       std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
-      : jlm::rvsdg::simple_op({ std::move(srctype) }, { std::move(dsttype) })
+      : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
   {}
 
   virtual bool
@@ -402,13 +402,13 @@ public:
 
 /* branch operator */
 
-class branch_op final : public jlm::rvsdg::simple_op
+class branch_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~branch_op() noexcept;
 
   explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ControlType> type)
-      : jlm::rvsdg::simple_op({ std::move(type) }, {})
+      : SimpleOperation({ std::move(type) }, {})
   {}
 
   virtual bool
@@ -438,13 +438,13 @@ public:
  *
  * This operator is the Jlm equivalent of LLVM's ConstantPointerNull constant.
  */
-class ConstantPointerNullOperation final : public jlm::rvsdg::simple_op
+class ConstantPointerNullOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~ConstantPointerNullOperation() noexcept override;
 
   explicit ConstantPointerNullOperation(std::shared_ptr<const PointerType> pointerType)
-      : simple_op({}, { std::move(pointerType) })
+      : SimpleOperation({}, { std::move(pointerType) })
   {}
 
   bool
@@ -634,13 +634,13 @@ public:
 
 /* Constant Data Array operator */
 
-class ConstantDataArray final : public jlm::rvsdg::simple_op
+class ConstantDataArray final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantDataArray();
 
   ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
-      : simple_op({ size, type }, { arraytype::Create(type, size) })
+      : SimpleOperation({ size, type }, { arraytype::Create(type, size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.");
@@ -866,18 +866,18 @@ private:
 
 /* floating point constant operator */
 
-class ConstantFP final : public jlm::rvsdg::simple_op
+class ConstantFP final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantFP();
 
   inline ConstantFP(const fpsize & size, const ::llvm::APFloat & constant)
-      : simple_op({}, { fptype::Create(size) }),
+      : SimpleOperation({}, { fptype::Create(size) }),
         constant_(constant)
   {}
 
   inline ConstantFP(std::shared_ptr<const fptype> fpt, const ::llvm::APFloat & constant)
-      : simple_op({}, { std::move(fpt) }),
+      : SimpleOperation({}, { std::move(fpt) }),
         constant_(constant)
   {}
 
@@ -1006,13 +1006,13 @@ private:
  *
  * This operator is the Jlm equivalent of LLVM's UndefValue constant.
  */
-class UndefValueOperation final : public jlm::rvsdg::simple_op
+class UndefValueOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~UndefValueOperation() noexcept override;
 
   explicit UndefValueOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
-      : simple_op({}, { std::move(type) })
+      : SimpleOperation({}, { std::move(type) })
   {}
 
   UndefValueOperation(const UndefValueOperation &) = default;
@@ -1076,13 +1076,13 @@ public:
  *
  * This operator is the Jlm equivalent of LLVM's PoisonValue constant.
  */
-class PoisonValueOperation final : public jlm::rvsdg::simple_op
+class PoisonValueOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~PoisonValueOperation() noexcept override;
 
   explicit PoisonValueOperation(std::shared_ptr<const jlm::rvsdg::ValueType> type)
-      : jlm::rvsdg::simple_op({}, { std::move(type) })
+      : SimpleOperation({}, { std::move(type) })
   {}
 
   PoisonValueOperation(const PoisonValueOperation &) = default;
@@ -1432,13 +1432,13 @@ public:
 
 /* valist operator */
 
-class valist_op final : public jlm::rvsdg::simple_op
+class valist_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~valist_op();
 
   explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
-      : simple_op(std::move(types), { varargtype::Create() })
+      : SimpleOperation(std::move(types), { varargtype::Create() })
   {}
 
   valist_op(const valist_op &) = default;
@@ -1569,13 +1569,13 @@ private:
 
 /* ConstantStruct operator */
 
-class ConstantStruct final : public jlm::rvsdg::simple_op
+class ConstantStruct final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantStruct();
 
   inline ConstantStruct(std::shared_ptr<const StructType> type)
-      : simple_op(create_srctypes(*type), { type })
+      : SimpleOperation(create_srctypes(*type), { type })
   {}
 
   virtual bool
@@ -1847,13 +1847,13 @@ public:
 
 /* ConstantArray */
 
-class ConstantArray final : public jlm::rvsdg::simple_op
+class ConstantArray final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantArray();
 
   ConstantArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
-      : jlm::rvsdg::simple_op({ size, type }, { arraytype::Create(type, size) })
+      : SimpleOperation({ size, type }, { arraytype::Create(type, size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.\n");
@@ -1913,13 +1913,13 @@ public:
 
 /* ConstantAggregateZero operator */
 
-class ConstantAggregateZero final : public jlm::rvsdg::simple_op
+class ConstantAggregateZero final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantAggregateZero();
 
   ConstantAggregateZero(std::shared_ptr<const jlm::rvsdg::Type> type)
-      : simple_op({}, { type })
+      : SimpleOperation({}, { type })
   {
     auto st = dynamic_cast<const StructType *>(type.get());
     auto at = dynamic_cast<const arraytype *>(type.get());
@@ -1954,7 +1954,7 @@ public:
 
 /* extractelement operator */
 
-class extractelement_op final : public jlm::rvsdg::simple_op
+class extractelement_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~extractelement_op();
@@ -1962,7 +1962,7 @@ public:
   inline extractelement_op(
       const std::shared_ptr<const vectortype> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
-      : simple_op({ vtype, btype }, { vtype->Type() })
+      : SimpleOperation({ vtype, btype }, { vtype->Type() })
   {}
 
   virtual bool
@@ -1992,20 +1992,20 @@ public:
 
 /* shufflevector operator */
 
-class shufflevector_op final : public jlm::rvsdg::simple_op
+class shufflevector_op final : public rvsdg::SimpleOperation
 {
 public:
   ~shufflevector_op() override;
 
   shufflevector_op(const std::shared_ptr<const fixedvectortype> & v, const std::vector<int> & mask)
-      : simple_op({ v, v }, { v }),
+      : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
 
   shufflevector_op(
       const std::shared_ptr<const scalablevectortype> & v,
       const std::vector<int> & mask)
-      : simple_op({ v, v }, { v }),
+      : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
 
@@ -2051,13 +2051,13 @@ private:
 
 /* constantvector operator */
 
-class constantvector_op final : public jlm::rvsdg::simple_op
+class constantvector_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~constantvector_op();
 
   explicit inline constantvector_op(const std::shared_ptr<const vectortype> & vt)
-      : simple_op({ vt->size(), vt->Type() }, { vt })
+      : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
   virtual bool
@@ -2085,7 +2085,7 @@ public:
 
 /* insertelement operator */
 
-class insertelement_op final : public jlm::rvsdg::simple_op
+class insertelement_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~insertelement_op();
@@ -2094,7 +2094,7 @@ public:
       const std::shared_ptr<const vectortype> & vectype,
       const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
-      : simple_op({ vectype, vtype, btype }, { vectype })
+      : SimpleOperation({ vectype, vtype, btype }, { vectype })
   {
     if (vectype->type() != *vtype)
     {
@@ -2135,7 +2135,7 @@ public:
 
 /* vectorunary operator */
 
-class vectorunary_op final : public jlm::rvsdg::simple_op
+class vectorunary_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~vectorunary_op();
@@ -2144,7 +2144,7 @@ public:
       const jlm::rvsdg::unary_op & op,
       const std::shared_ptr<const vectortype> & operand,
       const std::shared_ptr<const vectortype> & result)
-      : simple_op({ operand }, { result }),
+      : SimpleOperation({ operand }, { result }),
         op_(op.copy())
   {
     if (operand->type() != *op.argument(0))
@@ -2163,12 +2163,12 @@ public:
   }
 
   inline vectorunary_op(const vectorunary_op & other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
   inline vectorunary_op(vectorunary_op && other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
@@ -2226,7 +2226,7 @@ private:
 
 /* vectorbinary operator */
 
-class vectorbinary_op final : public jlm::rvsdg::simple_op
+class vectorbinary_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~vectorbinary_op();
@@ -2236,7 +2236,7 @@ public:
       const std::shared_ptr<const vectortype> & op1,
       const std::shared_ptr<const vectortype> & op2,
       const std::shared_ptr<const vectortype> & result)
-      : simple_op({ op1, op2 }, { result }),
+      : SimpleOperation({ op1, op2 }, { result }),
         op_(binop.copy())
   {
     if (*op1 != *op2)
@@ -2258,12 +2258,12 @@ public:
   }
 
   inline vectorbinary_op(const vectorbinary_op & other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
   inline vectorbinary_op(vectorbinary_op && other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
@@ -2323,14 +2323,14 @@ private:
 
 /* constant data vector operator */
 
-class constant_data_vector_op final : public jlm::rvsdg::simple_op
+class constant_data_vector_op final : public rvsdg::SimpleOperation
 {
 public:
   ~constant_data_vector_op() override;
 
 private:
   explicit constant_data_vector_op(const std::shared_ptr<const vectortype> & vt)
-      : simple_op({ vt->size(), vt->Type() }, { vt })
+      : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
 public:
@@ -2372,7 +2372,7 @@ public:
 
 /* ExtractValue operator */
 
-class ExtractValue final : public jlm::rvsdg::simple_op
+class ExtractValue final : public rvsdg::SimpleOperation
 {
   typedef std::vector<unsigned>::const_iterator const_iterator;
 
@@ -2382,7 +2382,7 @@ public:
   inline ExtractValue(
       const std::shared_ptr<const jlm::rvsdg::Type> & aggtype,
       const std::vector<unsigned> & indices)
-      : simple_op({ aggtype }, { dsttype(aggtype, indices) }),
+      : SimpleOperation({ aggtype }, { dsttype(aggtype, indices) }),
         indices_(indices)
   {
     if (indices.empty())
@@ -2458,13 +2458,13 @@ private:
 
 /* malloc operator */
 
-class malloc_op final : public jlm::rvsdg::simple_op
+class malloc_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~malloc_op();
 
   explicit malloc_op(std::shared_ptr<const jlm::rvsdg::bittype> btype)
-      : simple_op({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
+      : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
   {}
 
   virtual bool
@@ -2517,13 +2517,13 @@ public:
  *
  * This operation has no equivalent LLVM instruction.
  */
-class FreeOperation final : public jlm::rvsdg::simple_op
+class FreeOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~FreeOperation() noexcept override;
 
   explicit FreeOperation(size_t numMemoryStates)
-      : simple_op(CreateOperandTypes(numMemoryStates), CreateResultTypes(numMemoryStates))
+      : SimpleOperation(CreateOperandTypes(numMemoryStates), CreateResultTypes(numMemoryStates))
   {}
 
   bool

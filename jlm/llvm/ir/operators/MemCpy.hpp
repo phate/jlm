@@ -20,13 +20,13 @@ namespace jlm::llvm
  * @see MemCpyNonVolatileOperation
  * @see MemCpyVolatileOperation
  */
-class MemCpyOperation : public rvsdg::simple_op
+class MemCpyOperation : public rvsdg::SimpleOperation
 {
 protected:
   MemCpyOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
-      : simple_op(operandTypes, resultTypes)
+      : SimpleOperation(operandTypes, resultTypes)
   {
     JLM_ASSERT(operandTypes.size() >= 4);
 

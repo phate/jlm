@@ -115,10 +115,10 @@ public:
     return cmpnode_;
   }
 
-  inline const jlm::rvsdg::simple_op &
+  [[nodiscard]] const rvsdg::SimpleOperation &
   cmpoperation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::simple_op *>(&cmpnode()->operation());
+    return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->operation());
   }
 
   inline jlm::rvsdg::node *
@@ -127,10 +127,10 @@ public:
     return armnode_;
   }
 
-  inline const jlm::rvsdg::simple_op &
+  [[nodiscard]] const rvsdg::SimpleOperation &
   armoperation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::simple_op *>(&armnode()->operation());
+    return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->operation());
   }
 
   inline rvsdg::RegionArgument *

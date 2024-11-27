@@ -230,7 +230,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
   }
 
-  if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(n1) && jlm::rvsdg::is<jlm::rvsdg::simple_op>(n2)
+  if (jlm::rvsdg::is<rvsdg::SimpleOperation>(n1) && jlm::rvsdg::is<rvsdg::SimpleOperation>(n2)
       && n1->operation() == n2->operation() && n1->ninputs() == n2->ninputs()
       && o1->index() == o2->index())
   {

@@ -360,7 +360,7 @@ private:
   }
 };
 
-class test_op final : public rvsdg::simple_op
+class test_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~test_op();
@@ -368,7 +368,7 @@ public:
   inline test_op(
       std::vector<std::shared_ptr<const rvsdg::Type>> arguments,
       std::vector<std::shared_ptr<const rvsdg::Type>> results)
-      : simple_op(std::move(arguments), std::move(results))
+      : SimpleOperation(std::move(arguments), std::move(results))
   {}
 
   test_op(const test_op &) = default;

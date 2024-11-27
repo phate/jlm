@@ -137,12 +137,12 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
 
   if (changes)
   {
-    std::unique_ptr<simple_op> tmp_op;
+    std::unique_ptr<SimpleOperation> tmp_op;
     if (new_args.size() > 2)
       tmp_op.reset(new flattened_binary_op(op, new_args.size()));
 
     JLM_ASSERT(new_args.size() >= 2);
-    const auto & new_op = tmp_op ? *tmp_op : static_cast<const simple_op &>(op);
+    const auto & new_op = tmp_op ? *tmp_op : static_cast<const SimpleOperation &>(op);
     divert_users(node, simple_node::create_normalized(node->region(), new_op, new_args));
     remove(node);
     return false;
@@ -154,7 +154,7 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
 std::vector<jlm::rvsdg::output *>
 binary_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & base_op,
+    const SimpleOperation & base_op,
     const std::vector<jlm::rvsdg::output *> & args) const
 {
   const auto & op = *static_cast<const jlm::rvsdg::binary_op *>(&base_op);
@@ -187,14 +187,14 @@ binary_normal_form::normalized_create(
   /* FIXME: reorder for commutative operation */
 
   /* FIXME: attempt distributive transform */
-  std::unique_ptr<simple_op> tmp_op;
+  std::unique_ptr<SimpleOperation> tmp_op;
   if (new_args.size() > 2)
   {
     tmp_op.reset(new flattened_binary_op(op, new_args.size()));
   }
 
   region = new_args[0]->region();
-  const auto & new_op = tmp_op ? *tmp_op : static_cast<const simple_op &>(op);
+  const auto & new_op = tmp_op ? *tmp_op : static_cast<const SimpleOperation &>(op);
   return simple_normal_form::normalized_create(region, new_op, new_args);
 }
 
@@ -298,7 +298,7 @@ flattened_binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 flattened_binary_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & base_op,
+    const SimpleOperation & base_op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
   const auto & op = static_cast<const flattened_binary_op &>(base_op);

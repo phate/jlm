@@ -20,11 +20,11 @@
 namespace jlm::hls
 {
 
-class branch_op final : public jlm::rvsdg::simple_op
+class branch_op final : public rvsdg::SimpleOperation
 {
 private:
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
-      : jlm::rvsdg::simple_op(
+      : SimpleOperation(
             { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
         loop(loop)
@@ -82,7 +82,7 @@ public:
  * single constant fork. Since the input of the fork is always the same value and is always valid.
  * No handshaking is necessary and the outputs of the fork is always valid.
  */
-class fork_op final : public jlm::rvsdg::simple_op
+class fork_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~fork_op()
@@ -95,7 +95,7 @@ public:
    * /param value The signal type, which is the same for the input and all outputs.
    */
   fork_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ type }, { nalternatives, type })
+      : SimpleOperation({ type }, { nalternatives, type })
   {}
 
   /**
@@ -109,7 +109,7 @@ public:
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool isConstant)
-      : rvsdg::simple_op({ type }, { nalternatives, type }),
+      : SimpleOperation({ type }, { nalternatives, type }),
         IsConstant_(isConstant)
   {}
 
@@ -172,14 +172,14 @@ private:
   bool IsConstant_ = false;
 };
 
-class merge_op final : public jlm::rvsdg::simple_op
+class merge_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~merge_op()
   {}
 
   merge_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ nalternatives, type }, { type })
+      : SimpleOperation({ nalternatives, type }, { type })
   {}
 
   bool
@@ -213,7 +213,7 @@ public:
   }
 };
 
-class mux_op final : public jlm::rvsdg::simple_op
+class mux_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~mux_op()
@@ -224,7 +224,7 @@ public:
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool discarding,
       bool loop)
-      : jlm::rvsdg::simple_op(create_typevector(nalternatives, type), { type }),
+      : SimpleOperation(create_typevector(nalternatives, type), { type }),
         discarding(discarding),
         loop(loop)
   {}
@@ -286,14 +286,14 @@ private:
   }
 };
 
-class sink_op final : public jlm::rvsdg::simple_op
+class sink_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~sink_op()
   {}
 
   explicit sink_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ type }, {})
+      : SimpleOperation({ type }, {})
   {}
 
   bool
@@ -324,14 +324,14 @@ public:
   }
 };
 
-class predicate_buffer_op final : public jlm::rvsdg::simple_op
+class predicate_buffer_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~predicate_buffer_op()
   {}
 
   explicit predicate_buffer_op(const std::shared_ptr<const rvsdg::ControlType> & type)
-      : jlm::rvsdg::simple_op({ type }, { type })
+      : SimpleOperation({ type }, { type })
   {}
 
   bool
@@ -365,7 +365,7 @@ public:
   }
 };
 
-class loop_constant_buffer_op final : public jlm::rvsdg::simple_op
+class loop_constant_buffer_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~loop_constant_buffer_op()
@@ -374,7 +374,7 @@ public:
   loop_constant_buffer_op(
       const std::shared_ptr<const rvsdg::ControlType> & ctltype,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ ctltype, type }, { type })
+      : SimpleOperation({ ctltype, type }, { type })
   {}
 
   bool
@@ -408,7 +408,7 @@ public:
   }
 };
 
-class buffer_op final : public jlm::rvsdg::simple_op
+class buffer_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~buffer_op()
@@ -418,7 +418,7 @@ public:
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       size_t capacity,
       bool pass_through)
-      : jlm::rvsdg::simple_op({ type }, { type }),
+      : SimpleOperation({ type }, { type }),
         capacity(capacity),
         pass_through(pass_through)
   {}
@@ -487,14 +487,14 @@ public:
   Create();
 };
 
-class trigger_op final : public jlm::rvsdg::simple_op
+class trigger_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~trigger_op()
   {}
 
   explicit trigger_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ triggertype::Create(), type }, { type })
+      : SimpleOperation({ triggertype::Create(), type }, { type })
   {}
 
   bool
@@ -529,7 +529,7 @@ public:
   }
 };
 
-class print_op final : public jlm::rvsdg::simple_op
+class print_op final : public rvsdg::SimpleOperation
 {
 private:
   size_t _id;
@@ -539,7 +539,7 @@ public:
   {}
 
   explicit print_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ type }, { type })
+      : SimpleOperation({ type }, { type })
   {
     static size_t common_id{ 0 };
     _id = common_id++;
@@ -872,14 +872,16 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
 std::shared_ptr<const bundletype>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
-class load_op final : public jlm::rvsdg::simple_op
+class load_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~load_op()
   {}
 
   load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
-      : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
+      : SimpleOperation(
+            CreateInTypes(pointeeType, numStates),
+            CreateOutTypes(pointeeType, numStates))
   {}
 
   bool
@@ -959,7 +961,7 @@ public:
   }
 };
 
-class addr_queue_op final : public jlm::rvsdg::simple_op
+class addr_queue_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~addr_queue_op()
@@ -969,7 +971,7 @@ public:
       const std::shared_ptr<const llvm::PointerType> & pointerType,
       size_t capacity,
       bool combinatorial)
-      : simple_op(CreateInTypes(pointerType), CreateOutTypes(pointerType)),
+      : SimpleOperation(CreateInTypes(pointerType), CreateOutTypes(pointerType)),
         combinatorial(combinatorial),
         capacity(capacity)
   {}
@@ -1032,14 +1034,14 @@ public:
   size_t capacity;
 };
 
-class state_gate_op final : public jlm::rvsdg::simple_op
+class state_gate_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~state_gate_op()
   {}
 
   state_gate_op(const std::shared_ptr<const jlm::rvsdg::Type> & type, size_t numStates)
-      : simple_op(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
+      : SimpleOperation(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
   {}
 
   bool
@@ -1085,14 +1087,14 @@ public:
   }
 };
 
-class decoupled_load_op final : public jlm::rvsdg::simple_op
+class decoupled_load_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~decoupled_load_op()
   {}
 
   decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType)
-      : simple_op(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
+      : SimpleOperation(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
   {}
 
   bool
@@ -1154,14 +1156,14 @@ public:
   }
 };
 
-class mem_resp_op final : public jlm::rvsdg::simple_op
+class mem_resp_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~mem_resp_op()
   {}
 
   explicit mem_resp_op(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
-      : simple_op(CreateInTypes(output_types), CreateOutTypes(output_types))
+      : SimpleOperation(CreateInTypes(output_types), CreateOutTypes(output_types))
   {}
 
   bool
@@ -1226,7 +1228,7 @@ public:
   }
 };
 
-class mem_req_op final : public jlm::rvsdg::simple_op
+class mem_req_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~mem_req_op() = default;
@@ -1234,7 +1236,9 @@ public:
   mem_req_op(
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
-      : simple_op(CreateInTypes(load_types, store_types), CreateOutTypes(load_types, store_types))
+      : SimpleOperation(
+            CreateInTypes(load_types, store_types),
+            CreateOutTypes(load_types, store_types))
   {
     for (auto loadType : load_types)
     {
@@ -1357,14 +1361,16 @@ private:
   std::vector<std::shared_ptr<const rvsdg::Type>> StoreTypes_;
 };
 
-class store_op final : public jlm::rvsdg::simple_op
+class store_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~store_op()
   {}
 
   store_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
-      : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
+      : SimpleOperation(
+            CreateInTypes(pointeeType, numStates),
+            CreateOutTypes(pointeeType, numStates))
   {}
 
   bool
@@ -1438,14 +1444,14 @@ public:
   }
 };
 
-class local_mem_op final : public jlm::rvsdg::simple_op
+class local_mem_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_mem_op()
   {}
 
   explicit local_mem_op(std::shared_ptr<const llvm::arraytype> at)
-      : simple_op({}, CreateOutTypes(std::move(at)))
+      : SimpleOperation({}, CreateOutTypes(std::move(at)))
   {}
 
   bool
@@ -1484,14 +1490,14 @@ public:
   }
 };
 
-class local_mem_resp_op final : public jlm::rvsdg::simple_op
+class local_mem_resp_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_mem_resp_op()
   {}
 
   local_mem_resp_op(const std::shared_ptr<const jlm::llvm::arraytype> & at, size_t resp_count)
-      : simple_op({ at }, CreateOutTypes(at, resp_count))
+      : SimpleOperation({ at }, CreateOutTypes(at, resp_count))
   {}
 
   bool
@@ -1532,14 +1538,14 @@ public:
   }
 };
 
-class local_load_op final : public jlm::rvsdg::simple_op
+class local_load_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_load_op()
   {}
 
   local_load_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
-      : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
+      : SimpleOperation(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
@@ -1610,14 +1616,14 @@ public:
   }
 };
 
-class local_store_op final : public jlm::rvsdg::simple_op
+class local_store_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_store_op()
   {}
 
   local_store_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
-      : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
+      : SimpleOperation(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
@@ -1687,7 +1693,7 @@ public:
   }
 };
 
-class local_mem_req_op final : public jlm::rvsdg::simple_op
+class local_mem_req_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_mem_req_op()
@@ -1697,7 +1703,7 @@ public:
       const std::shared_ptr<const jlm::llvm::arraytype> & at,
       size_t load_cnt,
       size_t store_cnt)
-      : simple_op(CreateInTypes(at, load_cnt, store_cnt), {})
+      : SimpleOperation(CreateInTypes(at, load_cnt, store_cnt), {})
   {}
 
   bool

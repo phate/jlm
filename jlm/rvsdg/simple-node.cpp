@@ -47,7 +47,7 @@ simple_node::~simple_node()
 
 simple_node::simple_node(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & operands)
     : node(op.copy(), region)
 {
@@ -73,7 +73,7 @@ simple_node::simple_node(
 jlm::rvsdg::node *
 simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  auto node = create(region, *static_cast<const simple_op *>(&operation()), operands);
+  auto node = create(region, operation(), operands);
   graph()->mark_denormalized();
   return node;
 }

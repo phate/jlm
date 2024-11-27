@@ -20,7 +20,7 @@
 static std::unique_ptr<jlm::llvm::cfg>
 SetupControlFlowGraph(
     jlm::llvm::ipgraph_module & ipgModule,
-    const jlm::rvsdg::simple_op & operation)
+    const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
@@ -50,7 +50,7 @@ SetupControlFlowGraph(
 }
 
 static std::unique_ptr<jlm::llvm::ipgraph_module>
-SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
+SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 

@@ -202,7 +202,7 @@ public:
     auto node = jlm::rvsdg::output::GetNode(*Output_);
     auto index = Output_->index();
 
-    if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node))
+    if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
       auto nodestr = node->operation().debug_string();
       auto outputstr = Output_->type().debug_string();

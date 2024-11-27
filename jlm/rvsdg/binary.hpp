@@ -35,7 +35,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
   virtual void
@@ -112,7 +112,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 };
 
@@ -122,7 +122,7 @@ public:
   Operator taking two arguments (with well-defined reduction for more
   operands if operator is associative).
 */
-class binary_op : public simple_op
+class binary_op : public SimpleOperation
 {
 public:
   enum class flags
@@ -137,7 +137,7 @@ public:
   inline binary_op(
       const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
       std::shared_ptr<const jlm::rvsdg::Type> result)
-      : simple_op(std::move(operands), { std::move(result) })
+      : SimpleOperation(std::move(operands), { std::move(result) })
   {}
 
   virtual binop_reduction_path_t
@@ -167,7 +167,7 @@ public:
   }
 };
 
-class flattened_binary_op final : public simple_op
+class flattened_binary_op final : public SimpleOperation
 {
 public:
   enum class reduction
@@ -179,14 +179,14 @@ public:
   virtual ~flattened_binary_op() noexcept;
 
   inline flattened_binary_op(std::unique_ptr<binary_op> op, size_t narguments) noexcept
-      : simple_op({ narguments, op->argument(0) }, { op->result(0) }),
+      : SimpleOperation({ narguments, op->argument(0) }, { op->result(0) }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
   inline flattened_binary_op(const binary_op & op, size_t narguments)
-      : simple_op({ narguments, op.argument(0) }, { op.result(0) }),
+      : SimpleOperation({ narguments, op.argument(0) }, { op.result(0) }),
         op_(std::unique_ptr<binary_op>(static_cast<binary_op *>(op.copy().release())))
   {
     JLM_ASSERT(op_->is_associative());

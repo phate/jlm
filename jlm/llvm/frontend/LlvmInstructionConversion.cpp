@@ -543,7 +543,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(binop.get()), { op1, op2 }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(binop.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -1053,7 +1053,8 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(operation.get()), { op1, op2 }));
+    tacs.push_back(
+        tac::create(*static_cast<rvsdg::SimpleOperation *>(operation.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -1202,7 +1203,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   if (dt->isVectorTy())
     tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, type));
   else
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(unop.get()), { op }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 
   return tacs.back()->result(0);
 }

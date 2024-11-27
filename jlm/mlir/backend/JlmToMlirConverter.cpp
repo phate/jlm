@@ -177,7 +177,7 @@ JlmToMlirConverter::ConvertNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertBitBinaryNode(
-    const jlm::rvsdg::simple_op & bitOp,
+    const rvsdg::SimpleOperation & bitOp,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   ::mlir::Operation * MlirOp;
@@ -264,7 +264,7 @@ JlmToMlirConverter::ConvertBitBinaryNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::BitCompareNode(
-    const jlm::rvsdg::simple_op & bitOp,
+    const rvsdg::SimpleOperation & bitOp,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   ::mlir::arith::CmpIPredicate compPredicate;
