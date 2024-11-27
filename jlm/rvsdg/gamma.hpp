@@ -68,13 +68,13 @@ private:
 class output;
 class Type;
 
-class GammaOperation final : public structural_op
+class GammaOperation final : public StructuralOperation
 {
 public:
   ~GammaOperation() noexcept override;
 
   explicit constexpr GammaOperation(size_t nalternatives) noexcept
-      : structural_op(),
+      : StructuralOperation(),
         nalternatives_(nalternatives)
   {}
 

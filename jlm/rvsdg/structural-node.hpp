@@ -15,7 +15,7 @@ namespace jlm::rvsdg
 /* structural node */
 
 class StructuralInput;
-class structural_op;
+class StructuralOperation;
 class StructuralOutput;
 
 class StructuralNode : public node
@@ -26,7 +26,7 @@ public:
 protected:
   StructuralNode(
       /* FIXME: use move semantics instead of copy semantics for op */
-      const jlm::rvsdg::structural_op & op,
+      const StructuralOperation & op,
       rvsdg::Region * region,
       size_t nsubregions);
 

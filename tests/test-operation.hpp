@@ -193,7 +193,7 @@ private:
 
 /* structural operation */
 
-class structural_op final : public rvsdg::structural_op
+class structural_op final : public rvsdg::StructuralOperation
 {
 public:
   virtual ~structural_op() noexcept;

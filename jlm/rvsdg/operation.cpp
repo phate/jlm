@@ -59,15 +59,16 @@ SimpleOperation::normal_form(Graph * graph) noexcept
 /* structural operation */
 
 bool
-structural_op::operator==(const operation & other) const noexcept
+StructuralOperation::operator==(const operation & other) const noexcept
 {
   return typeid(*this) == typeid(other);
 }
 
 jlm::rvsdg::structural_normal_form *
-structural_op::normal_form(Graph * graph) noexcept
+StructuralOperation::normal_form(Graph * graph) noexcept
 {
-  return static_cast<structural_normal_form *>(graph->node_normal_form(typeid(structural_op)));
+  return static_cast<structural_normal_form *>(
+      graph->node_normal_form(typeid(StructuralOperation)));
 }
 
 }

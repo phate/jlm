@@ -120,7 +120,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
           return false;
         }
       }
-      else if (rvsdg::is<rvsdg::structural_op>(&node))
+      else if (rvsdg::is<rvsdg::StructuralOperation>(&node))
       {
         throw util::error("Unexpected structural node: " + node.operation().debug_string());
       }
