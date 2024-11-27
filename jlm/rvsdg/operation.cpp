@@ -68,7 +68,8 @@ StructuralOperation::operator==(const operation & other) const noexcept
 jlm::rvsdg::structural_normal_form *
 StructuralOperation::normal_form(Graph * graph) noexcept
 {
-  return static_cast<structural_normal_form *>(graph->node_normal_form(typeid(StructuralOperation)));
+  return static_cast<structural_normal_form *>(
+      graph->node_normal_form(typeid(StructuralOperation)));
 }
 
 }
