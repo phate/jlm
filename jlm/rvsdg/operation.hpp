@@ -95,7 +95,7 @@ private:
 
 /* structural operation */
 
-class structural_op : public operation
+class StructuralOperation : public operation
 {
 public:
   virtual bool

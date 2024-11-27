@@ -20,7 +20,7 @@ namespace delta
 
 /** \brief Delta operation
  */
-class operation final : public rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;

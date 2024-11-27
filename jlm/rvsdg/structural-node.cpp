@@ -54,7 +54,7 @@ StructuralNode::~StructuralNode() noexcept
 }
 
 StructuralNode::StructuralNode(
-    const jlm::rvsdg::structural_op & op,
+    const StructuralOperation & op,
     rvsdg::Region * region,
     size_t nsubregions)
     : node(op.copy(), region)

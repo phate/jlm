@@ -584,7 +584,7 @@ public:
   }
 };
 
-class loop_op final : public jlm::rvsdg::structural_op
+class loop_op final : public rvsdg::StructuralOperation
 {
 public:
   virtual ~loop_op() noexcept

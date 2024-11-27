@@ -26,7 +26,7 @@ namespace phi
 
 /* phi operation class  */
 
-class operation final : public jlm::rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;

@@ -77,7 +77,7 @@ hls::distribute_constants(rvsdg::Region * region)
   // buffers for them
   for (auto & node : rvsdg::topdown_traverser(region))
   {
-    if (rvsdg::is<rvsdg::structural_op>(node))
+    if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
       if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
       {
