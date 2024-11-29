@@ -224,7 +224,7 @@ instrument_ref(
           { addr, size, ioState, memstate });
       for (auto ou : old_users)
       {
-        // Divert the memory state of the load to the new memstate from the call GetOperation
+        // Divert the memory state of the load to the new memstate from the call operation
         ou->divert_to(callOp[1]);
       }
     }
@@ -257,7 +257,7 @@ instrument_ref(
           store_func,
           storeFunctionType,
           { addr, data, width, ioState, memstate });
-      // Divert the memory state of the load to the new memstate from the call GetOperation
+      // Divert the memory state of the load to the new memstate from the call operation
       node->input(2)->divert_to(callOp[1]);
     }
   }
