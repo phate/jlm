@@ -14,7 +14,7 @@ node_cse(
 {
   auto cse_test = [&](const jlm::rvsdg::node * node)
   {
-    return node->operation() == op && arguments == jlm::rvsdg::operands(node);
+    return node->GetOperation() == op && arguments == operands(node);
   };
 
   if (!arguments.empty())
@@ -66,7 +66,7 @@ simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
   if (get_cse())
   {
-    auto new_node = node_cse(node->region(), node->operation(), operands(node));
+    auto new_node = node_cse(node->region(), node->GetOperation(), operands(node));
     JLM_ASSERT(new_node);
     if (new_node != node)
     {

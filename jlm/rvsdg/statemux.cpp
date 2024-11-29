@@ -45,7 +45,7 @@ is_mux_mux_reducible(const std::vector<jlm::rvsdg::output *> & ops)
   for (const auto & operand : operands)
   {
     auto node = output::GetNode(*operand);
-    if (!node || !is_mux_op(node->operation()))
+    if (!node || !is_mux_op(node->GetOperation()))
       continue;
 
     size_t n;
@@ -84,7 +84,7 @@ perform_mux_mux_reduction(
     const jlm::rvsdg::node * muxnode,
     const std::vector<jlm::rvsdg::output *> & old_operands)
 {
-  JLM_ASSERT(is_mux_op(muxnode->operation()));
+  JLM_ASSERT(is_mux_op(muxnode->GetOperation()));
 
   bool reduced = false;
   std::vector<jlm::rvsdg::output *> new_operands;
@@ -123,8 +123,8 @@ mux_normal_form::mux_normal_form(
 bool
 mux_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
-  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op *>(&node->operation()));
-  auto op = static_cast<const jlm::rvsdg::mux_op *>(&node->operation());
+  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op *>(&node->GetOperation()));
+  auto op = static_cast<const mux_op *>(&node->GetOperation());
 
   if (!get_mutable())
     return true;

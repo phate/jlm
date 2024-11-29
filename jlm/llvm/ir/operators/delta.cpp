@@ -42,6 +42,12 @@ operation::operator==(const jlm::rvsdg::operation & other) const noexcept
 node::~node()
 {}
 
+const delta::operation &
+node::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const delta::operation>(&StructuralNode::GetOperation());
+}
+
 delta::node *
 node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {

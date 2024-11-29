@@ -37,7 +37,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
         auto r = gamma->subregion(j)->result(i);
         if (auto so = dynamic_cast<rvsdg::simple_output *>(r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->operation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->GetOperation()))
           {
             if (j == ctl->value().alternative())
             {
@@ -82,7 +82,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
         auto r = old_gamma->subregion(j)->result(i);
         if (auto so = dynamic_cast<rvsdg::simple_output *>(r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->operation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->GetOperation()))
           {
             if (j != ctl->value().alternative())
             {
@@ -104,7 +104,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
     {
       return false;
     }
-    if (auto match = dynamic_cast<const rvsdg::match_op *>(&no->node()->operation()))
+    if (auto match = dynamic_cast<const rvsdg::match_op *>(&no->node()->GetOperation()))
     {
       if (match->nalternatives() == 2)
       {

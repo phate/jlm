@@ -25,9 +25,9 @@ add_prints(rvsdg::Region * region)
         add_prints(structnode->subregion(n));
       }
     }
-    //		if (auto lo = dynamic_cast<const jlm::load_op *>(&(node->operation()))) {
+    //		if (auto lo = dynamic_cast<const jlm::load_op *>(&(node->GetOperation()))) {
     //
-    //		} else if (auto so = dynamic_cast<const jlm::store_op *>(&(node->operation()))) {
+    //		} else if (auto so = dynamic_cast<const jlm::store_op *>(&(node->GetOperation()))) {
     //			auto po = hls::print_op::create(*node->input(1)->origin())[0];
     //			node->input(1)->divert_to(po);
     //		}
@@ -113,7 +113,7 @@ convert_prints(
         convert_prints(structnode->subregion(n), printf, functionType);
       }
     }
-    else if (auto po = dynamic_cast<const print_op *>(&(node->operation())))
+    else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
     {
       auto printf_local = route_to_region(printf, region); // TODO: prevent repetition?
       auto bc = jlm::rvsdg::create_bitconstant(region, 64, po->id());

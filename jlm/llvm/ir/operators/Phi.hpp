@@ -381,11 +381,8 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  const phi::operation &
-  operation() const noexcept
-  {
-    return *static_cast<const phi::operation *>(&jlm::rvsdg::node::operation());
-  }
+  [[nodiscard]] const phi::operation &
+  GetOperation() const noexcept override;
 
   cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);

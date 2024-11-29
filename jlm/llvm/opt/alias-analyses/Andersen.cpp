@@ -610,7 +610,7 @@ public:
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 {
-  const auto & op = node.operation();
+  const auto & op = node.GetOperation();
 
   if (is<alloca_op>(op))
     AnalyzeAlloca(node);
@@ -652,7 +652,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
   }
   else
   {
-    // This node operation is unknown, make sure it doesn't consume any pointers
+    // This node GetOperation is unknown, make sure it doesn't consume any pointers
     for (size_t i = 0; i < node.ninputs(); i++)
     {
       JLM_ASSERT(!IsOrContainsPointerType(node.input(i)->type()));
@@ -663,7 +663,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
 {
-  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.operation());
+  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.GetOperation());
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -787,7 +787,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
   const auto & output = *node.output(0);
   JLM_ASSERT(is<PointerType>(output.type()));
 
-  // This operation synthesizes a pointer from bytes.
+  // This GetOperation synthesizes a pointer from bytes.
   // Since no points-to information is tracked through integers, the resulting pointer must
   // be assumed to possibly point to any external or escaped memory object.
   const auto outputPO = Set_->CreateRegisterPointerObject(output);
@@ -801,7 +801,7 @@ Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
   const auto & inputRegister = *node.input(0)->origin();
   JLM_ASSERT(is<PointerType>(inputRegister.type()));
 
-  // This operation converts a pointer to bytes, exposing it as an integer, which we can't track.
+  // This GetOperation converts a pointer to bytes, exposing it as an integer, which we can't track.
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
   Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
 }
@@ -963,7 +963,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
   else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
     AnalyzeTheta(*thetaNode);
   else
-    JLM_UNREACHABLE("Unknown structural node operation");
+    JLM_UNREACHABLE("Unknown structural node GetOperation");
 }
 
 void

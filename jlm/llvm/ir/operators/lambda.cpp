@@ -13,7 +13,7 @@
 namespace jlm::llvm::lambda
 {
 
-/* lambda operation class */
+/* lambda GetOperation class */
 
 operation::~operation() = default;
 
@@ -40,6 +40,12 @@ operation::copy() const
 /* lambda node class */
 
 node::~node() = default;
+
+const lambda::operation &
+node::GetOperation() const noexcept
+{
+  return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::GetOperation());
+}
 
 node::fctargument_range
 node::fctarguments()

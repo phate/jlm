@@ -131,22 +131,22 @@ TestLoad()
   // Load Address
   auto loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
-  jlm::util::AssertedCast<const load_op>(&loadNode->operation());
+  jlm::util::AssertedCast<const load_op>(&loadNode->GetOperation());
 
   // Load Data
   loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
-  jlm::util::AssertedCast<const load_op>(&loadNode->operation());
+  jlm::util::AssertedCast<const load_op>(&loadNode->GetOperation());
 
   // Request Node
   auto requestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
-  jlm::util::AssertedCast<const mem_req_op>(&requestNode->operation());
+  jlm::util::AssertedCast<const mem_req_op>(&requestNode->GetOperation());
 
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
-  jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
+  jlm::util::AssertedCast<const mem_resp_op>(&responseNode->GetOperation());
 
   // Response source
   auto responseSource = responseNode->input(0)->origin();
@@ -218,27 +218,27 @@ TestLoadStore()
   // Store Node
   auto storeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
-  jlm::util::AssertedCast<const store_op>(&storeNode->operation());
+  jlm::util::AssertedCast<const store_op>(&storeNode->GetOperation());
 
   // Request Node
   auto firstRequestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
-  jlm::util::AssertedCast<const mem_req_op>(&firstRequestNode->operation());
+  jlm::util::AssertedCast<const mem_req_op>(&firstRequestNode->GetOperation());
 
   // Request Node
   auto secondRequestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
-  jlm::util::AssertedCast<const mem_req_op>(&secondRequestNode->operation());
+  jlm::util::AssertedCast<const mem_req_op>(&secondRequestNode->GetOperation());
 
   // Load node
   auto loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(0)->origin())->node();
-  jlm::util::AssertedCast<const load_op>(&loadNode->operation());
+  jlm::util::AssertedCast<const load_op>(&loadNode->GetOperation());
 
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
-  jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
+  jlm::util::AssertedCast<const mem_resp_op>(&responseNode->GetOperation());
 
   return 0;
 }
@@ -315,11 +315,11 @@ TestThetaLoad()
   auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(4)->begin();
   auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
-      &entryMemoryStateSplitNode->operation());
+      &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
-      &exitMemoryStateMergeNode->operation());
+      &exitMemoryStateMergeNode->GetOperation());
 
   // Act
   ConvertThetaNodes(*rvsdgModule);
@@ -352,20 +352,20 @@ TestThetaLoad()
   // Request Node
   auto requestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
-  jlm::util::AssertedCast<const mem_req_op>(&requestNode->operation());
+  jlm::util::AssertedCast<const mem_req_op>(&requestNode->GetOperation());
 
   // HLS_LOOP Node
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  jlm::util::AssertedCast<const loop_op>(&loopNode->operation());
+  jlm::util::AssertedCast<const loop_op>(&loopNode->GetOperation());
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);
   // Load Node
   auto loadNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
-  jlm::util::AssertedCast<const decoupled_load_op>(&loadNode->operation());
+  jlm::util::AssertedCast<const decoupled_load_op>(&loadNode->GetOperation());
   // Loop Argument
   auto thetaArgument =
       jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
@@ -374,7 +374,7 @@ TestThetaLoad()
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaInput->origin())->node();
-  jlm::util::AssertedCast<const mem_resp_op>(&responseNode->operation());
+  jlm::util::AssertedCast<const mem_resp_op>(&responseNode->GetOperation());
 
   // Lambda argument
   jlm::util::AssertedCast<const jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin());

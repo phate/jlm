@@ -231,7 +231,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   }
 
   if (jlm::rvsdg::is<rvsdg::SimpleOperation>(n1) && jlm::rvsdg::is<rvsdg::SimpleOperation>(n2)
-      && n1->operation() == n2->operation() && n1->ninputs() == n2->ninputs()
+      && n1->GetOperation() == n2->GetOperation() && n1->ninputs() == n2->ninputs()
       && o1->index() == o2->index())
   {
     for (size_t n = 0; n < n1->ninputs(); n++)
@@ -276,7 +276,7 @@ mark(rvsdg::Region *, cnectx &);
 static void
 mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node->operation()));
+  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node->GetOperation()));
 
   /* mark entry variables */
   for (size_t i1 = 1; i1 < node->ninputs(); i1++)
@@ -379,7 +379,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
         { typeid(phi::operation), mark_phi },
         { typeid(delta::operation), mark_delta } });
 
-  auto & op = node->operation();
+  auto & op = node->GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](node, ctx);
 }
@@ -391,7 +391,7 @@ mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
   {
     for (const auto & other : node->region()->TopNodes())
     {
-      if (&other != node && node->operation() == other.operation())
+      if (&other != node && node->GetOperation() == other.GetOperation())
       {
         ctx.mark(node, &other);
         break;
@@ -407,7 +407,7 @@ mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
     {
       auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(user);
       auto other = ni ? ni->node() : nullptr;
-      if (!other || other == node || other->operation() != node->operation()
+      if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;
 
@@ -532,7 +532,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
         { typeid(phi::operation), divert_phi },
         { typeid(delta::operation), divert_delta } });
 
-  auto & op = node->operation();
+  auto & op = node->GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](node, ctx);
 }

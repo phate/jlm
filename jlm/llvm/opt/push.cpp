@@ -329,7 +329,7 @@ pushout_store(jlm::rvsdg::node * storenode)
   JLM_ASSERT(is<rvsdg::ThetaOperation>(storenode->region()->node()));
   JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode));
   auto theta = static_cast<rvsdg::ThetaNode *>(storenode->region()->node());
-  auto storeop = static_cast<const StoreNonVolatileOperation *>(&storenode->operation());
+  auto storeop = static_cast<const StoreNonVolatileOperation *>(&storenode->GetOperation());
   auto oaddress = static_cast<rvsdg::RegionArgument *>(storenode->input(0)->origin());
   auto ovalue = storenode->input(1)->origin();
 

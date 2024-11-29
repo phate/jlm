@@ -264,9 +264,9 @@ private:
 
 public:
   [[nodiscard]] const CallOperation &
-  GetOperation() const noexcept
+  GetOperation() const noexcept override
   {
-    return *jlm::util::AssertedCast<const CallOperation>(&operation());
+    return *jlm::util::AssertedCast<const CallOperation>(&simple_node::GetOperation());
   }
 
   /**

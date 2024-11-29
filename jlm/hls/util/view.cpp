@@ -168,7 +168,7 @@ structural_node_to_dot(rvsdg::StructuralNode * structuralNode)
   dot << "subgraph cluster_sn" << hex((intptr_t)structuralNode) << " {\n";
   dot << "color=\"#ff8080\"\n";
   dot << "penwidth=6\n";
-  dot << "label=\"" << structuralNode->operation().debug_string() << "\"\n";
+  dot << "label=\"" << structuralNode->GetOperation().debug_string() << "\"\n";
   dot << "labeljust=l\n";
 
   // input nodes
@@ -240,7 +240,7 @@ simple_node_to_dot(jlm::rvsdg::simple_node * simpleNode)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_dot_name(simpleNode);
-  auto opname = simpleNode->operation().debug_string();
+  auto opname = simpleNode->GetOperation().debug_string();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::ostringstream inputs;

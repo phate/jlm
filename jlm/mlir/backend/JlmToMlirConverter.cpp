@@ -69,8 +69,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
     block.addArgument(type, Builder_->getUnknownLoc());
   }
 
-  // Create an MLIR operation for each RVSDG node and store each pair in a
-  // hash map for easy lookup of corresponding MLIR operation
+  // Create an MLIR GetOperation for each RVSDG node and store each pair in a
+  // hash map for easy lookup of corresponding MLIR GetOperation
   std::unordered_map<rvsdg::node *, ::mlir::Operation *> operationsMap;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
@@ -137,7 +137,7 @@ JlmToMlirConverter::GetConvertedInputs(
           ": ",
           node.input(i)->origin()->type().debug_string(),
           " for node: ",
-          node.operation().debug_string(),
+          node.GetOperation().debug_string(),
           " at index: ",
           i);
       JLM_UNREACHABLE(message.c_str());
@@ -170,7 +170,8 @@ JlmToMlirConverter::ConvertNode(
   }
   else
   {
-    auto message = util::strfmt("Unimplemented structural node: ", node.operation().debug_string());
+    auto message =
+        util::strfmt("Unimplemented structural node: ", node.GetOperation().debug_string());
     JLM_UNREACHABLE(message.c_str());
   }
 }
@@ -289,7 +290,7 @@ JlmToMlirConverter::BitCompareNode(
   else if (jlm::rvsdg::is<const rvsdg::bitult_op>(bitOp))
     compPredicate = ::mlir::arith::CmpIPredicate::ult;
   else
-    JLM_UNREACHABLE("Unknown bitcompare operation");
+    JLM_UNREACHABLE("Unknown bitcompare GetOperation");
 
   auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
       Builder_->getUnknownLoc(),
@@ -306,7 +307,8 @@ JlmToMlirConverter::ConvertSimpleNode(
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
   ::mlir::Operation * MlirOp;
-  if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&(node.operation())))
+  auto & operation = node.GetOperation();
+  if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&operation))
   {
     auto value = bitOp->value();
     MlirOp = Builder_->create<::mlir::arith::ConstantIntOp>(
@@ -314,15 +316,15 @@ JlmToMlirConverter::ConvertSimpleNode(
         value.to_uint(),
         value.nbits());
   }
-  else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(node.operation()))
+  else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
   {
-    MlirOp = ConvertBitBinaryNode(node.operation(), inputs);
+    MlirOp = ConvertBitBinaryNode(operation, inputs);
   }
-  else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(node.operation()))
+  else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
   {
-    MlirOp = BitCompareNode(node.operation(), inputs);
+    MlirOp = BitCompareNode(operation, inputs);
   }
-  else if (auto bitOp = dynamic_cast<const jlm::llvm::zext_op *>(&(node.operation())))
+  else if (auto bitOp = dynamic_cast<const llvm::zext_op *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
         Builder_->getUnknownLoc(),
@@ -330,23 +332,23 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0]);
   }
   // ** region structural nodes **
-  else if (auto ctlOp = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&node.operation()))
+  else if (auto ctlOp = dynamic_cast<const rvsdg::ctlconstant_op *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
         Builder_->getUnknownLoc(),
         ConvertType(node.output(0)->type()), // Control, ouput type
         ctlOp->value().alternative());
   }
-  else if (auto undefOp = dynamic_cast<const jlm::llvm::UndefValueOperation *>(&node.operation()))
+  else if (auto undefOp = dynamic_cast<const llvm::UndefValueOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Undef>(
         Builder_->getUnknownLoc(),
         ConvertType(undefOp->GetType()));
   }
-  else if (auto matchOp = dynamic_cast<const jlm::rvsdg::match_op *>(&(node.operation())))
+  else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
-    //! MLIR match operation can match multiple values to one index
+    //! MLIR match GetOperation can match multiple values to one index
     //! But jlm implements this with multiple mappings
     //! For easy conversion, we only created one mapping per value
     ::llvm::SmallVector<::mlir::Attribute> mappingVector;
@@ -375,7 +377,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   // ** endregion structural nodes **
   else
   {
-    auto message = util::strfmt("Unimplemented simple node: ", node.operation().debug_string());
+    auto message = util::strfmt("Unimplemented simple node: ", operation.debug_string());
     JLM_UNREACHABLE(message.c_str());
   }
 
@@ -441,7 +443,7 @@ JlmToMlirConverter::ConvertGamma(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto & gammaOp = *util::AssertedCast<const rvsdg::GammaOperation>(&gammaNode.operation());
+  auto & gammaOp = *util::AssertedCast<const rvsdg::GammaOperation>(&gammaNode.GetOperation());
 
   ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)

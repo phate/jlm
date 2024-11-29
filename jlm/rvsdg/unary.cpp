@@ -36,7 +36,7 @@ unary_normal_form::normalize_node(jlm::rvsdg::node * node) const
     return true;
   }
 
-  const auto & op = static_cast<const jlm::rvsdg::unary_op &>(node->operation());
+  const auto & op = static_cast<const unary_op &>(node->GetOperation());
 
   if (get_reducible())
   {

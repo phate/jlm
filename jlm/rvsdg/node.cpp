@@ -356,7 +356,7 @@ producer(const jlm::rvsdg::output * output) noexcept
 bool
 normalize(jlm::rvsdg::node * node)
 {
-  const auto & op = node->operation();
+  const auto & op = node->GetOperation();
   auto nf = node->graph()->node_normal_form(typeid(op));
   return nf->normalize_node(node);
 }

@@ -10,6 +10,12 @@
 namespace jlm::llvm
 {
 
+const StoreOperation &
+StoreNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const StoreOperation>(&simple_node::GetOperation());
+}
+
 StoreNonVolatileOperation::~StoreNonVolatileOperation() noexcept = default;
 
 bool
@@ -42,7 +48,7 @@ StoreNonVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const StoreNonVolatileOperation &
 StoreNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const StoreNonVolatileOperation>(&operation());
+  return *util::AssertedCast<const StoreNonVolatileOperation>(&StoreNode::GetOperation());
 }
 
 [[nodiscard]] StoreNode::MemoryStateInputRange
@@ -118,7 +124,7 @@ StoreVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const StoreVolatileOperation &
 StoreVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const StoreVolatileOperation>(&operation());
+  return *util::AssertedCast<const StoreVolatileOperation>(&StoreNode::GetOperation());
 }
 
 [[nodiscard]] StoreNode::MemoryStateInputRange
@@ -205,7 +211,7 @@ is_store_store_reducible(
       return false;
   }
 
-  auto other = static_cast<const StoreNonVolatileOperation *>(&storenode->operation());
+  auto other = static_cast<const StoreNonVolatileOperation *>(&storenode->GetOperation());
   JLM_ASSERT(op.GetAlignment() == other->GetAlignment());
   return true;
 }
@@ -217,7 +223,7 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
     return false;
 
   auto alloca = jlm::rvsdg::output::GetNode(*operands[0]);
-  if (!alloca || !is<alloca_op>(alloca->operation()))
+  if (!alloca || !is<alloca_op>(alloca->GetOperation()))
     return false;
 
   std::unordered_set<jlm::rvsdg::output *> states(
@@ -327,8 +333,8 @@ store_normal_form::store_normal_form(
 bool
 store_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
-  JLM_ASSERT(is<StoreNonVolatileOperation>(node->operation()));
-  auto op = static_cast<const StoreNonVolatileOperation *>(&node->operation());
+  JLM_ASSERT(is<StoreNonVolatileOperation>(node->GetOperation()));
+  auto op = static_cast<const StoreNonVolatileOperation *>(&node->GetOperation());
   auto operands = jlm::rvsdg::operands(node);
 
   if (!get_mutable())

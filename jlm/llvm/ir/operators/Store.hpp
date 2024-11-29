@@ -260,8 +260,8 @@ public:
   using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
-  [[nodiscard]] virtual const StoreOperation &
-  GetOperation() const noexcept = 0;
+  [[nodiscard]] const StoreOperation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept

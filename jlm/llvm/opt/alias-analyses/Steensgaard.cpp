@@ -204,50 +204,50 @@ public:
 
     if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
-      auto nodestr = node->operation().debug_string();
+      auto nodestr = node->GetOperation().debug_string();
       auto outputstr = Output_->type().debug_string();
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
     if (is<lambda::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is<lambda::fctargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg:", index);
     }
 
     if (is<delta::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is<rvsdg::GammaArgument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is<rvsdg::ThetaArgument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is<rvsdg::ThetaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (is<rvsdg::GammaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -258,18 +258,18 @@ public:
 
     if (is<phi::rvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":rvarg", index);
     }
 
     if (is<phi::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cvarg", index);
     }
 
     return jlm::util::strfmt(
-        jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string(),
+        rvsdg::output::GetNode(*Output_)->GetOperation().debug_string(),
         ":",
         index);
   }
@@ -306,7 +306,7 @@ public:
 
 /** \brief AllocaLocation class
  *
- * This class represents an abstract stack location allocated by a alloca operation.
+ * This class represents an abstract stack location allocated by a alloca GetOperation.
  */
 class AllocaLocation final : public MemoryLocation
 {
@@ -330,7 +330,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.operation().debug_string();
+    return Node_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -345,7 +345,7 @@ private:
 
 /** \brief MallocLocation class
  *
- * This class represents an abstract heap location allocated by a malloc operation.
+ * This class represents an abstract heap location allocated by a malloc GetOperation.
  */
 class MallocLocation final : public MemoryLocation
 {
@@ -368,7 +368,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.operation().debug_string();
+    return Node_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -383,7 +383,7 @@ private:
 
 /** \brief LambdaLocation class
  *
- * This class represents an abstract function location, statically allocated by a lambda operation.
+ * This class represents an abstract function location, statically allocated by a lambda GetOperation.
  */
 class LambdaLocation final : public MemoryLocation
 {
@@ -404,7 +404,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Lambda_.operation().debug_string();
+    return Lambda_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -420,7 +420,7 @@ private:
 /** \brief DeltaLocation class
  *
  * This class represents an abstract global variable location, statically allocated by a delta
- * operation.
+ * GetOperation.
  */
 class DeltaLocation final : public MemoryLocation
 {
@@ -441,7 +441,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Delta_.operation().debug_string();
+    return Delta_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -1158,7 +1158,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
-  auto & lambdaFunctionType = lambdaNode.operation().type();
+  auto & lambdaFunctionType = lambdaNode.GetOperation().type();
   auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
   if (callFunctionType != lambdaFunctionType)
   {
@@ -1318,7 +1318,7 @@ Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
 
   if (HasOrContainsPointerType(result))
   {
-    // FIXME: Have a look at this operation again to ensure that the flags add up.
+    // FIXME: Have a look at this GetOperation again to ensure that the flags add up.
     auto & registerLocation = Context_->GetOrInsertRegisterLocation(result);
     registerLocation.SetPointsToFlags(
         registerLocation.GetPointsToFlags() | PointsToFlags::PointsToUnknownMemory

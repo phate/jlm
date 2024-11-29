@@ -117,7 +117,7 @@ unrollinfo::niterations() const noexcept
   auto step = is_additive() ? *step_value() : step_value()->neg();
   auto end = is_additive() ? *end_value() : *init_value();
 
-  if (is_eqcmp(cmpnode()->operation()))
+  if (is_eqcmp(cmpnode()->GetOperation()))
     end = end.add({ nbits(), 1 });
 
   auto range = end.sub(start);

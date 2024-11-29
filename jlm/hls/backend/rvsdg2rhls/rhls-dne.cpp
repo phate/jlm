@@ -128,7 +128,7 @@ remove_unused_loop_inputs(loop_node * ln)
 bool
 dead_spec_gamma(jlm::rvsdg::node * dmux_node)
 {
-  auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&dmux_node->operation());
+  auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&dmux_node->GetOperation());
   JLM_ASSERT(mux_op);
   JLM_ASSERT(mux_op->discarding);
   // check if all inputs have the same origin
@@ -154,7 +154,7 @@ dead_spec_gamma(jlm::rvsdg::node * dmux_node)
 bool
 dead_nonspec_gamma(jlm::rvsdg::node * ndmux_node)
 {
-  auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&ndmux_node->operation());
+  auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
   JLM_ASSERT(mux_op);
   JLM_ASSERT(!mux_op->discarding);
   // check if all inputs go to outputs of same branch
@@ -164,7 +164,7 @@ dead_nonspec_gamma(jlm::rvsdg::node * ndmux_node)
   {
     if (auto no = dynamic_cast<jlm::rvsdg::node_output *>(ndmux_node->input(i)->origin()))
     {
-      if (dynamic_cast<const branch_op *>(&no->node()->operation()) && no->nusers() == 1)
+      if (dynamic_cast<const branch_op *>(&no->node()->GetOperation()) && no->nusers() == 1)
       {
         if (i == 1)
         {
@@ -195,7 +195,7 @@ dead_nonspec_gamma(jlm::rvsdg::node * ndmux_node)
 bool
 dead_loop(jlm::rvsdg::node * ndmux_node)
 {
-  auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&ndmux_node->operation());
+  auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
   JLM_ASSERT(mux_op);
   JLM_ASSERT(!mux_op->discarding);
   // origin is a backedege argument
@@ -210,7 +210,7 @@ dead_loop(jlm::rvsdg::node * ndmux_node)
     return false;
   }
   auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(*ndmux_node->output(0)->begin());
-  if (!branch_in || !dynamic_cast<const branch_op *>(&branch_in->node()->operation()))
+  if (!branch_in || !dynamic_cast<const branch_op *>(&branch_in->node()->GetOperation()))
   {
     return false;
   }
@@ -220,7 +220,7 @@ dead_loop(jlm::rvsdg::node * ndmux_node)
     return false;
   }
   auto buf_in = dynamic_cast<jlm::rvsdg::node_input *>(*branch_in->node()->output(1)->begin());
-  if (!buf_in || !dynamic_cast<const buffer_op *>(&buf_in->node()->operation()))
+  if (!buf_in || !dynamic_cast<const buffer_op *>(&buf_in->node()->GetOperation()))
   {
     return false;
   }
@@ -234,14 +234,14 @@ dead_loop(jlm::rvsdg::node * ndmux_node)
   auto branch_cond_origin = branch_in->node()->input(0)->origin();
   auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(ndmux_node->input(0)->origin());
   if (!pred_buf_out
-      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out->node()->operation()))
+      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out->node()->GetOperation()))
   {
     return false;
   }
   auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
   auto extra_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(pred_buf_cond_origin);
-  if (!extra_buf_out || !dynamic_cast<const buffer_op *>(&extra_buf_out->node()->operation()))
+  if (!extra_buf_out || !dynamic_cast<const buffer_op *>(&extra_buf_out->node()->GetOperation()))
   {
     return false;
   }
@@ -279,16 +279,16 @@ dne(rvsdg::Region * sr)
     {
       if (!node->has_users())
       {
-        if (dynamic_cast<const mem_req_op *>(&node->operation()))
+        if (dynamic_cast<const mem_req_op *>(&node->GetOperation()))
         {
           // TODO: fix this once memory connections are explicit
           continue;
         }
-        else if (dynamic_cast<const local_mem_req_op *>(&node->operation()))
+        else if (dynamic_cast<const local_mem_req_op *>(&node->GetOperation()))
         {
           continue;
         }
-        else if (dynamic_cast<const local_mem_resp_op *>(&node->operation()))
+        else if (dynamic_cast<const local_mem_resp_op *>(&node->GetOperation()))
         {
           // TODO: fix - this scenario has only stores and should just be optimized away completely
           continue;
@@ -304,7 +304,7 @@ dne(rvsdg::Region * sr)
         changed |= remove_loop_passthrough(ln);
         changed |= dne(ln->subregion());
       }
-      else if (auto mux = dynamic_cast<const jlm::hls::mux_op *>(&node->operation()))
+      else if (auto mux = dynamic_cast<const mux_op *>(&node->GetOperation()))
       {
         if (mux->discarding)
         {

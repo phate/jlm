@@ -36,8 +36,10 @@ memstate_conv(rvsdg::Region * region)
     }
     else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&simplenode->operation())
-          || dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
+              &simplenode->GetOperation())
+          || dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(
+              &simplenode->GetOperation()))
       {
         auto new_outs =
             hls::fork_op::create(simplenode->noutputs(), *simplenode->input(0)->origin());

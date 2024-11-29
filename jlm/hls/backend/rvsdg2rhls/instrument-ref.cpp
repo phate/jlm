@@ -172,7 +172,7 @@ instrument_ref(
     }
     else if (
         auto loadOp =
-            dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->operation())))
+            dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -190,17 +190,17 @@ instrument_ref(
           load_func,
           loadFunctionType,
           { addr, width, ioState, memstate });
-      // Divert the memory state of the load to the new memstate from the call operation
+      // Divert the memory state of the load to the new memstate from the call GetOperation
       node->input(1)->divert_to(callOp[1]);
     }
-    else if (auto ao = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->operation())))
+    else if (auto ao = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->GetOperation())))
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);
       auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
       auto constant_operation =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&constant_output->node()->operation());
+          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       jlm::rvsdg::output * addr = node->output(0);
@@ -224,12 +224,12 @@ instrument_ref(
           { addr, size, ioState, memstate });
       for (auto ou : old_users)
       {
-        // Divert the memory state of the load to the new memstate from the call operation
+        // Divert the memory state of the load to the new memstate from the call GetOperation
         ou->divert_to(callOp[1]);
       }
     }
     else if (
-        auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->operation())))
+        auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -256,7 +256,7 @@ instrument_ref(
           store_func,
           storeFunctionType,
           { addr, data, width, ioState, memstate });
-      // Divert the memory state of the load to the new memstate from the call operation
+      // Divert the memory state of the load to the new memstate from the call GetOperation
       node->input(2)->divert_to(callOp[1]);
     }
   }

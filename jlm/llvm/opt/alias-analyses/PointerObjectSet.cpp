@@ -20,7 +20,7 @@ namespace jlm::llvm::aa
 
 /**
  * Flag that enables unification logic.
- * When enabled, each points-to set lookup needs to perform a find operation.
+ * When enabled, each points-to set lookup needs to perform a find GetOperation.
  * When disabled, attempting to call UnifyPointerObjects panics.
  */
 static constexpr bool ENABLE_UNIFICATION = true;
@@ -1630,7 +1630,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   // Ensures all constraints end up being owned by the new root.
   // It does NOT redirect constraints owned by other nodes, referencing a or b.
   // If a and b already belong to the same unification root, this is a no-op.
-  // This operation does not add the unification result to the worklist.
+  // This GetOperation does not add the unification result to the worklist.
   // Returns the root of the new unification, or the existing root if a and b were already unified.
   const auto UnifyPointerObjects = [&](PointerObjectIndex a,
                                        PointerObjectIndex b) -> PointerObjectIndex

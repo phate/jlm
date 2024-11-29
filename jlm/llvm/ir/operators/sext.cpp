@@ -9,7 +9,7 @@
 namespace jlm::llvm
 {
 
-/* sext operation */
+/* sext GetOperation */
 
 static const rvsdg::unop_reduction_path_t sext_reduction_bitunary = 128;
 static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;
@@ -33,7 +33,7 @@ is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
   if (!node)
     return false;
 
-  auto top = dynamic_cast<const trunc_op *>(&node->operation());
+  auto top = dynamic_cast<const trunc_op *>(&node->GetOperation());
   return top && top->nsrcbits() == op.ndstbits();
 }
 
@@ -43,7 +43,7 @@ perform_bitunary_reduction(const sext_op & op, rvsdg::output * operand)
   JLM_ASSERT(is_bitunary_reducible(operand));
   auto unary = rvsdg::output::GetNode(*operand);
   auto region = operand->region();
-  auto uop = static_cast<const rvsdg::bitunary_op *>(&unary->operation());
+  auto uop = static_cast<const rvsdg::bitunary_op *>(&unary->GetOperation());
 
   auto output = sext_op::create(op.ndstbits(), unary->input(0)->origin());
   return rvsdg::simple_node::create_normalized(region, *uop->create(op.ndstbits()), { output })[0];
@@ -55,7 +55,7 @@ perform_bitbinary_reduction(const sext_op & op, rvsdg::output * operand)
   JLM_ASSERT(is_bitbinary_reducible(operand));
   auto binary = rvsdg::output::GetNode(*operand);
   auto region = operand->region();
-  auto bop = static_cast<const rvsdg::bitbinary_op *>(&binary->operation());
+  auto bop = static_cast<const rvsdg::bitbinary_op *>(&binary->GetOperation());
 
   JLM_ASSERT(binary->ninputs() == 2);
   auto op1 = sext_op::create(op.ndstbits(), binary->input(0)->origin());
@@ -119,7 +119,7 @@ sext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * opera
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->operation());
+    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->GetOperation());
     return create_bitconstant(operand->region(), c->value().sext(ndstbits() - nsrcbits()));
   }
 

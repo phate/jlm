@@ -248,9 +248,9 @@ TestStoreMuxReduction()
   auto n0 = jlm::rvsdg::output::GetNode(*muxnode->input(0)->origin());
   auto n1 = jlm::rvsdg::output::GetNode(*muxnode->input(1)->origin());
   auto n2 = jlm::rvsdg::output::GetNode(*muxnode->input(2)->origin());
-  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n0->operation()));
-  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n1->operation()));
-  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n2->operation()));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n0->GetOperation()));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n1->GetOperation()));
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n2->GetOperation()));
 }
 
 static void
@@ -289,7 +289,7 @@ TestMultipleOriginReduction()
 
   // Assert
   auto node = jlm::rvsdg::output::GetNode(*ex.origin());
-  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(node->operation()) && node->ninputs() == 3);
+  assert(jlm::rvsdg::is<StoreNonVolatileOperation>(node->GetOperation()) && node->ninputs() == 3);
 }
 
 static void

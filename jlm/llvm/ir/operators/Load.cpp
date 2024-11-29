@@ -11,6 +11,12 @@
 namespace jlm::llvm
 {
 
+const LoadOperation &
+LoadNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadOperation>(&simple_node::GetOperation());
+}
+
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
@@ -44,7 +50,7 @@ LoadNonVolatileOperation::NumMemoryStates() const noexcept
 const LoadNonVolatileOperation &
 LoadNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&operation());
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&simple_node::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -120,7 +126,7 @@ LoadVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const LoadVolatileOperation &
 LoadVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadVolatileOperation>(&operation());
+  return *util::AssertedCast<const LoadVolatileOperation>(&LoadNode::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -577,8 +583,8 @@ load_normal_form::load_normal_form(
 bool
 load_normal_form::normalize_node(rvsdg::node * node) const
 {
-  JLM_ASSERT(is<LoadNonVolatileOperation>(node->operation()));
-  auto op = static_cast<const LoadNonVolatileOperation *>(&node->operation());
+  JLM_ASSERT(is<LoadNonVolatileOperation>(node->GetOperation()));
+  auto op = static_cast<const LoadNonVolatileOperation *>(&node->GetOperation());
   auto operands = rvsdg::operands(node);
 
   if (!get_mutable())

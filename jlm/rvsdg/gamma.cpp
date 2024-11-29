@@ -17,7 +17,7 @@ static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
   auto constant = output::GetNode(*gamma->predicate()->origin());
-  return constant && is_ctlconstant_op(constant->operation());
+  return constant && is_ctlconstant_op(constant->GetOperation());
 }
 
 static void
@@ -25,7 +25,7 @@ perform_predicate_reduction(GammaNode * gamma)
 {
   auto origin = gamma->predicate()->origin();
   auto constant = static_cast<node_output *>(origin)->node();
-  auto cop = static_cast<const ctlconstant_op *>(&constant->operation());
+  auto cop = static_cast<const ctlconstant_op *>(&constant->GetOperation());
   auto alternative = cop->value().alternative();
 
   rvsdg::SubstitutionMap smap;
@@ -78,7 +78,7 @@ is_control_constant_reducible(GammaNode * gamma)
     return {};
 
   /* check number of alternatives */
-  auto match_op = static_cast<const jlm::rvsdg::match_op *>(&match->operation());
+  auto match_op = static_cast<const jlm::rvsdg::match_op *>(&match->GetOperation());
   std::unordered_set<uint64_t> set({ match_op->default_alternative() });
   for (const auto & pair : *match_op)
     set.insert(pair.second);
@@ -100,7 +100,7 @@ is_control_constant_reducible(GammaNode * gamma)
       if (!is<ctlconstant_op>(node))
         break;
 
-      auto op = static_cast<const jlm::rvsdg::ctlconstant_op *>(&node->operation());
+      auto op = static_cast<const jlm::rvsdg::ctlconstant_op *>(&node->GetOperation());
       if (op->value().nalternatives() != 2)
         break;
     }
@@ -117,7 +117,7 @@ perform_control_constant_reduction(std::unordered_set<StructuralOutput *> & outp
   auto gamma = static_cast<GammaNode *>((*outputs.begin())->node());
   auto origin = static_cast<node_output *>(gamma->predicate()->origin());
   auto match = origin->node();
-  auto & match_op = to_match_op(match->operation());
+  auto & match_op = to_match_op(match->GetOperation());
 
   std::unordered_map<uint64_t, uint64_t> map;
   for (const auto & pair : match_op)
@@ -134,7 +134,7 @@ perform_control_constant_reduction(std::unordered_set<StructuralOutput *> & outp
     for (size_t n = 0; n < xv->nresults(); n++)
     {
       auto origin = static_cast<node_output *>(xv->result(n)->origin());
-      auto & value = to_ctlconstant_op(origin->node()->operation()).value();
+      auto & value = to_ctlconstant_op(origin->node()->GetOperation()).value();
       nalternatives = value.nalternatives();
       if (map.find(n) != map.end())
         new_mapping[map[n]] = value.alternative();

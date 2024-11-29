@@ -237,7 +237,7 @@ AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap 
     if (is<assignment_op>(tac->operation()))
     {
       /*
-          We need special treatment for assignment operation, since the variable
+          We need special treatment for assignment GetOperation, since the variable
           they assign the value to is modeled as an argument of the tac.
       */
       JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);

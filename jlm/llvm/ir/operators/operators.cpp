@@ -437,7 +437,7 @@ zext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * opera
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->operation());
+    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->GetOperation());
     return create_bitconstant(
         rvsdg::output::GetNode(*operand)->region(),
         c->value().zext(ndstbits() - nsrcbits()));

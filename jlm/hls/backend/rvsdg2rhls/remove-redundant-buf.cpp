@@ -16,15 +16,15 @@ eliminate_buf(jlm::rvsdg::output * o)
   if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(o))
   {
     auto node = so->node();
-    if (dynamic_cast<const branch_op *>(&node->operation()))
+    if (dynamic_cast<const branch_op *>(&node->GetOperation()))
     {
       return eliminate_buf(node->input(1)->origin());
     }
-    else if (dynamic_cast<const local_load_op *>(&node->operation()))
+    else if (dynamic_cast<const local_load_op *>(&node->GetOperation()))
     {
       return true;
     }
-    else if (dynamic_cast<const local_store_op *>(&node->operation()))
+    else if (dynamic_cast<const local_store_op *>(&node->GetOperation()))
     {
       return true;
     }
@@ -46,7 +46,7 @@ remove_redundant_buf(rvsdg::Region * region)
     }
     else if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (auto buf = dynamic_cast<const buffer_op *>(&node->operation()))
+      if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
       {
         if (std::dynamic_pointer_cast<const jlm::llvm::MemoryStateType>(buf->argument(0)))
         {

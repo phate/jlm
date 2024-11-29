@@ -46,7 +46,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
   {
     if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->operation()))
+      if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->GetOperation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->ninputs(); ++i)
@@ -54,7 +54,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
           if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(simplenode->input(i)->origin()))
           {
             if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
-                    &so->node()->operation()))
+                    &so->node()->GetOperation()))
             {
               // skip things coming from entry
               continue;
@@ -68,7 +68,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
           auto entry_node =
               dynamic_cast<jlm::rvsdg::node_output *>(simplenode->input(0)->origin())->node();
           JLM_ASSERT(dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
-              &entry_node->operation()));
+              &entry_node->GetOperation()));
           simplenode->output(0)->divert_users(entry_node->input(0)->origin());
           remove(simplenode);
           remove(entry_node);
@@ -80,7 +80,8 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
           remove(simplenode);
         }
       }
-      else if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&node->operation()))
+      else if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
+                   &node->GetOperation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->noutputs(); ++i)

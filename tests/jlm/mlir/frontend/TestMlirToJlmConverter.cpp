@@ -127,7 +127,7 @@ TestLambda()
 
 /** \brief TestDivOperation
  *
- * This test is similar to TestLambda, but it adds a division operation to the
+ * This test is similar to TestLambda, but it adds a division GetOperation to the
  * lambda block and do a graph traversal.
  * This function is similar to the TestAddOperation function in the backend tests.
  */
@@ -204,7 +204,7 @@ TestDivOperation()
     auto constOp1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
     lambdaBlock->push_back(constOp1);
 
-    // ConstOp2 is connected as second argument of the divide operation
+    // ConstOp2 is connected as second argument of the divide GetOperation
     auto constOp2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
     lambdaBlock->push_back(constOp2);
 
@@ -280,7 +280,7 @@ TestDivOperation()
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
       jlm::rvsdg::node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
-      assert(is<bitudiv_op>(lambdaResultOriginNode->operation()));
+      assert(is<bitudiv_op>(lambdaResultOriginNode->GetOperation()));
       assert(lambdaResultOriginNode->ninputs() == 2);
 
       // Check first input
@@ -297,9 +297,9 @@ TestDivOperation()
           DivInput1NodeOuput =
               dynamic_cast<jlm::rvsdg::node_output *>(lambdaResultOriginNode->input(1)->origin()));
       jlm::rvsdg::node * DivInput1Node = DivInput1NodeOuput->node();
-      assert(is<bitconstant_op>(DivInput1Node->operation()));
+      assert(is<bitconstant_op>(DivInput1Node->GetOperation()));
       const jlm::rvsdg::bitconstant_op * DivInput1Constant =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&DivInput1Node->operation());
+          dynamic_cast<const bitconstant_op *>(&DivInput1Node->GetOperation());
       assert(DivInput1Constant->value() == 5);
       assert(is<const bittype>(DivInput1Constant->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(DivInput1Constant->result(0))->nbits() == 32);
@@ -310,8 +310,8 @@ TestDivOperation()
 
 /** \brief TestCompZeroExt
  *
- * This test is similar to TestLambda, but it adds an add operation, a comparison operation and a
- * zero extension operation to the lambda block and do a graph traversal check. This function is
+ * This test is similar to TestLambda, but it adds an add GetOperation, a comparison GetOperation and a
+ * zero extension GetOperation to the lambda block and do a graph traversal check. This function is
  * similar to the TestComZeroExt function in the backend tests.
  *
  */
@@ -384,11 +384,11 @@ TestCompZeroExt()
     lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
     lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
 
-    // ConstOp1 is connected to the second argument of the add operation
+    // ConstOp1 is connected to the second argument of the add GetOperation
     auto constOp1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
     lambdaBlock->push_back(constOp1);
 
-    // ConstOp2 is connected as second argument of the compare operation
+    // ConstOp2 is connected as second argument of the compare GetOperation
     auto constOp2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
     lambdaBlock->push_back(constOp2);
 
@@ -459,12 +459,12 @@ TestCompZeroExt()
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
       jlm::rvsdg::node * ZExtNode = lambdaResultOriginNodeOuput->node();
-      assert(is<jlm::llvm::zext_op>(ZExtNode->operation()));
+      assert(is<jlm::llvm::zext_op>(ZExtNode->GetOperation()));
       assert(ZExtNode->ninputs() == 1);
 
       // Check ZExt
       const jlm::llvm::zext_op * ZExtOp =
-          dynamic_cast<const jlm::llvm::zext_op *>(&ZExtNode->operation());
+          dynamic_cast<const jlm::llvm::zext_op *>(&ZExtNode->GetOperation());
       assert(ZExtOp->nsrcbits() == 1);
       assert(ZExtOp->ndstbits() == 32);
 
@@ -473,11 +473,11 @@ TestCompZeroExt()
       jlm::rvsdg::node_output * ZExtInput0;
       assert(ZExtInput0 = dynamic_cast<jlm::rvsdg::node_output *>(ZExtNode->input(0)->origin()));
       jlm::rvsdg::node * BitEqNode = ZExtInput0->node();
-      assert(is<jlm::rvsdg::biteq_op>(BitEqNode->operation()));
+      assert(is<jlm::rvsdg::biteq_op>(BitEqNode->GetOperation()));
 
       // Check BitEq
       assert(
-          dynamic_cast<const jlm::rvsdg::biteq_op *>(&BitEqNode->operation())->type().nbits()
+          dynamic_cast<const jlm::rvsdg::biteq_op *>(&BitEqNode->GetOperation())->type().nbits()
           == 32);
       assert(BitEqNode->ninputs() == 2);
 
@@ -485,25 +485,25 @@ TestCompZeroExt()
       jlm::rvsdg::node_output * AddOuput;
       assert(AddOuput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(0)->origin()));
       jlm::rvsdg::node * AddNode = AddOuput->node();
-      assert(is<bitadd_op>(AddNode->operation()));
+      assert(is<bitadd_op>(AddNode->GetOperation()));
       assert(AddNode->ninputs() == 2);
 
       // Check BitEq input 1
       jlm::rvsdg::node_output * Const2Ouput;
       assert(Const2Ouput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(1)->origin()));
       jlm::rvsdg::node * Const2Node = Const2Ouput->node();
-      assert(is<bitconstant_op>(Const2Node->operation()));
+      assert(is<bitconstant_op>(Const2Node->GetOperation()));
 
       // Check Const2
       const jlm::rvsdg::bitconstant_op * Const2Op =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&Const2Node->operation());
+          dynamic_cast<const bitconstant_op *>(&Const2Node->GetOperation());
       assert(Const2Op->value() == 5);
       assert(is<const bittype>(Const2Op->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(Const2Op->result(0))->nbits() == 32);
 
       // Check add op
       const jlm::rvsdg::bitadd_op * AddOp =
-          dynamic_cast<const jlm::rvsdg::bitadd_op *>(&AddNode->operation());
+          dynamic_cast<const bitadd_op *>(&AddNode->GetOperation());
       assert(AddOp->type().nbits() == 32);
 
       // Check add input0
@@ -516,11 +516,11 @@ TestCompZeroExt()
       jlm::rvsdg::node_output * Const1Output;
       assert(Const1Output = dynamic_cast<jlm::rvsdg::node_output *>(AddNode->input(1)->origin()));
       jlm::rvsdg::node * Const1Node = Const1Output->node();
-      assert(is<bitconstant_op>(Const1Node->operation()));
+      assert(is<bitconstant_op>(Const1Node->GetOperation()));
 
       // Check Const1
       const jlm::rvsdg::bitconstant_op * Const1Op =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&Const1Node->operation());
+          dynamic_cast<const bitconstant_op *>(&Const1Node->GetOperation());
       assert(Const1Op->value() == 20);
       assert(is<const bittype>(Const1Op->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(Const1Op->result(0))->nbits() == 32);
@@ -531,7 +531,7 @@ TestCompZeroExt()
 
 /** \brief TestMatchOp
  *
- * This function tests the Match operation. It creates a lambda block with a Match operation.
+ * This function tests the Match GetOperation. It creates a lambda block with a Match GetOperation.
  *
  */
 static int
@@ -668,9 +668,9 @@ TestMatchOp()
       assert(
           matchOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
       jlm::rvsdg::node * matchNode = matchOutput->node();
-      assert(is<match_op>(matchNode->operation()));
+      assert(is<match_op>(matchNode->GetOperation()));
 
-      auto matchOp = dynamic_cast<const match_op *>(&matchNode->operation());
+      auto matchOp = dynamic_cast<const match_op *>(&matchNode->GetOperation());
       assert(matchOp->narguments() == 1);
       assert(is<const bittype>(matchOp->argument(0)));
       assert(std::dynamic_pointer_cast<const bittype>(matchOp->argument(0))->nbits() == 32);
@@ -694,7 +694,7 @@ TestMatchOp()
 
 /** \brief TestMatchOp
  *
- * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.
+ * This function tests the Gamma GetOperation. It creates a lambda block with a Gamma GetOperation.
  *
  */
 static int
@@ -844,10 +844,10 @@ TestGammaOp()
       assert(
           gammaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
       jlm::rvsdg::node * gammaNode = gammaOutput->node();
-      assert(is<GammaOperation>(gammaNode->operation()));
+      assert(is<GammaOperation>(gammaNode->GetOperation()));
 
-      std::cout << "Checking gamma operation" << std::endl;
-      auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->operation());
+      std::cout << "Checking gamma GetOperation" << std::endl;
+      auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->GetOperation());
       assert(gammaNode->ninputs() == 3);
       assert(gammaOp->nalternatives() == 3);
       assert(gammaNode->noutputs() == 2);
@@ -858,7 +858,7 @@ TestGammaOp()
 
 /** \brief TestThetaOp
  *
- * This function tests the Theta operation. It creates a lambda block with a Theta operation.
+ * This function tests the Theta GetOperation. It creates a lambda block with a Theta GetOperation.
  *
  */
 static int
@@ -993,7 +993,7 @@ TestThetaOp()
       assert(
           thetaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
       jlm::rvsdg::node * node = thetaOutput->node();
-      assert(is<ThetaOperation>(node->operation()));
+      assert(is<ThetaOperation>(node->GetOperation()));
       auto thetaNode = dynamic_cast<const jlm::rvsdg::ThetaNode *>(node);
 
       std::cout << "Checking theta node" << std::endl;

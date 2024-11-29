@@ -40,8 +40,8 @@ concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
   if (!node1 || !node2)
     return nullptr;
 
-  auto arg1_constant = dynamic_cast<const bitconstant_op *>(&node1->operation());
-  auto arg2_constant = dynamic_cast<const bitconstant_op *>(&node2->operation());
+  auto arg1_constant = dynamic_cast<const bitconstant_op *>(&node1->GetOperation());
+  auto arg2_constant = dynamic_cast<const bitconstant_op *>(&node2->GetOperation());
   if (arg1_constant && arg2_constant)
   {
     size_t nbits = arg1_constant->value().nbits() + arg2_constant->value().nbits();
@@ -56,8 +56,8 @@ concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
     return create_bitconstant(node1->region(), s.c_str());
   }
 
-  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->operation());
-  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->operation());
+  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->GetOperation());
+  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->GetOperation());
   if (arg1_slice && arg2_slice && arg1_slice->high() == arg2_slice->low()
       && node1->input(0)->origin() == node2->input(0)->origin())
   {
@@ -296,8 +296,8 @@ bitconcat_op::can_reduce_operand_pair(
     return binop_reduction_constants;
   }
 
-  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->operation());
-  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->operation());
+  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->GetOperation());
+  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->GetOperation());
 
   if (arg1_slice && arg2_slice)
   {
@@ -326,8 +326,8 @@ bitconcat_op::reduce_operand_pair(
 
   if (path == binop_reduction_constants)
   {
-    auto & arg1_constant = static_cast<const bitconstant_op &>(node1->operation());
-    auto & arg2_constant = static_cast<const bitconstant_op &>(node2->operation());
+    auto & arg1_constant = static_cast<const bitconstant_op &>(node1->GetOperation());
+    auto & arg2_constant = static_cast<const bitconstant_op &>(node2->GetOperation());
 
     size_t nbits = arg1_constant.value().nbits() + arg2_constant.value().nbits();
     std::vector<char> bits(nbits);
@@ -342,8 +342,8 @@ bitconcat_op::reduce_operand_pair(
 
   if (path == binop_reduction_merge)
   {
-    auto arg1_slice = static_cast<const bitslice_op *>(&node1->operation());
-    auto arg2_slice = static_cast<const bitslice_op *>(&node2->operation());
+    auto arg1_slice = static_cast<const bitslice_op *>(&node1->GetOperation());
+    auto arg2_slice = static_cast<const bitslice_op *>(&node2->GetOperation());
     return jlm::rvsdg::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
 
     /* FIXME: support sign bit */

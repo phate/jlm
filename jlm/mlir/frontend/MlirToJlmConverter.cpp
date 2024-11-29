@@ -81,7 +81,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 {
   ::mlir::sortTopologically(&block);
 
-  // Create an RVSDG node for each MLIR operation and store each pair in a
+  // Create an RVSDG node for each MLIR GetOperation and store each pair in a
   // hash map for easy lookup of corresponding RVSDG nodes
   std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap;
   for (auto & mlirOp : block.getOperations())
@@ -95,7 +95,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
     }
   }
 
-  // The results of the region/block are encoded in the terminator operation
+  // The results of the region/block are encoded in the terminator GetOperation
   ::mlir::Operation * terminator = block.getTerminator();
 
   return GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
@@ -264,7 +264,7 @@ MlirToJlmConverter::ConvertOperation(
 
   // ** region Arithmetic Integer Operation **
   auto convertedNode = ConvertBitBinaryNode(mlirOperation, inputs);
-  // If the operation was converted it means it has been casted to a bit binary operation
+  // If the GetOperation was converted it means it has been casted to a bit binary GetOperation
   if (convertedNode)
     return convertedNode;
   // ** endregion Arithmetic Integer Operation **
@@ -273,7 +273,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
     if (!st)
-      JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
+      JLM_ASSERT("frontend : expected bitstring type for ExtUIOp GetOperation.");
     ::mlir::Type type = castedOp.getType();
     return rvsdg::output::GetNode(*&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
   }
@@ -408,7 +408,7 @@ MlirToJlmConverter::ConvertOperation(
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation))
   {
-    // This is a terminating operation that doesn't have a corresponding RVSDG node
+    // This is a terminating GetOperation that doesn't have a corresponding RVSDG node
     return nullptr;
   }
   else

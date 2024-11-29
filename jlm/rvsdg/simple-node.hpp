@@ -38,8 +38,8 @@ public:
   jlm::rvsdg::simple_output *
   output(size_t index) const noexcept;
 
-  const SimpleOperation &
-  operation() const noexcept;
+  [[nodiscard]] const SimpleOperation &
+  GetOperation() const noexcept override;
 
   virtual jlm::rvsdg::node *
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
@@ -120,12 +120,6 @@ inline jlm::rvsdg::simple_output *
 simple_node::output(size_t index) const noexcept
 {
   return static_cast<simple_output *>(node::output(index));
-}
-
-inline const SimpleOperation &
-simple_node::operation() const noexcept
-{
-  return *static_cast<const SimpleOperation *>(&node::operation());
 }
 
 }

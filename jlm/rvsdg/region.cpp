@@ -367,7 +367,7 @@ Region::normalize(bool recursive)
         structnode->subregion(n)->normalize(recursive);
     }
 
-    const auto & op = node->operation();
+    const auto & op = node->GetOperation();
     graph()->node_normal_form(typeid(op))->normalize_node(node);
   }
 }
@@ -440,7 +440,7 @@ Region::ToTree(
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto nodeString = structuralNode->operation().debug_string();
+      auto nodeString = structuralNode->GetOperation().debug_string();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,
