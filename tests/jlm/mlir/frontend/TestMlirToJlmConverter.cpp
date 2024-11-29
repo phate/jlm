@@ -310,9 +310,9 @@ TestDivOperation()
 
 /** \brief TestCompZeroExt
  *
- * This test is similar to TestLambda, but it adds an add operation, a comparison operation
- * and a zero extension operation to the lambda block and do a graph traversal check. This
- * function is similar to the TestComZeroExt function in the backend tests.
+ * This test is similar to TestLambda, but it adds an add operation, a comparison operation and a
+ * zero extension operation to the lambda block and do a graph traversal check. This function is
+ * similar to the TestComZeroExt function in the backend tests.
  *
  */
 static int
@@ -858,7 +858,7 @@ TestGammaOp()
 
 /** \brief TestThetaOp
  *
- * This function tests the Theta operation. It creates a lambda block with a Theta operationpp.
+ * This function tests the Theta operation. It creates a lambda block with a Theta operation.
  *
  */
 static int

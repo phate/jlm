@@ -50,7 +50,7 @@ TestLambda()
     auto & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
     auto & omegaBlock = omegaRegion.front();
-    // Lamda + terminating GetOperation
+    // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
     auto & mlirLambda = omegaBlock.front();
     assert(mlirLambda.getName().getStringRef().equals(LambdaNode::getOperationName()));
@@ -85,7 +85,7 @@ TestLambda()
 
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
-    // Bitconstant + terminating GetOperation
+    // Bitconstant + terminating operation
     assert(lambdaBlock.getOperations().size() == 2);
     assert(lambdaBlock.front().getName().getStringRef().equals(
         mlir::arith::ConstantIntOp::getOperationName()));
@@ -98,11 +98,10 @@ TestLambda()
 /** \brief useChainsUpTraverse
  *
  * This function checks if the given operation matches the given definingOperations use chain
- * recursively. For each operation the operand 0 is checked until the definingOperations is
- * empty.
+ * recursively. For each operation the operand 0 is checked until the definingOperations is empty.
  *
  * \param operation The starting operation to check. (the lambda result for example)
- * \param succesorOperations The trace of operations to check. The last operation is the direct user
+ * \param definingOperations The trace of operations to check. The last operation is the direct user
  * of the given operation operand and the first operation is the last operation that will be checked
  * on the chain.
  */
