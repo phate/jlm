@@ -419,7 +419,8 @@ private:
 
 /** \brief DeltaLocation class
  *
- * This class represents an abstract global variable location, statically allocated by a delta operation.
+ * This class represents an abstract global variable location, statically allocated by a delta
+ * operation.
  */
 class DeltaLocation final : public MemoryLocation
 {
