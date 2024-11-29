@@ -264,7 +264,7 @@ MlirToJlmConverter::ConvertOperation(
 
   // ** region Arithmetic Integer Operation **
   auto convertedNode = ConvertBitBinaryNode(mlirOperation, inputs);
-  // If the GetOperation was converted it means it has been casted to a bit binary operation
+  // If the operation was converted it means it has been casted to a bit binary operation
   if (convertedNode)
     return convertedNode;
   // ** endregion Arithmetic Integer Operation **

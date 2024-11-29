@@ -24,7 +24,7 @@ TestUndef()
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
   {
-    // Create an undef GetOperation
+    // Create an undef operation
     std::cout << "Undef Operation" << std::endl;
     UndefValueOperation::Create(*graph->root(), jlm::rvsdg::bittype::Create(32));
 
