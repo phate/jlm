@@ -581,8 +581,7 @@ is(const jlm::rvsdg::output * output) noexcept
 class node_input : public jlm::rvsdg::input
 {
 public:
-  node_input(
-      jlm::rvsdg::output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
+  node_input(jlm::rvsdg::output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
 
   Node *
   node() const noexcept
