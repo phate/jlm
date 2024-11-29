@@ -25,9 +25,9 @@ add_prints(rvsdg::Region * region)
         add_prints(structnode->subregion(n));
       }
     }
-    //		if (auto lo = dynamic_cast<const jlm::load_op *>(&(node->GetOperation()))) {
+    //		if (auto lo = dynamic_cast<const jlm::load_op *>(&(node->operation()))) {
     //
-    //		} else if (auto so = dynamic_cast<const jlm::store_op *>(&(node->GetOperation()))) {
+    //		} else if (auto so = dynamic_cast<const jlm::store_op *>(&(node->operation()))) {
     //			auto po = hls::print_op::create(*node->input(1)->origin())[0];
     //			node->input(1)->divert_to(po);
     //		}
