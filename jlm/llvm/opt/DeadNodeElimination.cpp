@@ -58,7 +58,7 @@ public:
   }
 
   bool
-  IsAlive(const jlm::rvsdg::node & node) const noexcept
+  IsAlive(const rvsdg::Node & node) const noexcept
   {
     if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node *>(&node))
     {
@@ -313,7 +313,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<jlm::rvsdg::node *>> nodesTopDown(region.nnodes());
+  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.nnodes());
   for (auto & node : region.Nodes())
   {
     nodesTopDown[node.depth()].push_back(&node);

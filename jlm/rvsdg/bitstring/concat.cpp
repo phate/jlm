@@ -93,7 +93,7 @@ public:
   {}
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override
+  normalize_node(Node * node) const override
   {
     if (!get_mutable())
     {

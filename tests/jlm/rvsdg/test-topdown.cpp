@@ -55,7 +55,7 @@ test_basic_traversal()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::node * tmp;
+    jlm::rvsdg::Node * tmp;
     jlm::rvsdg::topdown_traverser trav(graph.root());
 
     tmp = trav.next();
@@ -80,7 +80,7 @@ test_order_enforcement_traversal()
   auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { type });
 
   {
-    jlm::rvsdg::node * tmp;
+    jlm::rvsdg::Node * tmp;
     jlm::rvsdg::topdown_traverser trav(graph.root());
 
     tmp = trav.next();
@@ -108,7 +108,7 @@ test_traversal_insertion()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::node * node;
+    jlm::rvsdg::Node * node;
     jlm::rvsdg::topdown_traverser trav(graph.root());
 
     node = trav.next();
@@ -155,9 +155,9 @@ static void
 test_mutable_traverse()
 {
   auto test = [](jlm::rvsdg::Graph * graph,
-                 jlm::rvsdg::node * n1,
-                 jlm::rvsdg::node * n2,
-                 jlm::rvsdg::node * n3)
+                 jlm::rvsdg::Node * n1,
+                 jlm::rvsdg::Node * n2,
+                 jlm::rvsdg::Node * n3)
   {
     bool seen_n1 = false;
     bool seen_n2 = false;

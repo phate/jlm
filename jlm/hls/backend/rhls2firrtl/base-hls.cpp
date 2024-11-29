@@ -23,7 +23,7 @@ isForbiddenChar(char c)
 }
 
 std::string
-BaseHLS::get_node_name(const jlm::rvsdg::node * node)
+BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 {
   auto found = node_map.find(node);
   if (found != node_map.end())

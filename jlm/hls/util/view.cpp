@@ -28,7 +28,7 @@ hex(size_t i)
 }
 
 std::string
-get_dot_name(jlm::rvsdg::node * node)
+get_dot_name(rvsdg::Node * node)
 {
   return jlm::util::strfmt("n", hex((intptr_t)node));
 }

@@ -48,7 +48,7 @@ topdown_traverser::topdown_traverser(rvsdg::Region * region)
 }
 
 bool
-topdown_traverser::predecessors_visited(const jlm::rvsdg::node * node) noexcept
+topdown_traverser::predecessors_visited(const Node * node) noexcept
 {
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -63,10 +63,10 @@ topdown_traverser::predecessors_visited(const jlm::rvsdg::node * node) noexcept
   return true;
 }
 
-jlm::rvsdg::node *
+Node *
 topdown_traverser::next()
 {
-  jlm::rvsdg::node * node = tracker_.peek_top();
+  Node * node = tracker_.peek_top();
   if (!node)
     return nullptr;
 
@@ -88,7 +88,7 @@ topdown_traverser::next()
 }
 
 void
-topdown_traverser::node_create(jlm::rvsdg::node * node)
+topdown_traverser::node_create(Node * node)
 {
   if (node->region() != region())
     return;
@@ -148,7 +148,7 @@ bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
       on_input_change.connect(std::bind(&bottomup_traverser::input_change, this, _1, _2, _3)));
 }
 
-jlm::rvsdg::node *
+Node *
 bottomup_traverser::next()
 {
   auto node = tracker_.peek_bottom();
@@ -166,7 +166,7 @@ bottomup_traverser::next()
 }
 
 void
-bottomup_traverser::node_create(jlm::rvsdg::node * node)
+bottomup_traverser::node_create(Node * node)
 {
   if (node->region() != region())
     return;
@@ -175,7 +175,7 @@ bottomup_traverser::node_create(jlm::rvsdg::node * node)
 }
 
 void
-bottomup_traverser::node_destroy(jlm::rvsdg::node * node)
+bottomup_traverser::node_destroy(Node * node)
 {
   if (node->region() != region())
     return;

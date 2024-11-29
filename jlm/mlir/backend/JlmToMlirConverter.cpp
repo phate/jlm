@@ -71,8 +71,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
 
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
-  std::unordered_map<rvsdg::node *, ::mlir::Operation *> operationsMap;
-  for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
+  std::unordered_map<rvsdg::Node *, ::mlir::Operation *> operationsMap;
+  for (rvsdg::Node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
     ::llvm::SmallVector<::mlir::Value> inputs =
         GetConvertedInputs(*rvsdgNode, operationsMap, block);
@@ -114,8 +114,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
 
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::GetConvertedInputs(
-    const rvsdg::node & node,
-    const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+    const rvsdg::Node & node,
+    const std::unordered_map<rvsdg::Node *, ::mlir::Operation *> & operationsMap,
     ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Value> inputs;
@@ -148,7 +148,7 @@ JlmToMlirConverter::GetConvertedInputs(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertNode(
-    const rvsdg::node & node,
+    const rvsdg::Node & node,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {

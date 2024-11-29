@@ -51,7 +51,7 @@ node::GetOperation() const noexcept
 delta::node *
 node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  return static_cast<delta::node *>(jlm::rvsdg::node::copy(region, operands));
+  return static_cast<delta::node *>(rvsdg::Node::copy(region, operands));
 }
 
 delta::node *

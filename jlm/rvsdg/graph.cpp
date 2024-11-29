@@ -64,7 +64,7 @@ Graph::node_normal_form(const std::type_info & type) noexcept
   return result;
 }
 
-std::vector<rvsdg::node *>
+std::vector<Node *>
 Graph::ExtractTailNodes(const Graph & rvsdg)
 {
   auto IsOnlyExported = [](const rvsdg::output & output)
@@ -89,7 +89,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
 
   auto & rootRegion = *rvsdg.root();
 
-  std::vector<rvsdg::node *> nodes;
+  std::vector<Node *> nodes;
   for (auto & bottomNode : rootRegion.BottomNodes())
   {
     nodes.push_back(&bottomNode);

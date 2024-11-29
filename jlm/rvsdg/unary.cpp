@@ -29,7 +29,7 @@ unary_normal_form::unary_normal_form(
 }
 
 bool
-unary_normal_form::normalize_node(jlm::rvsdg::node * node) const
+unary_normal_form::normalize_node(Node * node) const
 {
   if (!get_mutable())
   {

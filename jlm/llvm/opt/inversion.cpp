@@ -90,14 +90,14 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
   pullin_top(gamma);
 }
 
-static std::vector<std::vector<jlm::rvsdg::node *>>
+static std::vector<std::vector<rvsdg::Node *>>
 collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(tnode));
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
   JLM_ASSERT(gnode->region()->node() == tnode);
 
-  std::vector<std::vector<jlm::rvsdg::node *>> nodes;
+  std::vector<std::vector<rvsdg::Node *>> nodes;
   for (auto & node : tnode->subregion(0)->Nodes())
   {
     if (&node == gnode)
@@ -115,7 +115,7 @@ static void
 copy_condition_nodes(
     rvsdg::Region * target,
     rvsdg::SubstitutionMap & smap,
-    const std::vector<std::vector<jlm::rvsdg::node *>> & nodes)
+    const std::vector<std::vector<rvsdg::Node *>> & nodes)
 {
   for (size_t n = 0; n < nodes.size(); n++)
   {

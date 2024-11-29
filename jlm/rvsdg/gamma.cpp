@@ -169,7 +169,7 @@ gamma_normal_form::gamma_normal_form(
 }
 
 bool
-gamma_normal_form::normalize_node(jlm::rvsdg::node * node_) const
+gamma_normal_form::normalize_node(Node * node_) const
 {
   auto node = util::AssertedCast<GammaNode>(node_);
 

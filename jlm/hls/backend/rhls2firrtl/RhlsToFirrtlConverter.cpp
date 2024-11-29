@@ -3951,7 +3951,7 @@ RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::Type * type)
 }
 
 std::string
-RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
+RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
 {
 
   std::string append = "";
@@ -4048,7 +4048,7 @@ RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::match_op & op)
 void
 RhlsToFirrtlConverter::WriteModuleToFile(
     const circt::firrtl::FModuleOp fModuleOp,
-    const jlm::rvsdg::node * node)
+    const rvsdg::Node * node)
 {
   if (!fModuleOp)
     return;

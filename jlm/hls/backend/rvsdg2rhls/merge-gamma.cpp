@@ -220,14 +220,14 @@ merge_gamma(rvsdg::Region * region)
 }
 
 bool
-is_output_of(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
+is_output_of(jlm::rvsdg::output * output, rvsdg::Node * node)
 {
   auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
   return no && no->node() == node;
 }
 
 bool
-depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
+depends_on(jlm::rvsdg::output * output, rvsdg::Node * node)
 {
   auto arg = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (arg)

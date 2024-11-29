@@ -279,7 +279,7 @@ TestDivOperation()
       assert(
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
-      jlm::rvsdg::node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
+      Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
       assert(is<bitudiv_op>(lambdaResultOriginNode->GetOperation()));
       assert(lambdaResultOriginNode->ninputs() == 2);
 
@@ -296,7 +296,7 @@ TestDivOperation()
       assert(
           DivInput1NodeOuput =
               dynamic_cast<jlm::rvsdg::node_output *>(lambdaResultOriginNode->input(1)->origin()));
-      jlm::rvsdg::node * DivInput1Node = DivInput1NodeOuput->node();
+      Node * DivInput1Node = DivInput1NodeOuput->node();
       assert(is<bitconstant_op>(DivInput1Node->GetOperation()));
       const jlm::rvsdg::bitconstant_op * DivInput1Constant =
           dynamic_cast<const bitconstant_op *>(&DivInput1Node->GetOperation());
@@ -458,7 +458,7 @@ TestCompZeroExt()
       assert(
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
-      jlm::rvsdg::node * ZExtNode = lambdaResultOriginNodeOuput->node();
+      Node * ZExtNode = lambdaResultOriginNodeOuput->node();
       assert(is<jlm::llvm::zext_op>(ZExtNode->GetOperation()));
       assert(ZExtNode->ninputs() == 1);
 
@@ -472,7 +472,7 @@ TestCompZeroExt()
       std::cout << "Testing input 0\n";
       jlm::rvsdg::node_output * ZExtInput0;
       assert(ZExtInput0 = dynamic_cast<jlm::rvsdg::node_output *>(ZExtNode->input(0)->origin()));
-      jlm::rvsdg::node * BitEqNode = ZExtInput0->node();
+      Node * BitEqNode = ZExtInput0->node();
       assert(is<jlm::rvsdg::biteq_op>(BitEqNode->GetOperation()));
 
       // Check BitEq
@@ -484,14 +484,14 @@ TestCompZeroExt()
       // Check BitEq input 0
       jlm::rvsdg::node_output * AddOuput;
       assert(AddOuput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(0)->origin()));
-      jlm::rvsdg::node * AddNode = AddOuput->node();
+      Node * AddNode = AddOuput->node();
       assert(is<bitadd_op>(AddNode->GetOperation()));
       assert(AddNode->ninputs() == 2);
 
       // Check BitEq input 1
       jlm::rvsdg::node_output * Const2Ouput;
       assert(Const2Ouput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(1)->origin()));
-      jlm::rvsdg::node * Const2Node = Const2Ouput->node();
+      Node * Const2Node = Const2Ouput->node();
       assert(is<bitconstant_op>(Const2Node->GetOperation()));
 
       // Check Const2
@@ -515,7 +515,7 @@ TestCompZeroExt()
       // Check add input1
       jlm::rvsdg::node_output * Const1Output;
       assert(Const1Output = dynamic_cast<jlm::rvsdg::node_output *>(AddNode->input(1)->origin()));
-      jlm::rvsdg::node * Const1Node = Const1Output->node();
+      Node * Const1Node = Const1Output->node();
       assert(is<bitconstant_op>(Const1Node->GetOperation()));
 
       // Check Const1
@@ -667,7 +667,7 @@ TestMatchOp()
       jlm::rvsdg::node_output * matchOutput;
       assert(
           matchOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      jlm::rvsdg::node * matchNode = matchOutput->node();
+      Node * matchNode = matchOutput->node();
       assert(is<match_op>(matchNode->GetOperation()));
 
       auto matchOp = dynamic_cast<const match_op *>(&matchNode->GetOperation());
@@ -843,7 +843,7 @@ TestGammaOp()
       jlm::rvsdg::node_output * gammaOutput;
       assert(
           gammaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      jlm::rvsdg::node * gammaNode = gammaOutput->node();
+      Node * gammaNode = gammaOutput->node();
       assert(is<GammaOperation>(gammaNode->GetOperation()));
 
       std::cout << "Checking gamma operation" << std::endl;
@@ -992,7 +992,7 @@ TestThetaOp()
       jlm::rvsdg::node_output * thetaOutput;
       assert(
           thetaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      jlm::rvsdg::node * node = thetaOutput->node();
+      Node * node = thetaOutput->node();
       assert(is<ThetaOperation>(node->GetOperation()));
       auto thetaNode = dynamic_cast<const jlm::rvsdg::ThetaNode *>(node);
 

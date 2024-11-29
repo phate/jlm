@@ -57,7 +57,7 @@ StructuralNode::StructuralNode(
     const StructuralOperation & op,
     rvsdg::Region * region,
     size_t nsubregions)
-    : node(op.copy(), region)
+    : Node(op.copy(), region)
 {
   if (nsubregions == 0)
     throw jlm::util::error("Number of subregions must be greater than zero.");
