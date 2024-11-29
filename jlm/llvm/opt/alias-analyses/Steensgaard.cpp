@@ -306,7 +306,7 @@ public:
 
 /** \brief AllocaLocation class
  *
- * This class represents an abstract stack location allocated by a alloca GetOperation.
+ * This class represents an abstract stack location allocated by a alloca operation.
  */
 class AllocaLocation final : public MemoryLocation
 {
@@ -345,7 +345,7 @@ private:
 
 /** \brief MallocLocation class
  *
- * This class represents an abstract heap location allocated by a malloc GetOperation.
+ * This class represents an abstract heap location allocated by a malloc operation.
  */
 class MallocLocation final : public MemoryLocation
 {
@@ -383,8 +383,7 @@ private:
 
 /** \brief LambdaLocation class
  *
- * This class represents an abstract function location, statically allocated by a lambda
- * GetOperation.
+ * This class represents an abstract function location, statically allocated by a lambda operation.
  */
 class LambdaLocation final : public MemoryLocation
 {
@@ -420,8 +419,7 @@ private:
 
 /** \brief DeltaLocation class
  *
- * This class represents an abstract global variable location, statically allocated by a delta
- * GetOperation.
+ * This class represents an abstract global variable location, statically allocated by a delta operation.
  */
 class DeltaLocation final : public MemoryLocation
 {
@@ -1319,7 +1317,7 @@ Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
 
   if (HasOrContainsPointerType(result))
   {
-    // FIXME: Have a look at this GetOperation again to ensure that the flags add up.
+    // FIXME: Have a look at this operation again to ensure that the flags add up.
     auto & registerLocation = Context_->GetOrInsertRegisterLocation(result);
     registerLocation.SetPointsToFlags(
         registerLocation.GetPointsToFlags() | PointsToFlags::PointsToUnknownMemory

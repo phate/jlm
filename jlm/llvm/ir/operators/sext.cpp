@@ -9,7 +9,7 @@
 namespace jlm::llvm
 {
 
-/* sext GetOperation */
+/* sext operation */
 
 static const rvsdg::unop_reduction_path_t sext_reduction_bitunary = 128;
 static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;

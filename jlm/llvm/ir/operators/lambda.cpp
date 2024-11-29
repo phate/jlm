@@ -13,7 +13,7 @@
 namespace jlm::llvm::lambda
 {
 
-/* lambda GetOperation class */
+/* lambda operation class */
 
 operation::~operation() = default;
 

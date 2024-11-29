@@ -97,8 +97,8 @@ TestLambda()
 
 /** \brief useChainsUpTraverse
  *
- * This function checks if the given GetOperation matches the given definingOperations use chain
- * recursively. For each GetOperation the operand 0 is checked until the definingOperations is
+ * This function checks if the given operation matches the given definingOperations use chain
+ * recursively. For each operation the operand 0 is checked until the definingOperations is
  * empty.
  *
  * \param operation The starting operation to check. (the lambda result for example)
@@ -111,7 +111,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
 {
   if (definingOperations.empty())
     return;
-  std::cout << "Checking if GetOperation: "
+  std::cout << "Checking if operation: "
             << operation->getOperand(0).getDefiningOp()->getName().getStringRef().data()
             << " is equal to: " << definingOperations.back().data() << std::endl;
   assert(operation->getOperand(0).getDefiningOp()->getName().getStringRef().equals(
@@ -122,15 +122,15 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
 
 /** \brief TestAddOperation
  *
- * This test is similar to TestLambda, but it adds a add GetOperation to the
+ * This test is similar to TestLambda, but it adds a add operation to the
  * lambda block and does a graph traversal.
  * This function is similar to the TestDivOperation function in the frontend tests.
  *
- * This function tests the generation of an add GetOperation using 2 bit constants as operands in
- * the MLIR backend. The test checks the number of blocks and operations in the generated MLIR. It
- * also checks the types of the operations and the users chain upwards from the lambda result to the
- * bit constants. The users trace goes through the GetOperation first operand user recursively to
- * trace the nodes.
+ * This function tests the generation of an add operation using 2 bit constants as operands in the
+ * MLIR backend. The test checks the number of blocks and operations in the generated MLIR. It also
+ * checks the types of the operations and the users chain upwards from the lambda result to the bit
+ * constants. The users trace goes through the operation first operand user recursively to trace the
+ * nodes.
  */
 static int
 TestAddOperation()
@@ -156,7 +156,7 @@ TestAddOperation()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    // Create add GetOperation
+    // Create add operation
     std::cout << "Add Operation" << std::endl;
     auto constant1 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto constant2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
@@ -174,7 +174,7 @@ TestAddOperation()
     auto & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
     auto & omegaBlock = omegaRegion.front();
-    // Lamda + terminating GetOperation
+    // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
 
     // Checking lambda block operations
@@ -182,7 +182,7 @@ TestAddOperation()
     auto & mlirLambda = omegaBlock.front();
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
-    // 2 Bits contants + add + terminating GetOperation
+    // 2 Bits contants + add + terminating operation
     assert(lambdaBlock.getOperations().size() == 4);
 
     // Checking lambda block operations types
@@ -204,11 +204,11 @@ TestAddOperation()
         constCount++;
         continue;
       }
-      // Checking add GetOperation
-      std::cout << "Checking add GetOperation" << std::endl;
+      // Checking add operation
+      std::cout << "Checking add operation" << std::endl;
       assert(operation->getName().getStringRef().equals(
-          mlir::arith::AddIOp::getOperationName())); // Last remaining GetOperation is the add
-                                                     // GetOperation
+          mlir::arith::AddIOp::getOperationName())); // Last remaining operation is the add
+                                                     // operation
       assert(operation->getNumOperands() == 2);
       auto addOperand1 = operation->getOperand(0);
       auto addOperand2 = operation->getOperand(1);
@@ -230,7 +230,7 @@ TestAddOperation()
 /** \brief TestAddOperation
  *
  * This test is similar to previous tests, but uses a mul, zero extension
- * and comparison GetOperation, it tests operations types
+ * and comparison operation, it tests operations types
  * and does the use chain traversal.
  */
 static int
@@ -257,7 +257,7 @@ TestComZeroExt()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    // Create add GetOperation
+    // Create add operation
     std::cout << "Add Operation" << std::endl;
     auto constant1 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 8, 4);
     jlm::rvsdg::create_bitconstant(lambda->subregion(), 16, 5); // Unused constant
@@ -286,7 +286,7 @@ TestComZeroExt()
     auto & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
     auto & omegaBlock = omegaRegion.front();
-    // Lamda + terminating GetOperation
+    // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
 
     // Checking lambda block operations
@@ -294,7 +294,7 @@ TestComZeroExt()
     auto & mlirLambda = omegaBlock.front();
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
-    // 3 Bits contants + ZeroExt + Mul + Comp + terminating GetOperation
+    // 3 Bits contants + ZeroExt + Mul + Comp + terminating operation
     assert(lambdaBlock.getOperations().size() == 7);
 
     // Checking lambda block operations types
@@ -377,7 +377,7 @@ TestComZeroExt()
 
 /** \brief TestMatch
  *
- * This test is similar to previous tests, but uses a match GetOperation
+ * This test is similar to previous tests, but uses a match operation
  */
 static int
 TestMatch()
@@ -403,7 +403,7 @@ TestMatch()
     auto iOStateArgument = lambda->fctargument(0);
     auto memoryStateArgument = lambda->fctargument(1);
 
-    // Create a match GetOperation
+    // Create a match operation
     std::cout << "Match Operation" << std::endl;
     auto predicateConst = jlm::rvsdg::create_bitconstant(lambda->subregion(), 8, 4);
 
@@ -422,7 +422,7 @@ TestMatch()
     auto & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
     auto & omegaBlock = omegaRegion.front();
-    // Lamda + terminating GetOperation
+    // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
 
     // Checking lambda block operations
@@ -430,7 +430,7 @@ TestMatch()
     auto & mlirLambda = omegaBlock.front();
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
-    // 1 Bits contants + Match + terminating GetOperation
+    // 1 Bits contants + Match + terminating operation
     assert(lambdaBlock.getOperations().size() == 3);
 
     bool matchFound = false;
@@ -439,7 +439,7 @@ TestMatch()
       if (mlir::isa<mlir::rvsdg::Match>(operation))
       {
         matchFound = true;
-        std::cout << "Checking match GetOperation" << std::endl;
+        std::cout << "Checking match operation" << std::endl;
         auto matchOp = mlir::cast<mlir::rvsdg::Match>(operation);
 
         assert(mlir::isa<mlir::arith::ConstantIntOp>(matchOp.getInput().getDefiningOp()));
@@ -484,7 +484,7 @@ TestMatch()
 
 /** \brief TestGamma
  *
- * This test is similar to previous tests, but uses a gamma GetOperation
+ * This test is similar to previous tests, but uses a gamma operation
  */
 static int
 TestGamma()
@@ -500,7 +500,7 @@ TestGamma()
 
   {
 
-    // Create a gamma GetOperation
+    // Create a gamma operation
     std::cout << "Gamma Operation" << std::endl;
     auto CtrlConstant = jlm::rvsdg::control_constant(graph->root(), 3, 1);
     auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
@@ -535,7 +535,7 @@ TestGamma()
     auto & omegaRegion = omega.getRegion();
     assert(omegaRegion.getBlocks().size() == 1);
     auto & omegaBlock = omegaRegion.front();
-    // 1 control + 2 constants + gamma + terminating GetOperation
+    // 1 control + 2 constants + gamma + terminating operation
     assert(omegaBlock.getOperations().size() == 5);
 
     bool gammaFound = false;
@@ -544,7 +544,7 @@ TestGamma()
       if (mlir::isa<mlir::rvsdg::GammaNode>(operation))
       {
         gammaFound = true;
-        std::cout << "Checking gamma GetOperation" << std::endl;
+        std::cout << "Checking gamma operation" << std::endl;
         auto gammaOp = mlir::cast<mlir::rvsdg::GammaNode>(operation);
         assert(gammaOp.getNumRegions() == 3);
         // 1 predicate + 2 entryVars
@@ -603,7 +603,7 @@ TestGamma()
 
 /** \brief TestTheta
  *
- * This test is similar to previous tests, but uses a theta GetOperation
+ * This test is similar to previous tests, but uses a theta operation
  */
 static int
 TestTheta()
@@ -617,7 +617,7 @@ TestTheta()
   auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
   nf->set_mutable(false);
   {
-    // Create a theta GetOperation
+    // Create a theta operation
     std::cout << "Theta Operation" << std::endl;
     auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
     auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
@@ -648,7 +648,7 @@ TestTheta()
       if (mlir::isa<mlir::rvsdg::ThetaNode>(operation))
       {
         thetaFound = true;
-        std::cout << "Checking theta GetOperation" << std::endl;
+        std::cout << "Checking theta operation" << std::endl;
         auto thetaOp = mlir::cast<mlir::rvsdg::ThetaNode>(operation);
         // 2 loop vars
         assert(thetaOp.getNumOperands() == 2);

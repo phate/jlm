@@ -127,7 +127,7 @@ TestLambda()
 
 /** \brief TestDivOperation
  *
- * This test is similar to TestLambda, but it adds a division GetOperation to the
+ * This test is similar to TestLambda, but it adds a division operation to the
  * lambda block and do a graph traversal.
  * This function is similar to the TestAddOperation function in the backend tests.
  */
@@ -204,7 +204,7 @@ TestDivOperation()
     auto constOp1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
     lambdaBlock->push_back(constOp1);
 
-    // ConstOp2 is connected as second argument of the divide GetOperation
+    // ConstOp2 is connected as second argument of the divide operation
     auto constOp2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
     lambdaBlock->push_back(constOp2);
 
@@ -310,8 +310,8 @@ TestDivOperation()
 
 /** \brief TestCompZeroExt
  *
- * This test is similar to TestLambda, but it adds an add GetOperation, a comparison GetOperation
- * and a zero extension GetOperation to the lambda block and do a graph traversal check. This
+ * This test is similar to TestLambda, but it adds an add operation, a comparison operation
+ * and a zero extension operation to the lambda block and do a graph traversal check. This
  * function is similar to the TestComZeroExt function in the backend tests.
  *
  */
@@ -384,11 +384,11 @@ TestCompZeroExt()
     lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
     lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
 
-    // ConstOp1 is connected to the second argument of the add GetOperation
+    // ConstOp1 is connected to the second argument of the add operation
     auto constOp1 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 20, 32);
     lambdaBlock->push_back(constOp1);
 
-    // ConstOp2 is connected as second argument of the compare GetOperation
+    // ConstOp2 is connected as second argument of the compare operation
     auto constOp2 = Builder_->create<mlir::arith::ConstantIntOp>(Builder_->getUnknownLoc(), 5, 32);
     lambdaBlock->push_back(constOp2);
 
@@ -531,7 +531,7 @@ TestCompZeroExt()
 
 /** \brief TestMatchOp
  *
- * This function tests the Match GetOperation. It creates a lambda block with a Match GetOperation.
+ * This function tests the Match operation. It creates a lambda block with a Match operation.
  *
  */
 static int
@@ -694,7 +694,7 @@ TestMatchOp()
 
 /** \brief TestMatchOp
  *
- * This function tests the Gamma GetOperation. It creates a lambda block with a Gamma GetOperation.
+ * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.
  *
  */
 static int
@@ -846,7 +846,7 @@ TestGammaOp()
       jlm::rvsdg::node * gammaNode = gammaOutput->node();
       assert(is<GammaOperation>(gammaNode->GetOperation()));
 
-      std::cout << "Checking gamma GetOperation" << std::endl;
+      std::cout << "Checking gamma operation" << std::endl;
       auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->GetOperation());
       assert(gammaNode->ninputs() == 3);
       assert(gammaOp->nalternatives() == 3);
@@ -858,7 +858,7 @@ TestGammaOp()
 
 /** \brief TestThetaOp
  *
- * This function tests the Theta GetOperation. It creates a lambda block with a Theta GetOperation.
+ * This function tests the Theta operation. It creates a lambda block with a Theta operationpp.
  *
  */
 static int

@@ -69,8 +69,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
     block.addArgument(type, Builder_->getUnknownLoc());
   }
 
-  // Create an MLIR GetOperation for each RVSDG node and store each pair in a
-  // hash map for easy lookup of corresponding MLIR GetOperation
+  // Create an MLIR operation for each RVSDG node and store each pair in a
+  // hash map for easy lookup of corresponding MLIR operation
   std::unordered_map<rvsdg::node *, ::mlir::Operation *> operationsMap;
   for (rvsdg::node * rvsdgNode : rvsdg::topdown_traverser(&region))
   {
@@ -290,7 +290,7 @@ JlmToMlirConverter::BitCompareNode(
   else if (jlm::rvsdg::is<const rvsdg::bitult_op>(bitOp))
     compPredicate = ::mlir::arith::CmpIPredicate::ult;
   else
-    JLM_UNREACHABLE("Unknown bitcompare GetOperation");
+    JLM_UNREACHABLE("Unknown bitcompare operation");
 
   auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
       Builder_->getUnknownLoc(),
@@ -348,7 +348,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
-    //! MLIR match GetOperation can match multiple values to one index
+    //! MLIR match operation can match multiple values to one index
     //! But jlm implements this with multiple mappings
     //! For easy conversion, we only created one mapping per value
     ::llvm::SmallVector<::mlir::Attribute> mappingVector;

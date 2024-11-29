@@ -13,7 +13,7 @@ namespace jlm::llvm
 namespace phi
 {
 
-/* phi GetOperation class */
+/* phi operation class */
 
 operation::~operation()
 {}
