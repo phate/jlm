@@ -708,7 +708,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   auto phi = ::llvm::dyn_cast<::llvm::PHINode>(i);
 
   // If this phi instruction only has one predecessor basic block that is reachable,
-  // the phi GetOperation can be removed.
+  // the phi operation can be removed.
   if (auto singlePredecessor = getSinglePredecessor(phi, ctx))
   {
     // The incoming value is either a constant,

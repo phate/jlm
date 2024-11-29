@@ -190,7 +190,7 @@ instrument_ref(
           load_func,
           loadFunctionType,
           { addr, width, ioState, memstate });
-      // Divert the memory state of the load to the new memstate from the call GetOperation
+      // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
     }
     else if (auto ao = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->GetOperation())))

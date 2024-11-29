@@ -444,7 +444,7 @@ TracePointer(
 /**
  * Decoupled loads are user specified and encoded as function calls that need special treatment.
  * This function traces the output to all nodes and checks if it is the first argument to a call
- * GetOperation.
+ * operation.
  * @param output The output to check if it is a function pointer
  * @param visited A set of already visited outputs (nodes)
  * @return True if the output is a function pointer
@@ -481,7 +481,7 @@ IsDecoupledFunctionPointer(
       {
         if (simpleNode->input(0)->origin() == output)
         {
-          // The output is the first argument to a call GetOperation so this is a function pointer.
+          // The output is the first argument to a call operation so this is a function pointer.
           // TODO
           // Currently, we only support decoupled load functions, so all other functions should
           // have bene inlined by now. Maybe a check that this is truly a decoupled load function
