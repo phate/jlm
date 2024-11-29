@@ -47,7 +47,8 @@ BaseHLS::get_node_name(const jlm::rvsdg::node * node)
     append.append("_W");
     append.append(std::to_string(JlmSize(&node->output(outPorts - 1)->type())));
   }
-  auto name = util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
+  auto name =
+      util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
   node_map[node] = name;

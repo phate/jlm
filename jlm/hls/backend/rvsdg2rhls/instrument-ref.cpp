@@ -199,8 +199,8 @@ instrument_ref(
       JLM_ASSERT(node->ninputs() == 1);
       auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
-      auto constant_operation =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&constant_output->node()->GetOperation());
+      auto constant_operation = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(
+          &constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       jlm::rvsdg::output * addr = node->output(0);
@@ -229,7 +229,8 @@ instrument_ref(
       }
     }
     else if (
-        auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
+        auto so =
+            dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));

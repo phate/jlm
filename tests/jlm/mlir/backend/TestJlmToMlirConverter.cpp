@@ -98,7 +98,8 @@ TestLambda()
 /** \brief useChainsUpTraverse
  *
  * This function checks if the given GetOperation matches the given definingOperations use chain
- * recursively. For each GetOperation the operand 0 is checked until the definingOperations is empty.
+ * recursively. For each GetOperation the operand 0 is checked until the definingOperations is
+ * empty.
  *
  * \param operation The starting operation to check. (the lambda result for example)
  * \param succesorOperations The trace of operations to check. The last operation is the direct user
@@ -125,11 +126,11 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
  * lambda block and does a graph traversal.
  * This function is similar to the TestDivOperation function in the frontend tests.
  *
- * This function tests the generation of an add GetOperation using 2 bit constants as operands in the
- * MLIR backend. The test checks the number of blocks and operations in the generated MLIR. It also
- * checks the types of the operations and the users chain upwards from the lambda result to the bit
- * constants. The users trace goes through the GetOperation first operand user recursively to trace the
- * nodes.
+ * This function tests the generation of an add GetOperation using 2 bit constants as operands in
+ * the MLIR backend. The test checks the number of blocks and operations in the generated MLIR. It
+ * also checks the types of the operations and the users chain upwards from the lambda result to the
+ * bit constants. The users trace goes through the GetOperation first operand user recursively to
+ * trace the nodes.
  */
 static int
 TestAddOperation()

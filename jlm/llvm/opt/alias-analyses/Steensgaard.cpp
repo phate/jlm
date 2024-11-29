@@ -383,7 +383,8 @@ private:
 
 /** \brief LambdaLocation class
  *
- * This class represents an abstract function location, statically allocated by a lambda GetOperation.
+ * This class represents an abstract function location, statically allocated by a lambda
+ * GetOperation.
  */
 class LambdaLocation final : public MemoryLocation
 {

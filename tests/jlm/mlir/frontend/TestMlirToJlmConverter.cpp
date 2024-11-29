@@ -310,9 +310,9 @@ TestDivOperation()
 
 /** \brief TestCompZeroExt
  *
- * This test is similar to TestLambda, but it adds an add GetOperation, a comparison GetOperation and a
- * zero extension GetOperation to the lambda block and do a graph traversal check. This function is
- * similar to the TestComZeroExt function in the backend tests.
+ * This test is similar to TestLambda, but it adds an add GetOperation, a comparison GetOperation
+ * and a zero extension GetOperation to the lambda block and do a graph traversal check. This
+ * function is similar to the TestComZeroExt function in the backend tests.
  *
  */
 static int
