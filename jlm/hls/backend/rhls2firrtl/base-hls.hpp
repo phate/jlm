@@ -48,11 +48,11 @@ private:
   extension() = 0;
 
 protected:
-  std::unordered_map<const jlm::rvsdg::node *, std::string> node_map;
+  std::unordered_map<const rvsdg::Node *, std::string> node_map;
   std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
 
   std::string
-  get_node_name(const jlm::rvsdg::node * node);
+  get_node_name(const rvsdg::Node * node);
 
   static std::string
   get_port_name(jlm::rvsdg::input * port);

@@ -432,13 +432,13 @@ is_invariant(const ThetaOutput * output) noexcept
 inline ThetaInput *
 ThetaNode::input(size_t index) const noexcept
 {
-  return static_cast<ThetaInput *>(node::input(index));
+  return static_cast<ThetaInput *>(Node::input(index));
 }
 
 inline ThetaOutput *
 ThetaNode::output(size_t index) const noexcept
 {
-  return static_cast<ThetaOutput *>(node::output(index));
+  return static_cast<ThetaOutput *>(Node::output(index));
 }
 
 template<typename F>

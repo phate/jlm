@@ -30,7 +30,7 @@ public:
       Graph * graph);
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
@@ -85,7 +85,7 @@ public:
 
 private:
   bool
-  normalize_node(jlm::rvsdg::node * node, const binary_op & op) const;
+  normalize_node(Node * node, const binary_op & op) const;
 
   bool enable_reducible_;
   bool enable_reorder_;
@@ -107,7 +107,7 @@ public:
       Graph * graph);
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(

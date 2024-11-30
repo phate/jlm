@@ -28,7 +28,7 @@ public:
       Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual void
   set_predicate_reduction(bool enable);
@@ -234,14 +234,14 @@ public:
   inline size_t
   nentryvars() const noexcept
   {
-    JLM_ASSERT(node::ninputs() != 0);
-    return node::ninputs() - 1;
+    JLM_ASSERT(Node::ninputs() != 0);
+    return ninputs() - 1;
   }
 
   inline size_t
   nexitvars() const noexcept
   {
-    return node::noutputs();
+    return noutputs();
   }
 
   inline GammaInput *
@@ -453,7 +453,7 @@ public:
 inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
     : StructuralNode(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(std::unique_ptr<node_input>(
+  add_input(std::unique_ptr<node_input>(
       new GammaInput(this, predicate, ControlType::Create(nalternatives))));
 }
 
@@ -520,20 +520,19 @@ GammaNode::predicate() const noexcept
 inline GammaInput *
 GammaNode::entryvar(size_t index) const noexcept
 {
-  return util::AssertedCast<GammaInput>(node::input(index + 1));
+  return util::AssertedCast<GammaInput>(Node::input(index + 1));
 }
 
 inline GammaOutput *
 GammaNode::exitvar(size_t index) const noexcept
 {
-  return static_cast<GammaOutput *>(node::output(index));
+  return static_cast<GammaOutput *>(Node::output(index));
 }
 
 inline GammaInput *
 GammaNode::add_entryvar(jlm::rvsdg::output * origin)
 {
-  auto input =
-      node::add_input(std::unique_ptr<node_input>(new GammaInput(this, origin, origin->Type())));
+  auto input = add_input(std::unique_ptr<node_input>(new GammaInput(this, origin, origin->Type())));
   auto gammaInput = util::AssertedCast<GammaInput>(input);
 
   for (size_t n = 0; n < nsubregions(); n++)
@@ -551,7 +550,7 @@ GammaNode::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
     throw jlm::util::error("Incorrect number of values.");
 
   const auto & type = values[0]->Type();
-  node::add_output(std::make_unique<GammaOutput>(this, type));
+  add_output(std::make_unique<GammaOutput>(this, type));
 
   auto output = exitvar(nexitvars() - 1);
   for (size_t n = 0; n < nsubregions(); n++)

@@ -74,10 +74,10 @@ simple_node::simple_node(
 const SimpleOperation &
 simple_node::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const SimpleOperation>(&node::GetOperation());
+  return *util::AssertedCast<const SimpleOperation>(&Node::GetOperation());
 }
 
-jlm::rvsdg::node *
+Node *
 simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   auto node = create(region, GetOperation(), operands);

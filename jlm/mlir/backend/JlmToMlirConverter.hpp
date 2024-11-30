@@ -96,8 +96,8 @@ private:
    */
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
-      const rvsdg::node & node,
-      const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+      const rvsdg::Node & node,
+      const std::unordered_map<rvsdg::Node *, ::mlir::Operation *> & operationsMap,
       ::mlir::Block & block);
 
   /**
@@ -109,7 +109,7 @@ private:
    */
   ::mlir::Operation *
   ConvertNode(
-      const rvsdg::node & node,
+      const rvsdg::Node & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

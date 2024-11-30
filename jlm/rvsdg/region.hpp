@@ -23,7 +23,7 @@ class AnnotationMap;
 namespace jlm::rvsdg
 {
 
-class node;
+class Node;
 class simple_node;
 class SimpleOperation;
 class StructuralInput;
@@ -82,7 +82,7 @@ public:
   virtual RegionArgument &
   Copy(Region & region, StructuralInput * input);
 
-  [[nodiscard]] std::variant<node *, Region *>
+  [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
 
   /**
@@ -163,7 +163,7 @@ public:
   virtual RegionResult &
   Copy(rvsdg::output & origin, StructuralOutput * output);
 
-  [[nodiscard]] std::variant<node *, Region *>
+  [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
 
   /**
@@ -214,16 +214,12 @@ private:
  */
 class Region
 {
-  typedef jlm::util::intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_node_list_accessor>
-      region_nodes_list;
+  typedef util::intrusive_list<Node, Node::region_node_list_accessor> region_nodes_list;
 
-  typedef jlm::util::
-      intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_top_node_list_accessor>
-          region_top_node_list;
+  typedef util::intrusive_list<Node, Node::region_top_node_list_accessor> region_top_node_list;
 
-  typedef jlm::util::
-      intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_bottom_node_list_accessor>
-          region_bottom_node_list;
+  typedef util::intrusive_list<Node, Node::region_bottom_node_list_accessor>
+      region_bottom_node_list;
 
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
@@ -529,7 +525,7 @@ public:
   }
 
   void
-  remove_node(jlm::rvsdg::node * node);
+  remove_node(Node * node);
 
   /**
    * \brief Adds \p node to the top nodes of the region.
@@ -545,7 +541,7 @@ public:
    * no need to invoke it manually.
    */
   bool
-  AddTopNode(rvsdg::node & node);
+  AddTopNode(Node & node);
 
   /**
    * \brief Adds \p node to the bottom nodes of the region.
@@ -561,7 +557,7 @@ public:
    * no need to invoke it manually.
    */
   bool
-  AddBottomNode(rvsdg::node & node);
+  AddBottomNode(Node & node);
 
   /**
    * \brief Adds \p node to the region.
@@ -575,7 +571,7 @@ public:
    * it manually.
    */
   bool
-  AddNode(rvsdg::node & node);
+  AddNode(Node & node);
 
   /**
    * Removes \p node from the top nodes in the region.
@@ -587,7 +583,7 @@ public:
    * invoke it manually.
    */
   bool
-  RemoveTopNode(rvsdg::node & node);
+  RemoveTopNode(Node & node);
 
   /**
    * Removes \p node from the bottom nodes in the region.
@@ -599,7 +595,7 @@ public:
    * invoke it manually.
    */
   bool
-  RemoveBottomNode(rvsdg::node & node);
+  RemoveBottomNode(Node & node);
 
   /**
    * Remove \p node from the region.
@@ -611,7 +607,7 @@ public:
    * it manually.
    */
   bool
-  RemoveNode(rvsdg::node & node);
+  RemoveNode(Node & node);
 
   /**
     \brief Copy a region with substitutions
@@ -743,7 +739,7 @@ private:
 };
 
 static inline void
-remove(jlm::rvsdg::node * node)
+remove(Node * node)
 {
   return node->region()->remove_node(node);
 }

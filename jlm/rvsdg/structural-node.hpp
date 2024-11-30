@@ -18,7 +18,7 @@ class StructuralInput;
 class StructuralOperation;
 class StructuralOutput;
 
-class StructuralNode : public node
+class StructuralNode : public Node
 {
 public:
   ~StructuralNode() noexcept override;
@@ -56,9 +56,9 @@ public:
   StructuralOutput *
   append_output(std::unique_ptr<StructuralOutput> output);
 
-  using node::RemoveInput;
+  using Node::RemoveInput;
 
-  using node::RemoveOutput;
+  using Node::RemoveOutput;
 
 private:
   std::vector<std::unique_ptr<rvsdg::Region>> subregions_;
@@ -135,13 +135,13 @@ public:
 inline StructuralInput *
 StructuralNode::input(size_t index) const noexcept
 {
-  return static_cast<StructuralInput *>(node::input(index));
+  return static_cast<StructuralInput *>(Node::input(index));
 }
 
 inline StructuralOutput *
 StructuralNode::output(size_t index) const noexcept
 {
-  return static_cast<StructuralOutput *>(node::output(index));
+  return static_cast<StructuralOutput *>(Node::output(index));
 }
 
 template<class Operation>

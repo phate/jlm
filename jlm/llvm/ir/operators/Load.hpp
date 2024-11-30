@@ -28,7 +28,7 @@ public:
       rvsdg::Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(rvsdg::node * node) const override;
+  normalize_node(rvsdg::Node * node) const override;
 
   virtual std::vector<rvsdg::output *>
   normalized_create(
@@ -364,7 +364,7 @@ private:
   {}
 
 public:
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   [[nodiscard]] const LoadVolatileOperation &
@@ -529,7 +529,7 @@ public:
   [[nodiscard]] LoadNonVolatileNode &
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<rvsdg::output *>

@@ -20,7 +20,7 @@ class simple_output;
 
 /* simple nodes */
 
-class simple_node : public node
+class simple_node : public Node
 {
 public:
   virtual ~simple_node();
@@ -41,10 +41,10 @@ public:
   [[nodiscard]] const SimpleOperation &
   GetOperation() const noexcept override;
 
-  virtual jlm::rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
-  virtual jlm::rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
   static inline jlm::rvsdg::simple_node *
@@ -113,13 +113,13 @@ public:
 inline jlm::rvsdg::simple_input *
 simple_node::input(size_t index) const noexcept
 {
-  return static_cast<simple_input *>(node::input(index));
+  return static_cast<simple_input *>(Node::input(index));
 }
 
 inline jlm::rvsdg::simple_output *
 simple_node::output(size_t index) const noexcept
 {
-  return static_cast<simple_output *>(node::output(index));
+  return static_cast<simple_output *>(Node::output(index));
 }
 
 }
