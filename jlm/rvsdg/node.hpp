@@ -630,7 +630,7 @@ class Node
 public:
   virtual ~Node();
 
-  Node(std::unique_ptr<operation> op, Region * region);
+  Node(std::unique_ptr<jlm::rvsdg::operation> op, Region * region);
 
   [[nodiscard]] virtual const operation &
   GetOperation() const noexcept
