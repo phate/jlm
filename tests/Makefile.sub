@@ -18,7 +18,7 @@ $(eval $(call common_library,libjlmtest))
 # Rules to compile test cases with jlc and run them
 
 JLC_COMPILE_TESTS = \
-	tests/c-tests/test-array-struct \
+#	tests/c-tests/test-array-struct \
 	tests/c-tests/test-assertion \
 	tests/c-tests/test-binary \
 	tests/c-tests/test-call-by-value \

@@ -32,6 +32,11 @@ endif
 
 include Makefile.rules
 
+# Add deployment target for OSX builds to avoid warnings during linking
+ifeq ($(shell uname -s),Darwin)
+export MACOSX_DEPLOYMENT_TARGET=$(shell otool -l ${LLVMCONFIG} | grep minos | awk '{print $$2}')
+endif
+
 # Provide support for custom make targets
 ifneq ("$(wildcard Makefile.custom)","")
 include Makefile.custom

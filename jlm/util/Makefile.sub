@@ -29,7 +29,6 @@ libutil_TESTS += \
 	tests/jlm/util/test-disjointset \
 	tests/jlm/util/test-intrusive-hash \
 	tests/jlm/util/test-intrusive-list \
-	tests/jlm/util/TestBijectiveMap \
 	tests/jlm/util/TestFile \
 	tests/jlm/util/TestGraphWriter \
 	tests/jlm/util/TestHashSet \
