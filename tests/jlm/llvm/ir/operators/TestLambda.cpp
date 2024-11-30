@@ -64,7 +64,7 @@ TestArgumentIterators()
         "f",
         linkage::external_linkage);
 
-    auto cv = lambda->AddContextVar(rvsdgImport).inner;
+    auto cv = lambda->AddContextVar(*rvsdgImport).inner;
 
     lambda->finalize({ lambda->GetFunctionArguments()[0], cv });
 
@@ -127,9 +127,9 @@ TestRemoveLambdaInputsWhere()
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
-  auto lambdaBinder0 = lambdaNode->AddContextVar(x);
-  auto lambdaBinder1 = lambdaNode->AddContextVar(x);
-  lambdaNode->AddContextVar(x);
+  auto lambdaBinder0 = lambdaNode->AddContextVar(*x);
+  auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
+  lambdaNode->AddContextVar(*x);
 
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
@@ -196,9 +196,9 @@ TestPruneLambdaInputs()
   auto lambdaNode =
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
 
-  lambdaNode->AddContextVar(x);
-  auto lambdaInput1 = lambdaNode->AddContextVar(x);
-  lambdaNode->AddContextVar(x);
+  lambdaNode->AddContextVar(*x);
+  auto lambdaInput1 = lambdaNode->AddContextVar(*x);
+  lambdaNode->AddContextVar(*x);
 
   auto result = jlm::tests::SimpleNode::Create(
                     *lambdaNode->subregion(),
@@ -328,7 +328,7 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
-    auto lambdaXCv = lambdaNode->AddContextVar(&lambdaX).inner;
+    auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
 
     auto callResults = jlm::llvm::CallNode::Create(
         lambdaXCv,
@@ -350,8 +350,8 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::linkage::external_linkage);
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
-    auto lambdaXCv = lambdaNode->AddContextVar(&lambdaX).inner;
-    auto lambdaYCv = lambdaNode->AddContextVar(&lambdaY).inner;
+    auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
+    auto lambdaYCv = lambdaNode->AddContextVar(lambdaY).inner;
 
     auto callXResults = jlm::llvm::CallNode::Create(
         lambdaXCv,
@@ -507,7 +507,7 @@ TestCallSummaryComputationLambdaResult()
 
   auto lambdaNodeF =
       lambda::node::create(rvsdg.root(), functionTypeF, "f", linkage::external_linkage);
-  auto lambdaGArgument = lambdaNodeF->AddContextVar(lambdaOutputG).inner;
+  auto lambdaGArgument = lambdaNodeF->AddContextVar(*lambdaOutputG).inner;
   auto lambdaOutputF = lambdaNodeF->finalize({ lambdaGArgument });
 
   GraphExport::Create(*lambdaOutputF, "f");

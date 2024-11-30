@@ -41,8 +41,8 @@ operation::copy() const
 
 node::~node() = default;
 
-node::node(rvsdg::Region * parent, lambda::operation op)
-    : StructuralNode(std::move(op), parent, 1)
+node::node(rvsdg::Region & parent, lambda::operation op)
+    : StructuralNode(std::move(op), &parent, 1)
 {
   ArgumentAttributes_.resize(GetOperation().Type()->NumArguments());
 }
@@ -113,10 +113,10 @@ node::GetContextVars() const noexcept
 }
 
 node::ContextVar
-node::AddContextVar(jlm::rvsdg::output * origin)
+node::AddContextVar(jlm::rvsdg::output & origin)
 {
-  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
-  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin->Type());
+  auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
+  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
   return ContextVar{ input, argument };
 }
 
@@ -170,7 +170,7 @@ node::create(
     const attributeset & attributes)
 {
   lambda::operation op(type, name, linkage, attributes);
-  auto node = new lambda::node(parent, std::move(op));
+  auto node = new lambda::node(*parent, std::move(op));
 
   for (auto & argumentType : type->Arguments())
     rvsdg::RegionArgument::Create(*node->subregion(), nullptr, argumentType);
@@ -230,7 +230,7 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (const auto & cv : GetContextVars())
   {
     auto origin = smap.lookup(cv.input->origin());
-    subregionmap.insert(cv.inner, lambda->AddContextVar(origin).inner);
+    subregionmap.insert(cv.inner, lambda->AddContextVar(*origin).inner);
   }
 
   /* collect function arguments */

@@ -31,7 +31,7 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
   for (const auto & cv : ln->GetContextVars())
   {
     auto origin = cv.input->origin();
-    auto newcv = lambda->AddContextVar(origin);
+    auto newcv = lambda->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newcv.inner);
   }
 

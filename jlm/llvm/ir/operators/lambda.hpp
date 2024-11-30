@@ -132,7 +132,7 @@ public:
   ~node() override;
 
 private:
-  node(rvsdg::Region * parent, lambda::operation op);
+  node(rvsdg::Region & parent, lambda::operation op);
 
 public:
   /**
@@ -227,7 +227,7 @@ public:
    * \return The context variable argument of the lambda abstraction.
    */
   ContextVar
-  AddContextVar(jlm::rvsdg::output * origin);
+  AddContextVar(jlm::rvsdg::output & origin);
 
   /**
    * \brief Maps input to context variable.

@@ -649,7 +649,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : lambda->GetContextVars())
   {
-    smap.insert(ctxvar.inner, newLambda->AddContextVar(ctxvar.input->origin()).inner);
+    smap.insert(ctxvar.inner, newLambda->AddContextVar(*ctxvar.input->origin()).inner);
   }
 
   auto args = lambda->GetFunctionArguments();

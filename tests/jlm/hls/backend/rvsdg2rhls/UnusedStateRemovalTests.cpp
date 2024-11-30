@@ -140,8 +140,8 @@ TestLambda()
       lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
   auto argument0 = lambdaNode->GetFunctionArguments()[0];
   auto argument1 = lambdaNode->GetFunctionArguments()[1];
-  auto argument2 = lambdaNode->AddContextVar(x).inner;
-  auto argument3 = lambdaNode->AddContextVar(x).inner;
+  auto argument2 = lambdaNode->AddContextVar(*x).inner;
+  auto argument3 = lambdaNode->AddContextVar(*x).inner;
 
   auto result1 =
       jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { valueType })

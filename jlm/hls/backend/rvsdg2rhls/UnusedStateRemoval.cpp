@@ -76,7 +76,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     auto oldArgument = ctxvar.inner;
     auto origin = ctxvar.input->origin();
 
-    auto newArgument = newLambda->AddContextVar(origin).inner;
+    auto newArgument = newLambda->AddContextVar(*origin).inner;
     substitutionMap.insert(oldArgument, newArgument);
   }
 

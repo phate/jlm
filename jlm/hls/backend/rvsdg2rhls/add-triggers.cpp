@@ -54,7 +54,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
   for (const auto & ctxvar : ln->GetContextVars())
   {
     // copy over context vars
-    smap.insert(ctxvar.inner, new_lambda->AddContextVar(ctxvar.input->origin()).inner);
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(*ctxvar.input->origin()).inner);
   }
   auto old_args = ln->GetFunctionArguments();
   auto new_args = new_lambda->GetFunctionArguments();

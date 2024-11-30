@@ -209,7 +209,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   for (const auto & ctxvar : ln->GetContextVars())
   {
     // copy over context vars
-    smap.insert(ctxvar.inner, new_lambda->AddContextVar(ctxvar.input->origin()).inner);
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(*ctxvar.input->origin()).inner);
   }
 
   size_t new_i = 0;

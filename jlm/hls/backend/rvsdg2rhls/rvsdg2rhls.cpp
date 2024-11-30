@@ -290,7 +290,7 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
   for (const auto & cv : ln->GetContextVars())
   {
     auto origin = cv.input->origin();
-    auto newcv = lambda->AddContextVar(origin);
+    auto newcv = lambda->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newcv.inner);
   }
 

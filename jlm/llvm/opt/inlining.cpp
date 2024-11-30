@@ -82,7 +82,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   }
   else if (auto lambda = dynamic_cast<lambda::node *>(region->node()))
   {
-    output = lambda->AddContextVar(output).inner;
+    output = lambda->AddContextVar(*output).inner;
   }
   else if (auto phi = dynamic_cast<phi::node *>(region->node()))
   {

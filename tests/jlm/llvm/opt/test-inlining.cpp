@@ -38,7 +38,7 @@ test1()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
-    lambda->AddContextVar(i);
+    lambda->AddContextVar(*i);
 
     auto t = jlm::tests::test_op::create(
         lambda->subregion(),
@@ -63,7 +63,7 @@ test1()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
-    auto d = lambda->AddContextVar(f1).inner;
+    auto d = lambda->AddContextVar(*f1).inner;
     auto controlArgument = lambda->GetFunctionArguments()[0];
     auto valueArgument = lambda->GetFunctionArguments()[1];
     auto iOStateArgument = lambda->GetFunctionArguments()[2];
@@ -146,8 +146,8 @@ test2()
         { iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f2", linkage::external_linkage);
-    auto cvi = lambda->AddContextVar(i).inner;
-    auto cvf1 = lambda->AddContextVar(f1).inner;
+    auto cvi = lambda->AddContextVar(*i).inner;
+    auto cvf1 = lambda->AddContextVar(*f1).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 

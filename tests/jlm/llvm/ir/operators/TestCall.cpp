@@ -220,7 +220,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
-    auto functionGArgument = lambda->AddContextVar(g).inner;
+    auto functionGArgument = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -333,7 +333,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
-    auto functionG = lambda->AddContextVar(g).inner;
+    auto functionG = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -400,7 +400,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto pointerArgument = lambda->GetFunctionArguments()[1];
     auto iOStateArgument = lambda->GetFunctionArguments()[2];
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
-    auto ctxVarFib = lambda->AddContextVar(fibrv->argument()).inner;
+    auto ctxVarFib = lambda->AddContextVar(*fibrv->argument()).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
