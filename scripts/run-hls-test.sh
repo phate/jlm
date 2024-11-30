@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=d0bb58feb2432aefbc65364e10fded264c024fd8
+GIT_COMMIT=99d309be2a9aa8d565c2ece493dc33a447ad166d
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -60,7 +60,7 @@ done
 # Check if verilator exists
 if ! command -v verilator &> /dev/null
 then
-	echo "No verilator in ${PATH}" 
+	echo "No verilator in ${PATH}"
 	echo "Consider installing the verilator package for your Linux distro."
 	exit 1
 fi
