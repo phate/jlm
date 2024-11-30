@@ -51,10 +51,16 @@ JLC_COMPILE_TESTS = \
 	tests/c-tests/test-valist \
 	tests/c-tests/test-zeroinitialization
 
+# Add macOS specific include and library paths
+ifeq ($(shell uname -s),Darwin)
+	CPPFLAGS += -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+endif
+
+
 $(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS)): $(BUILD_OUT_PREFIX)%.jlm : %.c $(BUILD_OUT_PREFIX)jlc
 	@mkdir -p $(dir $@)
 	@cp $< $$(dirname $@)/$$(basename $<)
-	$(BUILD_OUT_PREFIX)jlc -Wall -Werror -O3 -o $@ $$(dirname $@)/$$(basename $<)
+	$(BUILD_OUT_PREFIX)jlc -Wall -Werror -O3 $(CPPFLAGS) $(LDFLAGS) -o $@ $$(dirname $@)/$$(basename $<)
 
 GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS))
 GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.c, $(JLC_COMPILE_TESTS))

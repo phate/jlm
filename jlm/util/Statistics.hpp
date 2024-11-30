@@ -17,7 +17,9 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace jlm::util
 {

@@ -920,7 +920,7 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
     modified |= set.MarkAsPointingToExternal(index);
   };
 
-  for (const auto [lambda, lambdaPO] : set.GetFunctionMap())
+  for (const auto & [lambda, lambdaPO] : set.GetFunctionMap())
   {
     if (set.HasEscaped(lambdaPO))
       HandleEscapedFunction(set, lambdaPO, markAsPointeesEscaping, markAsPointsToExternal);

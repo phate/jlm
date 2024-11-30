@@ -16,6 +16,12 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 ### MLIR backend and frontend dependencies
 * MLIR 18
 
+### macOS dependencies
+* Xcode command line tools
+* llvm installed with brew
+* make needs to support the '-O' command line argument
+*   - If your default make is too old, then install a newer version with brew and add it to your PATH
+
 ### Optional dependencies
 * gcovr, for computing code coverage summary
 
@@ -45,6 +51,12 @@ Additional information about supported build options is available via
 `./configure.sh --help`. Useful options include specifying
 `--target debug` to switch to a debug build target instead of the (default)
 release target.
+
+## Bootstrap for complete build with default configuration
+Default build with all backends and frontends enabled.
+```
+./scripts/build-all.sh
+```
 
 ## Documentation
 Invoke the following command to generate the doxygen documentation:

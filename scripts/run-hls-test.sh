@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=1365c30074f921733dec6c5fc949bd1cb64ae001
+GIT_COMMIT=52adc8e870025d1c8d99e547d598b8cd6f9a1414
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -14,8 +14,19 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
 BENCHMARK_RUN_TARGET=run
 
-# Execute benchmarks in parallel by default
-PARALLEL_THREADS=`nproc`
+# Set operating system specific configurations
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  # Execute benchmarks in parallel by default
+  PARALLEL_THREADS=`nproc`
+  MAKE_OPT="-O"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  PARALLEL_THREADS=`sysctl -n hw.ncpu`
+  MAKE_OPT="-O"
+else
+  echo "warning: Operating system not recognized." >&2
+  PARALLEL_THREADS=1
+  MAKE_OPT=""
+fi
 
 function commit()
 {
@@ -76,5 +87,5 @@ export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
 git checkout ${GIT_COMMIT}
 make clean
-echo "make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}"
-make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}
+echo "make -j ${PARALLEL_THREADS} ${MAKE_OPT} ${BENCHMARK_RUN_TARGET}"
+make -j ${PARALLEL_THREADS} ${MAKE_OPT} ${BENCHMARK_RUN_TARGET}
