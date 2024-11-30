@@ -118,7 +118,7 @@ public:
   [[nodiscard]] const rvsdg::SimpleOperation &
   cmpoperation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->operation());
+    return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->GetOperation());
   }
 
   inline jlm::rvsdg::node *
@@ -130,7 +130,7 @@ public:
   [[nodiscard]] const rvsdg::SimpleOperation &
   armoperation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->operation());
+    return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->GetOperation());
   }
 
   inline rvsdg::RegionArgument *
@@ -190,8 +190,8 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->operation()));
-    return static_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->operation())->type().nbits();
+    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->GetOperation()));
+    return static_cast<const rvsdg::bitcompare_op *>(&cmpnode()->GetOperation())->type().nbits();
   }
 
   inline jlm::rvsdg::bitvalue_repr
@@ -211,7 +211,7 @@ private:
     if (!p)
       return false;
 
-    auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&p->operation());
+    auto op = dynamic_cast<const rvsdg::bitconstant_op *>(&p->GetOperation());
     return op && op->value().is_known();
   }
 
@@ -222,7 +222,7 @@ private:
       return nullptr;
 
     auto p = producer(output);
-    return &static_cast<const jlm::rvsdg::bitconstant_op *>(&p->operation())->value();
+    return &static_cast<const rvsdg::bitconstant_op *>(&p->GetOperation())->value();
   }
 
   rvsdg::RegionArgument * end_;

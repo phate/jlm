@@ -156,46 +156,43 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  const delta::operation &
-  operation() const noexcept
-  {
-    return *static_cast<const delta::operation *>(&StructuralNode::operation());
-  }
+  [[nodiscard]] const delta::operation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
-    return operation().type();
+    return GetOperation().type();
   }
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
-    return operation().Type();
+    return GetOperation().Type();
   }
 
   const std::string &
   name() const noexcept
   {
-    return operation().name();
+    return GetOperation().name();
   }
 
   [[nodiscard]] const std::string &
   Section() const noexcept
   {
-    return operation().Section();
+    return GetOperation().Section();
   }
 
   const llvm::linkage &
   linkage() const noexcept
   {
-    return operation().linkage();
+    return GetOperation().linkage();
   }
 
   bool
   constant() const noexcept
   {
-    return operation().constant();
+    return GetOperation().constant();
   }
 
   size_t

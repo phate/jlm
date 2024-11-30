@@ -33,7 +33,7 @@ test_gamma(void)
 
   jlm::tests::GraphExport::Create(*gamma->output(0), "dummy");
 
-  assert(gamma && gamma->operation() == GammaOperation(3));
+  assert(gamma && gamma->GetOperation() == GammaOperation(3));
 
   /* test gamma copy */
 
@@ -138,8 +138,8 @@ test_control_constant_reduction()
   jlm::rvsdg::view(graph.root(), stdout);
 
   auto match = output::GetNode(*ex1.origin());
-  assert(match && is<match_op>(match->operation()));
-  auto & match_op = to_match_op(match->operation());
+  assert(match && is<match_op>(match->GetOperation()));
+  auto & match_op = to_match_op(match->GetOperation());
   assert(match_op.default_alternative() == 0);
 
   assert(output::GetNode(*ex2.origin()) == gamma);

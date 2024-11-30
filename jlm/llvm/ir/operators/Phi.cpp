@@ -35,6 +35,12 @@ operation::copy() const
 node::~node()
 {}
 
+[[nodiscard]] const phi::operation &
+node::GetOperation() const noexcept
+{
+  return *static_cast<const phi::operation *>(&StructuralNode::GetOperation());
+}
+
 cvinput *
 node::input(size_t n) const noexcept
 {

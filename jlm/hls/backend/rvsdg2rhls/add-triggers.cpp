@@ -119,7 +119,7 @@ add_triggers(rvsdg::Region * region)
       }
       else
       {
-        throw jlm::util::error("Unexpected node type: " + node->operation().debug_string());
+        throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
       }
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
@@ -138,7 +138,7 @@ add_triggers(rvsdg::Region * region)
     }
     else
     {
-      throw jlm::util::error("Unexpected node type: " + node->operation().debug_string());
+      throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
     }
   }
 }

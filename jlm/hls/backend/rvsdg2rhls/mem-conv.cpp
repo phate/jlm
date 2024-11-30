@@ -90,7 +90,7 @@ trace_channel(const jlm::rvsdg::output * dst)
   }
   else if (auto so = dynamic_cast<const jlm::rvsdg::simple_output *>(dst))
   {
-    if (auto co = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&so->node()->operation()))
+    if (auto co = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&so->node()->GetOperation()))
     {
       return co;
     }
@@ -192,7 +192,7 @@ trace_function_calls(
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
-      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
         calls.push_back(simplenode);
@@ -267,7 +267,7 @@ replace_decouple(
     jlm::rvsdg::simple_node * decouple_request,
     jlm::rvsdg::output * resp)
 {
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decouple_request->operation()));
+  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decouple_request->GetOperation()));
   auto channel = decouple_request->input(1)->origin();
   auto channel_constant = trace_channel(channel);
 
@@ -343,15 +343,16 @@ gather_mem_nodes(
       {
         continue;
       }
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         storeNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
+                   &simplenode->GetOperation()))
       {
         loadNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
         decoupleNodes.push_back(simplenode);
@@ -393,15 +394,16 @@ TracePointer(
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         storeNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
+                   &simplenode->GetOperation()))
       {
         loadNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
         decoupleNodes.push_back(simplenode);
@@ -475,7 +477,7 @@ IsDecoupledFunctionPointer(
     if (auto simpleInput = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simpleNode = simpleInput->node();
-      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->operation()))
+      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->GetOperation()))
       {
         if (simpleNode->input(0)->origin() == output)
         {
@@ -765,7 +767,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto loadOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(loadNode->output(0)));
     loadNodes.push_back(loadOutput->node());
     auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
-        &loadOutput->node()->operation());
+        &loadOutput->node()->GetOperation());
     loadTypes.push_back(loadOp->GetLoadedType());
   }
   std::vector<jlm::rvsdg::simple_node *> storeNodes;
@@ -800,19 +802,19 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto address = route_request(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
     std::shared_ptr<const jlm::rvsdg::ValueType> type;
-    if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->operation()))
+    if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
     else if (
         auto loadOperation =
-            dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation()))
+            dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
     else
     {
-      JLM_UNREACHABLE("Unknown load operation");
+      JLM_UNREACHABLE("Unknown load GetOperation");
     }
     JLM_ASSERT(type);
     loadTypes.push_back(type);
@@ -829,8 +831,9 @@ jlm::hls::ConnectRequestResponseMemPorts(
     // TODO: routing is probably not necessary
     auto addr = route_request(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
-    loadTypes.push_back(dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation())
-                            ->GetLoadedType());
+    loadTypes.push_back(
+        dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->GetOperation())
+            ->GetLoadedType());
   }
   std::vector<jlm::rvsdg::output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
@@ -926,7 +929,7 @@ ReplaceDecouple(
   auto decoupleRequest =
       ((jlm::rvsdg::simple_output *)smap.lookup(originalDecoupleRequest->output(0)))->node();
 
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->operation()));
+  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->GetOperation()));
   auto channel = decoupleRequest->input(1)->origin();
   auto channelConstant = trace_channel(channel);
 

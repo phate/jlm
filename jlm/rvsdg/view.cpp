@@ -47,7 +47,7 @@ node_to_string(
     s = s + name + " ";
   }
 
-  s += ":= " + node->operation().debug_string() + " ";
+  s += ":= " + node->GetOperation().debug_string() + " ";
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -262,10 +262,10 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 static inline std::string
 type(const jlm::rvsdg::node * n)
 {
-  if (dynamic_cast<const GammaOperation *>(&n->operation()))
+  if (dynamic_cast<const GammaOperation *>(&n->GetOperation()))
     return "gamma";
 
-  if (dynamic_cast<const ThetaOperation *>(&n->operation()))
+  if (dynamic_cast<const ThetaOperation *>(&n->GetOperation()))
     return "theta";
 
   return "";
@@ -279,7 +279,7 @@ convert_simple_node(const jlm::rvsdg::simple_node * node)
 {
   std::string s;
 
-  s += node_starttag(id(node), node->operation().debug_string(), "");
+  s += node_starttag(id(node), node->GetOperation().debug_string(), "");
   for (size_t n = 0; n < node->ninputs(); n++)
     s += input_tag(id(node->input(n)));
   for (size_t n = 0; n < node->noutputs(); n++)

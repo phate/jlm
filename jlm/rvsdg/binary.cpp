@@ -79,7 +79,7 @@ binary_normal_form::binary_normal_form(
 bool
 binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
-  const jlm::rvsdg::operation & base_op = node->operation();
+  const operation & base_op = node->GetOperation();
   const auto & op = *static_cast<const jlm::rvsdg::binary_op *>(&base_op);
 
   return normalize_node(node, op);
@@ -107,8 +107,8 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
             return false;
 
           auto node = static_cast<node_output *>(arg)->node();
-          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->operation());
-          return node->operation() == op || (fb_op && fb_op->bin_operation() == op);
+          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+          return node->GetOperation() == op || (fb_op && fb_op->bin_operation() == op);
         });
   }
   else
@@ -172,8 +172,8 @@ binary_normal_form::normalized_create(
             return false;
 
           auto node = static_cast<node_output *>(arg)->node();
-          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->operation());
-          return node->operation() == op || (fb_op && fb_op->bin_operation() == op);
+          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+          return node->GetOperation() == op || (fb_op && fb_op->bin_operation() == op);
         });
   }
 
@@ -288,7 +288,7 @@ flattened_binary_normal_form::flattened_binary_normal_form(
 bool
 flattened_binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 {
-  const auto & op = static_cast<const flattened_binary_op &>(node->operation());
+  const auto & op = static_cast<const flattened_binary_op &>(node->GetOperation());
   const auto & bin_op = op.bin_operation();
   auto nf = graph()->node_normal_form(typeid(bin_op));
 
@@ -424,7 +424,7 @@ flattened_binary_op::reduce(
   {
     if (is<flattened_binary_op>(node))
     {
-      auto op = static_cast<const flattened_binary_op *>(&node->operation());
+      auto op = static_cast<const flattened_binary_op *>(&node->GetOperation());
       auto output = op->reduce(reduction, operands(node));
       node->output(0)->divert_users(output);
       remove(node);

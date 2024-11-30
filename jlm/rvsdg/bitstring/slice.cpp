@@ -61,13 +61,13 @@ bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg
 
   if (path == unop_reduction_narrow)
   {
-    auto op = static_cast<const bitslice_op &>(node->operation());
+    auto op = static_cast<const bitslice_op &>(node->GetOperation());
     return jlm::rvsdg::bitslice(node->input(0)->origin(), low() + op.low(), high() + op.low());
   }
 
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(node->operation());
+    auto op = static_cast<const bitconstant_op &>(node->GetOperation());
     std::string s(&op.value()[0] + low(), high() - low());
     return create_bitconstant(arg->region(), s.c_str());
   }

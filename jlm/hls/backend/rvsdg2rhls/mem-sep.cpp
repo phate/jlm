@@ -78,11 +78,11 @@ gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::simple_node *> 
     }
     else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         mem_nodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         mem_nodes.push_back(simplenode);
       }
@@ -223,7 +223,7 @@ trace_edge(
     else if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto sn = si->node();
-      auto op = &si->node()->operation();
+      auto op = &si->node()->GetOperation();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
         JLM_ASSERT(sn->noutputs() == 1);

@@ -41,6 +41,12 @@ operation::copy() const
 
 node::~node() = default;
 
+const lambda::operation &
+node::GetOperation() const noexcept
+{
+  return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::GetOperation());
+}
+
 node::fctargument_range
 node::fctarguments()
 {

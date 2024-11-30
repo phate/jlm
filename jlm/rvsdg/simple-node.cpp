@@ -51,29 +51,36 @@ simple_node::simple_node(
     const std::vector<jlm::rvsdg::output *> & operands)
     : node(op.copy(), region)
 {
-  if (operation().narguments() != operands.size())
+  if (simple_node::GetOperation().narguments() != operands.size())
     throw jlm::util::error(jlm::util::strfmt(
         "Argument error - expected ",
-        operation().narguments(),
+        simple_node::GetOperation().narguments(),
         ", received ",
         operands.size(),
         " arguments."));
 
-  for (size_t n = 0; n < operation().narguments(); n++)
+  for (size_t n = 0; n < simple_node::GetOperation().narguments(); n++)
   {
-    node::add_input(std::make_unique<simple_input>(this, operands[n], operation().argument(n)));
+    add_input(
+        std::make_unique<simple_input>(this, operands[n], simple_node::GetOperation().argument(n)));
   }
 
-  for (size_t n = 0; n < operation().nresults(); n++)
-    node::add_output(std::make_unique<simple_output>(this, operation().result(n)));
+  for (size_t n = 0; n < simple_node::GetOperation().nresults(); n++)
+    add_output(std::make_unique<simple_output>(this, simple_node::GetOperation().result(n)));
 
   on_node_create(this);
+}
+
+const SimpleOperation &
+simple_node::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const SimpleOperation>(&node::GetOperation());
 }
 
 jlm::rvsdg::node *
 simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  auto node = create(region, operation(), operands);
+  auto node = create(region, GetOperation(), operands);
   graph()->mark_denormalized();
   return node;
 }

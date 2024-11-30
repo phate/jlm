@@ -204,50 +204,50 @@ public:
 
     if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
-      auto nodestr = node->operation().debug_string();
+      auto nodestr = node->GetOperation().debug_string();
       auto outputstr = Output_->type().debug_string();
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
     if (is<lambda::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is<lambda::fctargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg:", index);
     }
 
     if (is<delta::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (is<rvsdg::GammaArgument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is<rvsdg::ThetaArgument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is<rvsdg::ThetaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (is<rvsdg::GammaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -258,18 +258,18 @@ public:
 
     if (is<phi::rvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":rvarg", index);
     }
 
     if (is<phi::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cvarg", index);
     }
 
     return jlm::util::strfmt(
-        jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string(),
+        rvsdg::output::GetNode(*Output_)->GetOperation().debug_string(),
         ":",
         index);
   }
@@ -330,7 +330,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.operation().debug_string();
+    return Node_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -368,7 +368,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.operation().debug_string();
+    return Node_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -404,7 +404,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Lambda_.operation().debug_string();
+    return Lambda_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -441,7 +441,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Delta_.operation().debug_string();
+    return Delta_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -1158,7 +1158,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
-  auto & lambdaFunctionType = lambdaNode.operation().type();
+  auto & lambdaFunctionType = lambdaNode.GetOperation().type();
   auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
   if (callFunctionType != lambdaFunctionType)
   {

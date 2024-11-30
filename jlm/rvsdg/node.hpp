@@ -635,8 +635,8 @@ public:
 
   node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region);
 
-  inline const jlm::rvsdg::operation &
-  operation() const noexcept
+  [[nodiscard]] virtual const operation &
+  GetOperation() const noexcept
   {
     return *operation_;
   }
@@ -1083,7 +1083,7 @@ is(const jlm::rvsdg::node * node) noexcept
   if (!node)
     return false;
 
-  return is<T>(node->operation());
+  return is<T>(node->GetOperation());
 }
 
 jlm::rvsdg::node *

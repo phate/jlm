@@ -744,7 +744,7 @@ RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaNode)
 {
-  JLM_ASSERT(is<alloca_op>(allocaNode.operation()));
+  JLM_ASSERT(is<alloca_op>(allocaNode.GetOperation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetAllocaNode(allocaNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*allocaNode.region());
@@ -754,7 +754,7 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaN
 void
 RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocNode)
 {
-  JLM_ASSERT(is<malloc_op>(mallocNode.operation()));
+  JLM_ASSERT(is<malloc_op>(mallocNode.GetOperation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetMallocNode(mallocNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*mallocNode.region());
@@ -764,7 +764,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocN
 void
 RegionAwareMemoryNodeProvider::AnnotateFree(const rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(is<FreeOperation>(freeNode.operation()));
+  JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
   auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
@@ -818,7 +818,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.operation()));
+  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
@@ -1048,7 +1048,7 @@ RegionAwareMemoryNodeProvider::ToRegionTree(
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
-        subtree += util::strfmt(indent(depth), structuralNode->operation().debug_string(), "\n");
+        subtree += util::strfmt(indent(depth), structuralNode->GetOperation().debug_string(), "\n");
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
         {
           subtree += toRegionTree(structuralNode->subregion(n), depth + 1);

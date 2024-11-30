@@ -72,7 +72,7 @@ TestFork()
         forkNodeOutput =
             dynamic_cast<rvsdg::node_output *>(loop->subregion()->result(0)->origin()));
     auto forkNode = forkNodeOutput->node();
-    auto forkOp = util::AssertedCast<const hls::fork_op>(&forkNode->operation());
+    auto forkOp = util::AssertedCast<const hls::fork_op>(&forkNode->GetOperation());
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 4);
     assert(forkOp->IsConstant() == false);
@@ -142,7 +142,7 @@ TestConstantFork()
         forkNodeOutput =
             dynamic_cast<rvsdg::node_output *>(loop->subregion()->result(0)->origin()));
     auto forkNode = forkNodeOutput->node();
-    auto forkOp = util::AssertedCast<const hls::fork_op>(&forkNode->operation());
+    auto forkOp = util::AssertedCast<const hls::fork_op>(&forkNode->GetOperation());
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 2);
     assert(forkOp->IsConstant() == false);
@@ -152,7 +152,7 @@ TestConstantFork()
     auto bitsUltNode = bitsUltNodeOutput->node();
     auto cforkNodeOutput = dynamic_cast<rvsdg::node_output *>(bitsUltNode->input(1)->origin());
     auto cforkNode = cforkNodeOutput->node();
-    auto cforkOp = util::AssertedCast<const hls::fork_op>(&cforkNode->operation());
+    auto cforkOp = util::AssertedCast<const hls::fork_op>(&cforkNode->GetOperation());
     assert(cforkNode->ninputs() == 1);
     assert(cforkNode->noutputs() == 2);
     assert(cforkOp->IsConstant() == true);

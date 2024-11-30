@@ -101,7 +101,7 @@ TestLambda()
  * recursively. For each operation the operand 0 is checked until the definingOperations is empty.
  *
  * \param operation The starting operation to check. (the lambda result for example)
- * \param succesorOperations The trace of operations to check. The last operation is the direct user
+ * \param definingOperations The trace of operations to check. The last operation is the direct user
  * of the given operation operand and the first operation is the last operation that will be checked
  * on the chain.
  */

@@ -379,7 +379,7 @@ process_loopnode(loop_node * loopNode)
     }
     else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
     {
-      if (dynamic_cast<const load_op *>(&simplenode->operation()))
+      if (dynamic_cast<const load_op *>(&simplenode->GetOperation()))
       {
         // can currently only generate dae one loop deep
         // find load slice within loop - three slices - complete, data and state-edge
@@ -398,14 +398,14 @@ process_loopnode(loop_node * loopNode)
             break;
           }
           else if (
-              dynamic_cast<const load_op *>(&sn->operation())
-              || dynamic_cast<const store_op *>(&sn->operation()))
+              dynamic_cast<const load_op *>(&sn->GetOperation())
+              || dynamic_cast<const store_op *>(&sn->GetOperation()))
           {
             // data slice may not contain loads or stores - this includes node
             can_decouple = false;
             break;
           }
-          else if (dynamic_cast<const decoupled_load_op *>(&sn->operation()))
+          else if (dynamic_cast<const decoupled_load_op *>(&sn->GetOperation()))
           {
             // decoupled load has to be exclusive to load slice - e.g. not needed once load slice is
             // removed
@@ -426,8 +426,8 @@ process_loopnode(loop_node * loopNode)
             break;
           }
           else if (
-              dynamic_cast<const load_op *>(&sn->operation())
-              || dynamic_cast<const store_op *>(&sn->operation()))
+              dynamic_cast<const load_op *>(&sn->GetOperation())
+              || dynamic_cast<const store_op *>(&sn->GetOperation()))
           {
             // state slice may not contain loads or stores except for node
             if (sn != dynamic_cast<jlm::rvsdg::node *>(simplenode))
@@ -436,7 +436,7 @@ process_loopnode(loop_node * loopNode)
               break;
             }
           }
-          else if (dynamic_cast<const decoupled_load_op *>(&sn->operation()))
+          else if (dynamic_cast<const decoupled_load_op *>(&sn->GetOperation()))
           {
             // decoupled load has to be exclusive to load slice - e.g. not needed once load slice is
             // removed

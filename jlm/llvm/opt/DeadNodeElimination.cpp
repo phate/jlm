@@ -372,7 +372,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
             { typeid(phi::operation), sweepPhi },
             { typeid(delta::operation), sweepDelta } });
 
-  auto & op = node.operation();
+  auto & op = node.GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](*this, node);
 }

@@ -145,7 +145,7 @@ inline_calls(rvsdg::Region * region)
         inline_calls(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<const llvm::CallOperation *>(&(node->operation())))
+    else if (dynamic_cast<const llvm::CallOperation *>(&(node->GetOperation())))
     {
       auto traced = jlm::hls::trace_call(node->input(0));
       auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
@@ -187,7 +187,7 @@ convert_alloca(rvsdg::Region * region)
         convert_alloca(structnode->subregion(n));
       }
     }
-    else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->operation())))
+    else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->GetOperation())))
     {
       auto rr = region->graph()->root();
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
@@ -220,7 +220,7 @@ convert_alloca(rvsdg::Region * region)
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
       auto mux_node = rvsdg::input::GetNode(*mux_in);
-      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->operation()))
+      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(mux_node->ninputs() == 2);
@@ -379,7 +379,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else
         {
-          throw jlm::util::error("Unsupported node type: " + orig_node->operation().debug_string());
+          throw util::error("Unsupported node type: " + orig_node->GetOperation().debug_string());
         }
       }
       // copy function into rhls

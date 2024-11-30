@@ -90,7 +90,7 @@ create_initialization(const delta::node * delta, context & ctx)
       operands.push_back(ctx.variable(node->input(n)->origin()));
 
     /* convert node to tac */
-    auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->operation());
+    auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
     tacs.push_back(tac::create(op, operands));
     ctx.insert(output, tacs.back()->result(0));
   }
@@ -161,13 +161,13 @@ create_cfg(const lambda::node & lambda, context & ctx)
 static inline void
 convert_simple_node(const rvsdg::node & node, context & ctx)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::SimpleOperation *>(&node.operation()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::SimpleOperation *>(&node.GetOperation()));
 
   std::vector<const variable *> operands;
   for (size_t n = 0; n < node.ninputs(); n++)
     operands.push_back(ctx.variable(node.input(n)->origin()));
 
-  auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node.operation());
+  auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node.GetOperation());
   ctx.lpbb()->append_last(tac::create(op, operands));
 
   for (size_t n = 0; n < node.noutputs(); n++)
@@ -207,7 +207,7 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
     auto matchnode = rvsdg::output::GetNode(*predicate);
     if (is<rvsdg::match_op>(matchnode))
     {
-      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
+      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->GetOperation());
       auto d = matchop->default_alternative();
       auto c = ctx.variable(matchnode->input(0)->origin());
       auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
@@ -309,7 +309,7 @@ convert_gamma_node(const rvsdg::node & node, context & ctx)
     {
       /* use select instead of phi */
       auto matchnode = rvsdg::output::GetNode(*predicate);
-      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->operation());
+      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->GetOperation());
       auto d = matchop->default_alternative();
       auto c = ctx.variable(matchnode->input(0)->origin());
       auto t = d == 0 ? arguments[1].first : arguments[0].first;
@@ -526,13 +526,13 @@ convert_node(const rvsdg::node & node, context & ctx)
                 { typeid(phi::operation), convert_phi_node },
                 { typeid(delta::operation), convert_delta_node } });
 
-  if (dynamic_cast<const rvsdg::SimpleOperation *>(&node.operation()))
+  if (dynamic_cast<const rvsdg::SimpleOperation *>(&node.GetOperation()))
   {
     convert_simple_node(node, ctx);
     return;
   }
 
-  auto & op = node.operation();
+  auto & op = node.GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](node, ctx);
 }

@@ -119,7 +119,7 @@ match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) c
 {
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(producer(arg)->operation());
+    auto op = static_cast<const bitconstant_op &>(producer(arg)->GetOperation());
     return jlm::rvsdg::control_constant(
         arg->region(),
         nalternatives(),

@@ -516,11 +516,11 @@ PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
   auto node = jlm::rvsdg::output::GetNode(*&output);
 
   if (node != nullptr)
-    return util::strfmt(node->operation().debug_string(), ":o", output.index());
+    return util::strfmt(node->GetOperation().debug_string(), ":o", output.index());
 
   node = output.region()->node();
   if (node != nullptr)
-    return util::strfmt(node->operation().debug_string(), ":a", output.index());
+    return util::strfmt(node->GetOperation().debug_string(), ":a", output.index());
 
   if (auto graphImport = dynamic_cast<const GraphImport *>(&output))
   {
@@ -554,7 +554,7 @@ PointsToGraph::AllocaNode::~AllocaNode() noexcept = default;
 std::string
 PointsToGraph::AllocaNode::DebugString() const
 {
-  return GetAllocaNode().operation().debug_string();
+  return GetAllocaNode().GetOperation().debug_string();
 }
 
 PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
@@ -562,7 +562,7 @@ PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
 std::string
 PointsToGraph::DeltaNode::DebugString() const
 {
-  return GetDeltaNode().operation().debug_string();
+  return GetDeltaNode().GetOperation().debug_string();
 }
 
 PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
@@ -570,7 +570,7 @@ PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
 std::string
 PointsToGraph::LambdaNode::DebugString() const
 {
-  return GetLambdaNode().operation().debug_string();
+  return GetLambdaNode().GetOperation().debug_string();
 }
 
 PointsToGraph::MallocNode::~MallocNode() noexcept = default;
@@ -578,7 +578,7 @@ PointsToGraph::MallocNode::~MallocNode() noexcept = default;
 std::string
 PointsToGraph::MallocNode::DebugString() const
 {
-  return GetMallocNode().operation().debug_string();
+  return GetMallocNode().GetOperation().debug_string();
 }
 
 PointsToGraph::ImportNode::~ImportNode() noexcept = default;

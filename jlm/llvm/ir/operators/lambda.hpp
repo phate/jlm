@@ -186,39 +186,36 @@ public:
   }
 
   [[nodiscard]] const lambda::operation &
-  operation() const noexcept
-  {
-    return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::operation());
-  }
+  GetOperation() const noexcept override;
 
   [[nodiscard]] const jlm::llvm::FunctionType &
   type() const noexcept
   {
-    return operation().type();
+    return GetOperation().type();
   }
 
   [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
   Type() const noexcept
   {
-    return operation().Type();
+    return GetOperation().Type();
   }
 
   [[nodiscard]] const std::string &
   name() const noexcept
   {
-    return operation().name();
+    return GetOperation().name();
   }
 
   [[nodiscard]] const jlm::llvm::linkage &
   linkage() const noexcept
   {
-    return operation().linkage();
+    return GetOperation().linkage();
   }
 
   [[nodiscard]] const jlm::llvm::attributeset &
   attributes() const noexcept
   {
-    return operation().attributes();
+    return GetOperation().attributes();
   }
 
   [[nodiscard]] size_t
