@@ -31,7 +31,7 @@ TestDeadLoopNode()
 
   loop_node::create(lambdaNode->subregion());
 
-  lambdaNode->finalize({ lambdaNode->fctargument(1) });
+  lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[1] });
 
   // Act
   EliminateDeadNodes(rvsdgModule);
@@ -60,8 +60,8 @@ TestDeadLoopNodeOutput()
       "f",
       jlm::llvm::linkage::external_linkage);
 
-  auto p = lambdaNode->fctargument(0);
-  auto x = lambdaNode->fctargument(1);
+  auto p = lambdaNode->GetFunctionArguments()[0];
+  auto x = lambdaNode->GetFunctionArguments()[1];
 
   auto loopNode = loop_node::create(lambdaNode->subregion());
 

@@ -402,8 +402,8 @@ test_lambda()
 
   auto lambda = lambda::node::create(graph.root(), ft, "f", linkage::external_linkage);
 
-  auto d1 = lambda->add_ctxvar(x);
-  auto d2 = lambda->add_ctxvar(x);
+  auto d1 = lambda->AddContextVar(*x).inner;
+  auto d2 = lambda->AddContextVar(*x).inner;
 
   auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { vt })[0];
 
@@ -446,11 +446,11 @@ test_phi()
   auto r2 = pb.add_recvar(PointerType::Create());
 
   auto lambda1 = lambda::node::create(region, ft, "f", linkage::external_linkage);
-  auto cv1 = lambda1->add_ctxvar(d1);
+  auto cv1 = lambda1->AddContextVar(*d1).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
   auto lambda2 = lambda::node::create(region, ft, "f", linkage::external_linkage);
-  auto cv2 = lambda2->add_ctxvar(d2);
+  auto cv2 = lambda2->AddContextVar(*d2).inner;
   auto f2 = lambda2->finalize({ cv2 });
 
   r1->set_rvorigin(f1);
@@ -466,7 +466,9 @@ test_phi()
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(f1->node()->input(0)->origin() == f2->node()->input(0)->origin());
+  assert(
+      jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).input(0)->origin()
+      == jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f2).input(0)->origin());
 }
 
 static int

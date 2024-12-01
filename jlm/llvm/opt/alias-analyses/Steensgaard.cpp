@@ -209,16 +209,19 @@ public:
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
-    if (is<lambda::cvargument>(Output_))
+    if (auto node = rvsdg::TryGetRegionParentNode<lambda::node>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
-      return jlm::util::strfmt(dbgstr, ":cv:", index);
-    }
-
-    if (is<lambda::fctargument>(Output_))
-    {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
-      return jlm::util::strfmt(dbgstr, ":arg:", index);
+      auto dbgstr = node->GetOperation().debug_string();
+      if (auto ctxvar = node->MapBinderContextVar(*Output_))
+      {
+        // Bound context variable.
+        return jlm::util::strfmt(dbgstr, ":cv:", index);
+      }
+      else
+      {
+        // Formal function argument.
+        return jlm::util::strfmt(dbgstr, ":arg:", index);
+      }
     }
 
     if (is<delta::cvargument>(Output_))
@@ -1142,7 +1145,9 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
   {
   case CallTypeClassifier::CallType::NonRecursiveDirectCall:
   case CallTypeClassifier::CallType::RecursiveDirectCall:
-    AnalyzeDirectCall(callNode, *callTypeClassifier->GetLambdaOutput().node());
+    AnalyzeDirectCall(
+        callNode,
+        rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()));
     break;
   case CallTypeClassifier::CallType::ExternalCall:
     AnalyzeExternalCall(callNode);
@@ -1174,10 +1179,11 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
   // Handle call node operands
   //
   // Variadic arguments are taken care of in AnalyzeVaList().
+  auto arguments = lambdaNode.GetFunctionArguments();
   for (size_t n = 1; n < callNode.ninputs(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
-    auto & lambdaArgument = *lambdaNode.fctargument(n - 1);
+    auto & lambdaArgument = *arguments[n - 1];
 
     if (HasOrContainsPointerType(callArgument))
     {
@@ -1472,14 +1478,14 @@ void
 Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    auto & origin = *cv.origin();
+    auto & origin = *cv.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.argument());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.inner);
       Context_->Join(originLocation, argumentLocation);
     }
   }
@@ -1488,22 +1494,22 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   auto callSummary = lambda.ComputeCallSummary();
   if (callSummary->HasOnlyDirectCalls())
   {
-    for (auto & argument : lambda.fctarguments())
+    for (auto & argument : lambda.GetFunctionArguments())
     {
-      if (HasOrContainsPointerType(argument))
+      if (HasOrContainsPointerType(*argument))
       {
-        Context_->GetOrInsertRegisterLocation(argument);
+        Context_->GetOrInsertRegisterLocation(*argument);
       }
     }
   }
   else
   {
     // FIXME: We also end up in this case when the lambda has only direct calls, but is exported.
-    for (auto & argument : lambda.fctarguments())
+    for (auto argument : lambda.GetFunctionArguments())
     {
-      if (HasOrContainsPointerType(argument))
+      if (HasOrContainsPointerType(*argument))
       {
-        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(argument);
+        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*argument);
         argumentLocation.SetPointsToFlags(
             argumentLocation.GetPointsToFlags() | PointsToFlags::PointsToExternalMemory
             | PointsToFlags::PointsToEscapedMemory);
@@ -1516,9 +1522,9 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   // Handle function results
   if (lambda::node::IsExported(lambda))
   {
-    for (auto & result : lambda.fctresults())
+    for (auto result : lambda.GetFunctionResults())
     {
-      auto & operand = *result.origin();
+      auto & operand = *result->origin();
 
       if (HasOrContainsPointerType(operand))
       {

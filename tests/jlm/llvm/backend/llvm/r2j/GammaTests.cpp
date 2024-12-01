@@ -38,10 +38,10 @@ GammaWithMatch()
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
-  auto gammaInput1 = gamma->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gamma->add_entryvar(lambdaNode->fctargument(2));
+  auto gammaInput1 = gamma->add_entryvar(lambdaNode->GetFunctionArguments()[1]);
+  auto gammaInput2 = gamma->add_entryvar(lambdaNode->GetFunctionArguments()[2]);
   auto gammaOutput = gamma->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
@@ -92,9 +92,9 @@ GammaWithoutMatch()
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->fctargument(0), 2);
-  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->fctargument(2));
+  auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->GetFunctionArguments()[0], 2);
+  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->GetFunctionArguments()[1]);
+  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->GetFunctionArguments()[2]);
   auto gammaOutput = gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
@@ -146,11 +146,12 @@ EmptyGammaWithThreeSubregions()
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->fctargument(0));
+  auto match =
+      jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->GetFunctionArguments()[0]);
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
-  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->fctargument(2));
+  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->GetFunctionArguments()[1]);
+  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->GetFunctionArguments()[2]);
   auto gammaOutput = gammaNode->add_exitvar(
       { gammaInput1->argument(0), gammaInput1->argument(1), gammaInput2->argument(2) });
 
@@ -198,9 +199,9 @@ PartialEmptyGamma()
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
-  auto gammaInput = gammaNode->add_entryvar(lambdaNode->fctargument(1));
+  auto gammaInput = gammaNode->add_entryvar(lambdaNode->GetFunctionArguments()[1]);
   auto output = jlm::tests::create_testop(
       gammaNode->subregion(1),
       { gammaInput->argument(1) },

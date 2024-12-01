@@ -157,10 +157,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 
   while (true)
   {
-    if (is<lambda::output>(origin))
-      return origin;
-
-    if (is<lambda::fctargument>(origin))
+    if (rvsdg::TryGetOwnerNode<lambda::node>(*origin))
       return origin;
 
     if (is<rvsdg::GraphImport>(origin))
@@ -174,11 +171,17 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (is<lambda::cvargument>(origin))
+    if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(*origin))
     {
-      auto argument = util::AssertedCast<const rvsdg::RegionArgument>(origin);
-      origin = argument->input()->origin();
-      continue;
+      if (auto ctxvar = lambda->MapBinderContextVar(*origin))
+      {
+        origin = ctxvar->input->origin();
+        continue;
+      }
+      else
+      {
+        return origin;
+      }
     }
 
     if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(origin))
@@ -241,9 +244,9 @@ CallNode::ClassifyCall(const CallNode & callNode)
 {
   auto output = CallNode::TraceFunctionInput(callNode);
 
-  if (auto lambdaOutput = dynamic_cast<lambda::output *>(output))
+  if (rvsdg::TryGetOwnerNode<lambda::node>(*output))
   {
-    return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*lambdaOutput);
+    return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*output);
   }
 
   if (auto argument = dynamic_cast<rvsdg::RegionArgument *>(output))

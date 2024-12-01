@@ -14,7 +14,7 @@ namespace jlm::hls
 {
 
 static bool
-IsPassthroughArgument(const rvsdg::RegionArgument & argument)
+IsPassthroughArgument(const rvsdg::output & argument)
 {
   if (argument.nusers() != 1)
   {
@@ -25,7 +25,7 @@ IsPassthroughArgument(const rvsdg::RegionArgument & argument)
 }
 
 static bool
-IsPassthroughResult(const rvsdg::RegionResult & result)
+IsPassthroughResult(const rvsdg::input & result)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(result.origin());
   return argument != nullptr;
@@ -71,31 +71,30 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
       lambdaNode.attributes());
 
   rvsdg::SubstitutionMap substitutionMap;
-  for (size_t i = 0; i < lambdaNode.ncvarguments(); ++i)
+  for (const auto & ctxvar : lambdaNode.GetContextVars())
   {
-    auto oldArgument = lambdaNode.cvargument(i);
-    auto origin = oldArgument->input()->origin();
+    auto oldArgument = ctxvar.inner;
+    auto origin = ctxvar.input->origin();
 
-    auto newArgument = newLambda->add_ctxvar(origin);
+    auto newArgument = newLambda->AddContextVar(*origin).inner;
     substitutionMap.insert(oldArgument, newArgument);
   }
 
   size_t new_i = 0;
-  for (size_t i = 0; i < lambdaNode.nfctarguments(); ++i)
+  auto newArgs = newLambda->GetFunctionArguments();
+  for (auto argument : lambdaNode.GetFunctionArguments())
   {
-    auto argument = lambdaNode.fctargument(i);
     if (!IsPassthroughArgument(*argument))
     {
-      substitutionMap.insert(argument, newLambda->fctargument(new_i));
+      substitutionMap.insert(argument, newArgs[new_i]);
       new_i++;
     }
   }
   lambdaNode.subregion()->copy(newLambda->subregion(), substitutionMap, false, false);
 
   std::vector<jlm::rvsdg::output *> newResults;
-  for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
+  for (auto result : lambdaNode.GetFunctionResults())
   {
-    auto result = lambdaNode.fctresult(i);
     if (!IsPassthroughResult(*result))
     {
       newResults.push_back(substitutionMap.lookup(result->origin()));
