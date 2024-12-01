@@ -217,12 +217,31 @@ public:
     return *Output_;
   }
 
+  /**
+    \brief Classify callee as non-recursive.
+
+    \param output
+      Output representing the function called (must be a lambda).
+
+    \pre
+      The given output must belong to a lambda node.
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
   {
+    rvsdg::AssertGetOwnerNode<lambda::node>(output);
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }
 
+  /**
+    \brief Classify callee as recursive.
+
+    \param output
+      Output representing the function called (must be phi argument).
+
+    \pre
+      The given output must belong to a phi node.
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
   {
@@ -230,6 +249,15 @@ public:
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
+  /**
+    \brief Classify callee as external.
+
+    \param argument
+      Output representing the function called (must be graph argument).
+
+    \pre
+      The given output must be an argument to the root region of the graph.
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateExternalCallClassifier(rvsdg::RegionArgument & argument)
   {
@@ -237,6 +265,12 @@ public:
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
   }
 
+  /**
+    \brief Classify callee as inderict.
+
+    \param output
+      Output representing the function called (supposed to be pointer).
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateIndirectCallClassifier(jlm::rvsdg::output & output)
   {
