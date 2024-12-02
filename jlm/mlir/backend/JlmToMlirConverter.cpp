@@ -389,15 +389,15 @@ JlmToMlirConverter::ConvertSimpleNode(
 JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Type> arguments;
-  for (size_t i = 0; i < lambdaNode.nfctarguments(); ++i)
+  for (auto arg : lambdaNode.GetFunctionArguments())
   {
-    arguments.push_back(ConvertType(lambdaNode.fctargument(i)->type()));
+    arguments.push_back(ConvertType(arg->type()));
   }
 
   ::llvm::SmallVector<::mlir::Type> results;
-  for (size_t i = 0; i < lambdaNode.nfctresults(); ++i)
+  for (auto res : lambdaNode.GetFunctionResults())
   {
-    results.push_back(ConvertType(lambdaNode.fctresult(i)->type()));
+    results.push_back(ConvertType(res->type()));
   }
 
   ::llvm::SmallVector<::mlir::Type> lambdaRef;

@@ -2122,7 +2122,7 @@ public:
     return *Lambda_;
   }
 
-  [[nodiscard]] const jlm::llvm::lambda::output &
+  [[nodiscard]] const rvsdg::output &
   GetLambdaOutput() const noexcept
   {
     JLM_ASSERT(Lambda_);
@@ -2279,7 +2279,7 @@ public:
     return *LocalFuncRegister_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::RegionArgument &
+  [[nodiscard]] const jlm::rvsdg::output &
   GetLocalFunctionParam() const noexcept
   {
     JLM_ASSERT(LocalFuncParam_);
@@ -2306,7 +2306,7 @@ private:
 
   jlm::llvm::delta::node * Global_ = {};
   jlm::llvm::lambda::node * LocalFunc_ = {};
-  jlm::rvsdg::RegionArgument * LocalFuncParam_ = {};
+  jlm::rvsdg::output * LocalFuncParam_ = {};
   jlm::rvsdg::output * LocalFuncRegister_ = {};
   rvsdg::Node * LocalFuncParamAllocaNode_ = {};
   jlm::llvm::lambda::node * ExportedFunc_ = {};

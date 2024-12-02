@@ -82,7 +82,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   }
   else if (auto lambda = dynamic_cast<lambda::node *>(region->node()))
   {
-    output = lambda->add_ctxvar(output);
+    output = lambda->AddContextVar(*output).inner;
   }
   else if (auto phi = dynamic_cast<phi::node *>(region->node()))
   {
@@ -119,16 +119,18 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
   JLM_ASSERT(is<CallOperation>(call));
 
   auto deps = route_dependencies(lambda, call);
-  JLM_ASSERT(lambda->ncvarguments() == deps.size());
+  auto ctxvars = lambda->GetContextVars();
+  JLM_ASSERT(ctxvars.size() == deps.size());
 
   rvsdg::SubstitutionMap smap;
+  auto args = lambda->GetFunctionArguments();
   for (size_t n = 1; n < call->ninputs(); n++)
   {
-    auto argument = lambda->fctargument(n - 1);
+    auto argument = args[n - 1];
     smap.insert(argument, call->input(n)->origin());
   }
-  for (size_t n = 0; n < lambda->ncvarguments(); n++)
-    smap.insert(lambda->cvargument(n), deps[n]);
+  for (size_t n = 0; n < ctxvars.size(); n++)
+    smap.insert(ctxvars[n].inner, deps[n]);
 
   lambda->subregion()->copy(call->region(), smap, false, false);
 

@@ -970,22 +970,22 @@ void
 Andersen::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv.type()))
+    if (!IsOrContainsPointerType(cv.input->type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
   // Create Register PointerObjects for each argument of pointing type in the function
-  for (auto & argument : lambda.fctarguments())
+  for (auto argument : lambda.GetFunctionArguments())
   {
-    if (IsOrContainsPointerType(argument.type()))
-      (void)Set_->CreateRegisterPointerObject(argument);
+    if (IsOrContainsPointerType(argument->type()))
+      (void)Set_->CreateRegisterPointerObject(*argument);
   }
 
   AnalyzeRegion(*lambda.subregion());

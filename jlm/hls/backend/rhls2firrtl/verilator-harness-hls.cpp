@@ -490,10 +490,10 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
     cpp << "    top->i_data_" << i << " = (uint64_t) a" << i << ";\n";
     register_ix++;
   }
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (const auto & ctxvar : ln->GetContextVars())
   {
     std::string name;
-    if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(ln->input(i)->origin()))
+    if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(ctxvar.input->origin()))
     {
       name = graphImport->Name();
     }

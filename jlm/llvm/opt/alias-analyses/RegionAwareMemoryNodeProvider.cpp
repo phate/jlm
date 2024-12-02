@@ -377,7 +377,8 @@ public:
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
     {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaEntryNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -401,7 +402,8 @@ public:
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
     {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaExitNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -562,7 +564,9 @@ public:
       auto & regionUnknownMemoryNodeReferences = regionSummary.GetUnknownMemoryNodeReferences();
 
       auto callTypeClassifier = CallNode::ClassifyCall(callNode);
-      auto & lambdaRegion = *callTypeClassifier->GetLambdaOutput().node()->subregion();
+      auto & lambdaRegion =
+          *rvsdg::AssertGetOwnerNode<llvm::lambda::node>(callTypeClassifier->GetLambdaOutput())
+               .subregion();
       auto & lambdaRegionSummary = provisioning.GetRegionSummary(lambdaRegion);
       auto & lambdaRegionMemoryNodes = lambdaRegionSummary.GetMemoryNodes();
       auto & lambdaRegionUnknownMemoryNodeReferences =
@@ -947,7 +951,8 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::Region & region)
   for (auto & callNode : regionSummary.GetNonRecursiveCalls().Items())
   {
     auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
-    auto & lambdaRegion = *callTypeClassifier->GetLambdaOutput().node()->subregion();
+    auto & lambdaRegion =
+        *rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()).subregion();
     auto & lambdaRegionSummary = Provisioning_->GetRegionSummary(lambdaRegion);
 
     RegionSummary::Propagate(regionSummary, lambdaRegionSummary);

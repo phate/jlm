@@ -95,7 +95,8 @@ public:
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
     {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaEntryNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -118,7 +119,8 @@ public:
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
     {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaExitNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -804,7 +806,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownNonRecursiveDirectCall(
   JLM_ASSERT(callTypeClassifier.IsNonRecursiveDirectCall());
 
   auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
-  auto & lambdaNode = *callTypeClassifier.GetLambdaOutput().node();
+  auto & lambdaNode = rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier.GetLambdaOutput());
 
   Context_->AddLiveNodes(*lambdaNode.subregion(), liveNodes);
   Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
@@ -818,7 +820,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRecursiveDirectCall(
   JLM_ASSERT(callTypeClassifier.IsRecursiveDirectCall());
 
   auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
-  auto & lambdaNode = *callTypeClassifier.GetLambdaOutput().node();
+  auto & lambdaNode = rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier.GetLambdaOutput());
 
   Context_->AddLiveNodes(*lambdaNode.subregion(), liveNodes);
   Context_->AddLiveNodesAnnotatedLambda(lambdaNode);

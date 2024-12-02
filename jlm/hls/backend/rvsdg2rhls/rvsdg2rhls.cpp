@@ -287,18 +287,21 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
-  for (auto & cv : ln->ctxvars())
+  for (const auto & cv : ln->GetContextVars())
   {
-    auto origin = cv.origin();
-    auto newcv = lambda->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto origin = cv.input->origin();
+    auto newcv = lambda->AddContextVar(*origin);
+    subregionmap.insert(cv.inner, newcv.inner);
   }
 
   /* collect function arguments */
-  for (size_t n = 0; n < ln->nfctarguments(); n++)
+  auto args = ln->GetFunctionArguments();
+  auto newArgs = lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() == newArgs.size());
+  for (size_t n = 0; n < args.size(); n++)
   {
-    lambda->fctargument(n)->set_attributes(ln->fctargument(n)->attributes());
-    subregionmap.insert(ln->fctargument(n), lambda->fctargument(n));
+    lambda->SetArgumentAttributes(*newArgs[n], ln->GetArgumentAttributes(*args[n]));
+    subregionmap.insert(args[n], newArgs[n]);
   }
 
   /* copy subregion */
@@ -306,8 +309,8 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 
   /* collect function results */
   std::vector<jlm::rvsdg::output *> results;
-  for (auto & result : ln->fctresults())
-    results.push_back(subregionmap.lookup(result.origin()));
+  for (auto result : ln->GetFunctionResults())
+    results.push_back(subregionmap.lookup(result->origin()));
 
   /* finalize lambda */
   lambda->finalize(results);

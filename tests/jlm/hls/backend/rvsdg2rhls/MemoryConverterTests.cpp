@@ -41,16 +41,16 @@ TestTraceArgument()
       linkage::external_linkage);
 
   // Load followed by store
-  auto loadAddress = lambda->fctargument(0);
-  auto memoryStateArgument = lambda->fctargument(3);
+  auto loadAddress = lambda->GetFunctionArguments()[0];
+  auto memoryStateArgument = lambda->GetFunctionArguments()[3];
   auto loadOutput = LoadNonVolatileNode::Create(
       loadAddress,
       { memoryStateArgument },
       jlm::llvm::PointerType::Create(),
       32);
 
-  auto storeAddress = lambda->fctargument(1);
-  auto storeData = lambda->fctargument(2);
+  auto storeAddress = lambda->GetFunctionArguments()[1];
+  auto storeData = lambda->GetFunctionArguments()[2];
   auto storeOutput = StoreNonVolatileNode::Create(storeAddress, storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
@@ -98,8 +98,8 @@ TestLoad()
       linkage::external_linkage);
 
   // Single load
-  auto loadAddress = lambda->fctargument(0);
-  auto memoryStateArgument = lambda->fctargument(1);
+  auto loadAddress = lambda->GetFunctionArguments()[0];
+  auto memoryStateArgument = lambda->GetFunctionArguments()[1];
   auto loadOutput = LoadNonVolatileNode::Create(
       loadAddress,
       { memoryStateArgument },
@@ -182,9 +182,9 @@ TestLoadStore()
       linkage::external_linkage);
 
   // Load followed by store
-  auto loadAddress = lambda->fctargument(0);
-  auto storeData = lambda->fctargument(1);
-  auto memoryStateArgument = lambda->fctargument(2);
+  auto loadAddress = lambda->GetFunctionArguments()[0];
+  auto storeData = lambda->GetFunctionArguments()[1];
+  auto memoryStateArgument = lambda->GetFunctionArguments()[2];
   auto loadOutput = LoadNonVolatileNode::Create(
       loadAddress,
       { memoryStateArgument },
@@ -274,9 +274,9 @@ TestThetaLoad()
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto thetaRegion = theta->subregion();
   // Predicate
-  auto idv = theta->add_loopvar(lambda->fctargument(0));
-  auto lvs = theta->add_loopvar(lambda->fctargument(1));
-  auto lve = theta->add_loopvar(lambda->fctargument(2));
+  auto idv = theta->add_loopvar(lambda->GetFunctionArguments()[0]);
+  auto lvs = theta->add_loopvar(lambda->GetFunctionArguments()[1]);
+  auto lve = theta->add_loopvar(lambda->GetFunctionArguments()[2]);
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitsgt_op sgt(32);
   jlm::rvsdg::bitadd_op add(32);
@@ -292,8 +292,8 @@ TestThetaLoad()
   theta->set_predicate(match);
 
   // Load node
-  auto loadAddress = theta->add_loopvar(lambda->fctargument(3));
-  auto memoryStateArgument = theta->add_loopvar(lambda->fctargument(4));
+  auto loadAddress = theta->add_loopvar(lambda->GetFunctionArguments()[3]);
+  auto memoryStateArgument = theta->add_loopvar(lambda->GetFunctionArguments()[4]);
   auto loadOutput = LoadNonVolatileNode::Create(
       loadAddress->argument(),
       { memoryStateArgument->argument() },
