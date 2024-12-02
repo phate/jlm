@@ -230,7 +230,7 @@ public:
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
-    if (is<rvsdg::GammaArgument>(Output_))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*Output_))
     {
       auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
@@ -248,9 +248,9 @@ public:
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is<rvsdg::GammaOutput>(Output_))
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
+      auto dbgstr = node->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -1621,16 +1621,16 @@ void
 Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
 {
   // Handle entry variables
-  for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++)
+  for (const auto & ev : node.GetEntryVars())
   {
-    auto & origin = *ev->origin();
+    auto & origin = *ev.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
-      auto & originLocation = Context_->GetLocation(*ev->origin());
-      for (auto & argument : *ev)
+      auto & originLocation = Context_->GetLocation(*ev.input->origin());
+      for (auto argument : ev.branchArgument)
       {
-        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(argument);
+        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*argument);
         Context_->Join(argumentLocation, originLocation);
       }
     }
@@ -1641,16 +1641,14 @@ Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
     AnalyzeRegion(*node.subregion(n));
 
   // Handle exit variables
-  for (auto ex = node.begin_exitvar(); ex != node.end_exitvar(); ex++)
+  for (auto ex : node.GetExitVars())
   {
-    auto & output = *ex.output();
-
-    if (HasOrContainsPointerType(output))
+    if (HasOrContainsPointerType(*ex.output))
     {
-      auto & outputLocation = Context_->GetOrInsertRegisterLocation(output);
-      for (auto & result : *ex)
+      auto & outputLocation = Context_->GetOrInsertRegisterLocation(*ex.output);
+      for (auto result : ex.branchResult)
       {
-        auto & resultLocation = Context_->GetLocation(*result.origin());
+        auto & resultLocation = Context_->GetLocation(*result->origin());
         Context_->Join(outputLocation, resultLocation);
       }
     }

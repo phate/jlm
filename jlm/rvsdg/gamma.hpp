@@ -7,6 +7,8 @@
 #ifndef JLM_RVSDG_GAMMA_HPP
 #define JLM_RVSDG_GAMMA_HPP
 
+#include <optional>
+
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -106,9 +108,6 @@ private:
 
 /* gamma node */
 
-class GammaInput;
-class GammaOutput;
-
 class GammaNode : public StructuralNode
 {
 public:
@@ -117,180 +116,184 @@ public:
 private:
   GammaNode(rvsdg::output * predicate, size_t nalternatives);
 
-  class entryvar_iterator
-  {
-  public:
-    constexpr entryvar_iterator(GammaInput * input) noexcept
-        : input_(input)
-    {}
-
-    GammaInput *
-    input() const noexcept
-    {
-      return input_;
-    }
-
-    const entryvar_iterator &
-    operator++() noexcept;
-
-    inline const entryvar_iterator
-    operator++(int) noexcept
-    {
-      entryvar_iterator it(*this);
-      ++(*this);
-      return it;
-    }
-
-    inline bool
-    operator==(const entryvar_iterator & other) const noexcept
-    {
-      return input_ == other.input_;
-    }
-
-    inline bool
-    operator!=(const entryvar_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    GammaInput &
-    operator*() noexcept
-    {
-      return *input_;
-    }
-
-    GammaInput *
-    operator->() noexcept
-    {
-      return input_;
-    }
-
-  private:
-    GammaInput * input_;
-  };
-
-  class exitvar_iterator
-  {
-  public:
-    constexpr explicit exitvar_iterator(GammaOutput * output) noexcept
-        : output_(output)
-    {}
-
-    [[nodiscard]] GammaOutput *
-    output() const noexcept
-    {
-      return output_;
-    }
-
-    const exitvar_iterator &
-    operator++() noexcept;
-
-    inline const exitvar_iterator
-    operator++(int) noexcept
-    {
-      exitvar_iterator it(*this);
-      ++(*this);
-      return it;
-    }
-
-    inline bool
-    operator==(const exitvar_iterator & other) const noexcept
-    {
-      return output_ == other.output_;
-    }
-
-    inline bool
-    operator!=(const exitvar_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    GammaOutput &
-    operator*() noexcept
-    {
-      return *output_;
-    }
-
-    GammaOutput *
-    operator->() noexcept
-    {
-      return output_;
-    }
-
-  private:
-    GammaOutput * output_;
-  };
-
 public:
+  /**
+   * \brief A variable routed into all gamma regions.
+   */
+  struct EntryVar
+  {
+    /**
+     * \brief Variable at entry point (input to gamma node).
+     */
+    rvsdg::input * input;
+    /**
+     * \brief Variable inside each of the branch regions (argument per subregion).
+     */
+    std::vector<rvsdg::output *> branchArgument;
+  };
+
+  /**
+   * \brief A variable routed out of all gamma regions as result.
+   */
+  struct ExitVar
+  {
+    /**
+     * \brief Variable exit points (results per subregion).
+     */
+    std::vector<rvsdg::input *> branchResult;
+    /**
+     * \brief Output of gamma.
+     */
+    rvsdg::output * output;
+  };
+
   static GammaNode *
   create(jlm::rvsdg::output * predicate, size_t nalternatives)
   {
     return new GammaNode(predicate, nalternatives);
   }
 
-  inline GammaInput *
+  inline rvsdg::input *
   predicate() const noexcept;
 
-  inline size_t
-  nentryvars() const noexcept
-  {
-    JLM_ASSERT(node::ninputs() != 0);
-    return node::ninputs() - 1;
-  }
+  /**
+   * \brief Routes a variable into the gamma branches.
+   *
+   * \param origin
+   *   Value to be routed in.
+   *
+   * \returns
+   *   Description of entry variable.
+   *
+   * Routes a variable into a gamma region. To access the
+   * variable in each branch use \ref EntryVar::branchArgument.
+   */
+  EntryVar
+  AddEntryVar(rvsdg::output * origin);
 
-  inline size_t
-  nexitvars() const noexcept
-  {
-    return node::noutputs();
-  }
+  /**
+   * \brief Gets entry variable by index.
+   *
+   * \param index
+   *   Index of entry variable
+   *
+   * \returns
+   *   Description of entry variable.
+   *
+   * Looks up the \p index 'th entry variable into the gamma
+   * node and returns its description.
+   */
+  EntryVar
+  GetEntryVar(std::size_t index) const;
 
-  inline GammaInput *
-  entryvar(size_t index) const noexcept;
+  /**
+   * \brief Gets all entry variables for this gamma.
+   */
+  std::vector<EntryVar>
+  GetEntryVars() const;
 
-  [[nodiscard]] inline GammaOutput *
-  exitvar(size_t index) const noexcept;
+  /**
+   * \brief Maps gamma input to entry variable.
+   *
+   * \param input
+   *   Input to be mapped.
+   *
+   * \returns
+   *   The entry variable description corresponding to this input
+   *
+   * \pre
+   *   \p input must be an input of this node and must not be the predicate
+   *
+   * Maps the gamma input to the entry variable description corresponding
+   * to it. This allows to trace the value through to users in the
+   * gamma subregions.
+   */
+  EntryVar
+  MapInputEntryVar(const rvsdg::input & input) const;
 
-  inline GammaNode::entryvar_iterator
-  begin_entryvar() const
-  {
-    if (nentryvars() == 0)
-      return entryvar_iterator(nullptr);
+  /**
+   * \brief Maps branch subregion entry argument to gamma entry variable.
+   *
+   * \param output
+   *   The branch argument to be mapped.
+   *
+   * \returns
+   *   The entry variable description corresponding to this input
+   *
+   * \pre
+   *   \p output must be the entry argument to a subregion of this gamma nade.
+   *
+   * Maps the subregion entry argument to the entry variable description
+   * corresponding to it. This allows to trace the value to users in other
+   * branches as well as its def site preceding the gamma node:
+   */
+  EntryVar
+  MapBranchArgumentEntryVar(const rvsdg::output & output) const;
 
-    return entryvar_iterator(entryvar(0));
-  }
+  /**
+   * \brief Routes per-branch result of gamma to output
+   *
+   * \param values
+   *   Value to be routed out.
+   *
+   * \returns
+   *   Description of exit variable.
+   *
+   * Routes per-branch values for a particular variable
+   * out of the gamma regions and makes it available as
+   * output of the gamma node.
+   */
+  ExitVar
+  AddExitVar(std::vector<rvsdg::output *> values);
 
-  inline GammaNode::entryvar_iterator
-  end_entryvar() const
-  {
-    return entryvar_iterator(nullptr);
-  }
+  /**
+   * \brief Gets all exit variables for this gamma.
+   */
+  std::vector<ExitVar>
+  GetExitVars() const;
 
-  inline GammaNode::exitvar_iterator
-  begin_exitvar() const
-  {
-    if (nexitvars() == 0)
-      return exitvar_iterator(nullptr);
+  /**
+   * \brief Maps gamma output to exit variable description.
+   *
+   * \param output
+   *   Output to be mapped.
+   *
+   * \returns
+   *   The exit variable description corresponding to this output.
+   *
+   * \pre
+   *   \p output must be an output of this node.
+   *
+   * Maps the gamma output to the exit variable description corresponding
+   * to it. This allows to trace the value through to users in the
+   * gamma subregions.
+   */
+  ExitVar
+  MapOutputExitVar(const rvsdg::output & output) const;
 
-    return exitvar_iterator(exitvar(0));
-  }
-
-  inline GammaNode::exitvar_iterator
-  end_exitvar() const
-  {
-    return exitvar_iterator(nullptr);
-  }
-
-  inline GammaInput *
-  add_entryvar(jlm::rvsdg::output * origin);
-
-  inline GammaOutput *
-  add_exitvar(const std::vector<jlm::rvsdg::output *> & values);
+  /**
+   * \brief Maps gamma region exit result to exit variable description.
+   *
+   * \param input
+   *   The result to be mapped to be mapped.
+   *
+   * \returns
+   *   The exit variable description corresponding to this output.
+   *
+   * \pre
+   *   \p input must be a result of a subregion of this node.
+   *
+   * Maps the gamma region result to the exit variable description
+   * corresponding to it.
+   */
+  ExitVar
+  MapBranchResultExitVar(const rvsdg::input & input) const;
 
   /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and
    * match the condition specified by \p match.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const GammaOutput&)
+   * @tparam F A type that supports the function call operator: bool operator(const rvsdg::output&)
    * @param match Defines the condition of the elements to remove.
    */
   template<typename F>
@@ -303,7 +306,7 @@ public:
   void
   PruneOutputs()
   {
-    auto match = [](const GammaOutput &)
+    auto match = [](const rvsdg::output &)
     {
       return true;
     };
@@ -315,251 +318,34 @@ public:
   copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
 };
 
-/* gamma input */
-
-class GammaInput final : public StructuralInput
-{
-  friend GammaNode;
-
-public:
-  ~GammaInput() noexcept override;
-
-private:
-  GammaInput(GammaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::Type> type)
-      : StructuralInput(node, origin, std::move(type))
-  {}
-
-public:
-  GammaNode *
-  node() const noexcept
-  {
-    return static_cast<GammaNode *>(StructuralInput::node());
-  }
-
-  inline argument_list::iterator
-  begin()
-  {
-    return arguments.begin();
-  }
-
-  inline argument_list::const_iterator
-  begin() const
-  {
-    return arguments.begin();
-  }
-
-  inline argument_list::iterator
-  end()
-  {
-    return arguments.end();
-  }
-
-  inline argument_list::const_iterator
-  end() const
-  {
-    return arguments.end();
-  }
-
-  inline size_t
-  narguments() const noexcept
-  {
-    return arguments.size();
-  }
-
-  [[nodiscard]] RegionArgument *
-  argument(size_t n) const noexcept
-  {
-    JLM_ASSERT(n < narguments());
-    auto argument = node()->subregion(n)->argument(index() - 1);
-    JLM_ASSERT(argument->input() == this);
-    return argument;
-  }
-};
-
-/* gamma output */
-
-class GammaOutput final : public StructuralOutput
-{
-  friend GammaNode;
-
-public:
-  ~GammaOutput() noexcept override;
-
-  GammaOutput(GammaNode * node, std::shared_ptr<const rvsdg::Type> type)
-      : StructuralOutput(node, std::move(type))
-  {}
-
-  GammaNode *
-  node() const noexcept
-  {
-    return static_cast<GammaNode *>(StructuralOutput::node());
-  }
-
-  inline result_list::iterator
-  begin()
-  {
-    return results.begin();
-  }
-
-  inline result_list::const_iterator
-  begin() const
-  {
-    return results.begin();
-  }
-
-  inline result_list::iterator
-  end()
-  {
-    return results.end();
-  }
-
-  inline result_list::const_iterator
-  end() const
-  {
-    return results.end();
-  }
-
-  inline size_t
-  nresults() const noexcept
-  {
-    return results.size();
-  }
-
-  [[nodiscard]] RegionResult *
-  result(size_t n) const noexcept
-  {
-    JLM_ASSERT(n < nresults());
-    auto result = node()->subregion(n)->result(index());
-    JLM_ASSERT(result->output() == this);
-    return result;
-  }
-
-  /**
-   * Determines whether a gamma output is invariant.
-   *
-   * A gamma output is invariant if its value directly originates from gamma inputs and the origin
-   * of all these inputs is the same.
-   *
-   * @param invariantOrigin The origin of the gamma inputs if the gamma output is invariant and \p
-   * invariantOrigin is unequal NULL.
-   * @return True if the gamma output is invariant, otherwise false.
-   */
-  bool
-  IsInvariant(rvsdg::output ** invariantOrigin = nullptr) const noexcept;
-};
+/**
+ * \brief Determines whether a gamma exit var is path-invariant.
+ *
+ * \param gamma
+ *   The gamma node which we are testing for.
+ *
+ * \param exitvar
+ *   Exit variable of the gamma node.
+ *
+ * \returns
+ *   The common (invariant) origin of this output, or nullopt.
+ *
+ * \pre
+ *   \p exitvar must be an \ref GammaNode::ExitVar of \p gamma
+ *
+ * Checks whether the gamma effectively assigns the same input value to
+ * this exit variable on all paths of the gamma. If this is the case, it
+ * returns the origin of the common input.
+ */
+std::optional<rvsdg::output *>
+GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exitvar);
 
 /* gamma node method definitions */
 
-inline GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
-    : StructuralNode(GammaOperation(nalternatives), predicate->region(), nalternatives)
-{
-  node::add_input(std::unique_ptr<node_input>(
-      new GammaInput(this, predicate, ControlType::Create(nalternatives))));
-}
-
-/**
- * Represents a region argument in a gamma subregion.
- */
-class GammaArgument final : public RegionArgument
-{
-  friend GammaNode;
-
-public:
-  ~GammaArgument() noexcept override;
-
-  GammaArgument &
-  Copy(rvsdg::Region & region, StructuralInput * input) override;
-
-private:
-  GammaArgument(rvsdg::Region & region, GammaInput & input)
-      : RegionArgument(&region, &input, input.Type())
-  {}
-
-  static GammaArgument &
-  Create(rvsdg::Region & region, GammaInput & input)
-  {
-    auto gammaArgument = new GammaArgument(region, input);
-    region.append_argument(gammaArgument);
-    return *gammaArgument;
-  }
-};
-
-/**
- * Represents a region result in a gamma subregion.
- */
-class GammaResult final : public RegionResult
-{
-  friend GammaNode;
-
-public:
-  ~GammaResult() noexcept override;
-
-private:
-  GammaResult(rvsdg::Region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
-      : RegionResult(&region, &origin, &gammaOutput, origin.Type())
-  {}
-
-  GammaResult &
-  Copy(rvsdg::output & origin, StructuralOutput * output) override;
-
-  static GammaResult &
-  Create(rvsdg::Region & region, rvsdg::output & origin, GammaOutput & gammaOutput)
-  {
-    auto gammaResult = new GammaResult(region, origin, gammaOutput);
-    origin.region()->append_result(gammaResult);
-    return *gammaResult;
-  }
-};
-
-inline GammaInput *
+inline rvsdg::input *
 GammaNode::predicate() const noexcept
 {
-  return util::AssertedCast<GammaInput>(StructuralNode::input(0));
-}
-
-inline GammaInput *
-GammaNode::entryvar(size_t index) const noexcept
-{
-  return util::AssertedCast<GammaInput>(node::input(index + 1));
-}
-
-inline GammaOutput *
-GammaNode::exitvar(size_t index) const noexcept
-{
-  return static_cast<GammaOutput *>(node::output(index));
-}
-
-inline GammaInput *
-GammaNode::add_entryvar(jlm::rvsdg::output * origin)
-{
-  auto input =
-      node::add_input(std::unique_ptr<node_input>(new GammaInput(this, origin, origin->Type())));
-  auto gammaInput = util::AssertedCast<GammaInput>(input);
-
-  for (size_t n = 0; n < nsubregions(); n++)
-  {
-    GammaArgument::Create(*subregion(n), *gammaInput);
-  }
-
-  return gammaInput;
-}
-
-inline GammaOutput *
-GammaNode::add_exitvar(const std::vector<jlm::rvsdg::output *> & values)
-{
-  if (values.size() != nsubregions())
-    throw jlm::util::error("Incorrect number of values.");
-
-  const auto & type = values[0]->Type();
-  node::add_output(std::make_unique<GammaOutput>(this, type));
-
-  auto output = exitvar(nexitvars() - 1);
-  for (size_t n = 0; n < nsubregions(); n++)
-  {
-    GammaResult::Create(*subregion(n), *values[n], *output);
-  }
-
-  return output;
+  return StructuralNode::input(0);
 }
 
 template<typename F>
@@ -569,8 +355,7 @@ GammaNode::RemoveGammaOutputsWhere(const F & match)
   // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
   for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
   {
-    auto & gammaOutput = *util::AssertedCast<const GammaOutput>(output(n));
-    if (gammaOutput.nusers() == 0 && match(gammaOutput))
+    if (output(n)->nusers() == 0 && match(*output(n)))
     {
       for (size_t r = 0; r < nsubregions(); r++)
       {

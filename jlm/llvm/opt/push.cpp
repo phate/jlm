@@ -115,9 +115,9 @@ copy_from_gamma(jlm::rvsdg::node * node, size_t r)
   auto copy = node->copy(target, operands);
   for (size_t n = 0; n < copy->noutputs(); n++)
   {
-    auto ev = gamma->add_entryvar(copy->output(n));
-    node->output(n)->divert_users(ev->argument(r));
-    arguments.push_back(ev->argument(r));
+    auto ev = gamma->AddEntryVar(copy->output(n));
+    node->output(n)->divert_users(ev.branchArgument[r]);
+    arguments.push_back(util::AssertedCast<rvsdg::RegionArgument>(ev.branchArgument[r]));
   }
 
   return arguments;

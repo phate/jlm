@@ -140,14 +140,11 @@ InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structur
 void
 InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 {
-  for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
+  for (auto exitvar : gammaNode.GetExitVars())
   {
-    auto & gammaOutput = *it;
-
-    rvsdg::output * invariantOrigin = nullptr;
-    if (gammaOutput.IsInvariant(&invariantOrigin))
+    if (auto invariantOrigin = rvsdg::GetGammaInvariantOrigin(gammaNode, exitvar))
     {
-      it->divert_users(invariantOrigin);
+      exitvar.output->divert_users(*invariantOrigin);
     }
   }
 }

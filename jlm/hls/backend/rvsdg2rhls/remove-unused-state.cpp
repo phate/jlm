@@ -130,11 +130,12 @@ remove_unused_state(llvm::RvsdgModule & rm)
 void
 remove_gamma_passthrough(rvsdg::GammaNode * gn)
 { // remove inputs in reverse
-  for (int i = gn->nentryvars() - 1; i >= 0; --i)
+  auto entryvars = gn->GetEntryVars();
+  for (int i = entryvars.size() - 1; i >= 0; --i)
   {
     bool can_remove = true;
     size_t res_index = 0;
-    auto arg = gn->subregion(0)->argument(i);
+    auto arg = entryvars[i].branchArgument[0];
     if (arg->nusers() == 1)
     {
       auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
@@ -150,7 +151,7 @@ remove_gamma_passthrough(rvsdg::GammaNode * gn)
     }
     if (can_remove)
     {
-      auto origin = gn->entryvar(i)->origin();
+      auto origin = entryvars[i].input->origin();
       // divert users of output to origin of input
 
       gn->output(res_index)->divert_users(origin);

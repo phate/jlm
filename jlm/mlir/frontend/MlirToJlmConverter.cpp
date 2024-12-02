@@ -335,7 +335,7 @@ MlirToJlmConverter::ConvertOperation(
     // Add inputs to the gamma node and to all it's subregions
     for (size_t i = 1; i < inputs.size(); i++)
     {
-      rvsdgGammaNode->add_entryvar(inputs[i]);
+      rvsdgGammaNode->AddEntryVar(inputs[i]);
     }
 
     ::llvm::SmallVector<::llvm::SmallVector<jlm::rvsdg::output *>> regionResults;
@@ -355,7 +355,7 @@ MlirToJlmConverter::ConvertOperation(
         JLM_ASSERT(regionResults[regionIndex].size() == regionResults[0].size());
         exitvars.push_back(regionResults[regionIndex][exitvarIndex]);
       }
-      rvsdgGammaNode->add_exitvar(exitvars);
+      rvsdgGammaNode->AddExitVar(exitvars);
     }
 
     return rvsdgGammaNode;

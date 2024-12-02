@@ -290,16 +290,18 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto gamma_input = dynamic_cast<rvsdg::GammaInput *>(input))
+    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(inputNode))
     {
-      for (auto & argument : *gamma_input)
-        worklist.insert(worklist.end(), argument.begin(), argument.end());
+      for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
+      {
+        worklist.insert(worklist.end(), argument->begin(), argument->end());
+      }
       continue;
     }
 
-    if (auto gammaResult = dynamic_cast<const rvsdg::GammaResult *>(input))
+    if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*input))
     {
-      auto output = gammaResult->output();
+      auto output = gamma->MapBranchResultExitVar(*input).output;
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }
