@@ -52,7 +52,7 @@ test()
 
   auto loop = hls::loop_node::create(lambda->subregion());
 
-  auto loop_out = loop->add_loopvar(lambda->GetFunctionArguments()[1]);
+  auto loop_out = loop->AddLoopVar(lambda->GetFunctionArguments()[1]);
 
   auto f = lambda->finalize({ loop_out });
   jlm::llvm::GraphExport::Create(*f, "");

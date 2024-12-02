@@ -236,13 +236,13 @@ public:
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is<rvsdg::ThetaArgument>(Output_))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*Output_))
     {
       auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (is<rvsdg::ThetaOutput>(Output_))
+    if (rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*Output_))
     {
       auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
@@ -1658,12 +1658,12 @@ Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
 void
 Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 {
-  for (auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (HasOrContainsPointerType(*thetaOutput))
+    if (HasOrContainsPointerType(*loopVar.output))
     {
-      auto & originLocation = Context_->GetLocation(*thetaOutput->input()->origin());
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*thetaOutput->argument());
+      auto & originLocation = Context_->GetLocation(*loopVar.input->origin());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*loopVar.pre);
 
       Context_->Join(argumentLocation, originLocation);
     }
@@ -1671,13 +1671,13 @@ Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 
   AnalyzeRegion(*theta.subregion());
 
-  for (auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (HasOrContainsPointerType(*thetaOutput))
+    if (HasOrContainsPointerType(*loopVar.output))
     {
-      auto & originLocation = Context_->GetLocation(*thetaOutput->result()->origin());
-      auto & argumentLocation = Context_->GetLocation(*thetaOutput->argument());
-      auto & outputLocation = Context_->GetOrInsertRegisterLocation(*thetaOutput);
+      auto & originLocation = Context_->GetLocation(*loopVar.post->origin());
+      auto & argumentLocation = Context_->GetLocation(*loopVar.pre);
+      auto & outputLocation = Context_->GetOrInsertRegisterLocation(*loopVar.output);
 
       Context_->Join(originLocation, argumentLocation);
       Context_->Join(originLocation, outputLocation);

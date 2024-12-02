@@ -340,14 +340,20 @@ producer(const jlm::rvsdg::output * output) noexcept
   if (auto node = output::GetNode(*output))
     return node;
 
+  if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
+  {
+    auto loopvar = theta->MapPreLoopVar(*output);
+    if (loopvar.post->origin() != output)
+    {
+      return nullptr;
+    }
+    return producer(loopvar.input->origin());
+  }
+
   JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
   auto argument = static_cast<const RegionArgument *>(output);
 
   if (!argument->input())
-    return nullptr;
-
-  if (is<ThetaOperation>(argument->region()->node())
-      && (argument->region()->result(argument->index() + 1)->origin() != argument))
     return nullptr;
 
   return producer(argument->input()->origin());
