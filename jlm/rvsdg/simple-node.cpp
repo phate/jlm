@@ -49,7 +49,7 @@ simple_node::simple_node(
     rvsdg::Region * region,
     const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & operands)
-    : node(op.copy(), region)
+    : Node(op.copy(), region)
 {
   if (simple_node::GetOperation().narguments() != operands.size())
     throw jlm::util::error(jlm::util::strfmt(
@@ -74,10 +74,10 @@ simple_node::simple_node(
 const SimpleOperation &
 simple_node::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const SimpleOperation>(&node::GetOperation());
+  return *util::AssertedCast<const SimpleOperation>(&Node::GetOperation());
 }
 
-jlm::rvsdg::node *
+Node *
 simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   auto node = create(region, GetOperation(), operands);
@@ -85,7 +85,7 @@ simple_node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *
   return node;
 }
 
-jlm::rvsdg::node *
+Node *
 simple_node::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
   std::vector<jlm::rvsdg::output *> operands;

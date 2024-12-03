@@ -178,7 +178,7 @@ tracker::tracker(Graph * graph, size_t nstates)
 }
 
 void
-tracker::node_depth_change(jlm::rvsdg::node * node, size_t old_depth)
+tracker::node_depth_change(Node * node, size_t old_depth)
 {
   auto nstate = nodestate(node);
   if (nstate->state() < states_.size())
@@ -189,7 +189,7 @@ tracker::node_depth_change(jlm::rvsdg::node * node, size_t old_depth)
 }
 
 void
-tracker::node_destroy(jlm::rvsdg::node * node)
+tracker::node_destroy(Node * node)
 {
   auto nstate = nodestate(node);
   if (nstate->state() < states_.size())
@@ -199,13 +199,13 @@ tracker::node_destroy(jlm::rvsdg::node * node)
 }
 
 ssize_t
-tracker::get_nodestate(jlm::rvsdg::node * node)
+tracker::get_nodestate(Node * node)
 {
   return nodestate(node)->state();
 }
 
 void
-tracker::set_nodestate(jlm::rvsdg::node * node, size_t state)
+tracker::set_nodestate(Node * node, size_t state)
 {
   auto nstate = nodestate(node);
   if (nstate->state() != state)
@@ -219,7 +219,7 @@ tracker::set_nodestate(jlm::rvsdg::node * node, size_t state)
   }
 }
 
-jlm::rvsdg::node *
+Node *
 tracker::peek_top(size_t state) const
 {
   JLM_ASSERT(state < states_.size());
@@ -234,7 +234,7 @@ tracker::peek_top(size_t state) const
   return nullptr;
 }
 
-jlm::rvsdg::node *
+Node *
 tracker::peek_bottom(size_t state) const
 {
   JLM_ASSERT(state < states_.size());
@@ -250,7 +250,7 @@ tracker::peek_bottom(size_t state) const
 }
 
 jlm::rvsdg::tracker_nodestate *
-tracker::nodestate(jlm::rvsdg::node * node)
+tracker::nodestate(Node * node)
 {
   auto it = nodestates_.find(node);
   if (it != nodestates_.end())

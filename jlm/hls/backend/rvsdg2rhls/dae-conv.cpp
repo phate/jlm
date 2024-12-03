@@ -27,10 +27,10 @@ dae_conv(jlm::llvm::RvsdgModule & rm)
 }
 
 void
-find_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::node *> & slice);
+find_slice_node(rvsdg::Node * node, std::unordered_set<rvsdg::Node *> & slice);
 
 void
-find_slice_output(jlm::rvsdg::output * output, std::unordered_set<jlm::rvsdg::node *> & slice)
+find_slice_output(rvsdg::output * output, std::unordered_set<rvsdg::Node *> & slice)
 {
   if (auto no = dynamic_cast<jlm::rvsdg::node_output *>(output))
   {
@@ -57,7 +57,7 @@ find_slice_output(jlm::rvsdg::output * output, std::unordered_set<jlm::rvsdg::no
 }
 
 void
-find_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::node *> & slice)
+find_slice_node(rvsdg::Node * node, std::unordered_set<rvsdg::Node *> & slice)
 {
   for (size_t i = 0; i < node->ninputs(); ++i)
   {
@@ -66,7 +66,7 @@ find_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::node *> 
 }
 
 void
-find_data_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::node *> & slice)
+find_data_slice_node(rvsdg::Node * node, std::unordered_set<rvsdg::Node *> & slice)
 {
   for (size_t i = 0; i < node->ninputs(); ++i)
   {
@@ -79,7 +79,7 @@ find_data_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::nod
 }
 
 void
-find_state_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::node *> & slice)
+find_state_slice_node(rvsdg::Node * node, std::unordered_set<rvsdg::Node *> & slice)
 {
   for (size_t i = 0; i < node->ninputs(); ++i)
   {
@@ -93,17 +93,17 @@ find_state_slice_node(jlm::rvsdg::node * node, std::unordered_set<jlm::rvsdg::no
 
 bool
 is_slice_exclusive_(
-    jlm::rvsdg::node * source,
-    jlm::rvsdg::node * destination,
-    std::unordered_set<jlm::rvsdg::node *> & slice,
-    std::unordered_set<jlm::rvsdg::node *> & visited);
+    rvsdg::Node * source,
+    rvsdg::Node * destination,
+    std::unordered_set<jlm::rvsdg::Node *> & slice,
+    std::unordered_set<jlm::rvsdg::Node *> & visited);
 
 bool
 is_slice_exclusive_input_(
     jlm::rvsdg::input * source,
-    jlm::rvsdg::node * destination,
-    std::unordered_set<jlm::rvsdg::node *> & slice,
-    std::unordered_set<jlm::rvsdg::node *> & visited)
+    rvsdg::Node * destination,
+    std::unordered_set<jlm::rvsdg::Node *> & slice,
+    std::unordered_set<jlm::rvsdg::Node *> & visited)
 {
   if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(source))
   {
@@ -166,10 +166,10 @@ trace_to_loop_results(jlm::rvsdg::output * out, std::vector<rvsdg::RegionResult 
 
 bool
 is_slice_exclusive_(
-    jlm::rvsdg::node * source,
-    jlm::rvsdg::node * destination,
-    std::unordered_set<jlm::rvsdg::node *> & slice,
-    std::unordered_set<jlm::rvsdg::node *> & visited)
+    rvsdg::Node * source,
+    rvsdg::Node * destination,
+    std::unordered_set<jlm::rvsdg::Node *> & slice,
+    std::unordered_set<jlm::rvsdg::Node *> & visited)
 {
   // check if descendents of source can leave the slice without going through destination
   if (source == destination)
@@ -200,11 +200,11 @@ is_slice_exclusive_(
 
 bool
 is_slice_exclusive_(
-    jlm::rvsdg::node * source,
-    jlm::rvsdg::node * destination,
-    std::unordered_set<jlm::rvsdg::node *> & slice)
+    rvsdg::Node * source,
+    rvsdg::Node * destination,
+    std::unordered_set<jlm::rvsdg::Node *> & slice)
 {
-  std::unordered_set<jlm::rvsdg::node *> visited;
+  std::unordered_set<rvsdg::Node *> visited;
   return is_slice_exclusive_(source, destination, slice, visited);
 }
 
@@ -220,7 +220,7 @@ void
 decouple_load(
     loop_node * loopNode,
     jlm::rvsdg::simple_node * loadNode,
-    std::unordered_set<jlm::rvsdg::node *> & loop_slice)
+    std::unordered_set<rvsdg::Node *> & loop_slice)
 {
   // loadNode is always a part of loop_slice due to state edges
   auto new_loop = loop_node::create(loopNode->region(), false);
@@ -257,7 +257,7 @@ decouple_load(
     }
   }
   // copy nodes
-  std::vector<std::vector<jlm::rvsdg::node *>> context(loopNode->subregion()->nnodes());
+  std::vector<std::vector<rvsdg::Node *>> context(loopNode->subregion()->nnodes());
   for (auto & node : loopNode->subregion()->Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
@@ -383,7 +383,7 @@ process_loopnode(loop_node * loopNode)
       {
         // can currently only generate dae one loop deep
         // find load slice within loop - three slices - complete, data and state-edge
-        std::unordered_set<jlm::rvsdg::node *> loop_slice, data_slice, state_slice;
+        std::unordered_set<rvsdg::Node *> loop_slice, data_slice, state_slice;
         find_slice_node(simplenode, loop_slice);
         find_data_slice_node(simplenode, data_slice);
         find_state_slice_node(simplenode, state_slice);
@@ -430,7 +430,7 @@ process_loopnode(loop_node * loopNode)
               || dynamic_cast<const store_op *>(&sn->GetOperation()))
           {
             // state slice may not contain loads or stores except for node
-            if (sn != dynamic_cast<jlm::rvsdg::node *>(simplenode))
+            if (sn != dynamic_cast<rvsdg::Node *>(simplenode))
             {
               can_decouple = false;
               break;

@@ -217,7 +217,7 @@ node::output() const noexcept
 lambda::node *
 node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  return util::AssertedCast<lambda::node>(jlm::rvsdg::node::copy(region, operands));
+  return util::AssertedCast<lambda::node>(rvsdg::Node::copy(region, operands));
 }
 
 lambda::node *

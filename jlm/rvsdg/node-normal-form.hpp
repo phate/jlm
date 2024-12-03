@@ -23,7 +23,7 @@ namespace jlm::rvsdg
 {
 
 class Graph;
-class node;
+class Node;
 class operation;
 class output;
 class Region;
@@ -50,7 +50,7 @@ public:
   }
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const;
+  normalize_node(Node * node) const;
 
   inline node_normal_form *
   parent() const noexcept

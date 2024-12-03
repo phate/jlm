@@ -57,9 +57,9 @@ empty(const rvsdg::GammaNode * gamma)
 }
 
 static bool
-single_successor(const jlm::rvsdg::node * node)
+single_successor(const rvsdg::Node * node)
 {
-  std::unordered_set<jlm::rvsdg::node *> successors;
+  std::unordered_set<rvsdg::Node *> successors;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *node->output(n))
@@ -80,7 +80,7 @@ remove(rvsdg::input * input)
 }
 
 static void
-pullin_node(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
+pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   /* collect operands */
   std::vector<std::vector<jlm::rvsdg::output *>> operands(gamma->nsubregions());
@@ -112,7 +112,7 @@ pullin_node(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
 }
 
 static void
-cleanup(rvsdg::GammaNode * gamma, jlm::rvsdg::node * node)
+cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 
@@ -156,7 +156,7 @@ void
 pullin_bottom(rvsdg::GammaNode * gamma)
 {
   /* collect immediate successors of the gamma node */
-  std::unordered_set<jlm::rvsdg::node *> workset;
+  std::unordered_set<rvsdg::Node *> workset;
   for (size_t n = 0; n < gamma->noutputs(); n++)
   {
     auto output = gamma->output(n);
@@ -217,7 +217,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
 }
 
 static size_t
-is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const jlm::rvsdg::node * node)
+is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 

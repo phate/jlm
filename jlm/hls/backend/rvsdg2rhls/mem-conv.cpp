@@ -62,7 +62,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
   {
     states.push_back(orig->input(i)->origin());
   }
-  jlm::rvsdg::node * nn;
+  jlm::rvsdg::Node * nn;
   if (states.empty())
   {
     auto outputs = jlm::hls::decoupled_load_op::create(*addr, *resp);
@@ -873,7 +873,7 @@ jlm::hls::ReplaceLoad(
     states.push_back(replacedLoad->input(i)->origin());
   }
 
-  jlm::rvsdg::node * newLoad;
+  rvsdg::Node * newLoad;
   if (states.empty())
   {
     auto outputs = jlm::hls::decoupled_load_op::create(*loadAddress, *response);

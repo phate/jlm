@@ -49,16 +49,14 @@ public:
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
-  using AllocaNodeMap =
-      std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::AllocaNode>>;
+  using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<AllocaNode>>;
   using DeltaNodeMap =
       std::unordered_map<const delta::node *, std::unique_ptr<PointsToGraph::DeltaNode>>;
   using ImportNodeMap =
       std::unordered_map<const rvsdg::RegionArgument *, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap =
       std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
-  using MallocNodeMap =
-      std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::MallocNode>>;
+  using MallocNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<MallocNode>>;
   using RegisterNodeMap = std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterNode *>;
   using RegisterNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterNode>>;
 
@@ -269,7 +267,7 @@ public:
   }
 
   const PointsToGraph::AllocaNode &
-  GetAllocaNode(const jlm::rvsdg::node & node) const
+  GetAllocaNode(const rvsdg::Node & node) const
   {
     auto it = AllocaNodes_.find(&node);
     if (it == AllocaNodes_.end())
@@ -309,7 +307,7 @@ public:
   }
 
   const PointsToGraph::MallocNode &
-  GetMallocNode(const jlm::rvsdg::node & node) const
+  GetMallocNode(const rvsdg::Node & node) const
   {
     auto it = MallocNodes_.find(&node);
     if (it == MallocNodes_.end())
@@ -617,7 +615,7 @@ public:
   ~AllocaNode() noexcept override;
 
 private:
-  AllocaNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & allocaNode)
+  AllocaNode(PointsToGraph & pointsToGraph, const rvsdg::Node & allocaNode)
       : MemoryNode(pointsToGraph),
         AllocaNode_(&allocaNode)
   {
@@ -625,7 +623,7 @@ private:
   }
 
 public:
-  const jlm::rvsdg::node &
+  const rvsdg::Node &
   GetAllocaNode() const noexcept
   {
     return *AllocaNode_;
@@ -635,14 +633,14 @@ public:
   DebugString() const override;
 
   static PointsToGraph::AllocaNode &
-  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & node)
+  Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::AllocaNode>(new AllocaNode(pointsToGraph, node));
     return pointsToGraph.AddAllocaNode(std::move(n));
   }
 
 private:
-  const jlm::rvsdg::node * AllocaNode_;
+  const rvsdg::Node * AllocaNode_;
 };
 
 /** \brief PointsTo graph delta node
@@ -691,7 +689,7 @@ public:
   ~MallocNode() noexcept override;
 
 private:
-  MallocNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & mallocNode)
+  MallocNode(PointsToGraph & pointsToGraph, const rvsdg::Node & mallocNode)
       : MemoryNode(pointsToGraph),
         MallocNode_(&mallocNode)
   {
@@ -699,7 +697,7 @@ private:
   }
 
 public:
-  const jlm::rvsdg::node &
+  const rvsdg::Node &
   GetMallocNode() const noexcept
   {
     return *MallocNode_;
@@ -709,14 +707,14 @@ public:
   DebugString() const override;
 
   static PointsToGraph::MallocNode &
-  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & node)
+  Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::MallocNode>(new MallocNode(pointsToGraph, node));
     return pointsToGraph.AddMallocNode(std::move(n));
   }
 
 private:
-  const jlm::rvsdg::node * MallocNode_;
+  const rvsdg::Node * MallocNode_;
 };
 
 /** \brief PointsTo graph malloc node

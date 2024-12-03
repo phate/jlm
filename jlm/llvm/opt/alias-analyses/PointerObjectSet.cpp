@@ -121,7 +121,7 @@ PointerObjectSet::CreateDummyRegisterPointerObject()
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode, bool canPoint)
+PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::Node & allocaNode, bool canPoint)
 {
   JLM_ASSERT(AllocaMap_.count(&allocaNode) == 0);
   return AllocaMap_[&allocaNode] =
@@ -129,7 +129,7 @@ PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode, bool 
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateMallocMemoryObject(const rvsdg::node & mallocNode, bool canPoint)
+PointerObjectSet::CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool canPoint)
 {
   JLM_ASSERT(MallocMap_.count(&mallocNode) == 0);
   return MallocMap_[&mallocNode] =
@@ -187,13 +187,13 @@ PointerObjectSet::GetRegisterMap() const noexcept
   return RegisterMap_;
 }
 
-const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
 PointerObjectSet::GetAllocaMap() const noexcept
 {
   return AllocaMap_;
 }
 
-const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
 PointerObjectSet::GetMallocMap() const noexcept
 {
   return MallocMap_;

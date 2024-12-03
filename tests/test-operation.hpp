@@ -94,7 +94,7 @@ public:
   virtual std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static inline rvsdg::node *
+  static rvsdg::Node *
   create(
       rvsdg::Region * region,
       std::shared_ptr<const rvsdg::Type> srctype,
@@ -125,7 +125,7 @@ is_unary_op(const rvsdg::operation & op) noexcept
 }
 
 static inline bool
-is_unary_node(const rvsdg::node * node) noexcept
+is_unary_node(const rvsdg::Node * node) noexcept
 {
   return jlm::rvsdg::is<unary_op>(node);
 }
@@ -165,7 +165,7 @@ public:
   virtual std::unique_ptr<rvsdg::operation>
   copy() const override;
 
-  static inline rvsdg::node *
+  static rvsdg::Node *
   create(
       const std::shared_ptr<const rvsdg::Type> & srctype,
       std::shared_ptr<const rvsdg::Type> dsttype,
@@ -419,9 +419,9 @@ private:
   {}
 
 public:
-  using rvsdg::node::RemoveInputsWhere;
+  using Node::RemoveInputsWhere;
 
-  using rvsdg::node::RemoveOutputsWhere;
+  using Node::RemoveOutputsWhere;
 
   static SimpleNode &
   Create(

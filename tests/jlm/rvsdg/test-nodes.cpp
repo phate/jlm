@@ -117,7 +117,7 @@ test_node_depth()
 }
 
 /**
- * Test node::RemoveOutputsWhere()
+ * Test Node::RemoveOutputsWhere()
  */
 static void
 TestRemoveOutputsWhere()
@@ -180,7 +180,7 @@ TestRemoveOutputsWhere()
 }
 
 /**
- * Test node::RemoveInputsWhere()
+ * Test Node::RemoveInputsWhere()
  */
 static void
 TestRemoveInputsWhere()

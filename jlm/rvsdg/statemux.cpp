@@ -37,7 +37,7 @@ mux_op::copy() const
 
 /* mux normal form */
 
-static jlm::rvsdg::node *
+static Node *
 is_mux_mux_reducible(const std::vector<jlm::rvsdg::output *> & ops)
 {
   std::unordered_set<jlm::rvsdg::output *> operands(ops.begin(), ops.end());
@@ -81,7 +81,7 @@ perform_multiple_origin_reduction(
 static std::vector<jlm::rvsdg::output *>
 perform_mux_mux_reduction(
     const jlm::rvsdg::mux_op & op,
-    const jlm::rvsdg::node * muxnode,
+    const Node * muxnode,
     const std::vector<jlm::rvsdg::output *> & old_operands)
 {
   JLM_ASSERT(is_mux_op(muxnode->GetOperation()));
@@ -121,7 +121,7 @@ mux_normal_form::mux_normal_form(
 }
 
 bool
-mux_normal_form::normalize_node(jlm::rvsdg::node * node) const
+mux_normal_form::normalize_node(Node * node) const
 {
   JLM_ASSERT(dynamic_cast<const jlm::rvsdg::mux_op *>(&node->GetOperation()));
   auto op = static_cast<const mux_op *>(&node->GetOperation());

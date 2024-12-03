@@ -256,7 +256,7 @@ public:
   result() const noexcept;
 
   virtual delta::node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   virtual delta::node *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;

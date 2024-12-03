@@ -64,7 +64,7 @@ DotHLS::result_to_dot(rvsdg::RegionResult * port)
 }
 
 std::string
-DotHLS::node_to_dot(const jlm::rvsdg::node * node)
+DotHLS::node_to_dot(const rvsdg::Node * node)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_node_name(node);
@@ -203,7 +203,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "color=\"#ff8080\"\n";
 
   std::set<jlm::rvsdg::output *> back_outputs;
-  std::set<jlm::rvsdg::node *> top_nodes; // no artificial top nodes for now
+  std::set<rvsdg::Node *> top_nodes; // no artificial top nodes for now
   for (size_t i = 0; i < sr->narguments(); ++i)
   {
     auto arg = sr->argument(i);

@@ -51,8 +51,8 @@ public:
 
 private:
   inline unrollinfo(
-      jlm::rvsdg::node * cmpnode,
-      jlm::rvsdg::node * armnode,
+      rvsdg::Node * cmpnode,
+      rvsdg::Node * armnode,
       rvsdg::RegionArgument * idv,
       rvsdg::RegionArgument * step,
       rvsdg::RegionArgument * end)
@@ -109,7 +109,7 @@ public:
   std::unique_ptr<jlm::rvsdg::bitvalue_repr>
   niterations() const noexcept;
 
-  inline jlm::rvsdg::node *
+  rvsdg::Node *
   cmpnode() const noexcept
   {
     return cmpnode_;
@@ -121,7 +121,7 @@ public:
     return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->GetOperation());
   }
 
-  inline jlm::rvsdg::node *
+  inline rvsdg::Node *
   armnode() const noexcept
   {
     return armnode_;
@@ -227,8 +227,8 @@ private:
 
   rvsdg::RegionArgument * end_;
   rvsdg::RegionArgument * step_;
-  jlm::rvsdg::node * cmpnode_;
-  jlm::rvsdg::node * armnode_;
+  rvsdg::Node * cmpnode_;
+  rvsdg::Node * armnode_;
   rvsdg::RegionArgument * idv_;
 };
 

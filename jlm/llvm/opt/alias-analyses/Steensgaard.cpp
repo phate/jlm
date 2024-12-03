@@ -316,7 +316,7 @@ class AllocaLocation final : public MemoryLocation
 
   ~AllocaLocation() override = default;
 
-  explicit AllocaLocation(const jlm::rvsdg::node & node)
+  explicit AllocaLocation(const rvsdg::Node & node)
       : MemoryLocation(),
         Node_(node)
   {
@@ -324,7 +324,7 @@ class AllocaLocation final : public MemoryLocation
   }
 
 public:
-  [[nodiscard]] const jlm::rvsdg::node &
+  [[nodiscard]] const rvsdg::Node &
   GetNode() const noexcept
   {
     return Node_;
@@ -337,13 +337,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jlm::rvsdg::node & node)
+  Create(const rvsdg::Node & node)
   {
     return std::unique_ptr<Location>(new AllocaLocation(node));
   }
 
 private:
-  const jlm::rvsdg::node & Node_;
+  const rvsdg::Node & Node_;
 };
 
 /** \brief MallocLocation class
@@ -354,7 +354,7 @@ class MallocLocation final : public MemoryLocation
 {
   ~MallocLocation() override = default;
 
-  explicit MallocLocation(const jlm::rvsdg::node & node)
+  explicit MallocLocation(const rvsdg::Node & node)
       : MemoryLocation(),
         Node_(node)
   {
@@ -362,7 +362,7 @@ class MallocLocation final : public MemoryLocation
   }
 
 public:
-  [[nodiscard]] const jlm::rvsdg::node &
+  [[nodiscard]] const rvsdg::Node &
   GetNode() const noexcept
   {
     return Node_;
@@ -375,13 +375,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const jlm::rvsdg::node & node)
+  Create(const rvsdg::Node & node)
   {
     return std::unique_ptr<Location>(new MallocLocation(node));
   }
 
 private:
-  const jlm::rvsdg::node & Node_;
+  const rvsdg::Node & Node_;
 };
 
 /** \brief LambdaLocation class
@@ -566,7 +566,7 @@ public:
   }
 
   Location &
-  InsertAllocaLocation(const jlm::rvsdg::node & node)
+  InsertAllocaLocation(const rvsdg::Node & node)
   {
     Locations_.push_back(AllocaLocation::Create(node));
     auto location = Locations_.back().get();
@@ -576,7 +576,7 @@ public:
   }
 
   Location &
-  InsertMallocLocation(const jlm::rvsdg::node & node)
+  InsertMallocLocation(const rvsdg::Node & node)
   {
     Locations_.push_back(MallocLocation::Create(node));
     auto location = Locations_.back().get();

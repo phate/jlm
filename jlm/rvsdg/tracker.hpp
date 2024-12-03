@@ -20,7 +20,7 @@ namespace jlm::rvsdg
 static const size_t tracker_nodestate_none = (size_t)-1;
 
 class Graph;
-class node;
+class Node;
 class Region;
 class tracker_depth_state;
 class tracker_nodestate;
@@ -40,18 +40,18 @@ public:
 
   /* get state of the node */
   ssize_t
-  get_nodestate(jlm::rvsdg::node * node);
+  get_nodestate(Node * node);
 
   /* set state of the node */
   void
-  set_nodestate(jlm::rvsdg::node * node, size_t state);
+  set_nodestate(Node * node, size_t state);
 
   /* get one of the top nodes for the given state */
-  jlm::rvsdg::node *
+  Node *
   peek_top(size_t state) const;
 
   /* get one of the bottom nodes for the given state */
-  jlm::rvsdg::node *
+  Node *
   peek_bottom(size_t state) const;
 
   [[nodiscard]] Graph *
@@ -62,13 +62,13 @@ public:
 
 private:
   jlm::rvsdg::tracker_nodestate *
-  nodestate(jlm::rvsdg::node * node);
+  nodestate(Node * node);
 
   void
-  node_depth_change(jlm::rvsdg::node * node, size_t old_depth);
+  node_depth_change(Node * node, size_t old_depth);
 
   void
-  node_destroy(jlm::rvsdg::node * node);
+  node_destroy(Node * node);
 
   jlm::rvsdg::Graph * graph_;
 
@@ -77,8 +77,7 @@ private:
 
   jlm::util::callback depth_callback_, destroy_callback_;
 
-  std::unordered_map<jlm::rvsdg::node *, std::unique_ptr<jlm::rvsdg::tracker_nodestate>>
-      nodestates_;
+  std::unordered_map<Node *, std::unique_ptr<tracker_nodestate>> nodestates_;
 };
 
 class tracker_nodestate
@@ -86,7 +85,7 @@ class tracker_nodestate
   friend tracker;
 
 public:
-  inline tracker_nodestate(jlm::rvsdg::node * node)
+  inline tracker_nodestate(Node * node)
       : state_(tracker_nodestate_none),
         node_(node)
   {}
@@ -101,7 +100,7 @@ public:
   tracker_nodestate &
   operator=(tracker_nodestate &&) = delete;
 
-  inline jlm::rvsdg::node *
+  [[nodiscard]] Node *
   node() const noexcept
   {
     return node_;
@@ -115,7 +114,7 @@ public:
 
 private:
   size_t state_;
-  jlm::rvsdg::node * node_;
+  Node * node_;
 };
 
 }

@@ -126,7 +126,7 @@ remove_unused_loop_inputs(loop_node * ln)
 }
 
 bool
-dead_spec_gamma(jlm::rvsdg::node * dmux_node)
+dead_spec_gamma(rvsdg::Node * dmux_node)
 {
   auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&dmux_node->GetOperation());
   JLM_ASSERT(mux_op);
@@ -152,14 +152,14 @@ dead_spec_gamma(jlm::rvsdg::node * dmux_node)
 }
 
 bool
-dead_nonspec_gamma(jlm::rvsdg::node * ndmux_node)
+dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 {
   auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
   JLM_ASSERT(mux_op);
   JLM_ASSERT(!mux_op->discarding);
   // check if all inputs go to outputs of same branch
   bool all_inputs_same_branch = true;
-  jlm::rvsdg::node * origin_branch = nullptr;
+  rvsdg::Node * origin_branch = nullptr;
   for (size_t i = 1; i < ndmux_node->ninputs(); ++i)
   {
     if (auto no = dynamic_cast<jlm::rvsdg::node_output *>(ndmux_node->input(i)->origin()))
@@ -193,7 +193,7 @@ dead_nonspec_gamma(jlm::rvsdg::node * ndmux_node)
 }
 
 bool
-dead_loop(jlm::rvsdg::node * ndmux_node)
+dead_loop(rvsdg::Node * ndmux_node)
 {
   auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
   JLM_ASSERT(mux_op);

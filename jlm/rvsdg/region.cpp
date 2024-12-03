@@ -43,7 +43,7 @@ RegionArgument::RegionArgument(
   }
 }
 
-[[nodiscard]] std::variant<node *, Region *>
+[[nodiscard]] std::variant<Node *, Region *>
 RegionArgument::GetOwner() const noexcept
 {
   return region();
@@ -96,7 +96,7 @@ RegionResult::RegionResult(
   }
 }
 
-[[nodiscard]] std::variant<node *, Region *>
+[[nodiscard]] std::variant<Node *, Region *>
 RegionResult::GetOwner() const noexcept
 {
   return region();
@@ -220,13 +220,13 @@ Region::RemoveResult(size_t index)
 }
 
 void
-Region::remove_node(jlm::rvsdg::node * node)
+Region::remove_node(Node * node)
 {
   delete node;
 }
 
 bool
-Region::AddTopNode(rvsdg::node & node)
+Region::AddTopNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -241,7 +241,7 @@ Region::AddTopNode(rvsdg::node & node)
 }
 
 bool
-Region::AddBottomNode(rvsdg::node & node)
+Region::AddBottomNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -256,7 +256,7 @@ Region::AddBottomNode(rvsdg::node & node)
 }
 
 bool
-Region::AddNode(rvsdg::node & node)
+Region::AddNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -267,7 +267,7 @@ Region::AddNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveBottomNode(rvsdg::node & node)
+Region::RemoveBottomNode(Node & node)
 {
   auto numBottomNodes = NumBottomNodes();
   BottomNodes_.erase(&node);
@@ -275,7 +275,7 @@ Region::RemoveBottomNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveTopNode(rvsdg::node & node)
+Region::RemoveTopNode(Node & node)
 {
   auto numTopNodes = NumTopNodes();
   TopNodes_.erase(&node);
@@ -283,7 +283,7 @@ Region::RemoveTopNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveNode(rvsdg::node & node)
+Region::RemoveNode(Node & node)
 {
   auto numNodes = nnodes();
   Nodes_.erase(&node);
@@ -296,7 +296,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   smap.insert(this, target);
 
   // order nodes top-down
-  std::vector<std::vector<const jlm::rvsdg::node *>> context(nnodes());
+  std::vector<std::vector<const Node *>> context(nnodes());
   for (const auto & node : Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());

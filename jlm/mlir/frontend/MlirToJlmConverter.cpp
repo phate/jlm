@@ -53,7 +53,7 @@ MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdg
 ::llvm::SmallVector<jlm::rvsdg::output *>
 MlirToJlmConverter::GetConvertedInputs(
     ::mlir::Operation & mlirOp,
-    const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
+    const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
     const rvsdg::Region & rvsdgRegion)
 {
   ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
@@ -83,7 +83,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 
   // Create an RVSDG node for each MLIR operation and store each pair in a
   // hash map for easy lookup of corresponding RVSDG nodes
-  std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap;
+  std::unordered_map<::mlir::Operation *, rvsdg::Node *> operationsMap;
   for (auto & mlirOp : block.getOperations())
   {
     ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
@@ -101,7 +101,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   return GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
 }
 
-rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertCmpIOp(
     ::mlir::arith::CmpIOp & CompOp,
     const ::llvm::SmallVector<rvsdg::output *> & inputs,
@@ -153,7 +153,7 @@ MlirToJlmConverter::ConvertCmpIOp(
   }
 }
 
-rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertBitBinaryNode(
     const ::mlir::Operation & mlirOperation,
     const ::llvm::SmallVector<rvsdg::output *> & inputs)
@@ -255,7 +255,7 @@ MlirToJlmConverter::ConvertBitBinaryNode(
   return nullptr;
 }
 
-rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
     rvsdg::Region & rvsdgRegion,
@@ -428,7 +428,7 @@ MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & 
   ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
-jlm::rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion)
 {
   // Get the name of the function

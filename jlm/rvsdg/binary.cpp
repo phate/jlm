@@ -77,7 +77,7 @@ binary_normal_form::binary_normal_form(
 }
 
 bool
-binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
+binary_normal_form::normalize_node(Node * node) const
 {
   const operation & base_op = node->GetOperation();
   const auto & op = *static_cast<const jlm::rvsdg::binary_op *>(&base_op);
@@ -86,7 +86,7 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 }
 
 bool
-binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op) const
+binary_normal_form::normalize_node(Node * node, const binary_op & op) const
 {
   if (!get_mutable())
   {
@@ -286,7 +286,7 @@ flattened_binary_normal_form::flattened_binary_normal_form(
 {}
 
 bool
-flattened_binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
+flattened_binary_normal_form::normalize_node(Node * node) const
 {
   const auto & op = static_cast<const flattened_binary_op &>(node->GetOperation());
   const auto & bin_op = op.bin_operation();
@@ -440,10 +440,6 @@ flattened_binary_op::reduce(
 }
 
 }
-
-/* node class */
-
-/* node class inheritable methods */
 
 jlm::rvsdg::node_normal_form *
 binary_operation_get_default_normal_form_(

@@ -86,7 +86,7 @@ LoadNonVolatileNode::CopyWithNewMemoryStates(
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
@@ -162,7 +162,7 @@ LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & m
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -230,7 +230,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 }
 
 static bool
-is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
+is_reducible_state(const rvsdg::output * state, const rvsdg::Node * loadalloca)
 {
   if (is<StoreNonVolatileOperation>(rvsdg::output::GetNode(*state)))
   {
@@ -581,7 +581,7 @@ load_normal_form::load_normal_form(
 {}
 
 bool
-load_normal_form::normalize_node(rvsdg::node * node) const
+load_normal_form::normalize_node(rvsdg::Node * node) const
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(node->GetOperation()));
   auto op = static_cast<const LoadNonVolatileOperation *>(&node->GetOperation());

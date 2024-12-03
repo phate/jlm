@@ -30,7 +30,7 @@ public:
       Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual void
   set_predicate_reduction(bool enable);

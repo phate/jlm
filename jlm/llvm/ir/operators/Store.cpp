@@ -84,7 +84,7 @@ StoreNonVolatileNode::CopyWithNewMemoryStates(
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
@@ -160,7 +160,7 @@ StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & 
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 StoreVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -331,7 +331,7 @@ store_normal_form::store_normal_form(
 }
 
 bool
-store_normal_form::normalize_node(jlm::rvsdg::node * node) const
+store_normal_form::normalize_node(rvsdg::Node * node) const
 {
   JLM_ASSERT(is<StoreNonVolatileOperation>(node->GetOperation()));
   auto op = static_cast<const StoreNonVolatileOperation *>(&node->GetOperation());

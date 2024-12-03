@@ -107,7 +107,7 @@ public:
    * @param rvsdg The RVSDG from which to extract the tail nodes.
    * @return A vector of tail nodes.
    */
-  static std::vector<rvsdg::node *>
+  static std::vector<Node *>
   ExtractTailNodes(const Graph & rvsdg);
 
 private:

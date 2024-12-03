@@ -99,7 +99,7 @@ create_initialization(const delta::node * delta, context & ctx)
 }
 
 static void
-convert_node(const rvsdg::node & node, context & ctx);
+convert_node(const rvsdg::Node & node, context & ctx);
 
 static inline void
 convert_region(rvsdg::Region & region, context & ctx)
@@ -159,7 +159,7 @@ create_cfg(const lambda::node & lambda, context & ctx)
 }
 
 static inline void
-convert_simple_node(const rvsdg::node & node, context & ctx)
+convert_simple_node(const rvsdg::Node & node, context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::SimpleOperation *>(&node.GetOperation()));
 
@@ -229,7 +229,7 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
 }
 
 static inline void
-convert_gamma_node(const rvsdg::node & node, context & ctx)
+convert_gamma_node(const rvsdg::Node & node, context & ctx)
 {
   JLM_ASSERT(is<rvsdg::GammaOperation>(&node));
   auto gamma = static_cast<const rvsdg::GammaNode *>(&node);
@@ -350,7 +350,7 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
 }
 
 static inline void
-convert_theta_node(const rvsdg::node & node, context & ctx)
+convert_theta_node(const rvsdg::Node & node, context & ctx)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(&node));
   auto subregion = static_cast<const rvsdg::StructuralNode *>(&node)->subregion(0);
@@ -405,7 +405,7 @@ convert_theta_node(const rvsdg::node & node, context & ctx)
 }
 
 static inline void
-convert_lambda_node(const rvsdg::node & node, context & ctx)
+convert_lambda_node(const rvsdg::Node & node, context & ctx)
 {
   JLM_ASSERT(is<lambda::operation>(&node));
   auto lambda = static_cast<const lambda::node *>(&node);
@@ -425,7 +425,7 @@ convert_lambda_node(const rvsdg::node & node, context & ctx)
 }
 
 static inline void
-convert_phi_node(const rvsdg::node & node, context & ctx)
+convert_phi_node(const rvsdg::Node & node, context & ctx)
 {
   JLM_ASSERT(rvsdg::is<phi::operation>(&node));
   auto phi = static_cast<const rvsdg::StructuralNode *>(&node);
@@ -497,7 +497,7 @@ convert_phi_node(const rvsdg::node & node, context & ctx)
 }
 
 static inline void
-convert_delta_node(const rvsdg::node & node, context & ctx)
+convert_delta_node(const rvsdg::Node & node, context & ctx)
 {
   JLM_ASSERT(is<delta::operation>(&node));
   auto delta = static_cast<const delta::node *>(&node);
@@ -516,10 +516,10 @@ convert_delta_node(const rvsdg::node & node, context & ctx)
 }
 
 static inline void
-convert_node(const rvsdg::node & node, context & ctx)
+convert_node(const rvsdg::Node & node, context & ctx)
 {
   static std::
-      unordered_map<std::type_index, std::function<void(const rvsdg::node & node, context & ctx)>>
+      unordered_map<std::type_index, std::function<void(const rvsdg::Node & node, context & ctx)>>
           map({ { typeid(lambda::operation), convert_lambda_node },
                 { std::type_index(typeid(rvsdg::GammaOperation)), convert_gamma_node },
                 { std::type_index(typeid(rvsdg::ThetaOperation)), convert_theta_node },

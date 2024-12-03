@@ -16,7 +16,7 @@ node_normal_form::~node_normal_form() noexcept
 {}
 
 bool
-node_normal_form::normalize_node(jlm::rvsdg::node * node) const
+node_normal_form::normalize_node(Node * node) const
 {
   return true;
 }

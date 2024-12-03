@@ -6,13 +6,13 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-static jlm::rvsdg::node *
+static jlm::rvsdg::Node *
 node_cse(
     jlm::rvsdg::Region * region,
     const jlm::rvsdg::operation & op,
     const std::vector<jlm::rvsdg::output *> & arguments)
 {
-  auto cse_test = [&](const jlm::rvsdg::node * node)
+  auto cse_test = [&](const jlm::rvsdg::Node * node)
   {
     return node->GetOperation() == op && arguments == operands(node);
   };
@@ -59,7 +59,7 @@ simple_normal_form::simple_normal_form(
 }
 
 bool
-simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
+simple_normal_form::normalize_node(Node * node) const
 {
   if (!get_mutable())
     return true;
@@ -85,7 +85,7 @@ simple_normal_form::normalized_create(
     const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
-  jlm::rvsdg::node * node = nullptr;
+  Node * node = nullptr;
   if (get_mutable() && get_cse())
     node = node_cse(region, op, arguments);
   if (!node)

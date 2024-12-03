@@ -148,7 +148,7 @@ CallOperation::copy() const
   return std::unique_ptr<rvsdg::operation>(new CallOperation(*this));
 }
 
-rvsdg::node *
+rvsdg::Node *
 CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);

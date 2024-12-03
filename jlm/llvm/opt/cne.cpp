@@ -90,7 +90,7 @@ public:
   }
 
   inline void
-  mark(const jlm::rvsdg::node * n1, const jlm::rvsdg::node * n2)
+  mark(const rvsdg::Node * n1, const rvsdg::Node * n2)
   {
     JLM_ASSERT(n1->noutputs() == n2->noutputs());
 
@@ -450,7 +450,7 @@ divert_users(jlm::rvsdg::output * output, cnectx & ctx)
 }
 
 static void
-divert_outputs(jlm::rvsdg::node * node, cnectx & ctx)
+divert_outputs(rvsdg::Node * node, cnectx & ctx)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
     divert_users(node->output(n), ctx);
