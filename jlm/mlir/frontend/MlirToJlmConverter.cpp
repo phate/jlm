@@ -764,7 +764,7 @@ MlirToJlmConverter::ConvertOperation(
         &rvsdgRegion,
         outputValueType,
         mlirDeltaNode.getName().str(),
-        jlm::llvm::FromString(linakgeString),
+        ConvertLinkage(linakgeString),
         mlirDeltaNode.getSection().str(),
         mlirDeltaNode.getConstant());
 
@@ -844,6 +844,57 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
     JLM_UNREACHABLE(message.c_str());
     break;
   }
+}
+
+llvm::linkage
+MlirToJlmConverter::ConvertLinkage(std::string stringValue)
+{
+  if (!stringValue.compare("external_linkage"))
+  {
+    return llvm::linkage::external_linkage;
+  }
+  else if (!stringValue.compare("available_externally_linkage"))
+  {
+    return llvm::linkage::available_externally_linkage;
+  }
+  else if (!stringValue.compare("link_once_any_linkage"))
+  {
+    return llvm::linkage::link_once_any_linkage;
+  }
+  else if (!stringValue.compare("link_once_odr_linkage"))
+  {
+    return llvm::linkage::link_once_odr_linkage;
+  }
+  else if (!stringValue.compare("weak_any_linkage"))
+  {
+    return llvm::linkage::weak_any_linkage;
+  }
+  else if (!stringValue.compare("weak_odr_linkage"))
+  {
+    return llvm::linkage::weak_odr_linkage;
+  }
+  else if (!stringValue.compare("appending_linkage"))
+  {
+    return llvm::linkage::appending_linkage;
+  }
+  else if (!stringValue.compare("internal_linkage"))
+  {
+    return llvm::linkage::internal_linkage;
+  }
+  else if (!stringValue.compare("private_linkage"))
+  {
+    return llvm::linkage::private_linkage;
+  }
+  else if (!stringValue.compare("external_weak_linkage"))
+  {
+    return llvm::linkage::external_weak_linkage;
+  }
+  else if (!stringValue.compare("common_linkage"))
+  {
+    return llvm::linkage::common_linkage;
+  }
+  auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
+  JLM_UNREACHABLE(message.c_str());
 }
 
 jlm::rvsdg::Node *

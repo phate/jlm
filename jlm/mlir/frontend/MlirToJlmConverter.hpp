@@ -187,6 +187,14 @@ private:
   ConvertFPSize(unsigned int size);
 
   /**
+   * Converts a string representing a linkage to jlm::llvm::linkage.
+   * \param stringValue 
+   * \result The linkage.
+   */
+  llvm::linkage
+  ConvertLinkage(std::string stringValue);
+
+  /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
    * \param omegaNode The MLIR omega opeation to the converted
    * \return The converted RVSDG graph.
