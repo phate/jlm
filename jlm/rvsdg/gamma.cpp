@@ -273,15 +273,15 @@ GammaNode::~GammaNode() noexcept = default;
 GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
     : StructuralNode(GammaOperation(nalternatives), predicate->region(), nalternatives)
 {
-  node::add_input(std::unique_ptr<node_input>(
-      new rvsdg::StructuralInput(this, predicate, ControlType::Create(nalternatives))));
+  add_input(std::unique_ptr<node_input>(
+      new StructuralInput(this, predicate, ControlType::Create(nalternatives))));
 }
 
 GammaNode::EntryVar
 GammaNode::AddEntryVar(rvsdg::output * origin)
 {
   auto gammaInput = new StructuralInput(this, origin, origin->Type());
-  node::add_input(std::unique_ptr<node_input>(gammaInput));
+  add_input(std::unique_ptr<node_input>(gammaInput));
 
   EntryVar ev;
   ev.input = gammaInput;
@@ -341,8 +341,8 @@ GammaNode::AddExitVar(std::vector<jlm::rvsdg::output *> values)
     throw jlm::util::error("Incorrect number of values.");
 
   const auto & type = values[0]->Type();
-  auto output = static_cast<rvsdg::StructuralOutput *>(
-      node::add_output(std::make_unique<rvsdg::StructuralOutput>(this, type)));
+  auto output =
+      static_cast<StructuralOutput *>(add_output(std::make_unique<StructuralOutput>(this, type)));
 
   std::vector<rvsdg::input *> branchResults;
   for (size_t n = 0; n < nsubregions(); n++)
@@ -379,7 +379,7 @@ GammaNode::MapOutputExitVar(const rvsdg::output & output) const
   {
     branchResults.push_back(subregion(k)->result(output.index()));
   }
-  return ExitVar{ std::move(branchResults), node::output(output.index()) };
+  return ExitVar{ std::move(branchResults), Node::output(output.index()) };
 }
 
 GammaNode::ExitVar
@@ -391,7 +391,7 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
   {
     branchResults.push_back(subregion(k)->result(input.index()));
   }
-  return ExitVar{ std::move(branchResults), node::output(input.index()) };
+  return ExitVar{ std::move(branchResults), Node::output(input.index()) };
 }
 
 GammaNode *
