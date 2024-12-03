@@ -21,13 +21,17 @@ static rvsdg::input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
 
 static rvsdg::StructuralInput *
-invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariantOutputs)
+invariantInput(
+    const rvsdg::GammaNode & gamma,
+    const rvsdg::output & output,
+    InvariantOutputMap & invariantOutputs)
 {
   size_t n;
   rvsdg::StructuralInput * input = nullptr;
-  for (n = 0; n < output.nresults(); n++)
+  auto exitvar = gamma.MapOutputExitVar(output);
+  for (n = 0; n < exitvar.branchResult.size(); n++)
   {
-    auto origin = output.result(n)->origin();
+    auto origin = exitvar.branchResult[n]->origin();
 
     bool resultIsInvariant = false;
     while (true)
@@ -52,7 +56,7 @@ invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariant
       break;
   }
 
-  if (n == output.nresults())
+  if (n == exitvar.branchResult.size())
   {
     invariantOutputs[&output] = input;
     return input;
@@ -106,8 +110,8 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
     return invariantInput(*thetaInput->output(), invariantOutputs);
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
-    return invariantInput(*gammaOutput, invariantOutputs);
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+    return invariantInput(*gamma, output, invariantOutputs);
 
   return nullptr;
 }
@@ -184,9 +188,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       }
     }
 
-    if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(origin))
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin))
     {
-      if (auto input = invariantInput(*gammaOutput))
+      if (auto input = invariantInput(*origin))
       {
         origin = input->origin();
         continue;
@@ -195,9 +199,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(origin))
+    if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*origin))
     {
-      origin = gammaArgument->input()->origin();
+      origin = gamma->MapBranchArgumentEntryVar(*origin).input->origin();
       continue;
     }
 

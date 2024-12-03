@@ -113,7 +113,7 @@ add_triggers(rvsdg::Region * region)
       {
         JLM_ASSERT(trigger != nullptr);
         JLM_ASSERT(get_trigger(gn->subregion(0)) == nullptr);
-        gn->add_entryvar(trigger);
+        gn->AddEntryVar(trigger);
         for (size_t i = 0; i < gn->nsubregions(); ++i)
         {
           add_triggers(gn->subregion(i));

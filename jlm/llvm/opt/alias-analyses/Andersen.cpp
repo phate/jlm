@@ -1088,16 +1088,16 @@ void
 Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 {
   // Handle input variables
-  for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)
+  for (const auto & ev : gamma.GetEntryVars())
   {
-    if (!IsOrContainsPointerType(ev->type()))
+    if (!IsOrContainsPointerType(ev.input->type()))
       continue;
 
-    auto & inputRegister = *ev->origin();
+    auto & inputRegister = *ev.input->origin();
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
 
-    for (auto & argument : *ev)
-      Set_->MapRegisterToExistingPointerObject(argument, inputRegisterPO);
+    for (auto & argument : ev.branchArgument)
+      Set_->MapRegisterToExistingPointerObject(*argument, inputRegisterPO);
   }
 
   // Handle subregions
@@ -1105,17 +1105,17 @@ Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
     AnalyzeRegion(*gamma.subregion(n));
 
   // Handle exit variables
-  for (auto ex = gamma.begin_exitvar(); ex != gamma.end_exitvar(); ++ex)
+  for (const auto & ex : gamma.GetExitVars())
   {
-    if (!IsOrContainsPointerType(ex->type()))
+    if (!IsOrContainsPointerType(ex.output->type()))
       continue;
 
-    auto & outputRegister = *ex.output();
-    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    auto & outputRegister = ex.output;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(*outputRegister);
 
-    for (auto & result : *ex)
+    for (auto result : ex.branchResult)
     {
-      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result.origin());
+      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result->origin());
       Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, resultRegisterPO));
     }
   }

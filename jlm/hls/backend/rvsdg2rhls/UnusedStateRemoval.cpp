@@ -132,10 +132,11 @@ RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
 static void
 RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 {
-  for (int i = gammaNode.nentryvars() - 1; i >= 0; --i)
+  auto entryvars = gammaNode.GetEntryVars();
+  for (int i = entryvars.size() - 1; i >= 0; --i)
   {
     size_t resultIndex = 0;
-    auto argument = gammaNode.subregion(0)->argument(i);
+    auto argument = entryvars[i].branchArgument[0];
     if (argument->nusers() == 1)
     {
       auto result = dynamic_cast<rvsdg::RegionResult *>(*argument->begin());
@@ -154,7 +155,7 @@ RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 
     if (shouldRemove)
     {
-      auto origin = gammaNode.entryvar(i)->origin();
+      auto origin = entryvars[i].input->origin();
       gammaNode.output(resultIndex)->divert_users(origin);
 
       for (size_t r = 0; r < gammaNode.nsubregions(); r++)

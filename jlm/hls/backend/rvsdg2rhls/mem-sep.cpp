@@ -103,18 +103,13 @@ route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
     auto parrent_user = *parent_response->begin();
     if (auto gn = dynamic_cast<rvsdg::GammaNode *>(target->node()))
     {
-      auto ip = gn->add_entryvar(parent_response);
-      std::vector<jlm::rvsdg::output *> vec;
-      for (auto & arg : ip->arguments)
+      auto ip = gn->AddEntryVar(parent_response);
+      parrent_user->divert_to(gn->AddExitVar(ip.branchArgument).output);
+      for (auto arg : ip.branchArgument)
       {
-        vec.push_back(&arg);
-      }
-      parrent_user->divert_to(gn->add_exitvar(vec));
-      for (auto & arg : ip->arguments)
-      {
-        if (arg.region() == target)
+        if (arg->region() == target)
         {
-          return &arg;
+          return arg;
         }
       }
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
@@ -188,26 +183,28 @@ trace_edge(
     JLM_ASSERT(new_edge->nusers() == 1);
     auto user = *common_edge->begin();
     auto new_next = *new_edge->begin();
+    auto node = rvsdg::input::GetNode(*user);
     if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       // end of region reached
       return res;
     }
-    else if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
+    else if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(node))
     {
-      auto gn = gi->node();
-      auto ip = gn->add_entryvar(new_edge);
+      auto ip = gammaNode->AddEntryVar(new_edge);
       std::vector<jlm::rvsdg::output *> vec;
-      for (auto & arg : ip->arguments)
-      {
-        vec.push_back(&arg);
-      }
-      new_edge = gn->add_exitvar(vec);
+      new_edge = gammaNode->AddExitVar(ip.branchArgument).output;
       new_next->divert_to(new_edge);
-      for (size_t i = 0; i < gn->nsubregions(); ++i)
+
+      auto entryvar = gammaNode->MapInputEntryVar(*user);
+      for (size_t i = 0; i < gammaNode->nsubregions(); ++i)
       {
-        auto subres =
-            trace_edge(gi->argument(i), ip->argument(i), load_nodes, store_nodes, decouple_nodes);
+        auto subres = trace_edge(
+            entryvar.branchArgument[i],
+            ip.branchArgument[i],
+            load_nodes,
+            store_nodes,
+            decouple_nodes);
         common_edge = subres->output();
       }
     }

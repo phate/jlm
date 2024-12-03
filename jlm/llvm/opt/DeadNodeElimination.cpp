@@ -198,19 +198,19 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gammaOutput->node()->predicate()->origin());
-    for (const auto & result : gammaOutput->results)
+    MarkOutput(*gamma->predicate()->origin());
+    for (const auto & result : gamma->MapOutputExitVar(output).branchResult)
     {
-      MarkOutput(*result.origin());
+      MarkOutput(*result->origin());
     }
     return;
   }
 
-  if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(&output))
+  if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gammaArgument->input()->origin());
+    MarkOutput(*gamma->MapBranchArgumentEntryVar(output).input->origin());
     return;
   }
 

@@ -222,12 +222,15 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     return true;
   }
 
-  if (is<rvsdg::GammaArgument>(o1) && is<rvsdg::GammaArgument>(o2))
+  if (auto g1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1))
   {
-    JLM_ASSERT(o1->region()->node() == o2->region()->node());
-    auto a1 = static_cast<rvsdg::RegionArgument *>(o1);
-    auto a2 = static_cast<rvsdg::RegionArgument *>(o2);
-    return congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx);
+    if (auto g2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2))
+    {
+      JLM_ASSERT(g1 == g2);
+      auto origin1 = g1->MapBranchArgumentEntryVar(*o1).input->origin();
+      auto origin2 = g2->MapBranchArgumentEntryVar(*o2).input->origin();
+      return congruent(origin1, origin2, vs, ctx);
+    }
   }
 
   if (jlm::rvsdg::is<rvsdg::SimpleOperation>(n1) && jlm::rvsdg::is<rvsdg::SimpleOperation>(n2)
@@ -469,10 +472,10 @@ divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
   JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node));
   auto gamma = static_cast<rvsdg::GammaNode *>(node);
 
-  for (auto ev = gamma->begin_entryvar(); ev != gamma->end_entryvar(); ev++)
+  for (const auto & ev : gamma->GetEntryVars())
   {
-    for (size_t n = 0; n < ev->narguments(); n++)
-      divert_users(ev->argument(n), ctx);
+    for (auto input : ev.branchArgument)
+      divert_users(input, ctx);
   }
 
   for (size_t r = 0; r < node->nsubregions(); r++)

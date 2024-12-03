@@ -1919,8 +1919,8 @@ ValidatePhiTestSteensgaardAgnostic(const jlm::tests::PhiTest1 & test)
 
   auto gammaStateIndex = store->input(2)->origin()->index();
 
-  auto load1 =
-      jlm::rvsdg::output::GetNode(*test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+  auto load1 = jlm::rvsdg::output::GetNode(
+      *test.gamma->GetExitVars()[gammaStateIndex].branchResult[0]->origin());
   assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::output::GetNode(*load1->input(1)->origin());
@@ -1948,8 +1948,8 @@ ValidatePhiTestSteensgaardRegionAware(const jlm::tests::PhiTest1 & test)
 
   auto gammaStateIndex = store->input(2)->origin()->index();
 
-  auto load1 =
-      jlm::rvsdg::output::GetNode(*test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+  auto load1 = jlm::rvsdg::output::GetNode(
+      *test.gamma->GetExitVars()[gammaStateIndex].branchResult[0]->origin());
   assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::output::GetNode(*load1->input(1)->origin());
@@ -1991,8 +1991,8 @@ ValidatePhiTestSteensgaardAgnosticTopDown(const jlm::tests::PhiTest1 & test)
 
   auto gammaStateIndex = storeNode->input(2)->origin()->index();
 
-  auto load1 =
-      jlm::rvsdg::output::GetNode(*test.gamma->exitvar(gammaStateIndex)->result(0)->origin());
+  auto load1 = jlm::rvsdg::output::GetNode(
+      *test.gamma->GetExitVars()[gammaStateIndex].branchResult[0]->origin());
   assert(is<LoadNonVolatileOperation>(*load1, 2, 2));
 
   auto load2 = jlm::rvsdg::output::GetNode(*load1->input(1)->origin());

@@ -86,23 +86,23 @@ test_gamma()
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
-  auto ev1 = gamma->add_entryvar(u1);
-  auto ev2 = gamma->add_entryvar(u2);
-  auto ev3 = gamma->add_entryvar(y);
-  auto ev4 = gamma->add_entryvar(z);
-  auto ev5 = gamma->add_entryvar(z);
+  auto ev1 = gamma->AddEntryVar(u1);
+  auto ev2 = gamma->AddEntryVar(u2);
+  auto ev3 = gamma->AddEntryVar(y);
+  auto ev4 = gamma->AddEntryVar(z);
+  auto ev5 = gamma->AddEntryVar(z);
 
   auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
   auto n2 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
   auto n3 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
 
-  gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
-  gamma->add_exitvar({ ev2->argument(0), ev2->argument(1) });
-  gamma->add_exitvar({ ev3->argument(0), ev3->argument(1) });
-  gamma->add_exitvar({ n1, ev3->argument(1) });
-  gamma->add_exitvar({ n2, ev3->argument(1) });
-  gamma->add_exitvar({ n3, ev3->argument(1) });
-  gamma->add_exitvar({ ev5->argument(0), ev4->argument(1) });
+  gamma->AddExitVar({ ev1.branchArgument[0], ev1.branchArgument[1] });
+  gamma->AddExitVar({ ev2.branchArgument[0], ev2.branchArgument[1] });
+  gamma->AddExitVar({ ev3.branchArgument[0], ev3.branchArgument[1] });
+  gamma->AddExitVar({ n1, ev3.branchArgument[1] });
+  gamma->AddExitVar({ n2, ev3.branchArgument[1] });
+  gamma->AddExitVar({ n3, ev3.branchArgument[1] });
+  gamma->AddExitVar({ ev5.branchArgument[0], ev4.branchArgument[1] });
 
   GraphExport::Create(*gamma->output(0), "x1");
   GraphExport::Create(*gamma->output(1), "x2");
