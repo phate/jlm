@@ -369,6 +369,17 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp =
         Builder_->create<::mlir::arith::ConstantFloatOp>(Builder_->getUnknownLoc(), value, size);
   }
+  else if (auto arrOp = dynamic_cast<const llvm::ConstantDataArray *>(&operation))
+  {
+    auto arrayType = ConvertType(*arrOp->result(0));
+    MlirOp =
+        Builder_->create<::mlir::jlm::ConstantDataArray>(Builder_->getUnknownLoc(), arrayType, inputs);
+  }
+  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZero *>(&operation))
+  {
+    auto type = ConvertType(*zeroOp->result(0));
+    MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
+  }
   else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
@@ -410,6 +421,13 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         ConvertType(node.output(0)->type()), // Control, ouput type
         ctlOp->value().alternative());
+  }
+  else if (auto vaOp = dynamic_cast<const llvm::valist_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::CreateVarArgList>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*vaOp->result(0)),
+        inputs);
   }
   else if (auto undefOp = dynamic_cast<const llvm::UndefValueOperation *>(&operation))
   {
@@ -730,6 +748,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
     return Builder_->getType<::mlir::LLVM::LLVMArrayType>(
         ConvertType(arrayType->element_type()),
         arrayType->nelements());
+  }
+  else if (rvsdg::is<const llvm::VariableArgumentType>(type))
+  {
+    return Builder_->getType<::mlir::jlm::VarargListType>();
   }
   else
   {
