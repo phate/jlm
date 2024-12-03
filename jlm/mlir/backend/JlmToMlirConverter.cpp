@@ -416,6 +416,11 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp =
         Builder_->create<::mlir::arith::ConstantFloatOp>(Builder_->getUnknownLoc(), value, size);
   }
+  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
+  {
+    auto type = ConvertType(*zeroOp->result(0));
+    MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
+  }
   else if (auto arrOp = dynamic_cast<const llvm::ConstantDataArray *>(&operation))
   {
     auto arrayType = ConvertType(*arrOp->result(0));
