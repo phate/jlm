@@ -6,6 +6,7 @@
 #ifndef JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 #define JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
@@ -173,6 +174,14 @@ private:
    */
   llvm::fpsize
   ConvertFPSize(unsigned int size);
+
+  /**
+   * Converts a string representing a linkage to jlm::llvm::linkage.
+   * \param stringValue 
+   * \result The linkage.
+   */
+  llvm::linkage
+  ConvertLinkage(std::string stringValue);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.

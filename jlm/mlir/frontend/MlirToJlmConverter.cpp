@@ -567,6 +567,28 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdgThetaNode;
   }
+  else if (auto mlirDeltaNode = ::mlir::dyn_cast<::mlir::rvsdg::DeltaNode>(&mlirOperation))
+  {
+    auto & deltaRegion = mlirDeltaNode.getRegion();
+    auto & deltaBlock = deltaRegion.front();
+    auto terminator = deltaBlock.getTerminator();
+
+    auto mlirOutputType = terminator->getOperand(0).getType();
+    std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
+    auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
+    auto linakgeString = mlirDeltaNode.getLinkage().str();
+    auto rvsdgDeltaNode = llvm::delta::node::Create(
+        &rvsdgRegion,
+        outputValueType,
+        mlirDeltaNode.getName().str(),
+        ConvertLinkage(linakgeString),
+        mlirDeltaNode.getSection().str(),
+        mlirDeltaNode.getConstant());
+
+    ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
+
+    return rvsdgDeltaNode;
+  }
   else if (auto mlirMatch = ::mlir::dyn_cast<::mlir::rvsdg::Match>(&mlirOperation))
   {
     std::unordered_map<uint64_t, uint64_t> mapping;
@@ -597,7 +619,8 @@ MlirToJlmConverter::ConvertOperation(
       ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation))
+      || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
+      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation))
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node
     return nullptr;
@@ -632,6 +655,57 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
     JLM_UNREACHABLE(message.c_str());
     break;
   }
+}
+
+llvm::linkage
+MlirToJlmConverter::ConvertLinkage(std::string stringValue)
+{
+  if (!stringValue.compare("external_linkage"))
+  {
+    return llvm::linkage::external_linkage;
+  }
+  else if (!stringValue.compare("available_externally_linkage"))
+  {
+    return llvm::linkage::available_externally_linkage;
+  }
+  else if (!stringValue.compare("link_once_any_linkage"))
+  {
+    return llvm::linkage::link_once_any_linkage;
+  }
+  else if (!stringValue.compare("link_once_odr_linkage"))
+  {
+    return llvm::linkage::link_once_odr_linkage;
+  }
+  else if (!stringValue.compare("weak_any_linkage"))
+  {
+    return llvm::linkage::weak_any_linkage;
+  }
+  else if (!stringValue.compare("weak_odr_linkage"))
+  {
+    return llvm::linkage::weak_odr_linkage;
+  }
+  else if (!stringValue.compare("appending_linkage"))
+  {
+    return llvm::linkage::appending_linkage;
+  }
+  else if (!stringValue.compare("internal_linkage"))
+  {
+    return llvm::linkage::internal_linkage;
+  }
+  else if (!stringValue.compare("private_linkage"))
+  {
+    return llvm::linkage::private_linkage;
+  }
+  else if (!stringValue.compare("external_weak_linkage"))
+  {
+    return llvm::linkage::external_weak_linkage;
+  }
+  else if (!stringValue.compare("common_linkage"))
+  {
+    return llvm::linkage::common_linkage;
+  }
+  auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
+  JLM_UNREACHABLE(message.c_str());
 }
 
 void
