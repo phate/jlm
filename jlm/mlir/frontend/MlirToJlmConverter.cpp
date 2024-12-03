@@ -334,6 +334,18 @@ MlirToJlmConverter::ConvertOperation(
     ::mlir::Type type = castedOp.getType();
     return rvsdg::output::GetNode(*&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
   }
+  else if (auto sitofpOp = ::mlir::dyn_cast<::mlir::arith::SIToFPOp>(&mlirOperation))
+  {
+    auto & inputType = inputs[0]->type();
+    std::shared_ptr<const rvsdg::Type> inputTypePtr(&inputType);
+    auto mlirOutputType = sitofpOp.getType();
+    std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
+    auto op = llvm::sitofp_op(inputTypePtr, outputType);
+    return rvsdg::simple_node::create(
+        &rvsdgRegion,
+        op,
+        std::vector<jlm::rvsdg::output *>(inputs.begin(), inputs.end()));
+  }
 
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
   {
