@@ -51,11 +51,11 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   const std::string &
   name() const noexcept

@@ -9,8 +9,6 @@
 namespace jlm::llvm
 {
 
-/* sext operation */
-
 static const rvsdg::unop_reduction_path_t sext_reduction_bitunary = 128;
 static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;
 
@@ -78,7 +76,7 @@ sext_op::~sext_op()
 {}
 
 bool
-sext_op::operator==(const operation & other) const noexcept
+sext_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const sext_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -90,10 +88,10 @@ sext_op::debug_string() const
   return util::strfmt("SEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 sext_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new sext_op(*this));
+  return std::make_unique<sext_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t

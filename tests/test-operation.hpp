@@ -80,7 +80,7 @@ public:
   {}
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual rvsdg::unop_reduction_path_t
   can_reduce_operand(const rvsdg::output * operand) const noexcept override;
@@ -91,7 +91,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::Node *
@@ -119,7 +119,7 @@ public:
 };
 
 static inline bool
-is_unary_op(const rvsdg::operation & op) noexcept
+is_unary_op(const rvsdg::Operation & op) noexcept
 {
   return dynamic_cast<const unary_op *>(&op);
 }
@@ -146,7 +146,7 @@ public:
   {}
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual rvsdg::binop_reduction_path_t
   can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
@@ -162,7 +162,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::Node *
@@ -201,7 +201,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 };
 
@@ -374,12 +374,12 @@ public:
   test_op(const test_op &) = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::simple_node *

@@ -13,8 +13,6 @@
 namespace jlm::llvm::lambda
 {
 
-/* lambda operation class */
-
 operation::~operation() = default;
 
 std::string
@@ -24,17 +22,17 @@ operation::debug_string() const
 }
 
 bool
-operation::operator==(const jlm::rvsdg::operation & other) const noexcept
+operation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const lambda::operation *>(&other);
   return op && op->type() == type() && op->name() == name() && op->linkage() == linkage()
       && op->attributes() == attributes();
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new operation(*this));
+  return std::make_unique<lambda::operation>(*this);
 }
 
 /* lambda node class */

@@ -22,7 +22,7 @@ TestTraceArgument()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -82,7 +82,7 @@ TestLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -164,7 +164,7 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -251,7 +251,7 @@ TestThetaLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function

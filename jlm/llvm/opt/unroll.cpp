@@ -47,7 +47,7 @@ public:
 /* helper functions */
 
 static bool
-is_eqcmp(const jlm::rvsdg::operation & op)
+is_eqcmp(const rvsdg::Operation & op)
 {
   return dynamic_cast<const jlm::rvsdg::bituge_op *>(&op)
       || dynamic_cast<const jlm::rvsdg::bitsge_op *>(&op)
@@ -470,7 +470,7 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (!ui)
     return;
 
-  auto nf = otheta->graph()->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = otheta->graph()->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   if (ui->is_known() && ui->niterations())

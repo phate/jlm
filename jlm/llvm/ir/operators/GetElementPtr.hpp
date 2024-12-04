@@ -38,12 +38,12 @@ public:
   GetElementPtrOperation(GetElementPtrOperation && other) noexcept = default;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const rvsdg::ValueType &

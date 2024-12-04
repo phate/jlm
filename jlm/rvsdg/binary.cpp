@@ -79,7 +79,7 @@ binary_normal_form::binary_normal_form(
 bool
 binary_normal_form::normalize_node(Node * node) const
 {
-  const operation & base_op = node->GetOperation();
+  const Operation & base_op = node->GetOperation();
   const auto & op = *static_cast<const jlm::rvsdg::binary_op *>(&base_op);
 
   return normalize_node(node, op);
@@ -325,7 +325,7 @@ flattened_binary_op::~flattened_binary_op() noexcept
 {}
 
 bool
-flattened_binary_op::operator==(const operation & other) const noexcept
+flattened_binary_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const flattened_binary_op *>(&other);
   return op && op->bin_operation() == bin_operation() && op->narguments() == narguments();
@@ -337,12 +337,11 @@ flattened_binary_op::debug_string() const
   return jlm::util::strfmt("FLATTENED[", op_->debug_string(), "]");
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 flattened_binary_op::copy() const
 {
   std::unique_ptr<binary_op> copied_op(static_cast<binary_op *>(op_->copy().release()));
-  return std::unique_ptr<jlm::rvsdg::operation>(
-      new flattened_binary_op(std::move(copied_op), narguments()));
+  return std::make_unique<flattened_binary_op>(std::move(copied_op), narguments());
 }
 
 /*

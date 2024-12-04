@@ -70,12 +70,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static jlm::rvsdg::mux_normal_form *
@@ -86,7 +86,7 @@ public:
 };
 
 static inline bool
-is_mux_op(const jlm::rvsdg::operation & op)
+is_mux_op(const Operation & op)
 {
   return dynamic_cast<const jlm::rvsdg::mux_op *>(&op) != nullptr;
 }

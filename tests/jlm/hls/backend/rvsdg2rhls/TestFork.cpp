@@ -22,7 +22,7 @@ TestFork()
   auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::operation));
+  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
@@ -90,7 +90,7 @@ TestConstantFork()
   auto ft = FunctionType::Create({ b32 }, { b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::operation));
+  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);

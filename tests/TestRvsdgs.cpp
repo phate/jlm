@@ -19,7 +19,7 @@ StoreTest1::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -73,7 +73,7 @@ StoreTest2::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -135,7 +135,7 @@ LoadTest1::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath("LoadTest1.c"), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -173,7 +173,7 @@ LoadTest2::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -241,7 +241,7 @@ LoadFromUndefTest::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg.node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   Lambda_ = lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
@@ -272,7 +272,7 @@ GetElementPtrTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
@@ -336,7 +336,7 @@ BitCastTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -364,7 +364,7 @@ Bits2PtrTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto setupBit2PtrFunction = [&]()
@@ -444,7 +444,7 @@ ConstantPointerNullTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -478,7 +478,7 @@ CallTest1::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupF = [&]()
@@ -634,7 +634,7 @@ CallTest2::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupCreate = [&]()
@@ -772,7 +772,7 @@ IndirectCallTest1::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupConstantFunction = [&](ssize_t n, const std::string & name)
@@ -881,7 +881,7 @@ IndirectCallTest2::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupG1 = [&]()
@@ -1127,7 +1127,7 @@ ExternalCallTest1::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -1209,7 +1209,7 @@ ExternalCallTest2::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg.node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -1326,7 +1326,7 @@ GammaTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -1374,7 +1374,7 @@ GammaTest2::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupLambdaF = [&]()
@@ -1568,7 +1568,7 @@ ThetaTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto fct = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -1620,7 +1620,7 @@ DeltaTest1::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupGlobalF = [&]()
@@ -1715,7 +1715,7 @@ DeltaTest2::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupD1 = [&]()
@@ -1825,7 +1825,7 @@ DeltaTest3::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupG1 = [&]()
@@ -1934,7 +1934,7 @@ ImportTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupF1 = [&](jlm::rvsdg::output * d1)
@@ -2023,7 +2023,7 @@ PhiTest1::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pbit64 = PointerType::Create();
@@ -2210,7 +2210,7 @@ PhiTest2::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupEight = [&]()
@@ -2542,7 +2542,7 @@ PhiWithDeltaTest::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg.node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -2593,7 +2593,7 @@ ExternalMemoryTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   /**
@@ -2624,7 +2624,7 @@ EscapedMemoryTest1::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupDeltaA = [&]()
@@ -2752,7 +2752,7 @@ EscapedMemoryTest2::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -2929,7 +2929,7 @@ EscapedMemoryTest3::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -3027,7 +3027,7 @@ MemcpyTest::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto arrayType = arraytype::Create(jlm::rvsdg::bittype::Create(32), 5);
@@ -3178,7 +3178,7 @@ MemcpyTest2::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -3280,7 +3280,7 @@ MemcpyTest3::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -3338,7 +3338,7 @@ LinkedListTest::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg.node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
@@ -3429,7 +3429,7 @@ AllMemoryNodesTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   // Create imported symbol "imported"
@@ -3526,7 +3526,7 @@ NAllocaNodesTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   Function_ = lambda::node::create(graph->root(), fcttype, "f", linkage::external_linkage);
@@ -3571,7 +3571,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   auto module = RvsdgModule::Create(util::filepath(""), "", "");
   const auto graph = &module->Rvsdg();
-  graph->node_normal_form(typeid(rvsdg::operation))->set_mutable(false);
+  graph->node_normal_form(typeid(rvsdg::Operation))->set_mutable(false);
 
   Global_ = delta::node::Create(
       graph->root(),
@@ -3639,7 +3639,7 @@ FreeNullTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   LambdaMain_ =
@@ -3667,7 +3667,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
 
   auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  rvsdg.node_normal_form(typeid(rvsdg::operation))->set_mutable(false);
+  rvsdg.node_normal_form(typeid(rvsdg::Operation))->set_mutable(false);
 
   auto setupLambdaG = [&]()
   {
@@ -3750,7 +3750,7 @@ VariadicFunctionTest1::SetupRvsdg()
 
   auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  rvsdg.node_normal_form(typeid(rvsdg::operation))->set_mutable(false);
+  rvsdg.node_normal_form(typeid(rvsdg::Operation))->set_mutable(false);
 
   auto pointerType = PointerType::Create();
   auto iOStateType = iostatetype::Create();
@@ -3835,7 +3835,7 @@ VariadicFunctionTest2::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdg.node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();

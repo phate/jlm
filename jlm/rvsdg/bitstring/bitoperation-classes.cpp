@@ -10,8 +10,6 @@
 namespace jlm::rvsdg
 {
 
-/* bitunary operation */
-
 bitunary_op::~bitunary_op() noexcept
 {}
 
@@ -36,8 +34,6 @@ bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg
 
   return nullptr;
 }
-
-/* bitbinary operation */
 
 bitbinary_op::~bitbinary_op() noexcept
 {}
@@ -68,8 +64,6 @@ bitbinary_op::reduce_operand_pair(
 
   return nullptr;
 }
-
-/* bitcompare operation */
 
 bitcompare_op::~bitcompare_op() noexcept
 {}

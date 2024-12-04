@@ -21,7 +21,7 @@ TestWithMatch()
   auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   /* Setup graph */
@@ -58,7 +58,7 @@ TestWithoutMatch()
   auto ft = FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   /* Setup graph */

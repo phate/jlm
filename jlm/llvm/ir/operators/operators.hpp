@@ -47,12 +47,12 @@ public:
   operator=(phi_op &&) = delete;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline const jlm::rvsdg::Type &
@@ -111,12 +111,12 @@ public:
   assignment_op(assignment_op &&) = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
@@ -141,12 +141,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const jlm::rvsdg::Type &
@@ -185,12 +185,12 @@ private:
 
 public:
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const rvsdg::Type &
@@ -268,12 +268,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -331,12 +331,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -376,12 +376,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
@@ -412,12 +412,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline size_t
@@ -448,12 +448,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const PointerType &
@@ -515,12 +515,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -595,12 +595,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -647,12 +647,12 @@ public:
   }
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   size_t
@@ -724,12 +724,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::binop_reduction_path_t
@@ -804,12 +804,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
@@ -882,12 +882,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline const ::llvm::APFloat &
@@ -957,12 +957,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::binop_reduction_path_t
@@ -1024,12 +1024,12 @@ public:
   operator=(UndefValueOperation &&) = delete;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const rvsdg::Type &
@@ -1096,12 +1096,12 @@ public:
   operator=(PoisonValueOperation &&) = delete;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const jlm::rvsdg::ValueType &
@@ -1166,12 +1166,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::binop_reduction_path_t
@@ -1252,12 +1252,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1311,12 +1311,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1387,12 +1387,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1450,12 +1450,12 @@ public:
   operator=(valist_op &&) = delete;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
@@ -1505,21 +1505,21 @@ public:
 
   bitcast_op(const bitcast_op &) = default;
 
-  bitcast_op(jlm::rvsdg::operation &&) = delete;
+  bitcast_op(Operation &&) = delete;
 
   bitcast_op &
-  operator=(const jlm::rvsdg::operation &) = delete;
+  operator=(const Operation &) = delete;
 
   bitcast_op &
-  operator=(jlm::rvsdg::operation &&) = delete;
+  operator=(Operation &&) = delete;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1579,12 +1579,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const StructType &
@@ -1673,12 +1673,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
@@ -1755,12 +1755,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
@@ -1814,12 +1814,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1860,12 +1860,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   size_t
@@ -1929,12 +1929,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
@@ -1966,12 +1966,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -2010,12 +2010,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const ::llvm::ArrayRef<int>
@@ -2061,12 +2061,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -2105,12 +2105,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -2197,12 +2197,12 @@ public:
   }
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -2221,7 +2221,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::rvsdg::operation> op_;
+  std::unique_ptr<Operation> op_;
 };
 
 /* vectorbinary operator */
@@ -2292,12 +2292,12 @@ public:
   }
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -2318,7 +2318,7 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::rvsdg::operation> op_;
+  std::unique_ptr<Operation> op_;
 };
 
 /* constant data vector operator */
@@ -2335,12 +2335,12 @@ private:
 
 public:
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   size_t
@@ -2390,12 +2390,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const_iterator
@@ -2468,12 +2468,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const jlm::rvsdg::bittype &
@@ -2527,12 +2527,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>

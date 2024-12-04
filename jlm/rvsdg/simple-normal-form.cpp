@@ -9,7 +9,7 @@
 static jlm::rvsdg::Node *
 node_cse(
     jlm::rvsdg::Region * region,
-    const jlm::rvsdg::operation & op,
+    const jlm::rvsdg::Operation & op,
     const std::vector<jlm::rvsdg::output *> & arguments)
 {
   auto cse_test = [&](const jlm::rvsdg::Node * node)

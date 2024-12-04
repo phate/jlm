@@ -70,7 +70,7 @@ public:
   inline domain_const_op(domain_const_op && other) = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto op = dynamic_cast<const domain_const_op *>(&other);
     return op && op->value_ == value_;
@@ -88,10 +88,10 @@ public:
     return value_;
   }
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new domain_const_op(*this));
+    return std::make_unique<domain_const_op>(*this);
   }
 
   static inline jlm::rvsdg::output *

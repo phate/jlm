@@ -89,11 +89,11 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   static jlm::rvsdg::gamma_normal_form *
   normal_form(Graph * graph) noexcept

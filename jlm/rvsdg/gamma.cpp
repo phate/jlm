@@ -242,8 +242,6 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
     graph()->mark_denormalized();
 }
 
-/* gamma operation */
-
 GammaOperation::~GammaOperation() noexcept
 {}
 
@@ -253,14 +251,14 @@ GammaOperation::debug_string() const
   return "GAMMA";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 GammaOperation::copy() const
 {
-  return std::unique_ptr<operation>(new GammaOperation(*this));
+  return std::make_unique<GammaOperation>(*this);
 }
 
 bool
-GammaOperation::operator==(const operation & other) const noexcept
+GammaOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const GammaOperation *>(&other);
   return op && op->nalternatives_ == nalternatives_;
