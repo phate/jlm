@@ -23,14 +23,14 @@ operation::debug_string() const
   return util::strfmt("DELTA[", name(), "]");
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new delta::operation(*this));
+  return std::make_unique<delta::operation>(*this);
 }
 
 bool
-operation::operator==(const jlm::rvsdg::operation & other) const noexcept
+operation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const delta::operation *>(&other);
   return op && op->name_ == name_ && op->linkage_ == linkage_ && op->constant_ == constant_

@@ -35,7 +35,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const branch_op *>(&other);
     // check predicate and value
@@ -49,10 +49,10 @@ public:
     return "HLS_BRANCH";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new branch_op(*this));
+    return std::make_unique<branch_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -114,7 +114,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto forkOp = dynamic_cast<const fork_op *>(&other);
     // check predicate and value
@@ -132,10 +132,10 @@ public:
     return IsConstant() ? "HLS_CFORK" : "HLS_FORK";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new fork_op(*this));
+    return std::make_unique<fork_op>(*this);
   }
 
   /**
@@ -183,7 +183,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const merge_op *>(&other);
     return ot && ot->narguments() == narguments() && *ot->argument(0) == *argument(0);
@@ -195,10 +195,10 @@ public:
     return "HLS_MERGE";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new merge_op(*this));
+    return std::make_unique<merge_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -230,7 +230,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const mux_op *>(&other);
     // check predicate and value
@@ -244,10 +244,10 @@ public:
     return discarding ? "HLS_DMUX" : "HLS_NDMUX";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new mux_op(*this));
+    return std::make_unique<mux_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -297,7 +297,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const sink_op *>(&other);
     return ot && *ot->argument(0) == *argument(0);
@@ -309,10 +309,10 @@ public:
     return "HLS_SINK";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new sink_op(*this));
+    return std::make_unique<sink_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -335,7 +335,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const predicate_buffer_op *>(&other);
     return ot && *ot->result(0) == *result(0);
@@ -347,10 +347,10 @@ public:
     return "HLS_PRED_BUF";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new predicate_buffer_op(*this));
+    return std::make_unique<predicate_buffer_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -378,7 +378,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const loop_constant_buffer_op *>(&other);
     return ot && *ot->result(0) == *result(0) && *ot->argument(0) == *argument(0);
@@ -390,10 +390,10 @@ public:
     return "HLS_LOOP_CONST_BUF";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new loop_constant_buffer_op(*this));
+    return std::make_unique<loop_constant_buffer_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -424,7 +424,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const buffer_op *>(&other);
     return ot && ot->capacity == capacity && ot->pass_through == pass_through
@@ -437,10 +437,10 @@ public:
     return util::strfmt("HLS_BUF_", (pass_through ? "P_" : ""), capacity);
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new buffer_op(*this));
+    return std::make_unique<buffer_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -498,7 +498,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const trigger_op *>(&other);
     // check predicate and value
@@ -511,10 +511,10 @@ public:
     return "HLS_TRIGGER";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new trigger_op(*this));
+    return std::make_unique<trigger_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -546,7 +546,7 @@ public:
   }
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     //				auto ot = dynamic_cast<const print_op *>(&other);
     // check predicate and value
@@ -568,10 +568,10 @@ public:
     return _id;
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new print_op(*this));
+    return std::make_unique<print_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -596,10 +596,10 @@ public:
     return "HLS_LOOP";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new loop_op(*this));
+    return std::make_unique<loop_op>(*this);
   }
 };
 
@@ -885,7 +885,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const load_op *>(&other);
@@ -925,10 +925,10 @@ public:
     return "HLS_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new load_op(*this));
+    return std::make_unique<load_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -977,7 +977,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const addr_queue_op *>(&other);
@@ -1010,10 +1010,10 @@ public:
     return "HLS_ADDR_QUEUE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new addr_queue_op(*this));
+    return std::make_unique<addr_queue_op>(*this);
   }
 
   static jlm::rvsdg::output *
@@ -1045,7 +1045,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const state_gate_op *>(&other);
     // check predicate and value
@@ -1069,10 +1069,10 @@ public:
     return "HLS_STATE_GATE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new state_gate_op(*this));
+    return std::make_unique<state_gate_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1098,7 +1098,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const decoupled_load_op *>(&other);
     // check predicate and value
@@ -1127,10 +1127,10 @@ public:
     return "HLS_DEC_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new decoupled_load_op(*this));
+    return std::make_unique<decoupled_load_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1167,7 +1167,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const mem_resp_op *>(&other);
@@ -1208,10 +1208,10 @@ public:
     return "HLS_MEM_RESP";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new mem_resp_op(*this));
+    return std::make_unique<mem_resp_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1254,7 +1254,7 @@ public:
   mem_req_op(const mem_req_op & other) = default;
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const mem_req_op *>(&other);
@@ -1310,10 +1310,10 @@ public:
     return "HLS_MEM_REQ";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new mem_req_op(*this));
+    return std::make_unique<mem_req_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1374,7 +1374,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const store_op *>(&other);
@@ -1411,10 +1411,10 @@ public:
     return "HLS_STORE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new store_op(*this));
+    return std::make_unique<store_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1455,7 +1455,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     // auto ot = dynamic_cast<const local_mem_op *>(&other);
@@ -1476,10 +1476,10 @@ public:
     return "HLS_LOCAL_MEM_" + result(0)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_mem_op(*this));
+    return std::make_unique<local_mem_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1501,7 +1501,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_mem_resp_op *>(&other);
@@ -1522,10 +1522,10 @@ public:
     return "HLS_LOCAL_MEM_RESP";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_mem_resp_op(*this));
+    return std::make_unique<local_mem_resp_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1549,7 +1549,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_load_op *>(&other);
@@ -1587,10 +1587,10 @@ public:
     return "HLS_LOCAL_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_load_op(*this));
+    return std::make_unique<local_load_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1627,7 +1627,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_store_op *>(&other);
@@ -1664,10 +1664,10 @@ public:
     return "HLS_LOCAL_STORE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_store_op(*this));
+    return std::make_unique<local_store_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1707,7 +1707,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_mem_req_op *>(&other);
@@ -1742,10 +1742,10 @@ public:
     return "HLS_LOCAL_MEM_REQ";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_mem_req_op(*this));
+    return std::make_unique<local_mem_req_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>

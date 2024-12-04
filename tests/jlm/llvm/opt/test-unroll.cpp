@@ -93,7 +93,7 @@ test_unrollinfo()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
     auto init0 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
@@ -147,7 +147,7 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
@@ -167,7 +167,7 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
@@ -187,7 +187,7 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
@@ -208,7 +208,7 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
@@ -292,7 +292,7 @@ test_nested_theta()
   jlm::llvm::RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);

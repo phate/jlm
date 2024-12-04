@@ -29,7 +29,7 @@ GammaWithMatch()
       FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType, valueType }, { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
@@ -84,7 +84,7 @@ GammaWithoutMatch()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
@@ -139,7 +139,7 @@ EmptyGammaWithThreeSubregions()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(

@@ -28,7 +28,7 @@ test_simple()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -73,7 +73,7 @@ test_gamma()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -139,7 +139,7 @@ test_theta()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -192,7 +192,7 @@ test_theta2()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -236,7 +236,7 @@ test_theta3()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -295,7 +295,7 @@ test_theta4()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -348,7 +348,7 @@ test_theta5()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -395,7 +395,7 @@ test_lambda()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -430,7 +430,7 @@ test_phi()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");

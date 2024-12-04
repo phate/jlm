@@ -16,7 +16,7 @@ bitslice_op::~bitslice_op() noexcept
 {}
 
 bool
-bitslice_op::operator==(const operation & other) const noexcept
+bitslice_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const bitslice_op *>(&other);
   return op && op->low() == low() && op->high() == high() && op->argument(0) == argument(0);
@@ -97,10 +97,10 @@ bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg
   return nullptr;
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 bitslice_op::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new bitslice_op(*this));
+  return std::make_unique<bitslice_op>(*this);
 }
 
 jlm::rvsdg::output *

@@ -16,7 +16,7 @@ mux_op::~mux_op() noexcept
 {}
 
 bool
-mux_op::operator==(const operation & other) const noexcept
+mux_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const mux_op *>(&other);
   return op && op->narguments() == narguments() && op->nresults() == nresults()
@@ -29,10 +29,10 @@ mux_op::debug_string() const
   return "STATEMUX";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 mux_op::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new mux_op(*this));
+  return std::make_unique<mux_op>(*this);
 }
 
 /* mux normal form */

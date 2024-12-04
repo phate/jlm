@@ -21,13 +21,11 @@ GraphExport::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
   return GraphExport::Create(origin, Name());
 }
 
-/* unary operation */
-
 unary_op::~unary_op() noexcept
 {}
 
 bool
-unary_op::operator==(const rvsdg::operation & other) const noexcept
+unary_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const unary_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -51,19 +49,17 @@ unary_op::debug_string() const
   return "UNARY_TEST_NODE";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 unary_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new unary_op(*this));
+  return std::make_unique<unary_op>(*this);
 }
-
-/* binary operation */
 
 binary_op::~binary_op() noexcept
 {}
 
 bool
-binary_op::operator==(const rvsdg::operation & other) const noexcept
+binary_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const binary_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -97,17 +93,17 @@ binary_op::debug_string() const
   return "BINARY_TEST_OP";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 binary_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new binary_op(*this));
+  return std::make_unique<binary_op>(*this);
 }
 
 test_op::~test_op()
 {}
 
 bool
-test_op::operator==(const operation & o) const noexcept
+test_op::operator==(const Operation & o) const noexcept
 {
   auto other = dynamic_cast<const test_op *>(&o);
   if (!other)
@@ -137,13 +133,11 @@ test_op::debug_string() const
   return "test_op";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 test_op::copy() const
 {
-  return std::unique_ptr<operation>(new test_op(*this));
+  return std::make_unique<test_op>(*this);
 }
-
-/* structural operation */
 
 structural_op::~structural_op() noexcept
 {}
@@ -154,10 +148,10 @@ structural_op::debug_string() const
   return "STRUCTURAL_TEST_NODE";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 structural_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new structural_op(*this));
+  return std::make_unique<structural_op>(*this);
 }
 
 structural_node::~structural_node()

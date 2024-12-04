@@ -1200,7 +1200,7 @@ ConvertInterProceduralGraphModule(
       std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */

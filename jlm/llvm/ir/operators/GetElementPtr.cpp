@@ -11,7 +11,7 @@ namespace jlm::llvm
 GetElementPtrOperation::~GetElementPtrOperation() noexcept = default;
 
 bool
-GetElementPtrOperation::operator==(const operation & other) const noexcept
+GetElementPtrOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const GetElementPtrOperation *>(&other);
 
@@ -38,10 +38,10 @@ GetElementPtrOperation::debug_string() const
   return "GetElementPtr";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 GetElementPtrOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new GetElementPtrOperation(*this));
+  return std::make_unique<GetElementPtrOperation>(*this);
 }
 
 }

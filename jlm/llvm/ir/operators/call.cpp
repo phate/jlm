@@ -130,7 +130,7 @@ invariantInput(const rvsdg::output & output)
 CallOperation::~CallOperation() = default;
 
 bool
-CallOperation::operator==(const operation & other) const noexcept
+CallOperation::operator==(const Operation & other) const noexcept
 {
   auto callOperation = dynamic_cast<const CallOperation *>(&other);
   return callOperation && FunctionType_ == callOperation->FunctionType_;
@@ -142,10 +142,10 @@ CallOperation::debug_string() const
   return "CALL";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 CallOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new CallOperation(*this));
+  return std::make_unique<CallOperation>(*this);
 }
 
 rvsdg::Node *

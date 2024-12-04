@@ -112,7 +112,7 @@ TestCallTypeClassifierIndirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupFunction = [&]()
@@ -164,7 +164,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
@@ -260,7 +260,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
@@ -374,7 +374,7 @@ TestCallTypeClassifierRecursiveDirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupFib = [&]()

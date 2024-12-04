@@ -178,7 +178,7 @@ private:
   }
 
   std::vector<const variable *> operands_;
-  std::unique_ptr<jlm::rvsdg::operation> operation_;
+  std::unique_ptr<rvsdg::Operation> operation_;
   std::vector<std::unique_ptr<tacvariable>> results_;
 };
 

@@ -10,8 +10,6 @@
 namespace jlm::rvsdg
 {
 
-/* theta operation */
-
 ThetaOperation::~ThetaOperation() noexcept = default;
 
 std::string
@@ -20,10 +18,10 @@ ThetaOperation::debug_string() const
   return "THETA";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 ThetaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new ThetaOperation(*this));
+  return std::make_unique<ThetaOperation>(*this);
 }
 
 ThetaNode::ThetaNode(rvsdg::Region & parent)
@@ -116,7 +114,7 @@ ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 ThetaNode *
 ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph()->node_normal_form(typeid(Operation));
   nf->set_mutable(false);
 
   rvsdg::SubstitutionMap rmap;

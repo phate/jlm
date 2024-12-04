@@ -20,7 +20,7 @@ LoadNode::GetOperation() const noexcept
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
-LoadNonVolatileOperation::operator==(const operation & other) const noexcept
+LoadNonVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const LoadNonVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -34,10 +34,10 @@ LoadNonVolatileOperation::debug_string() const
   return "Load";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 LoadNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadNonVolatileOperation(*this));
+  return std::make_unique<LoadNonVolatileOperation>(*this);
 }
 
 size_t
@@ -96,7 +96,7 @@ LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::outpu
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
 
 bool
-LoadVolatileOperation::operator==(const operation & other) const noexcept
+LoadVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -110,10 +110,10 @@ LoadVolatileOperation::debug_string() const
   return "LoadVolatile";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 LoadVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+  return std::make_unique<LoadVolatileOperation>(*this);
 }
 
 size_t

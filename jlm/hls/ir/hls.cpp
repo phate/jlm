@@ -101,7 +101,7 @@ loop_node::add_loopconst(jlm::rvsdg::output * origin)
 loop_node *
 loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph()->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   auto loop = create(region, false);

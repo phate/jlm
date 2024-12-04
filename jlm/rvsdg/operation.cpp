@@ -11,16 +11,13 @@
 namespace jlm::rvsdg
 {
 
-operation::~operation() noexcept
-{}
+Operation::~Operation() noexcept = default;
 
 jlm::rvsdg::node_normal_form *
-operation::normal_form(Graph * graph) noexcept
+Operation::normal_form(Graph * graph) noexcept
 {
-  return graph->node_normal_form(typeid(operation));
+  return graph->node_normal_form(typeid(Operation));
 }
-
-/* simple operation */
 
 SimpleOperation::~SimpleOperation() noexcept = default;
 
@@ -56,10 +53,8 @@ SimpleOperation::normal_form(Graph * graph) noexcept
   return static_cast<simple_normal_form *>(graph->node_normal_form(typeid(SimpleOperation)));
 }
 
-/* structural operation */
-
 bool
-StructuralOperation::operator==(const operation & other) const noexcept
+StructuralOperation::operator==(const Operation & other) const noexcept
 {
   return typeid(*this) == typeid(other);
 }

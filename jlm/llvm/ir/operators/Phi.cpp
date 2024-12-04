@@ -13,8 +13,6 @@ namespace jlm::llvm
 namespace phi
 {
 
-/* phi operation class */
-
 operation::~operation()
 {}
 
@@ -24,10 +22,10 @@ operation::debug_string() const
   return "PHI";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new phi::operation(*this));
+  return std::make_unique<phi::operation>(*this);
 }
 
 /* phi node class */

@@ -21,7 +21,7 @@ TestLambda()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   {
@@ -140,7 +140,7 @@ TestAddOperation()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   {
@@ -241,7 +241,7 @@ TestComZeroExt()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   {
@@ -387,7 +387,7 @@ TestMatch()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   {
@@ -494,7 +494,7 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   {
@@ -613,7 +613,7 @@ TestTheta()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
   {
     // Create a theta operation

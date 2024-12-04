@@ -19,7 +19,7 @@ StoreNode::GetOperation() const noexcept
 StoreNonVolatileOperation::~StoreNonVolatileOperation() noexcept = default;
 
 bool
-StoreNonVolatileOperation::operator==(const operation & other) const noexcept
+StoreNonVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const StoreNonVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -33,10 +33,10 @@ StoreNonVolatileOperation::debug_string() const
   return "Store";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 StoreNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new StoreNonVolatileOperation(*this));
+  return std::make_unique<StoreNonVolatileOperation>(*this);
 }
 
 [[nodiscard]] size_t
@@ -94,7 +94,7 @@ StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::outp
 StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
 
 bool
-StoreVolatileOperation::operator==(const operation & other) const noexcept
+StoreVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
   return operation && operation->NumMemoryStates() == NumMemoryStates()
@@ -108,10 +108,10 @@ StoreVolatileOperation::debug_string() const
   return "StoreVolatile";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 StoreVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new StoreVolatileOperation(*this));
+  return std::make_unique<StoreVolatileOperation>(*this);
 }
 
 [[nodiscard]] size_t

@@ -18,7 +18,7 @@ MakeBitComparisonOperation<reduction, name, opflags>::~MakeBitComparisonOperatio
 template<typename reduction, const char * name, enum binary_op::flags opflags>
 bool
 MakeBitComparisonOperation<reduction, name, opflags>::operator==(
-    const operation & other) const noexcept
+    const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const MakeBitComparisonOperation<reduction, name, opflags> *>(&other);
   return op && op->type() == type();
@@ -56,7 +56,7 @@ MakeBitComparisonOperation<reduction, name, opflags>::debug_string() const
 }
 
 template<typename reduction, const char * name, enum binary_op::flags opflags>
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 MakeBitComparisonOperation<reduction, name, opflags>::copy() const
 {
   return std::make_unique<MakeBitComparisonOperation>(*this);

@@ -150,7 +150,7 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::operation),
+      typeid(jlm::rvsdg::Operation),
       node_get_default_normal_form_);
 }
 
@@ -188,7 +188,7 @@ node_output::GetOwner() const noexcept
 
 /* node class */
 
-Node::Node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
+Node::Node(std::unique_ptr<Operation> op, Region * region)
     : depth_(0),
       graph_(region->graph()),
       region_(region),

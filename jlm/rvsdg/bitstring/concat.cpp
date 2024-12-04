@@ -262,7 +262,7 @@ bitconcat_op::~bitconcat_op() noexcept
 {}
 
 bool
-bitconcat_op::operator==(const jlm::rvsdg::operation & other) const noexcept
+bitconcat_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const jlm::rvsdg::bitconcat_op *>(&other);
   if (!op || op->narguments() != narguments())
@@ -364,10 +364,10 @@ bitconcat_op::debug_string() const
   return "BITCONCAT";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 bitconcat_op::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new bitconcat_op(*this));
+  return std::make_unique<bitconcat_op>(*this);
 }
 
 }
