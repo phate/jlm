@@ -23,13 +23,13 @@ class AnnotationMap;
 namespace jlm::rvsdg
 {
 
-class node;
+class Node;
 class simple_node;
-class simple_op;
-class structural_input;
+class SimpleOperation;
+class StructuralInput;
 class StructuralNode;
 class structural_op;
-class structural_output;
+class StructuralOutput;
 class SubstitutionMap;
 
 /**
@@ -38,7 +38,7 @@ class SubstitutionMap;
  * Region arguments represent the initial values of the region's acyclic graph. These values
  * are mapped to the arguments throughout the execution, and the concrete semantics of this mapping
  * depends on the structural node the region is part of. A region argument is either linked
- * with a \ref structural_input or is a standalone argument.
+ * with a \ref StructuralInput or is a standalone argument.
  */
 class RegionArgument : public output
 {
@@ -52,7 +52,7 @@ public:
 
   RegionArgument(
       rvsdg::Region * region,
-      structural_input * input,
+      StructuralInput * input,
       std::shared_ptr<const rvsdg::Type> type);
 
   RegionArgument(const RegionArgument &) = delete;
@@ -65,7 +65,7 @@ public:
   RegionArgument &
   operator=(RegionArgument &&) = delete;
 
-  [[nodiscard]] structural_input *
+  [[nodiscard]] StructuralInput *
   input() const noexcept
   {
     return input_;
@@ -80,9 +80,9 @@ public:
    * @return A reference to the copied argument.
    */
   virtual RegionArgument &
-  Copy(rvsdg::Region & region, structural_input * input);
+  Copy(Region & region, StructuralInput * input);
 
-  [[nodiscard]] std::variant<node *, Region *>
+  [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
 
   /**
@@ -104,13 +104,10 @@ public:
    * Creates an argument and registers it with the given region.
    */
   static RegionArgument &
-  Create(
-      rvsdg::Region & region,
-      rvsdg::structural_input * input,
-      std::shared_ptr<const rvsdg::Type> type);
+  Create(rvsdg::Region & region, StructuralInput * input, std::shared_ptr<const rvsdg::Type> type);
 
 private:
-  structural_input * input_;
+  StructuralInput * input_;
 };
 
 /**
@@ -120,7 +117,7 @@ private:
  * can be mapped back to the region arguments or the corresponding structural outputs
  * throughout the execution, but the concrete semantics of this mapping
  * depends on the structural node the region is part of. A region result is either linked
- * with a \ref structural_output or is a standalone result.
+ * with a \ref StructuralOutput or is a standalone result.
  */
 class RegionResult : public input
 {
@@ -135,7 +132,7 @@ public:
   RegionResult(
       rvsdg::Region * region,
       rvsdg::output * origin,
-      structural_output * output,
+      StructuralOutput * output,
       std::shared_ptr<const rvsdg::Type> type);
 
   RegionResult(const RegionResult &) = delete;
@@ -148,7 +145,7 @@ public:
   RegionResult &
   operator=(RegionResult &&) = delete;
 
-  [[nodiscard]] structural_output *
+  [[nodiscard]] StructuralOutput *
   output() const noexcept
   {
     return output_;
@@ -164,9 +161,9 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::output & origin, structural_output * output);
+  Copy(rvsdg::output & origin, StructuralOutput * output);
 
-  [[nodiscard]] std::variant<node *, Region *>
+  [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
 
   /**
@@ -194,11 +191,11 @@ public:
   Create(
       rvsdg::Region & region,
       rvsdg::output & origin,
-      structural_output * output,
+      StructuralOutput * output,
       std::shared_ptr<const rvsdg::Type> type);
 
 private:
-  structural_output * output_;
+  StructuralOutput * output_;
 };
 
 /**
@@ -217,16 +214,12 @@ private:
  */
 class Region
 {
-  typedef jlm::util::intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_node_list_accessor>
-      region_nodes_list;
+  typedef util::intrusive_list<Node, Node::region_node_list_accessor> region_nodes_list;
 
-  typedef jlm::util::
-      intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_top_node_list_accessor>
-          region_top_node_list;
+  typedef util::intrusive_list<Node, Node::region_top_node_list_accessor> region_top_node_list;
 
-  typedef jlm::util::
-      intrusive_list<jlm::rvsdg::node, jlm::rvsdg::node::region_bottom_node_list_accessor>
-          region_bottom_node_list;
+  typedef util::intrusive_list<Node, Node::region_bottom_node_list_accessor>
+      region_bottom_node_list;
 
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
@@ -256,7 +249,7 @@ class Region
 public:
   ~Region() noexcept;
 
-  Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph);
+  Region(rvsdg::Region * parent, Graph * graph);
 
   Region(rvsdg::StructuralNode * node, size_t index);
 
@@ -351,7 +344,7 @@ public:
     return { BottomNodes_.begin(), BottomNodes_.end() };
   }
 
-  inline jlm::rvsdg::graph *
+  [[nodiscard]] Graph *
   graph() const noexcept
   {
     return graph_;
@@ -532,7 +525,7 @@ public:
   }
 
   void
-  remove_node(jlm::rvsdg::node * node);
+  remove_node(Node * node);
 
   /**
    * \brief Adds \p node to the top nodes of the region.
@@ -548,7 +541,7 @@ public:
    * no need to invoke it manually.
    */
   bool
-  AddTopNode(rvsdg::node & node);
+  AddTopNode(Node & node);
 
   /**
    * \brief Adds \p node to the bottom nodes of the region.
@@ -564,7 +557,7 @@ public:
    * no need to invoke it manually.
    */
   bool
-  AddBottomNode(rvsdg::node & node);
+  AddBottomNode(Node & node);
 
   /**
    * \brief Adds \p node to the region.
@@ -578,7 +571,7 @@ public:
    * it manually.
    */
   bool
-  AddNode(rvsdg::node & node);
+  AddNode(Node & node);
 
   /**
    * Removes \p node from the top nodes in the region.
@@ -590,7 +583,7 @@ public:
    * invoke it manually.
    */
   bool
-  RemoveTopNode(rvsdg::node & node);
+  RemoveTopNode(Node & node);
 
   /**
    * Removes \p node from the bottom nodes in the region.
@@ -602,7 +595,7 @@ public:
    * invoke it manually.
    */
   bool
-  RemoveBottomNode(rvsdg::node & node);
+  RemoveBottomNode(Node & node);
 
   /**
    * Remove \p node from the region.
@@ -614,7 +607,7 @@ public:
    * it manually.
    */
   bool
-  RemoveNode(rvsdg::node & node);
+  RemoveNode(Node & node);
 
   /**
     \brief Copy a region with substitutions
@@ -736,7 +729,7 @@ private:
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
   size_t index_;
-  jlm::rvsdg::graph * graph_;
+  Graph * graph_;
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
@@ -746,7 +739,7 @@ private:
 };
 
 static inline void
-remove(jlm::rvsdg::node * node)
+remove(Node * node)
 {
   return node->region()->remove_node(node);
 }

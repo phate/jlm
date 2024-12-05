@@ -24,15 +24,15 @@ public:
   mux_normal_form(
       const std::type_info & opclass,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
   virtual void
@@ -60,33 +60,33 @@ private:
 
 /* mux operation */
 
-class mux_op final : public simple_op
+class mux_op final : public SimpleOperation
 {
 public:
   virtual ~mux_op() noexcept;
 
   inline mux_op(std::shared_ptr<const StateType> type, size_t narguments, size_t nresults)
-      : simple_op({ narguments, type }, { nresults, type })
+      : SimpleOperation({ narguments, type }, { nresults, type })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static jlm::rvsdg::mux_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::mux_normal_form *>(graph->node_normal_form(typeid(mux_op)));
   }
 };
 
 static inline bool
-is_mux_op(const jlm::rvsdg::operation & op)
+is_mux_op(const Operation & op)
 {
   return dynamic_cast<const jlm::rvsdg::mux_op *>(&op) != nullptr;
 }

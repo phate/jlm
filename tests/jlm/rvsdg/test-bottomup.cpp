@@ -12,7 +12,7 @@
 static void
 test_initialization()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto vtype = jlm::tests::valuetype::Create();
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, {});
   auto n2 = jlm::tests::test_op::create(graph.root(), {}, { vtype });
@@ -36,7 +36,7 @@ test_initialization()
 static void
 test_basic_traversal()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
@@ -44,7 +44,7 @@ test_basic_traversal()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::node * tmp;
+    jlm::rvsdg::Node * tmp;
     jlm::rvsdg::bottomup_traverser trav(graph.root());
     tmp = trav.next();
     assert(tmp == n2);
@@ -60,13 +60,13 @@ test_basic_traversal()
 static void
 test_order_enforcement_traversal()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { type });
 
-  jlm::rvsdg::node * tmp;
+  jlm::rvsdg::Node * tmp;
   {
     jlm::rvsdg::bottomup_traverser trav(graph.root());
 

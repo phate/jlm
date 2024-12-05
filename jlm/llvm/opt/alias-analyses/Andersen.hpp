@@ -420,7 +420,7 @@ private:
   AnalyzeTheta(const rvsdg::ThetaNode & node);
 
   void
-  AnalyzeRvsdg(const rvsdg::graph & graph);
+  AnalyzeRvsdg(const rvsdg::Graph & graph);
 
   /**
    * Traverses the given module, and initializes the members Set_ and Constraints_ with

@@ -14,13 +14,13 @@
 namespace jlm::rvsdg
 {
 
-class simple_op;
+class SimpleOperation;
 class simple_input;
 class simple_output;
 
 /* simple nodes */
 
-class simple_node : public node
+class simple_node : public Node
 {
 public:
   virtual ~simple_node();
@@ -28,7 +28,7 @@ public:
 protected:
   simple_node(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands);
 
 public:
@@ -38,19 +38,19 @@ public:
   jlm::rvsdg::simple_output *
   output(size_t index) const noexcept;
 
-  const jlm::rvsdg::simple_op &
-  operation() const noexcept;
+  [[nodiscard]] const SimpleOperation &
+  GetOperation() const noexcept override;
 
-  virtual jlm::rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
-  virtual jlm::rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
   static inline jlm::rvsdg::simple_node *
   create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
     return new simple_node(region, op, operands);
@@ -59,7 +59,7 @@ public:
   static inline std::vector<jlm::rvsdg::output *>
   create_normalized(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
     auto nf = static_cast<simple_normal_form *>(region->graph()->node_normal_form(typeid(op)));
@@ -113,19 +113,13 @@ public:
 inline jlm::rvsdg::simple_input *
 simple_node::input(size_t index) const noexcept
 {
-  return static_cast<simple_input *>(node::input(index));
+  return static_cast<simple_input *>(Node::input(index));
 }
 
 inline jlm::rvsdg::simple_output *
 simple_node::output(size_t index) const noexcept
 {
-  return static_cast<simple_output *>(node::output(index));
-}
-
-inline const jlm::rvsdg::simple_op &
-simple_node::operation() const noexcept
-{
-  return *static_cast<const simple_op *>(&node::operation());
+  return static_cast<simple_output *>(Node::output(index));
 }
 
 }

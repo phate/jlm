@@ -11,7 +11,7 @@
 namespace jlm::rvsdg
 {
 
-class simple_op;
+class SimpleOperation;
 
 class simple_normal_form : public node_normal_form
 {
@@ -21,15 +21,15 @@ public:
   simple_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const;
 
   virtual void

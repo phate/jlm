@@ -24,7 +24,7 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph) noexcept
+  start(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
@@ -32,7 +32,7 @@ public:
   }
 
   void
-  end(const jlm::rvsdg::graph & graph) noexcept
+  end(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
     AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
@@ -47,7 +47,7 @@ public:
 };
 
 static void
-enable_mux_reductions(jlm::rvsdg::graph & graph)
+enable_mux_reductions(rvsdg::Graph & graph)
 {
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
   auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
@@ -57,7 +57,7 @@ enable_mux_reductions(jlm::rvsdg::graph & graph)
 }
 
 static void
-enable_store_reductions(jlm::rvsdg::graph & graph)
+enable_store_reductions(rvsdg::Graph & graph)
 {
   auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
@@ -68,7 +68,7 @@ enable_store_reductions(jlm::rvsdg::graph & graph)
 }
 
 static void
-enable_load_reductions(jlm::rvsdg::graph & graph)
+enable_load_reductions(rvsdg::Graph & graph)
 {
   auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
   nf->set_mutable(true);
@@ -81,7 +81,7 @@ enable_load_reductions(jlm::rvsdg::graph & graph)
 }
 
 static void
-enable_gamma_reductions(jlm::rvsdg::graph & graph)
+enable_gamma_reductions(rvsdg::Graph & graph)
 {
   auto nf = rvsdg::GammaOperation::normal_form(&graph);
   nf->set_mutable(true);
@@ -92,7 +92,7 @@ enable_gamma_reductions(jlm::rvsdg::graph & graph)
 }
 
 static void
-enable_unary_reductions(jlm::rvsdg::graph & graph)
+enable_unary_reductions(rvsdg::Graph & graph)
 {
   auto nf = jlm::rvsdg::unary_op::normal_form(&graph);
   // set_mutable generates incorrect output for a number of
@@ -105,7 +105,7 @@ enable_unary_reductions(jlm::rvsdg::graph & graph)
 }
 
 static void
-enable_binary_reductions(jlm::rvsdg::graph & graph)
+enable_binary_reductions(rvsdg::Graph & graph)
 {
   auto nf = jlm::rvsdg::binary_op::normal_form(&graph);
   nf->set_mutable(true);

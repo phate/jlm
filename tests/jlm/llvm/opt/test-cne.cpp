@@ -28,7 +28,7 @@ test_simple()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -73,7 +73,7 @@ test_gamma()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -86,23 +86,23 @@ test_gamma()
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
-  auto ev1 = gamma->add_entryvar(u1);
-  auto ev2 = gamma->add_entryvar(u2);
-  auto ev3 = gamma->add_entryvar(y);
-  auto ev4 = gamma->add_entryvar(z);
-  auto ev5 = gamma->add_entryvar(z);
+  auto ev1 = gamma->AddEntryVar(u1);
+  auto ev2 = gamma->AddEntryVar(u2);
+  auto ev3 = gamma->AddEntryVar(y);
+  auto ev4 = gamma->AddEntryVar(z);
+  auto ev5 = gamma->AddEntryVar(z);
 
   auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
   auto n2 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
   auto n3 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
 
-  gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
-  gamma->add_exitvar({ ev2->argument(0), ev2->argument(1) });
-  gamma->add_exitvar({ ev3->argument(0), ev3->argument(1) });
-  gamma->add_exitvar({ n1, ev3->argument(1) });
-  gamma->add_exitvar({ n2, ev3->argument(1) });
-  gamma->add_exitvar({ n3, ev3->argument(1) });
-  gamma->add_exitvar({ ev5->argument(0), ev4->argument(1) });
+  gamma->AddExitVar({ ev1.branchArgument[0], ev1.branchArgument[1] });
+  gamma->AddExitVar({ ev2.branchArgument[0], ev2.branchArgument[1] });
+  gamma->AddExitVar({ ev3.branchArgument[0], ev3.branchArgument[1] });
+  gamma->AddExitVar({ n1, ev3.branchArgument[1] });
+  gamma->AddExitVar({ n2, ev3.branchArgument[1] });
+  gamma->AddExitVar({ n3, ev3.branchArgument[1] });
+  gamma->AddExitVar({ ev5.branchArgument[0], ev4.branchArgument[1] });
 
   GraphExport::Create(*gamma->output(0), "x1");
   GraphExport::Create(*gamma->output(1), "x2");
@@ -139,7 +139,7 @@ test_theta()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -192,7 +192,7 @@ test_theta2()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -236,7 +236,7 @@ test_theta3()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -295,7 +295,7 @@ test_theta4()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -348,7 +348,7 @@ test_theta5()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -395,15 +395,15 @@ test_lambda()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto lambda = lambda::node::create(graph.root(), ft, "f", linkage::external_linkage);
 
-  auto d1 = lambda->add_ctxvar(x);
-  auto d2 = lambda->add_ctxvar(x);
+  auto d1 = lambda->AddContextVar(*x).inner;
+  auto d2 = lambda->AddContextVar(*x).inner;
 
   auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { vt })[0];
 
@@ -430,7 +430,7 @@ test_phi()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -446,11 +446,11 @@ test_phi()
   auto r2 = pb.add_recvar(PointerType::Create());
 
   auto lambda1 = lambda::node::create(region, ft, "f", linkage::external_linkage);
-  auto cv1 = lambda1->add_ctxvar(d1);
+  auto cv1 = lambda1->AddContextVar(*d1).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
   auto lambda2 = lambda::node::create(region, ft, "f", linkage::external_linkage);
-  auto cv2 = lambda2->add_ctxvar(d2);
+  auto cv2 = lambda2->AddContextVar(*d2).inner;
   auto f2 = lambda2->finalize({ cv2 });
 
   r1->set_rvorigin(f1);
@@ -466,7 +466,9 @@ test_phi()
   cne.run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.root(), stdout);
 
-  assert(f1->node()->input(0)->origin() == f2->node()->input(0)->origin());
+  assert(
+      jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).input(0)->origin()
+      == jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f2).input(0)->origin());
 }
 
 static int

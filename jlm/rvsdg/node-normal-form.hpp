@@ -22,9 +22,9 @@
 namespace jlm::rvsdg
 {
 
-class graph;
-class node;
-class operation;
+class Graph;
+class Node;
+class Operation;
 class output;
 class Region;
 
@@ -36,7 +36,7 @@ public:
   inline node_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept
+      Graph * graph) noexcept
       : operator_class_(operator_class),
         parent_(parent),
         graph_(graph),
@@ -50,7 +50,7 @@ public:
   }
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const;
+  normalize_node(Node * node) const;
 
   inline node_normal_form *
   parent() const noexcept
@@ -58,7 +58,7 @@ public:
     return parent_;
   }
 
-  inline jlm::rvsdg::graph *
+  [[nodiscard]] Graph *
   graph() const noexcept
   {
     return graph_;
@@ -79,13 +79,13 @@ public:
       jlm::rvsdg::node_normal_form * (*fn)(
           const std::type_info & operator_class,
           jlm::rvsdg::node_normal_form * parent,
-          jlm::rvsdg::graph * graph));
+          Graph * graph));
 
   static node_normal_form *
   create(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   class opclass_hash_accessor
   {
@@ -136,7 +136,7 @@ protected:
 private:
   const std::type_info & operator_class_;
   node_normal_form * parent_;
-  jlm::rvsdg::graph * graph_;
+  Graph * graph_;
 
   struct
   {

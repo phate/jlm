@@ -21,7 +21,7 @@ TestUndef()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
   {
     // Create an undef operation
@@ -57,7 +57,7 @@ TestUndef()
 
       // Get the undef op
       auto convertedUndef =
-          dynamic_cast<const UndefValueOperation *>(&region->Nodes().begin()->operation());
+          dynamic_cast<const UndefValueOperation *>(&region->Nodes().begin()->GetOperation());
 
       assert(convertedUndef != nullptr);
 

@@ -20,14 +20,18 @@ using InvariantOutputMap = std::unordered_map<const rvsdg::output *, rvsdg::inpu
 static rvsdg::input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
 
-static rvsdg::structural_input *
-invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariantOutputs)
+static rvsdg::StructuralInput *
+invariantInput(
+    const rvsdg::GammaNode & gamma,
+    const rvsdg::output & output,
+    InvariantOutputMap & invariantOutputs)
 {
   size_t n;
-  rvsdg::structural_input * input = nullptr;
-  for (n = 0; n < output.nresults(); n++)
+  rvsdg::StructuralInput * input = nullptr;
+  auto exitvar = gamma.MapOutputExitVar(output);
+  for (n = 0; n < exitvar.branchResult.size(); n++)
   {
-    auto origin = output.result(n)->origin();
+    auto origin = exitvar.branchResult[n]->origin();
 
     bool resultIsInvariant = false;
     while (true)
@@ -52,7 +56,7 @@ invariantInput(const rvsdg::GammaOutput & output, InvariantOutputMap & invariant
       break;
   }
 
-  if (n == output.nresults())
+  if (n == exitvar.branchResult.size())
   {
     invariantOutputs[&output] = input;
     return input;
@@ -106,8 +110,8 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
     return invariantInput(*thetaInput->output(), invariantOutputs);
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
-    return invariantInput(*gammaOutput, invariantOutputs);
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+    return invariantInput(*gamma, output, invariantOutputs);
 
   return nullptr;
 }
@@ -126,7 +130,7 @@ invariantInput(const rvsdg::output & output)
 CallOperation::~CallOperation() = default;
 
 bool
-CallOperation::operator==(const operation & other) const noexcept
+CallOperation::operator==(const Operation & other) const noexcept
 {
   auto callOperation = dynamic_cast<const CallOperation *>(&other);
   return callOperation && FunctionType_ == callOperation->FunctionType_;
@@ -138,13 +142,13 @@ CallOperation::debug_string() const
   return "CALL";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 CallOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new CallOperation(*this));
+  return std::make_unique<CallOperation>(*this);
 }
 
-rvsdg::node *
+rvsdg::Node *
 CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -157,16 +161,13 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 
   while (true)
   {
-    if (is<lambda::output>(origin))
-      return origin;
-
-    if (is<lambda::fctargument>(origin))
+    if (rvsdg::TryGetOwnerNode<lambda::node>(*origin))
       return origin;
 
     if (is<rvsdg::GraphImport>(origin))
       return origin;
 
-    if (is<rvsdg::simple_op>(rvsdg::output::GetNode(*origin)))
+    if (is<rvsdg::SimpleOperation>(rvsdg::output::GetNode(*origin)))
       return origin;
 
     if (is<phi::rvargument>(origin))
@@ -174,16 +175,22 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (is<lambda::cvargument>(origin))
+    if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(*origin))
     {
-      auto argument = util::AssertedCast<const rvsdg::RegionArgument>(origin);
-      origin = argument->input()->origin();
-      continue;
+      if (auto ctxvar = lambda->MapBinderContextVar(*origin))
+      {
+        origin = ctxvar->input->origin();
+        continue;
+      }
+      else
+      {
+        return origin;
+      }
     }
 
-    if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(origin))
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin))
     {
-      if (auto input = invariantInput(*gammaOutput))
+      if (auto input = invariantInput(*origin))
       {
         origin = input->origin();
         continue;
@@ -192,9 +199,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(origin))
+    if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*origin))
     {
-      origin = gammaArgument->input()->origin();
+      origin = gamma->MapBranchArgumentEntryVar(*origin).input->origin();
       continue;
     }
 
@@ -241,9 +248,9 @@ CallNode::ClassifyCall(const CallNode & callNode)
 {
   auto output = CallNode::TraceFunctionInput(callNode);
 
-  if (auto lambdaOutput = dynamic_cast<lambda::output *>(output))
+  if (rvsdg::TryGetOwnerNode<lambda::node>(*output))
   {
-    return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*lambdaOutput);
+    return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*output);
   }
 
   if (auto argument = dynamic_cast<rvsdg::RegionArgument *>(output))

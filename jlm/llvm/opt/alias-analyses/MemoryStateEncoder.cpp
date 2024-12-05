@@ -27,7 +27,7 @@ public:
   {}
 
   void
-  Start(const rvsdg::graph & graph)
+  Start(const rvsdg::Graph & graph)
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddTimer(Label::Timer).start();
@@ -858,9 +858,9 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
-    auto gammaInput = gammaNode.add_entryvar(&memoryNodeStatePair->State());
-    for (auto & argument : *gammaInput)
-      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), argument);
+    auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
+    for (auto & argument : gammaInput.branchArgument)
+      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *argument);
   }
 }
 
@@ -882,7 +882,7 @@ MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
       states.push_back(&state);
     }
 
-    auto state = gammaNode.add_exitvar(states);
+    auto state = gammaNode.AddExitVar(states).output;
     memoryNodeStatePair->ReplaceState(*state);
   }
 }

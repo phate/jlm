@@ -272,7 +272,7 @@ public:
   {}
 
   void
-  StartAndersenStatistics(const rvsdg::graph & graph) noexcept
+  StartAndersenStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(AnalysisTimer_).start();
@@ -610,7 +610,7 @@ public:
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 {
-  const auto & op = node.operation();
+  const auto & op = node.GetOperation();
 
   if (is<alloca_op>(op))
     AnalyzeAlloca(node);
@@ -663,7 +663,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 void
 Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
 {
-  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.operation());
+  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.GetOperation());
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -970,22 +970,22 @@ void
 Andersen::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv.type()))
+    if (!IsOrContainsPointerType(cv.input->type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
   // Create Register PointerObjects for each argument of pointing type in the function
-  for (auto & argument : lambda.fctarguments())
+  for (auto argument : lambda.GetFunctionArguments())
   {
-    if (IsOrContainsPointerType(argument.type()))
-      (void)Set_->CreateRegisterPointerObject(argument);
+    if (IsOrContainsPointerType(argument->type()))
+      (void)Set_->CreateRegisterPointerObject(*argument);
   }
 
   AnalyzeRegion(*lambda.subregion());
@@ -1088,16 +1088,16 @@ void
 Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 {
   // Handle input variables
-  for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)
+  for (const auto & ev : gamma.GetEntryVars())
   {
-    if (!IsOrContainsPointerType(ev->type()))
+    if (!IsOrContainsPointerType(ev.input->type()))
       continue;
 
-    auto & inputRegister = *ev->origin();
+    auto & inputRegister = *ev.input->origin();
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
 
-    for (auto & argument : *ev)
-      Set_->MapRegisterToExistingPointerObject(argument, inputRegisterPO);
+    for (auto & argument : ev.branchArgument)
+      Set_->MapRegisterToExistingPointerObject(*argument, inputRegisterPO);
   }
 
   // Handle subregions
@@ -1105,17 +1105,17 @@ Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
     AnalyzeRegion(*gamma.subregion(n));
 
   // Handle exit variables
-  for (auto ex = gamma.begin_exitvar(); ex != gamma.end_exitvar(); ++ex)
+  for (const auto & ex : gamma.GetExitVars())
   {
-    if (!IsOrContainsPointerType(ex->type()))
+    if (!IsOrContainsPointerType(ex.output->type()))
       continue;
 
-    auto & outputRegister = *ex.output();
-    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    auto & outputRegister = ex.output;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(*outputRegister);
 
-    for (auto & result : *ex)
+    for (auto result : ex.branchResult)
     {
-      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result.origin());
+      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result->origin());
       Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, resultRegisterPO));
     }
   }
@@ -1199,7 +1199,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 }
 
 void
-Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
+Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
   auto & rootRegion = *graph.root();
 

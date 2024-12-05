@@ -472,7 +472,7 @@ TestEscapedFunctionConstraint()
   const auto & localFunction = rvsdg.GetLocalFunction();
   const auto & localFunctionRegister = rvsdg.GetLocalFunctionRegister();
   const auto & exportedFunction = rvsdg.GetExportedFunction();
-  const auto & exportedFunctionReturn = *exportedFunction.fctresult(0)->origin();
+  const auto & exportedFunctionReturn = *exportedFunction.GetFunctionResults()[0]->origin();
 
   PointerObjectSet set;
   const auto localFunctionPO = set.CreateFunctionMemoryObject(localFunction);
@@ -632,8 +632,10 @@ TestFunctionCallConstraint()
   PointerObjectSet set;
   const auto lambdaF = set.CreateFunctionMemoryObject(*rvsdg.lambda_f);
   const auto lambdaFRegister = set.CreateRegisterPointerObject(*rvsdg.lambda_f->output());
-  const auto lambdaFArgumentX = set.CreateRegisterPointerObject(*rvsdg.lambda_f->fctargument(0));
-  const auto lambdaFArgumentY = set.CreateRegisterPointerObject(*rvsdg.lambda_f->fctargument(1));
+  const auto lambdaFArgumentX =
+      set.CreateRegisterPointerObject(*rvsdg.lambda_f->GetFunctionArguments()[0]);
+  const auto lambdaFArgumentY =
+      set.CreateRegisterPointerObject(*rvsdg.lambda_f->GetFunctionArguments()[1]);
   const auto allocaX = set.CreateAllocaMemoryObject(*rvsdg.alloca_x, true);
   const auto allocaY = set.CreateAllocaMemoryObject(*rvsdg.alloca_y, true);
   const auto allocaXRegister = set.CreateRegisterPointerObject(*rvsdg.alloca_x->output(0));

@@ -20,7 +20,7 @@ TestUnknownBoundaries()
   auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
@@ -32,9 +32,9 @@ TestUnknownBoundaries()
 
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto subregion = theta->subregion();
-  auto idv = theta->add_loopvar(lambda->fctargument(0));
-  auto lvs = theta->add_loopvar(lambda->fctargument(1));
-  auto lve = theta->add_loopvar(lambda->fctargument(2));
+  auto idv = theta->add_loopvar(lambda->GetFunctionArguments()[0]);
+  auto lvs = theta->add_loopvar(lambda->GetFunctionArguments()[1]);
+  auto lve = theta->add_loopvar(lambda->GetFunctionArguments()[2]);
 
   auto arm = jlm::rvsdg::simple_node::create_normalized(
       subregion,

@@ -17,7 +17,7 @@ phi_op::~phi_op() noexcept
 {}
 
 bool
-phi_op::operator==(const operation & other) const noexcept
+phi_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const phi_op *>(&other);
   return op && op->nodes_ == nodes_ && op->result(0) == result(0);
@@ -38,10 +38,10 @@ phi_op::debug_string() const
   return "PHI" + str;
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 phi_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new phi_op(*this));
+  return std::make_unique<phi_op>(*this);
 }
 
 /* assignment operator */
@@ -50,7 +50,7 @@ assignment_op::~assignment_op() noexcept
 {}
 
 bool
-assignment_op::operator==(const operation & other) const noexcept
+assignment_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const assignment_op *>(&other);
   return op && op->argument(0) == argument(0);
@@ -62,10 +62,10 @@ assignment_op::debug_string() const
   return "ASSIGN";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 assignment_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new assignment_op(*this));
+  return std::make_unique<assignment_op>(*this);
 }
 
 /* select operator */
@@ -74,7 +74,7 @@ select_op::~select_op() noexcept
 {}
 
 bool
-select_op::operator==(const operation & other) const noexcept
+select_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const select_op *>(&other);
   return op && op->result(0) == result(0);
@@ -86,10 +86,10 @@ select_op::debug_string() const
   return "SELECT";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 select_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new select_op(*this));
+  return std::make_unique<select_op>(*this);
 }
 
 /* vectorselect operator */
@@ -98,7 +98,7 @@ vectorselect_op::~vectorselect_op() noexcept
 {}
 
 bool
-vectorselect_op::operator==(const operation & other) const noexcept
+vectorselect_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const vectorselect_op *>(&other);
   return op && op->type() == type();
@@ -110,10 +110,10 @@ vectorselect_op::debug_string() const
   return "VECTORSELECT";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 vectorselect_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new vectorselect_op(*this));
+  return std::make_unique<vectorselect_op>(*this);
 }
 
 /* fp2ui operator */
@@ -122,7 +122,7 @@ fp2ui_op::~fp2ui_op() noexcept
 {}
 
 bool
-fp2ui_op::operator==(const operation & other) const noexcept
+fp2ui_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fp2ui_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -134,10 +134,10 @@ fp2ui_op::debug_string() const
   return "FP2UI";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fp2ui_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fp2ui_op(*this));
+  return std::make_unique<fp2ui_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -158,7 +158,7 @@ fp2si_op::~fp2si_op() noexcept
 {}
 
 bool
-fp2si_op::operator==(const operation & other) const noexcept
+fp2si_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fp2si_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -170,10 +170,10 @@ fp2si_op::debug_string() const
   return "FP2UI";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fp2si_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fp2si_op(*this));
+  return std::make_unique<fp2si_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -194,7 +194,7 @@ ctl2bits_op::~ctl2bits_op() noexcept
 {}
 
 bool
-ctl2bits_op::operator==(const operation & other) const noexcept
+ctl2bits_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ctl2bits_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -206,10 +206,10 @@ ctl2bits_op::debug_string() const
   return "CTL2BITS";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ctl2bits_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ctl2bits_op(*this));
+  return std::make_unique<ctl2bits_op>(*this);
 }
 
 /* branch operator */
@@ -218,7 +218,7 @@ branch_op::~branch_op() noexcept
 {}
 
 bool
-branch_op::operator==(const operation & other) const noexcept
+branch_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const branch_op *>(&other);
   return op && op->argument(0) == argument(0);
@@ -230,16 +230,16 @@ branch_op::debug_string() const
   return "BRANCH";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 branch_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new branch_op(*this));
+  return std::make_unique<branch_op>(*this);
 }
 
 ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept = default;
 
 bool
-ConstantPointerNullOperation::operator==(const operation & other) const noexcept
+ConstantPointerNullOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ConstantPointerNullOperation *>(&other);
   return op && op->GetPointerType() == GetPointerType();
@@ -251,10 +251,10 @@ ConstantPointerNullOperation::debug_string() const
   return "ConstantPointerNull";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ConstantPointerNullOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ConstantPointerNullOperation(*this));
+  return std::make_unique<ConstantPointerNullOperation>(*this);
 }
 
 /* bits2ptr operator */
@@ -263,7 +263,7 @@ bits2ptr_op::~bits2ptr_op()
 {}
 
 bool
-bits2ptr_op::operator==(const operation & other) const noexcept
+bits2ptr_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const bits2ptr_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -275,10 +275,10 @@ bits2ptr_op::debug_string() const
   return "BITS2PTR";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 bits2ptr_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new bits2ptr_op(*this));
+  return std::make_unique<bits2ptr_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -299,7 +299,7 @@ ptr2bits_op::~ptr2bits_op()
 {}
 
 bool
-ptr2bits_op::operator==(const operation & other) const noexcept
+ptr2bits_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ptr2bits_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -311,10 +311,10 @@ ptr2bits_op::debug_string() const
   return "PTR2BITS";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ptr2bits_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ptr2bits_op(*this));
+  return std::make_unique<ptr2bits_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -333,7 +333,7 @@ ConstantDataArray::~ConstantDataArray()
 {}
 
 bool
-ConstantDataArray::operator==(const rvsdg::operation & other) const noexcept
+ConstantDataArray::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ConstantDataArray *>(&other);
   return op && op->result(0) == result(0);
@@ -345,10 +345,10 @@ ConstantDataArray::debug_string() const
   return "ConstantDataArray";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ConstantDataArray::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ConstantDataArray(*this));
+  return std::make_unique<ConstantDataArray>(*this);
 }
 
 /* pointer compare operator */
@@ -357,7 +357,7 @@ ptrcmp_op::~ptrcmp_op()
 {}
 
 bool
-ptrcmp_op::operator==(const operation & other) const noexcept
+ptrcmp_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ptrcmp_op *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
@@ -377,10 +377,10 @@ ptrcmp_op::debug_string() const
   return "PTRCMP " + map[cmp()];
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ptrcmp_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ptrcmp_op(*this));
+  return std::make_unique<ptrcmp_op>(*this);
 }
 
 rvsdg::binop_reduction_path_t
@@ -405,7 +405,7 @@ zext_op::~zext_op()
 {}
 
 bool
-zext_op::operator==(const operation & other) const noexcept
+zext_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const zext_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -417,10 +417,10 @@ zext_op::debug_string() const
   return util::strfmt("ZEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 zext_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new zext_op(*this));
+  return std::make_unique<zext_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -437,7 +437,7 @@ zext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * opera
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->operation());
+    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->GetOperation());
     return create_bitconstant(
         rvsdg::output::GetNode(*operand)->region(),
         c->value().zext(ndstbits() - nsrcbits()));
@@ -452,7 +452,7 @@ ConstantFP::~ConstantFP()
 {}
 
 bool
-ConstantFP::operator==(const operation & other) const noexcept
+ConstantFP::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ConstantFP *>(&other);
   return op && size() == op->size() && constant().bitwiseIsEqual(op->constant());
@@ -472,10 +472,10 @@ ConstantFP::debug_string() const
   return s;
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ConstantFP::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ConstantFP(*this));
+  return std::make_unique<ConstantFP>(*this);
 }
 
 /* floating point comparison operator */
@@ -484,7 +484,7 @@ fpcmp_op::~fpcmp_op()
 {}
 
 bool
-fpcmp_op::operator==(const operation & other) const noexcept
+fpcmp_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fpcmp_op *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
@@ -512,10 +512,10 @@ fpcmp_op::debug_string() const
   return "FPCMP " + map[cmp()];
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fpcmp_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fpcmp_op(*this));
+  return std::make_unique<fpcmp_op>(*this);
 }
 
 rvsdg::binop_reduction_path_t
@@ -537,7 +537,7 @@ fpcmp_op::reduce_operand_pair(
 UndefValueOperation::~UndefValueOperation() noexcept = default;
 
 bool
-UndefValueOperation::operator==(const operation & other) const noexcept
+UndefValueOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const UndefValueOperation *>(&other);
   return op && op->GetType() == GetType();
@@ -549,16 +549,16 @@ UndefValueOperation::debug_string() const
   return "undef";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 UndefValueOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new UndefValueOperation(*this));
+  return std::make_unique<UndefValueOperation>(*this);
 }
 
 PoisonValueOperation::~PoisonValueOperation() noexcept = default;
 
 bool
-PoisonValueOperation::operator==(const operation & other) const noexcept
+PoisonValueOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const PoisonValueOperation *>(&other);
   return operation && operation->GetType() == GetType();
@@ -570,10 +570,10 @@ PoisonValueOperation::debug_string() const
   return "poison";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 PoisonValueOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new PoisonValueOperation(*this));
+  return std::make_unique<PoisonValueOperation>(*this);
 }
 
 /* floating point arithmetic operator */
@@ -582,7 +582,7 @@ fpbin_op::~fpbin_op()
 {}
 
 bool
-fpbin_op::operator==(const operation & other) const noexcept
+fpbin_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fpbin_op *>(&other);
   return op && op->fpop() == fpop() && op->size() == size();
@@ -601,10 +601,10 @@ fpbin_op::debug_string() const
   return "FPOP " + map[fpop()];
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fpbin_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fpbin_op(*this));
+  return std::make_unique<fpbin_op>(*this);
 }
 
 rvsdg::binop_reduction_path_t
@@ -629,7 +629,7 @@ fpext_op::~fpext_op()
 {}
 
 bool
-fpext_op::operator==(const operation & other) const noexcept
+fpext_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fpext_op *>(&other);
   return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
@@ -641,10 +641,10 @@ fpext_op::debug_string() const
   return "fpext";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fpext_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fpext_op(*this));
+  return std::make_unique<fpext_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -665,7 +665,7 @@ fpneg_op::~fpneg_op()
 {}
 
 bool
-fpneg_op::operator==(const operation & other) const noexcept
+fpneg_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fpneg_op *>(&other);
   return op && op->size() == size();
@@ -677,10 +677,10 @@ fpneg_op::debug_string() const
   return "fpneg";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fpneg_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fpneg_op(*this));
+  return std::make_unique<fpneg_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -701,7 +701,7 @@ fptrunc_op::~fptrunc_op()
 {}
 
 bool
-fptrunc_op::operator==(const operation & other) const noexcept
+fptrunc_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const fptrunc_op *>(&other);
   return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
@@ -713,10 +713,10 @@ fptrunc_op::debug_string() const
   return "fptrunc";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 fptrunc_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new fptrunc_op(*this));
+  return std::make_unique<fptrunc_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -737,7 +737,7 @@ valist_op::~valist_op()
 {}
 
 bool
-valist_op::operator==(const operation & other) const noexcept
+valist_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const valist_op *>(&other);
   if (!op || op->narguments() != narguments())
@@ -758,10 +758,10 @@ valist_op::debug_string() const
   return "VALIST";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 valist_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new valist_op(*this));
+  return std::make_unique<valist_op>(*this);
 }
 
 /* bitcast operator */
@@ -770,7 +770,7 @@ bitcast_op::~bitcast_op()
 {}
 
 bool
-bitcast_op::operator==(const operation & other) const noexcept
+bitcast_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const bitcast_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -787,10 +787,10 @@ bitcast_op::debug_string() const
       "]");
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 bitcast_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new bitcast_op(*this));
+  return std::make_unique<bitcast_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -811,7 +811,7 @@ ConstantStruct::~ConstantStruct()
 {}
 
 bool
-ConstantStruct::operator==(const operation & other) const noexcept
+ConstantStruct::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ConstantStruct *>(&other);
   return op && op->result(0) == result(0);
@@ -823,10 +823,10 @@ ConstantStruct::debug_string() const
   return "ConstantStruct";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ConstantStruct::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ConstantStruct(*this));
+  return std::make_unique<ConstantStruct>(*this);
 }
 
 /* trunc operator */
@@ -835,7 +835,7 @@ trunc_op::~trunc_op()
 {}
 
 bool
-trunc_op::operator==(const operation & other) const noexcept
+trunc_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const trunc_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -847,10 +847,10 @@ trunc_op::debug_string() const
   return util::strfmt("TRUNC[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 trunc_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new trunc_op(*this));
+  return std::make_unique<trunc_op>(*this);
 }
 
 rvsdg::unop_reduction_path_t
@@ -871,7 +871,7 @@ uitofp_op::~uitofp_op()
 {}
 
 bool
-uitofp_op::operator==(const operation & other) const noexcept
+uitofp_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const uitofp_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -883,7 +883,7 @@ uitofp_op::debug_string() const
   return "UITOFP";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 uitofp_op::copy() const
 {
   return std::make_unique<uitofp_op>(*this);
@@ -907,7 +907,7 @@ sitofp_op::~sitofp_op()
 {}
 
 bool
-sitofp_op::operator==(const operation & other) const noexcept
+sitofp_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const sitofp_op *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
@@ -919,7 +919,7 @@ sitofp_op::debug_string() const
   return "SITOFP";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 sitofp_op::copy() const
 {
   return std::make_unique<sitofp_op>(*this);
@@ -943,7 +943,7 @@ ConstantArray::~ConstantArray()
 {}
 
 bool
-ConstantArray::operator==(const operation & other) const noexcept
+ConstantArray::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ConstantArray *>(&other);
   return op && op->result(0) == result(0);
@@ -955,10 +955,10 @@ ConstantArray::debug_string() const
   return "ConstantArray";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ConstantArray::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ConstantArray(*this));
+  return std::make_unique<ConstantArray>(*this);
 }
 
 /* ConstantAggregateZero operator */
@@ -967,7 +967,7 @@ ConstantAggregateZero::~ConstantAggregateZero()
 {}
 
 bool
-ConstantAggregateZero::operator==(const operation & other) const noexcept
+ConstantAggregateZero::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ConstantAggregateZero *>(&other);
   return op && op->result(0) == result(0);
@@ -979,10 +979,10 @@ ConstantAggregateZero::debug_string() const
   return "ConstantAggregateZero";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ConstantAggregateZero::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ConstantAggregateZero(*this));
+  return std::make_unique<ConstantAggregateZero>(*this);
 }
 
 /* extractelement operator */
@@ -991,7 +991,7 @@ extractelement_op::~extractelement_op()
 {}
 
 bool
-extractelement_op::operator==(const operation & other) const noexcept
+extractelement_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const extractelement_op *>(&other);
   return op && op->argument(0) == argument(0) && op->argument(1) == argument(1);
@@ -1003,10 +1003,10 @@ extractelement_op::debug_string() const
   return "EXTRACTELEMENT";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 extractelement_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new extractelement_op(*this));
+  return std::make_unique<extractelement_op>(*this);
 }
 
 /* shufflevector operator */
@@ -1015,7 +1015,7 @@ shufflevector_op::~shufflevector_op()
 {}
 
 bool
-shufflevector_op::operator==(const operation & other) const noexcept
+shufflevector_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const shufflevector_op *>(&other);
   return op && op->argument(0) == argument(0) && op->Mask() == Mask();
@@ -1027,10 +1027,10 @@ shufflevector_op::debug_string() const
   return "SHUFFLEVECTOR";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 shufflevector_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new shufflevector_op(*this));
+  return std::make_unique<shufflevector_op>(*this);
 }
 
 /* constantvector operator */
@@ -1039,7 +1039,7 @@ constantvector_op::~constantvector_op()
 {}
 
 bool
-constantvector_op::operator==(const operation & other) const noexcept
+constantvector_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const constantvector_op *>(&other);
   return op && op->result(0) == result(0);
@@ -1051,10 +1051,10 @@ constantvector_op::debug_string() const
   return "CONSTANTVECTOR";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 constantvector_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new constantvector_op(*this));
+  return std::make_unique<constantvector_op>(*this);
 }
 
 /* insertelement operator */
@@ -1063,7 +1063,7 @@ insertelement_op::~insertelement_op()
 {}
 
 bool
-insertelement_op::operator==(const operation & other) const noexcept
+insertelement_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const insertelement_op *>(&other);
   return op && op->argument(0) == argument(0) && op->argument(1) == argument(1)
@@ -1076,10 +1076,10 @@ insertelement_op::debug_string() const
   return "INSERTELEMENT";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 insertelement_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new insertelement_op(*this));
+  return std::make_unique<insertelement_op>(*this);
 }
 
 /* vectorunary operator */
@@ -1088,7 +1088,7 @@ vectorunary_op::~vectorunary_op()
 {}
 
 bool
-vectorunary_op::operator==(const rvsdg::operation & other) const noexcept
+vectorunary_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const vectorunary_op *>(&other);
   return op && op->operation() == operation();
@@ -1100,10 +1100,10 @@ vectorunary_op::debug_string() const
   return util::strfmt("VEC", operation().debug_string());
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 vectorunary_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new vectorunary_op(*this));
+  return std::make_unique<vectorunary_op>(*this);
 }
 
 /* vectorbinary operator */
@@ -1112,7 +1112,7 @@ vectorbinary_op::~vectorbinary_op()
 {}
 
 bool
-vectorbinary_op::operator==(const rvsdg::operation & other) const noexcept
+vectorbinary_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const vectorbinary_op *>(&other);
   return op && op->operation() == operation();
@@ -1124,10 +1124,10 @@ vectorbinary_op::debug_string() const
   return util::strfmt("VEC", operation().debug_string());
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 vectorbinary_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new vectorbinary_op(*this));
+  return std::make_unique<vectorbinary_op>(*this);
 }
 
 /* const data vector operator */
@@ -1136,7 +1136,7 @@ constant_data_vector_op::~constant_data_vector_op()
 {}
 
 bool
-constant_data_vector_op::operator==(const rvsdg::operation & other) const noexcept
+constant_data_vector_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const constant_data_vector_op *>(&other);
   return op && op->result(0) == result(0);
@@ -1148,10 +1148,10 @@ constant_data_vector_op::debug_string() const
   return "CONSTANTDATAVECTOR";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 constant_data_vector_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new constant_data_vector_op(*this));
+  return std::make_unique<constant_data_vector_op>(*this);
 }
 
 /* extractvalue operator */
@@ -1160,7 +1160,7 @@ ExtractValue::~ExtractValue()
 {}
 
 bool
-ExtractValue::operator==(const rvsdg::operation & other) const noexcept
+ExtractValue::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const ExtractValue *>(&other);
   return op && op->indices_ == indices_ && op->type() == type();
@@ -1172,10 +1172,10 @@ ExtractValue::debug_string() const
   return "ExtractValue";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 ExtractValue::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new ExtractValue(*this));
+  return std::make_unique<ExtractValue>(*this);
 }
 
 /* malloc operator */
@@ -1184,7 +1184,7 @@ malloc_op::~malloc_op()
 {}
 
 bool
-malloc_op::operator==(const operation & other) const noexcept
+malloc_op::operator==(const Operation & other) const noexcept
 {
   /*
     Avoid CNE for malloc operator
@@ -1198,10 +1198,10 @@ malloc_op::debug_string() const
   return "MALLOC";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 malloc_op::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new malloc_op(*this));
+  return std::make_unique<malloc_op>(*this);
 }
 
 /* free operator */
@@ -1209,7 +1209,7 @@ malloc_op::copy() const
 FreeOperation::~FreeOperation() noexcept = default;
 
 bool
-FreeOperation::operator==(const operation & other) const noexcept
+FreeOperation::operator==(const Operation & other) const noexcept
 {
   // Avoid CNE for free operator
   return this == &other;
@@ -1221,10 +1221,10 @@ FreeOperation::debug_string() const
   return "FREE";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 FreeOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new FreeOperation(*this));
+  return std::make_unique<FreeOperation>(*this);
 }
 
 }

@@ -14,10 +14,7 @@
 namespace jlm::rvsdg
 {
 
-GraphImport::GraphImport(
-    rvsdg::graph & graph,
-    std::shared_ptr<const rvsdg::Type> type,
-    std::string name)
+GraphImport::GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
     : RegionArgument(graph.root(), nullptr, std::move(type)),
       Name_(std::move(name))
 {}
@@ -27,29 +24,29 @@ GraphExport::GraphExport(rvsdg::output & origin, std::string name)
       Name_(std::move(name))
 {}
 
-graph::~graph()
+Graph::~Graph()
 {
   JLM_ASSERT(!has_active_trackers(this));
 
   delete root_;
 }
 
-graph::graph()
+Graph::Graph()
     : normalized_(false),
       root_(new rvsdg::Region(nullptr, this))
 {}
 
-std::unique_ptr<jlm::rvsdg::graph>
-graph::copy() const
+std::unique_ptr<Graph>
+Graph::copy() const
 {
   SubstitutionMap smap;
-  std::unique_ptr<jlm::rvsdg::graph> graph(new jlm::rvsdg::graph());
+  std::unique_ptr<jlm::rvsdg::Graph> graph(new jlm::rvsdg::Graph());
   root()->copy(graph->root(), smap, true, true);
   return graph;
 }
 
 jlm::rvsdg::node_normal_form *
-graph::node_normal_form(const std::type_info & type) noexcept
+Graph::node_normal_form(const std::type_info & type) noexcept
 {
   auto i = node_normal_forms_.find(std::type_index(type));
   if (i != node_normal_forms_.end())
@@ -67,8 +64,8 @@ graph::node_normal_form(const std::type_info & type) noexcept
   return result;
 }
 
-std::vector<rvsdg::node *>
-graph::ExtractTailNodes(const graph & rvsdg)
+std::vector<Node *>
+Graph::ExtractTailNodes(const Graph & rvsdg)
 {
   auto IsOnlyExported = [](const rvsdg::output & output)
   {
@@ -92,7 +89,7 @@ graph::ExtractTailNodes(const graph & rvsdg)
 
   auto & rootRegion = *rvsdg.root();
 
-  std::vector<rvsdg::node *> nodes;
+  std::vector<Node *> nodes;
   for (auto & bottomNode : rootRegion.BottomNodes())
   {
     nodes.push_back(&bottomNode);

@@ -202,52 +202,55 @@ public:
     auto node = jlm::rvsdg::output::GetNode(*Output_);
     auto index = Output_->index();
 
-    if (jlm::rvsdg::is<jlm::rvsdg::simple_op>(node))
+    if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
-      auto nodestr = node->operation().debug_string();
+      auto nodestr = node->GetOperation().debug_string();
       auto outputstr = Output_->type().debug_string();
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
-    if (is<lambda::cvargument>(Output_))
+    if (auto node = rvsdg::TryGetRegionParentNode<lambda::node>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return jlm::util::strfmt(dbgstr, ":cv:", index);
-    }
-
-    if (is<lambda::fctargument>(Output_))
-    {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
-      return jlm::util::strfmt(dbgstr, ":arg:", index);
+      auto dbgstr = node->GetOperation().debug_string();
+      if (auto ctxvar = node->MapBinderContextVar(*Output_))
+      {
+        // Bound context variable.
+        return jlm::util::strfmt(dbgstr, ":cv:", index);
+      }
+      else
+      {
+        // Formal function argument.
+        return jlm::util::strfmt(dbgstr, ":arg:", index);
+      }
     }
 
     if (is<delta::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
-    if (is<rvsdg::GammaArgument>(Output_))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is<rvsdg::ThetaArgument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (is<rvsdg::ThetaOutput>(Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
+      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
-    if (is<rvsdg::GammaOutput>(Output_))
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string();
+      auto dbgstr = node->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -258,18 +261,18 @@ public:
 
     if (is<phi::rvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":rvarg", index);
     }
 
     if (is<phi::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->operation().debug_string();
+      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":cvarg", index);
     }
 
     return jlm::util::strfmt(
-        jlm::rvsdg::output::GetNode(*Output_)->operation().debug_string(),
+        rvsdg::output::GetNode(*Output_)->GetOperation().debug_string(),
         ":",
         index);
   }
@@ -313,7 +316,7 @@ class AllocaLocation final : public MemoryLocation
 
   ~AllocaLocation() override = default;
 
-  explicit AllocaLocation(const jlm::rvsdg::node & node)
+  explicit AllocaLocation(const rvsdg::Node & node)
       : MemoryLocation(),
         Node_(node)
   {
@@ -321,7 +324,7 @@ class AllocaLocation final : public MemoryLocation
   }
 
 public:
-  [[nodiscard]] const jlm::rvsdg::node &
+  [[nodiscard]] const rvsdg::Node &
   GetNode() const noexcept
   {
     return Node_;
@@ -330,17 +333,17 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.operation().debug_string();
+    return Node_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
-  Create(const jlm::rvsdg::node & node)
+  Create(const rvsdg::Node & node)
   {
     return std::unique_ptr<Location>(new AllocaLocation(node));
   }
 
 private:
-  const jlm::rvsdg::node & Node_;
+  const rvsdg::Node & Node_;
 };
 
 /** \brief MallocLocation class
@@ -351,7 +354,7 @@ class MallocLocation final : public MemoryLocation
 {
   ~MallocLocation() override = default;
 
-  explicit MallocLocation(const jlm::rvsdg::node & node)
+  explicit MallocLocation(const rvsdg::Node & node)
       : MemoryLocation(),
         Node_(node)
   {
@@ -359,7 +362,7 @@ class MallocLocation final : public MemoryLocation
   }
 
 public:
-  [[nodiscard]] const jlm::rvsdg::node &
+  [[nodiscard]] const rvsdg::Node &
   GetNode() const noexcept
   {
     return Node_;
@@ -368,17 +371,17 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.operation().debug_string();
+    return Node_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
-  Create(const jlm::rvsdg::node & node)
+  Create(const rvsdg::Node & node)
   {
     return std::unique_ptr<Location>(new MallocLocation(node));
   }
 
 private:
-  const jlm::rvsdg::node & Node_;
+  const rvsdg::Node & Node_;
 };
 
 /** \brief LambdaLocation class
@@ -404,7 +407,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Lambda_.operation().debug_string();
+    return Lambda_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -441,7 +444,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Delta_.operation().debug_string();
+    return Delta_.GetOperation().debug_string();
   }
 
   static std::unique_ptr<Location>
@@ -563,7 +566,7 @@ public:
   }
 
   Location &
-  InsertAllocaLocation(const jlm::rvsdg::node & node)
+  InsertAllocaLocation(const rvsdg::Node & node)
   {
     Locations_.push_back(AllocaLocation::Create(node));
     auto location = Locations_.back().get();
@@ -573,7 +576,7 @@ public:
   }
 
   Location &
-  InsertMallocLocation(const jlm::rvsdg::node & node)
+  InsertMallocLocation(const rvsdg::Node & node)
   {
     Locations_.push_back(MallocLocation::Create(node));
     auto location = Locations_.back().get();
@@ -914,7 +917,7 @@ public:
   {}
 
   void
-  StartSteensgaardStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartSteensgaardStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
     AddTimer(AnalysisTimerLabel_).start();
@@ -1142,7 +1145,9 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
   {
   case CallTypeClassifier::CallType::NonRecursiveDirectCall:
   case CallTypeClassifier::CallType::RecursiveDirectCall:
-    AnalyzeDirectCall(callNode, *callTypeClassifier->GetLambdaOutput().node());
+    AnalyzeDirectCall(
+        callNode,
+        rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()));
     break;
   case CallTypeClassifier::CallType::ExternalCall:
     AnalyzeExternalCall(callNode);
@@ -1158,7 +1163,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 void
 Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
 {
-  auto & lambdaFunctionType = lambdaNode.operation().type();
+  auto & lambdaFunctionType = lambdaNode.GetOperation().type();
   auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
   if (callFunctionType != lambdaFunctionType)
   {
@@ -1174,10 +1179,11 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & l
   // Handle call node operands
   //
   // Variadic arguments are taken care of in AnalyzeVaList().
+  auto arguments = lambdaNode.GetFunctionArguments();
   for (size_t n = 1; n < callNode.ninputs(); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
-    auto & lambdaArgument = *lambdaNode.fctargument(n - 1);
+    auto & lambdaArgument = *arguments[n - 1];
 
     if (HasOrContainsPointerType(callArgument))
     {
@@ -1472,14 +1478,14 @@ void
 Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    auto & origin = *cv.origin();
+    auto & origin = *cv.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.argument());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.inner);
       Context_->Join(originLocation, argumentLocation);
     }
   }
@@ -1488,22 +1494,22 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   auto callSummary = lambda.ComputeCallSummary();
   if (callSummary->HasOnlyDirectCalls())
   {
-    for (auto & argument : lambda.fctarguments())
+    for (auto & argument : lambda.GetFunctionArguments())
     {
-      if (HasOrContainsPointerType(argument))
+      if (HasOrContainsPointerType(*argument))
       {
-        Context_->GetOrInsertRegisterLocation(argument);
+        Context_->GetOrInsertRegisterLocation(*argument);
       }
     }
   }
   else
   {
     // FIXME: We also end up in this case when the lambda has only direct calls, but is exported.
-    for (auto & argument : lambda.fctarguments())
+    for (auto argument : lambda.GetFunctionArguments())
     {
-      if (HasOrContainsPointerType(argument))
+      if (HasOrContainsPointerType(*argument))
       {
-        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(argument);
+        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*argument);
         argumentLocation.SetPointsToFlags(
             argumentLocation.GetPointsToFlags() | PointsToFlags::PointsToExternalMemory
             | PointsToFlags::PointsToEscapedMemory);
@@ -1516,9 +1522,9 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   // Handle function results
   if (lambda::node::IsExported(lambda))
   {
-    for (auto & result : lambda.fctresults())
+    for (auto result : lambda.GetFunctionResults())
     {
-      auto & operand = *result.origin();
+      auto & operand = *result->origin();
 
       if (HasOrContainsPointerType(operand))
       {
@@ -1615,16 +1621,16 @@ void
 Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
 {
   // Handle entry variables
-  for (auto ev = node.begin_entryvar(); ev != node.end_entryvar(); ev++)
+  for (const auto & ev : node.GetEntryVars())
   {
-    auto & origin = *ev->origin();
+    auto & origin = *ev.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
-      auto & originLocation = Context_->GetLocation(*ev->origin());
-      for (auto & argument : *ev)
+      auto & originLocation = Context_->GetLocation(*ev.input->origin());
+      for (auto argument : ev.branchArgument)
       {
-        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(argument);
+        auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*argument);
         Context_->Join(argumentLocation, originLocation);
       }
     }
@@ -1635,16 +1641,14 @@ Steensgaard::AnalyzeGamma(const rvsdg::GammaNode & node)
     AnalyzeRegion(*node.subregion(n));
 
   // Handle exit variables
-  for (auto ex = node.begin_exitvar(); ex != node.end_exitvar(); ex++)
+  for (auto ex : node.GetExitVars())
   {
-    auto & output = *ex.output();
-
-    if (HasOrContainsPointerType(output))
+    if (HasOrContainsPointerType(*ex.output))
     {
-      auto & outputLocation = Context_->GetOrInsertRegisterLocation(output);
-      for (auto & result : *ex)
+      auto & outputLocation = Context_->GetOrInsertRegisterLocation(*ex.output);
+      for (auto result : ex.branchResult)
       {
-        auto & resultLocation = Context_->GetLocation(*result.origin());
+        auto & resultLocation = Context_->GetLocation(*result->origin());
         Context_->Join(outputLocation, resultLocation);
       }
     }
@@ -1744,7 +1748,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
 }
 
 void
-Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
+Steensgaard::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
   AnalyzeImports(graph);
   AnalyzeRegion(*graph.root());
@@ -1752,7 +1756,7 @@ Steensgaard::AnalyzeRvsdg(const jlm::rvsdg::graph & graph)
 }
 
 void
-Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
+Steensgaard::AnalyzeImports(const rvsdg::Graph & graph)
 {
   auto rootRegion = graph.root();
   for (size_t n = 0; n < rootRegion->narguments(); n++)
@@ -1769,7 +1773,7 @@ Steensgaard::AnalyzeImports(const rvsdg::graph & graph)
 }
 
 void
-Steensgaard::AnalyzeExports(const rvsdg::graph & graph)
+Steensgaard::AnalyzeExports(const rvsdg::Graph & graph)
 {
   auto rootRegion = graph.root();
 

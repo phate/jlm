@@ -58,7 +58,7 @@ public:
   }
 
   bool
-  IsAlive(const jlm::rvsdg::node & node) const noexcept
+  IsAlive(const rvsdg::Node & node) const noexcept
   {
     if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node *>(&node))
     {
@@ -103,7 +103,7 @@ public:
   {}
 
   void
-  StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartMarkStatistics(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
     AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
@@ -123,7 +123,7 @@ public:
   }
 
   void
-  StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StopSweepStatistics(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(SweepTimerLabel_).stop();
     AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
@@ -198,19 +198,19 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gammaOutput->node()->predicate()->origin());
-    for (const auto & result : gammaOutput->results)
+    MarkOutput(*gamma->predicate()->origin());
+    for (const auto & result : gamma->MapOutputExitVar(output).branchResult)
     {
-      MarkOutput(*result.origin());
+      MarkOutput(*result->origin());
     }
     return;
   }
 
-  if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(&output))
+  if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gammaArgument->input()->origin());
+    MarkOutput(*gamma->MapBranchArgumentEntryVar(output).input->origin());
     return;
   }
 
@@ -230,24 +230,28 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto o = dynamic_cast<const lambda::output *>(&output))
+  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(output))
   {
-    for (auto & result : o->node()->fctresults())
+    for (auto & result : lambda->GetFunctionResults())
     {
-      MarkOutput(*result.origin());
+      MarkOutput(*result->origin());
     }
     return;
   }
 
-  if (is<lambda::fctargument>(&output))
+  if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(output))
   {
-    return;
-  }
-
-  if (auto cv = dynamic_cast<const lambda::cvargument *>(&output))
-  {
-    MarkOutput(*cv->input()->origin());
-    return;
+    if (auto ctxvar = lambda->MapBinderContextVar(output))
+    {
+      // Bound context variable.
+      MarkOutput(*ctxvar->input->origin());
+      return;
+    }
+    else
+    {
+      // Function argument.
+      return;
+    }
   }
 
   if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))
@@ -294,7 +298,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 }
 
 void
-DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & rvsdg) const
+DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
 {
   SweepRegion(*rvsdg.root());
 
@@ -313,7 +317,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<jlm::rvsdg::node *>> nodesTopDown(region.nnodes());
+  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.nnodes());
   for (auto & node : region.Nodes())
   {
     nodesTopDown[node.depth()].push_back(&node);
@@ -372,7 +376,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
             { typeid(phi::operation), sweepPhi },
             { typeid(delta::operation), sweepDelta } });
 
-  auto & op = node.operation();
+  auto & op = node.GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](*this, node);
 }

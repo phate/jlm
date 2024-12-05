@@ -303,7 +303,7 @@ public:
   }
 
   void
-  End(const rvsdg::graph & graph) noexcept
+  End(const rvsdg::Graph & graph) noexcept
   {
     AddTimer(Label::Timer).stop();
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
@@ -485,10 +485,10 @@ ConvertSelect(
   auto predicate = rvsdg::simple_node::create_normalized(&region, op, { p })[0];
 
   auto gamma = rvsdg::GammaNode::create(predicate, 2);
-  auto ev1 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(2)));
-  auto ev2 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(1)));
-  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
-  variableMap.insert(threeAddressCode.result(0), ex);
+  auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));
+  auto ev2 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(1)));
+  auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
+  variableMap.insert(threeAddressCode.result(0), ex.output);
 }
 
 static void
@@ -569,7 +569,8 @@ ConvertThreeAddressCode(
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
       operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
-    auto & simpleOperation = static_cast<const rvsdg::simple_op &>(threeAddressCode.operation());
+    auto & simpleOperation =
+        static_cast<const rvsdg::SimpleOperation &>(threeAddressCode.operation());
     auto results = rvsdg::simple_node::create_normalized(&region, simpleOperation, operands);
 
     JLM_ASSERT(results.size() == threeAddressCode.nresults());
@@ -613,14 +614,15 @@ Convert(
   /*
    * Add arguments
    */
-  JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.nfctarguments());
+  JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.GetFunctionArguments().size());
+  auto lambdaArgs = lambdaNode.GetFunctionArguments();
   for (size_t n = 0; n < entryAggregationNode.narguments(); n++)
   {
     auto functionNodeArgument = entryAggregationNode.argument(n);
-    auto lambdaNodeArgument = lambdaNode.fctargument(n);
+    auto lambdaNodeArgument = lambdaArgs[n];
 
     topVariableMap.insert(functionNodeArgument, lambdaNodeArgument);
-    lambdaNodeArgument->set_attributes(functionNodeArgument->attributes());
+    lambdaNode.SetArgumentAttributes(*lambdaNodeArgument, functionNodeArgument->attributes());
   }
 
   /*
@@ -630,7 +632,7 @@ Convert(
   {
     if (outerVariableMap.contains(&v))
     {
-      topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
+      topVariableMap.insert(&v, lambdaNode.AddContextVar(*outerVariableMap.lookup(&v)).inner);
     }
     else
     {
@@ -707,9 +709,10 @@ Convert(
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::GammaInput *> gammaInputMap;
+  std::unordered_map<const variable *, rvsdg::input *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
-    gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
+    gammaInputMap[&v] =
+        gamma->AddEntryVar(regionalizedVariableMap.GetTopVariableMap().lookup(&v)).input;
 
   /*
    * Convert subregions.
@@ -720,7 +723,9 @@ Convert(
   {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
     for (const auto & pair : gammaInputMap)
-      regionalizedVariableMap.GetTopVariableMap().insert(pair.first, pair.second->argument(n));
+      regionalizedVariableMap.GetTopVariableMap().insert(
+          pair.first,
+          gamma->MapInputEntryVar(*pair.second).branchArgument[n]);
 
     ConvertAggregationNode(
         *branchAggregationNode.child(n),
@@ -739,7 +744,7 @@ Convert(
   for (auto & v : demandSet.OutputVariables().Variables())
   {
     JLM_ASSERT(xvmap.find(&v) != xvmap.end());
-    regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->add_exitvar(xvmap[&v]));
+    regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->AddExitVar(xvmap[&v]).output);
   }
 }
 
@@ -911,7 +916,7 @@ AnnotateAggregationTree(
   return demandMap;
 }
 
-static lambda::output *
+static rvsdg::output *
 ConvertAggregationTreeToLambda(
     const aggnode & aggregationTreeRoot,
     const AnnotationMap & demandMap,
@@ -1095,7 +1100,7 @@ ConvertInterProceduralGraphNode(
 static void
 ConvertStronglyConnectedComponent(
     const std::unordered_set<const ipgraph_node *> & stronglyConnectedComponent,
-    rvsdg::graph & graph,
+    rvsdg::Graph & graph,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1195,7 +1200,7 @@ ConvertInterProceduralGraphModule(
       std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(rvsdg::operation));
+  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */

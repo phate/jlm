@@ -14,7 +14,7 @@ test_initialization()
 {
   auto vtype = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto i = &jlm::tests::GraphImport::Create(graph, vtype, "i");
 
   auto constant = jlm::tests::test_op::create(graph.root(), {}, { vtype });
@@ -46,7 +46,7 @@ test_initialization()
 static void
 test_basic_traversal()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
 
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
@@ -55,7 +55,7 @@ test_basic_traversal()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::node * tmp;
+    jlm::rvsdg::Node * tmp;
     jlm::rvsdg::topdown_traverser trav(graph.root());
 
     tmp = trav.next();
@@ -72,7 +72,7 @@ test_basic_traversal()
 static void
 test_order_enforcement_traversal()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
 
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
@@ -80,7 +80,7 @@ test_order_enforcement_traversal()
   auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { type });
 
   {
-    jlm::rvsdg::node * tmp;
+    jlm::rvsdg::Node * tmp;
     jlm::rvsdg::topdown_traverser trav(graph.root());
 
     tmp = trav.next();
@@ -99,7 +99,7 @@ test_order_enforcement_traversal()
 static void
 test_traversal_insertion()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
 
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
@@ -108,7 +108,7 @@ test_traversal_insertion()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::node * node;
+    jlm::rvsdg::Node * node;
     jlm::rvsdg::topdown_traverser trav(graph.root());
 
     node = trav.next();
@@ -154,10 +154,10 @@ test_traversal_insertion()
 static void
 test_mutable_traverse()
 {
-  auto test = [](jlm::rvsdg::graph * graph,
-                 jlm::rvsdg::node * n1,
-                 jlm::rvsdg::node * n2,
-                 jlm::rvsdg::node * n3)
+  auto test = [](jlm::rvsdg::Graph * graph,
+                 jlm::rvsdg::Node * n1,
+                 jlm::rvsdg::Node * n2,
+                 jlm::rvsdg::Node * n3)
   {
     bool seen_n1 = false;
     bool seen_n2 = false;
@@ -179,7 +179,7 @@ test_mutable_traverse()
     assert(seen_n3);
   };
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
   auto n2 = jlm::tests::test_op::create(graph.root(), {}, { type });

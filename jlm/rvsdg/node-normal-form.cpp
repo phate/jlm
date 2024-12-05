@@ -16,7 +16,7 @@ node_normal_form::~node_normal_form() noexcept
 {}
 
 bool
-node_normal_form::normalize_node(jlm::rvsdg::node * node) const
+node_normal_form::normalize_node(Node * node) const
 {
   return true;
 }
@@ -42,7 +42,7 @@ namespace
 typedef jlm::rvsdg::node_normal_form * (*create_node_normal_form_functor)(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph);
+    Graph * graph);
 
 typedef std::unordered_map<std::type_index, create_node_normal_form_functor>
     node_normal_form_registry;
@@ -78,7 +78,7 @@ node_normal_form::register_factory(
     jlm::rvsdg::node_normal_form * (*fn)(
         const std::type_info & operator_class,
         jlm::rvsdg::node_normal_form * parent,
-        jlm::rvsdg::graph * graph))
+        Graph * graph))
 {
   if (!registry)
   {
@@ -92,7 +92,7 @@ node_normal_form *
 node_normal_form::create(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
 {
   return lookup_factory_functor(&operator_class)(operator_class, parent, graph);
 }

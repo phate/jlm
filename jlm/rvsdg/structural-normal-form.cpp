@@ -15,7 +15,7 @@ structural_normal_form::~structural_normal_form() noexcept
 structural_normal_form::structural_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    Graph * graph) noexcept
     : node_normal_form(operator_class, parent, graph)
 {}
 
@@ -25,7 +25,7 @@ static jlm::rvsdg::node_normal_form *
 get_default_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::structural_normal_form(operator_class, parent, graph);
 }
@@ -34,6 +34,6 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::structural_op),
+      typeid(jlm::rvsdg::StructuralOperation),
       get_default_normal_form);
 }

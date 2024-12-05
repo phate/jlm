@@ -20,7 +20,7 @@ test_mux_mux_reduction()
 
   auto st = jlm::tests::statetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
   auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
   mnf->set_mutable(false);
@@ -60,7 +60,7 @@ test_multiple_origin_reduction()
 
   auto st = jlm::tests::statetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
   auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
   mnf->set_mutable(false);

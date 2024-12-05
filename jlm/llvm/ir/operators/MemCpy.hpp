@@ -20,13 +20,13 @@ namespace jlm::llvm
  * @see MemCpyNonVolatileOperation
  * @see MemCpyVolatileOperation
  */
-class MemCpyOperation : public rvsdg::simple_op
+class MemCpyOperation : public rvsdg::SimpleOperation
 {
 protected:
   MemCpyOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
-      : simple_op(operandTypes, resultTypes)
+      : SimpleOperation(operandTypes, resultTypes)
   {
     JLM_ASSERT(operandTypes.size() >= 4);
 
@@ -79,12 +79,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -158,12 +158,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t

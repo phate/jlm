@@ -98,7 +98,7 @@ match_op::match_op(
 {}
 
 bool
-match_op::operator==(const operation & other) const noexcept
+match_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const match_op *>(&other);
   return op && op->default_alternative_ == default_alternative_ && op->mapping_ == mapping_
@@ -119,7 +119,7 @@ match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) c
 {
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(producer(arg)->operation());
+    auto op = static_cast<const bitconstant_op &>(producer(arg)->GetOperation());
     return jlm::rvsdg::control_constant(
         arg->region(),
         nalternatives(),
@@ -140,10 +140,10 @@ match_op::debug_string() const
   return "MATCH" + str;
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 match_op::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new match_op(*this));
+  return std::make_unique<match_op>(*this);
 }
 
 jlm::rvsdg::output *

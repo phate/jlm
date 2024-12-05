@@ -38,14 +38,18 @@ test1()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
-    lambda->add_ctxvar(i);
+    lambda->AddContextVar(*i);
 
-    auto t = jlm::tests::test_op::create(lambda->subregion(), { lambda->fctargument(0) }, { vt });
+    auto t = jlm::tests::test_op::create(
+        lambda->subregion(),
+        { lambda->GetFunctionArguments()[0] },
+        { vt });
 
-    return lambda->finalize({ t->output(0), lambda->fctargument(1), lambda->fctargument(2) });
+    return lambda->finalize(
+        { t->output(0), lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
 
-  auto SetupF2 = [&](lambda::output * f1)
+  auto SetupF2 = [&](jlm::rvsdg::output * f1)
   {
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = iostatetype::Create();
@@ -59,32 +63,34 @@ test1()
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
-    auto d = lambda->add_ctxvar(f1);
-    auto controlArgument = lambda->fctargument(0);
-    auto valueArgument = lambda->fctargument(1);
-    auto iOStateArgument = lambda->fctargument(2);
-    auto memoryStateArgument = lambda->fctargument(3);
+    auto d = lambda->AddContextVar(*f1).inner;
+    auto controlArgument = lambda->GetFunctionArguments()[0];
+    auto valueArgument = lambda->GetFunctionArguments()[1];
+    auto iOStateArgument = lambda->GetFunctionArguments()[2];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[3];
 
     auto gamma = jlm::rvsdg::GammaNode::create(controlArgument, 2);
-    auto gammaInputF1 = gamma->add_entryvar(d);
-    auto gammaInputValue = gamma->add_entryvar(valueArgument);
-    auto gammaInputIoState = gamma->add_entryvar(iOStateArgument);
-    auto gammaInputMemoryState = gamma->add_entryvar(memoryStateArgument);
+    auto gammaInputF1 = gamma->AddEntryVar(d);
+    auto gammaInputValue = gamma->AddEntryVar(valueArgument);
+    auto gammaInputIoState = gamma->AddEntryVar(iOStateArgument);
+    auto gammaInputMemoryState = gamma->AddEntryVar(memoryStateArgument);
 
     auto callResults = CallNode::Create(
-        gammaInputF1->argument(0),
-        f1->node()->Type(),
-        { gammaInputValue->argument(0),
-          gammaInputIoState->argument(0),
-          gammaInputMemoryState->argument(0) });
+        gammaInputF1.branchArgument[0],
+        jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).Type(),
+        { gammaInputValue.branchArgument[0],
+          gammaInputIoState.branchArgument[0],
+          gammaInputMemoryState.branchArgument[0] });
 
-    auto gammaOutputValue = gamma->add_exitvar({ callResults[0], gammaInputValue->argument(1) });
+    auto gammaOutputValue =
+        gamma->AddExitVar({ callResults[0], gammaInputValue.branchArgument[1] });
     auto gammaOutputIoState =
-        gamma->add_exitvar({ callResults[1], gammaInputIoState->argument(1) });
+        gamma->AddExitVar({ callResults[1], gammaInputIoState.branchArgument[1] });
     auto gammaOutputMemoryState =
-        gamma->add_exitvar({ callResults[2], gammaInputMemoryState->argument(1) });
+        gamma->AddExitVar({ callResults[2], gammaInputMemoryState.branchArgument[1] });
 
-    return lambda->finalize({ gammaOutputValue, gammaOutputIoState, gammaOutputMemoryState });
+    return lambda->finalize(
+        { gammaOutputValue.output, gammaOutputIoState.output, gammaOutputMemoryState.output });
   };
 
   auto f1 = SetupF1();
@@ -129,10 +135,11 @@ test2()
   auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
   {
     auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
-    return lambda->finalize({ lambda->fctargument(1), lambda->fctargument(2) });
+    return lambda->finalize(
+        { lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
 
-  auto SetupF2 = [&](lambda::output * f1)
+  auto SetupF2 = [&](jlm::rvsdg::output * f1)
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -141,10 +148,10 @@ test2()
         { iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(graph.root(), functionType, "f2", linkage::external_linkage);
-    auto cvi = lambda->add_ctxvar(i);
-    auto cvf1 = lambda->add_ctxvar(f1);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto cvi = lambda->AddContextVar(*i).inner;
+    auto cvf1 = lambda->AddContextVar(*f1).inner;
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto callResults =
         CallNode::Create(cvi, functionType2, { cvf1, iOStateArgument, memoryStateArgument });
@@ -166,7 +173,8 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(jlm::rvsdg::output::GetNode(*f2->node()->fctresult(0)->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::output::GetNode(
+      *jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f2).GetFunctionResults()[0]->origin())));
 }
 
 static int

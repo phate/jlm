@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static bool
-region_contains_node(const jlm::rvsdg::Region * region, const jlm::rvsdg::node * n)
+region_contains_node(const jlm::rvsdg::Region * region, const jlm::rvsdg::Node * n)
 {
   for (const auto & node : region->Nodes())
   {
@@ -33,19 +33,19 @@ test_recursive_prune()
 
   auto t = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto imp = &jlm::tests::GraphImport::Create(graph, t, "i");
 
   auto n1 = jlm::tests::test_op::create(graph.root(), { imp }, { t });
   auto n2 = jlm::tests::test_op::create(graph.root(), { imp }, { t });
 
   auto n3 = jlm::tests::structural_node::create(graph.root(), 1);
-  structural_input::create(n3, imp, t);
+  StructuralInput::create(n3, imp, t);
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
   auto n4 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
   auto n5 = jlm::tests::test_op::create(n3->subregion(0), { &a1 }, { t });
   TestGraphResult::Create(*n4->output(0), nullptr);
-  auto o1 = structural_output::create(n3, t);
+  auto o1 = StructuralOutput::create(n3, t);
 
   auto n6 = jlm::tests::structural_node::create(n3->subregion(0), 1);
 
@@ -71,7 +71,7 @@ JLM_UNIT_TEST_REGISTER("rvsdg/test-graph_prune", test_recursive_prune)
 static int
 test_empty_graph_pruning(void)
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
 
   jlm::rvsdg::view(graph.root(), stdout);
 
@@ -93,7 +93,7 @@ test_prune_replace(void)
 
   auto type = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
   auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0) }, { type });
@@ -122,7 +122,7 @@ test_graph(void)
 
   auto type = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type });
   assert(n1);
@@ -146,7 +146,7 @@ Copy()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto & argument = TestGraphArgument::Create(*graph.root(), nullptr, valueType);
   auto node = test_op::create(graph.root(), { &argument }, { valueType });
   TestGraphResult::Create(*node->output(0), nullptr);

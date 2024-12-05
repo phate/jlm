@@ -20,11 +20,11 @@
 namespace jlm::hls
 {
 
-class branch_op final : public jlm::rvsdg::simple_op
+class branch_op final : public rvsdg::SimpleOperation
 {
 private:
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
-      : jlm::rvsdg::simple_op(
+      : SimpleOperation(
             { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
         loop(loop)
@@ -35,7 +35,7 @@ public:
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const branch_op *>(&other);
     // check predicate and value
@@ -49,10 +49,10 @@ public:
     return "HLS_BRANCH";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new branch_op(*this));
+    return std::make_unique<branch_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -82,7 +82,7 @@ public:
  * single constant fork. Since the input of the fork is always the same value and is always valid.
  * No handshaking is necessary and the outputs of the fork is always valid.
  */
-class fork_op final : public jlm::rvsdg::simple_op
+class fork_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~fork_op()
@@ -95,7 +95,7 @@ public:
    * /param value The signal type, which is the same for the input and all outputs.
    */
   fork_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ type }, { nalternatives, type })
+      : SimpleOperation({ type }, { nalternatives, type })
   {}
 
   /**
@@ -109,12 +109,12 @@ public:
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool isConstant)
-      : rvsdg::simple_op({ type }, { nalternatives, type }),
+      : SimpleOperation({ type }, { nalternatives, type }),
         IsConstant_(isConstant)
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto forkOp = dynamic_cast<const fork_op *>(&other);
     // check predicate and value
@@ -132,10 +132,10 @@ public:
     return IsConstant() ? "HLS_CFORK" : "HLS_FORK";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new fork_op(*this));
+    return std::make_unique<fork_op>(*this);
   }
 
   /**
@@ -172,18 +172,18 @@ private:
   bool IsConstant_ = false;
 };
 
-class merge_op final : public jlm::rvsdg::simple_op
+class merge_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~merge_op()
   {}
 
   merge_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ nalternatives, type }, { type })
+      : SimpleOperation({ nalternatives, type }, { type })
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const merge_op *>(&other);
     return ot && ot->narguments() == narguments() && *ot->argument(0) == *argument(0);
@@ -195,10 +195,10 @@ public:
     return "HLS_MERGE";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new merge_op(*this));
+    return std::make_unique<merge_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -213,7 +213,7 @@ public:
   }
 };
 
-class mux_op final : public jlm::rvsdg::simple_op
+class mux_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~mux_op()
@@ -224,13 +224,13 @@ public:
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool discarding,
       bool loop)
-      : jlm::rvsdg::simple_op(create_typevector(nalternatives, type), { type }),
+      : SimpleOperation(create_typevector(nalternatives, type), { type }),
         discarding(discarding),
         loop(loop)
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const mux_op *>(&other);
     // check predicate and value
@@ -244,10 +244,10 @@ public:
     return discarding ? "HLS_DMUX" : "HLS_NDMUX";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new mux_op(*this));
+    return std::make_unique<mux_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -286,18 +286,18 @@ private:
   }
 };
 
-class sink_op final : public jlm::rvsdg::simple_op
+class sink_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~sink_op()
   {}
 
   explicit sink_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ type }, {})
+      : SimpleOperation({ type }, {})
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const sink_op *>(&other);
     return ot && *ot->argument(0) == *argument(0);
@@ -309,10 +309,10 @@ public:
     return "HLS_SINK";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new sink_op(*this));
+    return std::make_unique<sink_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -324,18 +324,18 @@ public:
   }
 };
 
-class predicate_buffer_op final : public jlm::rvsdg::simple_op
+class predicate_buffer_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~predicate_buffer_op()
   {}
 
   explicit predicate_buffer_op(const std::shared_ptr<const rvsdg::ControlType> & type)
-      : jlm::rvsdg::simple_op({ type }, { type })
+      : SimpleOperation({ type }, { type })
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const predicate_buffer_op *>(&other);
     return ot && *ot->result(0) == *result(0);
@@ -347,10 +347,10 @@ public:
     return "HLS_PRED_BUF";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new predicate_buffer_op(*this));
+    return std::make_unique<predicate_buffer_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -365,7 +365,7 @@ public:
   }
 };
 
-class loop_constant_buffer_op final : public jlm::rvsdg::simple_op
+class loop_constant_buffer_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~loop_constant_buffer_op()
@@ -374,11 +374,11 @@ public:
   loop_constant_buffer_op(
       const std::shared_ptr<const rvsdg::ControlType> & ctltype,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ ctltype, type }, { type })
+      : SimpleOperation({ ctltype, type }, { type })
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const loop_constant_buffer_op *>(&other);
     return ot && *ot->result(0) == *result(0) && *ot->argument(0) == *argument(0);
@@ -390,10 +390,10 @@ public:
     return "HLS_LOOP_CONST_BUF";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new loop_constant_buffer_op(*this));
+    return std::make_unique<loop_constant_buffer_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -408,7 +408,7 @@ public:
   }
 };
 
-class buffer_op final : public jlm::rvsdg::simple_op
+class buffer_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~buffer_op()
@@ -418,13 +418,13 @@ public:
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       size_t capacity,
       bool pass_through)
-      : jlm::rvsdg::simple_op({ type }, { type }),
+      : SimpleOperation({ type }, { type }),
         capacity(capacity),
         pass_through(pass_through)
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const buffer_op *>(&other);
     return ot && ot->capacity == capacity && ot->pass_through == pass_through
@@ -437,10 +437,10 @@ public:
     return util::strfmt("HLS_BUF_", (pass_through ? "P_" : ""), capacity);
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new buffer_op(*this));
+    return std::make_unique<buffer_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -487,18 +487,18 @@ public:
   Create();
 };
 
-class trigger_op final : public jlm::rvsdg::simple_op
+class trigger_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~trigger_op()
   {}
 
   explicit trigger_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ triggertype::Create(), type }, { type })
+      : SimpleOperation({ triggertype::Create(), type }, { type })
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const trigger_op *>(&other);
     // check predicate and value
@@ -511,10 +511,10 @@ public:
     return "HLS_TRIGGER";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new trigger_op(*this));
+    return std::make_unique<trigger_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -529,7 +529,7 @@ public:
   }
 };
 
-class print_op final : public jlm::rvsdg::simple_op
+class print_op final : public rvsdg::SimpleOperation
 {
 private:
   size_t _id;
@@ -539,14 +539,14 @@ public:
   {}
 
   explicit print_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : jlm::rvsdg::simple_op({ type }, { type })
+      : SimpleOperation({ type }, { type })
   {
     static size_t common_id{ 0 };
     _id = common_id++;
   }
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     //				auto ot = dynamic_cast<const print_op *>(&other);
     // check predicate and value
@@ -568,10 +568,10 @@ public:
     return _id;
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new print_op(*this));
+    return std::make_unique<print_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -584,7 +584,7 @@ public:
   }
 };
 
-class loop_op final : public jlm::rvsdg::structural_op
+class loop_op final : public rvsdg::StructuralOperation
 {
 public:
   virtual ~loop_op() noexcept
@@ -596,10 +596,10 @@ public:
     return "HLS_LOOP";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new loop_op(*this));
+    return std::make_unique<loop_op>(*this);
   }
 };
 
@@ -620,21 +620,21 @@ public:
 private:
   EntryArgument(
       rvsdg::Region & region,
-      rvsdg::structural_input & input,
+      rvsdg::StructuralInput & input,
       const std::shared_ptr<const rvsdg::Type> type)
       : rvsdg::RegionArgument(&region, &input, std::move(type))
   {}
 
 public:
   EntryArgument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
   static EntryArgument &
   Create(
       rvsdg::Region & region,
-      rvsdg::structural_input & input,
+      rvsdg::StructuralInput & input,
       const std::shared_ptr<const rvsdg::Type> type)
   {
     auto argument = new EntryArgument(region, input, std::move(type));
@@ -658,7 +658,7 @@ public:
   }
 
   backedge_argument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   backedge_argument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
@@ -692,7 +692,7 @@ public:
   }
 
   backedge_result &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   backedge_result(jlm::rvsdg::output * origin)
@@ -722,7 +722,7 @@ public:
   ~ExitResult() noexcept override;
 
 private:
-  ExitResult(rvsdg::output & origin, rvsdg::structural_output & output)
+  ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output)
       : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
   {
     JLM_ASSERT(rvsdg::is<loop_op>(origin.region()->node()));
@@ -730,12 +730,12 @@ private:
 
 public:
   ExitResult &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
   static ExitResult &
-  Create(rvsdg::output & origin, rvsdg::structural_output & output)
+  Create(rvsdg::output & origin, rvsdg::StructuralOutput & output)
   {
     auto result = new ExitResult(origin, output);
     origin.region()->append_result(result);
@@ -786,7 +786,7 @@ public:
   backedge_argument *
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
-  jlm::rvsdg::structural_output *
+  rvsdg::StructuralOutput *
   add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer = nullptr);
 
   jlm::rvsdg::output *
@@ -872,18 +872,20 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
 std::shared_ptr<const bundletype>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
-class load_op final : public jlm::rvsdg::simple_op
+class load_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~load_op()
   {}
 
   load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
-      : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
+      : SimpleOperation(
+            CreateInTypes(pointeeType, numStates),
+            CreateOutTypes(pointeeType, numStates))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const load_op *>(&other);
@@ -923,10 +925,10 @@ public:
     return "HLS_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new load_op(*this));
+    return std::make_unique<load_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -959,7 +961,7 @@ public:
   }
 };
 
-class addr_queue_op final : public jlm::rvsdg::simple_op
+class addr_queue_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~addr_queue_op()
@@ -969,13 +971,13 @@ public:
       const std::shared_ptr<const llvm::PointerType> & pointerType,
       size_t capacity,
       bool combinatorial)
-      : simple_op(CreateInTypes(pointerType), CreateOutTypes(pointerType)),
+      : SimpleOperation(CreateInTypes(pointerType), CreateOutTypes(pointerType)),
         combinatorial(combinatorial),
         capacity(capacity)
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const addr_queue_op *>(&other);
@@ -1008,10 +1010,10 @@ public:
     return "HLS_ADDR_QUEUE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new addr_queue_op(*this));
+    return std::make_unique<addr_queue_op>(*this);
   }
 
   static jlm::rvsdg::output *
@@ -1032,18 +1034,18 @@ public:
   size_t capacity;
 };
 
-class state_gate_op final : public jlm::rvsdg::simple_op
+class state_gate_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~state_gate_op()
   {}
 
   state_gate_op(const std::shared_ptr<const jlm::rvsdg::Type> & type, size_t numStates)
-      : simple_op(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
+      : SimpleOperation(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const state_gate_op *>(&other);
     // check predicate and value
@@ -1067,10 +1069,10 @@ public:
     return "HLS_STATE_GATE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new state_gate_op(*this));
+    return std::make_unique<state_gate_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1085,18 +1087,18 @@ public:
   }
 };
 
-class decoupled_load_op final : public jlm::rvsdg::simple_op
+class decoupled_load_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~decoupled_load_op()
   {}
 
   decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType)
-      : simple_op(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
+      : SimpleOperation(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto ot = dynamic_cast<const decoupled_load_op *>(&other);
     // check predicate and value
@@ -1125,10 +1127,10 @@ public:
     return "HLS_DEC_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new decoupled_load_op(*this));
+    return std::make_unique<decoupled_load_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1154,18 +1156,18 @@ public:
   }
 };
 
-class mem_resp_op final : public jlm::rvsdg::simple_op
+class mem_resp_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~mem_resp_op()
   {}
 
   explicit mem_resp_op(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
-      : simple_op(CreateInTypes(output_types), CreateOutTypes(output_types))
+      : SimpleOperation(CreateInTypes(output_types), CreateOutTypes(output_types))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const mem_resp_op *>(&other);
@@ -1206,10 +1208,10 @@ public:
     return "HLS_MEM_RESP";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new mem_resp_op(*this));
+    return std::make_unique<mem_resp_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1226,7 +1228,7 @@ public:
   }
 };
 
-class mem_req_op final : public jlm::rvsdg::simple_op
+class mem_req_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~mem_req_op() = default;
@@ -1234,7 +1236,9 @@ public:
   mem_req_op(
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
-      : simple_op(CreateInTypes(load_types, store_types), CreateOutTypes(load_types, store_types))
+      : SimpleOperation(
+            CreateInTypes(load_types, store_types),
+            CreateOutTypes(load_types, store_types))
   {
     for (auto loadType : load_types)
     {
@@ -1250,7 +1254,7 @@ public:
   mem_req_op(const mem_req_op & other) = default;
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const mem_req_op *>(&other);
@@ -1306,10 +1310,10 @@ public:
     return "HLS_MEM_REQ";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new mem_req_op(*this));
+    return std::make_unique<mem_req_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1357,18 +1361,20 @@ private:
   std::vector<std::shared_ptr<const rvsdg::Type>> StoreTypes_;
 };
 
-class store_op final : public jlm::rvsdg::simple_op
+class store_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~store_op()
   {}
 
   store_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
-      : simple_op(CreateInTypes(pointeeType, numStates), CreateOutTypes(pointeeType, numStates))
+      : SimpleOperation(
+            CreateInTypes(pointeeType, numStates),
+            CreateOutTypes(pointeeType, numStates))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const store_op *>(&other);
@@ -1405,10 +1411,10 @@ public:
     return "HLS_STORE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new store_op(*this));
+    return std::make_unique<store_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1438,18 +1444,18 @@ public:
   }
 };
 
-class local_mem_op final : public jlm::rvsdg::simple_op
+class local_mem_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_mem_op()
   {}
 
   explicit local_mem_op(std::shared_ptr<const llvm::arraytype> at)
-      : simple_op({}, CreateOutTypes(std::move(at)))
+      : SimpleOperation({}, CreateOutTypes(std::move(at)))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     // auto ot = dynamic_cast<const local_mem_op *>(&other);
@@ -1470,10 +1476,10 @@ public:
     return "HLS_LOCAL_MEM_" + result(0)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_mem_op(*this));
+    return std::make_unique<local_mem_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1484,18 +1490,18 @@ public:
   }
 };
 
-class local_mem_resp_op final : public jlm::rvsdg::simple_op
+class local_mem_resp_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_mem_resp_op()
   {}
 
   local_mem_resp_op(const std::shared_ptr<const jlm::llvm::arraytype> & at, size_t resp_count)
-      : simple_op({ at }, CreateOutTypes(at, resp_count))
+      : SimpleOperation({ at }, CreateOutTypes(at, resp_count))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_mem_resp_op *>(&other);
@@ -1516,10 +1522,10 @@ public:
     return "HLS_LOCAL_MEM_RESP";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_mem_resp_op(*this));
+    return std::make_unique<local_mem_resp_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1532,18 +1538,18 @@ public:
   }
 };
 
-class local_load_op final : public jlm::rvsdg::simple_op
+class local_load_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_load_op()
   {}
 
   local_load_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
-      : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
+      : SimpleOperation(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_load_op *>(&other);
@@ -1581,10 +1587,10 @@ public:
     return "HLS_LOCAL_LOAD_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_load_op(*this));
+    return std::make_unique<local_load_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1610,18 +1616,18 @@ public:
   }
 };
 
-class local_store_op final : public jlm::rvsdg::simple_op
+class local_store_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_store_op()
   {}
 
   local_store_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
-      : simple_op(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
+      : SimpleOperation(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_store_op *>(&other);
@@ -1658,10 +1664,10 @@ public:
     return "HLS_LOCAL_STORE_" + argument(narguments() - 1)->debug_string();
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_store_op(*this));
+    return std::make_unique<local_store_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -1687,7 +1693,7 @@ public:
   }
 };
 
-class local_mem_req_op final : public jlm::rvsdg::simple_op
+class local_mem_req_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~local_mem_req_op()
@@ -1697,11 +1703,11 @@ public:
       const std::shared_ptr<const jlm::llvm::arraytype> & at,
       size_t load_cnt,
       size_t store_cnt)
-      : simple_op(CreateInTypes(at, load_cnt, store_cnt), {})
+      : SimpleOperation(CreateInTypes(at, load_cnt, store_cnt), {})
   {}
 
   bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     // TODO:
     auto ot = dynamic_cast<const local_mem_req_op *>(&other);
@@ -1736,10 +1742,10 @@ public:
     return "HLS_LOCAL_MEM_REQ";
   }
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new local_mem_req_op(*this));
+    return std::make_unique<local_mem_req_op>(*this);
   }
 
   static std::vector<jlm::rvsdg::output *>

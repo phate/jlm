@@ -35,7 +35,7 @@ TestWriteGraphs()
   auto & lambdaNode = *AssertedCast<InOutNode>(&rootGraph.GetNode(0));
 
   // The lambda only has one output, and a single subgraph
-  assert(lambdaNode.GetLabel() == gammaTest.lambda->operation().debug_string());
+  assert(lambdaNode.GetLabel() == gammaTest.lambda->GetOperation().debug_string());
   assert(lambdaNode.NumInputPorts() == 0);
   assert(lambdaNode.NumOutputPorts() == 1);
   assert(lambdaNode.NumSubgraphs() == 1);
@@ -48,7 +48,7 @@ TestWriteGraphs()
   auto & connections = fctBody.GetArgumentNode(1).GetConnections();
   assert(connections.size() == 1);
   auto & gammaNode = *AssertedCast<InOutNode>(&connections[0]->GetTo().GetNode());
-  assert(gammaNode.GetLabel() == gammaTest.gamma->operation().debug_string());
+  assert(gammaNode.GetLabel() == gammaTest.gamma->GetOperation().debug_string());
   assert(gammaNode.NumInputPorts() == 5);
   assert(gammaNode.NumOutputPorts() == 2);
   assert(gammaNode.NumSubgraphs() == 2);

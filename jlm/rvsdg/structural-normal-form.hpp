@@ -19,7 +19,7 @@ public:
   structural_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      Graph * graph) noexcept;
 };
 
 }

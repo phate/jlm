@@ -20,7 +20,7 @@ namespace delta
 
 /** \brief Delta operation
  */
-class operation final : public rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;
@@ -51,11 +51,11 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   const std::string &
   name() const noexcept
@@ -156,46 +156,43 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  const delta::operation &
-  operation() const noexcept
-  {
-    return *static_cast<const delta::operation *>(&StructuralNode::operation());
-  }
+  [[nodiscard]] const delta::operation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
-    return operation().type();
+    return GetOperation().type();
   }
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
-    return operation().Type();
+    return GetOperation().Type();
   }
 
   const std::string &
   name() const noexcept
   {
-    return operation().name();
+    return GetOperation().name();
   }
 
   [[nodiscard]] const std::string &
   Section() const noexcept
   {
-    return operation().Section();
+    return GetOperation().Section();
   }
 
   const llvm::linkage &
   linkage() const noexcept
   {
-    return operation().linkage();
+    return GetOperation().linkage();
   }
 
   bool
   constant() const noexcept
   {
-    return operation().constant();
+    return GetOperation().constant();
   }
 
   size_t
@@ -259,7 +256,7 @@ public:
   result() const noexcept;
 
   virtual delta::node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   virtual delta::node *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
@@ -305,7 +302,7 @@ public:
 
 /** \brief Delta context variable input
  */
-class cvinput final : public rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend ::jlm::llvm::delta::node;
 
@@ -314,7 +311,7 @@ public:
 
 private:
   cvinput(delta::node * node, rvsdg::output * origin)
-      : structural_input(node, origin, origin->Type())
+      : StructuralInput(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -331,7 +328,7 @@ public:
   delta::node *
   node() const noexcept
   {
-    return static_cast<delta::node *>(structural_input::node());
+    return static_cast<delta::node *>(StructuralInput::node());
   }
 };
 
@@ -377,7 +374,7 @@ class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput>
 
 /** \brief Delta output
  */
-class output final : public rvsdg::structural_output
+class output final : public rvsdg::StructuralOutput
 {
   friend ::jlm::llvm::delta::node;
 
@@ -385,7 +382,7 @@ public:
   ~output() override;
 
   output(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type))
+      : StructuralOutput(node, std::move(type))
   {}
 
 private:
@@ -400,7 +397,7 @@ public:
   delta::node *
   node() const noexcept
   {
-    return static_cast<delta::node *>(structural_output::node());
+    return static_cast<delta::node *>(StructuralOutput::node());
   }
 };
 
@@ -414,7 +411,7 @@ public:
   ~cvargument() override;
 
   cvargument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   cvargument(rvsdg::Region * region, cvinput * input)
@@ -447,7 +444,7 @@ public:
   ~result() override;
 
   result &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   explicit result(rvsdg::output * origin)

@@ -26,15 +26,15 @@ public:
   load_normal_form(
       const std::type_info & opclass,
       rvsdg::node_normal_form * parent,
-      rvsdg::graph * graph) noexcept;
+      rvsdg::Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(rvsdg::node * node) const override;
+  normalize_node(rvsdg::Node * node) const override;
 
   virtual std::vector<rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const rvsdg::simple_op & op,
+      const rvsdg::SimpleOperation & op,
       const std::vector<rvsdg::output *> & operands) const override;
 
   inline void
@@ -124,14 +124,14 @@ private:
  * @see LoadVolatileOperation
  * @see LoadNonVolatileOperation
  */
-class LoadOperation : public rvsdg::simple_op
+class LoadOperation : public rvsdg::SimpleOperation
 {
 protected:
   LoadOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
-      : simple_op(operandTypes, resultTypes),
+      : SimpleOperation(operandTypes, resultTypes),
         Alignment_(alignment)
   {
     JLM_ASSERT(!operandTypes.empty() && !resultTypes.empty());
@@ -201,12 +201,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -304,8 +304,8 @@ public:
   using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
-  [[nodiscard]] virtual const LoadOperation &
-  GetOperation() const noexcept = 0;
+  [[nodiscard]] const LoadOperation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept
@@ -365,7 +365,7 @@ private:
   {}
 
 public:
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   [[nodiscard]] const LoadVolatileOperation &
@@ -451,19 +451,19 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
 
   static load_normal_form *
-  GetNormalForm(rvsdg::graph * graph) noexcept
+  GetNormalForm(rvsdg::Graph * graph) noexcept
   {
     return jlm::util::AssertedCast<load_normal_form>(
         graph->node_normal_form(typeid(LoadNonVolatileOperation)));
@@ -530,7 +530,7 @@ public:
   [[nodiscard]] LoadNonVolatileNode &
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<rvsdg::output *>

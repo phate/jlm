@@ -10,8 +10,6 @@
 namespace jlm::rvsdg
 {
 
-/* theta operation */
-
 ThetaOperation::~ThetaOperation() noexcept = default;
 
 std::string
@@ -20,10 +18,10 @@ ThetaOperation::debug_string() const
   return "THETA";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 ThetaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new ThetaOperation(*this));
+  return std::make_unique<ThetaOperation>(*this);
 }
 
 ThetaNode::ThetaNode(rvsdg::Region & parent)
@@ -50,7 +48,7 @@ ThetaOutput::~ThetaOutput() noexcept
 ThetaArgument::~ThetaArgument() noexcept = default;
 
 ThetaArgument &
-ThetaArgument::Copy(rvsdg::Region & region, structural_input * input)
+ThetaArgument::Copy(rvsdg::Region & region, StructuralInput * input)
 {
   auto thetaInput = util::AssertedCast<ThetaInput>(input);
   return ThetaArgument::Create(region, *thetaInput);
@@ -59,7 +57,7 @@ ThetaArgument::Copy(rvsdg::Region & region, structural_input * input)
 ThetaResult::~ThetaResult() noexcept = default;
 
 ThetaResult &
-ThetaResult::Copy(rvsdg::output & origin, structural_output * output)
+ThetaResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   auto thetaOutput = util::AssertedCast<ThetaOutput>(output);
   return ThetaResult::Create(origin, *thetaOutput);
@@ -68,7 +66,7 @@ ThetaResult::Copy(rvsdg::output & origin, structural_output * output)
 ThetaPredicateResult::~ThetaPredicateResult() noexcept = default;
 
 ThetaPredicateResult &
-ThetaPredicateResult::Copy(rvsdg::output & origin, structural_output * output)
+ThetaPredicateResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return ThetaPredicateResult::Create(origin);
@@ -100,8 +98,8 @@ ThetaNode::loopvar_iterator::operator++() noexcept
 ThetaOutput *
 ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 {
-  node::add_input(std::make_unique<ThetaInput>(this, origin, origin->Type()));
-  node::add_output(std::make_unique<ThetaOutput>(this, origin->Type()));
+  Node::add_input(std::make_unique<ThetaInput>(this, origin, origin->Type()));
+  Node::add_output(std::make_unique<ThetaOutput>(this, origin->Type()));
 
   auto input = ThetaNode::input(ninputs() - 1);
   auto output = ThetaNode::output(noutputs() - 1);
@@ -116,7 +114,7 @@ ThetaNode::add_loopvar(jlm::rvsdg::output * origin)
 ThetaNode *
 ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
+  auto nf = graph()->node_normal_form(typeid(Operation));
   nf->set_mutable(false);
 
   rvsdg::SubstitutionMap rmap;

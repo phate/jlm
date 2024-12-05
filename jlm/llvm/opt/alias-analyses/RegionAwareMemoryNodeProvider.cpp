@@ -377,7 +377,8 @@ public:
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
     {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaEntryNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -401,7 +402,8 @@ public:
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
     {
-      auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+      auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaExitNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -562,7 +564,9 @@ public:
       auto & regionUnknownMemoryNodeReferences = regionSummary.GetUnknownMemoryNodeReferences();
 
       auto callTypeClassifier = CallNode::ClassifyCall(callNode);
-      auto & lambdaRegion = *callTypeClassifier->GetLambdaOutput().node()->subregion();
+      auto & lambdaRegion =
+          *rvsdg::AssertGetOwnerNode<llvm::lambda::node>(callTypeClassifier->GetLambdaOutput())
+               .subregion();
       auto & lambdaRegionSummary = provisioning.GetRegionSummary(lambdaRegion);
       auto & lambdaRegionMemoryNodes = lambdaRegionSummary.GetMemoryNodes();
       auto & lambdaRegionUnknownMemoryNodeReferences =
@@ -744,7 +748,7 @@ RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaNode)
 {
-  JLM_ASSERT(is<alloca_op>(allocaNode.operation()));
+  JLM_ASSERT(is<alloca_op>(allocaNode.GetOperation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetAllocaNode(allocaNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*allocaNode.region());
@@ -754,7 +758,7 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaN
 void
 RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocNode)
 {
-  JLM_ASSERT(is<malloc_op>(mallocNode.operation()));
+  JLM_ASSERT(is<malloc_op>(mallocNode.GetOperation()));
 
   auto & memoryNode = Provisioning_->GetPointsToGraph().GetMallocNode(mallocNode);
   auto & regionSummary = Provisioning_->GetRegionSummary(*mallocNode.region());
@@ -764,7 +768,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocN
 void
 RegionAwareMemoryNodeProvider::AnnotateFree(const rvsdg::simple_node & freeNode)
 {
-  JLM_ASSERT(is<FreeOperation>(freeNode.operation()));
+  JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
   auto memoryNodes = Provisioning_->GetOutputNodes(*freeNode.input(0)->origin());
   auto & regionSummary = Provisioning_->GetRegionSummary(*freeNode.region());
@@ -818,7 +822,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 void
 RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
 {
-  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.operation()));
+  JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
 
   auto & regionSummary = Provisioning_->GetRegionSummary(*memcpyNode.region());
 
@@ -947,7 +951,8 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::Region & region)
   for (auto & callNode : regionSummary.GetNonRecursiveCalls().Items())
   {
     auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
-    auto & lambdaRegion = *callTypeClassifier->GetLambdaOutput().node()->subregion();
+    auto & lambdaRegion =
+        *rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()).subregion();
     auto & lambdaRegionSummary = Provisioning_->GetRegionSummary(lambdaRegion);
 
     RegionSummary::Propagate(regionSummary, lambdaRegionSummary);
@@ -969,7 +974,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgMod
     }
   };
 
-  auto nodes = rvsdg::graph::ExtractTailNodes(rvsdgModule.Rvsdg());
+  auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
@@ -1004,7 +1009,7 @@ RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::Region & r
 
 std::string
 RegionAwareMemoryNodeProvider::ToRegionTree(
-    const rvsdg::graph & rvsdg,
+    const rvsdg::Graph & rvsdg,
     const RegionAwareMemoryNodeProvisioning & provisioning)
 {
   auto toString = [](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
@@ -1048,7 +1053,7 @@ RegionAwareMemoryNodeProvider::ToRegionTree(
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
-        subtree += util::strfmt(indent(depth), structuralNode->operation().debug_string(), "\n");
+        subtree += util::strfmt(indent(depth), structuralNode->GetOperation().debug_string(), "\n");
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
         {
           subtree += toRegionTree(structuralNode->subregion(n), depth + 1);

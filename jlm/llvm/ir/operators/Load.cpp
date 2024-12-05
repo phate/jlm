@@ -11,10 +11,16 @@
 namespace jlm::llvm
 {
 
+const LoadOperation &
+LoadNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadOperation>(&simple_node::GetOperation());
+}
+
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
-LoadNonVolatileOperation::operator==(const operation & other) const noexcept
+LoadNonVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const LoadNonVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -28,10 +34,10 @@ LoadNonVolatileOperation::debug_string() const
   return "Load";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 LoadNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadNonVolatileOperation(*this));
+  return std::make_unique<LoadNonVolatileOperation>(*this);
 }
 
 size_t
@@ -44,7 +50,7 @@ LoadNonVolatileOperation::NumMemoryStates() const noexcept
 const LoadNonVolatileOperation &
 LoadNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&operation());
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&simple_node::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -80,7 +86,7 @@ LoadNonVolatileNode::CopyWithNewMemoryStates(
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
@@ -90,7 +96,7 @@ LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::outpu
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
 
 bool
-LoadVolatileOperation::operator==(const operation & other) const noexcept
+LoadVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -104,10 +110,10 @@ LoadVolatileOperation::debug_string() const
   return "LoadVolatile";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 LoadVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+  return std::make_unique<LoadVolatileOperation>(*this);
 }
 
 size_t
@@ -120,7 +126,7 @@ LoadVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const LoadVolatileOperation &
 LoadVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadVolatileOperation>(&operation());
+  return *util::AssertedCast<const LoadVolatileOperation>(&LoadNode::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -156,7 +162,7 @@ LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & m
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -590,7 +596,7 @@ load_normal_form::~load_normal_form()
 load_normal_form::load_normal_form(
     const std::type_info & opclass,
     rvsdg::node_normal_form * parent,
-    rvsdg::graph * graph) noexcept
+    rvsdg::Graph * graph) noexcept
     : simple_normal_form(opclass, parent, graph),
       enable_load_mux_(false),
       enable_load_store_(false),
@@ -601,10 +607,10 @@ load_normal_form::load_normal_form(
 {}
 
 bool
-load_normal_form::normalize_node(rvsdg::node * node) const
+load_normal_form::normalize_node(rvsdg::Node * node) const
 {
-  JLM_ASSERT(is<LoadNonVolatileOperation>(node->operation()));
-  auto & operation = *util::AssertedCast<const LoadNonVolatileOperation>(&node->operation());
+  JLM_ASSERT(is<LoadNonVolatileOperation>(node->GetOperation()));
+  auto & operation = *util::AssertedCast<const LoadNonVolatileOperation>(&node->GetOperation());
   const auto operands = rvsdg::operands(node);
 
   if (!get_mutable())
@@ -665,7 +671,7 @@ load_normal_form::normalize_node(rvsdg::node * node) const
 std::vector<rvsdg::output *>
 load_normal_form::normalized_create(
     rvsdg::Region * region,
-    const rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<rvsdg::output *> & operands) const
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(op));
@@ -711,7 +717,7 @@ static jlm::rvsdg::node_normal_form *
 create_load_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::llvm::load_normal_form(opclass, parent, graph);
 }

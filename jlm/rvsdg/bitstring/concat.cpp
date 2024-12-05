@@ -40,8 +40,8 @@ concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
   if (!node1 || !node2)
     return nullptr;
 
-  auto arg1_constant = dynamic_cast<const bitconstant_op *>(&node1->operation());
-  auto arg2_constant = dynamic_cast<const bitconstant_op *>(&node2->operation());
+  auto arg1_constant = dynamic_cast<const bitconstant_op *>(&node1->GetOperation());
+  auto arg2_constant = dynamic_cast<const bitconstant_op *>(&node2->GetOperation());
   if (arg1_constant && arg2_constant)
   {
     size_t nbits = arg1_constant->value().nbits() + arg2_constant->value().nbits();
@@ -56,8 +56,8 @@ concat_reduce_arg_pair(jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
     return create_bitconstant(node1->region(), s.c_str());
   }
 
-  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->operation());
-  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->operation());
+  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->GetOperation());
+  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->GetOperation());
   if (arg1_slice && arg2_slice && arg1_slice->high() == arg2_slice->low()
       && node1->input(0)->origin() == node2->input(0)->origin())
   {
@@ -86,14 +86,14 @@ class concat_normal_form final : public simple_normal_form
 public:
   virtual ~concat_normal_form() noexcept;
 
-  concat_normal_form(jlm::rvsdg::node_normal_form * parent, jlm::rvsdg::graph * graph)
+  concat_normal_form(jlm::rvsdg::node_normal_form * parent, Graph * graph)
       : simple_normal_form(typeid(bitconcat_op), parent, graph),
         enable_reducible_(true),
         enable_flatten_(true)
   {}
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override
+  normalize_node(Node * node) const override
   {
     if (!get_mutable())
     {
@@ -146,7 +146,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override
   {
     std::vector<jlm::rvsdg::output *> new_args;
@@ -233,7 +233,7 @@ static node_normal_form *
 get_default_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
 {
   return new concat_normal_form(parent, graph);
 }
@@ -262,7 +262,7 @@ bitconcat_op::~bitconcat_op() noexcept
 {}
 
 bool
-bitconcat_op::operator==(const jlm::rvsdg::operation & other) const noexcept
+bitconcat_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const jlm::rvsdg::bitconcat_op *>(&other);
   if (!op || op->narguments() != narguments())
@@ -296,8 +296,8 @@ bitconcat_op::can_reduce_operand_pair(
     return binop_reduction_constants;
   }
 
-  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->operation());
-  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->operation());
+  auto arg1_slice = dynamic_cast<const bitslice_op *>(&node1->GetOperation());
+  auto arg2_slice = dynamic_cast<const bitslice_op *>(&node2->GetOperation());
 
   if (arg1_slice && arg2_slice)
   {
@@ -326,8 +326,8 @@ bitconcat_op::reduce_operand_pair(
 
   if (path == binop_reduction_constants)
   {
-    auto & arg1_constant = static_cast<const bitconstant_op &>(node1->operation());
-    auto & arg2_constant = static_cast<const bitconstant_op &>(node2->operation());
+    auto & arg1_constant = static_cast<const bitconstant_op &>(node1->GetOperation());
+    auto & arg2_constant = static_cast<const bitconstant_op &>(node2->GetOperation());
 
     size_t nbits = arg1_constant.value().nbits() + arg2_constant.value().nbits();
     std::vector<char> bits(nbits);
@@ -342,8 +342,8 @@ bitconcat_op::reduce_operand_pair(
 
   if (path == binop_reduction_merge)
   {
-    auto arg1_slice = static_cast<const bitslice_op *>(&node1->operation());
-    auto arg2_slice = static_cast<const bitslice_op *>(&node2->operation());
+    auto arg1_slice = static_cast<const bitslice_op *>(&node1->GetOperation());
+    auto arg2_slice = static_cast<const bitslice_op *>(&node2->GetOperation());
     return jlm::rvsdg::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
 
     /* FIXME: support sign bit */
@@ -364,10 +364,10 @@ bitconcat_op::debug_string() const
   return "BITCONCAT";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 bitconcat_op::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new bitconcat_op(*this));
+  return std::make_unique<bitconcat_op>(*this);
 }
 
 }

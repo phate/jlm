@@ -6,15 +6,15 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-static jlm::rvsdg::node *
+static jlm::rvsdg::Node *
 node_cse(
     jlm::rvsdg::Region * region,
-    const jlm::rvsdg::operation & op,
+    const jlm::rvsdg::Operation & op,
     const std::vector<jlm::rvsdg::output *> & arguments)
 {
-  auto cse_test = [&](const jlm::rvsdg::node * node)
+  auto cse_test = [&](const jlm::rvsdg::Node * node)
   {
-    return node->operation() == op && arguments == jlm::rvsdg::operands(node);
+    return node->GetOperation() == op && arguments == operands(node);
   };
 
   if (!arguments.empty())
@@ -50,7 +50,7 @@ simple_normal_form::~simple_normal_form() noexcept
 simple_normal_form::simple_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    Graph * graph) noexcept
     : node_normal_form(operator_class, parent, graph),
       enable_cse_(true)
 {
@@ -59,14 +59,14 @@ simple_normal_form::simple_normal_form(
 }
 
 bool
-simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
+simple_normal_form::normalize_node(Node * node) const
 {
   if (!get_mutable())
     return true;
 
   if (get_cse())
   {
-    auto new_node = node_cse(node->region(), node->operation(), operands(node));
+    auto new_node = node_cse(node->region(), node->GetOperation(), operands(node));
     JLM_ASSERT(new_node);
     if (new_node != node)
     {
@@ -82,10 +82,10 @@ simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 simple_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
-  jlm::rvsdg::node * node = nullptr;
+  Node * node = nullptr;
   if (get_mutable() && get_cse())
     node = node_cse(region, op, arguments);
   if (!node)
@@ -113,7 +113,7 @@ static jlm::rvsdg::node_normal_form *
 get_default_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::simple_normal_form(operator_class, parent, graph);
 }
@@ -122,6 +122,6 @@ static void __attribute__((constructor))
 register_node_normal_form(void)
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::simple_op),
+      typeid(jlm::rvsdg::SimpleOperation),
       get_default_normal_form);
 }

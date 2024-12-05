@@ -18,7 +18,7 @@ unary_normal_form::~unary_normal_form() noexcept
 unary_normal_form::unary_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
     : simple_normal_form(operator_class, parent, graph),
       enable_reducible_(true)
 {
@@ -29,14 +29,14 @@ unary_normal_form::unary_normal_form(
 }
 
 bool
-unary_normal_form::normalize_node(jlm::rvsdg::node * node) const
+unary_normal_form::normalize_node(Node * node) const
 {
   if (!get_mutable())
   {
     return true;
   }
 
-  const auto & op = static_cast<const jlm::rvsdg::unary_op &>(node->operation());
+  const auto & op = static_cast<const unary_op &>(node->GetOperation());
 
   if (get_reducible())
   {
@@ -56,7 +56,7 @@ unary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 unary_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
   JLM_ASSERT(arguments.size() == 1);
@@ -101,7 +101,7 @@ jlm::rvsdg::node_normal_form *
 unary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   jlm::rvsdg::node_normal_form * nf =
       new jlm::rvsdg::unary_normal_form(operator_class, parent, graph);

@@ -64,13 +64,13 @@ public:
 
 private:
   void
-  AnalyzeRvsdg(const rvsdg::graph & graph);
+  AnalyzeRvsdg(const rvsdg::Graph & graph);
 
   void
-  AnalyzeImports(const rvsdg::graph & graph);
+  AnalyzeImports(const rvsdg::Graph & graph);
 
   void
-  AnalyzeExports(const rvsdg::graph & graph);
+  AnalyzeExports(const rvsdg::Graph & graph);
 
   void
   AnalyzeRegion(rvsdg::Region & region);

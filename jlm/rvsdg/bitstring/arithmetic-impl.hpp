@@ -18,7 +18,7 @@ MakeBitUnaryOperation<reduction, name>::~MakeBitUnaryOperation() noexcept
 
 template<typename reduction, const char * name>
 bool
-MakeBitUnaryOperation<reduction, name>::operator==(const operation & other) const noexcept
+MakeBitUnaryOperation<reduction, name>::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const MakeBitUnaryOperation *>(&other);
   return op && op->type() == type();
@@ -39,7 +39,7 @@ MakeBitUnaryOperation<reduction, name>::debug_string() const
 }
 
 template<typename reduction, const char * name>
-std::unique_ptr<operation>
+std::unique_ptr<Operation>
 MakeBitUnaryOperation<reduction, name>::copy() const
 {
   return std::make_unique<MakeBitUnaryOperation>(*this);
@@ -58,7 +58,7 @@ MakeBitBinaryOperation<reduction, name, opflags>::~MakeBitBinaryOperation() noex
 
 template<typename reduction, const char * name, enum binary_op::flags opflags>
 bool
-MakeBitBinaryOperation<reduction, name, opflags>::operator==(const operation & other) const noexcept
+MakeBitBinaryOperation<reduction, name, opflags>::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const MakeBitBinaryOperation *>(&other);
   return op && op->type() == type();
@@ -88,7 +88,7 @@ MakeBitBinaryOperation<reduction, name, opflags>::debug_string() const
 }
 
 template<typename reduction, const char * name, enum binary_op::flags opflags>
-std::unique_ptr<operation>
+std::unique_ptr<Operation>
 MakeBitBinaryOperation<reduction, name, opflags>::copy() const
 {
   return std::make_unique<MakeBitBinaryOperation>(*this);

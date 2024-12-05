@@ -28,18 +28,20 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
-  for (auto & cv : ln->ctxvars())
+  for (const auto & cv : ln->GetContextVars())
   {
-    auto origin = cv.origin();
-    auto newcv = lambda->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto origin = cv.input->origin();
+    auto newcv = lambda->AddContextVar(*origin);
+    subregionmap.insert(cv.inner, newcv.inner);
   }
 
   /* collect function arguments */
-  for (size_t n = 0; n < ln->nfctarguments(); n++)
+  auto args = ln->GetFunctionArguments();
+  auto new_args = lambda->GetFunctionArguments();
+  for (size_t n = 0; n < args.size(); n++)
   {
-    lambda->fctargument(n)->set_attributes(ln->fctargument(n)->attributes());
-    subregionmap.insert(ln->fctargument(n), lambda->fctargument(n));
+    lambda->SetArgumentAttributes(*new_args[n], ln->GetArgumentAttributes(*args[n]));
+    subregionmap.insert(args[n], new_args[n]);
   }
 
   /* copy subregion */
@@ -47,8 +49,8 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
 
   /* collect function results */
   std::vector<jlm::rvsdg::output *> results;
-  for (auto & result : ln->fctresults())
-    results.push_back(subregionmap.lookup(result.origin()));
+  for (auto result : ln->GetFunctionResults())
+    results.push_back(subregionmap.lookup(result->origin()));
 
   /* finalize lambda */
   lambda->finalize(results);
@@ -172,7 +174,7 @@ instrument_ref(
     }
     else if (
         auto loadOp =
-            dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->operation())))
+            dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -193,14 +195,14 @@ instrument_ref(
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
     }
-    else if (auto ao = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->operation())))
+    else if (auto ao = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->GetOperation())))
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);
       auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
-      auto constant_operation =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&constant_output->node()->operation());
+      auto constant_operation = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(
+          &constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       jlm::rvsdg::output * addr = node->output(0);
@@ -229,7 +231,8 @@ instrument_ref(
       }
     }
     else if (
-        auto so = dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->operation())))
+        auto so =
+            dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));

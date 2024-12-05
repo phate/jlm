@@ -18,7 +18,7 @@ test_bitunary_reduction()
 {
   auto bt32 = jlm::rvsdg::bittype::Create(32);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
   nf->set_mutable(false);
 
@@ -45,7 +45,7 @@ test_bitbinary_reduction()
 {
   auto bt32 = jlm::rvsdg::bittype::Create(32);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
   nf->set_mutable(false);
 
@@ -75,7 +75,7 @@ test_inverse_reduction()
 
   auto bt64 = jlm::rvsdg::bittype::Create(64);
 
-  jlm::rvsdg::graph graph;
+  rvsdg::Graph graph;
   auto nf = jlm::llvm::sext_op::normal_form(&graph);
   nf->set_mutable(false);
 

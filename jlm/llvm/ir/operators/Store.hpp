@@ -25,15 +25,15 @@ public:
   store_normal_form(
       const std::type_info & opclass,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
+      rvsdg::Graph * graph) noexcept;
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(rvsdg::Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const rvsdg::SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   virtual void
@@ -85,14 +85,14 @@ private:
  * @see StoreVolatileOperation
  * @see StoreNonVolatileOperation
  */
-class StoreOperation : public rvsdg::simple_op
+class StoreOperation : public rvsdg::SimpleOperation
 {
 protected:
   StoreOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
-      : simple_op(operandTypes, resultTypes),
+      : SimpleOperation(operandTypes, resultTypes),
         Alignment_(alignment)
   {
     JLM_ASSERT(operandTypes.size() >= 2);
@@ -154,19 +154,19 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
 
   static store_normal_form *
-  GetNormalForm(rvsdg::graph * graph) noexcept
+  GetNormalForm(rvsdg::Graph * graph) noexcept
   {
     return util::AssertedCast<store_normal_form>(
         graph->node_normal_form(typeid(StoreNonVolatileOperation)));
@@ -260,8 +260,8 @@ public:
   using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
   using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
 
-  [[nodiscard]] virtual const StoreOperation &
-  GetOperation() const noexcept = 0;
+  [[nodiscard]] const StoreOperation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept
@@ -333,7 +333,7 @@ public:
   [[nodiscard]] StoreNonVolatileNode &
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<rvsdg::output *>
@@ -420,12 +420,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -520,7 +520,7 @@ public:
     return *ioStateOutput;
   }
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static StoreVolatileNode &

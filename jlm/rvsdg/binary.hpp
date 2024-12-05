@@ -27,15 +27,15 @@ public:
   binary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
   virtual void
@@ -85,7 +85,7 @@ public:
 
 private:
   bool
-  normalize_node(jlm::rvsdg::node * node, const binary_op & op) const;
+  normalize_node(Node * node, const binary_op & op) const;
 
   bool enable_reducible_;
   bool enable_reorder_;
@@ -104,15 +104,15 @@ public:
   flattened_binary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 };
 
@@ -122,7 +122,7 @@ public:
   Operator taking two arguments (with well-defined reduction for more
   operands if operator is associative).
 */
-class binary_op : public simple_op
+class binary_op : public SimpleOperation
 {
 public:
   enum class flags
@@ -137,7 +137,7 @@ public:
   inline binary_op(
       const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
       std::shared_ptr<const jlm::rvsdg::Type> result)
-      : simple_op(std::move(operands), { std::move(result) })
+      : SimpleOperation(std::move(operands), { std::move(result) })
   {}
 
   virtual binop_reduction_path_t
@@ -160,14 +160,14 @@ public:
   is_commutative() const noexcept;
 
   static jlm::rvsdg::binary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::binary_normal_form *>(
         graph->node_normal_form(typeid(binary_op)));
   }
 };
 
-class flattened_binary_op final : public simple_op
+class flattened_binary_op final : public SimpleOperation
 {
 public:
   enum class reduction
@@ -179,26 +179,26 @@ public:
   virtual ~flattened_binary_op() noexcept;
 
   inline flattened_binary_op(std::unique_ptr<binary_op> op, size_t narguments) noexcept
-      : simple_op({ narguments, op->argument(0) }, { op->result(0) }),
+      : SimpleOperation({ narguments, op->argument(0) }, { op->result(0) }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
   inline flattened_binary_op(const binary_op & op, size_t narguments)
-      : simple_op({ narguments, op.argument(0) }, { op.result(0) }),
+      : SimpleOperation({ narguments, op.argument(0) }, { op.result(0) }),
         op_(std::unique_ptr<binary_op>(static_cast<binary_op *>(op.copy().release())))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline const binary_op &
@@ -208,7 +208,7 @@ public:
   }
 
   static jlm::rvsdg::flattened_binary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<flattened_binary_normal_form *>(
         graph->node_normal_form(typeid(flattened_binary_op)));
@@ -223,7 +223,7 @@ public:
   reduce(rvsdg::Region * region, const flattened_binary_op::reduction & reduction);
 
   static inline void
-  reduce(jlm::rvsdg::graph * graph, const flattened_binary_op::reduction & reduction)
+  reduce(Graph * graph, const flattened_binary_op::reduction & reduction)
   {
     reduce(graph->root(), reduction);
   }

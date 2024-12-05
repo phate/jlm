@@ -18,15 +18,15 @@ test_node_copy(void)
   auto stype = jlm::tests::statetype::Create();
   auto vtype = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
   auto n1 = jlm::tests::structural_node::create(graph.root(), 3);
-  auto i1 = structural_input::create(n1, s, stype);
-  auto i2 = structural_input::create(n1, v, vtype);
-  auto o1 = structural_output::create(n1, stype);
-  auto o2 = structural_output::create(n1, vtype);
+  auto i1 = StructuralInput::create(n1, s, stype);
+  auto i2 = StructuralInput::create(n1, v, vtype);
+  auto o1 = StructuralOutput::create(n1, stype);
+  auto o2 = StructuralOutput::create(n1, vtype);
 
   auto & a1 = TestGraphArgument::Create(*n1->subregion(0), i1, stype);
   auto & a2 = TestGraphArgument::Create(*n1->subregion(0), i2, vtype);
@@ -96,7 +96,7 @@ test_node_depth()
 {
   auto vt = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto null = jlm::tests::test_op::create(graph.root(), {}, { vt });
@@ -117,13 +117,13 @@ test_node_depth()
 }
 
 /**
- * Test node::RemoveOutputsWhere()
+ * Test Node::RemoveOutputsWhere()
  */
 static void
 TestRemoveOutputsWhere()
 {
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
 
   auto valueType = jlm::tests::valuetype::Create();
   auto & node1 =
@@ -180,13 +180,13 @@ TestRemoveOutputsWhere()
 }
 
 /**
- * Test node::RemoveInputsWhere()
+ * Test Node::RemoveInputsWhere()
  */
 static void
 TestRemoveInputsWhere()
 {
   // Arrange
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 

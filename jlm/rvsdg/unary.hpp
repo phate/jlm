@@ -25,15 +25,15 @@ public:
   unary_normal_form(
       const std::type_info & operator_class,
       jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
+      Graph * graph);
 
   virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
+  normalize_node(Node * node) const override;
 
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
+      const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & arguments) const override;
 
   virtual void
@@ -54,7 +54,7 @@ private:
 
   Operator taking a single argument.
 */
-class unary_op : public simple_op
+class unary_op : public SimpleOperation
 {
 public:
   virtual ~unary_op() noexcept;
@@ -62,7 +62,7 @@ public:
   inline unary_op(
       std::shared_ptr<const jlm::rvsdg::Type> operand,
       std::shared_ptr<const jlm::rvsdg::Type> result)
-      : simple_op({ std::move(operand) }, { std::move(result) })
+      : SimpleOperation({ std::move(operand) }, { std::move(result) })
   {}
 
   virtual unop_reduction_path_t
@@ -72,7 +72,7 @@ public:
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const = 0;
 
   static jlm::rvsdg::unary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
+  normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::unary_normal_form *>(graph->node_normal_form(typeid(unary_op)));
   }

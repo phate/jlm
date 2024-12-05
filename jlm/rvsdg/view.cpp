@@ -35,7 +35,7 @@ create_port_name(
 
 static std::string
 node_to_string(
-    const jlm::rvsdg::node * node,
+    const Node * node,
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
@@ -47,7 +47,7 @@ node_to_string(
     s = s + name + " ";
   }
 
-  s += ":= " + node->operation().debug_string() + " ";
+  s += ":= " + node->GetOperation().debug_string() + " ";
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -94,7 +94,7 @@ region_body(
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
-  std::vector<std::vector<const jlm::rvsdg::node *>> context;
+  std::vector<std::vector<const Node *>> context;
   for (const auto & node : region->Nodes())
   {
     if (node.depth() >= context.size())
@@ -194,7 +194,7 @@ id(const jlm::rvsdg::input * port)
 }
 
 static inline std::string
-id(const jlm::rvsdg::node * node)
+id(const Node * node)
 {
   return jlm::util::strfmt("n", (intptr_t)node);
 }
@@ -260,12 +260,12 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 }
 
 static inline std::string
-type(const jlm::rvsdg::node * n)
+type(const Node * n)
 {
-  if (dynamic_cast<const GammaOperation *>(&n->operation()))
+  if (dynamic_cast<const GammaOperation *>(&n->GetOperation()))
     return "gamma";
 
-  if (dynamic_cast<const ThetaOperation *>(&n->operation()))
+  if (dynamic_cast<const ThetaOperation *>(&n->GetOperation()))
     return "theta";
 
   return "";
@@ -279,7 +279,7 @@ convert_simple_node(const jlm::rvsdg::simple_node * node)
 {
   std::string s;
 
-  s += node_starttag(id(node), node->operation().debug_string(), "");
+  s += node_starttag(id(node), node->GetOperation().debug_string(), "");
   for (size_t n = 0; n < node->ninputs(); n++)
     s += input_tag(id(node->input(n)));
   for (size_t n = 0; n < node->noutputs(); n++)
@@ -322,7 +322,7 @@ convert_structural_node(const rvsdg::StructuralNode * node)
 }
 
 static inline std::string
-convert_node(const jlm::rvsdg::node * node)
+convert_node(const Node * node)
 {
   if (auto n = dynamic_cast<const simple_node *>(node))
     return convert_simple_node(n);

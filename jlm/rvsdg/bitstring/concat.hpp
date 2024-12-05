@@ -26,7 +26,7 @@ public:
   {}
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual binop_reduction_path_t
   can_reduce_operand_pair(const jlm::rvsdg::output * arg1, const jlm::rvsdg::output * arg2)
@@ -44,7 +44,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
 private:

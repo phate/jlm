@@ -60,7 +60,7 @@ InvariantValueRedirection::run(
 }
 
 void
-InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
+InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 {
   // We require a topdown traversal in the root region to ensure that a lambda node is visited
   // before its call nodes. This ensures that all invariant values are redirected in the lambda
@@ -140,14 +140,11 @@ InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structur
 void
 InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 {
-  for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
+  for (auto exitvar : gammaNode.GetExitVars())
   {
-    auto & gammaOutput = *it;
-
-    rvsdg::output * invariantOrigin = nullptr;
-    if (gammaOutput.IsInvariant(&invariantOrigin))
+    if (auto invariantOrigin = rvsdg::GetGammaInvariantOrigin(gammaNode, exitvar))
     {
-      it->divert_users(invariantOrigin);
+      exitvar.output->divert_users(*invariantOrigin);
     }
   }
 }
@@ -179,21 +176,23 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   if (callType != CallTypeClassifier::CallType::NonRecursiveDirectCall)
     return;
 
-  auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+  auto & lambdaNode =
+      rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
 
   // LLVM permits code where it can happen that the number and type of arguments handed in to the
   // call node do not agree with the number and type of lambda parameters, even though it is a
   // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. In this case, we cannot
   // redirect the call outputs to the call operand as the types would not align, resulting in type
   // errors.
-  if (callNode.NumArguments() != lambdaNode.nfctarguments())
+  if (callNode.NumArguments() != lambdaNode.GetFunctionArguments().size())
     return;
 
   auto memoryStateOutput = callNode.GetMemoryStateOutput();
   auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
 
-  JLM_ASSERT(callNode.noutputs() == lambdaNode.nfctresults());
+  auto results = lambdaNode.GetFunctionResults();
+  JLM_ASSERT(callNode.noutputs() == results.size());
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     auto callOutput = callNode.output(n);
@@ -228,16 +227,21 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     }
     else
     {
-      auto & lambdaResult = *lambdaNode.fctresult(n);
-      if (auto lambdaFunctionArgument = dynamic_cast<lambda::fctargument *>(lambdaResult.origin()))
+      auto & lambdaResult = *results[n];
+      auto origin = lambdaResult.origin();
+      if (rvsdg::TryGetRegionParentNode<lambda::node>(*origin) == &lambdaNode)
       {
-        auto callOperand = callNode.Argument(lambdaFunctionArgument->index())->origin();
-        callOutput->divert_users(callOperand);
-      }
-      else if (dynamic_cast<lambda::cvargument *>(lambdaResult.origin()))
-      {
-        // FIXME: We would like to get this case working as well, but we need to route the origin of
-        // the respective lambda input to the subregion of the call node.
+        if (auto ctxvar = lambdaNode.MapBinderContextVar(*origin))
+        {
+          // This is a bound context variable.
+          // FIXME: We would like to get this case working as well, but we need to route the origin
+          // of the respective lambda input to the subregion of the call node.
+        }
+        else
+        {
+          auto callOperand = callNode.Argument(origin->index())->origin();
+          callOutput->divert_users(callOperand);
+        }
       }
     }
   }

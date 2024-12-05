@@ -18,7 +18,7 @@ namespace jlm::llvm
 
 /* alloca operator */
 
-class alloca_op final : public rvsdg::simple_op
+class alloca_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~alloca_op() noexcept;
@@ -27,7 +27,7 @@ public:
       std::shared_ptr<const rvsdg::ValueType> allocatedType,
       std::shared_ptr<const rvsdg::bittype> btype,
       size_t alignment)
-      : simple_op({ btype }, { { PointerType::Create() }, { MemoryStateType::Create() } }),
+      : SimpleOperation({ btype }, { { PointerType::Create() }, { MemoryStateType::Create() } }),
         alignment_(alignment),
         AllocatedType_(std::move(allocatedType))
   {}
@@ -37,12 +37,12 @@ public:
   alloca_op(alloca_op && other) noexcept = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline const rvsdg::bittype &

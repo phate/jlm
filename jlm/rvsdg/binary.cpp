@@ -58,7 +58,7 @@ binary_normal_form::~binary_normal_form() noexcept
 binary_normal_form::binary_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
     : simple_normal_form(operator_class, parent, graph),
       enable_reducible_(true),
       enable_reorder_(true),
@@ -77,16 +77,16 @@ binary_normal_form::binary_normal_form(
 }
 
 bool
-binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
+binary_normal_form::normalize_node(Node * node) const
 {
-  const jlm::rvsdg::operation & base_op = node->operation();
+  const Operation & base_op = node->GetOperation();
   const auto & op = *static_cast<const jlm::rvsdg::binary_op *>(&base_op);
 
   return normalize_node(node, op);
 }
 
 bool
-binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op) const
+binary_normal_form::normalize_node(Node * node, const binary_op & op) const
 {
   if (!get_mutable())
   {
@@ -107,8 +107,8 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
             return false;
 
           auto node = static_cast<node_output *>(arg)->node();
-          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->operation());
-          return node->operation() == op || (fb_op && fb_op->bin_operation() == op);
+          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+          return node->GetOperation() == op || (fb_op && fb_op->bin_operation() == op);
         });
   }
   else
@@ -137,12 +137,12 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
 
   if (changes)
   {
-    std::unique_ptr<simple_op> tmp_op;
+    std::unique_ptr<SimpleOperation> tmp_op;
     if (new_args.size() > 2)
       tmp_op.reset(new flattened_binary_op(op, new_args.size()));
 
     JLM_ASSERT(new_args.size() >= 2);
-    const auto & new_op = tmp_op ? *tmp_op : static_cast<const simple_op &>(op);
+    const auto & new_op = tmp_op ? *tmp_op : static_cast<const SimpleOperation &>(op);
     divert_users(node, simple_node::create_normalized(node->region(), new_op, new_args));
     remove(node);
     return false;
@@ -154,7 +154,7 @@ binary_normal_form::normalize_node(jlm::rvsdg::node * node, const binary_op & op
 std::vector<jlm::rvsdg::output *>
 binary_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & base_op,
+    const SimpleOperation & base_op,
     const std::vector<jlm::rvsdg::output *> & args) const
 {
   const auto & op = *static_cast<const jlm::rvsdg::binary_op *>(&base_op);
@@ -172,8 +172,8 @@ binary_normal_form::normalized_create(
             return false;
 
           auto node = static_cast<node_output *>(arg)->node();
-          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->operation());
-          return node->operation() == op || (fb_op && fb_op->bin_operation() == op);
+          auto fb_op = dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+          return node->GetOperation() == op || (fb_op && fb_op->bin_operation() == op);
         });
   }
 
@@ -187,14 +187,14 @@ binary_normal_form::normalized_create(
   /* FIXME: reorder for commutative operation */
 
   /* FIXME: attempt distributive transform */
-  std::unique_ptr<simple_op> tmp_op;
+  std::unique_ptr<SimpleOperation> tmp_op;
   if (new_args.size() > 2)
   {
     tmp_op.reset(new flattened_binary_op(op, new_args.size()));
   }
 
   region = new_args[0]->region();
-  const auto & new_op = tmp_op ? *tmp_op : static_cast<const simple_op &>(op);
+  const auto & new_op = tmp_op ? *tmp_op : static_cast<const SimpleOperation &>(op);
   return simple_normal_form::normalized_create(region, new_op, new_args);
 }
 
@@ -281,14 +281,14 @@ flattened_binary_normal_form::~flattened_binary_normal_form() noexcept
 flattened_binary_normal_form::flattened_binary_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    Graph * graph)
     : simple_normal_form(operator_class, parent, graph)
 {}
 
 bool
-flattened_binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
+flattened_binary_normal_form::normalize_node(Node * node) const
 {
-  const auto & op = static_cast<const flattened_binary_op &>(node->operation());
+  const auto & op = static_cast<const flattened_binary_op &>(node->GetOperation());
   const auto & bin_op = op.bin_operation();
   auto nf = graph()->node_normal_form(typeid(bin_op));
 
@@ -298,7 +298,7 @@ flattened_binary_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 flattened_binary_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & base_op,
+    const SimpleOperation & base_op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
   const auto & op = static_cast<const flattened_binary_op &>(base_op);
@@ -325,7 +325,7 @@ flattened_binary_op::~flattened_binary_op() noexcept
 {}
 
 bool
-flattened_binary_op::operator==(const operation & other) const noexcept
+flattened_binary_op::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const flattened_binary_op *>(&other);
   return op && op->bin_operation() == bin_operation() && op->narguments() == narguments();
@@ -337,12 +337,11 @@ flattened_binary_op::debug_string() const
   return jlm::util::strfmt("FLATTENED[", op_->debug_string(), "]");
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<Operation>
 flattened_binary_op::copy() const
 {
   std::unique_ptr<binary_op> copied_op(static_cast<binary_op *>(op_->copy().release()));
-  return std::unique_ptr<jlm::rvsdg::operation>(
-      new flattened_binary_op(std::move(copied_op), narguments()));
+  return std::make_unique<flattened_binary_op>(std::move(copied_op), narguments());
 }
 
 /*
@@ -424,7 +423,7 @@ flattened_binary_op::reduce(
   {
     if (is<flattened_binary_op>(node))
     {
-      auto op = static_cast<const flattened_binary_op *>(&node->operation());
+      auto op = static_cast<const flattened_binary_op *>(&node->GetOperation());
       auto output = op->reduce(reduction, operands(node));
       node->output(0)->divert_users(output);
       remove(node);
@@ -441,15 +440,11 @@ flattened_binary_op::reduce(
 
 }
 
-/* node class */
-
-/* node class inheritable methods */
-
 jlm::rvsdg::node_normal_form *
 binary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::binary_normal_form(operator_class, parent, graph);
 }
@@ -458,7 +453,7 @@ jlm::rvsdg::node_normal_form *
 flattened_binary_operation_get_default_normal_form_(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::flattened_binary_normal_form(operator_class, parent, graph);
 }

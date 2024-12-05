@@ -15,7 +15,7 @@ test_main(void)
 {
   using namespace jlm::rvsdg;
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
 
   auto type = jlm::tests::statetype::Create();
   auto value_type = jlm::tests::valuetype::Create();

@@ -24,7 +24,7 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   enum binary_op::flags
   flags() const noexcept override;
@@ -35,7 +35,7 @@ public:
   std::string
   debug_string() const override;
 
-  std::unique_ptr<operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   std::unique_ptr<bitcompare_op>

@@ -26,16 +26,16 @@ namespace jlm::tests
  */
 class GraphImport final : public rvsdg::GraphImport
 {
-  GraphImport(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+  GraphImport(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
       : rvsdg::GraphImport(graph, std::move(type), std::move(name))
   {}
 
 public:
   GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   static GraphImport &
-  Create(rvsdg::graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+  Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
   {
     auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
     graph.root()->append_argument(graphImport);
@@ -55,7 +55,7 @@ class GraphExport final : public rvsdg::GraphExport
 
 public:
   GraphExport &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static GraphExport &
   Create(rvsdg::output & origin, std::string name)
@@ -80,7 +80,7 @@ public:
   {}
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual rvsdg::unop_reduction_path_t
   can_reduce_operand(const rvsdg::output * operand) const noexcept override;
@@ -91,10 +91,10 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline rvsdg::node *
+  static rvsdg::Node *
   create(
       rvsdg::Region * region,
       std::shared_ptr<const rvsdg::Type> srctype,
@@ -119,13 +119,13 @@ public:
 };
 
 static inline bool
-is_unary_op(const rvsdg::operation & op) noexcept
+is_unary_op(const rvsdg::Operation & op) noexcept
 {
   return dynamic_cast<const unary_op *>(&op);
 }
 
 static inline bool
-is_unary_node(const rvsdg::node * node) noexcept
+is_unary_node(const rvsdg::Node * node) noexcept
 {
   return jlm::rvsdg::is<unary_op>(node);
 }
@@ -146,7 +146,7 @@ public:
   {}
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual rvsdg::binop_reduction_path_t
   can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
@@ -162,10 +162,10 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline rvsdg::node *
+  static rvsdg::Node *
   create(
       const std::shared_ptr<const rvsdg::Type> & srctype,
       std::shared_ptr<const rvsdg::Type> dsttype,
@@ -193,7 +193,7 @@ private:
 
 /* structural operation */
 
-class structural_op final : public rvsdg::structural_op
+class structural_op final : public rvsdg::StructuralOperation
 {
 public:
   virtual ~structural_op() noexcept;
@@ -201,7 +201,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 };
 
@@ -242,7 +242,7 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class StructuralNodeInput final : public rvsdg::structural_input
+class StructuralNodeInput final : public rvsdg::StructuralInput
 {
   friend structural_node;
 
@@ -254,7 +254,7 @@ private:
       structural_node & node,
       rvsdg::output & origin,
       std::shared_ptr<const rvsdg::Type> type)
-      : rvsdg::structural_input(&node, &origin, std::move(type))
+      : StructuralInput(&node, &origin, std::move(type))
   {}
 
 public:
@@ -280,7 +280,7 @@ public:
   }
 };
 
-class StructuralNodeOutput final : public rvsdg::structural_output
+class StructuralNodeOutput final : public rvsdg::StructuralOutput
 {
   friend structural_node;
 
@@ -289,7 +289,7 @@ public:
 
 private:
   StructuralNodeOutput(structural_node & node, std::shared_ptr<const rvsdg::Type> type)
-      : rvsdg::structural_output(&node, std::move(type))
+      : StructuralOutput(&node, std::move(type))
   {}
 };
 
@@ -301,7 +301,7 @@ public:
   ~StructuralNodeArgument() noexcept override;
 
   StructuralNodeArgument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   StructuralNodeArgument(
@@ -336,7 +336,7 @@ public:
   ~StructuralNodeResult() noexcept override;
 
   StructuralNodeResult &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
   StructuralNodeResult(rvsdg::output & origin, StructuralNodeOutput * output)
@@ -360,7 +360,7 @@ private:
   }
 };
 
-class test_op final : public rvsdg::simple_op
+class test_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~test_op();
@@ -368,18 +368,18 @@ public:
   inline test_op(
       std::vector<std::shared_ptr<const rvsdg::Type>> arguments,
       std::vector<std::shared_ptr<const rvsdg::Type>> results)
-      : simple_op(std::move(arguments), std::move(results))
+      : SimpleOperation(std::move(arguments), std::move(results))
   {}
 
   test_op(const test_op &) = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::simple_node *
@@ -419,9 +419,9 @@ private:
   {}
 
 public:
-  using rvsdg::node::RemoveInputsWhere;
+  using Node::RemoveInputsWhere;
 
-  using rvsdg::node::RemoveOutputsWhere;
+  using Node::RemoveOutputsWhere;
 
   static SimpleNode &
   Create(
@@ -483,14 +483,14 @@ class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 private:
   TestGraphArgument(
       rvsdg::Region & region,
-      jlm::rvsdg::structural_input * input,
+      rvsdg::StructuralInput * input,
       std::shared_ptr<const jlm::rvsdg::Type> type)
       : jlm::rvsdg::RegionArgument(&region, input, type)
   {}
 
 public:
   TestGraphArgument &
-  Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input) override
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override
   {
     return Create(region, input, Type());
   }
@@ -498,7 +498,7 @@ public:
   static TestGraphArgument &
   Create(
       rvsdg::Region & region,
-      jlm::rvsdg::structural_input * input,
+      rvsdg::StructuralInput * input,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto graphArgument = new TestGraphArgument(region, input, std::move(type));
@@ -513,26 +513,23 @@ private:
   TestGraphResult(
       rvsdg::Region & region,
       jlm::rvsdg::output & origin,
-      jlm::rvsdg::structural_output * output)
+      rvsdg::StructuralOutput * output)
       : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
   {}
 
-  TestGraphResult(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+  TestGraphResult(rvsdg::output & origin, rvsdg::StructuralOutput * output)
       : TestGraphResult(*origin.region(), origin, output)
   {}
 
 public:
   TestGraphResult &
-  Copy(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output) override
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override
   {
     return Create(origin, output);
   }
 
   static TestGraphResult &
-  Create(
-      rvsdg::Region & region,
-      jlm::rvsdg::output & origin,
-      jlm::rvsdg::structural_output * output)
+  Create(rvsdg::Region & region, jlm::rvsdg::output & origin, rvsdg::StructuralOutput * output)
   {
     auto graphResult = new TestGraphResult(region, origin, output);
     origin.region()->append_result(graphResult);
@@ -540,7 +537,7 @@ public:
   }
 
   static TestGraphResult &
-  Create(jlm::rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+  Create(rvsdg::output & origin, rvsdg::StructuralOutput * output)
   {
     return Create(*origin.region(), origin, output);
   }

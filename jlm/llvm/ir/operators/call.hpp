@@ -19,18 +19,18 @@ namespace jlm::llvm
 /** \brief Call operation class
  *
  */
-class CallOperation final : public jlm::rvsdg::simple_op
+class CallOperation final : public jlm::rvsdg::SimpleOperation
 {
 public:
   ~CallOperation() override;
 
   explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
-      : simple_op(create_srctypes(*functionType), functionType->Results()),
+      : SimpleOperation(create_srctypes(*functionType), functionType->Results()),
         FunctionType_(std::move(functionType))
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -41,7 +41,7 @@ public:
     return FunctionType_;
   }
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<tac>
@@ -172,12 +172,12 @@ public:
    *
    * @return The called function.
    */
-  [[nodiscard]] lambda::output &
+  [[nodiscard]] rvsdg::output &
   GetLambdaOutput() const noexcept
   {
     if (GetCallType() == CallType::NonRecursiveDirectCall)
     {
-      return *jlm::util::AssertedCast<lambda::output>(Output_);
+      return *Output_;
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
@@ -187,8 +187,7 @@ public:
      * would be better if we did not use the index for retrieving the result, but instead
      * explicitly encoded it in an phi_argument.
      */
-    return *jlm::util::AssertedCast<lambda::output>(
-        argument->region()->result(argument->index())->origin());
+    return *argument->region()->result(argument->index())->origin();
   }
 
   /** \brief Returns the imported function.
@@ -218,12 +217,31 @@ public:
     return *Output_;
   }
 
+  /**
+    \brief Classify callee as non-recursive.
+
+    \param output
+      Output representing the function called (must be a lambda).
+
+    \pre
+      The given output must belong to a lambda node.
+  */
   static std::unique_ptr<CallTypeClassifier>
-  CreateNonRecursiveDirectCallClassifier(lambda::output & output)
+  CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
   {
+    rvsdg::AssertGetOwnerNode<lambda::node>(output);
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }
 
+  /**
+    \brief Classify callee as recursive.
+
+    \param output
+      Output representing the function called (must be phi argument).
+
+    \pre
+      The given output must belong to a phi node.
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
   {
@@ -231,6 +249,15 @@ public:
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
+  /**
+    \brief Classify callee as external.
+
+    \param argument
+      Output representing the function called (must be graph argument).
+
+    \pre
+      The given output must be an argument to the root region of the graph.
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateExternalCallClassifier(rvsdg::RegionArgument & argument)
   {
@@ -238,6 +265,12 @@ public:
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
   }
 
+  /**
+    \brief Classify callee as inderict.
+
+    \param output
+      Output representing the function called (supposed to be pointer).
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateIndirectCallClassifier(jlm::rvsdg::output & output)
   {
@@ -264,9 +297,9 @@ private:
 
 public:
   [[nodiscard]] const CallOperation &
-  GetOperation() const noexcept
+  GetOperation() const noexcept override
   {
-    return *jlm::util::AssertedCast<const CallOperation>(&operation());
+    return *jlm::util::AssertedCast<const CallOperation>(&simple_node::GetOperation());
   }
 
   /**
@@ -415,7 +448,7 @@ public:
                                                        : nullptr;
   }
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<jlm::rvsdg::output *>

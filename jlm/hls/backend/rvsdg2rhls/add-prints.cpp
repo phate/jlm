@@ -79,7 +79,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 
   if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
-    gamma->add_entryvar(output);
+    gamma->AddEntryVar(output);
     output = region->argument(region->narguments() - 1);
   }
   else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
@@ -88,7 +88,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   }
   else if (auto lambda = dynamic_cast<llvm::lambda::node *>(region->node()))
   {
-    output = lambda->add_ctxvar(output);
+    output = lambda->AddContextVar(*output).inner;
   }
   else
   {
@@ -113,7 +113,7 @@ convert_prints(
         convert_prints(structnode->subregion(n), printf, functionType);
       }
     }
-    else if (auto po = dynamic_cast<const print_op *>(&(node->operation())))
+    else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
     {
       auto printf_local = route_to_region(printf, region); // TODO: prevent repetition?
       auto bc = jlm::rvsdg::create_bitconstant(region, 64, po->id());

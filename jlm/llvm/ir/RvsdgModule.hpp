@@ -22,7 +22,7 @@ class GraphImport final : public rvsdg::GraphImport
 {
 private:
   GraphImport(
-      rvsdg::graph & graph,
+      rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::ValueType> valueType,
       std::string name,
       llvm::linkage linkage)
@@ -45,11 +45,11 @@ public:
   }
 
   GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   static GraphImport &
   Create(
-      rvsdg::graph & graph,
+      rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::ValueType> valueType,
       std::string name,
       llvm::linkage linkage)
@@ -78,7 +78,7 @@ private:
 
 public:
   GraphExport &
-  Copy(rvsdg::output & origin, rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static GraphExport &
   Create(rvsdg::output & origin, std::string name)

@@ -24,7 +24,7 @@ RegionArgument::~RegionArgument() noexcept
 
 RegionArgument::RegionArgument(
     rvsdg::Region * region,
-    jlm::rvsdg::structural_input * input,
+    StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
     : output(region, std::move(type)),
       input_(input)
@@ -43,14 +43,14 @@ RegionArgument::RegionArgument(
   }
 }
 
-[[nodiscard]] std::variant<node *, Region *>
+[[nodiscard]] std::variant<Node *, Region *>
 RegionArgument::GetOwner() const noexcept
 {
   return region();
 }
 
 RegionArgument &
-RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
+RegionArgument::Copy(Region & region, StructuralInput * input)
 {
   return RegionArgument::Create(region, input, Type());
 }
@@ -58,7 +58,7 @@ RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
 RegionArgument &
 RegionArgument::Create(
     rvsdg::Region & region,
-    rvsdg::structural_input * input,
+    StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
 {
   auto argument = new RegionArgument(&region, input, std::move(type));
@@ -77,7 +77,7 @@ RegionResult::~RegionResult() noexcept
 RegionResult::RegionResult(
     rvsdg::Region * region,
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
+    StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
     : input(origin, region, std::move(type)),
       output_(output)
@@ -96,14 +96,14 @@ RegionResult::RegionResult(
   }
 }
 
-[[nodiscard]] std::variant<node *, Region *>
+[[nodiscard]] std::variant<Node *, Region *>
 RegionResult::GetOwner() const noexcept
 {
   return region();
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::output & origin, structural_output * output)
+RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   return RegionResult::Create(*origin.region(), origin, output, origin.Type());
 }
@@ -112,7 +112,7 @@ RegionResult &
 RegionResult::Create(
     rvsdg::Region & region,
     rvsdg::output & origin,
-    structural_output * output,
+    StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
   JLM_ASSERT(origin.region() == &region);
@@ -137,7 +137,7 @@ Region::~Region() noexcept
     RemoveArgument(arguments_.size() - 1);
 }
 
-Region::Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph)
+Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
       node_(nullptr)
@@ -220,13 +220,13 @@ Region::RemoveResult(size_t index)
 }
 
 void
-Region::remove_node(jlm::rvsdg::node * node)
+Region::remove_node(Node * node)
 {
   delete node;
 }
 
 bool
-Region::AddTopNode(rvsdg::node & node)
+Region::AddTopNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -241,7 +241,7 @@ Region::AddTopNode(rvsdg::node & node)
 }
 
 bool
-Region::AddBottomNode(rvsdg::node & node)
+Region::AddBottomNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -256,7 +256,7 @@ Region::AddBottomNode(rvsdg::node & node)
 }
 
 bool
-Region::AddNode(rvsdg::node & node)
+Region::AddNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -267,7 +267,7 @@ Region::AddNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveBottomNode(rvsdg::node & node)
+Region::RemoveBottomNode(Node & node)
 {
   auto numBottomNodes = NumBottomNodes();
   BottomNodes_.erase(&node);
@@ -275,7 +275,7 @@ Region::RemoveBottomNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveTopNode(rvsdg::node & node)
+Region::RemoveTopNode(Node & node)
 {
   auto numTopNodes = NumTopNodes();
   TopNodes_.erase(&node);
@@ -283,7 +283,7 @@ Region::RemoveTopNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveNode(rvsdg::node & node)
+Region::RemoveNode(Node & node)
 {
   auto numNodes = nnodes();
   Nodes_.erase(&node);
@@ -296,7 +296,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   smap.insert(this, target);
 
   // order nodes top-down
-  std::vector<std::vector<const jlm::rvsdg::node *>> context(nnodes());
+  std::vector<std::vector<const Node *>> context(nnodes());
   for (const auto & node : Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
@@ -331,7 +331,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
       auto oldResult = result(n);
       auto newOrigin = smap.lookup(oldResult->origin());
       JLM_ASSERT(newOrigin != nullptr);
-      auto newOutput = dynamic_cast<structural_output *>(smap.lookup(oldResult->output()));
+      auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
       oldResult->Copy(*newOrigin, newOutput);
     }
   }
@@ -367,7 +367,7 @@ Region::normalize(bool recursive)
         structnode->subregion(n)->normalize(recursive);
     }
 
-    const auto & op = node->operation();
+    const auto & op = node->GetOperation();
     graph()->node_normal_form(typeid(op))->normalize_node(node);
   }
 }
@@ -440,7 +440,7 @@ Region::ToTree(
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto nodeString = structuralNode->operation().debug_string();
+      auto nodeString = structuralNode->GetOperation().debug_string();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,

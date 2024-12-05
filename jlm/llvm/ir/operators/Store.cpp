@@ -10,10 +10,16 @@
 namespace jlm::llvm
 {
 
+const StoreOperation &
+StoreNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const StoreOperation>(&simple_node::GetOperation());
+}
+
 StoreNonVolatileOperation::~StoreNonVolatileOperation() noexcept = default;
 
 bool
-StoreNonVolatileOperation::operator==(const operation & other) const noexcept
+StoreNonVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const StoreNonVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -27,10 +33,10 @@ StoreNonVolatileOperation::debug_string() const
   return "Store";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 StoreNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new StoreNonVolatileOperation(*this));
+  return std::make_unique<StoreNonVolatileOperation>(*this);
 }
 
 [[nodiscard]] size_t
@@ -42,7 +48,7 @@ StoreNonVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const StoreNonVolatileOperation &
 StoreNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const StoreNonVolatileOperation>(&operation());
+  return *util::AssertedCast<const StoreNonVolatileOperation>(&StoreNode::GetOperation());
 }
 
 [[nodiscard]] StoreNode::MemoryStateInputRange
@@ -78,7 +84,7 @@ StoreNonVolatileNode::CopyWithNewMemoryStates(
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
@@ -88,7 +94,7 @@ StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::outp
 StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
 
 bool
-StoreVolatileOperation::operator==(const operation & other) const noexcept
+StoreVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
   return operation && operation->NumMemoryStates() == NumMemoryStates()
@@ -102,10 +108,10 @@ StoreVolatileOperation::debug_string() const
   return "StoreVolatile";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 StoreVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new StoreVolatileOperation(*this));
+  return std::make_unique<StoreVolatileOperation>(*this);
 }
 
 [[nodiscard]] size_t
@@ -118,7 +124,7 @@ StoreVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const StoreVolatileOperation &
 StoreVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const StoreVolatileOperation>(&operation());
+  return *util::AssertedCast<const StoreVolatileOperation>(&StoreNode::GetOperation());
 }
 
 [[nodiscard]] StoreNode::MemoryStateInputRange
@@ -154,7 +160,7 @@ StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & 
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 StoreVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
   return &CreateNode(*region, GetOperation(), operands);
@@ -205,7 +211,7 @@ is_store_store_reducible(
       return false;
   }
 
-  auto other = static_cast<const StoreNonVolatileOperation *>(&storenode->operation());
+  auto other = static_cast<const StoreNonVolatileOperation *>(&storenode->GetOperation());
   JLM_ASSERT(op.GetAlignment() == other->GetAlignment());
   return true;
 }
@@ -217,7 +223,7 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
     return false;
 
   auto alloca = jlm::rvsdg::output::GetNode(*operands[0]);
-  if (!alloca || !is<alloca_op>(alloca->operation()))
+  if (!alloca || !is<alloca_op>(alloca->GetOperation()))
     return false;
 
   std::unordered_set<jlm::rvsdg::output *> states(
@@ -309,7 +315,7 @@ store_normal_form::~store_normal_form()
 store_normal_form::store_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    rvsdg::Graph * graph) noexcept
     : simple_normal_form(opclass, parent, graph),
       enable_store_mux_(false),
       enable_store_store_(false),
@@ -325,10 +331,10 @@ store_normal_form::store_normal_form(
 }
 
 bool
-store_normal_form::normalize_node(jlm::rvsdg::node * node) const
+store_normal_form::normalize_node(rvsdg::Node * node) const
 {
-  JLM_ASSERT(is<StoreNonVolatileOperation>(node->operation()));
-  auto op = static_cast<const StoreNonVolatileOperation *>(&node->operation());
+  JLM_ASSERT(is<StoreNonVolatileOperation>(node->GetOperation()));
+  auto op = static_cast<const StoreNonVolatileOperation *>(&node->GetOperation());
   auto operands = jlm::rvsdg::operands(node);
 
   if (!get_mutable())
@@ -384,7 +390,7 @@ store_normal_form::normalize_node(jlm::rvsdg::node * node) const
 std::vector<jlm::rvsdg::output *>
 store_normal_form::normalized_create(
     rvsdg::Region * region,
-    const jlm::rvsdg::simple_op & op,
+    const rvsdg::SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & ops) const
 {
   JLM_ASSERT(is<StoreNonVolatileOperation>(op));
@@ -467,7 +473,7 @@ static jlm::rvsdg::node_normal_form *
 create_store_normal_form(
     const std::type_info & opclass,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::llvm::store_normal_form(opclass, parent, graph);
 }

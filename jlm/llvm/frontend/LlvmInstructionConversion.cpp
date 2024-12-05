@@ -444,7 +444,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto t = i->getOperand(0)->getType();
 
   static std::
-      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::operation> (*)(size_t)>
+      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::Operation> (*)(size_t)>
           map({ { ::llvm::CmpInst::ICMP_SLT,
                   [](size_t nbits)
                   {
@@ -518,7 +518,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
 
-  std::unique_ptr<rvsdg::operation> binop;
+  std::unique_ptr<rvsdg::Operation> binop;
 
   if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy()))
   {
@@ -543,7 +543,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(binop.get()), { op1, op2 }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(binop.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -930,7 +930,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
 
   static std::unordered_map<
       const ::llvm::Instruction::BinaryOps,
-      std::unique_ptr<rvsdg::operation> (*)(size_t)>
+      std::unique_ptr<rvsdg::Operation> (*)(size_t)>
       bitmap({ { ::llvm::Instruction::Add,
                  [](size_t nbits)
                  {
@@ -1024,7 +1024,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
         { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
         { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
-  std::unique_ptr<rvsdg::operation> operation;
+  std::unique_ptr<rvsdg::Operation> operation;
   auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
   if (t->isIntegerTy())
   {
@@ -1053,7 +1053,8 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(operation.get()), { op1, op2 }));
+    tacs.push_back(
+        tac::create(*static_cast<rvsdg::SimpleOperation *>(operation.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -1158,10 +1159,10 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
 }
 
 template<class OP>
-static std::unique_ptr<rvsdg::operation>
+static std::unique_ptr<rvsdg::Operation>
 create_unop(std::shared_ptr<const rvsdg::Type> st, std::shared_ptr<const rvsdg::Type> dt)
 {
-  return std::unique_ptr<rvsdg::operation>(new OP(std::move(st), std::move(dt)));
+  return std::unique_ptr<rvsdg::Operation>(new OP(std::move(st), std::move(dt)));
 }
 
 static const variable *
@@ -1173,7 +1174,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   static std::unordered_map<
       unsigned,
-      std::unique_ptr<rvsdg::operation> (*)(
+      std::unique_ptr<rvsdg::Operation> (*)(
           std::shared_ptr<const rvsdg::Type>,
           std::shared_ptr<const rvsdg::Type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<trunc_op> },
@@ -1202,7 +1203,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   if (dt->isVectorTy())
     tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, type));
   else
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(unop.get()), { op }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 
   return tacs.back()->result(0);
 }

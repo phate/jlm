@@ -51,23 +51,25 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
       ln->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (const auto & ctxvar : ln->GetContextVars())
   {
-    // copy over cvarguments
-    smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
+    // copy over context vars
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(*ctxvar.input->origin()).inner);
   }
-  for (size_t i = 0; i < ln->nfctarguments(); ++i)
+  auto old_args = ln->GetFunctionArguments();
+  auto new_args = new_lambda->GetFunctionArguments();
+  for (size_t i = 0; i < old_args.size(); ++i)
   {
-    smap.insert(ln->fctargument(i), new_lambda->fctargument(i));
+    smap.insert(old_args[i], new_args[i]);
   }
   //	jlm::rvsdg::view(ln->subregion(), stdout);
   //	jlm::rvsdg::view(new_lambda->subregion(), stdout);
   ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
 
   std::vector<jlm::rvsdg::output *> new_results;
-  for (size_t i = 0; i < ln->nfctresults(); ++i)
+  for (auto result : ln->GetFunctionResults())
   {
-    new_results.push_back(smap.lookup(ln->fctresult(i)->origin()));
+    new_results.push_back(smap.lookup(result->origin()));
   }
   auto new_out = new_lambda->finalize(new_results);
 
@@ -89,7 +91,7 @@ add_triggers(rvsdg::Region * region)
   auto trigger = get_trigger(region);
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (rvsdg::is<rvsdg::structural_op>(node))
+    if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
       if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
       {
@@ -111,7 +113,7 @@ add_triggers(rvsdg::Region * region)
       {
         JLM_ASSERT(trigger != nullptr);
         JLM_ASSERT(get_trigger(gn->subregion(0)) == nullptr);
-        gn->add_entryvar(trigger);
+        gn->AddEntryVar(trigger);
         for (size_t i = 0; i < gn->nsubregions(); ++i)
         {
           add_triggers(gn->subregion(i));
@@ -119,7 +121,7 @@ add_triggers(rvsdg::Region * region)
       }
       else
       {
-        throw jlm::util::error("Unexpected node type: " + node->operation().debug_string());
+        throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
       }
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
@@ -138,7 +140,7 @@ add_triggers(rvsdg::Region * region)
     }
     else
     {
-      throw jlm::util::error("Unexpected node type: " + node->operation().debug_string());
+      throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
     }
   }
 }

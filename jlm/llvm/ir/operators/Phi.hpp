@@ -26,7 +26,7 @@ namespace phi
 
 /* phi operation class  */
 
-class operation final : public jlm::rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;
@@ -34,7 +34,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 };
 
@@ -381,11 +381,8 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  const phi::operation &
-  operation() const noexcept
-  {
-    return *static_cast<const phi::operation *>(&jlm::rvsdg::node::operation());
-  }
+  [[nodiscard]] const phi::operation &
+  GetOperation() const noexcept override;
 
   cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);
@@ -547,7 +544,7 @@ private:
 
 /* phi context variable input class */
 
-class cvinput final : public jlm::rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend class phi::node;
 
@@ -558,7 +555,7 @@ public:
       phi::node * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
-      : structural_input(node, origin, std::move(type))
+      : StructuralInput(node, origin, std::move(type))
   {}
 
 private:
@@ -589,7 +586,7 @@ public:
   phi::node *
   node() const noexcept
   {
-    return static_cast<phi::node *>(structural_input::node());
+    return static_cast<phi::node *>(StructuralInput::node());
   }
 };
 
@@ -598,7 +595,7 @@ public:
 class rvargument;
 class rvresult;
 
-class rvoutput final : public jlm::rvsdg::structural_output
+class rvoutput final : public rvsdg::StructuralOutput
 {
   friend class phi::builder;
 
@@ -607,7 +604,7 @@ public:
 
 private:
   rvoutput(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type)),
+      : StructuralOutput(node, std::move(type)),
         argument_(argument)
   {}
 
@@ -640,7 +637,7 @@ public:
   phi::node *
   node() const noexcept
   {
-    return static_cast<phi::node *>(structural_output::node());
+    return static_cast<phi::node *>(StructuralOutput::node());
   }
 
 private:
@@ -698,7 +695,7 @@ public:
   }
 
   rvargument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
   rvoutput * output_;
@@ -732,7 +729,7 @@ private:
   operator=(cvargument &&) = delete;
 
   cvargument &
-  Copy(rvsdg::Region & region, rvsdg::structural_input * input) override;
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   static cvargument *
   create(rvsdg::Region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::Type> type)
@@ -779,7 +776,7 @@ private:
   operator=(rvresult &&) = delete;
 
   rvresult &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static rvresult *
   create(
