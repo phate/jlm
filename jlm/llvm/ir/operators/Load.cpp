@@ -448,7 +448,7 @@ LoadStoreStateReduction::GetInstance() noexcept
   return loadStoreStateReduction;
 }
 
-LoadDuplicateStateReduction::~LoadDuplicateStateReduction() = default;
+LoadDuplicateStateReduction::~LoadDuplicateStateReduction() noexcept = default;
 
 LoadDuplicateStateReduction::LoadDuplicateStateReduction() noexcept = default;
 
