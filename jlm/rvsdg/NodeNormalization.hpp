@@ -11,7 +11,6 @@
 namespace jlm::rvsdg
 {
 
-class node;
 class output;
 
 /**
@@ -26,7 +25,7 @@ template<class TOperation>
 class NodeNormalization
 {
   static_assert(
-      std::is_base_of<operation, TOperation>::value,
+      std::is_base_of<Operation, TOperation>::value,
       "Template parameter TOperation must be derived from jlm::rvsdg::operation.");
 
 public:

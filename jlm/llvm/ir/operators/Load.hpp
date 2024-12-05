@@ -702,7 +702,7 @@ private:
   LoadStoreStateReduction() noexcept;
 
   static bool
-  IsReducibleState(const rvsdg::output * state, const rvsdg::node * loadAlloca);
+  IsReducibleState(const rvsdg::output * state, const rvsdg::Node * loadAlloca);
 };
 
 /**

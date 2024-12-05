@@ -368,7 +368,7 @@ LoadStoreStateReduction::LoadStoreStateReduction() noexcept = default;
 bool
 LoadStoreStateReduction::IsReducibleState(
     const rvsdg::output * state,
-    const rvsdg::node * loadAlloca)
+    const rvsdg::Node * loadAlloca)
 {
   if (is<StoreNonVolatileOperation>(rvsdg::output::GetNode(*state)))
   {
