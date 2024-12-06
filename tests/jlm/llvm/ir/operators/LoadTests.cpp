@@ -46,7 +46,7 @@ JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-OperationEquality",
     OperationEquality)
 
-static void
+static int
 TestCopy()
 {
   using namespace jlm::llvm;
@@ -74,9 +74,13 @@ TestCopy()
   auto copiedLoadNode = dynamic_cast<const LoadNonVolatileNode *>(copiedNode);
   assert(copiedLoadNode != nullptr);
   assert(loadNode->GetOperation() == copiedLoadNode->GetOperation());
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests-Copy", TestCopy)
+
+static int
 TestLoadAllocaReduction()
 {
   using namespace jlm::llvm;
@@ -116,9 +120,15 @@ TestLoadAllocaReduction()
   assert(node->ninputs() == 3);
   assert(node->input(1)->origin() == alloca1[1]);
   assert(node->input(2)->origin() == mux[0]);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadAllocaReduction",
+    TestLoadAllocaReduction)
+
+static int
 TestMultipleOriginReduction()
 {
   using namespace jlm::llvm;
@@ -153,9 +163,15 @@ TestMultipleOriginReduction()
   auto node = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(is<LoadNonVolatileOperation>(node));
   assert(node->ninputs() == 2);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-MultipleOriginReduction",
+    TestMultipleOriginReduction)
+
+static int
 TestLoadStoreStateReduction()
 {
   using namespace jlm::llvm;
@@ -199,9 +215,15 @@ TestLoadStoreStateReduction()
   node = jlm::rvsdg::output::GetNode(*ex2.origin());
   assert(is<LoadNonVolatileOperation>(node));
   assert(node->ninputs() == 2);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreStateReduction",
+    TestLoadStoreStateReduction)
+
+static int
 TestLoadStoreReduction()
 {
   using namespace jlm::llvm;
@@ -239,9 +261,15 @@ TestLoadStoreReduction()
   assert(graph.root()->nnodes() == 1);
   assert(x1.origin() == v);
   assert(x2.origin() == s1);
+
+  return 0;
 }
 
-static void
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction",
+    TestLoadStoreReduction)
+
+static int
 TestLoadLoadReduction()
 {
   using namespace jlm::llvm;
@@ -298,23 +326,13 @@ TestLoadLoadReduction()
   assert(is<MemoryStateMergeOperation>(mx2) && mx2->ninputs() == 2);
   assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
   assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
-}
-
-static int
-TestLoad()
-{
-  TestCopy();
-
-  TestLoadAllocaReduction();
-  TestMultipleOriginReduction();
-  TestLoadStoreStateReduction();
-  TestLoadStoreReduction();
-  TestLoadLoadReduction();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests", TestLoad)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadLoadReduction",
+    TestLoadLoadReduction)
 
 static int
 LoadVolatileOperationEquality()
