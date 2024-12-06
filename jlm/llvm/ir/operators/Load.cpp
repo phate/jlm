@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
 {
@@ -286,8 +287,8 @@ is_load_store_state_reducible(
 static bool
 is_multiple_origin_reducible(const std::vector<rvsdg::output *> & operands)
 {
-  std::unordered_set<rvsdg::output *> states(std::next(operands.begin()), operands.end());
-  return states.size() != operands.size() - 1;
+  const util::HashSet<rvsdg::output *> states(std::next(operands.begin()), operands.end());
+  return states.Size() != operands.size() - 1;
 }
 
 // s2 = store_op a v1 s1
@@ -453,31 +454,32 @@ perform_multiple_origin_reduction(
     const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
-  std::vector<rvsdg::output *> new_loadstates;
-  std::unordered_set<rvsdg::output *> seen_state;
-  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  JLM_ASSERT(operands.size() > 1);
+  const auto address = operands[0];
+
+  std::vector<rvsdg::output *> newInputStates;
+  std::unordered_map<rvsdg::output *, size_t> stateIndexMap;
   for (size_t n = 1; n < operands.size(); n++)
   {
     auto state = operands[n];
-    if (seen_state.find(state) != seen_state.end())
-      results[n] = state;
-    else
-      new_loadstates.push_back(state);
-
-    seen_state.insert(state);
+    if (stateIndexMap.find(state) == stateIndexMap.end())
+    {
+      const size_t resultIndex = 1 + newInputStates.size(); // loaded value + states seen so far
+      newInputStates.push_back(state);
+      stateIndexMap[state] = resultIndex;
+    }
   }
 
-  auto ld = LoadNonVolatileNode::Create(
-      operands[0],
-      new_loadstates,
-      op.GetLoadedType(),
-      op.GetAlignment());
+  const auto loadResults =
+      LoadNonVolatileNode::Create(address, newInputStates, op.GetLoadedType(), op.GetAlignment());
 
-  results[0] = ld[0];
-  for (size_t n = 1, s = 1; n < results.size(); n++)
+  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  results[0] = loadResults[0];
+  for (size_t n = 1; n < operands.size(); n++)
   {
-    if (results[n] == nullptr)
-      results[n] = ld[s++];
+    auto state = operands[n];
+    JLM_ASSERT(stateIndexMap.find(state) != stateIndexMap.end());
+    results[n] = loadResults[stateIndexMap[state]];
   }
 
   return results;
