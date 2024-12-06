@@ -454,12 +454,7 @@ perform_multiple_origin_reduction(
     const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
-  if (operands.size() == 1)
-  {
-    // Nothing needs to be done as we do not have any states
-    return operands;
-  }
-
+  JLM_ASSERT(operands.size() > 1);
   const auto address = operands[0];
 
   std::vector<rvsdg::output *> newInputStates;
