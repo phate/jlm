@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
 {
@@ -457,8 +458,8 @@ LoadDuplicateStateReduction::IsApplicable(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::output *> & operands)
 {
-  const std::unordered_set<rvsdg::output *> states(std::next(operands.begin()), operands.end());
-  return states.size() != operands.size() - 1;
+  const util::HashSet<rvsdg::output *> states(std::next(operands.begin()), operands.end());
+  return states.Size() != operands.size() - 1;
 }
 
 std::vector<rvsdg::output *>
@@ -466,31 +467,32 @@ LoadDuplicateStateReduction::ApplyNormalization(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::output *> & operands)
 {
-  std::vector<rvsdg::output *> newLoadStates;
-  std::unordered_set<rvsdg::output *> seenStates;
-  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  JLM_ASSERT(operands.size() > 1);
+  const auto address = operands[0];
+
+  std::vector<rvsdg::output *> newInputStates;
+  std::unordered_map<rvsdg::output *, size_t> stateIndexMap;
   for (size_t n = 1; n < operands.size(); n++)
   {
     auto state = operands[n];
-    if (seenStates.find(state) != seenStates.end())
-      results[n] = state;
-    else
-      newLoadStates.push_back(state);
-
-    seenStates.insert(state);
+    if (stateIndexMap.find(state) == stateIndexMap.end())
+    {
+      const size_t resultIndex = 1 + newInputStates.size(); // loaded value + states seen so far
+      newInputStates.push_back(state);
+      stateIndexMap[state] = resultIndex;
+    }
   }
 
-  const auto ld = LoadNonVolatileNode::Create(
-      operands[0],
-      newLoadStates,
-      operation.GetLoadedType(),
-      operation.GetAlignment());
+  const auto loadResults =
+      LoadNonVolatileNode::Create(address, newInputStates, op.GetLoadedType(), op.GetAlignment());
 
-  results[0] = ld[0];
-  for (size_t n = 1, s = 1; n < results.size(); n++)
+  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  results[0] = loadResults[0];
+  for (size_t n = 1; n < operands.size(); n++)
   {
-    if (results[n] == nullptr)
-      results[n] = ld[s++];
+    auto state = operands[n];
+    JLM_ASSERT(stateIndexMap.find(state) != stateIndexMap.end());
+    results[n] = loadResults[stateIndexMap[state]];
   }
 
   return results;
