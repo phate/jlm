@@ -483,8 +483,11 @@ LoadDuplicateStateReduction::ApplyNormalization(
     }
   }
 
-  const auto loadResults =
-      LoadNonVolatileNode::Create(address, newInputStates, op.GetLoadedType(), op.GetAlignment());
+  const auto loadResults = LoadNonVolatileNode::Create(
+      address,
+      newInputStates,
+      operation.GetLoadedType(),
+      operation.GetAlignment());
 
   std::vector<rvsdg::output *> results(operands.size(), nullptr);
   results[0] = loadResults[0];
