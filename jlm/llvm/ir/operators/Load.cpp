@@ -262,16 +262,14 @@ LoadAllocaReduction::ApplyNormalization(
       otherStates.push_back(operands[n]);
   }
 
-  auto ld = LoadNonVolatileNode::Create(
+  auto loadResults = LoadNonVolatileNode::Create(
       operands[0],
       loadStates,
       operation.GetLoadedType(),
       operation.GetAlignment());
 
-  std::vector<rvsdg::output *> results(1, ld[0]);
-  results.insert(results.end(), std::next(ld.begin()), ld.end());
-  results.insert(results.end(), otherStates.begin(), otherStates.end());
-  return results;
+  loadResults.insert(loadResults.end(), otherStates.begin(), otherStates.end());
+  return loadResults;
 }
 
 LoadAllocaReduction &
