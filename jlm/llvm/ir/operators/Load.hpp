@@ -591,6 +591,16 @@ class LoadMuxReduction final : public rvsdg::NodeNormalization<LoadNonVolatileOp
 public:
   ~LoadMuxReduction() noexcept override;
 
+  LoadMuxReduction(const LoadMuxReduction &) = delete;
+
+  LoadMuxReduction(LoadMuxReduction &&) = delete;
+
+  LoadMuxReduction &
+  operator=(const LoadMuxReduction &) = delete;
+
+  LoadMuxReduction &
+  operator=(LoadMuxReduction &&) = delete;
+
   [[nodiscard]] bool
   IsApplicable(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> & operands)
       override;
@@ -624,6 +634,16 @@ class LoadAllocaReduction final : public rvsdg::NodeNormalization<LoadNonVolatil
 public:
   ~LoadAllocaReduction() noexcept override;
 
+  LoadAllocaReduction(const LoadAllocaReduction &) = delete;
+
+  LoadAllocaReduction(LoadAllocaReduction &&) = delete;
+
+  LoadAllocaReduction &
+  operator=(const LoadAllocaReduction &) = delete;
+
+  LoadAllocaReduction &
+  operator=(LoadAllocaReduction &&) = delete;
+
   [[nodiscard]] bool
   IsApplicable(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> & operands)
       override;
@@ -652,6 +672,16 @@ class LoadStoreReduction final : public rvsdg::NodeNormalization<LoadNonVolatile
 {
 public:
   ~LoadStoreReduction() noexcept override;
+
+  LoadStoreReduction(const LoadStoreReduction &) = delete;
+
+  LoadStoreReduction(LoadStoreReduction &&) = delete;
+
+  LoadStoreReduction &
+  operator=(const LoadStoreReduction &) = delete;
+
+  LoadStoreReduction &
+  operator=(LoadStoreReduction &&) = delete;
 
   [[nodiscard]] bool
   IsApplicable(
@@ -685,6 +715,16 @@ class LoadStoreStateReduction final : public rvsdg::NodeNormalization<LoadNonVol
 public:
   ~LoadStoreStateReduction() noexcept override;
 
+  LoadStoreStateReduction(const LoadStoreStateReduction &) = delete;
+
+  LoadStoreStateReduction(LoadStoreStateReduction &&) = delete;
+
+  LoadStoreStateReduction &
+  operator=(const LoadStoreStateReduction &) = delete;
+
+  LoadStoreStateReduction &
+  operator=(LoadStoreStateReduction &&) = delete;
+
   [[nodiscard]] bool
   IsApplicable(
       const LoadNonVolatileOperation & operation,
@@ -714,6 +754,16 @@ class LoadDuplicateStateReduction final : public rvsdg::NodeNormalization<LoadNo
 {
 public:
   ~LoadDuplicateStateReduction() noexcept override;
+
+  LoadDuplicateStateReduction(const LoadDuplicateStateReduction &) = delete;
+
+  LoadDuplicateStateReduction(LoadDuplicateStateReduction &&) = delete;
+
+  LoadDuplicateStateReduction &
+  operator=(const LoadDuplicateStateReduction &) = delete;
+
+  LoadDuplicateStateReduction &
+  operator=(LoadDuplicateStateReduction &&) = delete;
 
   [[nodiscard]] bool
   IsApplicable(
@@ -745,6 +795,16 @@ class LoadLoadStateReduction final : public rvsdg::NodeNormalization<LoadNonVola
 {
 public:
   ~LoadLoadStateReduction() noexcept override;
+
+  LoadLoadStateReduction(const LoadLoadStateReduction &) = delete;
+
+  LoadLoadStateReduction(LoadLoadStateReduction &&) = delete;
+
+  LoadLoadStateReduction &
+  operator=(const LoadLoadStateReduction &) = delete;
+
+  LoadLoadStateReduction &
+  operator=(LoadLoadStateReduction &&) = delete;
 
   [[nodiscard]] bool
   IsApplicable(
