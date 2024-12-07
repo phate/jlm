@@ -62,7 +62,7 @@ public:
    * @param operation The operation for which to normalize the operands.
    * @param operands The operands corresponding to the operation.
    *
-   * @return The normalized operands.
+   * @return The normalized result values.
    */
   virtual std::vector<output *>
   ApplyNormalization(const TOperation & operation, const std::vector<output *> & operands) = 0;
