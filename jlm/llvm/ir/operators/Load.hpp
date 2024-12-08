@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
@@ -574,6 +575,15 @@ public:
     return *(new LoadNonVolatileNode(region, loadOperation, operands));
   }
 };
+
+using LoadNonVolatileNormalization = rvsdg::NodeNormalization<LoadNonVolatileOperation>;
+
+extern LoadNonVolatileNormalization LoadMuxNormalization;
+extern LoadNonVolatileNormalization LoadAllocaNormalization;
+extern LoadNonVolatileNormalization LoadStoreNormalization;
+extern LoadNonVolatileNormalization LoadStoreStateNormalization;
+extern LoadNonVolatileNormalization LoadDuplicateStateNormalization;
+extern LoadNonVolatileNormalization LoadLoadStateNormalization;
 
 }
 

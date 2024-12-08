@@ -8,6 +8,7 @@
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/statemux.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
@@ -46,6 +47,7 @@ public:
   }
 };
 
+#if 0
 static void
 enable_mux_reductions(rvsdg::Graph & graph)
 {
@@ -111,10 +113,38 @@ enable_binary_reductions(rvsdg::Graph & graph)
   nf->set_mutable(true);
   nf->set_reducible(true);
 }
+#endif
+
+static bool
+NormalizeLoadNode(LoadNonVolatileNode & node)
+{
+  static auto LoadNormalizationSequence =
+      rvsdg::NodeNormalizationSequence<LoadNonVolatileOperation>(
+          { LoadMuxNormalization, LoadAllocaNormalization });
+
+  return rvsdg::NodeNormalizationReduction<LoadNonVolatileOperation>(LoadNormalizationSequence)(
+      node);
+}
 
 static void
 reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 {
+  auto & graph = rm.Rvsdg();
+
+  bool regionChanged = false;
+
+  do
+  {
+    for (auto node : rvsdg::topdown_traverser(graph.root()))
+    {
+      if (const auto loadNode = dynamic_cast<LoadNonVolatileNode *>(node))
+      {
+        regionChanged |= NormalizeLoadNode(*loadNode);
+      }
+    }
+  } while (regionChanged);
+
+  /*
   auto & graph = rm.Rvsdg();
   auto statistics = redstat::Create(rm.SourceFileName());
 
@@ -131,6 +161,7 @@ reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   statistics->end(graph);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+  */
 }
 
 /* nodereduction class */

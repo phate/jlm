@@ -61,6 +61,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/bitstring.hpp \
 	jlm/rvsdg/node.hpp \
 	jlm/rvsdg/node-normal-form.hpp \
+	jlm/rvsdg/NodeNormalization.hpp \
 	jlm/rvsdg/nullary.hpp \
 	jlm/rvsdg/structural-node.hpp \
 	jlm/rvsdg/control.hpp \
