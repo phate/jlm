@@ -29,6 +29,11 @@ protected:
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands);
 
+  SimpleNode(
+      rvsdg::Region * region,
+      std::unique_ptr<SimpleOperation> op,
+      const std::vector<jlm::rvsdg::output *> & operands);
+
 public:
   jlm::rvsdg::simple_input *
   input(size_t index) const noexcept;
@@ -52,6 +57,15 @@ public:
       const std::vector<jlm::rvsdg::output *> & operands)
   {
     return new SimpleNode(region, op, operands);
+  }
+
+  static inline jlm::rvsdg::SimpleNode *
+  Create(
+      rvsdg::Region * region,
+      std::unique_ptr<SimpleOperation> op,
+      const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    return new SimpleNode(region, std::move(op), operands);
   }
 
   static inline std::vector<jlm::rvsdg::output *>
@@ -118,6 +132,31 @@ inline jlm::rvsdg::simple_output *
 SimpleNode::output(size_t index) const noexcept
 {
   return static_cast<simple_output *>(Node::output(index));
+}
+
+struct CreateOpNodeResult
+{
+  Node * node;
+  std::vector<output *> outputs;
+};
+
+template<typename OpType, typename... OpParameters>
+CreateOpNodeResult
+CreateOpNode(const std::vector<output *> & arguments, OpParameters... opParameters)
+{
+  Region * region = arguments.at(0)->region();
+  for (const auto & argument : arguments)
+  {
+    JLM_ASSERT(argument->region() == region);
+  }
+  Node * node =
+      SimpleNode::Create(region, std::make_unique<OpType>(std::move(opParameters)...), arguments);
+  std::vector<output *> outputs;
+  for (std::size_t n = 0; n < node->noutputs(); ++n)
+  {
+    outputs.push_back(node->output(n));
+  }
+  return { node, std::move(outputs) };
 }
 
 }
