@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -873,6 +874,20 @@ RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
     {
       // Nothing needs to be done for delta nodes.
       continue;
+    }
+    else if (auto n = dynamic_cast<const rvsdg::SimpleNode *>(node))
+    {
+      // Few operators may appear as top-level constructs and simply must
+      // be ignored.
+      if (dynamic_cast<const FunctionToPointerOperation *>(&n->GetOperation()))
+      {
+        continue;
+      }
+      if (dynamic_cast<const PointerToFunctionOperation *>(&n->GetOperation()))
+      {
+        continue;
+      }
+      JLM_UNREACHABLE("Unhandled node type!");
     }
     else
     {
