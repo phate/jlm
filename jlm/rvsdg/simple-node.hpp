@@ -29,6 +29,11 @@ protected:
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands);
 
+  SimpleNode(
+      rvsdg::Region & region,
+      std::unique_ptr<SimpleOperation> operation,
+      const std::vector<jlm::rvsdg::output *> & operands);
+
 public:
   jlm::rvsdg::simple_input *
   input(size_t index) const noexcept;
@@ -52,6 +57,15 @@ public:
       const std::vector<jlm::rvsdg::output *> & operands)
   {
     return new SimpleNode(region, op, operands);
+  }
+
+  static inline jlm::rvsdg::SimpleNode &
+  Create(
+      rvsdg::Region & region,
+      std::unique_ptr<SimpleOperation> operation,
+      const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    return *new SimpleNode(region, std::move(operation), operands);
   }
 
   static inline std::vector<jlm::rvsdg::output *>
@@ -118,6 +132,91 @@ inline jlm::rvsdg::simple_output *
 SimpleNode::output(size_t index) const noexcept
 {
   return static_cast<simple_output *>(Node::output(index));
+}
+
+/**
+ * \brief Creates a simple node characterized by its operator.
+ *
+ * \tparam OperatorType
+ *   The type of operator wrapped by the node.
+ *
+ * \tparam OperatorArguments
+ *   Argument types of the operator to be constructed (should be
+ *   implied, just specify the OperatorType).
+ *
+ * \param operands
+ *   The operands to the operator (i.e. inputs to the node to be constructed).
+ *
+ * \param operatorArguments
+ *   Constructor arguments for the operator to be constructed.
+ *
+ * \returns
+ *   Reference to the node constructed.
+ *
+ * \pre
+ *   \p operands must be non-empty, must be in the same region, and their
+ *   types must match the operator constructed by this call.
+ *
+ * Constructs a new operator of type \p OperatorType using \p operatorArguments
+ * as constructor arguments. Creates a simple node using the constructed operator
+ * and the given \p operands as operands to the constructed operator.
+ *
+ * Usage example:
+ * \code
+ *   auto element_ptr = CreateOpNode<GetElementPtrOperation>(
+ *     { ptr }, offsetTypes, pointeeTypes).outputs(0);
+ * \endcode
+ */
+template<typename OperatorType, typename... OperatorArguments>
+SimpleNode &
+CreateOpNode(const std::vector<output *> & operands, OperatorArguments... operatorArguments)
+{
+  JLM_ASSERT(!operands.empty());
+  return SimpleNode::Create(
+      *operands[0]->region(),
+      std::make_unique<OperatorType>(std::move(operatorArguments)...),
+      operands);
+}
+
+/**
+ * \brief Creates a simple node characterized by its operator.
+ *
+ * \tparam OperatorType
+ *   The type of operator wrapped by the node.
+ *
+ * \tparam OperatorArguments
+ *   Argument types of the operator to be constructed (should be
+ *   implied, just specify the OperatorType).
+ *
+ * \param region
+ *   The region to create the node in.
+ *
+ * \param operatorArguments
+ *   Constructor arguments for the operator to be constructed.
+ *
+ * \returns
+ *   Reference to the node constructed.
+ *
+ * \pre
+ *   The given operator must not take any operands.
+ *
+ * Constructs a new operator of type \p OperatorType using \p operatorArguments
+ * as constructor arguments. Creates a simple node using the constructed operator
+ * with no operands in the specified region.
+ *
+ * Usage example:
+ * \code
+ *   auto val = CreateOpNode<IntegerConstantOperation>(region, 42).outputs(0);
+ * \endcode
+ */
+template<typename OperatorType, typename... OperatorArguments>
+SimpleNode &
+CreateOpNode(Region & region, OperatorArguments... operatorArguments)
+{
+  return SimpleNode::Create(
+      region,
+      std::make_unique<OperatorType>(std::move(operatorArguments)...),
+      {});
 }
 
 }
