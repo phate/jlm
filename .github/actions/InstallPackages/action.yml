@@ -72,7 +72,6 @@ runs:
       run: |
         sudo apt-get install llvm-${{inputs.llvm-version}}-dev
         pip install "lit~=${{inputs.llvm-version}}.0"
-        echo "$(python -m site --user-base)/bin" >> $GITHUB_PATH
       shell: bash
 
     - name: "Install clang package"
