@@ -68,7 +68,7 @@ while [[ "$#" -ge 1 ]] ; do
 	esac
 done
 
-if [ ! -z "$LLVM_LIT_PATH" ]; then
+if [ z "$LLVM_LIT_PATH" ]; then
   echo "error: --llvm-lit-path could not be found automatically" >&2
   exit 1
 fi
