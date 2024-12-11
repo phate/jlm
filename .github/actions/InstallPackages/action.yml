@@ -72,6 +72,7 @@ runs:
       run: |
         sudo apt-get install llvm-${{inputs.llvm-version}}-dev
         pip install "lit~=${{inputs.llvm-version}}.0"
+        pip show lit
       shell: bash
 
     - name: "Install clang package"
