@@ -576,14 +576,23 @@ public:
   }
 };
 
-using LoadNonVolatileNormalization = rvsdg::NodeNormalization<LoadNonVolatileOperation>;
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadMux(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> &);
 
-extern LoadNonVolatileNormalization LoadMuxNormalization;
-extern LoadNonVolatileNormalization LoadAllocaNormalization;
-extern LoadNonVolatileNormalization LoadStoreNormalization;
-extern LoadNonVolatileNormalization LoadStoreStateNormalization;
-extern LoadNonVolatileNormalization LoadDuplicateStateNormalization;
-extern LoadNonVolatileNormalization LoadLoadStateNormalization;
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadAlloca(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> &);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStore(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> &);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStoreState(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> &);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadDuplicateState(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> &);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadLoadState(const LoadNonVolatileOperation &, const std::vector<rvsdg::output *> &);
 
 }
 

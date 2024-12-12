@@ -118,12 +118,16 @@ enable_binary_reductions(rvsdg::Graph & graph)
 static bool
 NormalizeLoadNode(LoadNonVolatileNode & node)
 {
-  static auto LoadNormalizationSequence =
-      rvsdg::NodeNormalizationSequence<LoadNonVolatileOperation>(
-          { LoadMuxNormalization, LoadAllocaNormalization });
+  static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNormalizations(
+      { NormalizeLoadMux, NormalizeLoadAlloca });
 
-  return rvsdg::NodeNormalizationReduction<LoadNonVolatileOperation>(LoadNormalizationSequence)(
-      node);
+  auto normalizeLoadNode = std::bind(
+      rvsdg::NormalizeSequence<LoadNonVolatileOperation>,
+      loadNormalizations,
+      std::placeholders::_1,
+      std::placeholders::_2);
+
+  return rvsdg::ReduceNode<LoadNonVolatileOperation>(normalizeLoadNode, node);
 }
 
 static void

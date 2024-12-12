@@ -24,53 +24,39 @@ using NodeNormalization = std::function<
     std::optional<std::vector<output *>>(const TOperation &, const std::vector<output *> &)>;
 
 template<class TOperation>
-using NodeNormalizationSequenceType = std::function<NodeNormalization<TOperation>(
-    const std::vector<NodeNormalization<TOperation>> &)>;
-
-template<class TOperation>
-NodeNormalizationSequenceType<TOperation> NodeNormalizationSequence =
-    [](const std::vector<NodeNormalization<TOperation>> & nodeNormalizations)
-    -> NodeNormalization<TOperation>
+std::optional<std::vector<output *>>
+NormalizeSequence(
+    std::vector<NodeNormalization<TOperation>> nodeNormalizations,
+    const TOperation & operation,
+    const std::vector<output *> & operands)
 {
-  return [&](const TOperation & operation,
-             const std::vector<output *> & operands) -> std::optional<std::vector<output *>>
+  for (auto & nodeNormalization : nodeNormalizations)
   {
-    for (auto & nodeNormalization : nodeNormalizations)
+    if (auto results = nodeNormalization(operation, operands))
     {
-      if (auto results = nodeNormalization(operation, operands))
-      {
-        return results;
-      }
+      return results;
     }
+  }
 
-    return std::nullopt;
-  };
-};
-
-using NodeReduction = std::function<bool(Node &)>;
+  return std::nullopt;
+}
 
 template<class TOperation>
-using NodeNormalizationReductionType = std::function<NodeReduction(NodeNormalization<TOperation>)>;
-
-template<class TOperation>
-NodeNormalizationReductionType<TOperation> NodeNormalizationReduction =
-    [](NodeNormalization<TOperation> nodeNormalization) -> NodeReduction
+bool
+ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, Node & node)
 {
-  return [&](Node & node) -> bool
+  auto operation = util::AssertedCast<const TOperation>(&node.GetOperation());
+  auto operands = rvsdg::operands(&node);
+
+  if (auto results = nodeNormalization(*operation, operands))
   {
-    auto operation = util::AssertedCast<const TOperation>(&node.GetOperation());
-    auto operands = rvsdg::operands(&node);
+    divert_users(&node, *results);
+    remove(&node);
+    return true;
+  }
 
-    if (auto results = nodeNormalization(*operation, operands))
-    {
-      divert_users(&node, *results);
-      remove(&node);
-      return true;
-    }
-
-    return false;
-  };
-};
+  return false;
+}
 
 }
 
