@@ -6,6 +6,7 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 ## Dependencies
 * Clang/LLVM 18
 * Doxygen 1.9.1
+* `lit` 18
 
 ### HLS dependencies
 * MLIR 18
@@ -24,7 +25,7 @@ Regionalized Value State Dependence Graph (RVSDG) as intermediate representation
 make all
 ```
 
-This presumes that the reight version of llvm-config can be found in $PATH.
+This presumes that the right version of llvm-config can be found in $PATH.
 If that is not the case, you may need to explicitly configure it:
 
 ```

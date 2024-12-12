@@ -1,14 +1,15 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=2dc8240d91a0f993d616b152aa4d7520156862fe
+GIT_REPOSITORY=https://github.com/EECS-NTNU/circt.git
+GIT_COMMIT=c3c436b321db83dfabc9065e552a5da2f4694faa
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
 CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
-LLVM_LIT_PATH=`which lit`
+LLVM_LIT_PATH=`command -v lit || true`
 
 LLVM_VERSION=18
 LLVM_CONFIG_BIN=llvm-config-${LLVM_VERSION}
@@ -60,12 +61,17 @@ while [[ "$#" -ge 1 ]] ; do
 			commit >&1
 			exit 0
 			;;
-		--help)
+		--help|*)
 			usage >&2
 			exit 1
 			;;
 	esac
 done
+
+if [ -z "$LLVM_LIT_PATH" ]; then
+  echo "error: --llvm-lit-path could not be found automatically" >&2
+  exit 1
+fi
 
 LLVM_BINDIR=$(${LLVM_CONFIG_BIN} --bindir)
 LLVM_CMAKEDIR=$(${LLVM_CONFIG_BIN} --cmakedir)
@@ -75,7 +81,7 @@ CIRCT_BUILD_DIR=${CIRCT_BUILD}/build
 
 if [ ! -d "$CIRCT_GIT_DIR" ] ;
 then
-	git clone https://github.com/EECS-NTNU/circt.git ${CIRCT_GIT_DIR}
+	git clone ${GIT_REPOSITORY} ${CIRCT_GIT_DIR}
 fi
 git -C ${CIRCT_GIT_DIR} checkout ${GIT_COMMIT}
 cmake -G Ninja \
