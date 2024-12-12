@@ -26,7 +26,7 @@ using NodeNormalization = std::function<
 template<class TOperation>
 std::optional<std::vector<output *>>
 NormalizeSequence(
-    std::vector<NodeNormalization<TOperation>> nodeNormalizations,
+    const std::vector<NodeNormalization<TOperation>> & nodeNormalizations,
     const TOperation & operation,
     const std::vector<output *> & operands)
 {
