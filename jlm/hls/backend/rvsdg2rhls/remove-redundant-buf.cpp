@@ -20,6 +20,11 @@ eliminate_buf(jlm::rvsdg::output * o)
     {
       return eliminate_buf(node->input(1)->origin());
     }
+    else if (auto fork = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation()))
+    {
+      // part of memory disambiguation
+      return eliminate_buf(node->input(0)->origin());
+    }
     else if (dynamic_cast<const local_load_op *>(&node->GetOperation()))
     {
       return true;
@@ -28,7 +33,16 @@ eliminate_buf(jlm::rvsdg::output * o)
     {
       return true;
     }
+    else if (auto load = dynamic_cast<const jlm::hls::load_op *>(&node->GetOperation()))
+    {
+      return true;
+    }
+    else if (auto store = dynamic_cast<const jlm::hls::store_op *>(&node->GetOperation()))
+    {
+      return true;
+    }
   }
+
   return false;
 }
 
