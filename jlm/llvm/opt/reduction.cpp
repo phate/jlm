@@ -26,16 +26,16 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -49,7 +49,7 @@ public:
 static void
 enable_mux_reductions(rvsdg::Graph & graph)
 {
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::mux_op));
   auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
   mnf->set_mutable(true);
   mnf->set_mux_mux_reducible(true);
@@ -127,7 +127,7 @@ reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   enable_unary_reductions(graph);
   enable_binary_reductions(graph);
 
-  graph.normalize();
+  graph.Normalize();
   statistics->end(graph);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

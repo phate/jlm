@@ -156,7 +156,7 @@ StoreVolatileNodeCopy()
       StoreVolatileNode::CreateNode(address1, value1, ioState1, { &memoryState1 }, 4);
 
   // Act
-  auto copiedNode = storeNode.copy(graph.root(), { &address2, &value2, &ioState2, &memoryState2 });
+  auto copiedNode = storeNode.copy(&graph.GetRootRegion(), { &address2, &value2, &ioState2, &memoryState2 });
 
   // Assert
   auto copiedStoreNode = dynamic_cast<const StoreVolatileNode *>(copiedNode);
@@ -196,7 +196,7 @@ TestCopy()
   // Act
   auto node = jlm::rvsdg::output::GetNode(*storeResults[0]);
   auto storeNode = jlm::util::AssertedCast<const StoreNonVolatileNode>(node);
-  auto copiedNode = storeNode->copy(graph.root(), { address2, value2, memoryState2 });
+  auto copiedNode = storeNode->copy(&graph.GetRootRegion(), { address2, value2, memoryState2 });
 
   // Assert
   auto copiedStoreNode = dynamic_cast<const StoreNonVolatileNode *>(copiedNode);
@@ -215,7 +215,7 @@ TestStoreMuxReduction()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = graph.node_normal_form(typeid(StoreNonVolatileOperation));
+  auto nf = graph.GetNodeNormalForm(typeid(StoreNonVolatileOperation));
   auto snf = static_cast<jlm::llvm::store_normal_form *>(nf);
   snf->set_mutable(false);
   snf->set_store_mux_reducible(false);
@@ -231,15 +231,15 @@ TestStoreMuxReduction()
 
   auto & ex = GraphExport::Create(*state[0], "s");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   snf->set_mutable(true);
   snf->set_store_mux_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   auto muxnode = jlm::rvsdg::output::GetNode(*ex.origin());
@@ -264,7 +264,7 @@ TestMultipleOriginReduction()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = graph.node_normal_form(typeid(StoreNonVolatileOperation));
+  auto nf = graph.GetNodeNormalForm(typeid(StoreNonVolatileOperation));
   auto snf = static_cast<jlm::llvm::store_normal_form *>(nf);
   snf->set_mutable(false);
   snf->set_multiple_origin_reducible(false);
@@ -277,15 +277,15 @@ TestMultipleOriginReduction()
 
   auto & ex = GraphExport::Create(*states[0], "s");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   snf->set_mutable(true);
   snf->set_multiple_origin_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   auto node = jlm::rvsdg::output::GetNode(*ex.origin());
@@ -303,7 +303,7 @@ TestStoreAllocaReduction()
   auto bt = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::Graph graph;
-  auto nf = graph.node_normal_form(typeid(StoreNonVolatileOperation));
+  auto nf = graph.GetNodeNormalForm(typeid(StoreNonVolatileOperation));
   auto snf = static_cast<jlm::llvm::store_normal_form *>(nf);
   snf->set_mutable(false);
   snf->set_store_alloca_reducible(false);
@@ -321,21 +321,21 @@ TestStoreAllocaReduction()
   GraphExport::Create(*states2[1], "s2");
   GraphExport::Create(*states2[2], "s3");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
   snf->set_mutable(true);
   snf->set_store_alloca_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
   bool has_add_import = false;
-  for (size_t n = 0; n < graph.root()->nresults(); n++)
+  for (size_t n = 0; n < graph.GetRootRegion().nresults(); n++)
   {
-    if (graph.root()->result(n)->origin() == s)
+    if (graph.GetRootRegion().result(n)->origin() == s)
       has_add_import = true;
   }
   assert(has_add_import);
@@ -362,18 +362,18 @@ TestStoreStoreReduction()
 
   auto & ex = GraphExport::Create(*s2, "state");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
   nf->set_store_store_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(graph.root()->nnodes() == 1);
+  assert(graph.GetRootRegion().nnodes() == 1);
   assert(jlm::rvsdg::output::GetNode(*ex.origin())->input(1)->origin() == v2);
 }
 

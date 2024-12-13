@@ -37,8 +37,8 @@ test_gamma(void)
 
   /* test gamma copy */
 
-  auto gamma2 = static_cast<StructuralNode *>(gamma)->copy(graph.root(), { pred, v0, v1, v2 });
-  view(graph.root(), stdout);
+  auto gamma2 = static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
+  view(&graph.GetRootRegion(), stdout);
   assert(is<GammaOperation>(gamma2));
 
   /* test entry and exit variable iterators */
@@ -62,7 +62,7 @@ test_predicate_reduction(void)
   auto v1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
   auto v2 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
 
-  auto pred = jlm::rvsdg::control_constant(graph.root(), 3, 1);
+  auto pred = jlm::rvsdg::control_constant(&graph.GetRootRegion(), 3, 1);
 
   auto gamma = GammaNode::create(pred, 3);
   auto ev0 = gamma->AddEntryVar(v0);
@@ -72,12 +72,12 @@ test_predicate_reduction(void)
 
   auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
 
-  graph.normalize();
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  graph.Normalize();
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   assert(r.origin() == v1);
 
-  graph.prune();
-  assert(graph.root()->nnodes() == 0);
+  graph.Prune();
+  assert(graph.GetRootRegion().nnodes() == 0);
 }
 
 static void
@@ -99,12 +99,12 @@ test_invariant_reduction(void)
 
   auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
 
-  graph.normalize();
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  graph.Normalize();
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   assert(r.origin() == v);
 
-  graph.prune();
-  assert(graph.root()->nnodes() == 0);
+  graph.Prune();
+  assert(graph.GetRootRegion().nnodes() == 0);
 }
 
 static void
@@ -133,9 +133,9 @@ test_control_constant_reduction()
   auto & ex1 = jlm::tests::GraphExport::Create(*xv1.output, "");
   auto & ex2 = jlm::tests::GraphExport::Create(*xv2.output, "");
 
-  jlm::rvsdg::view(graph.root(), stdout);
-  graph.normalize();
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  graph.Normalize();
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   auto match = output::GetNode(*ex1.origin());
   assert(match && is<match_op>(match->GetOperation()));
@@ -168,9 +168,9 @@ test_control_constant_reduction2()
 
   auto & ex = jlm::tests::GraphExport::Create(*xv.output, "");
 
-  jlm::rvsdg::view(graph.root(), stdout);
-  graph.normalize();
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  graph.Normalize();
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   auto match = output::GetNode(*ex.origin());
   assert(is<match_op>(match));

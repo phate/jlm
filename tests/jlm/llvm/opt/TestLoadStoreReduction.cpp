@@ -41,15 +41,15 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   auto & exportedValue = GraphExport::Create(*loadResults[0], "v");
   GraphExport::Create(*loadResults[1], "s");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_store_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
   auto load = jlm::rvsdg::output::GetNode(*exportedValue.origin());

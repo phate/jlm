@@ -46,7 +46,7 @@ void
 check_rhls(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   if (root->nnodes() != 1)
   {
     throw jlm::util::error("Root should have only one node now");

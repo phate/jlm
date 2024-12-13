@@ -169,7 +169,7 @@ public:
   GetNormalForm(rvsdg::Graph * graph) noexcept
   {
     return util::AssertedCast<store_normal_form>(
-        graph->node_normal_form(typeid(StoreNonVolatileOperation)));
+        graph->GetNodeNormalForm(typeid(StoreNonVolatileOperation)));
   }
 
   static std::unique_ptr<llvm::tac>

@@ -91,7 +91,7 @@ void
 dump_xml(llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
 {
   auto xml_file = fopen(file_name.c_str(), "w");
-  jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), xml_file);
+  jlm::rvsdg::view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), xml_file);
   fclose(xml_file);
 }
 
@@ -121,7 +121,7 @@ trace_call(jlm::rvsdg::input * input)
   {
     result = input->origin();
   }
-  else if (argument->region() == graph->root())
+  else if (argument->region() == &graph->GetRootRegion())
   {
     result = argument;
   }
@@ -189,7 +189,7 @@ convert_alloca(rvsdg::Region * region)
     }
     else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->GetOperation())))
     {
-      auto rr = region->graph()->root();
+      auto rr = &region->graph()->GetRootRegion();
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
       auto delta_type = llvm::PointerType::Create();
       std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
@@ -328,7 +328,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
   // create a copy of rm
   auto rhls = llvm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
   std::cout << "processing " << rm.SourceFileName().name() << "\n";
-  auto root = rm.Rvsdg().root();
+  auto root = &rm.Rvsdg().GetRootRegion();
   for (auto node : jlm::rvsdg::topdown_traverser(root))
   {
     if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
@@ -386,7 +386,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
       }
       // copy function into rhls
-      auto new_ln = ln->copy(rhls->Rvsdg().root(), smap);
+      auto new_ln = ln->copy(&rhls->Rvsdg().GetRootRegion(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
       auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
       jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
@@ -449,13 +449,13 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
   rvsdg::SubstitutionMap smap;
-  rhls.Rvsdg().root()->copy(reference->Rvsdg().root(), smap, true, true);
+  rhls.Rvsdg().GetRootRegion().copy(&reference->Rvsdg().GetRootRegion(), smap, true, true);
   pre_opt(*reference);
   instrument_ref(*reference);
-  for (size_t i = 0; i < reference->Rvsdg().root()->narguments(); ++i)
+  for (size_t i = 0; i < reference->Rvsdg().GetRootRegion().narguments(); ++i)
   {
     auto graphImport =
-        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().root()->argument(i));
+        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
     std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
               << "\n";
   }

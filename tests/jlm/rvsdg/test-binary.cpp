@@ -25,21 +25,21 @@ test_flattened_binary_reduction()
     auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i3 = &jlm::tests::GraphImport::Create(graph, vt, "");
 
-    auto o1 = simple_node::create_normalized(graph.root(), op, { i0, i1 })[0];
-    auto o2 = simple_node::create_normalized(graph.root(), op, { o1, i2 })[0];
-    auto o3 = simple_node::create_normalized(graph.root(), op, { o2, i3 })[0];
+    auto o1 = simple_node::create_normalized(&graph.GetRootRegion(), op, { i0, i1 })[0];
+    auto o2 = simple_node::create_normalized(&graph.GetRootRegion(), op, { o1, i2 })[0];
+    auto o3 = simple_node::create_normalized(&graph.GetRootRegion(), op, { o2, i3 })[0];
 
     auto & ex = jlm::tests::GraphExport::Create(*o3, "");
-    graph.prune();
+    graph.Prune();
 
     jlm::rvsdg::view(graph, stdout);
     assert(
-        graph.root()->nnodes() == 1 && Region::Contains<flattened_binary_op>(*graph.root(), false));
+        graph.GetRootRegion().nnodes() == 1 && Region::Contains<flattened_binary_op>(graph.GetRootRegion(), false));
 
     flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::parallel);
     jlm::rvsdg::view(graph, stdout);
 
-    assert(graph.root()->nnodes() == 3);
+    assert(graph.GetRootRegion().nnodes() == 3);
 
     auto node0 = output::GetNode(*ex.origin());
     assert(is<jlm::tests::binary_op>(node0));
@@ -59,21 +59,21 @@ test_flattened_binary_reduction()
     auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i3 = &jlm::tests::GraphImport::Create(graph, vt, "");
 
-    auto o1 = simple_node::create_normalized(graph.root(), op, { i0, i1 })[0];
-    auto o2 = simple_node::create_normalized(graph.root(), op, { o1, i2 })[0];
-    auto o3 = simple_node::create_normalized(graph.root(), op, { o2, i3 })[0];
+    auto o1 = simple_node::create_normalized(&graph.GetRootRegion(), op, { i0, i1 })[0];
+    auto o2 = simple_node::create_normalized(&graph.GetRootRegion(), op, { o1, i2 })[0];
+    auto o3 = simple_node::create_normalized(&graph.GetRootRegion(), op, { o2, i3 })[0];
 
     auto & ex = jlm::tests::GraphExport::Create(*o3, "");
-    graph.prune();
+    graph.Prune();
 
     jlm::rvsdg::view(graph, stdout);
     assert(
-        graph.root()->nnodes() == 1 && Region::Contains<flattened_binary_op>(*graph.root(), false));
+        graph.GetRootRegion().nnodes() == 1 && Region::Contains<flattened_binary_op>(graph.GetRootRegion(), false));
 
     flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::linear);
     jlm::rvsdg::view(graph, stdout);
 
-    assert(graph.root()->nnodes() == 3);
+    assert(graph.GetRootRegion().nnodes() == 3);
 
     auto node0 = output::GetNode(*ex.origin());
     assert(is<jlm::tests::binary_op>(node0));

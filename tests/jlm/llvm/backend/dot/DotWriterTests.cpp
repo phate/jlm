@@ -23,13 +23,13 @@ TestWriteGraphs()
 
   // Act
   GraphWriter writer;
-  dot::WriteGraphs(writer, *gammaTest.graph().root(), false);
+  dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
   writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
-  assert(rootGraph.GetProgramObject() == reinterpret_cast<uintptr_t>(gammaTest.graph().root()));
+  assert(rootGraph.GetProgramObject() == reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
   assert(rootGraph.NumNodes() == 1);       // Only the lambda node for "f"
   assert(rootGraph.NumResultNodes() == 1); // Exporting the function "f"
   auto & lambdaNode = *AssertedCast<InOutNode>(&rootGraph.GetNode(0));
@@ -85,7 +85,7 @@ TestTypeGraph()
 
   // Act
   GraphWriter writer;
-  dot::WriteGraphs(writer, *gammaTest.graph().root(), true);
+  dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
   writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);

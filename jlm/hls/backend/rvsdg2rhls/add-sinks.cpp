@@ -46,7 +46,7 @@ void
 add_sinks(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_sinks(root);
 }
 

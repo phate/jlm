@@ -163,7 +163,7 @@ public:
   normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::binary_normal_form *>(
-        graph->node_normal_form(typeid(binary_op)));
+        graph->GetNodeNormalForm(typeid(binary_op)));
   }
 };
 
@@ -211,7 +211,7 @@ public:
   normal_form(Graph * graph) noexcept
   {
     return static_cast<flattened_binary_normal_form *>(
-        graph->node_normal_form(typeid(flattened_binary_op)));
+        graph->GetNodeNormalForm(typeid(flattened_binary_op)));
   }
 
   jlm::rvsdg::output *
@@ -225,7 +225,7 @@ public:
   static inline void
   reduce(Graph * graph, const flattened_binary_op::reduction & reduction)
   {
-    reduce(graph->root(), reduction);
+    reduce(&graph->GetRootRegion(), reduction);
   }
 
 private:

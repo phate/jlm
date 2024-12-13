@@ -50,7 +50,7 @@ void
 add_prints(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_prints(root);
 }
 
@@ -58,7 +58,7 @@ void
 convert_prints(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   // TODO: make this less hacky by using the correct state types
   auto fct =
       llvm::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});

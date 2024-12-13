@@ -29,7 +29,7 @@ test1()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lvx = theta->add_loopvar(x);
   auto lvy = theta->add_loopvar(y);
@@ -65,10 +65,10 @@ test1()
   auto & ex2 = GraphExport::Create(*theta->output(1), "y");
   auto & ex3 = GraphExport::Create(*theta->output(2), "z");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex1.origin())));
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex2.origin())));
@@ -85,7 +85,7 @@ test2()
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lv1 = theta->add_loopvar(x);
 
@@ -112,10 +112,10 @@ test2()
 
   auto & ex = GraphExport::Create(*theta->output(0), "x");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex.origin())));
 }

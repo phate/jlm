@@ -21,12 +21,12 @@ TestWithMatch()
   auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   /* Setup graph */
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
@@ -58,12 +58,12 @@ TestWithoutMatch()
   auto ft = FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   /* Setup graph */
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
   auto gamma = jlm::rvsdg::GammaNode::create(lambda->GetFunctionArguments()[0], 2);
   auto ev1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);

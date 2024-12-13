@@ -26,7 +26,7 @@ void
 mem_sep_independent(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   mem_sep_independent(root);
 }
 
@@ -34,7 +34,7 @@ void
 mem_sep_argument(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   mem_sep_argument(root);
 }
 

@@ -81,7 +81,7 @@ public:
   static jlm::rvsdg::mux_normal_form *
   normal_form(Graph * graph) noexcept
   {
-    return static_cast<jlm::rvsdg::mux_normal_form *>(graph->node_normal_form(typeid(mux_op)));
+    return static_cast<jlm::rvsdg::mux_normal_form *>(graph->GetNodeNormalForm(typeid(mux_op)));
   }
 };
 

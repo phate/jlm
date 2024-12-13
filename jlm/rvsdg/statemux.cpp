@@ -179,7 +179,7 @@ mux_normal_form::set_mux_mux_reducible(bool enable)
 
   enable_mux_mux_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -192,7 +192,7 @@ mux_normal_form::set_multiple_origin_reducible(bool enable)
 
   enable_multiple_origin_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 }

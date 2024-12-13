@@ -123,7 +123,7 @@ trace_call(const jlm::rvsdg::output * output)
   if (auto argument = dynamic_cast<const jlm::rvsdg::RegionArgument *>(output))
   {
     auto graph = output->region()->graph();
-    if (argument->region() == graph->root())
+    if (argument->region() == &graph->GetRootRegion())
     {
       return argument;
     }
@@ -566,7 +566,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // arguments.
   //
 
-  auto root = rm.Rvsdg().root();
+  auto root = &rm.Rvsdg().GetRootRegion();
   auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->Nodes().begin().ptr());
 
   //

@@ -44,8 +44,8 @@ public:
     if (!IsDemanded())
       return;
 
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(rvsdgModule.Rvsdg().root()));
-    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::Region::NumRegions(*rvsdgModule.Rvsdg().root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&rvsdgModule.Rvsdg().GetRootRegion()));
+    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::Region::NumRegions(rvsdgModule.Rvsdg().GetRootRegion()));
     AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 
@@ -632,7 +632,7 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
   auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, pointsToGraph);
 
   statistics->StartAnnotationStatistics();
-  AnnotateRegion(*rvsdgModule.Rvsdg().root());
+  AnnotateRegion(rvsdgModule.Rvsdg().GetRootRegion());
   statistics->StopAnnotationStatistics();
 
   statistics->StartPropagationPass1Statistics();
@@ -856,7 +856,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::StructuralNod
 void
 RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
 {
-  rvsdg::topdown_traverser traverser(rvsdgModule.Rvsdg().root());
+  rvsdg::topdown_traverser traverser(&rvsdgModule.Rvsdg().GetRootRegion());
   for (auto & node : traverser)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
@@ -1064,7 +1064,7 @@ RegionAwareMemoryNodeProvider::ToRegionTree(
     return subtree;
   };
 
-  return toRegionTree(rvsdg.root(), 0);
+  return toRegionTree(&rvsdg.GetRootRegion(), 0);
 }
 
 }

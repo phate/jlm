@@ -22,10 +22,10 @@ TestFork()
   auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::Operation));
+  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
   rvsdg::bitult_op ult(32);
   rvsdg::bitadd_op add(32);
@@ -56,7 +56,7 @@ TestFork()
 
   // Assert
   {
-    auto omegaRegion = rm.Rvsdg().root();
+    auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
     auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
     assert(is<lambda::operation>(lambda));
@@ -90,10 +90,10 @@ TestConstantFork()
   auto ft = FunctionType::Create({ b32 }, { b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::Operation));
+  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
   auto lambdaRegion = lambda->subregion();
 
   rvsdg::bitult_op ult(32);
@@ -122,7 +122,7 @@ TestConstantFork()
 
   // Assert
   {
-    auto omegaRegion = rm.Rvsdg().root();
+    auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
     auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
     assert(is<lambda::operation>(lambda));

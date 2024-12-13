@@ -123,7 +123,7 @@ void
 remove_unused_state(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   remove_unused_state(root);
 }
 
@@ -239,8 +239,8 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   auto new_out = new_lambda->finalize(new_results);
 
   // TODO handle functions at other levels?
-  JLM_ASSERT(ln->region() == ln->region()->graph()->root());
-  JLM_ASSERT((*ln->output()->begin())->region() == ln->region()->graph()->root());
+  JLM_ASSERT(ln->region() == &ln->region()->graph()->GetRootRegion());
+  JLM_ASSERT((*ln->output()->begin())->region() == &ln->region()->graph()->GetRootRegion());
 
   //	ln->output()->divert_users(new_out); // can't divert since the type changed
   JLM_ASSERT(ln->output()->nusers() == 1);

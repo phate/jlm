@@ -90,7 +90,7 @@ void
 add_buffers(llvm::RvsdgModule & rm, bool pass_through)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_buffers(root, pass_through);
 }
 

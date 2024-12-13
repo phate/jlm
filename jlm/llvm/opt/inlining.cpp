@@ -27,14 +27,14 @@ public:
   void
   start(const rvsdg::Graph & graph)
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   stop(const rvsdg::Graph & graph)
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -54,7 +54,7 @@ find_producer(jlm::rvsdg::input * input)
   if (argument == nullptr)
     return input->origin();
 
-  if (argument->region() == graph->root())
+  if (argument->region() == &graph->GetRootRegion())
     return argument;
 
   JLM_ASSERT(argument->input() != nullptr);
@@ -146,7 +146,7 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
 static void
 inlining(rvsdg::Graph & rvsdg)
 {
-  for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
+  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
   {
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {

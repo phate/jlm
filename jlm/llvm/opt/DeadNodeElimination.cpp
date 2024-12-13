@@ -105,8 +105,8 @@ public:
   void
   StartMarkStatistics(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(MarkTimerLabel_).start();
   }
 
@@ -126,8 +126,8 @@ public:
   StopSweepStatistics(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(SweepTimerLabel_).stop();
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
   }
 
   static std::unique_ptr<Statistics>
@@ -161,7 +161,7 @@ DeadNodeElimination::run(RvsdgModule & module, jlm::util::StatisticsCollector & 
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFileName());
   statistics->StartMarkStatistics(rvsdg);
-  MarkRegion(*rvsdg.root());
+  MarkRegion(rvsdg.GetRootRegion());
   statistics->StopMarkStatistics();
 
   statistics->StartSweepStatistics();
@@ -300,14 +300,14 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 void
 DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
 {
-  SweepRegion(*rvsdg.root());
+  SweepRegion(rvsdg.GetRootRegion());
 
   // Remove dead imports
-  for (size_t n = rvsdg.root()->narguments() - 1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = rvsdg.GetRootRegion().narguments() - 1; n != static_cast<size_t>(-1); n--)
   {
-    if (!Context_->IsAlive(*rvsdg.root()->argument(n)))
+    if (!Context_->IsAlive(*rvsdg.GetRootRegion().argument(n)))
     {
-      rvsdg.root()->RemoveArgument(n);
+      rvsdg.GetRootRegion().RemoveArgument(n);
     }
   }
 }

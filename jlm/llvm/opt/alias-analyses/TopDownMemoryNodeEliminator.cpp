@@ -25,7 +25,7 @@ public:
   void
   Start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
@@ -465,7 +465,7 @@ TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule & rvsdgModule)
   InitializeLiveNodesOfTailLambdas(rvsdgModule);
 
   // Start the processing of the RVSDG module
-  EliminateTopDownRootRegion(*rvsdgModule.Rvsdg().root());
+  EliminateTopDownRootRegion(*rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 void
@@ -963,7 +963,7 @@ TopDownMemoryNodeEliminator::CheckInvariants(
 
   std::vector<const CallNode *> callNodes;
   std::vector<const rvsdg::Region *> regions;
-  collectRegionsAndCalls(*rvsdgModule.Rvsdg().root(), regions, callNodes);
+  collectRegionsAndCalls(*rvsdgModule.Rvsdg().GetRootRegion(), regions, callNodes);
 
   for (auto region : regions)
   {

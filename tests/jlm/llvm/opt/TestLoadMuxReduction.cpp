@@ -39,15 +39,15 @@ TestSuccess()
   auto & ex1 = GraphExport::Create(*ld[0], "v");
   auto & ex2 = GraphExport::Create(*ld[1], "s");
 
-  // jlm::rvsdg::view(graph.root(), stdout);
+  // jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  // jlm::rvsdg::view(graph.root(), stdout);
+  // jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
   auto load = jlm::rvsdg::output::GetNode(*ex1.origin());
@@ -93,15 +93,15 @@ TestWrongNumberOfOperands()
   auto & ex2 = GraphExport::Create(*ld[1], "s1");
   auto & ex3 = GraphExport::Create(*ld[2], "s2");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
 
@@ -133,15 +133,15 @@ TestLoadWithoutStates()
 
   auto & ex = GraphExport::Create(*loadResults[0], "v");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
   auto load = jlm::rvsdg::output::GetNode(*ex.origin());

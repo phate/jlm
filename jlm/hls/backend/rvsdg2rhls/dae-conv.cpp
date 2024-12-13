@@ -22,7 +22,7 @@ void
 dae_conv(jlm::llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   dae_conv(root);
 }
 

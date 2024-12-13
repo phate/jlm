@@ -7,17 +7,9 @@
 #ifndef JLM_RVSDG_GRAPH_HPP
 #define JLM_RVSDG_GRAPH_HPP
 
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include <typeindex>
-
 #include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/tracker.hpp>
-
-#include <jlm/util/common.hpp>
 
 namespace jlm::rvsdg
 {
@@ -60,42 +52,56 @@ private:
   std::string Name_;
 };
 
-class Graph
+/**
+ * Represents a Regionalized Value State Dependence Graph (RVSDG)
+ */
+class Graph final
 {
 public:
   ~Graph();
 
   Graph();
 
-  [[nodiscard]] rvsdg::Region *
-  root() const noexcept
+  /**
+   * @return The root region of the graph.
+   */
+  [[nodiscard]] Region &
+  GetRootRegion() const noexcept
   {
-    return root_;
+    return *RootRegion_;
   }
 
-  inline void
-  mark_denormalized() noexcept
+  void
+  MarkDenormalized() noexcept
   {
-    normalized_ = false;
+    Normalized_ = false;
   }
 
-  inline void
-  normalize()
+  void
+  Normalize()
   {
-    root()->normalize(true);
-    normalized_ = true;
+    GetRootRegion().normalize(true);
+    Normalized_ = true;
   }
 
+  /**
+   * @return A copy of the RVSDG.
+   */
   [[nodiscard]] std::unique_ptr<Graph>
-  copy() const;
+  Copy() const;
 
-  jlm::rvsdg::node_normal_form *
-  node_normal_form(const std::type_info & type) noexcept;
+  node_normal_form *
+  GetNodeNormalForm(const std::type_info & type) noexcept;
 
-  inline void
-  prune()
+  /**
+   * Remove all dead nodes in the graph.
+   *
+   * @see Node::IsDead()
+   */
+  void
+  Prune()
   {
-    root()->prune(true);
+    GetRootRegion().prune(true);
   }
 
   /**
@@ -111,9 +117,9 @@ public:
   ExtractTailNodes(const Graph & rvsdg);
 
 private:
-  bool normalized_;
-  rvsdg::Region * root_;
-  jlm::rvsdg::node_normal_form_hash node_normal_forms_;
+  bool Normalized_;
+  std::unique_ptr<Region> RootRegion_;
+  node_normal_form_hash NodeNormalForms_{};
 };
 
 }

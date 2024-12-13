@@ -4,62 +4,59 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <cxxabi.h>
-
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/tracker.hpp>
 
 #include <algorithm>
+#include <cxxabi.h>
 
 namespace jlm::rvsdg
 {
 
 GraphImport::GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-    : RegionArgument(graph.root(), nullptr, std::move(type)),
+    : RegionArgument(&graph.GetRootRegion(), nullptr, std::move(type)),
       Name_(std::move(name))
 {}
 
 GraphExport::GraphExport(rvsdg::output & origin, std::string name)
-    : RegionResult(origin.region()->graph()->root(), &origin, nullptr, origin.Type()),
+    : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
 
 Graph::~Graph()
 {
   JLM_ASSERT(!has_active_trackers(this));
-
-  delete root_;
 }
 
 Graph::Graph()
-    : normalized_(false),
-      root_(new rvsdg::Region(nullptr, this))
+    : Normalized_(false),
+      RootRegion_(new Region(nullptr, this))
 {}
 
 std::unique_ptr<Graph>
-Graph::copy() const
+Graph::Copy() const
 {
-  SubstitutionMap smap;
-  std::unique_ptr<jlm::rvsdg::Graph> graph(new jlm::rvsdg::Graph());
-  root()->copy(graph->root(), smap, true, true);
+  SubstitutionMap substitutionMap;
+  auto graph = std::make_unique<Graph>();
+  GetRootRegion().copy(&graph.GetRootRegion(), substitutionMap, true, true);
   return graph;
 }
 
-jlm::rvsdg::node_normal_form *
-Graph::node_normal_form(const std::type_info & type) noexcept
+node_normal_form *
+Graph::GetNodeNormalForm(const std::type_info & type) noexcept
 {
-  auto i = node_normal_forms_.find(std::type_index(type));
-  if (i != node_normal_forms_.end())
+  auto i = NodeNormalForms_.find(std::type_index(type));
+  if (i != NodeNormalForms_.end())
     return i.ptr();
 
   const auto cinfo = dynamic_cast<const abi::__si_class_type_info *>(&type);
-  auto parent_normal_form = cinfo ? node_normal_form(*cinfo->__base_type) : nullptr;
+  auto parent_normal_form = cinfo ? GetNodeNormalForm(*cinfo->__base_type) : nullptr;
 
-  std::unique_ptr<jlm::rvsdg::node_normal_form> nf(
-      jlm::rvsdg::node_normal_form::create(type, parent_normal_form, this));
+  std::unique_ptr<node_normal_form> nf(node_normal_form::create(type, parent_normal_form, this));
 
-  jlm::rvsdg::node_normal_form * result = nf.get();
-  node_normal_forms_.insert(std::move(nf));
+  node_normal_form * result = nf.get();
+  NodeNormalForms_.insert(std::move(nf));
 
   return result;
 }
@@ -76,7 +73,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
         return false;
       }
 
-      if (rvsdg::input::GetNode(*input))
+      if (input::GetNode(*input))
       {
         return false;
       }
@@ -87,7 +84,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
     return std::all_of(output.begin(), output.end(), IsRootRegionExport);
   };
 
-  auto & rootRegion = *rvsdg.root();
+  auto & rootRegion = rvsdg.GetRootRegion();
 
   std::vector<Node *> nodes;
   for (auto & bottomNode : rootRegion.BottomNodes())
@@ -100,7 +97,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
     auto output = rootRegion.result(n)->origin();
     if (IsOnlyExported(*output))
     {
-      nodes.push_back(rvsdg::output::GetNode(*output));
+      nodes.push_back(output::GetNode(*output));
     }
   }
 

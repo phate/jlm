@@ -487,7 +487,7 @@ JlmOptCommand::PrintAsAscii(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto ascii = rvsdg::view(rvsdgModule.Rvsdg().root());
+  auto ascii = view(&rvsdgModule.Rvsdg().GetRootRegion());
 
   if (outputFile == "")
   {
@@ -509,7 +509,7 @@ JlmOptCommand::PrintAsXml(
 {
   auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
 
-  jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), fd);
+  view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), fd);
 
   if (fd != stdout)
     fclose(fd);
@@ -561,7 +561,7 @@ JlmOptCommand::PrintAsRvsdgTree(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
   auto tree = rvsdg::Region::ToTree(rootRegion);
 
   if (outputFile == "")
@@ -583,7 +583,7 @@ JlmOptCommand::PrintAsDot(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   util::GraphWriter writer;
   jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);

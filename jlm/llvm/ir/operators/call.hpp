@@ -261,7 +261,7 @@ public:
   static std::unique_ptr<CallTypeClassifier>
   CreateExternalCallClassifier(rvsdg::RegionArgument & argument)
   {
-    JLM_ASSERT(argument.region() == argument.region()->graph()->root());
+    JLM_ASSERT(argument.region() == &argument.region()->graph()->GetRootRegion());
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
   }
 

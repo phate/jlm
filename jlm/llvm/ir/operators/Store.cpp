@@ -422,7 +422,7 @@ store_normal_form::set_store_mux_reducible(bool enable)
 
   enable_store_mux_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -435,7 +435,7 @@ store_normal_form::set_store_store_reducible(bool enable)
 
   enable_store_store_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -448,7 +448,7 @@ store_normal_form::set_store_alloca_reducible(bool enable)
 
   enable_store_alloca_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -461,7 +461,7 @@ store_normal_form::set_multiple_origin_reducible(bool enable)
 
   enable_multiple_origin_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 }

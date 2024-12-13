@@ -210,7 +210,7 @@ gamma_normal_form::set_predicate_reduction(bool enable)
   enable_predicate_reduction_ = enable;
 
   if (enable && get_mutable())
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -226,7 +226,7 @@ gamma_normal_form::set_invariant_reduction(bool enable)
   enable_invariant_reduction_ = enable;
 
   if (enable && get_mutable())
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -239,7 +239,7 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
 
   enable_control_constant_reduction_ = enable;
   if (enable && get_mutable())
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 GammaOperation::~GammaOperation() noexcept

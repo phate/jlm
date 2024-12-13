@@ -118,7 +118,7 @@ void
 hls::distribute_constants(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   distribute_constants(root);
 }
 

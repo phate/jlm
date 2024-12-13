@@ -21,7 +21,7 @@ test_mux_mux_reduction()
   auto st = jlm::tests::statetype::Create();
 
   Graph graph;
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::mux_op));
   auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
   mnf->set_mutable(false);
   mnf->set_mux_mux_reducible(false);
@@ -36,14 +36,14 @@ test_mux_mux_reduction()
 
   auto & ex = jlm::tests::GraphExport::Create(*mux3, "m");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   mnf->set_mutable(true);
   mnf->set_mux_mux_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto node = output::GetNode(*ex.origin());
   assert(node->ninputs() == 4);
@@ -61,7 +61,7 @@ test_multiple_origin_reduction()
   auto st = jlm::tests::statetype::Create();
 
   Graph graph;
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
+  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::mux_op));
   auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
   mnf->set_mutable(false);
   mnf->set_multiple_origin_reducible(false);
@@ -70,14 +70,14 @@ test_multiple_origin_reduction()
   auto mux1 = jlm::rvsdg::create_state_merge(st, { x, x });
   auto & ex = jlm::tests::GraphExport::Create(*mux1, "m");
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   mnf->set_mutable(true);
   mnf->set_multiple_origin_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   assert(output::GetNode(*ex.origin())->ninputs() == 1);
 }

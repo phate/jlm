@@ -22,7 +22,7 @@ TestTraceArgument()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -35,7 +35,7 @@ TestTraceArgument()
       { MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
@@ -82,7 +82,7 @@ TestLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -92,7 +92,7 @@ TestLoad()
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
@@ -115,7 +115,7 @@ TestLoad()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Memory Converter replaces the lambda so we start from the root of the graph
-  auto region = rvsdgModule->Rvsdg().root();
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
   lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
 
@@ -164,7 +164,7 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -176,7 +176,7 @@ TestLoadStore()
       { MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
@@ -201,7 +201,7 @@ TestLoadStore()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Memory Converter replaces the lambda so we start from the root of the graph
-  auto region = rvsdgModule->Rvsdg().root();
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
   lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
 
@@ -251,7 +251,7 @@ TestThetaLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -265,7 +265,7 @@ TestThetaLoad()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
@@ -341,7 +341,7 @@ TestThetaLoad()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Memory Converter replaces the lambda so we start from the root of the graph
-  auto region = rvsdgModule->Rvsdg().root();
+  auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
   lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();

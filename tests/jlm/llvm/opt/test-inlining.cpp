@@ -37,7 +37,7 @@ test1()
         { vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
+    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
     lambda->AddContextVar(*i);
 
     auto t = jlm::tests::test_op::create(
@@ -62,7 +62,7 @@ test1()
           MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
+    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
     auto d = lambda->AddContextVar(*f1).inner;
     auto controlArgument = lambda->GetFunctionArguments()[0];
     auto valueArgument = lambda->GetFunctionArguments()[1];
@@ -98,15 +98,15 @@ test1()
 
   GraphExport::Create(*f2, "f2");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
   jlm::llvm::fctinline fctinline;
   fctinline.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(!jlm::rvsdg::Region::Contains<CallOperation>(*graph.root(), true));
+  assert(!jlm::rvsdg::Region::Contains<CallOperation>(graph.GetRootRegion(), true));
 }
 
 static void
@@ -134,7 +134,7 @@ test2()
 
   auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
   {
-    auto lambda = lambda::node::create(graph.root(), functionType, "f1", linkage::external_linkage);
+    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
     return lambda->finalize(
         { lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
@@ -147,7 +147,7 @@ test2()
         { iostatetype::Create(), MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(graph.root(), functionType, "f2", linkage::external_linkage);
+    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f2", linkage::external_linkage);
     auto cvi = lambda->AddContextVar(*i).inner;
     auto cvf1 = lambda->AddContextVar(*f1).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
@@ -164,12 +164,12 @@ test2()
 
   GraphExport::Create(*f2, "f2");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   jlm::llvm::fctinline fctinline;
   fctinline.run(rm, statisticsCollector);
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   // Function f1 should not have been inlined.

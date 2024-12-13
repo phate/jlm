@@ -45,7 +45,7 @@ create_theta(
 
   auto graph = init->region()->graph();
 
-  auto theta = ThetaNode::create(graph->root());
+  auto theta = ThetaNode::create(&graph->GetRootRegion());
   auto subregion = theta->subregion();
   auto idv = theta->add_loopvar(init);
   auto lvs = theta->add_loopvar(step);
@@ -93,19 +93,19 @@ test_unrollinfo()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
+    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
-    auto init0 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
-    auto init1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
-    auto initm1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0xFFFFFFFF);
+    auto init0 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
+    auto init1 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
+    auto initm1 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0xFFFFFFFF);
 
-    auto step1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
-    auto step0 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
-    auto stepm1 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0xFFFFFFFF);
-    auto step2 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 2);
+    auto step1 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
+    auto step0 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
+    auto stepm1 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0xFFFFFFFF);
+    auto step2 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 2);
 
-    auto end100 = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
+    auto end100 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 100);
 
     auto theta = create_theta(ult, add, init0, step1, end100);
     auto ui = jlm::llvm::unrollinfo::create(theta);
@@ -147,12 +147,12 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
+    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
-    auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
-    auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
-    auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 4);
+    auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
+    auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
+    auto end = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 4);
 
     auto theta = create_theta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -162,17 +162,17 @@ test_known_boundaries()
       The unroll factor is greater than or equal the number of iterations.
       The loop should be fully unrolled and the theta removed.
     */
-    assert(nthetas(graph.root()) == 0);
+    assert(nthetas(&graph.GetRootRegion()) == 0);
   }
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
+    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
-    auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
-    auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
-    auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
+    auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
+    auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
+    auto end = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 100);
 
     auto theta = create_theta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -182,17 +182,17 @@ test_known_boundaries()
       The unroll factor is a multiple of the number of iterations.
       We should only find one (unrolled) theta.
     */
-    assert(nthetas(graph.root()) == 1);
+    assert(nthetas(&graph.GetRootRegion()) == 1);
   }
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
+    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
-    auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
-    auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
-    auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
+    auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
+    auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
+    auto end = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 100);
 
     auto theta = create_theta(ult, add, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -203,17 +203,17 @@ test_known_boundaries()
       and we have one remaining iteration. We should find only the
       unrolled theta and the body of the old theta as epilogue.
     */
-    assert(nthetas(graph.root()) == 1);
+    assert(nthetas(&graph.GetRootRegion()) == 1);
   }
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
+    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
     nf->set_mutable(false);
 
-    auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 100);
-    auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, -1);
-    auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
+    auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 100);
+    auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, -1);
+    auto end = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
 
     auto theta = create_theta(sgt, sub, init, step, end);
     //		jlm::rvsdg::view(graph, stdout);
@@ -224,7 +224,7 @@ test_known_boundaries()
       and we have four remaining iterations. We should find two thetas:
       one unrolled theta and one theta for the residual iterations.
     */
-    assert(nthetas(graph.root()) == 2);
+    assert(nthetas(&graph.GetRootRegion()) == 2);
   }
 }
 
@@ -242,7 +242,7 @@ test_unknown_boundaries()
   auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bt, "y");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto lv1 = theta->add_loopvar(x);
   auto lv2 = theta->add_loopvar(y);
 
@@ -292,15 +292,15 @@ test_nested_theta()
   jlm::llvm::RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
-  auto init = jlm::rvsdg::create_bitconstant(graph.root(), 32, 0);
-  auto step = jlm::rvsdg::create_bitconstant(graph.root(), 32, 1);
-  auto end = jlm::rvsdg::create_bitconstant(graph.root(), 32, 97);
+  auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
+  auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
+  auto end = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 97);
 
   /* Outer loop */
-  auto otheta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto otheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lvo_init = otheta->add_loopvar(init);
   auto lvo_step = otheta->add_loopvar(step);
@@ -408,7 +408,7 @@ test_nested_theta()
     After unrolling the outher theta four times it should
     now contain 8 thetas.
   */
-  thetas = find_thetas(graph.root());
+  thetas = find_thetas(&graph.GetRootRegion());
   assert(thetas.size() == 3 && nthetas(thetas[0]->subregion()) == 8);
 }
 

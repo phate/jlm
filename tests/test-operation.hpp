@@ -38,7 +38,7 @@ public:
   Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
   {
     auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
-    graph.root()->append_argument(graphImport);
+    graph.GetRootRegion().append_argument(graphImport);
     return *graphImport;
   }
 };
@@ -61,7 +61,7 @@ public:
   Create(rvsdg::output & origin, std::string name)
   {
     auto graphExport = new GraphExport(origin, std::move(name));
-    origin.region()->graph()->root()->append_result(graphExport);
+    origin.region()->graph()->GetRootRegion().append_result(graphExport);
     return *graphExport;
   }
 };

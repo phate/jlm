@@ -29,14 +29,14 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgInputsBefore, jlm::rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, jlm::rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgInputsAfter, jlm::rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, jlm::rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -419,7 +419,7 @@ push(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   auto statistics = pushstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
-  push(rm.Rvsdg().root());
+  push(&rm.Rvsdg().GetRootRegion());
   statistics->end(rm.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

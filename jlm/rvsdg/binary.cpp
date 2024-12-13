@@ -210,7 +210,7 @@ binary_normal_form::set_reducible(bool enable)
 
   enable_reducible_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -225,7 +225,7 @@ binary_normal_form::set_flatten(bool enable)
 
   enable_flatten_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -240,7 +240,7 @@ binary_normal_form::set_reorder(bool enable)
 
   enable_reorder_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -255,7 +255,7 @@ binary_normal_form::set_distribute(bool enable)
 
   enable_distribute_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 void
@@ -270,7 +270,7 @@ binary_normal_form::set_factorize(bool enable)
 
   enable_factorize_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 /* flattened binary normal form */
@@ -290,7 +290,7 @@ flattened_binary_normal_form::normalize_node(Node * node) const
 {
   const auto & op = static_cast<const flattened_binary_op &>(node->GetOperation());
   const auto & bin_op = op.bin_operation();
-  auto nf = graph()->node_normal_form(typeid(bin_op));
+  auto nf = graph()->GetNodeNormalForm(typeid(bin_op));
 
   return static_cast<const binary_normal_form *>(nf)->normalize_node(node, bin_op);
 }
@@ -304,7 +304,7 @@ flattened_binary_normal_form::normalized_create(
   const auto & op = static_cast<const flattened_binary_op &>(base_op);
   const auto & bin_op = op.bin_operation();
 
-  auto nf = static_cast<const binary_normal_form *>(graph()->node_normal_form(typeid(bin_op)));
+  auto nf = static_cast<const binary_normal_form *>(graph()->GetNodeNormalForm(typeid(bin_op)));
   return nf->normalized_create(region, bin_op, arguments);
 }
 

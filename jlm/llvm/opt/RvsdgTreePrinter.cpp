@@ -51,7 +51,7 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & sta
   statistics->Start();
 
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
-  auto tree = rvsdg::Region::ToTree(*rvsdgModule.Rvsdg().root(), annotationMap);
+  auto tree = rvsdg::Region::ToTree(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
   WriteTreeToFile(rvsdgModule, tree);
 
   statistics->Stop();
@@ -116,7 +116,7 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
     return numNodes;
   };
 
-  annotateRegion(*rvsdg.root());
+  annotateRegion(rvsdg.GetRootRegion());
 }
 
 void
@@ -176,7 +176,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
     }
   };
 
-  annotateRegion(*rvsdg.root());
+  annotateRegion(rvsdg.GetRootRegion());
 }
 
 void

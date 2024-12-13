@@ -465,7 +465,7 @@ public:
   GetNormalForm(rvsdg::Graph * graph) noexcept
   {
     return jlm::util::AssertedCast<load_normal_form>(
-        graph->node_normal_form(typeid(LoadNonVolatileOperation)));
+        graph->GetNodeNormalForm(typeid(LoadNonVolatileOperation)));
   }
 
   static std::unique_ptr<llvm::tac>

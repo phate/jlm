@@ -68,7 +68,7 @@ TestCopy()
   // Act
   auto node = jlm::rvsdg::output::GetNode(*loadResults[0]);
   auto loadNode = jlm::util::AssertedCast<const LoadNonVolatileNode>(node);
-  auto copiedNode = loadNode->copy(graph.root(), { address2, memoryState2 });
+  auto copiedNode = loadNode->copy(&graph.GetRootRegion(), { address2, memoryState2 });
 
   // Assert
   auto copiedLoadNode = dynamic_cast<const LoadNonVolatileNode *>(copiedNode);
@@ -104,15 +104,15 @@ TestLoadAllocaReduction()
 
   auto & ex = GraphExport::Create(*value, "l");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_alloca_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   auto node = jlm::rvsdg::output::GetNode(*ex.origin());
@@ -157,14 +157,14 @@ TestMultipleOriginReduction()
   auto & exS4 = GraphExport::Create(*loadResults[4], "exS4");
   auto & exS5 = GraphExport::Create(*loadResults[5], "exS5");
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_multiple_origin_reducible(true);
-  graph.normalize();
+  graph.Normalize();
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   const auto node = jlm::rvsdg::output::GetNode(*exA.origin());
@@ -212,15 +212,15 @@ TestLoadStoreStateReduction()
   auto & ex1 = GraphExport::Create(*value1, "l1");
   auto & ex2 = GraphExport::Create(*value2, "l2");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_store_state_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   auto node = jlm::rvsdg::output::GetNode(*ex1.origin());
@@ -263,17 +263,17 @@ TestLoadStoreReduction()
   auto & x1 = GraphExport::Create(*load[0], "value");
   auto & x2 = GraphExport::Create(*load[1], "state");
 
-  // jlm::rvsdg::view(graph.root(), stdout);
+  // jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_store_reducible(true);
-  graph.normalize();
+  graph.Normalize();
 
-  // jlm::rvsdg::view(graph.root(), stdout);
+  // jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(graph.root()->nnodes() == 1);
+  assert(graph.GetRootRegion().nnodes() == 1);
   assert(x1.origin() == v);
   assert(x2.origin() == s1);
 
@@ -316,18 +316,18 @@ TestLoadLoadReduction()
   auto & x2 = GraphExport::Create(*ld3[2], "s");
   auto & x3 = GraphExport::Create(*ld3[3], "s");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
   nf->set_load_load_state_reducible(true);
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.Prune();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(graph.root()->nnodes() == 6);
+  assert(graph.GetRootRegion().nnodes() == 6);
 
   auto ld = jlm::rvsdg::output::GetNode(*x1.origin());
   assert(is<LoadNonVolatileOperation>(ld));
@@ -454,7 +454,7 @@ NodeCopy()
       LoadVolatileNode::CreateNode(address1, iOState1, { &memoryState1 }, valueType, 4);
 
   // Act
-  auto copiedNode = loadNode.copy(graph.root(), { &address2, &iOState2, &memoryState2 });
+  auto copiedNode = loadNode.copy(&graph.GetRootRegion(), { &address2, &iOState2, &memoryState2 });
 
   // Assert
   auto copiedLoadNode = dynamic_cast<const LoadVolatileNode *>(copiedNode);

@@ -17,7 +17,7 @@ void
 merge_gamma(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   merge_gamma(root);
 }
 
