@@ -18,14 +18,20 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   auto loop = hls::loop_node::create(theta.region());
   std::vector<jlm::rvsdg::input *> branches;
 
-  // add loopvars and populate the smap
+  // Add loop variables, insert loop constant buffers for invariant variables, and populate the
+  // smap.
   for (size_t i = 0; i < theta.ninputs(); i++)
   {
-    if (theta.input(i)->result()->origin() == theta.input(i)->argument())
+    // Check if the input is a loop invariant such that a loop constant buffer should be created.
+    // Memory state inputs are not loop variables containting a value, so we ignor these.
+    if (is_invariant(theta.input(i))
+        && theta.input(i)->Type() != jlm::llvm::MemoryStateType::Create())
     {
-      // value is constant in loop
       smap.insert(theta.input(i)->argument(), loop->add_loopconst(theta.input(i)->origin()));
       branches.push_back(nullptr);
+      // The HLS loop has no output for this input. The users of the theta output is
+      // therefore redirected to the input origin, as the value is loop invariant.
+      theta.output(i)->divert_users(theta.input(i)->origin());
     }
     else
     {
