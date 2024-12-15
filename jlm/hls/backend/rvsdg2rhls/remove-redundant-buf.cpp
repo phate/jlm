@@ -33,11 +33,11 @@ eliminate_buf(jlm::rvsdg::output * o)
     {
       return true;
     }
-    else if (auto load = dynamic_cast<const jlm::hls::load_op *>(&node->GetOperation()))
+    else if (dynamic_cast<const jlm::hls::load_op *>(&node->GetOperation()))
     {
       return true;
     }
-    else if (auto store = dynamic_cast<const jlm::hls::store_op *>(&node->GetOperation()))
+    else if (dynamic_cast<const jlm::hls::store_op *>(&node->GetOperation()))
     {
       return true;
     }
