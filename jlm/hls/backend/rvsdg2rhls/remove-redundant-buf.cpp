@@ -20,7 +20,7 @@ eliminate_buf(jlm::rvsdg::output * o)
     {
       return eliminate_buf(node->input(1)->origin());
     }
-    else if (auto fork = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation()))
+    else if (dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation()))
     {
       // part of memory disambiguation
       return eliminate_buf(node->input(0)->origin());
