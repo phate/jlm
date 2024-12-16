@@ -27,6 +27,11 @@ inputs:
     default: "false"
     required: false
 
+  install-clang-tidy:
+    description: "Install clang-tidy package. Default is 'false'."
+    default: "false"
+    required: false
+
   install-ninja:
     description: "Install ninja package. Default is 'false'."
     default: "false"
@@ -93,6 +98,11 @@ runs:
     - name: "Install clang-format package"
       if: ${{inputs.install-clang-format == 'true'}}
       run: sudo apt-get install clang-format-${{inputs.llvm-version}}
+      shell: bash
+
+    - name: "Install clang-tidy package"
+      if: ${{inputs.install-clang-tidy == 'true'}}
+      run: sudo apt-get install clang-tidy-${{inputs.llvm-version}}
       shell: bash
 
     - name: "Install ninja package"
