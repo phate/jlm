@@ -59,7 +59,8 @@ runs:
       if: ${{inputs.install-llvm == 'true'
         || inputs.install-clang == 'true'
         || inputs.install-mlir == 'true'
-        || inputs.install-clang-format == 'true'}}
+        || inputs.install-clang-format == 'true'
+        || inputs.install-clang-tidy == 'true'}}
       run: |
         export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-${{inputs.llvm-version}})
         if [[ -z $HAS_LLVM_REPOSITORY ]]; then
