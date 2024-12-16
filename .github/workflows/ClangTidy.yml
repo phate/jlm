@@ -20,11 +20,9 @@ jobs:
           install-clang-tidy: true
 
       - name: "Install HLS dialect dependencies"
-        if: ${{inputs.enable-hls == 'true'}}
         uses: ./.github/actions/BuildCirct
 
       - name: "Install MLIR dialect dependencies"
-        if: ${{inputs.enable-mlir == 'true'}}
         uses: ./.github/actions/BuildMlirDialect
 
       - name: "Configure jlm with HLS and MLIR enabled"
