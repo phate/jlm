@@ -68,6 +68,8 @@ fi
 if [ ! -d "$BENCHMARK_DIR" ] ;
 then
 	git clone ${GIT_REPOSITORY} ${BENCHMARK_DIR}
+else
+	git -C ${BENCHMARK_DIR} fetch origin
 fi
 
 export PATH=${JLM_BIN_DIR}:${PATH}
