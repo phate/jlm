@@ -25,7 +25,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
     // Check if the input is a loop invariant such that a loop constant buffer should be created.
     // Memory state inputs are not loop variables containting a value, so we ignor these.
     if (is_invariant(theta.input(i))
-        && theta.input(i)->Type() != jlm::llvm::MemoryStateType::Create())
+        && !jlm::rvsdg::is<jlm::llvm::MemoryStateType>(theta.input(i)->Type()))
     {
       smap.insert(theta.input(i)->argument(), loop->add_loopconst(theta.input(i)->origin()));
       branches.push_back(nullptr);
