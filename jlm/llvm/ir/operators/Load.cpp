@@ -670,6 +670,72 @@ load_normal_form::normalized_create(
   return simple_normal_form::normalized_create(region, op, operands);
 }
 
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadMux(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_mux_reducible(operands))
+    return perform_load_mux_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStore(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_store_reducible(operation, operands))
+    return perform_load_store_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadAlloca(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_alloca_reducible(operands))
+    return perform_load_alloca_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStoreState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_store_state_reducible(operation, operands))
+    return perform_load_store_state_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadDuplicateState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_multiple_origin_reducible(operands))
+    return perform_multiple_origin_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadLoadState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_load_state_reducible(operands))
+    return perform_load_load_state_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
 }
 
 namespace
