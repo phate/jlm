@@ -188,4 +188,4 @@ format-dry-run:
 # Clang tidy rules
 
 tidy:
-	clang-tidy --config-file=.clang-tidy $(SOURCES) $(HEADERS) -- $(CXXFLAGS) $(CPPFLAGS)
+	clang-tidy --config-file=.clang-tidy /home/reissman/Documents/jlm/jlm/rvsdg/bitstring/concat.cpp -- $(CXXFLAGS) $(CPPFLAGS)
