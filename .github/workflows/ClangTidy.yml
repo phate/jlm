@@ -19,10 +19,11 @@ jobs:
         with:
           install-clang-tidy: true
 
-      # We need to build jlm to create jlm/tooling/CommandPaths.hpp. If that file is not present,
-      # then clang-tidy will produce an error.
-      - name: "Build jlm"
-        uses: ./.github/actions/BuildJlm
+      - name: "Install HLS dialect dependencies"
+        uses: ./.github/actions/BuildCirct
+
+      - name: "Install MLIR dialect dependencies"
+        uses: ./.github/actions/BuildMlirDialect
 
       - name: "Run clang tidy"
         run: make tidy
