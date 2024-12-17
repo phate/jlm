@@ -13,9 +13,16 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+
+      - name: "Install clang tidy"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-clang-tidy: true
+
       # We need to build jlm to create jlm/tooling/CommandPaths.hpp. If that file is not present,
       # then clang-tidy will produce an error.
       - name: "Build jlm"
         uses: ./.github/actions/BuildJlm
+
       - name: "Run clang tidy"
         run: make tidy
