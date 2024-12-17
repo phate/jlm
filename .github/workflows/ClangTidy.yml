@@ -25,5 +25,8 @@ jobs:
       - name: "Install MLIR dialect dependencies"
         uses: ./.github/actions/BuildMlirDialect
 
+      - name: "Configure jlm with HLS and MLIR enabled"
+        run: ./configure.sh --enable-mlir --enable-hls
+
       - name: "Run clang tidy"
         run: make tidy
