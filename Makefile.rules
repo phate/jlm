@@ -187,5 +187,5 @@ format-dry-run:
 #################################################################################
 # Clang tidy rules
 
-tidy:
-	clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy $(HEADERS) $(SOURCES) -- $(CXXFLAGS) $(CPPFLAGS)
+tidy: $(COMMANDPATHSFILE)
+	clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy $(HEADERS) $(SOURCES) -- $(CXXFLAGS) $(CPPFLAGS) -I$(BUILD_OUT_PREFIX)
