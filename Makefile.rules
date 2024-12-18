@@ -183,3 +183,9 @@ format:
 
 format-dry-run:
 	clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
+
+#################################################################################
+# Clang tidy rules
+
+tidy: $(COMMANDPATHSFILE)
+	clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy $(HEADERS) $(SOURCES) -- $(CXXFLAGS) $(CPPFLAGS) -I$(BUILD_OUT_PREFIX)
