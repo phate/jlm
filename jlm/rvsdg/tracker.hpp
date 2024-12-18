@@ -7,12 +7,9 @@
 #ifndef JLM_RVSDG_TRACKER_HPP
 #define JLM_RVSDG_TRACKER_HPP
 
-#include <stdbool.h>
-#include <stddef.h>
+#include <jlm/util/callbacks.hpp>
 
 #include <unordered_map>
-
-#include <jlm/util/callbacks.hpp>
 
 namespace jlm::rvsdg
 {

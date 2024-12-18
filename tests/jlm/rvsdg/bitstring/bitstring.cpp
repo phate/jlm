@@ -7,11 +7,7 @@
 #include "test-registry.hpp"
 #include <test-operation.hpp>
 
-#include <assert.h>
-#include <stdio.h>
-
 #include <jlm/rvsdg/bitstring.hpp>
-#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static int

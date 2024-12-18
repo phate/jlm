@@ -4,10 +4,8 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
-#include <jlm/hls/ir/hls.hpp>
 
 #include <algorithm>
-#include <math.h>
 
 namespace jlm::hls
 {

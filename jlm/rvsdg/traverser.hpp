@@ -9,9 +9,6 @@
 
 #include <jlm/rvsdg/tracker.hpp>
 
-#include <stdbool.h>
-#include <stdlib.h>
-
 namespace jlm::rvsdg
 {
 

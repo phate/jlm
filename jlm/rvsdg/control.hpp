@@ -15,8 +15,6 @@
 
 #include <unordered_map>
 
-#include <inttypes.h>
-
 namespace jlm::rvsdg
 {
 

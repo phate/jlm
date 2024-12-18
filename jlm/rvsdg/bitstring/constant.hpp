@@ -7,14 +7,13 @@
 #ifndef JLM_RVSDG_BITSTRING_CONSTANT_HPP
 #define JLM_RVSDG_BITSTRING_CONSTANT_HPP
 
-#include <stdint.h>
-#include <vector>
-
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+
+#include <vector>
 
 namespace jlm::rvsdg
 {

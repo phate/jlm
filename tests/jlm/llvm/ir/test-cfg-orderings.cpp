@@ -8,8 +8,6 @@
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
-#include <assert.h>
-
 static int
 test()
 {

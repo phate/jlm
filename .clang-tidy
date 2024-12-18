@@ -4,5 +4,5 @@ Checks: '-*,
   '
 
 WarningsAsErrors: '
-#  modernize-deprecated-headers,
+  modernize-deprecated-headers,
   '
