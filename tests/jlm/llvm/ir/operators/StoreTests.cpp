@@ -209,7 +209,7 @@ TestCopy()
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/StoreTests-TestCopy", TestCopy)
 
 static int
-TestStoreMuxReduction()
+TestStoreMuxNormalization()
 {
   using namespace jlm::llvm;
 
@@ -258,6 +258,10 @@ TestStoreMuxReduction()
 
   return 0;
 }
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreTests-TestStoreMuxNormalization",
+    TestStoreMuxNormalization)
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-TestStoreMuxReduction",
