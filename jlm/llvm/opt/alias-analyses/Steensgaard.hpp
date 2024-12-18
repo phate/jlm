@@ -7,17 +7,44 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/disjointset.hpp>
 
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Graph;
+class output;
+class Region;
+class simple_node;
+class StructuralNode;
 class ThetaNode;
 }
 
-namespace jlm::llvm::aa
+namespace jlm::llvm
 {
 
+namespace delta
+{
+class node;
+}
+
+namespace lambda
+{
+class node;
+}
+
+namespace phi
+{
+class node;
+}
+
+class CallNode;
+class LoadNode;
+class StoreNode;
+
+namespace aa
+{
 class Location;
 class RegisterLocation;
 
@@ -244,6 +271,7 @@ private:
   std::unique_ptr<Context> Context_;
 };
 
+}
 }
 
 #endif

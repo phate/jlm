@@ -1,0 +1,8 @@
+---
+Checks: '-*,
+  modernize-deprecated-headers,
+  '
+
+WarningsAsErrors: '
+#  modernize-deprecated-headers,
+  '

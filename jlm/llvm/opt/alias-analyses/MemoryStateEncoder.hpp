@@ -7,6 +7,18 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP
 
 #include <memory>
+#include <vector>
+
+namespace rvsdg
+{
+class GammaNode;
+class output;
+class Region;
+class simple_node;
+class StructuralNode;
+class ThetaNode;
+class ThetaOutput;
+}
 
 namespace jlm::util
 {

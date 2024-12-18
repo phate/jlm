@@ -6,6 +6,8 @@
 #ifndef JLM_LLVM_FRONTEND_LLVMINSTRUCTIONCONVERSION_HPP
 #define JLM_LLVM_FRONTEND_LLVMINSTRUCTIONCONVERSION_HPP
 
+#include <jlm/llvm/ir/tac.hpp>
+
 namespace llvm
 {
 class Constant;
