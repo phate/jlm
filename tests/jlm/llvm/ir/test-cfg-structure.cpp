@@ -12,8 +12,6 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-#include <assert.h>
-
 static void
 test_straightening()
 {

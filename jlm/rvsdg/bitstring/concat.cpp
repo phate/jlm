@@ -9,8 +9,6 @@
 #include <jlm/rvsdg/bitstring/slice.hpp>
 #include <jlm/rvsdg/reduction-helpers.hpp>
 
-#include <string.h>
-
 namespace jlm::rvsdg
 {
 

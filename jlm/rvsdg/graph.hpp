@@ -7,17 +7,13 @@
 #ifndef JLM_RVSDG_GRAPH_HPP
 #define JLM_RVSDG_GRAPH_HPP
 
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include <typeindex>
-
 #include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/tracker.hpp>
-
 #include <jlm/util/common.hpp>
+
+#include <typeindex>
 
 namespace jlm::rvsdg
 {

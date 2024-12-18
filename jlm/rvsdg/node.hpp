@@ -7,17 +7,14 @@
 #ifndef JLM_RVSDG_NODE_HPP
 #define JLM_RVSDG_NODE_HPP
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <unordered_set>
-#include <utility>
-#include <variant>
-
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <unordered_set>
+#include <utility>
+#include <variant>
 
 namespace jlm::rvsdg
 {

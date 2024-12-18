@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <assert.h>
-
 #include <jlm/util/intrusive-list.hpp>
+
+#include <cassert>
 
 namespace
 {

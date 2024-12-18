@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <assert.h>
-
 #include <jlm/util/intrusive-hash.hpp>
+
+#include <cassert>
 
 struct my_item
 {

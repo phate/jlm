@@ -8,8 +8,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <assert.h>
-
 #include <jlm/rvsdg/statemux.hpp>
 #include <jlm/rvsdg/view.hpp>
 

@@ -8,9 +8,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <assert.h>
-#include <stdio.h>
-
 #include <jlm/rvsdg/view.hpp>
 
 static bool
