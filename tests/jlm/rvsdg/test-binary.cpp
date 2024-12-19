@@ -25,9 +25,9 @@ test_flattened_binary_reduction()
     auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i3 = &jlm::tests::GraphImport::Create(graph, vt, "");
 
-    auto o1 = simple_node::create_normalized(graph.root(), op, { i0, i1 })[0];
-    auto o2 = simple_node::create_normalized(graph.root(), op, { o1, i2 })[0];
-    auto o3 = simple_node::create_normalized(graph.root(), op, { o2, i3 })[0];
+    auto o1 = SimpleNode::create_normalized(graph.root(), op, { i0, i1 })[0];
+    auto o2 = SimpleNode::create_normalized(graph.root(), op, { o1, i2 })[0];
+    auto o3 = SimpleNode::create_normalized(graph.root(), op, { o2, i3 })[0];
 
     auto & ex = jlm::tests::GraphExport::Create(*o3, "");
     graph.prune();
@@ -59,9 +59,9 @@ test_flattened_binary_reduction()
     auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
     auto i3 = &jlm::tests::GraphImport::Create(graph, vt, "");
 
-    auto o1 = simple_node::create_normalized(graph.root(), op, { i0, i1 })[0];
-    auto o2 = simple_node::create_normalized(graph.root(), op, { o1, i2 })[0];
-    auto o3 = simple_node::create_normalized(graph.root(), op, { o2, i3 })[0];
+    auto o1 = SimpleNode::create_normalized(graph.root(), op, { i0, i1 })[0];
+    auto o2 = SimpleNode::create_normalized(graph.root(), op, { o1, i2 })[0];
+    auto o3 = SimpleNode::create_normalized(graph.root(), op, { o2, i3 })[0];
 
     auto & ex = jlm::tests::GraphExport::Create(*o3, "");
     graph.prune();

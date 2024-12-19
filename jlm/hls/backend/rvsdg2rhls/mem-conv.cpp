@@ -53,8 +53,8 @@ jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
   }
 }
 
-jlm::rvsdg::simple_node *
-replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
+jlm::rvsdg::SimpleNode *
+replace_load(jlm::rvsdg::SimpleNode * orig, jlm::rvsdg::output * resp)
 {
   auto addr = orig->input(0)->origin();
   std::vector<jlm::rvsdg::output *> states;
@@ -78,7 +78,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
     orig->output(i)->divert_users(nn->output(i));
   }
   remove(orig);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nn);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
 const jlm::rvsdg::bitconstant_op *
@@ -178,7 +178,7 @@ get_impport_function_name(jlm::rvsdg::input * input)
 void
 trace_function_calls(
     jlm::rvsdg::output * output,
-    std::vector<jlm::rvsdg::simple_node *> & calls,
+    std::vector<jlm::rvsdg::SimpleNode *> & calls,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
   if (visited.count(output))
@@ -230,7 +230,7 @@ trace_function_calls(
   }
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
@@ -246,7 +246,7 @@ find_decouple_response(
     }
   }
   JLM_ASSERT(response_function == nullptr);
-  std::vector<jlm::rvsdg::simple_node *> reponse_calls;
+  std::vector<jlm::rvsdg::SimpleNode *> reponse_calls;
   std::unordered_set<jlm::rvsdg::output *> visited;
   trace_function_calls(response_function, reponse_calls, visited);
   JLM_ASSERT(!reponse_calls.empty());
@@ -261,10 +261,10 @@ find_decouple_response(
   JLM_UNREACHABLE("No response found");
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 replace_decouple(
     const jlm::llvm::lambda::node * lambda,
-    jlm::rvsdg::simple_node * decouple_request,
+    jlm::rvsdg::SimpleNode * decouple_request,
     jlm::rvsdg::output * resp)
 {
   JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decouple_request->GetOperation()));
@@ -299,11 +299,11 @@ replace_decouple(
   remove(decouple_response);
 
   auto nn = dynamic_cast<jlm::rvsdg::node_output *>(dload_out[0])->node();
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nn);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
-jlm::rvsdg::simple_node *
-replace_store(jlm::rvsdg::simple_node * orig)
+jlm::rvsdg::SimpleNode *
+replace_store(jlm::rvsdg::SimpleNode * orig)
 {
   auto addr = orig->input(0)->origin();
   auto data = orig->input(1)->origin();
@@ -319,16 +319,16 @@ replace_store(jlm::rvsdg::simple_node * orig)
     orig->output(i)->divert_users(nn->output(i));
   }
   remove(orig);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nn);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
 void
 gather_mem_nodes(
     jlm::rvsdg::Region * region,
-    std::vector<jlm::rvsdg::simple_node *> & loadNodes,
-    std::vector<jlm::rvsdg::simple_node *> & storeNodes,
-    std::vector<jlm::rvsdg::simple_node *> & decoupleNodes,
-    std::unordered_set<jlm::rvsdg::simple_node *> exclude)
+    std::vector<jlm::rvsdg::SimpleNode *> & loadNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & storeNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & decoupleNodes,
+    std::unordered_set<jlm::rvsdg::SimpleNode *> exclude)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -337,7 +337,7 @@ gather_mem_nodes(
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         gather_mem_nodes(structnode->subregion(n), loadNodes, storeNodes, decoupleNodes, exclude);
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (exclude.find(simplenode) != exclude.end())
       {
@@ -373,9 +373,9 @@ gather_mem_nodes(
 void
 TracePointer(
     jlm::rvsdg::output * output,
-    std::vector<jlm::rvsdg::simple_node *> & loadNodes,
-    std::vector<jlm::rvsdg::simple_node *> & storeNodes,
-    std::vector<jlm::rvsdg::simple_node *> & decoupleNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & loadNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & storeNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & decoupleNodes,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
   if (!dynamic_cast<const jlm::llvm::PointerType *>(&output->type()))
@@ -596,7 +596,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(64), false);
   auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(64), true);
 
-  std::unordered_set<jlm::rvsdg::simple_node *> accountedNodes;
+  std::unordered_set<jlm::rvsdg::SimpleNode *> accountedNodes;
   for (auto & portNode : portNodes)
   {
     newArgumentTypes.push_back(responseTypePtr);
@@ -612,9 +612,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
     accountedNodes.insert(std::get<1>(portNode).begin(), std::get<1>(portNode).end());
     accountedNodes.insert(std::get<2>(portNode).begin(), std::get<2>(portNode).end());
   }
-  std::vector<jlm::rvsdg::simple_node *> unknownLoadNodes;
-  std::vector<jlm::rvsdg::simple_node *> unknownStoreNodes;
-  std::vector<jlm::rvsdg::simple_node *> unknownDecoupledNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> unknownLoadNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> unknownStoreNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> unknownDecoupledNodes;
   gather_mem_nodes(
       root,
       unknownLoadNodes,
@@ -756,15 +756,15 @@ jlm::hls::ConnectRequestResponseMemPorts(
     const jlm::llvm::lambda::node * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
-    const std::vector<jlm::rvsdg::simple_node *> & originalLoadNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalStoreNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalDecoupledNodes)
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalStoreNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalDecoupledNodes)
 {
   //
   // We have the memory operations from the original lambda and need to lookup the corresponding
   // nodes in the new lambda
   //
-  std::vector<jlm::rvsdg::simple_node *> loadNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> loadNodes;
   std::vector<std::shared_ptr<const jlm::rvsdg::ValueType>> loadTypes;
   for (auto loadNode : originalLoadNodes)
   {
@@ -775,14 +775,14 @@ jlm::hls::ConnectRequestResponseMemPorts(
         &loadOutput->node()->GetOperation());
     loadTypes.push_back(loadOp->GetLoadedType());
   }
-  std::vector<jlm::rvsdg::simple_node *> storeNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> storeNodes;
   for (auto storeNode : originalStoreNodes)
   {
     JLM_ASSERT(smap.contains(*storeNode->output(0)));
     auto storeOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(storeNode->output(0)));
     storeNodes.push_back(storeOutput->node());
   }
-  std::vector<jlm::rvsdg::simple_node *> decoupledNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> decoupledNodes;
   for (auto decoupledNode : originalDecoupledNodes)
   {
     JLM_ASSERT(smap.contains(*decoupledNode->output(0)));
@@ -855,10 +855,10 @@ jlm::hls::ConnectRequestResponseMemPorts(
   return mem_req_op::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 jlm::hls::ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::simple_node * originalLoad,
+    const jlm::rvsdg::SimpleNode * originalLoad,
     jlm::rvsdg::output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
@@ -891,11 +891,11 @@ jlm::hls::ReplaceLoad(
     replacedLoad->output(i)->divert_users(newLoad->output(i));
   }
   remove(replacedLoad);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(newLoad);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(newLoad);
 }
 
-jlm::rvsdg::simple_node *
-jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_node * originalStore)
+jlm::rvsdg::SimpleNode *
+jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore)
 {
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
@@ -918,14 +918,14 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_n
     replacedStore->output(i)->divert_users(newStore->output(i));
   }
   remove(replacedStore);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(newStore);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(newStore);
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 ReplaceDecouple(
     jlm::rvsdg::SubstitutionMap & smap,
     const jlm::llvm::lambda::node * lambda,
-    jlm::rvsdg::simple_node * originalDecoupleRequest,
+    jlm::rvsdg::SimpleNode * originalDecoupleRequest,
     jlm::rvsdg::output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
@@ -966,5 +966,5 @@ ReplaceDecouple(
   remove(decoupledResponse);
 
   auto nodeOutput = dynamic_cast<jlm::rvsdg::node_output *>(decoupledLoadOutput[0])->node();
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nodeOutput);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nodeOutput);
 }

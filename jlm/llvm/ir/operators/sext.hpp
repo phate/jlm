@@ -96,7 +96,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     sext_op op(std::move(ot), rvsdg::bittype::Create(ndstbits));
-    return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 };
 

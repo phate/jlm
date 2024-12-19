@@ -30,11 +30,11 @@ HasOrContainsPointerType(const rvsdg::output & output)
 /**
  * Determines whether \p node should be handled by the Steensgaard analysis.
  *
- * @param node An rvsdg::simple_node.
+ * @param node An rvsdg::SimpleNode.
  * @return True if \p node should be handled, otherwise false.
  */
 static bool
-ShouldHandle(const rvsdg::simple_node & node)
+ShouldHandle(const rvsdg::SimpleNode & node)
 {
   for (size_t n = 0; n < node.ninputs(); n++)
   {
@@ -990,7 +990,7 @@ Steensgaard::~Steensgaard() = default;
 Steensgaard::Steensgaard() = default;
 
 void
-Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
 {
   if (is<alloca_op>(&node))
   {
@@ -1072,7 +1072,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeAlloca(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
@@ -1082,7 +1082,7 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeMalloc(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeMalloc(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
@@ -1267,7 +1267,7 @@ Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeGep(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeGep(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
@@ -1278,7 +1278,7 @@ Steensgaard::AnalyzeGep(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeBitcast(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bitcast_op>(&node));
 
@@ -1295,7 +1295,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
 
@@ -1308,7 +1308,7 @@ Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzePtr2Bits(const rvsdg::simple_node & node)
+Steensgaard::AnalyzePtr2Bits(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ptr2bits_op>(&node));
 
@@ -1316,7 +1316,7 @@ Steensgaard::AnalyzePtr2Bits(const rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ExtractValue>(&node));
 
@@ -1333,7 +1333,7 @@ Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
 
@@ -1343,7 +1343,7 @@ Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto & output = *node.output(0);
@@ -1357,7 +1357,7 @@ Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeUndef(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeUndef(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<UndefValueOperation>(&node));
   auto & output = *node.output(0);
@@ -1371,7 +1371,7 @@ Steensgaard::AnalyzeUndef(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantArray>(&node));
 
@@ -1392,7 +1392,7 @@ Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
@@ -1414,7 +1414,7 @@ Steensgaard::AnalyzeConstantStruct(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
+Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(&node));
 
@@ -1454,7 +1454,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::simple_node & node)
 }
 
 void
-Steensgaard::AnalyzeVaList(const rvsdg::simple_node & node)
+Steensgaard::AnalyzeVaList(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<valist_op>(&node));
 
@@ -1732,7 +1732,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
   topdown_traverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
     {
       AnalyzeSimpleNode(*simpleNode);
     }

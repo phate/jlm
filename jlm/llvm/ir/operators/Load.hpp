@@ -257,14 +257,14 @@ private:
  * @see LoadVolatileNode
  * @see LoadNonVolatileNode
  */
-class LoadNode : public rvsdg::simple_node
+class LoadNode : public rvsdg::SimpleNode
 {
 protected:
   LoadNode(
       rvsdg::Region & region,
       const LoadOperation & operation,
       const std::vector<rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : SimpleNode(&region, operation, operands)
   {}
 
 public:

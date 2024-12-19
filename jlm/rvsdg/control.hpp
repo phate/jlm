@@ -216,7 +216,7 @@ public:
     auto bitType = CheckAndExtractBitType(predicate.type());
 
     match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
-    return rvsdg::simple_node::create_normalized(predicate.region(), operation, { &predicate })[0];
+    return rvsdg::SimpleNode::create_normalized(predicate.region(), operation, { &predicate })[0];
   }
 
 private:

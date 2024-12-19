@@ -281,12 +281,12 @@ TestThetaLoad()
   jlm::rvsdg::bitsgt_op sgt(32);
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
-  auto arm = jlm::rvsdg::simple_node::create_normalized(
+  auto arm = jlm::rvsdg::SimpleNode::create_normalized(
       thetaRegion,
       add,
       { idv->argument(), lvs->argument() })[0];
   auto cmp =
-      jlm::rvsdg::simple_node::create_normalized(thetaRegion, ult, { arm, lve->argument() })[0];
+      jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, ult, { arm, lve->argument() })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
   idv->result()->divert_to(arm);
   theta->set_predicate(match);

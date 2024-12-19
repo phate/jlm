@@ -13,9 +13,9 @@ namespace jlm::hls
 {
 
 typedef std::vector<std::tuple<
-    std::vector<jlm::rvsdg::simple_node *>,
-    std::vector<jlm::rvsdg::simple_node *>,
-    std::vector<jlm::rvsdg::simple_node *>>>
+    std::vector<jlm::rvsdg::SimpleNode *>,
+    std::vector<jlm::rvsdg::SimpleNode *>,
+    std::vector<jlm::rvsdg::SimpleNode *>>>
     port_load_store_decouple;
 
 /**
@@ -45,18 +45,18 @@ ConnectRequestResponseMemPorts(
     const llvm::lambda::node * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
-    const std::vector<jlm::rvsdg::simple_node *> & originalLoadNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalStoreNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalDecoupledNodes);
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalStoreNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalDecoupledNodes);
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::simple_node * originalLoad,
+    const jlm::rvsdg::SimpleNode * originalLoad,
     jlm::rvsdg::output * response);
 
-jlm::rvsdg::simple_node *
-ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_node * originalStore);
+jlm::rvsdg::SimpleNode *
+ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore);
 
 jlm::rvsdg::output *
 route_response(rvsdg::Region * target, jlm::rvsdg::output * response);

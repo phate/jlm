@@ -164,7 +164,7 @@ inline_calls(rvsdg::Region * region)
       JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
       auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
       llvm::inlineCall(
-          dynamic_cast<jlm::rvsdg::simple_node *>(node),
+          dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
           dynamic_cast<const llvm::lambda::node *>(ln));
       // restart for this region
       inline_calls(region);
@@ -209,7 +209,7 @@ convert_alloca(rvsdg::Region * region)
       else
       {
         llvm::ConstantAggregateZero cop(po->ValueType());
-        cout = jlm::rvsdg::simple_node::create_normalized(db->subregion(), cop, {})[0];
+        cout = jlm::rvsdg::SimpleNode::create_normalized(db->subregion(), cop, {})[0];
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
