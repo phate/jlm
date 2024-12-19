@@ -8,7 +8,6 @@
 #include <test-types.hpp>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
-#include <jlm/rvsdg/statemux.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -99,9 +98,9 @@ TestLoadAllocaReduction()
 
   auto alloca1 = alloca_op::create(bt, size, 4);
   auto alloca2 = alloca_op::create(bt, size, 4);
-  auto mux = jlm::rvsdg::create_state_mux(mt, { alloca1[1] }, 1);
+  auto mux = MemoryStateMergeOperation::Create({ alloca1[1] });
   auto & loadNode =
-      LoadNonVolatileNode::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux[0] }, bt, 4);
+      LoadNonVolatileNode::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux }, bt, 4);
 
   auto & ex = GraphExport::Create(*loadNode.output(0), "l");
 
@@ -118,7 +117,7 @@ TestLoadAllocaReduction()
   assert(is<LoadNonVolatileOperation>(node));
   assert(node->ninputs() == 3);
   assert(node->input(1)->origin() == alloca1[1]);
-  assert(node->input(2)->origin() == mux[0]);
+  assert(node->input(2)->origin() == mux);
 
   return 0;
 }
