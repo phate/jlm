@@ -7,6 +7,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/statemux.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
 
@@ -193,6 +195,26 @@ mux_normal_form::set_multiple_origin_reducible(bool enable)
   enable_multiple_origin_ = enable;
   if (get_mutable() && enable)
     graph()->mark_denormalized();
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMuxMux(const mux_op & operation, const std::vector<rvsdg::output *> & operands)
+{
+  if (auto muxNode = is_mux_mux_reducible(operands))
+    return perform_mux_mux_reduction(operation, muxNode, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMuxDuplicateOperands(
+    const mux_op & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_multiple_origin_reducible(operands))
+    return perform_multiple_origin_reduction(operation, operands);
+
+  return std::nullopt;
 }
 
 }

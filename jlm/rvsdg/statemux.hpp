@@ -11,6 +11,8 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
 
@@ -125,6 +127,42 @@ create_state_split(
 {
   return create_state_mux(std::move(type), { operand }, nresults);
 }
+
+/**
+ * \brief Merges multiple mux operations into a single operation.
+ *
+ * so1 = mux_op si1 si2
+ * so2 = mux_op si3 si4
+ * so3 = mux_op so1 so2
+ * =>
+ * so3 = mux_op si1 si2 si3 si4
+ *
+ * @param operation The mux operation on which the transformation is performed.
+ * @param operands The operands of the mux node.
+ *
+ * @return If the normalization could be applied, then the results of the mux operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMuxMux(const mux_op & operation, const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Remove duplicated operands
+ *
+ * so1 = mux_op si1 si1 si2 si1 si3
+ * =>
+ * so1 = mux_op si1 si2 si3
+ *
+ * @param operation The mux operation on which the transformation is performed.
+ * @param operands The operands of the mux node.
+ *
+ * @return If the normalization could be applied, then the results of the mux operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMuxDuplicateOperands(
+    const mux_op & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 
