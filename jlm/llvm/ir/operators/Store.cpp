@@ -470,6 +470,50 @@ store_normal_form::set_multiple_origin_reducible(bool enable)
     graph()->mark_denormalized();
 }
 
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreMux(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_store_mux_reducible(operands))
+    return perform_store_mux_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreStore(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_store_store_reducible(operation, operands))
+    return perform_store_store_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreAlloca(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_store_alloca_reducible(operands))
+    return perform_store_alloca_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreDuplicateState(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_multiple_origin_reducible(operands))
+    return perform_multiple_origin_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
 }
 
 namespace
