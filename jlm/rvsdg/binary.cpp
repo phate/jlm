@@ -143,7 +143,7 @@ binary_normal_form::normalize_node(Node * node, const binary_op & op) const
 
     JLM_ASSERT(new_args.size() >= 2);
     const auto & new_op = tmp_op ? *tmp_op : static_cast<const SimpleOperation &>(op);
-    divert_users(node, simple_node::create_normalized(node->region(), new_op, new_args));
+    divert_users(node, SimpleNode::create_normalized(node->region(), new_op, new_args));
     remove(node);
     return false;
   }
@@ -364,7 +364,7 @@ reduce_parallel(const binary_op & op, const std::vector<jlm::rvsdg::output *> & 
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = simple_node::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
     worklist.push_back(output);
   }
 
@@ -387,7 +387,7 @@ reduce_linear(const binary_op & op, const std::vector<jlm::rvsdg::output *> & op
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = simple_node::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
     worklist.push_front(output);
   }
 

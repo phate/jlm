@@ -21,7 +21,7 @@ bitconcat(const std::vector<jlm::rvsdg::output *> & operands)
 
   auto region = operands[0]->region();
   jlm::rvsdg::bitconcat_op op(std::move(types));
-  return jlm::rvsdg::simple_node::create_normalized(
+  return jlm::rvsdg::SimpleNode::create_normalized(
       region,
       op,
       { operands.begin(), operands.end() })[0];
@@ -133,7 +133,7 @@ public:
     if (args != new_args)
     {
       bitconcat_op op(types_from_arguments(new_args));
-      divert_users(node, simple_node::create_normalized(node->region(), op, new_args));
+      divert_users(node, SimpleNode::create_normalized(node->region(), op, new_args));
       remove(node);
       return false;
     }

@@ -64,7 +64,7 @@ public:
 
     auto region = predicate.region();
     branch_op op(ctl->nalternatives(), value.Type(), loop);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate, &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &predicate, &value });
   }
 
   bool loop; // only used for dot output
@@ -153,7 +153,7 @@ public:
 
     auto region = value.region();
     fork_op op(nalternatives, value.Type(), isConstant);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &value });
   }
 
   /**
@@ -209,7 +209,7 @@ public:
 
     auto region = alternatives.front()->region();
     merge_op op(alternatives.size(), alternatives.front()->Type());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, alternatives);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, alternatives);
   }
 };
 
@@ -270,7 +270,7 @@ public:
     operands.push_back(&predicate);
     operands.insert(operands.end(), alternatives.begin(), alternatives.end());
     mux_op op(alternatives.size(), alternatives.front()->Type(), discarding, loop);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, operands);
   }
 
   bool discarding;
@@ -320,7 +320,7 @@ public:
   {
     auto region = value.region();
     sink_op op(value.Type());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &value });
   }
 };
 
@@ -361,7 +361,7 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
     predicate_buffer_op op(ctl);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &predicate });
   }
 };
 
@@ -404,7 +404,7 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
     loop_constant_buffer_op op(ctl, value.Type());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &predicate, &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &predicate, &value });
   }
 };
 
@@ -448,7 +448,7 @@ public:
   {
     auto region = value.region();
     buffer_op op(value.Type(), capacity, pass_through);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &value });
   }
 
   size_t capacity;
@@ -525,7 +525,7 @@ public:
 
     auto region = value.region();
     trigger_op op(value.Type());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &tg, &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &tg, &value });
   }
 };
 
@@ -580,7 +580,7 @@ public:
 
     auto region = value.region();
     print_op op(value.Type());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &value });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &value });
   }
 };
 
@@ -945,7 +945,7 @@ public:
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, inputs);
   }
 
   [[nodiscard]] const llvm::PointerType &
@@ -1027,7 +1027,7 @@ public:
     auto region = check.region();
     auto pointerType = std::dynamic_pointer_cast<const llvm::PointerType>(check.Type());
     addr_queue_op op(pointerType, capacity, combinatorial);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &check, &enq, &deq })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &check, &enq, &deq })[0];
   }
 
   bool combinatorial;
@@ -1083,7 +1083,7 @@ public:
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, inputs);
   }
 };
 
@@ -1140,7 +1140,7 @@ public:
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
-    return jlm::rvsdg::simple_node::create_normalized(load_result.region(), op, inputs);
+    return jlm::rvsdg::SimpleNode::create_normalized(load_result.region(), op, inputs);
   }
 
   [[nodiscard]] const llvm::PointerType &
@@ -1224,7 +1224,7 @@ public:
     //                auto result_type = dynamic_cast<const jlm::rvsdg::bittype*>(&result.type());
     //                JLM_ASSERT(result_type && result_type->nbits()==64);
     mem_resp_op op(output_types);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &result });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &result });
   }
 };
 
@@ -1335,7 +1335,7 @@ public:
     mem_req_op op(loadTypes, storeTypes);
     std::vector<jlm::rvsdg::output *> operands(load_operands);
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, operands);
   }
 
   size_t
@@ -1428,7 +1428,7 @@ public:
     inputs.push_back(&addr);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return rvsdg::simple_node::create_normalized(value.region(), op, inputs);
+    return rvsdg::SimpleNode::create_normalized(value.region(), op, inputs);
   }
 
   [[nodiscard]] const llvm::PointerType &
@@ -1486,7 +1486,7 @@ public:
   create(std::shared_ptr<const jlm::llvm::arraytype> at, rvsdg::Region * region)
   {
     local_mem_op op(std::move(at));
-    return jlm::rvsdg::simple_node::create_normalized(region, op, {});
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, {});
   }
 };
 
@@ -1534,7 +1534,7 @@ public:
     auto region = mem.region();
     auto at = std::dynamic_pointer_cast<const jlm::llvm::arraytype>(mem.Type());
     local_mem_resp_op op(at, resp_count);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, { &mem });
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &mem });
   }
 };
 
@@ -1606,7 +1606,7 @@ public:
     inputs.push_back(&index);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
-    return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, inputs);
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::ValueType>
@@ -1683,7 +1683,7 @@ public:
     inputs.push_back(&index);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, inputs);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, inputs);
   }
 
   [[nodiscard]] const jlm::rvsdg::ValueType &
@@ -1761,7 +1761,7 @@ public:
     std::vector<jlm::rvsdg::output *> operands(1, &mem);
     operands.insert(operands.end(), load_operands.begin(), load_operands.end());
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return jlm::rvsdg::simple_node::create_normalized(region, op, operands);
+    return jlm::rvsdg::SimpleNode::create_normalized(region, op, operands);
   }
 };
 

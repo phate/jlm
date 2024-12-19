@@ -44,7 +44,7 @@ remove_redundant_buf(rvsdg::Region * region)
         remove_redundant_buf(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
       {

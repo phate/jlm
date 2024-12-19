@@ -67,7 +67,7 @@ GetMemoryStateResult(const llvm::lambda::node & lambda)
 }
 
 void
-gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::simple_node *> & mem_nodes)
+gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & mem_nodes)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -76,7 +76,7 @@ gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::simple_node *> 
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         gather_mem_nodes(structnode->subregion(n), mem_nodes);
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
@@ -137,7 +137,7 @@ mem_sep_independent(rvsdg::Region * region)
     return;
   }
   auto state_user = *state_arg->begin();
-  std::vector<jlm::rvsdg::simple_node *> mem_nodes;
+  std::vector<jlm::rvsdg::SimpleNode *> mem_nodes;
   gather_mem_nodes(lambda_region, mem_nodes);
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + mem_nodes.size());
@@ -169,9 +169,9 @@ rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::output * common_edge,
     jlm::rvsdg::output * new_edge,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    const std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & decouple_nodes)
+    std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & decouple_nodes)
 {
   // follows along common edge and routes new edge through the same regions
   // redirects the supplied loads, stores and decouples to the new edge

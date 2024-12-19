@@ -155,14 +155,14 @@ match(
     jlm::rvsdg::output * operand)
 {
   match_op op(nbits, mapping, default_alternative, nalternatives);
-  return simple_node::create_normalized(operand->region(), op, { operand })[0];
+  return SimpleNode::create_normalized(operand->region(), op, { operand })[0];
 }
 
 jlm::rvsdg::output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
   jlm::rvsdg::ctlconstant_op op({ alternative, nalternatives });
-  return jlm::rvsdg::simple_node::create_normalized(region, op, {})[0];
+  return jlm::rvsdg::SimpleNode::create_normalized(region, op, {})[0];
 }
 
 }

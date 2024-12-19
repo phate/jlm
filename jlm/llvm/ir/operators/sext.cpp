@@ -44,7 +44,7 @@ perform_bitunary_reduction(const sext_op & op, rvsdg::output * operand)
   auto uop = static_cast<const rvsdg::bitunary_op *>(&unary->GetOperation());
 
   auto output = sext_op::create(op.ndstbits(), unary->input(0)->origin());
-  return rvsdg::simple_node::create_normalized(region, *uop->create(op.ndstbits()), { output })[0];
+  return rvsdg::SimpleNode::create_normalized(region, *uop->create(op.ndstbits()), { output })[0];
 }
 
 static rvsdg::output *
@@ -59,9 +59,7 @@ perform_bitbinary_reduction(const sext_op & op, rvsdg::output * operand)
   auto op1 = sext_op::create(op.ndstbits(), binary->input(0)->origin());
   auto op2 = sext_op::create(op.ndstbits(), binary->input(1)->origin());
 
-  return rvsdg::simple_node::create_normalized(
-      region,
-      *bop->create(op.ndstbits()),
+  return rvsdg::SimpleNode::create_normalized(region, *bop->create(op.ndstbits()),
       { op1, op2 })[0];
 }
 

@@ -23,8 +23,8 @@ namespace jlm::hls
 class TraceAllocaUses
 {
 public:
-  std::vector<jlm::rvsdg::simple_node *> load_nodes;
-  std::vector<jlm::rvsdg::simple_node *> store_nodes;
+  std::vector<jlm::rvsdg::SimpleNode *> load_nodes;
+  std::vector<jlm::rvsdg::SimpleNode *> store_nodes;
 
   TraceAllocaUses(jlm::rvsdg::output * op)
   {

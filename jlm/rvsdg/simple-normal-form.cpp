@@ -89,7 +89,7 @@ simple_normal_form::normalized_create(
   if (get_mutable() && get_cse())
     node = node_cse(region, op, arguments);
   if (!node)
-    node = simple_node::create(region, op, arguments);
+    node = SimpleNode::create(region, op, arguments);
 
   return outputs(node);
 }

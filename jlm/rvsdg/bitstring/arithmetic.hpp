@@ -40,7 +40,7 @@ public:
   static output *
   create(size_t nbits, output * op)
   {
-    return simple_node::create_normalized(op->region(), MakeBitUnaryOperation(nbits), { op })[0];
+    return SimpleNode::create_normalized(op->region(), MakeBitUnaryOperation(nbits), { op })[0];
   }
 };
 
@@ -75,7 +75,7 @@ public:
   static output *
   create(size_t nbits, output * op1, output * op2)
   {
-    return simple_node::create_normalized(
+    return SimpleNode::create_normalized(
         op1->region(),
         MakeBitBinaryOperation(nbits),
         { op1, op2 })[0];

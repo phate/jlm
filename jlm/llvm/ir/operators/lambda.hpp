@@ -342,7 +342,7 @@ public:
    *
    * @see GetMemoryStateExitMerge()
    */
-  static rvsdg::simple_node *
+  static rvsdg::SimpleNode *
   GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
 
   /**
@@ -354,7 +354,7 @@ public:
    *
    * @see GetMemoryStateEntrySplit()
    */
-  [[nodiscard]] static rvsdg::simple_node *
+  [[nodiscard]] static rvsdg::SimpleNode *
   GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept;
 
   /**

@@ -106,7 +106,7 @@ create_state_mux(
 
   auto region = operands.front()->region();
   jlm::rvsdg::mux_op op(std::move(st), operands.size(), nresults);
-  return simple_node::create_normalized(region, op, operands);
+  return SimpleNode::create_normalized(region, op, operands);
 }
 
 static inline jlm::rvsdg::output *

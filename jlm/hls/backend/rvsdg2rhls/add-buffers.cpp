@@ -23,7 +23,7 @@ add_buffers(rvsdg::Region * region, bool pass_through)
         add_buffers(structnode->subregion(n), pass_through);
       }
     }
-    else if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (jlm::rvsdg::is<hls::load_op>(node) || jlm::rvsdg::is<hls::decoupled_load_op>(node))
       {

@@ -473,7 +473,7 @@ public:
   Create(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
   {
     ConstantPointerNullOperation operation(CheckAndExtractType(type));
-    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(region, operation, {})[0];
   }
 
 private:
@@ -563,7 +563,7 @@ public:
       throw jlm::util::error("expected pointer type.");
 
     bits2ptr_op op(ot, pt);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 };
 
@@ -694,9 +694,7 @@ public:
     }
 
     ConstantDataArray operation(std::move(valueType), elements.size());
-    return jlm::rvsdg::simple_node::create_normalized(
-        elements[0]->region(),
-        operation,
+    return jlm::rvsdg::SimpleNode::create_normalized(elements[0]->region(), operation,
         elements)[0];
   }
 };
@@ -848,7 +846,7 @@ public:
     auto resultBitType = CheckAndExtractBitType(resultType);
 
     zext_op operation(std::move(operandBitType), std::move(resultBitType));
-    return *rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand })[0];
+    return *rvsdg::SimpleNode::create_normalized(operand.region(), operation, { &operand })[0];
   }
 
 private:
@@ -1042,7 +1040,7 @@ public:
   Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     UndefValueOperation operation(std::move(type));
-    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(&region, operation, {})[0];
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1125,7 +1123,7 @@ public:
     auto valueType = CheckAndConvertType(type);
 
     PoisonValueOperation operation(std::move(valueType));
-    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(region, operation, {})[0];
   }
 
 private:
@@ -1478,7 +1476,7 @@ public:
       operandTypes.emplace_back(operand->Type());
 
     valist_op operation(std::move(operandTypes));
-    return jlm::rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 };
 
@@ -1544,7 +1542,7 @@ public:
     auto pair = check_types(operand->Type(), rtype);
 
     bitcast_op op(pair.first, pair.second);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 
 private:
@@ -1613,7 +1611,7 @@ public:
     auto structType = CheckAndExtractStructType(std::move(resultType));
 
     ConstantStruct operation(std::move(structType));
-    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return *rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 
 private:
@@ -1723,7 +1721,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     trunc_op op(std::move(ot), jlm::rvsdg::bittype::Create(ndstbits));
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 };
 
@@ -1907,7 +1905,7 @@ public:
     }
 
     ConstantArray operation(valueType, operands.size());
-    return rvsdg::simple_node::create_normalized(operands[0]->region(), operation, operands)[0];
+    return rvsdg::SimpleNode::create_normalized(operands[0]->region(), operation, operands)[0];
   }
 };
 
@@ -1948,7 +1946,7 @@ public:
   Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     ConstantAggregateZero operation(std::move(type));
-    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(&region, operation, {})[0];
   }
 };
 
@@ -2508,7 +2506,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     malloc_op op(std::move(bt));
-    return jlm::rvsdg::simple_node::create_normalized(size->region(), op, { size });
+    return jlm::rvsdg::SimpleNode::create_normalized(size->region(), op, { size });
   }
 };
 
@@ -2562,7 +2560,7 @@ public:
     operands.push_back(iOState);
 
     FreeOperation operation(memoryStates.size());
-    return jlm::rvsdg::simple_node::create_normalized(pointer->region(), operation, operands);
+    return jlm::rvsdg::SimpleNode::create_normalized(pointer->region(), operation, operands);
   }
 
 private:

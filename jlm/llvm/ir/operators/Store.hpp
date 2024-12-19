@@ -212,14 +212,14 @@ private:
  * @see StoreVolatileNode
  * @see StoreNonVolatileNode
  */
-class StoreNode : public rvsdg::simple_node
+class StoreNode : public rvsdg::SimpleNode
 {
 protected:
   StoreNode(
       rvsdg::Region & region,
       const StoreOperation & operation,
       const std::vector<rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : SimpleNode(&region, operation, operands)
   {}
 
 public:

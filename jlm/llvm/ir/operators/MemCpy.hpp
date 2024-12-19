@@ -115,7 +115,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
-    return rvsdg::simple_node::create_normalized(destination->region(), operation, operands);
+    return rvsdg::SimpleNode::create_normalized(destination->region(), operation, operands);
   }
 
 private:
@@ -184,7 +184,7 @@ public:
     return tac::create(operation, operands);
   }
 
-  static rvsdg::simple_node &
+  static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::output & destination,
       rvsdg::output & source,
@@ -196,7 +196,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
-    return *rvsdg::simple_node::create(destination.region(), operation, operands);
+    return *rvsdg::SimpleNode::create(destination.region(), operation, operands);
   }
 
 private:

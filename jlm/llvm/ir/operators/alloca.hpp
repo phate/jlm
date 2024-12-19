@@ -94,7 +94,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     alloca_op op(std::move(allocatedType), std::move(bt), alignment);
-    return rvsdg::simple_node::create_normalized(size->region(), op, { size });
+    return rvsdg::SimpleNode::create_normalized(size->region(), op, { size });
   }
 
 private:
