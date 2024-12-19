@@ -760,19 +760,19 @@ public:
     return *CallY_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetAllocaPx() const noexcept
   {
     return *AllocaPx_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetAllocaPy() const noexcept
   {
     return *AllocaPy_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetAllocaPz() const noexcept
   {
     return *AllocaPz_;
@@ -800,9 +800,9 @@ private:
   jlm::llvm::CallNode * Test2CallX_;
   jlm::llvm::CallNode * CallY_;
 
-  jlm::rvsdg::simple_node * AllocaPx_;
-  jlm::rvsdg::simple_node * AllocaPy_;
-  jlm::rvsdg::simple_node * AllocaPz_;
+  jlm::rvsdg::SimpleNode * AllocaPx_;
+  jlm::rvsdg::SimpleNode * AllocaPy_;
+  jlm::rvsdg::SimpleNode * AllocaPz_;
 };
 
 /**
@@ -1566,31 +1566,31 @@ public:
     return *IndirectCall_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetPTestAlloca() const noexcept
   {
     return *PTestAlloca_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetPaAlloca() const noexcept
   {
     return *PaAlloca_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetPbAlloca() const noexcept
   {
     return *PbAlloca_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetPcAlloca() const noexcept
   {
     return *PcAlloca_;
   }
 
-  [[nodiscard]] jlm::rvsdg::simple_node &
+  [[nodiscard]] jlm::rvsdg::SimpleNode &
   GetPdAlloca() const noexcept
   {
     return *PdAlloca_;
@@ -1617,11 +1617,11 @@ private:
   jlm::llvm::CallNode * CallI_;
   jlm::llvm::CallNode * IndirectCall_;
 
-  jlm::rvsdg::simple_node * PTestAlloca_;
-  jlm::rvsdg::simple_node * PaAlloca_;
-  jlm::rvsdg::simple_node * PbAlloca_;
-  jlm::rvsdg::simple_node * PcAlloca_;
-  jlm::rvsdg::simple_node * PdAlloca_;
+  jlm::rvsdg::SimpleNode * PTestAlloca_;
+  jlm::rvsdg::SimpleNode * PaAlloca_;
+  jlm::rvsdg::SimpleNode * PbAlloca_;
+  jlm::rvsdg::SimpleNode * PcAlloca_;
+  jlm::rvsdg::SimpleNode * PdAlloca_;
 };
 
 /**

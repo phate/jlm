@@ -38,8 +38,8 @@ dump_xml(const jlm::rvsdg::Region * region, const std::string & file_name)
 void
 find_load_store(
     jlm::rvsdg::output * op,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & store_nodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
   if (!dynamic_cast<const jlm::llvm::MemoryStateType *>(&op->type()))
@@ -181,7 +181,7 @@ jlm::rvsdg::output *
 separate_load_edge(
     jlm::rvsdg::output * mem_edge,
     jlm::rvsdg::output * addr_edge,
-    jlm::rvsdg::simple_node ** load,
+    jlm::rvsdg::SimpleNode ** load,
     jlm::rvsdg::output ** new_mem_edge,
     std::vector<jlm::rvsdg::output *> & store_addresses,
     std::vector<jlm::rvsdg::output *> & store_dequeues,
@@ -467,8 +467,8 @@ process_loops(jlm::rvsdg::output * state_edge)
       JLM_ASSERT(mem_edge_after_loop->nusers() == 1);
       auto common_user = *mem_edge_after_loop->begin();
 
-      std::vector<jlm::rvsdg::simple_node *> load_nodes;
-      std::vector<jlm::rvsdg::simple_node *> store_nodes;
+      std::vector<jlm::rvsdg::SimpleNode *> load_nodes;
+      std::vector<jlm::rvsdg::SimpleNode *> store_nodes;
       std::unordered_set<jlm::rvsdg::output *> visited;
       // this is a hack to keep search within the loop
       visited.insert(mem_edge_after_loop);

@@ -111,7 +111,7 @@ public:
     std::vector<rvsdg::output *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-    return rvsdg::simple_node::create_normalized(baseAddress->region(), operation, operands)[0];
+    return rvsdg::SimpleNode::create_normalized(baseAddress->region(), operation, operands)[0];
   }
 
 private:

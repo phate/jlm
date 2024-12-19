@@ -39,8 +39,8 @@ TestFork()
   rvsdg::output * lveBuffer;
   loop->add_loopvar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
-  auto arm = rvsdg::simple_node::create_normalized(subregion, add, { idvBuffer, lvsBuffer })[0];
-  auto cmp = rvsdg::simple_node::create_normalized(subregion, ult, { arm, lveBuffer })[0];
+  auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, lvsBuffer })[0];
+  auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lveBuffer })[0];
   auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   loop->set_predicate(match);
@@ -105,8 +105,8 @@ TestConstantFork()
   loop->add_loopvar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 
-  auto arm = rvsdg::simple_node::create_normalized(subregion, add, { idvBuffer, bitConstant1 })[0];
-  auto cmp = rvsdg::simple_node::create_normalized(subregion, ult, { arm, bitConstant1 })[0];
+  auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, bitConstant1 })[0];
+  auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, bitConstant1 })[0];
   auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   loop->set_predicate(match);

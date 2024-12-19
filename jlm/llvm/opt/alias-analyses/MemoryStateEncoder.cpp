@@ -492,7 +492,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
   topdown_traverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
     {
       EncodeSimpleNode(*simpleNode);
     }
@@ -537,7 +537,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
 }
 
 void
-MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
+MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
   if (is<alloca_op>(&simpleNode))
   {
@@ -579,7 +579,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
 }
 
 void
-MemoryStateEncoder::EncodeAlloca(const rvsdg::simple_node & allocaNode)
+MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
 {
   JLM_ASSERT(is<alloca_op>(&allocaNode));
 
@@ -602,7 +602,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::simple_node & allocaNode)
 }
 
 void
-MemoryStateEncoder::EncodeMalloc(const rvsdg::simple_node & mallocNode)
+MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   JLM_ASSERT(is<malloc_op>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -657,7 +657,7 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
 }
 
 void
-MemoryStateEncoder::EncodeFree(const rvsdg::simple_node & freeNode)
+MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode)
 {
   JLM_ASSERT(is<FreeOperation>(&freeNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -725,7 +725,7 @@ MemoryStateEncoder::EncodeCallExit(const CallNode & callNode)
 }
 
 void
-MemoryStateEncoder::EncodeMemcpy(const rvsdg::simple_node & memcpyNode)
+MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode)
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -989,7 +989,7 @@ MemoryStateEncoder::ReplaceStoreNode(
 
 std::vector<rvsdg::output *>
 MemoryStateEncoder::ReplaceMemcpyNode(
-    const rvsdg::simple_node & memcpyNode,
+    const rvsdg::SimpleNode & memcpyNode,
     const std::vector<rvsdg::output *> & memoryStates)
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
@@ -1022,7 +1022,7 @@ MemoryStateEncoder::ReplaceMemcpyNode(
 }
 
 bool
-MemoryStateEncoder::ShouldHandle(const rvsdg::simple_node & simpleNode) noexcept
+MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
 {
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
   {

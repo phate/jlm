@@ -245,7 +245,7 @@ instrument_ref(
       if (*dbt != *jlm::rvsdg::bittype::Create(64))
       {
         jlm::llvm::zext_op op(dbt->nbits(), 64);
-        data = jlm::rvsdg::simple_node::create_normalized(data->region(), op, { data })[0];
+        data = jlm::rvsdg::SimpleNode::create_normalized(data->region(), op, { data })[0];
       }
       auto memstate = node->input(2)->origin();
       auto callOp = jlm::llvm::CallNode::Create(

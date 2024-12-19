@@ -140,7 +140,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
 {
   for (auto & node : r->Nodes())
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(&node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(&node))
     {
       get_node_name(&node);
     }

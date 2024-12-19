@@ -98,7 +98,7 @@ public:
   create(rvsdg::Region * region, const value_repr & vr)
   {
     domain_const_op op(vr);
-    return simple_node::create_normalized(region, op, {})[0];
+    return SimpleNode::create_normalized(region, op, {})[0];
   }
 
 private:

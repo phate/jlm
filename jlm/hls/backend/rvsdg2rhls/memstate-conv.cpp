@@ -34,7 +34,7 @@ memstate_conv(rvsdg::Region * region)
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         memstate_conv(structnode->subregion(n));
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
               &simplenode->GetOperation())

@@ -37,12 +37,11 @@ TestUnknownBoundaries()
   auto lvs = theta->add_loopvar(lambda->GetFunctionArguments()[1]);
   auto lve = theta->add_loopvar(lambda->GetFunctionArguments()[2]);
 
-  auto arm = jlm::rvsdg::simple_node::create_normalized(
+  auto arm = jlm::rvsdg::SimpleNode::create_normalized(
       subregion,
       add,
       { idv->argument(), lvs->argument() })[0];
-  auto cmp =
-      jlm::rvsdg::simple_node::create_normalized(subregion, ult, { arm, lve->argument() })[0];
+  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lve->argument() })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   idv->result()->divert_to(arm);

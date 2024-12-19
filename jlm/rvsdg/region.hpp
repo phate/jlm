@@ -21,7 +21,7 @@ namespace jlm::rvsdg
 {
 
 class Node;
-class simple_node;
+class SimpleNode;
 class SimpleOperation;
 class StructuralInput;
 class StructuralNode;

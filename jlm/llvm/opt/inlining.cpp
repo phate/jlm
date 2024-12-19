@@ -97,7 +97,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 }
 
 static std::vector<jlm::rvsdg::output *>
-route_dependencies(const lambda::node * lambda, const jlm::rvsdg::simple_node * apply)
+route_dependencies(const lambda::node * lambda, const jlm::rvsdg::SimpleNode * apply)
 {
   JLM_ASSERT(is<CallOperation>(apply));
 
@@ -114,7 +114,7 @@ route_dependencies(const lambda::node * lambda, const jlm::rvsdg::simple_node * 
 }
 
 void
-inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
+inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
 {
   JLM_ASSERT(is<CallOperation>(call));
 
