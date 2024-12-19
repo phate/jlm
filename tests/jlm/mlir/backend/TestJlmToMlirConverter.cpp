@@ -265,8 +265,7 @@ TestComZeroExt()
     // zero extension of constant1
     auto zeroExtOp = jlm::llvm::zext_op(8, 16);
     auto zeroExt =
-        jlm::rvsdg::SimpleNode::create_normalized(lambda->subregion(), zeroExtOp,
-        { constant1 })[0];
+        jlm::rvsdg::SimpleNode::create_normalized(lambda->subregion(), zeroExtOp, { constant1 })[0];
 
     auto mul = jlm::rvsdg::bitmul_op::create(16, zeroExt, zeroExt);
 

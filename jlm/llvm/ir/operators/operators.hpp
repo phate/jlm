@@ -694,8 +694,7 @@ public:
     }
 
     ConstantDataArray operation(std::move(valueType), elements.size());
-    return jlm::rvsdg::SimpleNode::create_normalized(elements[0]->region(), operation,
-        elements)[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(elements[0]->region(), operation, elements)[0];
   }
 };
 

@@ -50,9 +50,9 @@ SimpleNode::SimpleNode(
   if (SimpleNode::GetOperation().narguments() != operands.size())
     throw jlm::util::error(jlm::util::strfmt(
         "Argument error - expected ",
-            SimpleNode::GetOperation().narguments(),
-            ", received ",
-            operands.size(),
+        SimpleNode::GetOperation().narguments(),
+        ", received ",
+        operands.size(),
         " arguments."));
 
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
