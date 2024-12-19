@@ -11,7 +11,6 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/region.cpp \
 	jlm/rvsdg/simple-normal-form.cpp \
 	jlm/rvsdg/simple-node.cpp \
-	jlm/rvsdg/statemux.cpp \
 	jlm/rvsdg/structural-normal-form.cpp \
 	jlm/rvsdg/structural-node.cpp \
 	jlm/rvsdg/theta.cpp \
@@ -46,7 +45,6 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/bitstring/comparison.hpp \
 	jlm/rvsdg/view.hpp \
 	jlm/rvsdg/traverser.hpp \
-	jlm/rvsdg/statemux.hpp \
 	jlm/rvsdg/graph.hpp \
 	jlm/rvsdg/substitution.hpp \
 	jlm/rvsdg/unary.hpp \
@@ -79,7 +77,6 @@ librvsdg_TESTS = \
 	tests/jlm/rvsdg/test-gamma \
 	tests/jlm/rvsdg/test-graph \
 	tests/jlm/rvsdg/test-nodes \
-	tests/jlm/rvsdg/test-statemux \
 	tests/jlm/rvsdg/test-theta \
 	tests/jlm/rvsdg/test-topdown \
 	tests/jlm/rvsdg/test-typemismatch \
