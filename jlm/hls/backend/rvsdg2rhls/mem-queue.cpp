@@ -165,8 +165,7 @@ route_to_region(jlm::rvsdg::Region * target, jlm::rvsdg::output * out)
     out_regions.pop_front();
   }
   JLM_ASSERT(common_region != nullptr);
-  auto common_loop = dynamic_cast<jlm::hls::loop_node *>(common_region->node());
-  JLM_ASSERT(common_loop);
+  auto common_loop = jlm::util::AssertedCast<jlm::hls::loop_node>(common_region->node());
   // route out to convergence point from out
   jlm::rvsdg::output * common_out = jlm::hls::route_request(common_region, out);
   // add a backedge to prevent cycles
@@ -211,8 +210,7 @@ separate_load_edge(
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      auto loop_node = dynamic_cast<jlm::hls::loop_node *>(sti->node());
-      JLM_ASSERT(loop_node);
+      auto loop_node = jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
       jlm::rvsdg::output * buffer;
 
       addr_edge = loop_node->add_loopvar(addr_edge, &buffer);
@@ -222,7 +220,7 @@ separate_load_edge(
       JLM_ASSERT(sti_arg->nusers() == 1);
       auto user = *sti_arg->begin();
       auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
+      jlm::util::AssertedCast<const jlm::hls::mux_op>(&si->node()->GetOperation());
       JLM_ASSERT(buffer->nusers() == 1);
       separate_load_edge(
           si->node()->output(0),
@@ -272,10 +270,9 @@ separate_load_edge(
           }
           // create mux
           JLM_ASSERT(mem_edge->nusers() == 1);
-          auto mux_user = dynamic_cast<jlm::rvsdg::simple_input *>(*mem_edge->begin());
-          JLM_ASSERT(mux_user);
-          auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&mux_user->node()->GetOperation());
-          JLM_ASSERT(mux_op);
+          auto mux_user = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(*mem_edge->begin());
+          auto mux_op =
+              jlm::util::AssertedCast<const jlm::hls::mux_op>(&mux_user->node()->GetOperation());
           addr_edge = jlm::hls::mux_op::create(
               *mux_user->node()->input(0)->origin(),
               load_branch_out,
@@ -287,10 +284,9 @@ separate_load_edge(
         else
         {
           // end of loop
-          auto load_user_input = dynamic_cast<jlm::rvsdg::simple_input *>(addr_edge_user);
-          JLM_ASSERT(load_user_input);
-          JLM_ASSERT(
-              dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->GetOperation()));
+          auto load_user_input = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(addr_edge_user);
+          jlm::util::AssertedCast<const jlm::hls::branch_op>(
+              &load_user_input->node()->GetOperation());
           return nullptr;
         }
       }
@@ -460,8 +456,7 @@ process_loops(jlm::rvsdg::output * state_edge)
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      auto ln = dynamic_cast<jlm::hls::loop_node *>(sti->node());
-      JLM_ASSERT(ln);
+      jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
       // update to output of loop
       auto mem_edge_after_loop = find_loop_output(sti);
       JLM_ASSERT(mem_edge_after_loop->nusers() == 1);
@@ -525,7 +520,8 @@ process_loops(jlm::rvsdg::output * state_edge)
 void
 jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->Nodes().begin().ptr());
+  auto lambda =
+      jlm::util::AssertedCast<const jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
   {
@@ -534,11 +530,10 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   }
   JLM_ASSERT(state_arg->nusers() == 1);
   auto state_user = *state_arg->begin();
-  auto entry_input = dynamic_cast<jlm::rvsdg::simple_input *>(state_user);
-  JLM_ASSERT(entry_input);
+  auto entry_input = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(state_user);
   auto entry_node = entry_input->node();
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
-      &entry_node->GetOperation()));
+  jlm::util::AssertedCast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation>(
+      &entry_node->GetOperation());
   // for each state edge:
   //    for each outer loop (theta/loop in lambda region):
   //        split state edge before the loop
