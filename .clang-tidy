@@ -1,10 +1,12 @@
 ---
 Checks: '-*,
+  bugprone-move-forwarding-reference,
   modernize-deprecated-headers,
   modernize-redundant-void-arg,
   '
 
 WarningsAsErrors: '
+  bugprone-move-forwarding-reference,
   modernize-deprecated-headers,
   modernize-redundant-void-arg,
   '
