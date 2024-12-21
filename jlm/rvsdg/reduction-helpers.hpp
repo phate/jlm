@@ -6,9 +6,9 @@
 #ifndef JLM_RVSDG_REDUCTION_HELPERS_HPP
 #define JLM_RVSDG_REDUCTION_HELPERS_HPP
 
-#include <algorithm>
-
 #include <jlm/rvsdg/node.hpp>
+
+#include <algorithm>
 
 namespace jlm::rvsdg
 {
@@ -52,7 +52,7 @@ pairwise_reduce(Container && args, const Reductor & reductor)
 {
   if (args.empty())
   {
-    return std::forward(args);
+    return std::forward<Container>(args);
   }
 
   auto left = args.begin();
@@ -75,7 +75,7 @@ pairwise_reduce(Container && args, const Reductor & reductor)
   }
   args.erase(std::next(left), args.end());
 
-  return std::forward(args);
+  return std::forward<Container>(args);
 }
 
 /* Test whether any pair of elements of "args" can be reduced according
@@ -137,7 +137,7 @@ commutative_pairwise_reduce(Container && args, const Reductor & reductor)
     ++left;
   }
 
-  return std::forward(args);
+  return std::forward<Container>(args);
 }
 
 /* Test whether "flatten_tester" applies to any element of "args". */
