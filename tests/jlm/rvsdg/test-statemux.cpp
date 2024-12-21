@@ -81,7 +81,7 @@ test_multiple_origin_reduction()
 }
 
 static int
-test_main(void)
+test_main()
 {
   test_mux_mux_reduction();
   test_multiple_origin_reduction();
