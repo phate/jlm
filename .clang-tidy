@@ -1,8 +1,10 @@
 ---
 Checks: '-*,
   modernize-deprecated-headers,
+  modernize-redundant-void-arg,
   '
 
 WarningsAsErrors: '
   modernize-deprecated-headers,
+  modernize-redundant-void-arg,
   '

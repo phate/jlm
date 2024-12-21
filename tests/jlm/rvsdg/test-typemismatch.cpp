@@ -9,7 +9,7 @@
 #include "test-types.hpp"
 
 static int
-test_main(void)
+test_main()
 {
   using namespace jlm::rvsdg;
 

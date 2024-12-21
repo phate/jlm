@@ -10,7 +10,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
-test_node_copy(void)
+test_node_copy()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::tests;

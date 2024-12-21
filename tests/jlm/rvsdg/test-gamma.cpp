@@ -12,7 +12,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
-test_gamma(void)
+test_gamma()
 {
   using namespace jlm::rvsdg;
 
@@ -49,7 +49,7 @@ test_gamma(void)
 }
 
 static void
-test_predicate_reduction(void)
+test_predicate_reduction()
 {
   using namespace jlm::rvsdg;
 
@@ -81,7 +81,7 @@ test_predicate_reduction(void)
 }
 
 static void
-test_invariant_reduction(void)
+test_invariant_reduction()
 {
   using namespace jlm::rvsdg;
 
