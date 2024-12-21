@@ -52,7 +52,7 @@ pairwise_reduce(Container && args, const Reductor & reductor)
 {
   if (args.empty())
   {
-    return std::move(args);
+    return std::forward(args);
   }
 
   auto left = args.begin();
@@ -75,7 +75,7 @@ pairwise_reduce(Container && args, const Reductor & reductor)
   }
   args.erase(std::next(left), args.end());
 
-  return std::move(args);
+  return std::forward(args);
 }
 
 /* Test whether any pair of elements of "args" can be reduced according
@@ -137,7 +137,7 @@ commutative_pairwise_reduce(Container && args, const Reductor & reductor)
     ++left;
   }
 
-  return std::move(args);
+  return std::forward(args);
 }
 
 /* Test whether "flatten_tester" applies to any element of "args". */
