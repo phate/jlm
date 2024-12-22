@@ -10,6 +10,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -249,6 +250,32 @@ TestAddrQueue()
   assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
 
-  return 0;
+  for (auto & node : jlm::rvsdg::topdown_traverser(lambdaRegion))
+  {
+    if (auto loopNode = dynamic_cast<jlm::hls::loop_node *>(node))
+    {
+      for (auto & node : jlm::rvsdg::topdown_traverser(loopNode->subregion()))
+      {
+        if (auto storeNode = dynamic_cast<const jlm::llvm::StoreNode *>(node))
+        {
+          auto loadNode =
+              jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(1)->origin())
+                  ->node();
+          jlm::util::AssertedCast<const jlm::llvm::LoadNode>(loadNode);
+          auto stateGate =
+              jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(0)->origin())
+                  ->node();
+          jlm::util::AssertedCast<const state_gate_op>(&stateGate->GetOperation());
+          auto addrQueue =
+              jlm::util::AssertedCast<jlm::rvsdg::node_output>(stateGate->input(0)->origin())
+                  ->node();
+          jlm::util::AssertedCast<const addr_queue_op>(&addrQueue->GetOperation());
+          return 0;
+        }
+      }
+    }
+  }
+
+  return 1;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-AddrQueue", TestAddrQueue)
