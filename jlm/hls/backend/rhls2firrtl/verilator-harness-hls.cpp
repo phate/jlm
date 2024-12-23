@@ -570,7 +570,7 @@ static void run_ref(
     if(pid == 0) { // child
         close(fd[0]); // close fd[0] since child will only write
 
-    instrumented_ref( )" << c_call_args << ");" << R"(
+        instrumented_ref()" << c_call_args << R"();
 
         // Send all memory accesses to the parent
         size_t cnt = memory_accesses.size();
@@ -615,10 +615,10 @@ extern "C" )" << c_return_type << " " << function_name << "(" << c_params << ")"
     ignored_memory_regions.clear();
 
     // Execute instrumented version of kernel compiled for the host in a fork
-    run_ref( )" << c_call_args << R"( );
+    run_ref()" << c_call_args << R"();
 
     // Execute the verilated model in this process
-)";
+    )";
   if (has_return)
     cpp << "auto result = ";
   cpp << "run_hls(" << c_call_args << ");" << std::endl;
@@ -629,7 +629,7 @@ extern "C" )" << c_return_type << " " << function_name << "(" << c_params << ")"
 )";
 
   if (has_return)
-    cpp << "return result;" << std::endl;
+    cpp << "    return result;" << std::endl;
 
   cpp << "}" << std::endl;
 
