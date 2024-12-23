@@ -31,7 +31,6 @@ convert_to_c_type(const rvsdg::Type * type)
     return convert_to_c_type(&t->element_type()) + "*";
   }
 
-
   JLM_UNREACHABLE("Unimplemented C type");
 }
 
@@ -48,14 +47,14 @@ convert_to_c_return_type(const llvm::lambda::node & hls_lambda)
   const auto & results = hls_lambda.type().Results();
 
   if (results.empty())
-    return {false, "void"};
+    return { false, "void" };
 
   const auto & type = results.front();
 
   if (rvsdg::is<rvsdg::StateType>(type))
-    return {false, "void"};
+    return { false, "void" };
 
-  return {true, convert_to_c_type(type.get())};
+  return { true, convert_to_c_type(type.get()) };
 }
 
 /**
@@ -376,14 +375,15 @@ static void verilator_init(int argc, char **argv) {
   for (const auto & ctx : hls_lambda.GetContextVars())
   {
     // Context variables should always be external symbols imported by name
-    if (const auto import = dynamic_cast<rvsdg::GraphImport*>(ctx.input->origin()))
-      cpp << "    top->i_data_" << first_ctx_var << " = (uint64_t) &" << import->Name() << ";" << std::endl;
+    if (const auto import = dynamic_cast<rvsdg::GraphImport *>(ctx.input->origin()))
+      cpp << "    top->i_data_" << first_ctx_var << " = (uint64_t) &" << import->Name() << ";"
+          << std::endl;
     else
       JLM_UNREACHABLE("Context variable is not a GraphImport");
     first_ctx_var++;
   }
 
-cpp << R"(
+  cpp << R"(
     // Run some cycles with reset set HIGH
     posedge();
     negedge();
@@ -416,10 +416,10 @@ static void posedge() {
     cpp << "top->mem_" << i << "_req_valid, ";
     if (has_write)
       cpp << "    top->mem_" << i << "_req_data_write, ";
-      else
-        cpp << "0, ";
+    else
+      cpp << "0, ";
     cpp << "top->mem_" << i << "_req_data_addr, ";
-    cpp << "top->mem_" << i <<"_req_data_size, ";
+    cpp << "top->mem_" << i << "_req_data_size, ";
     if (has_write)
       cpp << "top->mem_" << i << "_req_data_data, ";
     else
@@ -473,7 +473,8 @@ static void verilator_finish() {
   // delete top;
 }
 
-static )" << c_return_type << " run_hls(" << std::endl;
+static )"
+      << c_return_type << " run_hls(" << std::endl;
   cpp << c_params << R"(
 ) {
     if(!top) {
@@ -544,7 +545,8 @@ static )" << c_return_type << " run_hls(" << std::endl;
 
 
 // ======== Running the kernel compiled as C, with intrumentation ========
-extern "C" )" << c_return_type << " instrumented_ref(" << c_params << ");" << R"(
+extern "C" )"
+      << c_return_type << " instrumented_ref(" << c_params << ");" << R"(
 
 extern "C" void reference_load(void* addr, uint64_t width) {
     instrumented_load(addr, width);
@@ -562,7 +564,8 @@ std::vector<mem_access> ref_memory_accesses;
 
 // Calls instrumented_ref in a forked process and stores its memory accesses
 static void run_ref(
-)" << c_params << R"(
+)" << c_params
+      << R"(
 ) {
     int fd[2]; // channel 0 for reading and 1 for writing
     size_t tmp = pipe(fd);
@@ -570,7 +573,8 @@ static void run_ref(
     if(pid == 0) { // child
         close(fd[0]); // close fd[0] since child will only write
 
-        instrumented_ref()" << c_call_args << R"();
+        instrumented_ref()"
+      << c_call_args << R"();
 
         // Send all memory accesses to the parent
         size_t cnt = memory_accesses.size();
@@ -608,14 +612,16 @@ static void compare_memory_accesses() {
 }
 
 // ======== Entry point for calling kernel from host device (C code) ========
-extern "C" )" << c_return_type << " " << function_name << "(" << c_params << ")" << R"(
+extern "C" )"
+      << c_return_type << " " << function_name << "(" << c_params << ")" << R"(
 {
     // Reset structures used for tracing memory operations
     memory_accesses.clear();
     ignored_memory_regions.clear();
 
     // Execute instrumented version of kernel compiled for the host in a fork
-    run_ref()" << c_call_args << R"();
+    run_ref()"
+      << c_call_args << R"();
 
     // Execute the verilated model in this process
     )";
