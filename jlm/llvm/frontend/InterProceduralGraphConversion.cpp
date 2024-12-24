@@ -461,7 +461,7 @@ requiresExport(const ipgraph_node & ipgNode)
 static void
 ConvertAssignment(
     const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
+    rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
@@ -492,10 +492,7 @@ ConvertSelect(
 }
 
 static void
-ConvertBranch(
-    const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
-    llvm::VariableMap & variableMap)
+ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
   JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
   /*
@@ -645,7 +642,7 @@ Convert(
 static void
 Convert(
     const exitaggnode & exitAggregationNode,
-    const AnnotationMap & demandMap,
+    const AnnotationMap &,
     lambda::node & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -663,8 +660,8 @@ Convert(
 static void
 Convert(
     const blockaggnode & blockAggregationNode,
-    const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    const AnnotationMap &,
+    lambda::node &,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   ConvertBasicBlock(

@@ -195,7 +195,6 @@ static inline void
 restructure_loop_repetition(
     const sccstructure & s,
     cfg_node * new_nr,
-    cfg_node * new_nx,
     const tacvariable * ev,
     const tacvariable * rv)
 {
@@ -275,7 +274,7 @@ restructure_loops(cfg_node * entry, cfg_node * exit, std::vector<tcloop> & loops
 
     restructure_loop_entry(*sccstruct, new_ne, ev);
     restructure_loop_exit(*sccstruct, new_nr, new_nx, exit, rv, xv);
-    restructure_loop_repetition(*sccstruct, new_nr, new_nr, ev, rv);
+    restructure_loop_repetition(*sccstruct, new_nr, ev, rv);
 
     restructure(new_ne, new_nr, loops);
     loops.push_back(extract_tcloop(new_ne, new_nr));

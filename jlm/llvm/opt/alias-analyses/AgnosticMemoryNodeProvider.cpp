@@ -42,25 +42,25 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::Region & region) const override
+  GetRegionEntryNodes(const rvsdg::Region &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::Region & region) const override
+  GetRegionExitNodes(const rvsdg::Region &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const override
+  GetCallEntryNodes(const CallNode &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const override
+  GetCallExitNodes(const CallNode &) const override
   {
     return MemoryNodes_;
   }

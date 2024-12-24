@@ -213,7 +213,7 @@ RemoveResultsWhere()
   assert(result2.index() == 1);
 
   region.RemoveResultsWhere(
-      [](const jlm::rvsdg::RegionResult & result)
+      [](const jlm::rvsdg::RegionResult &)
       {
         return false;
       });
@@ -222,7 +222,7 @@ RemoveResultsWhere()
   assert(result2.index() == 1);
 
   region.RemoveResultsWhere(
-      [](const jlm::rvsdg::RegionResult & result)
+      [](const jlm::rvsdg::RegionResult &)
       {
         return true;
       });
@@ -259,7 +259,7 @@ RemoveArgumentsWhere()
   assert(argument2.index() == 2);
 
   region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument & argument)
+      [](const jlm::rvsdg::RegionArgument &)
       {
         return true;
       });
@@ -268,7 +268,7 @@ RemoveArgumentsWhere()
 
   region.remove_node(node);
   region.RemoveArgumentsWhere(
-      [](const jlm::rvsdg::RegionArgument & argument)
+      [](const jlm::rvsdg::RegionArgument &)
       {
         return false;
       });
@@ -469,7 +469,7 @@ BottomNodeTests()
 
   // And it becomes dead again
   rvsdg.root()->RemoveResultsWhere(
-      [](const RegionResult & result)
+      [](const RegionResult &)
       {
         return true;
       });

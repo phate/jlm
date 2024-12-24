@@ -393,7 +393,7 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
 }
 
 GammaNode *
-GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
+GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
