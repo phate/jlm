@@ -448,9 +448,7 @@ JlmOptCommand::ParseLlvmIrFile(
 }
 
 std::unique_ptr<llvm::RvsdgModule>
-JlmOptCommand::ParseMlirIrFile(
-    const util::filepath & mlirIrFile,
-    util::StatisticsCollector & statisticsCollector) const
+JlmOptCommand::ParseMlirIrFile(const util::filepath & mlirIrFile, util::StatisticsCollector &) const
 {
 #ifdef ENABLE_MLIR
   jlm::mlir::MlirToJlmConverter rvsdggen;

@@ -319,6 +319,69 @@ binary_op::flags() const noexcept
   return jlm::rvsdg::binary_op::flags::none;
 }
 
+std::optional<std::vector<rvsdg::output *>>
+FlattenAssociativeBinaryOperation(
+    const binary_op & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+  auto region = operands[0]->region();
+
+  if (!operation.is_associative())
+  {
+    return std::nullopt;
+  }
+
+  auto newOperands = base::detail::associative_flatten(
+      operands,
+      [&operation](rvsdg::output * operand)
+      {
+        auto node = TryGetOwnerNode<Node>(*operand);
+        if (node == nullptr)
+          return false;
+
+        auto flattenedBinaryOperation =
+            dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+        return node->GetOperation() == operation
+            || (flattenedBinaryOperation && flattenedBinaryOperation->bin_operation() == operation);
+      });
+
+  if (operands == newOperands)
+  {
+    JLM_ASSERT(newOperands.size() == 2);
+    return std::nullopt;
+  }
+
+  JLM_ASSERT(newOperands.size() > 2);
+  auto flattenedBinaryOperation =
+      std::make_unique<flattened_binary_op>(operation, newOperands.size());
+  return outputs(SimpleNode::create(region, *flattenedBinaryOperation, newOperands));
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeBinaryOperation(const binary_op & operation, const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+  auto region = operands[0]->region();
+
+  auto newOperands = reduce_operands(operation, operands);
+
+  if (newOperands == operands)
+  {
+    // The operands did not change, which means that none of the normalizations triggered.
+    return std::nullopt;
+  }
+
+  if (newOperands.size() == 1)
+  {
+    // The operands could be reduced to a single value by applying constant folding.
+    return newOperands;
+  }
+
+  JLM_ASSERT(newOperands.size() == 2);
+  return outputs(SimpleNode::create(region, operation, newOperands));
+}
+
 /* flattened binary operator */
 
 flattened_binary_op::~flattened_binary_op() noexcept
@@ -459,7 +522,7 @@ flattened_binary_operation_get_default_normal_form_(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::binary_op),

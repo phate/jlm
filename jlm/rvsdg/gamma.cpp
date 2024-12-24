@@ -393,7 +393,7 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
 }
 
 GammaNode *
-GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
+GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
@@ -471,7 +471,7 @@ gamma_node_get_default_normal_form_(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::GammaOperation),

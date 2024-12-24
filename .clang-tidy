@@ -1,8 +1,12 @@
 ---
 Checks: '-*,
+  misc-unused-parameters,
   modernize-deprecated-headers,
+  modernize-redundant-void-arg,
   '
 
 WarningsAsErrors: '
+  misc-unused-parameters,
   modernize-deprecated-headers,
+  modernize-redundant-void-arg,
   '

@@ -10,7 +10,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
-test_node_copy(void)
+test_node_copy()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
@@ -136,14 +136,14 @@ TestRemoveOutputsWhere()
 
   // Act & Assert
   node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return false;
       });
   assert(node2.noutputs() == 2);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return true;
       });
@@ -154,7 +154,7 @@ TestRemoveOutputsWhere()
   assert(node1.output(1)->index() == 1);
 
   node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return true;
       });
@@ -172,7 +172,7 @@ TestRemoveOutputsWhere()
   assert(node1.output(0)->index() == 0);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return true;
       });
@@ -205,7 +205,7 @@ TestRemoveInputsWhere()
   assert(node.input(1) == input2);
 
   node.RemoveInputsWhere(
-      [](const jlm::rvsdg::input & input)
+      [](const jlm::rvsdg::input &)
       {
         return true;
       });

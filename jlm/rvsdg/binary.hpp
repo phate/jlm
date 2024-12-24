@@ -12,6 +12,8 @@
 #include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/util/common.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
 
@@ -166,6 +168,43 @@ public:
         graph->node_normal_form(typeid(binary_op)));
   }
 };
+
+/**
+ * \brief Flattens a cascade of the same binary operations into a single flattened binary operation.
+ *
+ * o1 = binaryNode i1 i2
+ * o2 = binaryNode o1 i3
+ * =>
+ * o2 = flattenedBinaryNode i1 i2 i3
+ *
+ * \pre The binary operation must be associative.
+ *
+ * @param operation The binary operation on which the transformation is performed.
+ * @param operands The operands of the binary node.
+ * @return If the normalization could be applied, then the results of the binary operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+FlattenAssociativeBinaryOperation(
+    const binary_op & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Applies the reductions implemented in the binary operations reduction functions.
+ *
+ * @param operation The binary operation on which the transformation is performed.
+ * @param operands The operands of the binary node.
+ *
+ * @return If the normalization could be applied, then the results of the binary operation after
+ * the transformation. Otherwise, std::nullopt.
+ *
+ * \see binary_op::can_reduce_operand_pair()
+ * \see binary_op::reduce_operand_pair()
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeBinaryOperation(
+    const binary_op & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 class flattened_binary_op final : public SimpleOperation
 {

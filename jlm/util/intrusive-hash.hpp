@@ -173,7 +173,7 @@ public:
     {}
 
     inline const iterator &
-    operator++(void) noexcept
+    operator++() noexcept
     {
       ElementType * next = map_->accessor_.get_next(element_);
       if (next == nullptr)
@@ -262,7 +262,7 @@ public:
     {}
 
     inline const const_iterator &
-    operator++(void) noexcept
+    operator++() noexcept
     {
       ElementType * next = map_->accessor_.get_next(element_);
       if (next == nullptr)
