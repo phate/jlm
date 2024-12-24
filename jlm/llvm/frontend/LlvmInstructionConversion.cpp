@@ -278,8 +278,8 @@ convert_constantVector(
 static inline const variable *
 convert_globalAlias(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    std::vector<std::unique_ptr<llvm::tac>> &,
+    context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::GlobalAliasVal);
 
