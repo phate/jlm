@@ -66,7 +66,7 @@ static const variable *
 convert_int_constant(
     ::llvm::Constant * c,
     std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    context &)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantIntVal);
   const ::llvm::ConstantInt * constant = static_cast<const ::llvm::ConstantInt *>(c);
@@ -159,8 +159,8 @@ convert_constantPointerNull(
 static const variable *
 convert_blockAddress(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    std::vector<std::unique_ptr<llvm::tac>> &,
+    context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::BlockAddressVal);
 
@@ -428,7 +428,7 @@ convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
 }
 
 static inline const variable *
-convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t &, context & ctx)
 {
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Unreachable);
   auto bb = ctx.get(i->getParent());

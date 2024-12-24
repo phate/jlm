@@ -103,7 +103,7 @@ jlm::rvsdg::output *
 bitcompare_op::reduce_operand_pair(
     binop_reduction_path_t path,
     jlm::rvsdg::output * arg1,
-    jlm::rvsdg::output * arg2) const
+    jlm::rvsdg::output *) const
 {
   if (path == 1)
   {

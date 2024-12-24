@@ -221,7 +221,7 @@ TestLoadFromUndef()
    */
   auto ValidateProvider = [](const jlm::tests::LoadFromUndefTest & test,
                              const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
-                             const jlm::llvm::aa::PointsToGraph & pointsToGraph)
+                             const jlm::llvm::aa::PointsToGraph &)
   {
     auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.Lambda()).Size();
     auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.Lambda()).Size();

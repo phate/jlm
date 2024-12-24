@@ -357,7 +357,7 @@ is_load_store_reducible(
 
 static std::vector<rvsdg::output *>
 perform_load_store_reduction(
-    const LoadNonVolatileOperation & op,
+    const LoadNonVolatileOperation &,
     const std::vector<rvsdg::output *> & operands)
 {
   auto storenode = rvsdg::output::GetNode(*operands[1]);

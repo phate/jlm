@@ -58,7 +58,7 @@ public:
   }
 
   bool
-  operator==(const Operation & other) const noexcept override
+  operator==(const Operation &) const noexcept override
   {
     JLM_UNREACHABLE("Not implemented.");
   }
