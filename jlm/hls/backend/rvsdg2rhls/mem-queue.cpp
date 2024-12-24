@@ -456,7 +456,7 @@ process_loops(jlm::rvsdg::output * state_edge)
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      JLM_ASSERT(dynamic_cast<jlm::hls::loop_node *>(sti->node()));
+      JLM_ASSERT(jlm::rvsdg::is<jlm::hls::loop_op>(sti->node()));
       // update to output of loop
       auto mem_edge_after_loop = find_loop_output(sti);
       JLM_ASSERT(mem_edge_after_loop->nusers() == 1);
