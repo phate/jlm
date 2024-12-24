@@ -43,7 +43,7 @@ class RhlsToFirrtlConverter : public BaseHLS
 
 public:
   std::string
-  get_text(llvm::RvsdgModule &) override
+  GetText(llvm::RvsdgModule &) override
   {
     return "MLIR/FIRRTL generator";
   }
