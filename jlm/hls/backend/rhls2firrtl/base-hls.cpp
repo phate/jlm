@@ -20,6 +20,8 @@ isForbiddenChar(char c)
   return true;
 }
 
+BaseHLS::~BaseHLS() = default;
+
 std::string
 BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 {

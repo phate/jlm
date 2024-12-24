@@ -22,7 +22,7 @@ isForbiddenChar(char c);
 class BaseHLS
 {
 public:
-  virtual ~BaseHLS() = default;
+  virtual ~BaseHLS();
 
   std::string
   run(llvm::RvsdgModule & rm)
@@ -30,7 +30,7 @@ public:
     JLM_ASSERT(node_map.empty());
     // ensure consistent naming across runs
     create_node_names(get_hls_lambda(rm)->subregion());
-    return get_text(rm);
+    return GetText(rm);
   }
 
   static int
@@ -69,7 +69,7 @@ protected:
   create_node_names(rvsdg::Region * r);
 
   virtual std::string
-  get_text(llvm::RvsdgModule & rm) = 0;
+  GetText(llvm::RvsdgModule & rm) = 0;
 
   static std::string
   get_base_file_name(const llvm::RvsdgModule & rm);

@@ -16,7 +16,7 @@ namespace jlm::hls
 static constexpr int MEMORY_RESPONSE_LATENCY = 10;
 
 std::string
-convert_to_c_type(const rvsdg::Type * type)
+ConvertToCType(const rvsdg::Type * type)
 {
   if (auto t = dynamic_cast<const rvsdg::bittype *>(type))
   {
@@ -28,7 +28,7 @@ convert_to_c_type(const rvsdg::Type * type)
   }
   if (auto t = dynamic_cast<const llvm::arraytype *>(type))
   {
-    return convert_to_c_type(&t->element_type()) + "*";
+    return ConvertToCType(&t->element_type()) + "*";
   }
 
   JLM_UNREACHABLE("Unimplemented C type");
@@ -36,25 +36,24 @@ convert_to_c_type(const rvsdg::Type * type)
 
 /**
  * Takes an HLS kernel and determines the return type of the original C function.
- * Returns a tuple where the first element is a boolean signifying if anything is returned.
- * The second element is a string containing the kernel's return type when called from C.
- * @param hls_lambda the lambda node representing the kernel
- * @return a tuple (has return value, return type)
+ * If the function did not have a return value, i.e., returns "void", nullopt is returned.
+ * @param kernel the lambda node representing the kernel
+ * @return the return type of the kernel as written in C, or nullopt if it has no return value.
  */
-std::pair<bool, std::string>
-convert_to_c_return_type(const llvm::lambda::node & hls_lambda)
+std::optional<std::string>
+GetReturnTypeAsC(const llvm::lambda::node & kernel)
 {
-  const auto & results = hls_lambda.type().Results();
+  const auto & results = kernel.type().Results();
 
   if (results.empty())
-    return { false, "void" };
+    return std::nullopt;
 
   const auto & type = results.front();
 
   if (rvsdg::is<rvsdg::StateType>(type))
-    return { false, "void" };
+    return std::nullopt;
 
-  return { true, convert_to_c_type(type.get()) };
+  return ConvertToCType(type.get());
 }
 
 /**
@@ -62,17 +61,17 @@ convert_to_c_return_type(const llvm::lambda::node & hls_lambda)
  * Returns a tuple, the first element of which is the number of parameters.
  * The second element is a string defining the C parameters, like "int32_t a0, void* a1, void* a2".
  * The third element is a string for calling the C function, like "a0, a1, a2".
- * @param hls_lambda the lambda node representing the kernel
+ * @param kernel the lambda node representing the kernel
  * @return a tuple (number of parameters, string of parameters, string of call arguments)
  */
 std::tuple<size_t, std::string, std::string>
-convert_to_c_parameter_list(const llvm::lambda::node & hls_lambda)
+GetParameterListAsC(const llvm::lambda::node & kernel)
 {
   size_t argument_index = 0;
   std::ostringstream parameters;
   std::ostringstream arguments;
 
-  for (auto & argType : hls_lambda.type().Arguments())
+  for (auto & argType : kernel.type().Arguments())
   {
     if (rvsdg::is<rvsdg::StateType>(argType))
       continue;
@@ -85,7 +84,7 @@ convert_to_c_parameter_list(const llvm::lambda::node & hls_lambda)
       arguments << ", ";
     }
 
-    parameters << convert_to_c_type(argType.get()) << " a" << argument_index;
+    parameters << ConvertToCType(argType.get()) << " a" << argument_index;
     arguments << "a" << argument_index;
     argument_index++;
   }
@@ -94,23 +93,23 @@ convert_to_c_parameter_list(const llvm::lambda::node & hls_lambda)
 }
 
 std::string
-VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
+VerilatorHarnessHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream cpp;
-  const auto & hls_lambda = *get_hls_lambda(rm);
-  const auto & function_name = hls_lambda.name();
+  const auto & kernel = *get_hls_lambda(rm);
+  const auto & function_name = kernel.name();
 
   // The request and response parts of memory queues
-  const auto mem_reqs = get_mem_reqs(hls_lambda);
-  const auto mem_resps = get_mem_resps(hls_lambda);
+  const auto mem_reqs = get_mem_reqs(kernel);
+  const auto mem_resps = get_mem_resps(kernel);
   JLM_ASSERT(mem_reqs.size() == mem_resps.size());
 
   // All inputs that are not memory queues
-  const auto reg_args = get_reg_args(hls_lambda);
+  const auto reg_args = get_reg_args(kernel);
 
   // Extract info about the kernel's function signature in C
-  const auto [has_return, c_return_type] = convert_to_c_return_type(hls_lambda);
-  const auto [num_c_params, c_params, c_call_args] = convert_to_c_parameter_list(hls_lambda);
+  const auto c_return_type = GetReturnTypeAsC(kernel);
+  const auto [num_c_params, c_params, c_call_args] = GetParameterListAsC(kernel);
 
   cpp << R"(
 #define TRACE_CHUNK_SIZE 100000
@@ -175,7 +174,7 @@ struct mem_access {
 
 // A log of memory accesses made by the kernel
 std::vector<mem_access> memory_accesses;
-// Acesses to regions in this vector of (start, length) pairs are not traced
+// Accesses to regions in this vector of (start, length) pairs are not traced
 std::vector<std::pair<void*, size_t>> ignored_memory_regions;
 
 static void ignore_memory_region(void* start, size_t length) {
@@ -271,7 +270,8 @@ public:
   cpp << "MemoryQueue memory_queues[] = {";
   for (size_t i = 0; i < mem_reqs.size(); i++)
     cpp << MEMORY_RESPONSE_LATENCY << ", ";
-  cpp << "};" << R"(
+  cpp << "};"
+      << R"(
 
 // ======== Variables and functions for tracing the verilated model ========
 #ifdef TRACE_SIGNALS
@@ -350,7 +350,7 @@ static void verilator_init(int argc, char **argv) {
     // Verilator must compute traced signals
     Verilated::traceEverOn(true);
 
-    // Pass arguments so Verilated code can see them, e.g. $value$plusargs
+    // Pass arguments so Verilated code can see them, e.g., $value$plusargs
     // This needs to be called before you create any model
     Verilated::commandArgs(argc, argv);
 
@@ -367,19 +367,17 @@ static void verilator_init(int argc, char **argv) {
 )" << std::endl;
 
   // Zero out all kernel inputs, except for context variables
-  size_t first_ctx_var = reg_args.size() - hls_lambda.GetContextVars().size();
+  size_t first_ctx_var = reg_args.size() - kernel.GetContextVars().size();
   for (size_t i = 0; i < first_ctx_var; i++)
   {
     cpp << "    top->i_data_" << i << " = 0;" << std::endl;
   }
-  for (const auto & ctx : hls_lambda.GetContextVars())
+  for (const auto & ctx : kernel.GetContextVars())
   {
     // Context variables should always be external symbols imported by name
-    if (const auto import = dynamic_cast<rvsdg::GraphImport *>(ctx.input->origin()))
-      cpp << "    top->i_data_" << first_ctx_var << " = (uint64_t) &" << import->Name() << ";"
-          << std::endl;
-    else
-      JLM_UNREACHABLE("Context variable is not a GraphImport");
+    const auto import = util::AssertedCast<rvsdg::GraphImport>(ctx.input->origin());
+    cpp << "    top->i_data_" << first_ctx_var << " = (uint64_t) &" << import->Name() << ";"
+        << std::endl;
     first_ctx_var++;
   }
 
@@ -537,7 +535,7 @@ static )"
   for (size_t i = 0; i < mem_reqs.size(); i++)
     cpp << "assert(memory_queues[" << i << "].empty());" << std::endl;
 
-  if (has_return)
+  if (c_return_type.has_value())
     cpp << "return top->o_data_0;" << std::endl;
 
   cpp << R"(
@@ -546,7 +544,8 @@ static )"
 
 // ======== Running the kernel compiled as C, with intrumentation ========
 extern "C" )"
-      << c_return_type << " instrumented_ref(" << c_params << ");" << R"(
+      << c_return_type.value_or("void") << " instrumented_ref(" << c_params << ");"
+      << R"(
 
 extern "C" void reference_load(void* addr, uint64_t width) {
     instrumented_load(addr, width);
@@ -613,7 +612,8 @@ static void compare_memory_accesses() {
 
 // ======== Entry point for calling kernel from host device (C code) ========
 extern "C" )"
-      << c_return_type << " " << function_name << "(" << c_params << ")" << R"(
+      << c_return_type.value_or("void") << " " << function_name << "(" << c_params << ")"
+      << R"(
 {
     // Reset structures used for tracing memory operations
     memory_accesses.clear();
@@ -625,7 +625,7 @@ extern "C" )"
 
     // Execute the verilated model in this process
     )";
-  if (has_return)
+  if (c_return_type.has_value())
     cpp << "auto result = ";
   cpp << "run_hls(" << c_call_args << ");" << std::endl;
 
@@ -634,7 +634,7 @@ extern "C" )"
     compare_memory_accesses();
 )";
 
-  if (has_return)
+  if (c_return_type.has_value())
     cpp << "    return result;" << std::endl;
 
   cpp << "}" << std::endl;

@@ -10,7 +10,7 @@ namespace jlm::hls
 {
 
 std::string
-JsonHLS::get_text(llvm::RvsdgModule & rm)
+JsonHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream json;
   const auto & ln = *get_hls_lambda(rm);
