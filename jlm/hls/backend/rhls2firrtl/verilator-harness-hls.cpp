@@ -472,7 +472,7 @@ static void verilator_finish() {
 }
 
 static )"
-      << c_return_type << " run_hls(" << std::endl;
+      << c_return_type.value_or("void") << " run_hls(" << std::endl;
   cpp << c_params << R"(
 ) {
     if(!top) {
