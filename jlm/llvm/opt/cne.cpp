@@ -367,7 +367,7 @@ mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_delta(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_delta(const rvsdg::StructuralNode * node, cnectx &)
 {
   JLM_ASSERT(jlm::rvsdg::is<delta::operation>(node));
 }
@@ -520,7 +520,7 @@ divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_delta(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_delta(rvsdg::StructuralNode * node, cnectx &)
 {
   JLM_ASSERT(jlm::rvsdg::is<delta::operation>(node));
 }

@@ -66,7 +66,7 @@ TestLinearSubgraphAnnotation()
   /*
    * Arrange
    */
-  auto SetupAggregationTree = [](ipgraph_module & module, jlm::llvm::argument & argument)
+  auto SetupAggregationTree = [](ipgraph_module &, jlm::llvm::argument & argument)
   {
     /*
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit

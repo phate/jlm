@@ -348,7 +348,7 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
 
 static jlm::rvsdg::output *
 create_unrolled_theta_predicate(
-    rvsdg::Region * target,
+    rvsdg::Region *,
     const rvsdg::SubstitutionMap & smap,
     const unrollinfo & ui,
     size_t factor)

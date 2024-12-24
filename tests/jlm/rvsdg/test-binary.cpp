@@ -39,7 +39,7 @@ public:
   jlm::rvsdg::output *
   reduce_operand_pair(
       jlm::rvsdg::unop_reduction_path_t path,
-      jlm::rvsdg::output * op1,
+      jlm::rvsdg::output *,
       jlm::rvsdg::output * op2) const override
   {
 
@@ -58,7 +58,7 @@ public:
   }
 
   bool
-  operator==(const Operation & other) const noexcept override
+  operator==(const Operation &) const noexcept override
   {
     JLM_UNREACHABLE("Not implemented.");
   }

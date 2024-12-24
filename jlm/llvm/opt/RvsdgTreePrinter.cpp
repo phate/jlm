@@ -55,6 +55,7 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & sta
   WriteTreeToFile(rvsdgModule, tree);
 
   statistics->Stop();
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void
