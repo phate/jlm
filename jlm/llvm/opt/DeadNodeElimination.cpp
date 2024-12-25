@@ -60,7 +60,7 @@ public:
   bool
   IsAlive(const rvsdg::Node & node) const noexcept
   {
-    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node *>(&node))
+    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
     {
       return SimpleNodes_.Contains(simpleNode);
     }
@@ -83,7 +83,7 @@ public:
   }
 
 private:
-  util::HashSet<const jlm::rvsdg::simple_node *> SimpleNodes_;
+  util::HashSet<const jlm::rvsdg::SimpleNode *> SimpleNodes_;
   util::HashSet<const jlm::rvsdg::output *> Outputs_;
 };
 

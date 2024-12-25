@@ -367,7 +367,7 @@ mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_delta(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_delta(const rvsdg::StructuralNode * node, cnectx &)
 {
   JLM_ASSERT(jlm::rvsdg::is<delta::operation>(node));
 }
@@ -388,7 +388,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark(const jlm::rvsdg::simple_node * node, cnectx & ctx)
+mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
 {
   if (node->ninputs() == 0)
   {
@@ -431,7 +431,7 @@ mark(rvsdg::Region * region, cnectx & ctx)
 {
   for (const auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto simple = dynamic_cast<const jlm::rvsdg::simple_node *>(node))
+    if (auto simple = dynamic_cast<const jlm::rvsdg::SimpleNode *>(node))
       mark(simple, ctx);
     else
       mark(static_cast<const rvsdg::StructuralNode *>(node), ctx);
@@ -520,7 +520,7 @@ divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_delta(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_delta(rvsdg::StructuralNode * node, cnectx &)
 {
   JLM_ASSERT(jlm::rvsdg::is<delta::operation>(node));
 }
@@ -545,7 +545,7 @@ divert(rvsdg::Region * region, cnectx & ctx)
 {
   for (const auto & node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto simple = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto simple = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
       divert_outputs(simple, ctx);
     else
       divert(static_cast<rvsdg::StructuralNode *>(node), ctx);

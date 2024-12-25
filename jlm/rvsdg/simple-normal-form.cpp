@@ -89,7 +89,7 @@ simple_normal_form::normalized_create(
   if (get_mutable() && get_cse())
     node = node_cse(region, op, arguments);
   if (!node)
-    node = simple_node::create(region, op, arguments);
+    node = SimpleNode::create(region, op, arguments);
 
   return outputs(node);
 }
@@ -119,7 +119,7 @@ get_default_normal_form(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::SimpleOperation),

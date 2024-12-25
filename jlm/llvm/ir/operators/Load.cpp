@@ -15,7 +15,7 @@ namespace jlm::llvm
 const LoadOperation &
 LoadNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadOperation>(&simple_node::GetOperation());
+  return *util::AssertedCast<const LoadOperation>(&SimpleNode::GetOperation());
 }
 
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
@@ -51,7 +51,7 @@ LoadNonVolatileOperation::NumMemoryStates() const noexcept
 const LoadNonVolatileOperation &
 LoadNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&simple_node::GetOperation());
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&SimpleNode::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -357,7 +357,7 @@ is_load_store_reducible(
 
 static std::vector<rvsdg::output *>
 perform_load_store_reduction(
-    const LoadNonVolatileOperation & op,
+    const LoadNonVolatileOperation &,
     const std::vector<rvsdg::output *> & operands)
 {
   auto storenode = rvsdg::output::GetNode(*operands[1]);

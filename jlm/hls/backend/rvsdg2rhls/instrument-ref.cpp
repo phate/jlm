@@ -3,18 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <math.h>
-
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
-#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/ir/operators/call.hpp>
-#include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -252,7 +245,7 @@ instrument_ref(
       if (*dbt != *jlm::rvsdg::bittype::Create(64))
       {
         jlm::llvm::zext_op op(dbt->nbits(), 64);
-        data = jlm::rvsdg::simple_node::create_normalized(data->region(), op, { data })[0];
+        data = jlm::rvsdg::SimpleNode::create_normalized(data->region(), op, { data })[0];
       }
       auto memstate = node->input(2)->origin();
       auto callOp = jlm::llvm::CallNode::Create(

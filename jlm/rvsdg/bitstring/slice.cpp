@@ -108,7 +108,7 @@ bitslice(jlm::rvsdg::output * argument, size_t low, size_t high)
 {
   auto type = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
   jlm::rvsdg::bitslice_op op(type, low, high);
-  return jlm::rvsdg::simple_node::create_normalized(argument->region(), op, { argument })[0];
+  return jlm::rvsdg::SimpleNode::create_normalized(argument->region(), op, { argument })[0];
 }
 
 }

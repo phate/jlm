@@ -78,8 +78,7 @@ public:
   theta() const noexcept
   {
     auto node = idv()->region()->node();
-    JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
-    return static_cast<rvsdg::ThetaNode *>(node);
+    return util::AssertedCast<rvsdg::ThetaNode>(node);
   }
 
   inline bool

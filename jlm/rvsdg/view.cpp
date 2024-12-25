@@ -248,7 +248,7 @@ region_starttag(const std::string & id)
 }
 
 static inline std::string
-region_endtag(const std::string & id)
+region_endtag(const std::string &)
 {
   return "</region>\n";
 }
@@ -275,7 +275,7 @@ static std::string
 convert_region(const jlm::rvsdg::Region * region);
 
 static inline std::string
-convert_simple_node(const jlm::rvsdg::simple_node * node)
+convert_simple_node(const jlm::rvsdg::SimpleNode * node)
 {
   std::string s;
 
@@ -324,7 +324,7 @@ convert_structural_node(const rvsdg::StructuralNode * node)
 static inline std::string
 convert_node(const Node * node)
 {
-  if (auto n = dynamic_cast<const simple_node *>(node))
+  if (auto n = dynamic_cast<const SimpleNode *>(node))
     return convert_simple_node(n);
 
   if (auto n = dynamic_cast<const StructuralNode *>(node))

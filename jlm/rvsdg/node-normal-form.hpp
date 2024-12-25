@@ -7,15 +7,13 @@
 #ifndef JLM_RVSDG_NODE_NORMAL_FORM_HPP
 #define JLM_RVSDG_NODE_NORMAL_FORM_HPP
 
-#include <stddef.h>
+#include <jlm/util/common.hpp>
+#include <jlm/util/intrusive-hash.hpp>
 
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_set>
 #include <vector>
-
-#include <jlm/util/common.hpp>
-#include <jlm/util/intrusive-hash.hpp>
 
 /* normal forms */
 

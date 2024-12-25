@@ -177,7 +177,7 @@ TestRemoveThetaInputsWhere()
   assert(thetaOutput2->argument()->index() == 1);
 
   deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [](const ThetaInput & input)
+      [](const ThetaInput &)
       {
         return true;
       });

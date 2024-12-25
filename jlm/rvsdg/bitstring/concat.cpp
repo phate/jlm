@@ -9,8 +9,6 @@
 #include <jlm/rvsdg/bitstring/slice.hpp>
 #include <jlm/rvsdg/reduction-helpers.hpp>
 
-#include <string.h>
-
 namespace jlm::rvsdg
 {
 
@@ -23,7 +21,7 @@ bitconcat(const std::vector<jlm::rvsdg::output *> & operands)
 
   auto region = operands[0]->region();
   jlm::rvsdg::bitconcat_op op(std::move(types));
-  return jlm::rvsdg::simple_node::create_normalized(
+  return jlm::rvsdg::SimpleNode::create_normalized(
       region,
       op,
       { operands.begin(), operands.end() })[0];
@@ -135,7 +133,7 @@ public:
     if (args != new_args)
     {
       bitconcat_op op(types_from_arguments(new_args));
-      divert_users(node, simple_node::create_normalized(node->region(), op, new_args));
+      divert_users(node, SimpleNode::create_normalized(node->region(), op, new_args));
       remove(node);
       return false;
     }
@@ -146,7 +144,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const SimpleOperation & op,
+      const SimpleOperation &,
       const std::vector<jlm::rvsdg::output *> & arguments) const override
   {
     std::vector<jlm::rvsdg::output *> new_args;
@@ -231,7 +229,7 @@ concat_normal_form::~concat_normal_form() noexcept
 
 static node_normal_form *
 get_default_normal_form(
-    const std::type_info & operator_class,
+    const std::type_info &,
     jlm::rvsdg::node_normal_form * parent,
     Graph * graph)
 {
@@ -239,7 +237,7 @@ get_default_normal_form(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::bitconcat_op),

@@ -141,13 +141,13 @@ fp2ui_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-fp2ui_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+fp2ui_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fp2ui_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+fp2ui_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented");
 }
@@ -177,13 +177,13 @@ fp2si_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-fp2si_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+fp2si_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fp2si_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+fp2si_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -282,13 +282,13 @@ bits2ptr_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-bits2ptr_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+bits2ptr_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-bits2ptr_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+bits2ptr_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -318,13 +318,13 @@ ptr2bits_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-ptr2bits_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+ptr2bits_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-ptr2bits_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+ptr2bits_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -384,17 +384,14 @@ ptrcmp_op::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-ptrcmp_op::can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
-    const noexcept
+ptrcmp_op::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::output *
-ptrcmp_op::reduce_operand_pair(
-    rvsdg::binop_reduction_path_t path,
-    rvsdg::output * op1,
-    rvsdg::output * op2) const
+ptrcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rvsdg::output *)
+    const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -519,17 +516,13 @@ fpcmp_op::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-fpcmp_op::can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
-    const noexcept
+fpcmp_op::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::output *
-fpcmp_op::reduce_operand_pair(
-    rvsdg::binop_reduction_path_t path,
-    rvsdg::output * op1,
-    rvsdg::output * op2) const
+fpcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -608,17 +601,13 @@ fpbin_op::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-fpbin_op::can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
-    const noexcept
+fpbin_op::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::output *
-fpbin_op::reduce_operand_pair(
-    rvsdg::binop_reduction_path_t path,
-    rvsdg::output * op1,
-    rvsdg::output * op2) const
+fpbin_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -648,13 +637,13 @@ fpext_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-fpext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+fpext_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fpext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+fpext_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -684,13 +673,13 @@ fpneg_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-fpneg_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+fpneg_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fpneg_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+fpneg_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -720,13 +709,13 @@ fptrunc_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-fptrunc_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+fptrunc_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fptrunc_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+fptrunc_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -794,13 +783,13 @@ bitcast_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-bitcast_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+bitcast_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-bitcast_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+bitcast_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -854,13 +843,13 @@ trunc_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-trunc_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+trunc_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-trunc_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+trunc_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -890,13 +879,13 @@ uitofp_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-uitofp_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+uitofp_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-uitofp_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+uitofp_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -926,13 +915,13 @@ sitofp_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-sitofp_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+sitofp_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-sitofp_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+sitofp_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }

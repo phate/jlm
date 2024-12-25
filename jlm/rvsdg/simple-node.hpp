@@ -18,15 +18,13 @@ class SimpleOperation;
 class simple_input;
 class simple_output;
 
-/* simple nodes */
-
-class simple_node : public Node
+class SimpleNode : public Node
 {
 public:
-  virtual ~simple_node();
+  ~SimpleNode() override;
 
 protected:
-  simple_node(
+  SimpleNode(
       rvsdg::Region * region,
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands);
@@ -47,13 +45,13 @@ public:
   Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
-  static inline jlm::rvsdg::simple_node *
+  static inline jlm::rvsdg::SimpleNode *
   create(
       rvsdg::Region * region,
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
-    return new simple_node(region, op, operands);
+    return new SimpleNode(region, op, operands);
   }
 
   static inline std::vector<jlm::rvsdg::output *>
@@ -77,15 +75,15 @@ public:
   virtual ~simple_input() noexcept;
 
   simple_input(
-      simple_node * node,
+      SimpleNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
 public:
-  simple_node *
+  SimpleNode *
   node() const noexcept
   {
-    return static_cast<simple_node *>(node_input::node());
+    return static_cast<SimpleNode *>(node_input::node());
   }
 };
 
@@ -98,26 +96,26 @@ class simple_output final : public node_output
 public:
   virtual ~simple_output() noexcept;
 
-  simple_output(jlm::rvsdg::simple_node * node, std::shared_ptr<const rvsdg::Type> type);
+  simple_output(jlm::rvsdg::SimpleNode * node, std::shared_ptr<const rvsdg::Type> type);
 
 public:
-  simple_node *
+  SimpleNode *
   node() const noexcept
   {
-    return static_cast<simple_node *>(node_output::node());
+    return static_cast<SimpleNode *>(node_output::node());
   }
 };
 
 /* simple node method definitions */
 
 inline jlm::rvsdg::simple_input *
-simple_node::input(size_t index) const noexcept
+SimpleNode::input(size_t index) const noexcept
 {
   return static_cast<simple_input *>(Node::input(index));
 }
 
 inline jlm::rvsdg::simple_output *
-simple_node::output(size_t index) const noexcept
+SimpleNode::output(size_t index) const noexcept
 {
   return static_cast<simple_output *>(Node::output(index));
 }

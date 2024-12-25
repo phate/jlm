@@ -4,10 +4,8 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
-#include <jlm/hls/ir/hls.hpp>
 
 #include <algorithm>
-#include <math.h>
 
 namespace jlm::hls
 {
@@ -21,6 +19,8 @@ isForbiddenChar(char c)
   }
   return true;
 }
+
+BaseHLS::~BaseHLS() = default;
 
 std::string
 BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
@@ -142,7 +142,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
 {
   for (auto & node : r->Nodes())
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(&node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(&node))
     {
       get_node_name(&node);
     }

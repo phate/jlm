@@ -7,9 +7,6 @@
 #ifndef JLM_RVSDG_REGION_HPP
 #define JLM_RVSDG_REGION_HPP
 
-#include <stdbool.h>
-#include <stddef.h>
-
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
@@ -24,7 +21,7 @@ namespace jlm::rvsdg
 {
 
 class Node;
-class simple_node;
+class SimpleNode;
 class SimpleOperation;
 class StructuralInput;
 class StructuralNode;

@@ -8,10 +8,8 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <assert.h>
-
 static int
-test_main(void)
+test_main()
 {
   using namespace jlm::rvsdg;
 

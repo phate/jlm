@@ -134,15 +134,15 @@ private:
   BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG simple_node to an MLIR RVSDG operation.
+   * Converts an RVSDG SimpleNode to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-   * \param inputs The inputs to the simple_node.
+   * \param inputs The inputs to the SimpleNode.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   ConvertSimpleNode(
-      const rvsdg::simple_node & node,
+      const rvsdg::SimpleNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
