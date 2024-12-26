@@ -242,6 +242,34 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
     graph()->mark_denormalized();
 }
 
+bool
+ReduceGammaWithStaticallyKnownPredicate(Node & node)
+{
+  auto gammaNode = dynamic_cast<GammaNode *>(&node);
+  if (gammaNode && is_predicate_reducible(gammaNode))
+  {
+    perform_predicate_reduction(gammaNode);
+    return true;
+  }
+
+  return false;
+}
+
+bool
+ReduceGammaControlConstant(Node & node)
+{
+  auto gammaNode = dynamic_cast<GammaNode *>(&node);
+  if (gammaNode == nullptr)
+    return false;
+
+  auto outputs = is_control_constant_reducible(gammaNode);
+  if (outputs.empty())
+    return false;
+
+  perform_control_constant_reduction(outputs);
+  return true;
+}
+
 GammaOperation::~GammaOperation() noexcept
 {}
 
