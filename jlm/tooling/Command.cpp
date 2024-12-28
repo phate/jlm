@@ -408,7 +408,7 @@ JlmOptCommand::CreateOptimization(
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
     return std::make_unique<llvm::pushout>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
-    return std::make_unique<llvm::nodereduction>();
+    return std::make_unique<llvm::NodeReduction>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
     return std::make_unique<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
