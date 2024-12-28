@@ -11,6 +11,7 @@
 namespace jlm::rvsdg
 {
 class Region;
+class StructuralNode;
 }
 
 namespace jlm::llvm
