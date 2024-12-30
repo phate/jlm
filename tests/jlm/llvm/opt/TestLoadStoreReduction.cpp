@@ -47,7 +47,7 @@ TestLoadStoreReductionWithDifferentValueOperandType()
   nf->set_mutable(true);
   nf->set_load_store_reducible(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 

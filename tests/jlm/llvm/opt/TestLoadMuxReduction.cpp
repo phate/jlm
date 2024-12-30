@@ -45,7 +45,7 @@ TestSuccess()
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   // jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -99,7 +99,7 @@ TestWrongNumberOfOperands()
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -139,7 +139,7 @@ TestLoadWithoutStates()
   nf->set_mutable(true);
   nf->set_load_mux_reducible(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
