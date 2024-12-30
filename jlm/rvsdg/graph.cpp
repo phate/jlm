@@ -39,7 +39,7 @@ Graph::Copy() const
 {
   SubstitutionMap substitutionMap;
   auto graph = std::make_unique<Graph>();
-  GetRootRegion().copy(&graph.GetRootRegion(), substitutionMap, true, true);
+  GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap, true, true);
   return graph;
 }
 

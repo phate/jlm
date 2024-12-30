@@ -93,7 +93,7 @@ TestWrongNumberOfOperands()
   auto & ex2 = GraphExport::Create(*ld[1], "s1");
   auto & ex3 = GraphExport::Create(*ld[2], "s2");
 
-  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
@@ -101,7 +101,7 @@ TestWrongNumberOfOperands()
   graph.Normalize();
   graph.Prune();
 
-  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
 
@@ -133,7 +133,7 @@ TestLoadWithoutStates()
 
   auto & ex = GraphExport::Create(*loadResults[0], "v");
 
-  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   nf->set_mutable(true);
@@ -141,7 +141,7 @@ TestLoadWithoutStates()
   graph.Normalize();
   graph.Prune();
 
-  jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   auto load = jlm::rvsdg::output::GetNode(*ex.origin());

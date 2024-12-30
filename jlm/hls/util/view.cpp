@@ -414,7 +414,7 @@ void
 dump_dot(jlm::llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
 {
   auto dot_file = fopen(file_name.c_str(), "w");
-  jlm::hls::view_dot(rvsdgModule.Rvsdg().GetRootRegion(), dot_file);
+  jlm::hls::view_dot(&rvsdgModule.Rvsdg().GetRootRegion(), dot_file);
   fclose(dot_file);
 }
 

@@ -53,7 +53,7 @@ TestPhiCreation()
   };
 
   phi::builder pb;
-  pb.begin(graph.GetRootRegion());
+  pb.begin(&graph.GetRootRegion());
   auto rv1 = pb.add_recvar(PointerType::Create());
   auto rv2 = pb.add_recvar(PointerType::Create());
   auto rv3 = pb.add_recvar(PointerType::Create());
@@ -72,7 +72,7 @@ TestPhiCreation()
   graph.Normalize();
   graph.Prune();
 
-  jlm::rvsdg::view(graph.GetRootRegion(), stderr);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stderr);
 }
 
 static void
@@ -88,7 +88,7 @@ TestRemovePhiArgumentsWhere()
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().GetRootRegion());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -171,7 +171,7 @@ TestPrunePhiArguments()
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().GetRootRegion());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -215,7 +215,7 @@ TestRemovePhiOutputsWhere()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().GetRootRegion());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -264,7 +264,7 @@ TestPrunePhiOutputs()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().GetRootRegion());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);

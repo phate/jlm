@@ -23,7 +23,8 @@ TestUnknownBoundaries()
   auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
-  auto lambda = lambda::node::create(rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda =
+      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitsgt_op sgt(32);

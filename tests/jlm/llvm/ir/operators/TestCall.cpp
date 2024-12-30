@@ -241,7 +241,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   GraphExport::Create(*f->output(), "f");
 
-  //	jlm::rvsdg::view(graph->GetRootRegion(), stdout);
+  //	jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
   auto callTypeClassifier = CallNode::ClassifyCall(*callNode);

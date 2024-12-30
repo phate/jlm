@@ -405,7 +405,7 @@ VerilatorHarnessHLS::get_text(llvm::RvsdgModule & rm)
   cpp << "extern \"C\"\n" // TODO: parameter for linkage type here
          "{\n";
   // imports
-  auto root = rm.Rvsdg().GetRootRegion();
+  auto root = &rm.Rvsdg().GetRootRegion();
   for (size_t i = 0; i < root->narguments(); ++i)
   {
     if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(root->argument(i)))

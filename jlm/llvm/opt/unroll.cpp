@@ -26,14 +26,14 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -521,7 +521,7 @@ loopunroll::run(RvsdgModule & module, util::StatisticsCollector & statisticsColl
   auto statistics = unrollstat::Create(module.SourceFileName());
 
   statistics->start(module.Rvsdg());
-  unroll(graph.GetRootRegion(), factor_);
+  unroll(&graph.GetRootRegion(), factor_);
   statistics->end(module.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

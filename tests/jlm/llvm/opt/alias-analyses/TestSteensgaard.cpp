@@ -622,7 +622,7 @@ TestExternalCall2()
   // Arrange
   jlm::tests::ExternalCallTest2 test;
   std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
-  std::cout << jlm::rvsdg::view(test.graph().GetRootRegion(), outputMap) << std::flush;
+  std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   // Act
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1109,7 +1109,7 @@ TestMemcpy()
 
   jlm::tests::MemcpyTest test;
   std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
-  std::cout << jlm::rvsdg::view(test.graph().GetRootRegion(), outputMap) << std::flush;
+  std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   /*
    * Act
@@ -1170,7 +1170,7 @@ TestMemcpy3()
   // Arrange
   jlm::tests::MemcpyTest3 test;
   std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
-  std::cout << jlm::rvsdg::view(test.graph().GetRootRegion(), outputMap) << std::flush;
+  std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   // Act
   auto pointsToGraph = RunSteensgaard(test.module());
@@ -1277,7 +1277,7 @@ TestVariadicFunction2()
 
   // Arrange
   jlm::tests::VariadicFunctionTest2 test;
-  std::cout << jlm::rvsdg::view(test.module().Rvsdg().GetRootRegion(), outputMap) << std::flush;
+  std::cout << jlm::rvsdg::view(&test.module().Rvsdg().GetRootRegion(), outputMap) << std::flush;
 
   // Act
   auto pointsToGraph = RunSteensgaard(test.module());
