@@ -33,8 +33,9 @@ TestThetaCreation()
   theta->set_predicate(lv1->argument());
 
   jlm::tests::GraphExport::Create(*theta->output(0), "exp");
-  auto theta2 =
-      static_cast<jlm::rvsdg::StructuralNode *>(theta)->copy(&graph.GetRootRegion(), { imp1, imp2, imp3 });
+  auto theta2 = static_cast<jlm::rvsdg::StructuralNode *>(theta)->copy(
+      &graph.GetRootRegion(),
+      { imp1, imp2, imp3 });
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   assert(lv1->node() == theta);

@@ -126,13 +126,17 @@ TestRemoveOutputsWhere()
   jlm::rvsdg::Graph rvsdg;
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto & node1 =
-      jlm::tests::SimpleNode::Create(rvsdg.GetRootRegion(), {}, { valueType, valueType, valueType });
+  auto & node1 = jlm::tests::SimpleNode::Create(
+      rvsdg.GetRootRegion(),
+      {},
+      { valueType, valueType, valueType });
   auto output0 = node1.output(0);
   auto output2 = node1.output(2);
 
-  auto & node2 =
-      jlm::tests::SimpleNode::Create(rvsdg.GetRootRegion(), { output0, output2 }, { valueType, valueType });
+  auto & node2 = jlm::tests::SimpleNode::Create(
+      rvsdg.GetRootRegion(),
+      { output0, output2 },
+      { valueType, valueType });
 
   // Act & Assert
   node2.RemoveOutputsWhere(

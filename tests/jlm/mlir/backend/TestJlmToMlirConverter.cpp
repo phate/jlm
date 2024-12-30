@@ -31,8 +31,11 @@ TestLambda()
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "test", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -150,8 +153,11 @@ TestAddOperation()
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "test", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -251,8 +257,11 @@ TestComZeroExt()
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "test", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -395,8 +404,11 @@ TestMatch()
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::ControlType::Create(2), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "test", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 

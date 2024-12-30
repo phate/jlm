@@ -25,7 +25,8 @@ TestFork()
   auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
-  auto lambda = lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda =
+      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
   rvsdg::bitult_op ult(32);
   rvsdg::bitadd_op add(32);
@@ -93,7 +94,8 @@ TestConstantFork()
   auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
-  auto lambda = lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda =
+      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
   auto lambdaRegion = lambda->subregion();
 
   rvsdg::bitult_op ult(32);

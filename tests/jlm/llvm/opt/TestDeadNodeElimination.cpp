@@ -406,8 +406,13 @@ TestDelta()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode =
-      delta::node::Create(&rvsdg.GetRootRegion(), valueType, "delta", linkage::external_linkage, "", false);
+  auto deltaNode = delta::node::Create(
+      &rvsdg.GetRootRegion(),
+      valueType,
+      "delta",
+      linkage::external_linkage,
+      "",
+      false);
 
   auto xArgument = deltaNode->add_ctxvar(x);
   deltaNode->add_ctxvar(y);

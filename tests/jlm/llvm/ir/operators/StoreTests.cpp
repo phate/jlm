@@ -156,7 +156,8 @@ StoreVolatileNodeCopy()
       StoreVolatileNode::CreateNode(address1, value1, ioState1, { &memoryState1 }, 4);
 
   // Act
-  auto copiedNode = storeNode.copy(&graph.GetRootRegion(), { &address2, &value2, &ioState2, &memoryState2 });
+  auto copiedNode =
+      storeNode.copy(&graph.GetRootRegion(), { &address2, &value2, &ioState2, &memoryState2 });
 
   // Assert
   auto copiedStoreNode = dynamic_cast<const StoreVolatileNode *>(copiedNode);

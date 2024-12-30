@@ -357,7 +357,9 @@ ToTree_EmptyRvsdgWithAnnotations()
   Graph rvsdg;
 
   AnnotationMap annotationMap;
-  annotationMap.AddAnnotation(&rvsdg.GetRootRegion(), Annotation("NumNodes", rvsdg.GetRootRegion().nnodes()));
+  annotationMap.AddAnnotation(
+      &rvsdg.GetRootRegion(),
+      Annotation("NumNodes", rvsdg.GetRootRegion().nnodes()));
 
   // Act
   auto tree = Region::ToTree(rvsdg.GetRootRegion(), annotationMap);

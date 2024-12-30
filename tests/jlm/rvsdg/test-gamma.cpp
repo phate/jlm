@@ -37,7 +37,8 @@ test_gamma()
 
   /* test gamma copy */
 
-  auto gamma2 = static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
+  auto gamma2 =
+      static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
   view(&graph.GetRootRegion(), stdout);
   assert(is<GammaOperation>(gamma2));
 

@@ -270,8 +270,7 @@ public:
   cpp << "MemoryQueue memory_queues[] = {";
   for (size_t i = 0; i < mem_reqs.size(); i++)
     cpp << MEMORY_RESPONSE_LATENCY << ", ";
-  cpp << "};"
-      << R"(
+  cpp << "};" << R"(
 
 // ======== Variables and functions for tracing the verilated model ========
 #ifdef TRACE_SIGNALS
@@ -544,8 +543,7 @@ static )"
 
 // ======== Running the kernel compiled as C, with intrumentation ========
 extern "C" )"
-      << c_return_type.value_or("void") << " instrumented_ref(" << c_params << ");"
-      << R"(
+      << c_return_type.value_or("void") << " instrumented_ref(" << c_params << ");" << R"(
 
 extern "C" void reference_load(void* addr, uint64_t width) {
     instrumented_load(addr, width);
@@ -612,8 +610,7 @@ static void compare_memory_accesses() {
 
 // ======== Entry point for calling kernel from host device (C code) ========
 extern "C" )"
-      << c_return_type.value_or("void") << " " << function_name << "(" << c_params << ")"
-      << R"(
+      << c_return_type.value_or("void") << " " << function_name << "(" << c_params << ")" << R"(
 {
     // Reset structures used for tracing memory operations
     memory_accesses.clear();

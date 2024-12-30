@@ -1203,7 +1203,9 @@ ConvertInterProceduralGraphModule(
   /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
   rvsdg::binary_op::normal_form(graph)->set_flatten(false);
 
-  RegionalizedVariableMap regionalizedVariableMap(interProceduralGraphModule, graph->GetRootRegion());
+  RegionalizedVariableMap regionalizedVariableMap(
+      interProceduralGraphModule,
+      graph->GetRootRegion());
 
   auto stronglyConnectedComponents = interProceduralGraphModule.ipgraph().find_sccs();
   for (const auto & stronglyConnectedComponent : stronglyConnectedComponents)

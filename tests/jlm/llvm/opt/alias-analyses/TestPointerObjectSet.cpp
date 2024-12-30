@@ -778,7 +778,8 @@ TestDrawSubsetGraph()
   // Assert
   assert(graph.NumNodes() == set.NumPointerObjects());
 
-  // Check that the unified node that is not the GetRootRegion, contains the index of the GetRootRegion
+  // Check that the unified node that is not the GetRootRegion, contains the index of the
+  // GetRootRegion
   assert(StringContains(graph.GetNode(nonRoot).GetLabel(), "#" + std::to_string(root)));
 
   // Check that the unification GetRootRegion's label indicates pointing to external

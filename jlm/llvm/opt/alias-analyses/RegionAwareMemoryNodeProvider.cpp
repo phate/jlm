@@ -45,7 +45,9 @@ public:
       return;
 
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&rvsdgModule.Rvsdg().GetRootRegion()));
-    AddMeasurement(NumRvsdgRegionsLabel_, rvsdg::Region::NumRegions(rvsdgModule.Rvsdg().GetRootRegion()));
+    AddMeasurement(
+        NumRvsdgRegionsLabel_,
+        rvsdg::Region::NumRegions(rvsdgModule.Rvsdg().GetRootRegion()));
     AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
   }
 

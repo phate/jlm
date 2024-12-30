@@ -37,7 +37,8 @@ test1()
         { vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
     lambda->AddContextVar(*i);
 
     auto t = jlm::tests::test_op::create(
@@ -62,7 +63,8 @@ test1()
           MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
     auto d = lambda->AddContextVar(*f1).inner;
     auto controlArgument = lambda->GetFunctionArguments()[0];
     auto valueArgument = lambda->GetFunctionArguments()[1];
@@ -134,7 +136,8 @@ test2()
 
   auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
   {
-    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
     return lambda->finalize(
         { lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
@@ -147,7 +150,8 @@ test2()
         { iostatetype::Create(), MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(&graph.GetRootRegion(), functionType, "f2", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph.GetRootRegion(), functionType, "f2", linkage::external_linkage);
     auto cvi = lambda->AddContextVar(*i).inner;
     auto cvf1 = lambda->AddContextVar(*f1).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];

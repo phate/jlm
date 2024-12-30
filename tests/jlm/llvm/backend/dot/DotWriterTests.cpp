@@ -29,7 +29,9 @@ TestWriteGraphs()
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
-  assert(rootGraph.GetProgramObject() == reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
+  assert(
+      rootGraph.GetProgramObject()
+      == reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
   assert(rootGraph.NumNodes() == 1);       // Only the lambda node for "f"
   assert(rootGraph.NumResultNodes() == 1); // Exporting the function "f"
   auto & lambdaNode = *AssertedCast<InOutNode>(&rootGraph.GetNode(0));

@@ -42,7 +42,8 @@ TestCopy()
   // Act
   auto node = jlm::rvsdg::output::GetNode(*callResults[0]);
   auto callNode = jlm::util::AssertedCast<const CallNode>(node);
-  auto copiedNode = callNode->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
+  auto copiedNode =
+      callNode->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
   // Assert
   auto copiedCallNode = dynamic_cast<const CallNode *>(copiedNode);
@@ -117,7 +118,8 @@ TestCallTypeClassifierIndirectCall()
 
   auto SetupFunction = [&]()
   {
-    auto lambda = lambda::node::create(&graph->GetRootRegion(), fcttype2, "fct", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph->GetRootRegion(), fcttype2, "fct", linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
@@ -177,8 +179,11 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   auto SetupFunctionG = [&]()
   {
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionTypeG, "g", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionTypeG,
+        "g",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -219,7 +224,8 @@ TestCallTypeClassifierNonRecursiveDirectCall()
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(&graph->GetRootRegion(), functionType, "f", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph->GetRootRegion(), functionType, "f", linkage::external_linkage);
     auto functionGArgument = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
@@ -273,8 +279,11 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto SetupFunctionG = [&]()
   {
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionTypeG, "g", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionTypeG,
+        "g",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -332,7 +341,8 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(&graph->GetRootRegion(), functionType, "f", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph->GetRootRegion(), functionType, "f", linkage::external_linkage);
     auto functionG = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
