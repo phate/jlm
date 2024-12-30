@@ -29,7 +29,7 @@ public:
   void
   Start(const rvsdg::Graph & graph)
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
@@ -471,7 +471,7 @@ MemoryStateEncoder::Encode(
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
 
   statistics->Start(rvsdgModule.Rvsdg());
-  EncodeRegion(*rvsdgModule.Rvsdg().root());
+  EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion());
   statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

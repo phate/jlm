@@ -260,7 +260,7 @@ CallNode::ClassifyCall(const CallNode & callNode)
       return CallTypeClassifier::CreateRecursiveDirectCallClassifier(*argument);
     }
 
-    if (argument->region() == argument->region()->graph()->root())
+    if (argument->region() == &argument->region()->graph()->GetRootRegion())
     {
       return CallTypeClassifier::CreateExternalCallClassifier(*argument);
     }

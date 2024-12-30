@@ -28,16 +28,16 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -306,7 +306,7 @@ invert(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   auto statistics = ivtstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
-  invert(rm.Rvsdg().root());
+  invert(&rm.Rvsdg().GetRootRegion());
   statistics->end(rm.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

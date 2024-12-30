@@ -30,7 +30,7 @@ test()
   auto imp = &GraphImport::Create(rm.Rvsdg(), vt, "", linkage::external_linkage);
 
   phi::builder pb;
-  pb.begin(rm.Rvsdg().root());
+  pb.begin(&rm.Rvsdg().GetRootRegion());
   auto region = pb.subregion();
   auto r1 = pb.add_recvar(pt);
   auto r2 = pb.add_recvar(pt);

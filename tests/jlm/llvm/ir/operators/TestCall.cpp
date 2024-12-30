@@ -42,7 +42,8 @@ TestCopy()
   // Act
   auto node = jlm::rvsdg::output::GetNode(*callResults[0]);
   auto callNode = jlm::util::AssertedCast<const CallNode>(node);
-  auto copiedNode = callNode->copy(rvsdg.root(), { function2, value2, iOState2, memoryState2 });
+  auto copiedNode =
+      callNode->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
   // Assert
   auto copiedCallNode = dynamic_cast<const CallNode *>(copiedNode);
@@ -112,12 +113,13 @@ TestCallTypeClassifierIndirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupFunction = [&]()
   {
-    auto lambda = lambda::node::create(graph->root(), fcttype2, "fct", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph->GetRootRegion(), fcttype2, "fct", linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
@@ -164,7 +166,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
@@ -177,8 +179,11 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   auto SetupFunctionG = [&]()
   {
-    auto lambda =
-        lambda::node::create(graph->root(), functionTypeG, "g", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionTypeG,
+        "g",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -219,7 +224,8 @@ TestCallTypeClassifierNonRecursiveDirectCall()
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph->GetRootRegion(), functionType, "f", linkage::external_linkage);
     auto functionGArgument = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
@@ -241,7 +247,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   GraphExport::Create(*f->output(), "f");
 
-  //	jlm::rvsdg::view(graph->root(), stdout);
+  //	jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
   auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
@@ -260,7 +266,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
@@ -273,8 +279,11 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto SetupFunctionG = [&]()
   {
-    auto lambda =
-        lambda::node::create(graph->root(), functionTypeG, "g", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionTypeG,
+        "g",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -332,7 +341,8 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(graph->root(), functionType, "f", linkage::external_linkage);
+    auto lambda =
+        lambda::node::create(&graph->GetRootRegion(), functionType, "f", linkage::external_linkage);
     auto functionG = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
@@ -355,7 +365,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto [f, callNode] = SetupFunctionF(g);
   GraphExport::Create(*f, "f");
 
-  jlm::rvsdg::view(graph->root(), stdout);
+  jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
   auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
@@ -374,7 +384,7 @@ TestCallTypeClassifierRecursiveDirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto SetupFib = [&]()
@@ -391,7 +401,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto pt = PointerType::Create();
 
     jlm::llvm::phi::builder pb;
-    pb.begin(graph->root());
+    pb.begin(&graph->GetRootRegion());
     auto fibrv = pb.add_recvar(pt);
 
     auto lambda =

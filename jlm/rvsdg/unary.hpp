@@ -74,7 +74,7 @@ public:
   static jlm::rvsdg::unary_normal_form *
   normal_form(Graph * graph) noexcept
   {
-    return static_cast<jlm::rvsdg::unary_normal_form *>(graph->node_normal_form(typeid(unary_op)));
+    return static_cast<jlm::rvsdg::unary_normal_form *>(graph->GetNodeNormalForm(typeid(unary_op)));
   }
 };
 

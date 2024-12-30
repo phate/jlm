@@ -33,7 +33,7 @@ node_normal_form::set_mutable(bool enable)
 
   enable_mutable_ = enable;
   if (enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 namespace

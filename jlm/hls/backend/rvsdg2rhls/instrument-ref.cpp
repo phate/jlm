@@ -58,7 +58,7 @@ void
 instrument_ref(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   auto lambda = dynamic_cast<llvm::lambda::node *>(root->Nodes().begin().ptr());
 
   auto newLambda = change_function_name(lambda, "instrumented_ref");

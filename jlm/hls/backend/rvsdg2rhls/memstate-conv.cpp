@@ -20,7 +20,7 @@ void
 memstate_conv(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   memstate_conv(root);
 }
 

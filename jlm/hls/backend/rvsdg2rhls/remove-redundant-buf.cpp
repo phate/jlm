@@ -80,7 +80,7 @@ void
 remove_redundant_buf(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   remove_redundant_buf(root);
 }
 

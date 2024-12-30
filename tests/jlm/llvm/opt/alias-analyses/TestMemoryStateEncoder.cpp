@@ -46,7 +46,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   Test test;
   auto & rvsdgModule = test.module();
-  jlm::rvsdg::view(rvsdgModule.Rvsdg().root(), stdout);
+  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
 
@@ -60,7 +60,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   jlm::llvm::aa::MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
-  jlm::rvsdg::view(rvsdgModule.Rvsdg().root(), stdout);
+  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   validateEncoding(test);
 }

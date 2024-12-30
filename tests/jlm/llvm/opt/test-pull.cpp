@@ -33,11 +33,11 @@ test_pullin_top()
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto n1 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
-  auto n2 = jlm::tests::create_testop(graph.root(), { x }, { vt })[0];
-  auto n3 = jlm::tests::create_testop(graph.root(), { n2 }, { vt })[0];
-  auto n4 = jlm::tests::create_testop(graph.root(), { c, n1 }, { ct })[0];
-  auto n5 = jlm::tests::create_testop(graph.root(), { n1, n3 }, { vt })[0];
+  auto n1 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
+  auto n2 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
+  auto n3 = jlm::tests::create_testop(&graph.GetRootRegion(), { n2 }, { vt })[0];
+  auto n4 = jlm::tests::create_testop(&graph.GetRootRegion(), { c, n1 }, { ct })[0];
+  auto n5 = jlm::tests::create_testop(&graph.GetRootRegion(), { n1, n3 }, { vt })[0];
 
   auto gamma = jlm::rvsdg::GammaNode::create(n4, 2);
 
@@ -71,8 +71,8 @@ test_pullin_bottom()
   auto ev = gamma->AddEntryVar(x);
   gamma->AddExitVar(ev.branchArgument);
 
-  auto b1 = jlm::tests::create_testop(graph.root(), { gamma->output(0), x }, { vt })[0];
-  auto b2 = jlm::tests::create_testop(graph.root(), { gamma->output(0), b1 }, { vt })[0];
+  auto b1 = jlm::tests::create_testop(&graph.GetRootRegion(), { gamma->output(0), x }, { vt })[0];
+  auto b2 = jlm::tests::create_testop(&graph.GetRootRegion(), { gamma->output(0), b1 }, { vt })[0];
 
   auto & xp = jlm::llvm::GraphExport::Create(*b2, "x");
 
@@ -95,7 +95,7 @@ test_pull()
 
   auto p = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");
 
-  auto croot = jlm::tests::create_testop(graph.root(), {}, { vt })[0];
+  auto croot = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
 
   /* outer gamma */
   auto gamma1 = jlm::rvsdg::GammaNode::create(p, 2);
@@ -118,10 +118,10 @@ test_pull()
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::pullin pullin;
   pullin.run(rm, statisticsCollector);
-  graph.prune();
+  graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
-  assert(graph.root()->nnodes() == 1);
+  assert(graph.GetRootRegion().nnodes() == 1);
 }
 
 static int

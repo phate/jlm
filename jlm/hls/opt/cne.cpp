@@ -33,8 +33,8 @@ public:
   void
   start_mark_stat(const Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(MarkTimerLabel_).start();
   }
 
@@ -53,8 +53,8 @@ public:
   void
   end_divert_stat(const Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(DivertTimerLabel_).stop();
   }
 
@@ -609,11 +609,11 @@ cne(jlm::llvm::RvsdgModule & rm, util::StatisticsCollector & statisticsCollector
   auto statistics = cnestat::Create(rm.SourceFileName());
 
   statistics->start_mark_stat(graph);
-  mark(graph.root(), ctx);
+  mark(&graph.GetRootRegion(), ctx);
   statistics->end_mark_stat();
 
   statistics->start_divert_stat();
-  divert(graph.root(), ctx);
+  divert(&graph.GetRootRegion(), ctx);
   statistics->end_divert_stat(graph);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

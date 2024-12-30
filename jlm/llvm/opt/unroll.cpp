@@ -26,14 +26,14 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -470,7 +470,7 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (!ui)
     return;
 
-  auto nf = otheta->graph()->node_normal_form(typeid(rvsdg::Operation));
+  auto nf = otheta->graph()->GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   if (ui->is_known() && ui->niterations())
@@ -521,7 +521,7 @@ loopunroll::run(RvsdgModule & module, util::StatisticsCollector & statisticsColl
   auto statistics = unrollstat::Create(module.SourceFileName());
 
   statistics->start(module.Rvsdg());
-  unroll(graph.root(), factor_);
+  unroll(&graph.GetRootRegion(), factor_);
   statistics->end(module.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

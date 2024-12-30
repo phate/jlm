@@ -48,12 +48,12 @@ test_gamma()
 
   GraphExport::Create(*gamma->output(0), "x");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::pushout pushout;
   pushout.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.root()->nnodes() == 3);
+  assert(graph.GetRootRegion().nnodes() == 3);
 }
 
 static inline void
@@ -74,7 +74,7 @@ test_theta()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lv1 = theta->add_loopvar(c);
   auto lv2 = theta->add_loopvar(x);
@@ -96,12 +96,12 @@ test_theta()
 
   GraphExport::Create(*theta->output(0), "c");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::pushout pushout;
   pushout.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.root()->nnodes() == 3);
+  assert(graph.GetRootRegion().nnodes() == 3);
 }
 
 static inline void
@@ -119,7 +119,7 @@ test_push_theta_bottom()
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lvc = theta->add_loopvar(c);
   auto lva = theta->add_loopvar(a);

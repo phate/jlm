@@ -52,7 +52,8 @@ JlmToMlirConverter::ConvertOmega(const rvsdg::Graph & graph)
   auto omega = Builder_->create<::mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
   auto & omegaBlock = omega.getRegion().emplaceBlock();
 
-  ::llvm::SmallVector<::mlir::Value> regionResults = ConvertRegion(*graph.root(), omegaBlock);
+  ::llvm::SmallVector<::mlir::Value> regionResults =
+      ConvertRegion(graph.GetRootRegion(), omegaBlock);
 
   auto omegaResult =
       Builder_->create<::mlir::rvsdg::OmegaResult>(Builder_->getUnknownLoc(), regionResults);

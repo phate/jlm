@@ -21,7 +21,7 @@ TestSingleLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -31,7 +31,7 @@ TestSingleLoad()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
@@ -97,7 +97,7 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -109,7 +109,7 @@ TestLoadStore()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
@@ -182,7 +182,7 @@ TestAddrQueue()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   // Setup the function
@@ -192,7 +192,7 @@ TestAddrQueue()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "test",
       linkage::external_linkage);
