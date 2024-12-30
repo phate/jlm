@@ -153,7 +153,7 @@ bool terminate = false;
 // ======== Global variables imported from other modules ========
 )";
 
-  for (const auto arg : rm.Rvsdg().root()->Arguments())
+  for (const auto arg : rm.Rvsdg().GetRootRegion().Arguments())
   {
     const auto graphImport = util::AssertedCast<llvm::GraphImport>(arg);
     cpp << "extern \"C\" char " << graphImport->Name() << ";" << std::endl;

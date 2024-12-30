@@ -151,13 +151,13 @@ TestLoadMuxReduction()
 
   auto & ex = GraphExport::Create(*loadNode.output(0), "l");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadMux, loadNode);
-  graph.prune();
+  graph.Prune();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
