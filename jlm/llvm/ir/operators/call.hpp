@@ -285,21 +285,21 @@ private:
 /** \brief Call node
  *
  */
-class CallNode final : public jlm::rvsdg::simple_node
+class CallNode final : public jlm::rvsdg::SimpleNode
 {
 private:
   CallNode(
       rvsdg::Region & region,
       const CallOperation & operation,
       const std::vector<jlm::rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : SimpleNode(&region, operation, operands)
   {}
 
 public:
   [[nodiscard]] const CallOperation &
   GetOperation() const noexcept override
   {
-    return *jlm::util::AssertedCast<const CallOperation>(&simple_node::GetOperation());
+    return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
   }
 
   /**
@@ -418,11 +418,11 @@ public:
    * @see GetMemoryStateInput()
    * @see GetMemoryStateExitSplit()
    */
-  [[nodiscard]] static rvsdg::simple_node *
+  [[nodiscard]] static rvsdg::SimpleNode *
   GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
   {
     auto node = rvsdg::output::GetNode(*callNode.GetMemoryStateInput()->origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
   }
 
@@ -435,7 +435,7 @@ public:
    * @see GetMemoryStateOutput()
    * @see GetMemoryStateEntryMerge()
    */
-  [[nodiscard]] static rvsdg::simple_node *
+  [[nodiscard]] static rvsdg::SimpleNode *
   GetMemoryStateExitSplit(const CallNode & callNode) noexcept
   {
     // If a memory state exit split node is present, then we would expect the node to be the only
@@ -444,7 +444,7 @@ public:
       return nullptr;
 
     auto node = rvsdg::node_input::GetNode(**callNode.GetMemoryStateOutput()->begin());
-    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                        : nullptr;
   }
 

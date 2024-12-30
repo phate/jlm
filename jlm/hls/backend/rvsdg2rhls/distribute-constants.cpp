@@ -33,10 +33,10 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
         {
           // pass-through
           auto arg_replacement = dynamic_cast<rvsdg::simple_output *>(
-              rvsdg::simple_node::create_normalized(ti->node()->subregion(), op, {})[0]);
+              rvsdg::SimpleNode::create_normalized(ti->node()->subregion(), op, {})[0]);
           ti->argument()->divert_users(arg_replacement);
           ti->output()->divert_users(
-              rvsdg::simple_node::create_normalized(out->region(), op, {})[0]);
+              rvsdg::SimpleNode::create_normalized(out->region(), op, {})[0]);
           distribute_constant(op, arg_replacement);
           arg->region()->RemoveResult(res->index());
           arg->region()->RemoveArgument(arg->index());
@@ -57,7 +57,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
           if (argument->nusers())
           {
             auto arg_replacement = dynamic_cast<rvsdg::simple_output *>(
-                rvsdg::simple_node::create_normalized(argument->region(), op, {})[0]);
+                rvsdg::SimpleNode::create_normalized(argument->region(), op, {})[0]);
             argument->divert_users(arg_replacement);
             distribute_constant(op, arg_replacement);
           }
@@ -100,7 +100,7 @@ hls::distribute_constants(rvsdg::Region * region)
         throw util::error("Unexpected node type: " + node->GetOperation().debug_string());
       }
     }
-    else if (auto sn = dynamic_cast<rvsdg::simple_node *>(node))
+    else if (auto sn = dynamic_cast<rvsdg::SimpleNode *>(node))
     {
       if (is_constant(node))
       {

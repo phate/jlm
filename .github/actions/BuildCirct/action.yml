@@ -30,8 +30,7 @@ runs:
       run: |
         ./scripts/build-circt.sh \
           --build-path ${{ github.workspace }}/build-circt \
-          --install-path ${{ github.workspace }}/build-circt/circt \
-          --llvm-lit-path ~/.local/bin/lit
+          --install-path ${{ github.workspace }}/build-circt/circt
       shell: bash
 
     - name: "Save CIRCT to the cache"

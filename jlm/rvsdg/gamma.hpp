@@ -367,6 +367,56 @@ GammaNode::RemoveGammaOutputsWhere(const F & match)
   }
 }
 
+/**
+ * Reduces a gamma node with a statically known predicate to the respective subregion determined
+ * by the value of the predicate.
+ *
+ * c = gamma 0
+ *   []
+ *     x = 45
+ *   [c <= x]
+ *   []
+ *     y = 37
+ *   [c <= y]
+ * ... = add c + 5
+ * =>
+ * c = 45
+ * ... = add c + 5
+ *
+ * @param node A gamma node that is supposed to be reduced.
+ * @return True, if transformation was successful, otherwise false.
+ */
+bool
+ReduceGammaWithStaticallyKnownPredicate(Node & node);
+
+/**
+ * Reduces the predicate of a gamma node g1 from the constants that originate from another gamma
+ * node g2 to the predicate of g2.
+ *
+ * p2 = gamma p1
+ *  []
+ *    x = 0
+ *  [p2 <= x]
+ *  []
+ *    y = 1
+ *  [p2 <= y]
+ * ... = gamma p2
+ * =>
+ * p2 = gamma p1
+ *  []
+ *    x = 0
+ *  [p2 <= x]
+ *  []
+ *    y = 1
+ *  [p2 <= y]
+ * ... = gamma p1
+ *
+ * @param node A gamma node that is supposed to be reduced.
+ * @return True, if the transformation was successful, otherwise false.
+ */
+bool
+ReduceGammaControlConstant(Node & node);
+
 }
 
 #endif

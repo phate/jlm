@@ -20,7 +20,7 @@ DotHLS::extension()
 }
 
 std::string
-DotHLS::get_text(llvm::RvsdgModule & rm)
+DotHLS::GetText(llvm::RvsdgModule & rm)
 {
   return subregion_to_dot(get_hls_lambda(rm)->subregion());
 }
@@ -216,7 +216,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
 
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_dot = node_to_dot(node);
       if (top_nodes.count(node))
@@ -272,7 +272,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   // do edges outside in order not to pull other nodes into the cluster
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
       auto node_name = get_node_name(node);
@@ -307,7 +307,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
   // just translate outputs
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->noutputs(); ++i)
@@ -388,7 +388,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
   // process nodes
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_dot = node_to_dot(node);
       dot << node_dot;

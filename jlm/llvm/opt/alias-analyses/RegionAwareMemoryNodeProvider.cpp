@@ -168,7 +168,7 @@ public:
     return MemoryNodes_;
   }
 
-  [[nodiscard]] const util::HashSet<const rvsdg::simple_node *> &
+  [[nodiscard]] const util::HashSet<const rvsdg::SimpleNode *> &
   GetUnknownMemoryNodeReferences() const noexcept
   {
     return UnknownMemoryNodeReferences_;
@@ -199,7 +199,7 @@ public:
   }
 
   void
-  AddUnknownMemoryNodeReferences(const util::HashSet<const rvsdg::simple_node *> & nodes)
+  AddUnknownMemoryNodeReferences(const util::HashSet<const rvsdg::SimpleNode *> & nodes)
   {
     UnknownMemoryNodeReferences_.UnionWith(nodes);
   }
@@ -250,7 +250,7 @@ public:
 private:
   const rvsdg::Region * Region_;
   util::HashSet<const PointsToGraph::MemoryNode *> MemoryNodes_;
-  util::HashSet<const rvsdg::simple_node *> UnknownMemoryNodeReferences_;
+  util::HashSet<const rvsdg::SimpleNode *> UnknownMemoryNodeReferences_;
 
   util::HashSet<const CallNode *> RecursiveCalls_;
   util::HashSet<const CallNode *> NonRecursiveCalls_;
@@ -685,7 +685,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region)
     {
       AnnotateStructuralNode(*structuralNode);
     }
-    else if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
+    else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
     {
       AnnotateSimpleNode(*simpleNode);
     }
@@ -697,7 +697,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::simple_node & simpleNode)
+RegionAwareMemoryNodeProvider::AnnotateSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
   if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
   {
@@ -746,7 +746,7 @@ RegionAwareMemoryNodeProvider::AnnotateStore(const StoreNode & storeNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaNode)
+RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::SimpleNode & allocaNode)
 {
   JLM_ASSERT(is<alloca_op>(allocaNode.GetOperation()));
 
@@ -756,7 +756,7 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(const rvsdg::simple_node & allocaN
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocNode)
+RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   JLM_ASSERT(is<malloc_op>(mallocNode.GetOperation()));
 
@@ -766,7 +766,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(const rvsdg::simple_node & mallocN
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateFree(const rvsdg::simple_node & freeNode)
+RegionAwareMemoryNodeProvider::AnnotateFree(const rvsdg::SimpleNode & freeNode)
 {
   JLM_ASSERT(is<FreeOperation>(freeNode.GetOperation()));
 
@@ -820,7 +820,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(const CallNode & callNode)
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::simple_node & memcpyNode)
+RegionAwareMemoryNodeProvider::AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode)
 {
   JLM_ASSERT(is<MemCpyOperation>(memcpyNode.GetOperation()));
 
@@ -896,7 +896,7 @@ RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
   PropagateRegion(phiNodeSubregion);
 
   util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-  util::HashSet<const rvsdg::simple_node *> unknownMemoryNodeReferences;
+  util::HashSet<const rvsdg::SimpleNode *> unknownMemoryNodeReferences;
   for (auto & lambdaNode : lambdaNodes)
   {
     auto & regionSummary = Provisioning_->GetRegionSummary(*lambdaNode->subregion());
@@ -911,7 +911,7 @@ void
 RegionAwareMemoryNodeProvider::AssignAndPropagateMemoryNodes(
     const rvsdg::Region & region,
     const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
-    const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences)
+    const util::HashSet<const rvsdg::SimpleNode *> & unknownMemoryNodeReferences)
 {
   auto & regionSummary = Provisioning_->GetRegionSummary(region);
   for (auto structuralNode : regionSummary.GetStructuralNodes().Items())

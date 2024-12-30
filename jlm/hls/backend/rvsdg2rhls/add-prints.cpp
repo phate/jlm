@@ -31,7 +31,7 @@ add_prints(rvsdg::Region * region)
     //			auto po = hls::print_op::create(*node->input(1)->origin())[0];
     //			node->input(1)->divert_to(po);
     //		}
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node) && node->noutputs() == 1
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
         && jlm::rvsdg::is<jlm::rvsdg::bittype>(node->output(0)->type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
@@ -123,7 +123,7 @@ convert_prints(
         auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
         JLM_ASSERT(bt);
         auto op = llvm::zext_op(bt->nbits(), 64);
-        val = jlm::rvsdg::simple_node::create_normalized(region, op, { val })[0];
+        val = jlm::rvsdg::SimpleNode::create_normalized(region, op, { val })[0];
       }
       llvm::CallNode::Create(printf_local, functionType, { bc, val });
       node->output(0)->divert_users(node->input(0)->origin());

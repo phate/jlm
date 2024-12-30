@@ -7,7 +7,6 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/statemux.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
@@ -45,16 +44,6 @@ public:
     return std::make_unique<redstat>(sourceFile);
   }
 };
-
-static void
-enable_mux_reductions(rvsdg::Graph & graph)
-{
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::mux_op));
-  auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
-  mnf->set_mutable(true);
-  mnf->set_mux_mux_reducible(true);
-  mnf->set_multiple_origin_reducible(true);
-}
 
 static void
 enable_store_reductions(rvsdg::Graph & graph)
@@ -120,7 +109,6 @@ reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
 
   statistics->start(graph);
 
-  enable_mux_reductions(graph);
   enable_store_reductions(graph);
   enable_load_reductions(graph);
   enable_gamma_reductions(graph);

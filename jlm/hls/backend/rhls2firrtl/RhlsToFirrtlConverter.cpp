@@ -15,7 +15,7 @@ namespace jlm::hls
 
 // Handles nodes with 2 inputs and 1 output
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
 {
   // Only handles nodes with a single output
   if (node->noutputs() != 1)
@@ -385,7 +385,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -410,7 +410,7 @@ RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -465,7 +465,7 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * no
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::SimpleNode * node)
 {
   auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation());
   bool isConstant = op->IsConstant();
@@ -567,7 +567,7 @@ RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenStateGate(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenStateGate(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -659,7 +659,7 @@ RhlsToFirrtlConverter::MlirGenStateGate(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -740,7 +740,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -902,7 +902,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -1077,7 +1077,7 @@ RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -1124,7 +1124,7 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
   auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
   JLM_ASSERT(lmem_op);
@@ -1333,7 +1333,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -1477,7 +1477,7 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, true);
@@ -1694,7 +1694,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1728,7 +1728,7 @@ RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1763,7 +1763,7 @@ RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1828,7 +1828,7 @@ RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * 
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1968,7 +1968,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2136,7 +2136,7 @@ RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2275,7 +2275,7 @@ RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2322,7 +2322,7 @@ RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2369,7 +2369,7 @@ RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
 {
   if (dynamic_cast<const hls::sink_op *>(&(node->GetOperation())))
   {
@@ -2468,7 +2468,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
   return MlirGenSimpleNode(node);
 }
 
-std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
 RhlsToFirrtlConverter::MlirGen(
     hls::loop_node * loopNode,
     mlir::Block * body,
@@ -2571,7 +2571,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   auto body = module.getBodyBlock();
 
   // First we create and instantiate all the modules and keep them in a dictionary
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances =
+  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp> instances =
       createInstances(subRegion, circuitBody, body);
   // Wire up the instances
   for (const auto & instance : instances)
@@ -2620,7 +2620,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
         {
           // Connect directly to mem
           auto mem_out = dynamic_cast<jlm::rvsdg::node_output *>(source->input(0)->origin());
-          auto sourceNode = instances[dynamic_cast<jlm::rvsdg::simple_node *>(mem_out->node())];
+          auto sourceNode = instances[dynamic_cast<jlm::rvsdg::SimpleNode *>(mem_out->node())];
           auto sourcePort = GetInstancePort(sourceNode, "o" + std::to_string(o->index()));
           auto sinkPort = sinkNode->getResult(i + 2);
           Connect(body, sinkPort, sourcePort);
@@ -2712,7 +2712,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       throw std::logic_error("Unsupported output");
     }
     // Get the node of the output
-    jlm::rvsdg::simple_node * source = output->node();
+    jlm::rvsdg::SimpleNode * source = output->node();
     // Get the corresponding InstanceOp
     auto sourceNode = instances[source];
     // Calculate the result port of the instance:
@@ -2736,7 +2736,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   return module;
 }
 
-std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
 RhlsToFirrtlConverter::createInstances(
     rvsdg::Region * subRegion,
     mlir::Block * circuitBody,
@@ -2745,10 +2745,10 @@ RhlsToFirrtlConverter::createInstances(
   // create and instantiate all the modules and keep them in a dictionary
   auto clock = body->getArgument(0);
   auto reset = body->getArgument(1);
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances;
+  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp> instances;
   for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
   {
-    if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (dynamic_cast<const local_mem_req_op *>(&(node->GetOperation()))
           || dynamic_cast<const local_mem_resp_op *>(&(node->GetOperation())))
@@ -2838,8 +2838,8 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   AddClockPort(&ports);
   AddResetPort(&ports);
 
-  auto reg_args = get_reg_args(lambdaNode);
-  auto reg_results = get_reg_results(lambdaNode);
+  auto reg_args = get_reg_args(*lambdaNode);
+  auto reg_results = get_reg_results(*lambdaNode);
 
   // Input bundle
   using BundleElement = circt::firrtl::BundleType::BundleElement;
@@ -2882,8 +2882,8 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   ports.push_back(oBundle);
 
   // Memory ports
-  auto mem_reqs = get_mem_reqs(lambdaNode);
-  auto mem_resps = get_mem_resps(lambdaNode);
+  auto mem_reqs = get_mem_reqs(*lambdaNode);
+  auto mem_resps = get_mem_resps(*lambdaNode);
   JLM_ASSERT(mem_resps.size() == mem_reqs.size());
   for (size_t i = 0; i < mem_reqs.size(); ++i)
   {
@@ -3728,7 +3728,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
 }
 
 circt::firrtl::InstanceOp
-RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * body, jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * body, jlm::rvsdg::SimpleNode * node)
 {
   auto name = GetModuleName(node);
   // Check if the module has already been instantiated else we need to generate it
@@ -3855,11 +3855,11 @@ RhlsToFirrtlConverter::InitializeMemReq(circt::firrtl::FModuleOp module)
   Connect(body, memWidth, invalid3);
 }
 
-// Takes a jlm::rvsdg::simple_node and creates a firrtl module with an input
+// Takes a jlm::rvsdg::SimpleNode and creates a firrtl module with an input
 // bundle for each node input and output bundle for each node output
 // Returns a circt::firrtl::FModuleOp with an empty body
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
+RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::SimpleNode * node, bool mem)
 {
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;

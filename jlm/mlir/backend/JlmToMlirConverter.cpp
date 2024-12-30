@@ -152,7 +152,7 @@ JlmToMlirConverter::ConvertNode(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(&node))
+  if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
   {
     return ConvertSimpleNode(*simpleNode, block, inputs);
   }
@@ -302,7 +302,7 @@ JlmToMlirConverter::BitCompareNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertSimpleNode(
-    const rvsdg::simple_node & node,
+    const rvsdg::SimpleNode & node,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {

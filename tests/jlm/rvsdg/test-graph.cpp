@@ -8,9 +8,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <assert.h>
-#include <stdio.h>
-
 #include <jlm/rvsdg/view.hpp>
 
 static bool
@@ -69,7 +66,7 @@ test_recursive_prune()
 JLM_UNIT_TEST_REGISTER("rvsdg/test-graph_prune", test_recursive_prune)
 
 static int
-test_empty_graph_pruning(void)
+test_empty_graph_pruning()
 {
   jlm::rvsdg::Graph graph;
 
@@ -87,7 +84,7 @@ test_empty_graph_pruning(void)
 JLM_UNIT_TEST_REGISTER("rvsdg/test-empty_graph_pruning", test_empty_graph_pruning)
 
 static int
-test_prune_replace(void)
+test_prune_replace()
 {
   using namespace jlm::rvsdg;
 
@@ -116,7 +113,7 @@ test_prune_replace(void)
 JLM_UNIT_TEST_REGISTER("rvsdg/test-prune-replace", test_prune_replace)
 
 static int
-test_graph(void)
+test_graph()
 {
   using namespace jlm::rvsdg;
 

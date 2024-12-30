@@ -6,8 +6,7 @@
 #ifndef JLM_UTIL_COMMON_HPP
 #define JLM_UTIL_COMMON_HPP
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <stdexcept>
 

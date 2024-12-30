@@ -143,7 +143,7 @@ binary_normal_form::normalize_node(Node * node, const binary_op & op) const
 
     JLM_ASSERT(new_args.size() >= 2);
     const auto & new_op = tmp_op ? *tmp_op : static_cast<const SimpleOperation &>(op);
-    divert_users(node, simple_node::create_normalized(node->region(), new_op, new_args));
+    divert_users(node, SimpleNode::create_normalized(node->region(), new_op, new_args));
     remove(node);
     return false;
   }
@@ -319,6 +319,69 @@ binary_op::flags() const noexcept
   return jlm::rvsdg::binary_op::flags::none;
 }
 
+std::optional<std::vector<rvsdg::output *>>
+FlattenAssociativeBinaryOperation(
+    const binary_op & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+  auto region = operands[0]->region();
+
+  if (!operation.is_associative())
+  {
+    return std::nullopt;
+  }
+
+  auto newOperands = base::detail::associative_flatten(
+      operands,
+      [&operation](rvsdg::output * operand)
+      {
+        auto node = TryGetOwnerNode<Node>(*operand);
+        if (node == nullptr)
+          return false;
+
+        auto flattenedBinaryOperation =
+            dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+        return node->GetOperation() == operation
+            || (flattenedBinaryOperation && flattenedBinaryOperation->bin_operation() == operation);
+      });
+
+  if (operands == newOperands)
+  {
+    JLM_ASSERT(newOperands.size() == 2);
+    return std::nullopt;
+  }
+
+  JLM_ASSERT(newOperands.size() > 2);
+  auto flattenedBinaryOperation =
+      std::make_unique<flattened_binary_op>(operation, newOperands.size());
+  return outputs(SimpleNode::create(region, *flattenedBinaryOperation, newOperands));
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeBinaryOperation(const binary_op & operation, const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+  auto region = operands[0]->region();
+
+  auto newOperands = reduce_operands(operation, operands);
+
+  if (newOperands == operands)
+  {
+    // The operands did not change, which means that none of the normalizations triggered.
+    return std::nullopt;
+  }
+
+  if (newOperands.size() == 1)
+  {
+    // The operands could be reduced to a single value by applying constant folding.
+    return newOperands;
+  }
+
+  JLM_ASSERT(newOperands.size() == 2);
+  return outputs(SimpleNode::create(region, operation, newOperands));
+}
+
 /* flattened binary operator */
 
 flattened_binary_op::~flattened_binary_op() noexcept
@@ -364,7 +427,7 @@ reduce_parallel(const binary_op & op, const std::vector<jlm::rvsdg::output *> & 
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = simple_node::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
     worklist.push_back(output);
   }
 
@@ -387,7 +450,7 @@ reduce_linear(const binary_op & op, const std::vector<jlm::rvsdg::output *> & op
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = simple_node::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
     worklist.push_front(output);
   }
 
@@ -459,7 +522,7 @@ flattened_binary_operation_get_default_normal_form_(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::binary_op),

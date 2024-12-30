@@ -44,7 +44,7 @@ public:
   static output *
   create(size_t nbits, output * op1, output * op2)
   {
-    return simple_node::create_normalized(
+    return SimpleNode::create_normalized(
         op1->region(),
         MakeBitComparisonOperation(nbits),
         { op1, op2 })[0];

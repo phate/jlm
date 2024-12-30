@@ -3,11 +3,11 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=99d309be2a9aa8d565c2ece493dc33a447ad166d
+GIT_COMMIT=8ff67e118ab25ce7cbbdc8adfefb19340c54ce83
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-JLM_ROOT_DIR=${SCRIPT_DIR}/..
+JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 
 # Set default path for where the benchmark will be cloned and make target for running it
@@ -50,7 +50,7 @@ while [[ "$#" -ge 1 ]] ; do
 			commit >&2
 			exit 1
 			;;
-		--help)
+		--help|*)
 			usage >&2
 			exit 1
 			;;
@@ -68,6 +68,8 @@ fi
 if [ ! -d "$BENCHMARK_DIR" ] ;
 then
 	git clone ${GIT_REPOSITORY} ${BENCHMARK_DIR}
+else
+	git -C ${BENCHMARK_DIR} fetch origin
 fi
 
 export PATH=${JLM_BIN_DIR}:${PATH}

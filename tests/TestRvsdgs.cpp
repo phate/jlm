@@ -1080,9 +1080,8 @@ IndirectCallTest2::SetupRvsdg()
         lambdaOutput,
         &callX,
         &callY,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(jlm::rvsdg::output::GetNode(*pxAlloca[0])),
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
-            jlm::rvsdg::output::GetNode(*pyAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pxAlloca[0])),
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pyAlloca[0])));
   };
 
   auto SetupTest2Function = [&](rvsdg::output & functionX)
@@ -1118,8 +1117,7 @@ IndirectCallTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callX,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
-            jlm::rvsdg::output::GetNode(*pzAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pzAlloca[0])));
   };
 
   auto deltaG1 = SetupG1();
@@ -2360,8 +2358,7 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callB,
         &callD,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
-            jlm::rvsdg::output::GetNode(*paAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*paAlloca[0])));
   };
 
   auto SetupB = [&](jlm::rvsdg::Region & region,
@@ -2405,8 +2402,7 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callI,
         &callC,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
-            jlm::rvsdg::output::GetNode(*pbAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pbAlloca[0])));
   };
 
   auto SetupC = [&](jlm::rvsdg::Region & region, phi::rvargument & functionA)
@@ -2444,8 +2440,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
-            jlm::rvsdg::output::GetNode(*pcAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pcAlloca[0])));
   };
 
   auto SetupD = [&](jlm::rvsdg::Region & region, phi::rvargument & functionA)
@@ -2474,8 +2469,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
-            jlm::rvsdg::output::GetNode(*pdAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pdAlloca[0])));
   };
 
   auto SetupPhi = [&](rvsdg::output & lambdaEight, rvsdg::output & lambdaI)
@@ -2559,7 +2553,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::simple_node>(
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
             jlm::rvsdg::output::GetNode(*pTestAlloca[0])));
   };
 

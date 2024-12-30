@@ -242,6 +242,34 @@ gamma_normal_form::set_control_constant_reduction(bool enable)
     graph()->MarkDenormalized();
 }
 
+bool
+ReduceGammaWithStaticallyKnownPredicate(Node & node)
+{
+  auto gammaNode = dynamic_cast<GammaNode *>(&node);
+  if (gammaNode && is_predicate_reducible(gammaNode))
+  {
+    perform_predicate_reduction(gammaNode);
+    return true;
+  }
+
+  return false;
+}
+
+bool
+ReduceGammaControlConstant(Node & node)
+{
+  auto gammaNode = dynamic_cast<GammaNode *>(&node);
+  if (gammaNode == nullptr)
+    return false;
+
+  auto outputs = is_control_constant_reducible(gammaNode);
+  if (outputs.empty())
+    return false;
+
+  perform_control_constant_reduction(outputs);
+  return true;
+}
+
 GammaOperation::~GammaOperation() noexcept
 {}
 
@@ -393,7 +421,7 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
 }
 
 GammaNode *
-GammaNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
+GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
 {
   auto gamma = create(smap.lookup(predicate()->origin()), nsubregions());
 
@@ -471,7 +499,7 @@ gamma_node_get_default_normal_form_(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::GammaOperation),

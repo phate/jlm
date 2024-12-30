@@ -461,7 +461,7 @@ requiresExport(const ipgraph_node & ipgNode)
 static void
 ConvertAssignment(
     const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
+    rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
@@ -482,7 +482,7 @@ ConvertSelect(
 
   auto op = rvsdg::match_op(1, { { 1, 1 } }, 0, 2);
   auto p = variableMap.lookup(threeAddressCode.operand(0));
-  auto predicate = rvsdg::simple_node::create_normalized(&region, op, { p })[0];
+  auto predicate = rvsdg::SimpleNode::create_normalized(&region, op, { p })[0];
 
   auto gamma = rvsdg::GammaNode::create(predicate, 2);
   auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));
@@ -492,10 +492,7 @@ ConvertSelect(
 }
 
 static void
-ConvertBranch(
-    const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
-    llvm::VariableMap & variableMap)
+ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
   JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
   /*
@@ -571,7 +568,7 @@ ConvertThreeAddressCode(
 
     auto & simpleOperation =
         static_cast<const rvsdg::SimpleOperation &>(threeAddressCode.operation());
-    auto results = rvsdg::simple_node::create_normalized(&region, simpleOperation, operands);
+    auto results = rvsdg::SimpleNode::create_normalized(&region, simpleOperation, operands);
 
     JLM_ASSERT(results.size() == threeAddressCode.nresults());
     for (size_t n = 0; n < threeAddressCode.nresults(); n++)
@@ -645,7 +642,7 @@ Convert(
 static void
 Convert(
     const exitaggnode & exitAggregationNode,
-    const AnnotationMap & demandMap,
+    const AnnotationMap &,
     lambda::node & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -663,8 +660,8 @@ Convert(
 static void
 Convert(
     const blockaggnode & blockAggregationNode,
-    const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    const AnnotationMap &,
+    lambda::node &,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   ConvertBasicBlock(

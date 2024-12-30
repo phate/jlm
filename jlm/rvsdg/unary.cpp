@@ -110,7 +110,7 @@ unary_operation_get_default_normal_form_(
 }
 
 static void __attribute__((constructor))
-register_node_normal_form(void)
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::unary_op),

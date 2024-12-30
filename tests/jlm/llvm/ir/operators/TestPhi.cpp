@@ -145,7 +145,7 @@ TestRemovePhiArgumentsWhere()
 
   // Remove everything that is dead, i.e., phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::RegionArgument & argument)
+      [&](const jlm::rvsdg::RegionArgument &)
       {
         return true;
       });
@@ -245,7 +245,7 @@ TestRemovePhiOutputsWhere()
   assert(phiOutput2->index() == 1);
 
   numRemovedOutputs = phiNode.RemovePhiOutputsWhere(
-      [&](const phi::rvoutput & output)
+      [&](const phi::rvoutput &)
       {
         return true;
       });

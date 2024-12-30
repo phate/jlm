@@ -9,7 +9,7 @@ namespace jlm::tests
 {
 
 GraphImport &
-GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
 {
   return GraphImport::Create(*region.graph(), Type(), Name());
 }
@@ -32,13 +32,13 @@ unary_op::operator==(const Operation & other) const noexcept
 }
 
 rvsdg::unop_reduction_path_t
-unary_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+unary_op::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-unary_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+unary_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   return nullptr;
 }
@@ -66,17 +66,14 @@ binary_op::operator==(const Operation & other) const noexcept
 }
 
 rvsdg::binop_reduction_path_t
-binary_op::can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
-    const noexcept
+binary_op::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::output *
-binary_op::reduce_operand_pair(
-    rvsdg::binop_reduction_path_t path,
-    rvsdg::output * op1,
-    rvsdg::output * op2) const
+binary_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rvsdg::output *)
+    const
 {
   return nullptr;
 }

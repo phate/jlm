@@ -513,7 +513,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
   rvsdg::topdown_traverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
     {
       EliminateTopDownSimpleNode(*simpleNode);
     }
@@ -752,7 +752,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thet
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode)
+TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
   if (is<alloca_op>(&simpleNode))
   {
@@ -765,7 +765,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::simple_node
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownAlloca(const rvsdg::simple_node & node)
+TopDownMemoryNodeEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 

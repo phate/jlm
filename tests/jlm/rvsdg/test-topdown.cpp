@@ -190,7 +190,7 @@ test_mutable_traverse()
 }
 
 static int
-test_main(void)
+test_main()
 {
   test_initialization();
   test_basic_traversal();

@@ -5,8 +5,6 @@
 
 #include "test-registry.hpp"
 
-#include <assert.h>
-
 int
 main(int argc, char ** argv)
 {

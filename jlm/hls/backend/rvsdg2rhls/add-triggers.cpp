@@ -124,7 +124,7 @@ add_triggers(rvsdg::Region * region)
         throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
       }
     }
-    else if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       JLM_ASSERT(trigger != nullptr);
       if (is_constant(node))

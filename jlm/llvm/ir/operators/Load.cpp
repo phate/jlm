@@ -15,7 +15,7 @@ namespace jlm::llvm
 const LoadOperation &
 LoadNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadOperation>(&simple_node::GetOperation());
+  return *util::AssertedCast<const LoadOperation>(&SimpleNode::GetOperation());
 }
 
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
@@ -51,7 +51,7 @@ LoadNonVolatileOperation::NumMemoryStates() const noexcept
 const LoadNonVolatileOperation &
 LoadNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&simple_node::GetOperation());
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&SimpleNode::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -357,7 +357,7 @@ is_load_store_reducible(
 
 static std::vector<rvsdg::output *>
 perform_load_store_reduction(
-    const LoadNonVolatileOperation & op,
+    const LoadNonVolatileOperation &,
     const std::vector<rvsdg::output *> & operands)
 {
   auto storenode = rvsdg::output::GetNode(*operands[1]);
@@ -668,6 +668,72 @@ load_normal_form::normalized_create(
     return perform_load_load_state_reduction(*lop, operands);
 
   return simple_normal_form::normalized_create(region, op, operands);
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadMux(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_mux_reducible(operands))
+    return perform_load_mux_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStore(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_store_reducible(operation, operands))
+    return perform_load_store_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadAlloca(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_alloca_reducible(operands))
+    return perform_load_alloca_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStoreState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_store_state_reducible(operation, operands))
+    return perform_load_store_state_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadDuplicateState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_multiple_origin_reducible(operands))
+    return perform_multiple_origin_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadLoadState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_load_state_reducible(operands))
+    return perform_load_load_state_reduction(operation, operands);
+
+  return std::nullopt;
 }
 
 }

@@ -52,7 +52,7 @@ while [[ "$#" -ge 1 ]] ; do
 			commit >&1
 			exit 0
 			;;
-		--help)
+		--help|*)
 			usage >&2
 			exit 1
 			;;

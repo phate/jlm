@@ -7,14 +7,13 @@
 #ifndef JLM_RVSDG_BITSTRING_CONSTANT_HPP
 #define JLM_RVSDG_BITSTRING_CONSTANT_HPP
 
-#include <stdint.h>
-#include <vector>
-
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+
+#include <vector>
 
 namespace jlm::rvsdg
 {
@@ -60,7 +59,7 @@ extern template class domain_const_op<bittype, bitvalue_repr, format_value, type
 static inline jlm::rvsdg::output *
 create_bitconstant(rvsdg::Region * region, const bitvalue_repr & vr)
 {
-  return simple_node::create_normalized(region, bitconstant_op(vr), {})[0];
+  return SimpleNode::create_normalized(region, bitconstant_op(vr), {})[0];
 }
 
 static inline jlm::rvsdg::output *

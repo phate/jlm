@@ -114,7 +114,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
             { { 0, match->alternative(1) }, { 1, match->alternative(0) } },
             default_alternative,
             match->nalternatives());
-        auto new_match = rvsdg::simple_node::create_normalized(
+        auto new_match = rvsdg::SimpleNode::create_normalized(
             no->region(),
             op,
             { no->node()->input(0)->origin() })[0];

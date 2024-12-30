@@ -58,7 +58,7 @@ public:
 
     MemoryStateMergeOperation operation(operands.size());
     auto region = operands.front()->region();
-    return rvsdg::simple_node::create_normalized(region, operation, operands)[0];
+    return rvsdg::SimpleNode::create_normalized(region, operation, operands)[0];
   }
 
   static std::unique_ptr<tac>
@@ -103,7 +103,7 @@ public:
       throw util::error("Insufficient number of results.");
 
     MemoryStateSplitOperation operation(numResults);
-    return rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand });
+    return rvsdg::SimpleNode::create_normalized(operand.region(), operation, { &operand });
   }
 };
 
@@ -140,7 +140,7 @@ public:
   {
     auto region = output.region();
     LambdaEntryMemoryStateSplitOperation operation(numResults);
-    return rvsdg::simple_node::create_normalized(region, operation, { &output });
+    return rvsdg::SimpleNode::create_normalized(region, operation, { &output });
   }
 };
 
@@ -176,7 +176,7 @@ public:
   Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::output *> & operands)
   {
     LambdaExitMemoryStateMergeOperation operation(operands.size());
-    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return *rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 };
 
@@ -212,7 +212,7 @@ public:
   Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
   {
     CallEntryMemoryStateMergeOperation operation(operands.size());
-    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return *rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 };
 
@@ -249,7 +249,7 @@ public:
   {
     auto region = output.region();
     CallExitMemoryStateSplitOperation operation(numResults);
-    return rvsdg::simple_node::create_normalized(region, operation, { &output });
+    return rvsdg::SimpleNode::create_normalized(region, operation, { &output });
   }
 };
 

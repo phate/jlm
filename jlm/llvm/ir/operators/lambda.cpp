@@ -134,17 +134,17 @@ node::GetMemoryStateRegionResult() const noexcept
   return *result;
 }
 
-rvsdg::simple_node *
+rvsdg::SimpleNode *
 node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
 {
   auto & result = lambdaNode.GetMemoryStateRegionResult();
 
   auto node = rvsdg::output::GetNode(*result.origin());
-  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                        : nullptr;
 }
 
-rvsdg::simple_node *
+rvsdg::SimpleNode *
 node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 {
   auto & argument = lambdaNode.GetMemoryStateRegionArgument();
@@ -155,7 +155,7 @@ node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
     return nullptr;
 
   auto node = rvsdg::node_input::GetNode(**argument.begin());
-  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
 }
 

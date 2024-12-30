@@ -112,7 +112,7 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 }
 
 static void
-cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
+cleanup(rvsdg::GammaNode *, rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 

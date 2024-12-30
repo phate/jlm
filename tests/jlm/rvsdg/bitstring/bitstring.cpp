@@ -7,15 +7,11 @@
 #include "test-registry.hpp"
 #include <test-operation.hpp>
 
-#include <assert.h>
-#include <stdio.h>
-
 #include <jlm/rvsdg/bitstring.hpp>
-#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static int
-types_bitstring_arithmetic_test_bitand(void)
+types_bitstring_arithmetic_test_bitand()
 {
   using namespace jlm::rvsdg;
 
@@ -43,7 +39,7 @@ types_bitstring_arithmetic_test_bitand(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitashr(void)
+types_bitstring_arithmetic_test_bitashr()
 {
   using namespace jlm::rvsdg;
 
@@ -82,7 +78,7 @@ types_bitstring_arithmetic_test_bitashr(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitdifference(void)
+types_bitstring_arithmetic_test_bitdifference()
 {
   using namespace jlm::rvsdg;
 
@@ -105,7 +101,7 @@ types_bitstring_arithmetic_test_bitdifference(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitnegate(void)
+types_bitstring_arithmetic_test_bitnegate()
 {
   using namespace jlm::rvsdg;
 
@@ -133,7 +129,7 @@ types_bitstring_arithmetic_test_bitnegate(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitnot(void)
+types_bitstring_arithmetic_test_bitnot()
 {
   using namespace jlm::rvsdg;
 
@@ -161,7 +157,7 @@ types_bitstring_arithmetic_test_bitnot(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitor(void)
+types_bitstring_arithmetic_test_bitor()
 {
   using namespace jlm::rvsdg;
 
@@ -189,7 +185,7 @@ types_bitstring_arithmetic_test_bitor(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitproduct(void)
+types_bitstring_arithmetic_test_bitproduct()
 {
   using namespace jlm::rvsdg;
 
@@ -218,7 +214,7 @@ types_bitstring_arithmetic_test_bitproduct(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitshiproduct(void)
+types_bitstring_arithmetic_test_bitshiproduct()
 {
   using namespace jlm::rvsdg;
 
@@ -241,7 +237,7 @@ types_bitstring_arithmetic_test_bitshiproduct(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitshl(void)
+types_bitstring_arithmetic_test_bitshl()
 {
   using namespace jlm::rvsdg;
 
@@ -273,7 +269,7 @@ types_bitstring_arithmetic_test_bitshl(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitshr(void)
+types_bitstring_arithmetic_test_bitshr()
 {
   using namespace jlm::rvsdg;
 
@@ -305,7 +301,7 @@ types_bitstring_arithmetic_test_bitshr(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitsmod(void)
+types_bitstring_arithmetic_test_bitsmod()
 {
   using namespace jlm::rvsdg;
 
@@ -334,7 +330,7 @@ types_bitstring_arithmetic_test_bitsmod(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitsquotient(void)
+types_bitstring_arithmetic_test_bitsquotient()
 {
   using namespace jlm::rvsdg;
 
@@ -363,7 +359,7 @@ types_bitstring_arithmetic_test_bitsquotient(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitsum(void)
+types_bitstring_arithmetic_test_bitsum()
 {
   using namespace jlm::rvsdg;
 
@@ -392,7 +388,7 @@ types_bitstring_arithmetic_test_bitsum(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bituhiproduct(void)
+types_bitstring_arithmetic_test_bituhiproduct()
 {
   using namespace jlm::rvsdg;
 
@@ -415,7 +411,7 @@ types_bitstring_arithmetic_test_bituhiproduct(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitumod(void)
+types_bitstring_arithmetic_test_bitumod()
 {
   using namespace jlm::rvsdg;
 
@@ -444,7 +440,7 @@ types_bitstring_arithmetic_test_bitumod(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bituquotient(void)
+types_bitstring_arithmetic_test_bituquotient()
 {
   using namespace jlm::rvsdg;
 
@@ -473,7 +469,7 @@ types_bitstring_arithmetic_test_bituquotient(void)
 }
 
 static int
-types_bitstring_arithmetic_test_bitxor(void)
+types_bitstring_arithmetic_test_bitxor()
 {
   using namespace jlm::rvsdg;
 
@@ -517,7 +513,7 @@ expect_static_false(jlm::rvsdg::output * port)
 }
 
 static int
-types_bitstring_comparison_test_bitequal(void)
+types_bitstring_comparison_test_bitequal()
 {
   using namespace jlm::rvsdg;
 
@@ -551,7 +547,7 @@ types_bitstring_comparison_test_bitequal(void)
 }
 
 static int
-types_bitstring_comparison_test_bitnotequal(void)
+types_bitstring_comparison_test_bitnotequal()
 {
   using namespace jlm::rvsdg;
 
@@ -585,7 +581,7 @@ types_bitstring_comparison_test_bitnotequal(void)
 }
 
 static int
-types_bitstring_comparison_test_bitsgreater(void)
+types_bitstring_comparison_test_bitsgreater()
 {
   using namespace jlm::rvsdg;
 
@@ -623,7 +619,7 @@ types_bitstring_comparison_test_bitsgreater(void)
 }
 
 static int
-types_bitstring_comparison_test_bitsgreatereq(void)
+types_bitstring_comparison_test_bitsgreatereq()
 {
   using namespace jlm::rvsdg;
 
@@ -664,7 +660,7 @@ types_bitstring_comparison_test_bitsgreatereq(void)
 }
 
 static int
-types_bitstring_comparison_test_bitsless(void)
+types_bitstring_comparison_test_bitsless()
 {
   using namespace jlm::rvsdg;
 
@@ -702,7 +698,7 @@ types_bitstring_comparison_test_bitsless(void)
 }
 
 static int
-types_bitstring_comparison_test_bitslesseq(void)
+types_bitstring_comparison_test_bitslesseq()
 {
   using namespace jlm::rvsdg;
 
@@ -743,7 +739,7 @@ types_bitstring_comparison_test_bitslesseq(void)
 }
 
 static int
-types_bitstring_comparison_test_bitugreater(void)
+types_bitstring_comparison_test_bitugreater()
 {
   using namespace jlm::rvsdg;
 
@@ -781,7 +777,7 @@ types_bitstring_comparison_test_bitugreater(void)
 }
 
 static int
-types_bitstring_comparison_test_bitugreatereq(void)
+types_bitstring_comparison_test_bitugreatereq()
 {
   using namespace jlm::rvsdg;
 
@@ -822,7 +818,7 @@ types_bitstring_comparison_test_bitugreatereq(void)
 }
 
 static int
-types_bitstring_comparison_test_bituless(void)
+types_bitstring_comparison_test_bituless()
 {
   using namespace jlm::rvsdg;
 
@@ -860,7 +856,7 @@ types_bitstring_comparison_test_bituless(void)
 }
 
 static int
-types_bitstring_comparison_test_bitulesseq(void)
+types_bitstring_comparison_test_bitulesseq()
 {
   using namespace jlm::rvsdg;
 
@@ -929,7 +925,7 @@ types_bitstring_comparison_test_bitulesseq(void)
   "11111111"
 
 static int
-types_bitstring_test_constant(void)
+types_bitstring_test_constant()
 {
   using namespace jlm::rvsdg;
 
@@ -966,7 +962,7 @@ types_bitstring_test_constant(void)
 }
 
 static int
-types_bitstring_test_normalize(void)
+types_bitstring_test_normalize()
 {
   using namespace jlm::rvsdg;
 
@@ -1025,7 +1021,7 @@ assert_constant(jlm::rvsdg::output * bitstr, size_t nbits, const char bits[])
 }
 
 static int
-types_bitstring_test_reduction(void)
+types_bitstring_test_reduction()
 {
   using namespace jlm::rvsdg;
 
@@ -1079,7 +1075,7 @@ types_bitstring_test_reduction(void)
 }
 
 static int
-types_bitstring_test_slice_concat(void)
+types_bitstring_test_slice_concat()
 {
   using namespace jlm::rvsdg;
 

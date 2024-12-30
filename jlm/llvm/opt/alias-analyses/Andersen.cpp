@@ -608,7 +608,7 @@ public:
 };
 
 void
-Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
+Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 {
   const auto & op = node.GetOperation();
 
@@ -661,7 +661,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
+Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 {
   const auto allocaOp = util::AssertedCast<const alloca_op>(&node.GetOperation());
 
@@ -674,7 +674,7 @@ Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
+Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
@@ -747,7 +747,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Andersen::AnalyzeGep(const rvsdg::simple_node & node)
+Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
@@ -762,7 +762,7 @@ Andersen::AnalyzeGep(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
+Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bitcast_op>(&node));
 
@@ -781,7 +781,7 @@ Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
+Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
   const auto & output = *node.output(0);
@@ -795,7 +795,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
+Andersen::AnalyzePtr2bits(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ptr2bits_op>(&node));
   const auto & inputRegister = *node.input(0)->origin();
@@ -807,7 +807,7 @@ Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
   const auto & output = *node.output(0);
@@ -819,7 +819,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
+Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<UndefValueOperation>(&node));
   const auto & output = *node.output(0);
@@ -833,7 +833,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
+Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(&node));
 
@@ -855,7 +855,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantArray>(&node));
 
@@ -877,7 +877,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
@@ -900,7 +900,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto & output = *node.output(0);
@@ -914,7 +914,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
+Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ExtractValue>(&node));
 
@@ -929,7 +929,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeValist(const rvsdg::simple_node & node)
+Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<valist_op>(&node));
 
@@ -1182,7 +1182,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
   // PointerObjects for any of the node's outputs of pointer type
   for (const auto node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
       AnalyzeSimpleNode(*simpleNode);
     else if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
       AnalyzeStructuralNode(*structuralNode);

@@ -51,9 +51,8 @@ create_theta(
   auto lvs = theta->add_loopvar(step);
   auto lve = theta->add_loopvar(end);
 
-  auto arm =
-      simple_node::create_normalized(subregion, aop, { idv->argument(), lvs->argument() })[0];
-  auto cmp = simple_node::create_normalized(subregion, cop, { arm, lve->argument() })[0];
+  auto arm = SimpleNode::create_normalized(subregion, aop, { idv->argument(), lvs->argument() })[0];
+  auto cmp = SimpleNode::create_normalized(subregion, cop, { arm, lve->argument() })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   idv->result()->divert_to(arm);

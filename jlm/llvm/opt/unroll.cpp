@@ -338,9 +338,9 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
   auto uf = jlm::rvsdg::create_bitconstant(region, nbits, factor);
   auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
   auto arm =
-      jlm::rvsdg::simple_node::create_normalized(region, ui.armoperation(), { ui.init(), mul })[0];
+      jlm::rvsdg::SimpleNode::create_normalized(region, ui.armoperation(), { ui.init(), mul })[0];
   /* FIXME: order of operands */
-  auto cmp = jlm::rvsdg::simple_node::create_normalized(region, ui.cmpoperation(), { arm, end })[0];
+  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(region, ui.cmpoperation(), { arm, end })[0];
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -348,7 +348,7 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
 
 static jlm::rvsdg::output *
 create_unrolled_theta_predicate(
-    rvsdg::Region * target,
+    rvsdg::Region *,
     const rvsdg::SubstitutionMap & smap,
     const unrollinfo & ui,
     size_t factor)
@@ -368,9 +368,9 @@ create_unrolled_theta_predicate(
 
   auto uf = create_bitconstant(region, nbits, factor);
   auto mul = bitmul_op::create(nbits, step, uf);
-  auto arm = simple_node::create_normalized(region, ui.armoperation(), { idv->origin(), mul })[0];
+  auto arm = SimpleNode::create_normalized(region, ui.armoperation(), { idv->origin(), mul })[0];
   /* FIXME: order of operands */
-  auto cmp = simple_node::create_normalized(region, ui.cmpoperation(), { arm, iend->origin() })[0];
+  auto cmp = SimpleNode::create_normalized(region, ui.cmpoperation(), { arm, iend->origin() })[0];
   auto pred = match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -384,7 +384,7 @@ create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const unrol
   auto end = ui.end()->input()->origin();
 
   /* FIXME: order of operands */
-  auto cmp = jlm::rvsdg::simple_node::create_normalized(region, ui.cmpoperation(), { idv, end })[0];
+  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(region, ui.cmpoperation(), { idv, end })[0];
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;

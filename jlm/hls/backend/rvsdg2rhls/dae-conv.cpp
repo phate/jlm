@@ -219,7 +219,7 @@ dump_xml(const rvsdg::Region * region, const std::string & file_name)
 void
 decouple_load(
     loop_node * loopNode,
-    jlm::rvsdg::simple_node * loadNode,
+    jlm::rvsdg::SimpleNode * loadNode,
     std::unordered_set<rvsdg::Node *> & loop_slice)
 {
   // loadNode is always a part of loop_slice due to state edges
@@ -377,7 +377,7 @@ process_loopnode(loop_node * loopNode)
         return true;
       }
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (dynamic_cast<const load_op *>(&simplenode->GetOperation()))
       {

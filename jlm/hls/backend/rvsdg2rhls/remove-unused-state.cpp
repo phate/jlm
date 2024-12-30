@@ -44,7 +44,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
   // exit will come before entry
   for (auto & node : jlm::rvsdg::bottomup_traverser(region))
   {
-    if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->GetOperation()))
       {

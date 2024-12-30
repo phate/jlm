@@ -32,7 +32,7 @@ ExtractFloatingPointSize(const ::llvm::Type * type)
 }
 
 static std::shared_ptr<const rvsdg::ValueType>
-convert_integer_type(const ::llvm::Type * t, context & ctx)
+convert_integer_type(const ::llvm::Type * t, context &)
 {
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::IntegerTyID);
   auto * type = static_cast<const ::llvm::IntegerType *>(t);
@@ -73,7 +73,7 @@ convert_function_type(const ::llvm::Type * t, context & ctx)
 }
 
 static std::shared_ptr<const rvsdg::ValueType>
-convert_fp_type(const ::llvm::Type * t, context & ctx)
+convert_fp_type(const ::llvm::Type * t, context &)
 {
   static const std::unordered_map<::llvm::Type::TypeID, fpsize> map(
       { { ::llvm::Type::HalfTyID, fpsize::half },

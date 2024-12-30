@@ -35,7 +35,7 @@ static inline ::llvm::Value *
 convert_assignment(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
-    ::llvm::IRBuilder<> & builder,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   JLM_ASSERT(is<assignment_op>(op));
@@ -115,7 +115,7 @@ convert_bitconstant(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    context &)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::bitconstant_op *>(&op));
   auto value = static_cast<const rvsdg::bitconstant_op *>(&op)->value();
@@ -133,7 +133,7 @@ convert_ctlconstant(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    context &)
 {
   JLM_ASSERT(is_ctlconstant_op(op));
   auto & cop = *static_cast<const rvsdg::ctlconstant_op *>(&op);
@@ -148,7 +148,7 @@ convert(
     const ConstantFP & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    context &)
 {
   return ::llvm::ConstantFP::get(builder.getContext(), op.constant());
 }
@@ -157,7 +157,7 @@ static inline ::llvm::Value *
 convert_undef(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
-    ::llvm::IRBuilder<> & builder,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
@@ -251,8 +251,8 @@ static inline ::llvm::Value *
 convert_branch(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
-    ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    ::llvm::IRBuilder<> &,
+    context &)
 {
   JLM_ASSERT(is<branch_op>(op));
   return nullptr;
@@ -492,7 +492,7 @@ static ::llvm::Value *
 convert(
     const ConstantArray & op,
     const std::vector<const variable *> & operands,
-    ::llvm::IRBuilder<> & builder,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   JLM_ASSERT(is<ConstantArray>(op));
@@ -513,8 +513,8 @@ convert(
 static ::llvm::Value *
 convert(
     const ConstantAggregateZero & op,
-    const std::vector<const variable *> & args,
-    ::llvm::IRBuilder<> & builder,
+    const std::vector<const variable *> &,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   auto type = convert_type(*op.result(0), ctx);
@@ -617,9 +617,9 @@ convert_fpneg(
 static inline ::llvm::Value *
 convert_valist(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
-    ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    const std::vector<const variable *> &,
+    ::llvm::IRBuilder<> &,
+    context &)
 {
   JLM_ASSERT(is<valist_op>(op));
   return nullptr;
@@ -629,7 +629,7 @@ static inline ::llvm::Value *
 convert(
     const ConstantStruct & op,
     const std::vector<const variable *> & args,
-    ::llvm::IRBuilder<> & builder,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   std::vector<::llvm::Constant *> operands;
@@ -643,8 +643,8 @@ convert(
 static inline ::llvm::Value *
 convert(
     const ConstantPointerNullOperation & operation,
-    const std::vector<const variable *> & args,
-    ::llvm::IRBuilder<> & builder,
+    const std::vector<const variable *> &,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   auto pointerType = convert_type(operation.GetPointerType(), ctx);
@@ -674,7 +674,7 @@ static inline ::llvm::Value *
 convert_ctl2bits(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & args,
-    ::llvm::IRBuilder<> & builder,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   JLM_ASSERT(is<ctl2bits_op>(op));
@@ -685,7 +685,7 @@ static ::llvm::Value *
 convert_constantvector(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> & operands,
-    ::llvm::IRBuilder<> & builder,
+    ::llvm::IRBuilder<> &,
     context & ctx)
 {
   JLM_ASSERT(is<constantvector_op>(op));
@@ -820,7 +820,7 @@ convert_vectorbinary(
 
 static ::llvm::Value *
 convert(
-    const vectorselect_op & op,
+    const vectorselect_op &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)

@@ -236,7 +236,7 @@ structural_node_to_dot(rvsdg::StructuralNode * structuralNode)
 }
 
 std::string
-simple_node_to_dot(jlm::rvsdg::simple_node * simpleNode)
+simple_node_to_dot(jlm::rvsdg::SimpleNode * simpleNode)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_dot_name(simpleNode);
@@ -341,7 +341,7 @@ region_to_dot(rvsdg::Region * region)
   // nodes
   for (auto node : jlm::rvsdg::topdown_traverser(region))
   {
-    if (auto simpleNode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_dot = simple_node_to_dot(simpleNode);
       dot << node_dot;
