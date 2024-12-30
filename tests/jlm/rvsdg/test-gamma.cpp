@@ -83,7 +83,7 @@ test_predicate_reduction()
   // Assert
   assert(r.origin() == v1);
 
-  graph.Prune();
+  graph.PruneNodes();
   assert(graph.GetRootRegion().nnodes() == 0);
 }
 
@@ -110,7 +110,7 @@ test_invariant_reduction()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   assert(r.origin() == v);
 
-  graph.Prune();
+  graph.PruneNodes();
   assert(graph.GetRootRegion().nnodes() == 0);
 }
 

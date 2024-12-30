@@ -33,7 +33,7 @@ test_bitunary_reduction()
 
   nf->set_mutable(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   // jlm::rvsdg::view(graph, stdout);
 
@@ -61,7 +61,7 @@ test_bitbinary_reduction()
 
   nf->set_mutable(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -90,7 +90,7 @@ test_inverse_reduction()
 
   nf->set_mutable(true);
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(graph, stdout);
 

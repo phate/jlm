@@ -238,7 +238,7 @@ TestStoreMuxNormalization()
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreMux, storeNode);
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -295,7 +295,7 @@ TestDuplicateStateReduction()
   // Act
   auto success =
       jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreDuplicateState, storeNode);
-  graph.Prune();
+  graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -355,7 +355,7 @@ TestStoreAllocaReduction()
       jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreAlloca, storeNode1);
   auto success2 =
       jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreAlloca, storeNode2);
-  graph.Prune();
+  graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -401,7 +401,7 @@ TestStoreStoreReduction()
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreStore, storeNode2);
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 

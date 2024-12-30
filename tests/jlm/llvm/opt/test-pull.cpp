@@ -118,7 +118,7 @@ test_pull()
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::pullin pullin;
   pullin.run(rm, statisticsCollector);
-  graph.Prune();
+  graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
   assert(graph.GetRootRegion().nnodes() == 1);

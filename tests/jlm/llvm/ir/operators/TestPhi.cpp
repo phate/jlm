@@ -70,7 +70,7 @@ TestPhiCreation()
   GraphExport::Create(*phi->output(0), "dummy");
 
   graph.Normalize();
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stderr);
 }

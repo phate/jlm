@@ -108,7 +108,7 @@ TestLoadAllocaReduction()
 
   // Act
   jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadAlloca, loadNode);
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -155,7 +155,7 @@ TestLoadMuxReduction()
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadMux, loadNode);
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -267,7 +267,7 @@ TestLoadStoreStateReduction()
       jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStoreState, loadNode1);
   auto success2 =
       jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStoreState, loadNode2);
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -371,7 +371,7 @@ TestLoadLoadReduction()
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadLoadState, loadNode);
-  graph.Prune();
+  graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 

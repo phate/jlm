@@ -50,7 +50,7 @@ test_recursive_prune()
   jlm::tests::GraphExport::Create(*o1, "n3");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
-  graph.Prune();
+  graph.PruneNodes();
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   assert(!region_contains_node(&graph.GetRootRegion(), n1));
@@ -72,7 +72,7 @@ test_empty_graph_pruning()
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
-  graph.Prune();
+  graph.PruneNodes();
 
   assert(graph.GetRootRegion().nnodes() == 0);
 
@@ -103,7 +103,7 @@ test_prune_replace()
   n2->output(0)->divert_users(n4->output(0));
   assert(n2->output(0)->nusers() == 0);
 
-  graph.Prune();
+  graph.PruneNodes();
 
   assert(!region_contains_node(&graph.GetRootRegion(), n2));
 

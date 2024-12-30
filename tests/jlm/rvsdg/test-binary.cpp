@@ -100,7 +100,7 @@ FlattenedBinaryReduction()
     auto o3 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { o2, i3 })[0];
 
     auto & ex = jlm::tests::GraphExport::Create(*o3, "");
-    graph.Prune();
+    graph.PruneNodes();
 
     jlm::rvsdg::view(graph, stdout);
     assert(
@@ -134,7 +134,7 @@ FlattenedBinaryReduction()
     auto o3 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { o2, i3 })[0];
 
     auto & ex = jlm::tests::GraphExport::Create(*o3, "");
-    graph.Prune();
+    graph.PruneNodes();
 
     jlm::rvsdg::view(graph, stdout);
     assert(

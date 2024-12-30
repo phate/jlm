@@ -99,7 +99,7 @@ public:
    * @see Node::IsDead()
    */
   void
-  Prune()
+  PruneNodes()
   {
     GetRootRegion().prune(true);
   }
