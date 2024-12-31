@@ -134,7 +134,7 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
     ReduceNodesInRegion(*subregion);
   }
 
-  return reductionPerformed;
+  return false;
 }
 
 bool
