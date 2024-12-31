@@ -9,15 +9,22 @@
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
+class Graph;
 class Node;
 class Region;
+class output;
 class StructuralNode;
 }
 
 namespace jlm::llvm
 {
+
+class LoadNonVolatileOperation;
+class StoreNonVolatileOperation;
 
 /**
  * The node reduction transformation performs a series of peephole optimizations in the RVSDG. The
