@@ -121,7 +121,11 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
     reductionPerformed |= ReduceGammaNode(structuralNode);
   }
 
-  // FIXME: No need to go through subregions if we had a reduction
+  if (reductionPerformed)
+  {
+    // We can not go through the subregions as the structural node might already have been removed.
+    return true;
+  }
 
   // Reduce all nodes in the subregions
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
