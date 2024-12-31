@@ -189,7 +189,7 @@ public:
 
     enable_reducible_ = enable;
     if (get_mutable() && enable)
-      graph()->mark_denormalized();
+      graph()->MarkDenormalized();
   }
 
   inline bool
@@ -210,7 +210,7 @@ public:
 
     enable_flatten_ = enable;
     if (get_mutable() && enable)
-      graph()->mark_denormalized();
+      graph()->MarkDenormalized();
   }
 
   inline bool

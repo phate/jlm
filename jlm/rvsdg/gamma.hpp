@@ -99,7 +99,7 @@ public:
   normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::gamma_normal_form *>(
-        graph->node_normal_form(typeid(GammaOperation)));
+        graph->GetNodeNormalForm(typeid(GammaOperation)));
   }
 
 private:

@@ -104,7 +104,7 @@ simple_normal_form::set_cse(bool enable)
   children_set<simple_normal_form, &simple_normal_form::set_cse>(enable);
 
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 }

@@ -29,11 +29,11 @@ GammaWithMatch()
       FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType, valueType }, { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
@@ -84,11 +84,11 @@ GammaWithoutMatch()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
@@ -139,11 +139,11 @@ EmptyGammaWithThreeSubregions()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
@@ -197,7 +197,7 @@ PartialEmptyGamma()
   RvsdgModule rvsdgModule(filepath(""), "", "");
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);

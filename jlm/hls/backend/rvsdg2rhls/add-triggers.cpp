@@ -74,8 +74,8 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
   auto new_out = new_lambda->finalize(new_results);
 
   // TODO handle functions at other levels?
-  JLM_ASSERT(ln->region() == ln->region()->graph()->root());
-  JLM_ASSERT((*ln->output()->begin())->region() == ln->region()->graph()->root());
+  JLM_ASSERT(ln->region() == &ln->region()->graph()->GetRootRegion());
+  JLM_ASSERT((*ln->output()->begin())->region() == &ln->region()->graph()->GetRootRegion());
 
   //            ln->output()->divert_users(new_out);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
@@ -149,7 +149,7 @@ void
 add_triggers(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_triggers(root);
 }
 

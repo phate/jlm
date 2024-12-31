@@ -23,7 +23,7 @@ void
 jlm::hls::mem_queue(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   mem_queue(root);
 }
 

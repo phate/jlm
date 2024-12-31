@@ -65,7 +65,7 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   if (is<node_input>(*this))
     static_cast<node_input *>(this)->node()->recompute_depth();
 
-  region()->graph()->mark_denormalized();
+  region()->graph()->MarkDenormalized();
   on_input_change(this, old_origin, new_origin);
 }
 
@@ -357,7 +357,7 @@ bool
 normalize(Node * node)
 {
   const auto & op = node->GetOperation();
-  auto nf = node->graph()->node_normal_form(typeid(op));
+  auto nf = node->graph()->GetNodeNormalForm(typeid(op));
   return nf->normalize_node(node);
 }
 

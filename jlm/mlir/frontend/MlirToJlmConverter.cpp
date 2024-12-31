@@ -36,7 +36,7 @@ std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 {
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
-  ConvertBlock(*block, *rvsdgModule->Rvsdg().root());
+  ConvertBlock(*block, rvsdgModule->Rvsdg().GetRootRegion());
 
   return rvsdgModule;
 }

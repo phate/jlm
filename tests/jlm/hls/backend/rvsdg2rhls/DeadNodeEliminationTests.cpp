@@ -24,7 +24,7 @@ TestDeadLoopNode()
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::llvm::lambda::node::create(
-      rvsdg.root(),
+      &rvsdg.GetRootRegion(),
       functionType,
       "f",
       jlm::llvm::linkage::external_linkage);
@@ -55,7 +55,7 @@ TestDeadLoopNodeOutput()
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::llvm::lambda::node::create(
-      rvsdg.root(),
+      &rvsdg.GetRootRegion(),
       functionType,
       "f",
       jlm::llvm::linkage::external_linkage);

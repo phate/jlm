@@ -325,7 +325,7 @@ void
 dne(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   if (root->nnodes() != 1)
   {
     throw util::error("Root should have only one node now");

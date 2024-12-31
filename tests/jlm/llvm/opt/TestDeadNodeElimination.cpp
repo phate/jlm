@@ -38,11 +38,11 @@ TestRoot()
   auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "y");
   GraphExport::Create(*y, "z");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.root()->narguments() == 1);
+  assert(graph.GetRootRegion().narguments() == 1);
 }
 
 static void
@@ -73,15 +73,15 @@ TestGamma()
   GraphExport::Create(*gamma->output(0), "z");
   GraphExport::Create(*gamma->output(2), "w");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(gamma->noutputs() == 2);
   assert(gamma->subregion(1)->nnodes() == 0);
   assert(gamma->subregion(1)->narguments() == 2);
   assert(gamma->ninputs() == 3);
-  assert(graph.root()->narguments() == 2);
+  assert(graph.GetRootRegion().narguments() == 2);
 }
 
 static void
@@ -111,7 +111,7 @@ TestGamma2()
   RunDeadNodeElimination(rm);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(graph.root()->narguments() == 1);
+  assert(graph.GetRootRegion().narguments() == 1);
 }
 
 static void
@@ -128,7 +128,7 @@ TestTheta()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lv1 = theta->add_loopvar(x);
   auto lv2 = theta->add_loopvar(y);
@@ -148,13 +148,13 @@ TestTheta()
   GraphExport::Create(*theta->output(0), "a");
   GraphExport::Create(*theta->output(3), "b");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(theta->noutputs() == 3);
   assert(theta->subregion()->nnodes() == 1);
-  assert(graph.root()->narguments() == 2);
+  assert(graph.GetRootRegion().narguments() == 2);
 }
 
 static void
@@ -171,7 +171,7 @@ TestNestedTheta()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto otheta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto otheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lvo1 = otheta->add_loopvar(c);
   auto lvo2 = otheta->add_loopvar(x);
@@ -217,7 +217,7 @@ TestEvolvingTheta()
   auto x3 = &jlm::tests::GraphImport::Create(graph, vt, "x3");
   auto x4 = &jlm::tests::GraphImport::Create(graph, vt, "x4");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lv0 = theta->add_loopvar(c);
   auto lv1 = theta->add_loopvar(x1);
@@ -253,7 +253,7 @@ TestLambda()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
   auto lambda = lambda::node::create(
-      graph.root(),
+      &graph.GetRootRegion(),
       FunctionType::Create({ vt }, { vt, vt }),
       "f",
       linkage::external_linkage);
@@ -269,12 +269,12 @@ TestLambda()
 
   GraphExport::Create(*output, "f");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(lambda->subregion()->nnodes() == 0);
-  assert(graph.root()->narguments() == 1);
+  assert(graph.GetRootRegion().narguments() == 1);
 }
 
 static void
@@ -345,7 +345,7 @@ TestPhi()
   };
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdg.root());
+  phiBuilder.begin(&rvsdg.GetRootRegion());
   auto & phiSubregion = *phiBuilder.subregion();
 
   auto rv1 = phiBuilder.add_recvar(PointerType::Create());
@@ -406,8 +406,13 @@ TestDelta()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode =
-      delta::node::Create(rvsdg.root(), valueType, "delta", linkage::external_linkage, "", false);
+  auto deltaNode = delta::node::Create(
+      &rvsdg.GetRootRegion(),
+      valueType,
+      "delta",
+      linkage::external_linkage,
+      "",
+      false);
 
   auto xArgument = deltaNode->add_ctxvar(x);
   deltaNode->add_ctxvar(y);

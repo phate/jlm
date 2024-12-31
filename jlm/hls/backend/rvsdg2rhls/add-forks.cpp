@@ -59,7 +59,7 @@ void
 add_forks(llvm::RvsdgModule & rvsdgModule)
 {
   auto & graph = rvsdgModule.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_forks(root);
 }
 

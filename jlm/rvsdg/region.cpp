@@ -368,14 +368,14 @@ Region::normalize(bool recursive)
     }
 
     const auto & op = node->GetOperation();
-    graph()->node_normal_form(typeid(op))->normalize_node(node);
+    graph()->GetNodeNormalForm(typeid(op))->normalize_node(node);
   }
 }
 
 bool
 Region::IsRootRegion() const noexcept
 {
-  return this->graph()->root() == this;
+  return &this->graph()->GetRootRegion() == this;
 }
 
 size_t

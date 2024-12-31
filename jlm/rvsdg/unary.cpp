@@ -87,7 +87,7 @@ unary_normal_form::set_reducible(bool enable)
 
   enable_reducible_ = enable;
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 /* unary operator */

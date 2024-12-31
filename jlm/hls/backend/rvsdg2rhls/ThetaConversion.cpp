@@ -93,7 +93,7 @@ ConvertThetaNodesInRegion(rvsdg::Region & region)
 void
 ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule)
 {
-  ConvertThetaNodesInRegion(*rvsdgModule.Rvsdg().root());
+  ConvertThetaNodesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 }

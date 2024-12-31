@@ -16,16 +16,16 @@ namespace jlm::llvm
 void
 NodeReduction::Statistics::Start(const rvsdg::Graph & graph) noexcept
 {
-  AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-  AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+  AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+  AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
   AddTimer(Label::Timer).start();
 }
 
 void
 NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
 {
-  AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-  AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+  AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+  AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
   GetTimer(Label::Timer).stop();
 }
 

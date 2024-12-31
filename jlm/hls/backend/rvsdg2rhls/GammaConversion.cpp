@@ -167,7 +167,7 @@ ConvertGammaNodesInRegion(rvsdg::Region & region)
 void
 ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule)
 {
-  ConvertGammaNodesInRegion(*rvsdgModule.Rvsdg().root());
+  ConvertGammaNodesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 }

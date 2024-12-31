@@ -88,7 +88,7 @@ TestTheta()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto thetaNode = jlm::rvsdg::ThetaNode::create(rvsdg.root());
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
 
   auto thetaOutput0 = thetaNode->add_loopvar(p);
   auto thetaOutput1 = thetaNode->add_loopvar(x);
@@ -100,7 +100,7 @@ TestTheta()
   thetaNode->set_predicate(thetaOutput0->argument());
 
   auto result = jlm::tests::SimpleNode::Create(
-                    *rvsdg.root(),
+                    rvsdg.GetRootRegion(),
                     { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
                     { valueType })
                     .output(0);
@@ -136,7 +136,7 @@ TestLambda()
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode =
-      lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
+      lambda::node::create(&rvsdg.GetRootRegion(), functionType, "f", linkage::external_linkage);
   auto argument0 = lambdaNode->GetFunctionArguments()[0];
   auto argument1 = lambdaNode->GetFunctionArguments()[1];
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
@@ -157,8 +157,8 @@ TestLambda()
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
-  assert(rvsdg.root()->nnodes() == 1);
-  auto & newLambdaNode = dynamic_cast<const lambda::node &>(*rvsdg.root()->Nodes().begin());
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto & newLambdaNode = dynamic_cast<const lambda::node &>(*rvsdg.GetRootRegion().Nodes().begin());
   assert(newLambdaNode.ninputs() == 2);
   assert(newLambdaNode.subregion()->narguments() == 3);
   assert(newLambdaNode.subregion()->nresults() == 2);

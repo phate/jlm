@@ -22,7 +22,7 @@ public:
     PointsToGraph_ = jlm::llvm::aa::PointsToGraph::Create();
 
     AnalyzeImports(rvsdgModule.Rvsdg());
-    AnalyzeRegion(*rvsdgModule.Rvsdg().root());
+    AnalyzeRegion(rvsdgModule.Rvsdg().GetRootRegion());
 
     return std::move(PointsToGraph_);
   }
@@ -89,7 +89,7 @@ private:
   {
     using namespace jlm::llvm;
 
-    auto & rootRegion = *rvsdg.root();
+    auto & rootRegion = rvsdg.GetRootRegion();
     for (size_t n = 0; n < rootRegion.narguments(); n++)
     {
       auto & graphImport = *jlm::util::AssertedCast<const GraphImport>(rootRegion.argument(n));

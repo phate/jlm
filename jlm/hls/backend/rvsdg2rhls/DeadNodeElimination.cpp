@@ -113,7 +113,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
 void
 EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 {
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   if (rootRegion.nnodes() != 1)
   {
