@@ -29,11 +29,11 @@ MultipleReductionsPerRegion()
   auto & sizeArgument = jlm::tests::GraphImport::Create(graph, bitType, "size");
   auto allocaResults = alloca_op::create(bitType, &sizeArgument, 4);
 
-  const auto c3 = bitconstant_op::create(graph.root(), bitvalue_repr(32, 3));
+  const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 3));
   auto storeResults = StoreNonVolatileNode::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
   auto loadResults = LoadNonVolatileNode::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
-  const auto c5 = bitconstant_op::create(graph.root(), bitvalue_repr(32, 5));
+  const auto c5 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 5));
   auto sum = bitadd_op::create(32, loadResults[0], c5);
 
   auto & sumExport = jlm::tests::GraphExport::Create(*sum, "sum");
@@ -54,7 +54,7 @@ MultipleReductionsPerRegion()
   // the add operation
   // 2. Constant folding on the add operation
   // The result is that a single constant node with value 8 is left in the graph.
-  assert(graph.root()->nnodes() == 1);
+  assert(graph.GetRootRegion().nnodes() == 1);
 
   auto constantNode = TryGetOwnerNode<SimpleNode>(*sumExport.origin());
   auto constantOperation = dynamic_cast<const bitconstant_op *>(&constantNode->GetOperation());
@@ -63,7 +63,7 @@ MultipleReductionsPerRegion()
   // We expect that the node reductions transformation iterated over the root region 2 times.
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
   auto & nodeReductionStatistics = dynamic_cast<const NodeReduction::Statistics &>(statistics);
-  auto numIterations = nodeReductionStatistics.GetNumIterations(*graph.root()).value();
+  auto numIterations = nodeReductionStatistics.GetNumIterations(graph.GetRootRegion()).value();
   assert(numIterations == 2);
 
   return 0;

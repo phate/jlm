@@ -67,7 +67,7 @@ NodeReduction::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statis
   Statistics_ = Statistics::Create(rvsdgModule.SourceFileName());
   Statistics_->Start(graph);
 
-  ReduceNodesInRegion(*graph.root());
+  ReduceNodesInRegion(graph.GetRootRegion());
 
   Statistics_->End(graph);
   statisticsCollector.CollectDemandedStatistics(std::move(Statistics_));
@@ -199,7 +199,7 @@ NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
 
 std::optional<std::vector<rvsdg::output *>>
 NodeReduction::NormalizeLoadNode(
-    const jlm::llvm::LoadNonVolatileOperation & operation,
+    const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
@@ -218,7 +218,7 @@ NodeReduction::NormalizeLoadNode(
 
 std::optional<std::vector<rvsdg::output *>>
 NodeReduction::NormalizeStoreNode(
-    const jlm::llvm::StoreNonVolatileOperation & operation,
+    const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>> storeNodeNormalizations(
