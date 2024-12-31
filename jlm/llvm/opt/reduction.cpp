@@ -13,37 +13,40 @@
 namespace jlm::llvm
 {
 
-class NodeReduction::Statistics final : public util::Statistics
+void
+NodeReduction::Statistics::Start(const rvsdg::Graph & graph) noexcept
 {
-public:
-  ~Statistics() noexcept override = default;
+  AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+  AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+  AddTimer(Label::Timer).start();
+}
 
-  explicit Statistics(const util::filepath & sourceFile)
-      : util::Statistics(Statistics::Id::ReduceNodes, sourceFile)
-  {}
+void
+NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
+{
+  AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+  AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+  GetTimer(Label::Timer).stop();
+}
 
-  void
-  Start(const rvsdg::Graph & graph) noexcept
+bool
+NodeReduction::Statistics::AddIteration(const rvsdg::Region & region, size_t numIterations)
+{
+  const auto it = NumIterations_.find(&region);
+  NumIterations_[&region] = numIterations;
+  return it != NumIterations_.end();
+}
+
+std::optional<size_t>
+NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const noexcept
+{
+  if (const auto it = NumIterations_.find(&region); it != NumIterations_.end())
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
-    AddTimer(Label::Timer).start();
+    return it->second;
   }
 
-  void
-  End(const rvsdg::Graph & graph) noexcept
-  {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
-    GetTimer(Label::Timer).stop();
-  }
-
-  static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
-  {
-    return std::make_unique<Statistics>(sourceFile);
-  }
-};
+  return std::nullopt;
+}
 
 NodeReduction::~NodeReduction() noexcept = default;
 
@@ -59,28 +62,30 @@ NodeReduction::run(RvsdgModule & rvsdgModule)
 void
 NodeReduction::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = rvsdgModule.Rvsdg();
+  const auto & graph = rvsdgModule.Rvsdg();
 
-  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
-  statistics->Start(graph);
+  Statistics_ = Statistics::Create(rvsdgModule.SourceFileName());
+  Statistics_->Start(graph);
 
   ReduceNodesInRegion(*graph.root());
 
-  statistics->End(graph);
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+  Statistics_->End(graph);
+  statisticsCollector.CollectDemandedStatistics(std::move(Statistics_));
 }
 
 void
 NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
 {
   bool reductionPerformed;
+  size_t numIterations = 0;
   do
   {
+    numIterations++;
     reductionPerformed = false;
 
-    for (auto node : jlm::rvsdg::topdown_traverser(&region))
+    for (const auto node : rvsdg::topdown_traverser(&region))
     {
-      if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+      if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {
         reductionPerformed |= ReduceStructuralNode(*structuralNode);
       }
@@ -100,8 +105,9 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
       // dead nodes in the next iteration.
       region.prune(false);
     }
-
   } while (reductionPerformed);
+
+  Statistics_->AddIteration(region, numIterations);
 }
 
 bool
@@ -115,10 +121,12 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
     reductionPerformed |= ReduceGammaNode(structuralNode);
   }
 
+  // FIXME: No need to go through subregions if we had a reduction
+
   // Reduce all nodes in the subregions
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
   {
-    auto subregion = structuralNode.subregion(n);
+    const auto subregion = structuralNode.subregion(n);
     ReduceNodesInRegion(*subregion);
   }
 
@@ -133,7 +141,7 @@ NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
   // FIXME: We can not apply the reduction below due to a bug. See github issue #303
   // rvsdg::ReduceGammaControlConstant
 
-  return rvsdg::ReduceGammaWithStaticallyKnownPredicate(gammaNode);
+  return ReduceGammaWithStaticallyKnownPredicate(gammaNode);
 }
 
 bool
@@ -143,18 +151,19 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
   {
     return ReduceLoadNode(simpleNode);
   }
-  else if (is<StoreNonVolatileOperation>(&simpleNode))
+  if (is<StoreNonVolatileOperation>(&simpleNode))
   {
     return ReduceStoreNode(simpleNode);
   }
-  else if (is<rvsdg::unary_op>(&simpleNode))
+  if (is<rvsdg::unary_op>(&simpleNode))
   {
     // FIXME: handle the unary node
     // See github issue #304
+    return false;
   }
-  else if (is<rvsdg::binary_op>(&simpleNode))
+  if (is<rvsdg::binary_op>(&simpleNode))
   {
-    ReduceBinaryNode(simpleNode);
+    return ReduceBinaryNode(simpleNode);
   }
 
   return false;

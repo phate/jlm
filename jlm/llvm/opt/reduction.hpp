@@ -7,6 +7,7 @@
 #define JLM_LLVM_OPT_REDUCTION_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::rvsdg
 {
@@ -24,9 +25,9 @@ namespace jlm::llvm
  */
 class NodeReduction final : public optimization
 {
+public:
   class Statistics;
 
-public:
   ~NodeReduction() noexcept override;
 
   NodeReduction();
@@ -48,10 +49,10 @@ public:
   run(RvsdgModule & rvsdgModule);
 
 private:
-  static void
+  void
   ReduceNodesInRegion(rvsdg::Region & region);
 
-  static bool
+  bool
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
   static bool
@@ -78,6 +79,42 @@ private:
   NormalizeStoreNode(
       const StoreNonVolatileOperation & operation,
       const std::vector<rvsdg::output *> & operands);
+
+  std::unique_ptr<Statistics> Statistics_;
+};
+
+/**
+ * Represents the statistics gathered throughout the NodeReduction transformation.
+ */
+class NodeReduction::Statistics final : public util::Statistics
+{
+public:
+  ~Statistics() noexcept override = default;
+
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Id::ReduceNodes, sourceFile)
+  {}
+
+  void
+  Start(const rvsdg::Graph & graph) noexcept;
+
+  void
+  End(const rvsdg::Graph & graph) noexcept;
+
+  bool
+  AddIteration(const rvsdg::Region & region, size_t numIterations);
+
+  std::optional<size_t>
+  GetNumIterations(const rvsdg::Region & region) const noexcept;
+
+  static std::unique_ptr<Statistics>
+  Create(const util::filepath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+
+private:
+  std::unordered_map<const rvsdg::Region *, size_t> NumIterations_;
 };
 
 }
