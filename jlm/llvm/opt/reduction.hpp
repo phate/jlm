@@ -69,22 +69,22 @@ private:
    * @param structuralNode The structural node that is supposed to be reduced.
    * @return True, if the structural node could be reduced, otherwise false.
    */
-  bool
+  [[nodiscard]] bool
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
-  static bool
+  [[nodiscard]] static bool
   ReduceGammaNode(rvsdg::StructuralNode & gammaNode);
 
-  static bool
+  [[nodiscard]] static bool
   ReduceSimpleNode(rvsdg::Node & simpleNode);
 
-  static bool
+  [[nodiscard]] static bool
   ReduceLoadNode(rvsdg::Node & simpleNode);
 
-  static bool
+  [[nodiscard]] static bool
   ReduceStoreNode(rvsdg::Node & simpleNode);
 
-  static bool
+  [[nodiscard]] static bool
   ReduceBinaryNode(rvsdg::Node & simpleNode);
 
   static std::optional<std::vector<rvsdg::output *>>
