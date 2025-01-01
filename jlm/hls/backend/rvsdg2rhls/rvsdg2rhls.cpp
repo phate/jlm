@@ -59,7 +59,7 @@ split_opt(llvm::RvsdgModule & rm)
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
-  jlm::llvm::nodereduction red;
+  jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
   tgi.run(rm, statisticsCollector);
   dne.run(rm, statisticsCollector);
