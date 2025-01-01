@@ -60,6 +60,15 @@ private:
   void
   ReduceNodesInRegion(rvsdg::Region & region);
 
+  /**
+   * Reduces the structural node \p structuralNode.
+   *
+   * \note This method only returns true if the node itself could be reduced, but not if any of
+   * the nodes in its subregions could be reduced.
+   *
+   * @param structuralNode The structural node that is supposed to be reduced.
+   * @return True, if the structural node could be reduced, otherwise false.
+   */
   bool
   ReduceStructuralNode(rvsdg::StructuralNode & structuralNode);
 
