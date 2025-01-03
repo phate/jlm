@@ -994,6 +994,7 @@ ConvertFunctionNode(
     return &GraphImport::Create(
         *region.graph(),
         functionNode.GetFunctionType(),
+        functionNode.GetFunctionType(),
         functionNode.name(),
         functionNode.linkage());
   }
@@ -1035,6 +1036,7 @@ ConvertDataNode(
       return &GraphImport::Create(
           *region.graph(),
           dataNode.GetValueType(),
+          PointerType::Create(),
           dataNode.name(),
           dataNode.linkage());
     }

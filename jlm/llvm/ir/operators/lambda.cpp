@@ -203,7 +203,7 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   for (const auto & origin : results)
     rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, PointerType::Create()));
+  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, Type()));
 }
 
 rvsdg::output *

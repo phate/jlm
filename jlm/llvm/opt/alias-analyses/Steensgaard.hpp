@@ -183,6 +183,12 @@ private:
   void
   AnalyzeVaList(const rvsdg::SimpleNode & node);
 
+  void
+  AnalyzePointerToFunction(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
+
   /**
    * Marks register \p output as escaping the module. This indicates that the pointer in \p output
    * is going outside the module, where we do not know what happens with it. Consequently, the

@@ -442,8 +442,8 @@ test_phi()
   auto d1 = pb.add_ctxvar(x);
   auto d2 = pb.add_ctxvar(x);
 
-  auto r1 = pb.add_recvar(PointerType::Create());
-  auto r2 = pb.add_recvar(PointerType::Create());
+  auto r1 = pb.add_recvar(ft);
+  auto r2 = pb.add_recvar(ft);
 
   auto lambda1 = lambda::node::create(region, ft, "f", linkage::external_linkage);
   auto cv1 = lambda1->AddContextVar(*d1).inner;

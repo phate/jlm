@@ -823,11 +823,14 @@ IndirectCallTest1::SetupRvsdg()
         "indcall",
         linkage::external_linkage);
     auto pointerArgument = lambda->GetFunctionArguments()[0];
+    auto functionOfPointer =
+        rvsdg::CreateOpNode<PointerToFunctionOperation>({ pointerArgument }, constantFunctionType)
+            .output(0);
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto & call = CallNode::CreateNode(
-        pointerArgument,
+        functionOfPointer,
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
 
@@ -876,8 +879,10 @@ IndirectCallTest1::SetupRvsdg()
   auto fctfour = SetupConstantFunction(4, "four");
   auto fctthree = SetupConstantFunction(3, "three");
   auto [fctindcall, callIndirectFunction] = SetupIndirectCallFunction();
-  auto [fcttest, callFunctionThree, callFunctionFour] =
-      SetupTestFunction(fctindcall, fctthree, fctfour);
+  auto [fcttest, callFunctionThree, callFunctionFour] = SetupTestFunction(
+      fctindcall,
+      rvsdg::CreateOpNode<FunctionToPointerOperation>({ fctthree }, constantFunctionType).output(0),
+      rvsdg::CreateOpNode<FunctionToPointerOperation>({ fctfour }, constantFunctionType).output(0));
 
   /*
    * Assign
@@ -957,22 +962,27 @@ IndirectCallTest2::SetupRvsdg()
     return lambda->finalize({ constant, iOStateArgument, memoryStateArgument });
   };
 
+  auto functionIType = FunctionType::Create(
+      { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
+      { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
+
   auto SetupI = [&]()
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto functionType = FunctionType::Create(
-        { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "i", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionIType,
+        "i",
+        linkage::external_linkage);
     auto pointerArgument = lambda->GetFunctionArguments()[0];
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto & call = CallNode::CreateNode(
-        pointerArgument,
+        rvsdg::CreateOpNode<PointerToFunctionOperation>({ pointerArgument }, constantFunctionType)
+            .output(0),
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
 
@@ -1003,6 +1013,10 @@ IndirectCallTest2::SetupRvsdg()
 
     auto functionICv = lambda->AddContextVar(functionI).inner;
     auto argumentFunctionCv = lambda->AddContextVar(argumentFunction).inner;
+    auto argumentFunctionPtr = rvsdg::CreateOpNode<FunctionToPointerOperation>(
+                                   { argumentFunctionCv },
+                                   constantFunctionType)
+                                   .output(0);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, n);
     auto storeNode =
@@ -1010,8 +1024,8 @@ IndirectCallTest2::SetupRvsdg()
 
     auto & call = CallNode::CreateNode(
         functionICv,
-        rvsdg::AssertGetOwnerNode<lambda::node>(functionI).Type(),
-        { argumentFunctionCv, iOStateArgument, storeNode[0] });
+        functionIType,
+        { argumentFunctionPtr, iOStateArgument, storeNode[0] });
 
     auto lambdaOutput = lambda->finalize(call.Results());
 
@@ -1181,7 +1195,12 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return &GraphImport::Create(*rvsdg, functionGType, "g", linkage::external_linkage);
+    return &GraphImport::Create(
+        *rvsdg,
+        functionGType,
+        functionGType,
+        "g",
+        linkage::external_linkage);
   };
 
   auto SetupFunctionF = [&](jlm::rvsdg::RegionArgument * functionG)
@@ -1281,11 +1300,20 @@ ExternalCallTest2::SetupRvsdg()
           MemoryStateType::Create(),
       });
 
-  auto llvmLifetimeStart =
-      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.start.p0", linkage::external_linkage);
-  auto llvmLifetimeEnd =
-      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.end.p0", linkage::external_linkage);
-  ExternalFArgument_ = &GraphImport::Create(rvsdg, pointerType, "f", linkage::external_linkage);
+  auto llvmLifetimeStart = &GraphImport::Create(
+      rvsdg,
+      lambdaLlvmLifetimeStartType,
+      lambdaLlvmLifetimeStartType,
+      "llvm.lifetime.start.p0",
+      linkage::external_linkage);
+  auto llvmLifetimeEnd = &GraphImport::Create(
+      rvsdg,
+      lambdaLlvmLifetimeEndType,
+      lambdaLlvmLifetimeEndType,
+      "llvm.lifetime.end.p0",
+      linkage::external_linkage);
+  ExternalFArgument_ =
+      &GraphImport::Create(rvsdg, lambdaFType, lambdaFType, "f", linkage::external_linkage);
 
   // Setup function g()
   LambdaG_ =
@@ -2060,11 +2088,13 @@ ImportTest::SetupRvsdg()
   auto d1 = &GraphImport::Create(
       *graph,
       jlm::rvsdg::bittype::Create(32),
+      PointerType::Create(),
       "d1",
       linkage::external_linkage);
   auto d2 = &GraphImport::Create(
       *graph,
       jlm::rvsdg::bittype::Create(32),
+      PointerType::Create(),
       "d2",
       linkage::external_linkage);
 
@@ -2110,7 +2140,7 @@ PhiTest1::SetupRvsdg()
 
     jlm::llvm::phi::builder pb;
     pb.begin(&graph->GetRootRegion());
-    auto fibrv = pb.add_recvar(pt);
+    auto fibrv = pb.add_recvar(fibFunctionType);
 
     auto lambda =
         lambda::node::create(pb.subregion(), fibFunctionType, "fib", linkage::external_linkage);
@@ -2307,11 +2337,14 @@ PhiTest2::SetupRvsdg()
         "i",
         linkage::external_linkage);
     auto pointerArgument = lambda->GetFunctionArguments()[0];
+    auto functionArgument =
+        rvsdg::CreateOpNode<PointerToFunctionOperation>({ pointerArgument }, constantFunctionType)
+            .output(0);
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto & call = CallNode::CreateNode(
-        pointerArgument,
+        functionArgument,
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
 
@@ -2386,7 +2419,10 @@ PhiTest2::SetupRvsdg()
     auto & callI = CallNode::CreateNode(
         functionICv,
         functionIType,
-        { functionEightCv, iOStateArgument, pbMerge });
+        { rvsdg::CreateOpNode<FunctionToPointerOperation>({ functionEightCv }, constantFunctionType)
+              .output(0),
+          iOStateArgument,
+          pbMerge });
 
     auto & callC = CallNode::CreateNode(
         functionCCv,
@@ -2476,10 +2512,10 @@ PhiTest2::SetupRvsdg()
   {
     jlm::llvm::phi::builder phiBuilder;
     phiBuilder.begin(&graph->GetRootRegion());
-    auto lambdaARv = phiBuilder.add_recvar(pointerType);
-    auto lambdaBRv = phiBuilder.add_recvar(pointerType);
-    auto lambdaCRv = phiBuilder.add_recvar(pointerType);
-    auto lambdaDRv = phiBuilder.add_recvar(pointerType);
+    auto lambdaARv = phiBuilder.add_recvar(recFunctionType);
+    auto lambdaBRv = phiBuilder.add_recvar(recFunctionType);
+    auto lambdaCRv = phiBuilder.add_recvar(recFunctionType);
+    auto lambdaDRv = phiBuilder.add_recvar(recFunctionType);
     auto lambdaEightCv = phiBuilder.add_ctxvar(&lambdaEight);
     auto lambdaICv = phiBuilder.add_ctxvar(&lambdaI);
 
@@ -2858,6 +2894,7 @@ EscapedMemoryTest2::SetupRvsdg()
     return &GraphImport::Create(
         *rvsdg,
         externalFunction1Type,
+        externalFunction1Type,
         "ExternalFunction1",
         linkage::external_linkage);
   };
@@ -2866,6 +2903,7 @@ EscapedMemoryTest2::SetupRvsdg()
   {
     return &GraphImport::Create(
         *rvsdg,
+        externalFunction2Type,
         externalFunction2Type,
         "ExternalFunction2",
         linkage::external_linkage);
@@ -3029,6 +3067,7 @@ EscapedMemoryTest3::SetupRvsdg()
   {
     return &GraphImport::Create(
         *rvsdg,
+        externalFunctionType,
         externalFunctionType,
         "externalFunction",
         linkage::external_linkage);
@@ -3533,6 +3572,7 @@ AllMemoryNodesTest::SetupRvsdg()
   Import_ = &GraphImport::Create(
       *graph,
       rvsdg::bittype::Create(32),
+      PointerType::Create(),
       "imported",
       linkage::external_linkage);
 
@@ -3707,7 +3747,9 @@ EscapingLocalFunctionTest::SetupRvsdg()
   // Return &global
   LocalFunc_->finalize({ deltaOutputCtxVar, storeOutputs[0] });
 
-  LocalFuncRegister_ = LocalFunc_->output();
+  LocalFuncRegister_ =
+      rvsdg::CreateOpNode<FunctionToPointerOperation>({ LocalFunc_->output() }, localFuncType)
+          .output(0);
 
   ExportedFunc_ = lambda::node::create(
       &graph->GetRootRegion(),
@@ -3769,14 +3811,21 @@ LambdaCallArgumentMismatch::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
   rvsdg.GetNodeNormalForm(typeid(rvsdg::Operation))->set_mutable(false);
+  auto functionType = FunctionType::Create(
+      { iostatetype::Create(), MemoryStateType::Create() },
+      { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
+  auto variableArgumentType = varargtype::Create();
+  auto functionTypeCall = FunctionType::Create(
+      { rvsdg::bittype::Create(32),
+        variableArgumentType,
+        iostatetype::Create(),
+        MemoryStateType::Create() },
+      { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
   auto setupLambdaG = [&]()
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto functionType = FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda =
         lambda::node::create(&rvsdg.GetRootRegion(), functionType, "g", linkage::internal_linkage);
@@ -3793,15 +3842,8 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto pointerType = PointerType::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto variableArgumentType = varargtype::Create();
     auto functionTypeMain = FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
-        { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
-    auto functionTypeCall = FunctionType::Create(
-        { rvsdg::bittype::Create(32),
-          variableArgumentType,
-          iostatetype::Create(),
-          MemoryStateType::Create() },
         { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(
@@ -3841,7 +3883,16 @@ LambdaCallArgumentMismatch::SetupRvsdg()
   };
 
   LambdaG_ = &rvsdg::AssertGetOwnerNode<lambda::node>(*setupLambdaG());
-  auto [lambdaMainOutput, call] = setupLambdaMain(*LambdaG_->output());
+
+  // Formal arguments and call arguments do not match. Force conversion through pointer
+  // to hide the mismatch, the call operator would complain otherwise.
+  // The semantic of this is llvm-specific.
+  auto ptr =
+      jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ LambdaG_->output() }, functionType)
+          .output(0);
+  auto fn =
+      jlm::rvsdg::CreateOpNode<PointerToFunctionOperation>({ ptr }, functionTypeCall).output(0);
+  auto [lambdaMainOutput, call] = setupLambdaMain(*fn);
   LambdaMain_ = &rvsdg::AssertGetOwnerNode<lambda::node>(*lambdaMainOutput);
   Call_ = call;
 
@@ -3875,7 +3926,7 @@ VariadicFunctionTest1::SetupRvsdg()
       { iostatetype::Create(), MemoryStateType::Create() });
 
   // Setup h()
-  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, "h", linkage::external_linkage);
+  ImportH_ = &GraphImport::Create(rvsdg, lambdaHType, lambdaHType, "h", linkage::external_linkage);
 
   // Setup f()
   {
@@ -3981,14 +4032,30 @@ VariadicFunctionTest2::SetupRvsdg()
       { iostatetype::Create(), MemoryStateType::Create() },
       { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
-  auto llvmLifetimeStart =
-      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.start.p0", linkage::external_linkage);
-  auto llvmLifetimeEnd =
-      &GraphImport::Create(rvsdg, pointerType, "llvm.lifetime.end.p0", linkage::external_linkage);
-  auto llvmVaStart =
-      &GraphImport::Create(rvsdg, pointerType, "llvm.va_start", linkage::external_linkage);
-  auto llvmVaEnd =
-      &GraphImport::Create(rvsdg, pointerType, "llvm.va_end", linkage::external_linkage);
+  auto llvmLifetimeStart = &GraphImport::Create(
+      rvsdg,
+      lambdaLlvmLifetimeStartType,
+      lambdaLlvmLifetimeStartType,
+      "llvm.lifetime.start.p0",
+      linkage::external_linkage);
+  auto llvmLifetimeEnd = &GraphImport::Create(
+      rvsdg,
+      lambdaLlvmLifetimeEndType,
+      lambdaLlvmLifetimeEndType,
+      "llvm.lifetime.end.p0",
+      linkage::external_linkage);
+  auto llvmVaStart = &GraphImport::Create(
+      rvsdg,
+      lambdaVaStartType,
+      lambdaVaStartType,
+      "llvm.va_start",
+      linkage::external_linkage);
+  auto llvmVaEnd = &GraphImport::Create(
+      rvsdg,
+      lambdaVaEndType,
+      lambdaVaEndType,
+      "llvm.va_end",
+      linkage::external_linkage);
 
   // Setup function fst()
   {

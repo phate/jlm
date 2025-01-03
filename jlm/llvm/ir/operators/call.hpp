@@ -25,7 +25,7 @@ public:
   ~CallOperation() override;
 
   explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
-      : SimpleOperation(create_srctypes(*functionType), functionType->Results()),
+      : SimpleOperation(create_srctypes(functionType), functionType->Results()),
         FunctionType_(std::move(functionType))
   {}
 
@@ -60,10 +60,10 @@ public:
 
 private:
   static inline std::vector<std::shared_ptr<const rvsdg::Type>>
-  create_srctypes(const FunctionType & functionType)
+  create_srctypes(const std::shared_ptr<const FunctionType> & functionType)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
-    for (auto & argumentType : functionType.Arguments())
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ functionType });
+    for (auto & argumentType : functionType->Arguments())
       types.emplace_back(argumentType);
 
     return types;
@@ -72,8 +72,8 @@ private:
   static void
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
-    if (!is<PointerType>(type))
-      throw jlm::util::error("Expected pointer type.");
+    if (!is<FunctionType>(type))
+      throw jlm::util::error("Expected function type.");
   }
 
   std::shared_ptr<const FunctionType> FunctionType_;
@@ -360,7 +360,7 @@ public:
   GetFunctionInput() const noexcept
   {
     auto functionInput = input(0);
-    JLM_ASSERT(is<PointerType>(functionInput->type()));
+    JLM_ASSERT(is<FunctionType>(functionInput->type()));
     return functionInput;
   }
 
@@ -523,8 +523,8 @@ private:
   static void
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
-    if (!is<PointerType>(type))
-      throw jlm::util::error("Expected pointer type.");
+    if (!is<FunctionType>(type))
+      throw jlm::util::error("Expected function type.");
   }
 
   static void
