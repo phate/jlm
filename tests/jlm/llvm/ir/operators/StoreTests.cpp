@@ -220,10 +220,6 @@ TestStoreMuxNormalization()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_store_mux_reducible(false);
-
   auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
   auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
@@ -273,10 +269,6 @@ TestDuplicateStateReduction()
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  const auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_multiple_origin_reducible(false);
-
   auto a = &jlm::tests::GraphImport::Create(graph, pointerType, "a");
   auto v = &jlm::tests::GraphImport::Create(graph, valueType, "v");
   auto s1 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "s1");
@@ -330,10 +322,6 @@ TestStoreAllocaReduction()
   auto bt = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::Graph graph;
-  auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_store_alloca_reducible(false);
-
   auto size = &jlm::tests::GraphImport::Create(graph, bt, "size");
   auto value = &jlm::tests::GraphImport::Create(graph, vt, "value");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
