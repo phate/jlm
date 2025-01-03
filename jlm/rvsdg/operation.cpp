@@ -16,7 +16,7 @@ Operation::~Operation() noexcept = default;
 jlm::rvsdg::node_normal_form *
 Operation::normal_form(Graph * graph) noexcept
 {
-  return graph->node_normal_form(typeid(Operation));
+  return graph->GetNodeNormalForm(typeid(Operation));
 }
 
 SimpleOperation::~SimpleOperation() noexcept = default;
@@ -50,7 +50,7 @@ SimpleOperation::result(size_t index) const noexcept
 jlm::rvsdg::simple_normal_form *
 SimpleOperation::normal_form(Graph * graph) noexcept
 {
-  return static_cast<simple_normal_form *>(graph->node_normal_form(typeid(SimpleOperation)));
+  return static_cast<simple_normal_form *>(graph->GetNodeNormalForm(typeid(SimpleOperation)));
 }
 
 bool
@@ -63,7 +63,7 @@ jlm::rvsdg::structural_normal_form *
 StructuralOperation::normal_form(Graph * graph) noexcept
 {
   return static_cast<structural_normal_form *>(
-      graph->node_normal_form(typeid(StructuralOperation)));
+      graph->GetNodeNormalForm(typeid(StructuralOperation)));
 }
 
 }

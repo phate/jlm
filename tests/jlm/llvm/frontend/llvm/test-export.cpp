@@ -39,7 +39,7 @@ test()
     node should be converted to RVSDG imports as they do not have
     a body, i.e., either a CFG or a initialization.
   */
-  assert(rvsdgModule->Rvsdg().root()->nresults() == 0);
+  assert(rvsdgModule->Rvsdg().GetRootRegion().nresults() == 0);
 
   return 0;
 }

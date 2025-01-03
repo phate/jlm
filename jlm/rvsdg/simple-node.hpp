@@ -60,7 +60,7 @@ public:
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
-    auto nf = static_cast<simple_normal_form *>(region->graph()->node_normal_form(typeid(op)));
+    auto nf = static_cast<simple_normal_form *>(region->graph()->GetNodeNormalForm(typeid(op)));
     return nf->normalized_create(region, op, operands);
   }
 };

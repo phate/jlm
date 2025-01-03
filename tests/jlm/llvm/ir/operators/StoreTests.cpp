@@ -156,7 +156,8 @@ StoreVolatileNodeCopy()
       StoreVolatileNode::CreateNode(address1, value1, ioState1, { &memoryState1 }, 4);
 
   // Act
-  auto copiedNode = storeNode.copy(graph.root(), { &address2, &value2, &ioState2, &memoryState2 });
+  auto copiedNode =
+      storeNode.copy(&graph.GetRootRegion(), { &address2, &value2, &ioState2, &memoryState2 });
 
   // Assert
   auto copiedStoreNode = dynamic_cast<const StoreVolatileNode *>(copiedNode);
@@ -196,7 +197,7 @@ TestCopy()
   // Act
   auto node = jlm::rvsdg::output::GetNode(*storeResults[0]);
   auto storeNode = jlm::util::AssertedCast<const StoreNonVolatileNode>(node);
-  auto copiedNode = storeNode->copy(graph.root(), { address2, value2, memoryState2 });
+  auto copiedNode = storeNode->copy(&graph.GetRootRegion(), { address2, value2, memoryState2 });
 
   // Assert
   auto copiedStoreNode = dynamic_cast<const StoreNonVolatileNode *>(copiedNode);
@@ -234,13 +235,13 @@ TestStoreMuxNormalization()
 
   auto & ex = GraphExport::Create(*storeNode.output(0), "s");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreMux, storeNode);
-  graph.prune();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
@@ -290,14 +291,14 @@ TestDuplicateStateReduction()
   auto & exS4 = GraphExport::Create(*storeNode.output(3), "exS4");
   auto & exS5 = GraphExport::Create(*storeNode.output(4), "exS5");
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success =
       jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreDuplicateState, storeNode);
-  graph.prune();
+  graph.PruneNodes();
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
@@ -348,23 +349,23 @@ TestStoreAllocaReduction()
   GraphExport::Create(*storeNode2.output(1), "s2");
   GraphExport::Create(*storeNode2.output(2), "s3");
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success1 =
       jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreAlloca, storeNode1);
   auto success2 =
       jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreAlloca, storeNode2);
-  graph.prune();
+  graph.PruneNodes();
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success1 && success2);
   bool has_add_import = false;
-  for (size_t n = 0; n < graph.root()->nresults(); n++)
+  for (size_t n = 0; n < graph.GetRootRegion().nresults(); n++)
   {
-    if (graph.root()->result(n)->origin() == s)
+    if (graph.GetRootRegion().result(n)->origin() == s)
       has_add_import = true;
   }
   assert(has_add_import);
@@ -397,17 +398,17 @@ TestStoreStoreReduction()
 
   auto & ex = GraphExport::Create(*storeNode2.output(0), "state");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreStore, storeNode2);
-  graph.prune();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
-  assert(graph.root()->nnodes() == 1);
+  assert(graph.GetRootRegion().nnodes() == 1);
   assert(jlm::rvsdg::output::GetNode(*ex.origin())->input(1)->origin() == v2);
 
   return 0;

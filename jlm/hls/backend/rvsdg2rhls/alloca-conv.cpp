@@ -228,7 +228,7 @@ void
 alloca_conv(jlm::llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   alloca_conv(root);
 }
 

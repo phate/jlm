@@ -103,8 +103,9 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
   auto newLambdaOutput = newLambda->finalize(newResults);
 
   // TODO handle functions at other levels?
-  JLM_ASSERT(lambdaNode.region() == lambdaNode.region()->graph()->root());
-  JLM_ASSERT((*lambdaNode.output()->begin())->region() == lambdaNode.region()->graph()->root());
+  JLM_ASSERT(lambdaNode.region() == &lambdaNode.region()->graph()->GetRootRegion());
+  JLM_ASSERT(
+      (*lambdaNode.output()->begin())->region() == &lambdaNode.region()->graph()->GetRootRegion());
 
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
   lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
@@ -228,7 +229,7 @@ RemoveUnusedStatesInRegion(rvsdg::Region & region)
 void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
 {
-  RemoveUnusedStatesInRegion(*rvsdgModule.Rvsdg().root());
+  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 }

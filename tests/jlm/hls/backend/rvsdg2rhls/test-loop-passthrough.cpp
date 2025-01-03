@@ -39,13 +39,13 @@ test()
       { rvsdg::bittype::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::Operation));
+  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   /* setup graph */
 
   auto lambda = jlm::llvm::lambda::node::create(
-      rm.Rvsdg().root(),
+      &rm.Rvsdg().GetRootRegion(),
       ft,
       "f",
       jlm::llvm::linkage::external_linkage);

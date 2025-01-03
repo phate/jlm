@@ -274,7 +274,7 @@ public:
   void
   StartAndersenStatistics(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(AnalysisTimer_).start();
   }
 
@@ -1201,7 +1201,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 void
 Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
-  auto & rootRegion = *graph.root();
+  auto & rootRegion = graph.GetRootRegion();
 
   // Iterate over all arguments to the root region - symbols imported from other modules
   // These symbols can either be global variables or functions

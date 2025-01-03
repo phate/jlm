@@ -22,7 +22,7 @@ test_node_copy()
   auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
-  auto n1 = jlm::tests::structural_node::create(graph.root(), 3);
+  auto n1 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 3);
   auto i1 = StructuralInput::create(n1, s, stype);
   auto i2 = StructuralInput::create(n1, v, vtype);
   auto o1 = StructuralOutput::create(n1, stype);
@@ -37,7 +37,7 @@ test_node_copy()
   TestGraphResult::Create(*n2->output(0), o1);
   TestGraphResult::Create(*n3->output(0), o2);
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   /* copy first into second region with arguments and results */
   SubstitutionMap smap;
@@ -47,7 +47,7 @@ test_node_copy()
   smap.insert(o2, o2);
   n1->subregion(0)->copy(n1->subregion(1), smap, true, true);
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   auto r2 = n1->subregion(1);
   assert(r2->narguments() == 2);
@@ -71,7 +71,7 @@ test_node_copy()
   smap2.insert(o2, o2);
   n1->subregion(1)->copy(n1->subregion(2), smap2, false, true);
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   auto r3 = n1->subregion(2);
   assert(r3->nresults() == 2);
@@ -84,11 +84,11 @@ test_node_copy()
   jlm::rvsdg::SubstitutionMap smap3;
   smap3.insert(s, s);
   smap3.insert(v, v);
-  n1->copy(graph.root(), smap3);
+  n1->copy(&graph.GetRootRegion(), smap3);
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
-  assert(graph.root()->nnodes() == 2);
+  assert(graph.GetRootRegion().nnodes() == 2);
 }
 
 static inline void
@@ -99,13 +99,13 @@ test_node_depth()
   jlm::rvsdg::Graph graph;
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto null = jlm::tests::test_op::create(graph.root(), {}, { vt });
-  auto bin = jlm::tests::test_op::create(graph.root(), { null->output(0), x }, { vt });
-  auto un = jlm::tests::test_op::create(graph.root(), { bin->output(0) }, { vt });
+  auto null = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { vt });
+  auto bin = jlm::tests::test_op::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
+  auto un = jlm::tests::test_op::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
 
   jlm::tests::GraphExport::Create(*un->output(0), "x");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   assert(null->depth() == 0);
   assert(bin->depth() == 1);
@@ -126,24 +126,28 @@ TestRemoveOutputsWhere()
   jlm::rvsdg::Graph rvsdg;
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto & node1 =
-      jlm::tests::SimpleNode::Create(*rvsdg.root(), {}, { valueType, valueType, valueType });
+  auto & node1 = jlm::tests::SimpleNode::Create(
+      rvsdg.GetRootRegion(),
+      {},
+      { valueType, valueType, valueType });
   auto output0 = node1.output(0);
   auto output2 = node1.output(2);
 
-  auto & node2 =
-      jlm::tests::SimpleNode::Create(*rvsdg.root(), { output0, output2 }, { valueType, valueType });
+  auto & node2 = jlm::tests::SimpleNode::Create(
+      rvsdg.GetRootRegion(),
+      { output0, output2 },
+      { valueType, valueType });
 
   // Act & Assert
   node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return false;
       });
   assert(node2.noutputs() == 2);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return true;
       });
@@ -154,7 +158,7 @@ TestRemoveOutputsWhere()
   assert(node1.output(1)->index() == 1);
 
   node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return true;
       });
@@ -172,7 +176,7 @@ TestRemoveOutputsWhere()
   assert(node1.output(0)->index() == 0);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::output &)
       {
         return true;
       });
@@ -190,7 +194,7 @@ TestRemoveInputsWhere()
   auto valueType = jlm::tests::valuetype::Create();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto & node = jlm::tests::SimpleNode::Create(*rvsdg.root(), { x, x, x }, {});
+  auto & node = jlm::tests::SimpleNode::Create(rvsdg.GetRootRegion(), { x, x, x }, {});
   auto input0 = node.input(0);
   auto input2 = node.input(2);
 
@@ -205,7 +209,7 @@ TestRemoveInputsWhere()
   assert(node.input(1) == input2);
 
   node.RemoveInputsWhere(
-      [](const jlm::rvsdg::input & input)
+      [](const jlm::rvsdg::input &)
       {
         return true;
       });

@@ -8,7 +8,6 @@
 #include <test-types.hpp>
 
 #include <jlm/rvsdg/NodeNormalization.hpp>
-#include <jlm/rvsdg/statemux.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -69,7 +68,7 @@ TestCopy()
   // Act
   auto node = jlm::rvsdg::output::GetNode(*loadResults[0]);
   auto loadNode = jlm::util::AssertedCast<const LoadNonVolatileNode>(node);
-  auto copiedNode = loadNode->copy(graph.root(), { address2, memoryState2 });
+  auto copiedNode = loadNode->copy(&graph.GetRootRegion(), { address2, memoryState2 });
 
   // Assert
   auto copiedLoadNode = dynamic_cast<const LoadNonVolatileNode *>(copiedNode);
@@ -99,26 +98,26 @@ TestLoadAllocaReduction()
 
   auto alloca1 = alloca_op::create(bt, size, 4);
   auto alloca2 = alloca_op::create(bt, size, 4);
-  auto mux = jlm::rvsdg::create_state_mux(mt, { alloca1[1] }, 1);
+  auto mux = MemoryStateMergeOperation::Create({ alloca1[1] });
   auto & loadNode =
-      LoadNonVolatileNode::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux[0] }, bt, 4);
+      LoadNonVolatileNode::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux }, bt, 4);
 
   auto & ex = GraphExport::Create(*loadNode.output(0), "l");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadAlloca, loadNode);
-  graph.prune();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   auto node = jlm::rvsdg::output::GetNode(*ex.origin());
   assert(is<LoadNonVolatileOperation>(node));
   assert(node->ninputs() == 3);
   assert(node->input(1)->origin() == alloca1[1]);
-  assert(node->input(2)->origin() == mux[0]);
+  assert(node->input(2)->origin() == mux);
 
   return 0;
 }
@@ -152,13 +151,13 @@ TestLoadMuxReduction()
 
   auto & ex = GraphExport::Create(*loadNode.output(0), "l");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadMux, loadNode);
-  graph.prune();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
@@ -206,13 +205,13 @@ TestDuplicateStateReduction()
   auto & exS4 = GraphExport::Create(*loadNode.output(4), "exS4");
   auto & exS5 = GraphExport::Create(*loadNode.output(5), "exS5");
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success =
       jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadDuplicateState, loadNode);
 
-  view(graph.root(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
@@ -261,16 +260,16 @@ TestLoadStoreStateReduction()
   auto & ex1 = GraphExport::Create(*loadNode1.output(0), "l1");
   auto & ex2 = GraphExport::Create(*loadNode2.output(0), "l2");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success1 =
       jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStoreState, loadNode1);
   auto success2 =
       jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStoreState, loadNode2);
-  graph.prune();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success1);
@@ -315,17 +314,17 @@ TestLoadStoreReduction()
   auto & x1 = GraphExport::Create(*loadNode.output(0), "value");
   auto & x2 = GraphExport::Create(*loadNode.output(1), "state");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStore, loadNode);
-  graph.normalize();
+  graph.Normalize();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
-  assert(graph.root()->nnodes() == 1);
+  assert(graph.GetRootRegion().nnodes() == 1);
   assert(x1.origin() == v);
   assert(x2.origin() == s1);
 
@@ -368,17 +367,17 @@ TestLoadLoadReduction()
   auto & x2 = GraphExport::Create(*loadNode.output(2), "s");
   auto & x3 = GraphExport::Create(*loadNode.output(3), "s");
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadLoadState, loadNode);
-  graph.prune();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stdout);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
-  assert(graph.root()->nnodes() == 6);
+  assert(graph.GetRootRegion().nnodes() == 6);
 
   auto ld = jlm::rvsdg::output::GetNode(*x1.origin());
   assert(is<LoadNonVolatileOperation>(ld));
@@ -505,7 +504,7 @@ NodeCopy()
       LoadVolatileNode::CreateNode(address1, iOState1, { &memoryState1 }, valueType, 4);
 
   // Act
-  auto copiedNode = loadNode.copy(graph.root(), { &address2, &iOState2, &memoryState2 });
+  auto copiedNode = loadNode.copy(&graph.GetRootRegion(), { &address2, &iOState2, &memoryState2 });
 
   // Assert
   auto copiedLoadNode = dynamic_cast<const LoadVolatileNode *>(copiedNode);

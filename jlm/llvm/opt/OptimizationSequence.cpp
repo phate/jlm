@@ -23,7 +23,7 @@ public:
   void
   StartMeasuring(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
@@ -31,7 +31,7 @@ public:
   EndMeasuring(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
   }
 
   static std::unique_ptr<Statistics>

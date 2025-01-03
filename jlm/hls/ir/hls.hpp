@@ -546,7 +546,7 @@ public:
   }
 
   bool
-  operator==(const Operation & other) const noexcept override
+  operator==(const Operation &) const noexcept override
   {
     //				auto ot = dynamic_cast<const print_op *>(&other);
     // check predicate and value
@@ -1176,7 +1176,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
+  CreateInTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> &)
   {
     size_t max_width = 64;
     // TODO: calculate size onece JlmSize is moved
@@ -1284,7 +1284,7 @@ public:
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateOutTypes(
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> &,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
   {
     size_t max_width = 64;
@@ -1455,7 +1455,7 @@ public:
   {}
 
   bool
-  operator==(const Operation & other) const noexcept override
+  operator==(const Operation &) const noexcept override
   {
     // TODO:
     // auto ot = dynamic_cast<const local_mem_op *>(&other);

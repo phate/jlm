@@ -144,7 +144,7 @@ public:
   virtual std::vector<jlm::rvsdg::output *>
   normalized_create(
       rvsdg::Region * region,
-      const SimpleOperation & op,
+      const SimpleOperation &,
       const std::vector<jlm::rvsdg::output *> & arguments) const override
   {
     std::vector<jlm::rvsdg::output *> new_args;
@@ -189,7 +189,7 @@ public:
 
     enable_reducible_ = enable;
     if (get_mutable() && enable)
-      graph()->mark_denormalized();
+      graph()->MarkDenormalized();
   }
 
   inline bool
@@ -210,7 +210,7 @@ public:
 
     enable_flatten_ = enable;
     if (get_mutable() && enable)
-      graph()->mark_denormalized();
+      graph()->MarkDenormalized();
   }
 
   inline bool
@@ -229,7 +229,7 @@ concat_normal_form::~concat_normal_form() noexcept
 
 static node_normal_form *
 get_default_normal_form(
-    const std::type_info & operator_class,
+    const std::type_info &,
     jlm::rvsdg::node_normal_form * parent,
     Graph * graph)
 {

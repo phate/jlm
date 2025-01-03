@@ -33,7 +33,7 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
@@ -540,7 +540,7 @@ convert_node(const rvsdg::Node & node, context & ctx)
 static void
 convert_nodes(const rvsdg::Graph & graph, context & ctx)
 {
-  for (const auto & node : rvsdg::topdown_traverser(graph.root()))
+  for (const auto & node : rvsdg::topdown_traverser(&graph.GetRootRegion()))
     convert_node(*node, ctx);
 }
 
@@ -549,9 +549,9 @@ convert_imports(const rvsdg::Graph & graph, ipgraph_module & im, context & ctx)
 {
   auto & ipg = im.ipgraph();
 
-  for (size_t n = 0; n < graph.root()->narguments(); n++)
+  for (size_t n = 0; n < graph.GetRootRegion().narguments(); n++)
   {
-    auto graphImport = util::AssertedCast<GraphImport>(graph.root()->argument(n));
+    auto graphImport = util::AssertedCast<GraphImport>(graph.GetRootRegion().argument(n));
     if (auto ftype = is_function_import(graphImport))
     {
       auto f = function_node::create(ipg, graphImport->Name(), ftype, graphImport->Linkage());

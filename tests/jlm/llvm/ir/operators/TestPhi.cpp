@@ -53,7 +53,7 @@ TestPhiCreation()
   };
 
   phi::builder pb;
-  pb.begin(graph.root());
+  pb.begin(&graph.GetRootRegion());
   auto rv1 = pb.add_recvar(PointerType::Create());
   auto rv2 = pb.add_recvar(PointerType::Create());
   auto rv3 = pb.add_recvar(PointerType::Create());
@@ -69,10 +69,10 @@ TestPhiCreation()
   auto phi = pb.end();
   GraphExport::Create(*phi->output(0), "dummy");
 
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stderr);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stderr);
 }
 
 static void
@@ -88,7 +88,7 @@ TestRemovePhiArgumentsWhere()
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -145,7 +145,7 @@ TestRemovePhiArgumentsWhere()
 
   // Remove everything that is dead, i.e., phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::RegionArgument & argument)
+      [&](const jlm::rvsdg::RegionArgument &)
       {
         return true;
       });
@@ -171,7 +171,7 @@ TestPrunePhiArguments()
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -215,7 +215,7 @@ TestRemovePhiOutputsWhere()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -245,7 +245,7 @@ TestRemovePhiOutputsWhere()
   assert(phiOutput2->index() == 1);
 
   numRemovedOutputs = phiNode.RemovePhiOutputsWhere(
-      [&](const phi::rvoutput & output)
+      [&](const phi::rvoutput &)
       {
         return true;
       });
@@ -264,7 +264,7 @@ TestPrunePhiOutputs()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);

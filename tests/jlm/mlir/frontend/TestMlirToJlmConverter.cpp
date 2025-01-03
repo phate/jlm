@@ -108,7 +108,7 @@ TestLambda()
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
     {
       using namespace jlm::rvsdg;
       std::cout << "Checking the result" << std::endl;
@@ -257,7 +257,7 @@ TestDivOperation()
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     jlm::rvsdg::view(region, stdout);
 
@@ -435,7 +435,7 @@ TestCompZeroExt()
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
@@ -652,7 +652,7 @@ TestMatchOp()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
@@ -823,7 +823,7 @@ TestGammaOp()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
@@ -972,7 +972,7 @@ TestThetaOp()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;

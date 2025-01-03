@@ -2838,8 +2838,8 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   AddClockPort(&ports);
   AddResetPort(&ports);
 
-  auto reg_args = get_reg_args(lambdaNode);
-  auto reg_results = get_reg_results(lambdaNode);
+  auto reg_args = get_reg_args(*lambdaNode);
+  auto reg_results = get_reg_results(*lambdaNode);
 
   // Input bundle
   using BundleElement = circt::firrtl::BundleType::BundleElement;
@@ -2882,8 +2882,8 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   ports.push_back(oBundle);
 
   // Memory ports
-  auto mem_reqs = get_mem_reqs(lambdaNode);
-  auto mem_resps = get_mem_resps(lambdaNode);
+  auto mem_reqs = get_mem_reqs(*lambdaNode);
+  auto mem_resps = get_mem_resps(*lambdaNode);
   JLM_ASSERT(mem_resps.size() == mem_reqs.size());
   for (size_t i = 0; i < mem_reqs.size(); ++i)
   {

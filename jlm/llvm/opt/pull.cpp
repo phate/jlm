@@ -26,14 +26,14 @@ public:
   void
   start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
   end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -112,7 +112,7 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 }
 
 static void
-cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
+cleanup(rvsdg::GammaNode *, rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 
@@ -310,7 +310,7 @@ pull(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
   auto statistics = pullstat::Create(rm.SourceFileName());
 
   statistics->start(rm.Rvsdg());
-  pull(rm.Rvsdg().root());
+  pull(&rm.Rvsdg().GetRootRegion());
   statistics->end(rm.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

@@ -21,12 +21,12 @@ TestUndef()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::Operation));
+  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
   nf->set_mutable(false);
   {
     // Create an undef operation
     std::cout << "Undef Operation" << std::endl;
-    UndefValueOperation::Create(*graph->root(), jlm::rvsdg::bittype::Create(32));
+    UndefValueOperation::Create(graph->GetRootRegion(), jlm::rvsdg::bittype::Create(32));
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -48,7 +48,7 @@ TestUndef()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::llvm;

@@ -248,7 +248,7 @@ region_starttag(const std::string & id)
 }
 
 static inline std::string
-region_endtag(const std::string & id)
+region_endtag(const std::string &)
 {
   return "</region>\n";
 }

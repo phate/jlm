@@ -53,7 +53,7 @@ view(const rvsdg::Region * region, FILE * out);
 inline void
 view(const Graph & graph, FILE * out)
 {
-  return view(graph.root(), out);
+  return view(&graph.GetRootRegion(), out);
 }
 
 std::string

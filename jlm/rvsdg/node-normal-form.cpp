@@ -16,7 +16,7 @@ node_normal_form::~node_normal_form() noexcept
 {}
 
 bool
-node_normal_form::normalize_node(Node * node) const
+node_normal_form::normalize_node(Node *) const
 {
   return true;
 }
@@ -33,7 +33,7 @@ node_normal_form::set_mutable(bool enable)
 
   enable_mutable_ = enable;
   if (enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 namespace

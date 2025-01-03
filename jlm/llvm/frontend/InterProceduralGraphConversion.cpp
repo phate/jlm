@@ -306,7 +306,7 @@ public:
   End(const rvsdg::Graph & graph) noexcept
   {
     AddTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
   }
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
@@ -461,7 +461,7 @@ requiresExport(const ipgraph_node & ipgNode)
 static void
 ConvertAssignment(
     const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
+    rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
@@ -492,10 +492,7 @@ ConvertSelect(
 }
 
 static void
-ConvertBranch(
-    const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
-    llvm::VariableMap & variableMap)
+ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
   JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
   /*
@@ -645,7 +642,7 @@ Convert(
 static void
 Convert(
     const exitaggnode & exitAggregationNode,
-    const AnnotationMap & demandMap,
+    const AnnotationMap &,
     lambda::node & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
@@ -663,8 +660,8 @@ Convert(
 static void
 Convert(
     const blockaggnode & blockAggregationNode,
-    const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    const AnnotationMap &,
+    lambda::node &,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   ConvertBasicBlock(
@@ -1127,7 +1124,7 @@ ConvertStronglyConnectedComponent(
   }
 
   phi::builder pb;
-  pb.begin(graph.root());
+  pb.begin(&graph.GetRootRegion());
   regionalizedVariableMap.PushRegion(*pb.subregion());
 
   auto & outerVariableMap =
@@ -1200,13 +1197,15 @@ ConvertInterProceduralGraphModule(
       std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(rvsdg::Operation));
+  auto nf = graph->GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
 
   /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
   rvsdg::binary_op::normal_form(graph)->set_flatten(false);
 
-  RegionalizedVariableMap regionalizedVariableMap(interProceduralGraphModule, *graph->root());
+  RegionalizedVariableMap regionalizedVariableMap(
+      interProceduralGraphModule,
+      graph->GetRootRegion());
 
   auto stronglyConnectedComponents = interProceduralGraphModule.ipgraph().find_sccs();
   for (const auto & stronglyConnectedComponent : stronglyConnectedComponents)

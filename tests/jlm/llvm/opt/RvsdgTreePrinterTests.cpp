@@ -35,7 +35,7 @@ PrintRvsdgTree()
   auto functionType =
       FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
   auto lambda = lambda::node::create(
-      rvsdgModule->Rvsdg().root(),
+      &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,
       "f",
       linkage::external_linkage);
@@ -73,7 +73,7 @@ PrintNumRvsdgNodesAnnotation()
   // Arrange
   std::string fileName = "PrintNumRvsdgNodesAnnotationTest";
   auto rvsdgModule = RvsdgModule::Create({ fileName }, "", "");
-  auto rootRegion = rvsdgModule->Rvsdg().root();
+  auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = jlm::tests::structural_node::create(rootRegion, 2);
   jlm::tests::test_op::create(structuralNode->subregion(0), {}, {});
@@ -125,7 +125,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
   auto & y = jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
-  auto structuralNode = jlm::tests::structural_node::create(rvsdg.root(), 2);
+  auto structuralNode = jlm::tests::structural_node::create(&rvsdg.GetRootRegion(), 2);
   auto & ix = structuralNode->AddInputWithArguments(x);
   auto & iy = structuralNode->AddInputWithArguments(y);
 

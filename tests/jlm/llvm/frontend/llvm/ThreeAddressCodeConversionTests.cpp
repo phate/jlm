@@ -93,10 +93,10 @@ LoadVolatileConversion()
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(*ipgModule, statisticsCollector);
-  std::cout << jlm::rvsdg::view(rvsdgModule->Rvsdg().root()) << std::flush;
+  std::cout << jlm::rvsdg::view(&rvsdgModule->Rvsdg().GetRootRegion()) << std::flush;
 
   // Assert
-  auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
+  auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
   auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
@@ -122,10 +122,10 @@ StoreVolatileConversion()
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(*ipgModule, statisticsCollector);
-  std::cout << jlm::rvsdg::view(rvsdgModule->Rvsdg().root()) << std::flush;
+  std::cout << jlm::rvsdg::view(&rvsdgModule->Rvsdg().GetRootRegion()) << std::flush;
 
   // Assert
-  auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
+  auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
   auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();

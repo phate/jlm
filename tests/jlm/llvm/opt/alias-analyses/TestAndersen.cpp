@@ -63,7 +63,7 @@ TestStore1()
   const auto ptg = RunAndersen(test.module());
 
   // std::unordered_map<const jlm::rvsdg::output*, std::string> outputMap;
-  // std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::endl;
+  // std::cout << jlm::rvsdg::view(test.graph().GetRootRegion(), outputMap) << std::endl;
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*ptg, outputMap) << std::endl;
 
   assert(ptg->NumAllocaNodes() == 4);

@@ -20,6 +20,8 @@ isForbiddenChar(char c)
   return true;
 }
 
+BaseHLS::~BaseHLS() = default;
+
 std::string
 BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 {
@@ -159,7 +161,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
 const jlm::llvm::lambda::node *
 BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 {
-  auto region = rm.Rvsdg().root();
+  auto region = &rm.Rvsdg().GetRootRegion();
   auto ln = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   if (region->nnodes() == 1 && ln)
   {
