@@ -214,19 +214,20 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(&output))
+  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
   {
-    MarkOutput(*thetaOutput->node()->predicate()->origin());
-    MarkOutput(*thetaOutput->result()->origin());
-    MarkOutput(*thetaOutput->input()->origin());
+    auto loopvar = theta->MapOutputLoopVar(output);
+    MarkOutput(*theta->predicate()->origin());
+    MarkOutput(*loopvar.post->origin());
+    MarkOutput(*loopvar.input->origin());
     return;
   }
 
-  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
+  if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
-    auto thetaInput = util::AssertedCast<const rvsdg::ThetaInput>(thetaArgument->input());
-    MarkOutput(*thetaInput->output());
-    MarkOutput(*thetaInput->origin());
+    auto loopvar = theta->MapPreLoopVar(output);
+    MarkOutput(*loopvar.output);
+    MarkOutput(*loopvar.input->origin());
     return;
   }
 
@@ -435,16 +436,16 @@ DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
   auto & thetaSubregion = *thetaNode.subregion();
 
-  auto matchOutput = [&](const rvsdg::ThetaOutput & output)
+  auto matchOutput = [&](const rvsdg::output & output)
   {
-    auto & argument = *output.argument();
-    return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
+    auto loopvar = thetaNode.MapOutputLoopVar(output);
+    return !Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output);
   };
   auto deadInputs = thetaNode.RemoveThetaOutputsWhere(matchOutput);
 
   SweepRegion(thetaSubregion);
 
-  auto matchInput = [&](const rvsdg::ThetaInput & input)
+  auto matchInput = [&](const rvsdg::input & input)
   {
     return deadInputs.Contains(&input);
   };

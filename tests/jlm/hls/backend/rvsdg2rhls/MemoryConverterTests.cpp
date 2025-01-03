@@ -274,33 +274,29 @@ TestThetaLoad()
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto thetaRegion = theta->subregion();
   // Predicate
-  auto idv = theta->add_loopvar(lambda->GetFunctionArguments()[0]);
-  auto lvs = theta->add_loopvar(lambda->GetFunctionArguments()[1]);
-  auto lve = theta->add_loopvar(lambda->GetFunctionArguments()[2]);
+  auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
+  auto lvs = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
+  auto lve = theta->AddLoopVar(lambda->GetFunctionArguments()[2]);
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitsgt_op sgt(32);
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
-  auto arm = jlm::rvsdg::SimpleNode::create_normalized(
-      thetaRegion,
-      add,
-      { idv->argument(), lvs->argument() })[0];
-  auto cmp =
-      jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, ult, { arm, lve->argument() })[0];
+  auto arm = jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, add, { idv.pre, lvs.pre })[0];
+  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, ult, { arm, lve.pre })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
-  idv->result()->divert_to(arm);
+  idv.post->divert_to(arm);
   theta->set_predicate(match);
 
   // Load node
-  auto loadAddress = theta->add_loopvar(lambda->GetFunctionArguments()[3]);
-  auto memoryStateArgument = theta->add_loopvar(lambda->GetFunctionArguments()[4]);
+  auto loadAddress = theta->AddLoopVar(lambda->GetFunctionArguments()[3]);
+  auto memoryStateArgument = theta->AddLoopVar(lambda->GetFunctionArguments()[4]);
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress->argument(),
-      { memoryStateArgument->argument() },
+      loadAddress.pre,
+      { memoryStateArgument.pre },
       PointerType::Create(),
       32);
-  loadAddress->result()->divert_to(loadOutput[0]);
-  memoryStateArgument->result()->divert_to(loadOutput[1]);
+  loadAddress.post->divert_to(loadOutput[0]);
+  memoryStateArgument.post->divert_to(loadOutput[1]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(3), theta->output(4) });
   GraphExport::Create(*lambdaOutput, "f");

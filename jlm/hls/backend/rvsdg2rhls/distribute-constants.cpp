@@ -24,29 +24,27 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
     changed = false;
     for (auto user : *out)
     {
-      auto node = rvsdg::input::GetNode(*user);
-      if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
+      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))
       {
-        auto arg = ti->argument();
-        auto res = ti->result();
-        if (res->origin() == arg)
+        auto loopvar = theta->MapInputLoopVar(*user);
+        if (loopvar.post->origin() == loopvar.pre)
         {
           // pass-through
           auto arg_replacement = dynamic_cast<rvsdg::simple_output *>(
-              rvsdg::SimpleNode::create_normalized(ti->node()->subregion(), op, {})[0]);
-          ti->argument()->divert_users(arg_replacement);
-          ti->output()->divert_users(
+              rvsdg::SimpleNode::create_normalized(theta->subregion(), op, {})[0]);
+          loopvar.pre->divert_users(arg_replacement);
+          loopvar.output->divert_users(
               rvsdg::SimpleNode::create_normalized(out->region(), op, {})[0]);
           distribute_constant(op, arg_replacement);
-          arg->region()->RemoveResult(res->index());
-          arg->region()->RemoveArgument(arg->index());
-          arg->region()->node()->RemoveInput(arg->input()->index());
-          arg->region()->node()->RemoveOutput(res->output()->index());
+          theta->subregion()->RemoveResult(loopvar.post->index());
+          theta->subregion()->RemoveArgument(loopvar.pre->index());
+          theta->RemoveInput(loopvar.input->index());
+          theta->RemoveOutput(loopvar.output->index());
           changed = true;
           break;
         }
       }
-      if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(node))
+      if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
       {
         if (gammaNode->predicate() == user)
         {

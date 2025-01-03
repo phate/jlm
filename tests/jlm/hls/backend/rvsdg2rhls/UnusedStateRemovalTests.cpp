@@ -90,20 +90,21 @@ TestTheta()
 
   auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
 
-  auto thetaOutput0 = thetaNode->add_loopvar(p);
-  auto thetaOutput1 = thetaNode->add_loopvar(x);
-  auto thetaOutput2 = thetaNode->add_loopvar(y);
-  auto thetaOutput3 = thetaNode->add_loopvar(z);
+  auto thetaOutput0 = thetaNode->AddLoopVar(p);
+  auto thetaOutput1 = thetaNode->AddLoopVar(x);
+  auto thetaOutput2 = thetaNode->AddLoopVar(y);
+  auto thetaOutput3 = thetaNode->AddLoopVar(z);
 
-  thetaOutput2->result()->divert_to(thetaOutput3->argument());
-  thetaOutput3->result()->divert_to(thetaOutput2->argument());
-  thetaNode->set_predicate(thetaOutput0->argument());
+  thetaOutput2.post->divert_to(thetaOutput3.pre);
+  thetaOutput3.post->divert_to(thetaOutput2.pre);
+  thetaNode->set_predicate(thetaOutput0.pre);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    rvsdg.GetRootRegion(),
-                    { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
-                    { valueType })
-                    .output(0);
+  auto result =
+      jlm::tests::SimpleNode::Create(
+          rvsdg.GetRootRegion(),
+          { thetaOutput0.output, thetaOutput1.output, thetaOutput2.output, thetaOutput3.output },
+          { valueType })
+          .output(0);
 
   GraphExport::Create(*result, "f");
 

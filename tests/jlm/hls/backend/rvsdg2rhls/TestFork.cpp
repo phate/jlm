@@ -34,11 +34,11 @@ TestFork()
   auto loop = hls::loop_node::create(lambda->subregion());
   auto subregion = loop->subregion();
   rvsdg::output * idvBuffer;
-  loop->add_loopvar(lambda->GetFunctionArguments()[0], &idvBuffer);
+  loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   rvsdg::output * lvsBuffer;
-  loop->add_loopvar(lambda->GetFunctionArguments()[1], &lvsBuffer);
+  loop->AddLoopVar(lambda->GetFunctionArguments()[1], &lvsBuffer);
   rvsdg::output * lveBuffer;
-  loop->add_loopvar(lambda->GetFunctionArguments()[2], &lveBuffer);
+  loop->AddLoopVar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
   auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, lvsBuffer })[0];
   auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lveBuffer })[0];
@@ -104,7 +104,7 @@ TestConstantFork()
   auto loop = hls::loop_node::create(lambdaRegion);
   auto subregion = loop->subregion();
   rvsdg::output * idvBuffer;
-  loop->add_loopvar(lambda->GetFunctionArguments()[0], &idvBuffer);
+  loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 
   auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, bitConstant1 })[0];
