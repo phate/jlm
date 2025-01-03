@@ -53,7 +53,8 @@ public:
 
 struct reduce_eq;
 extern const char BitEqLabel[];
-using biteq_op = MakeBitComparisonOperation<reduce_eq, BitEqLabel, BinaryOperation::flags::commutative>;
+using biteq_op =
+    MakeBitComparisonOperation<reduce_eq, BitEqLabel, BinaryOperation::flags::commutative>;
 extern template class MakeBitComparisonOperation<
     reduce_eq,
     BitEqLabel,
@@ -61,7 +62,8 @@ extern template class MakeBitComparisonOperation<
 
 struct reduce_ne;
 extern const char BitNeLabel[];
-using bitne_op = MakeBitComparisonOperation<reduce_ne, BitNeLabel, BinaryOperation::flags::commutative>;
+using bitne_op =
+    MakeBitComparisonOperation<reduce_ne, BitNeLabel, BinaryOperation::flags::commutative>;
 extern template class MakeBitComparisonOperation<
     reduce_ne,
     BitNeLabel,
@@ -70,42 +72,66 @@ extern template class MakeBitComparisonOperation<
 struct reduce_sge;
 extern const char BitSgeLabel[];
 using bitsge_op = MakeBitComparisonOperation<reduce_sge, BitSgeLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_sge, BitSgeLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_sge,
+    BitSgeLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_sgt;
 extern const char BitSgtLabel[];
 using bitsgt_op = MakeBitComparisonOperation<reduce_sgt, BitSgtLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_sgt, BitSgtLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_sgt,
+    BitSgtLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_sle;
 extern const char BitSleLabel[];
 using bitsle_op = MakeBitComparisonOperation<reduce_sle, BitSleLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_sle, BitSleLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_sle,
+    BitSleLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_slt;
 extern const char BitSltLabel[];
 using bitslt_op = MakeBitComparisonOperation<reduce_slt, BitSltLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_slt, BitSltLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_slt,
+    BitSltLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_uge;
 extern const char BitUgeLabel[];
 using bituge_op = MakeBitComparisonOperation<reduce_uge, BitUgeLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_uge, BitUgeLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_uge,
+    BitUgeLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_ugt;
 extern const char BitUgtLabel[];
 using bitugt_op = MakeBitComparisonOperation<reduce_ugt, BitUgtLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_ugt, BitUgtLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_ugt,
+    BitUgtLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_ule;
 extern const char BitUleLabel[];
 using bitule_op = MakeBitComparisonOperation<reduce_ule, BitUleLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_ule, BitUleLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_ule,
+    BitUleLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_ult;
 extern const char BitUltLabel[];
 using bitult_op = MakeBitComparisonOperation<reduce_ult, BitUltLabel, BinaryOperation::flags::none>;
-extern template class MakeBitComparisonOperation<reduce_ult, BitUltLabel, BinaryOperation::flags::none>;
+extern template class MakeBitComparisonOperation<
+    reduce_ult,
+    BitUltLabel,
+    BinaryOperation::flags::none>;
 
 }
 

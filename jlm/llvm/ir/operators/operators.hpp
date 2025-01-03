@@ -944,7 +944,9 @@ public:
   virtual ~fpcmp_op();
 
   inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
-      : BinaryOperation({ fptype::Create(size), fptype::Create(size) }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation(
+            { fptype::Create(size), fptype::Create(size) },
+            jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 

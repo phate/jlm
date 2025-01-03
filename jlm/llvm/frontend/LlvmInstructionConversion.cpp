@@ -538,8 +538,11 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
   if (t->isVectorTy())
   {
-    tacs.push_back(
-        vectorbinary_op::create(*static_cast<rvsdg::BinaryOperation *>(binop.get()), op1, op2, type));
+    tacs.push_back(vectorbinary_op::create(
+        *static_cast<rvsdg::BinaryOperation *>(binop.get()),
+        op1,
+        op2,
+        type));
   }
   else
   {

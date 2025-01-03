@@ -117,7 +117,10 @@ extern template class MakeBitBinaryOperation<
 struct reduce_ashr;
 extern const char BitAShrLabel[];
 using bitashr_op = MakeBitBinaryOperation<reduce_ashr, BitAShrLabel, BinaryOperation::flags::none>;
-extern template class MakeBitBinaryOperation<reduce_ashr, BitAShrLabel, BinaryOperation::flags::none>;
+extern template class MakeBitBinaryOperation<
+    reduce_ashr,
+    BitAShrLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_mul;
 extern const char BitMulLabel[];
@@ -144,7 +147,10 @@ extern template class MakeBitBinaryOperation<
 struct reduce_sdiv;
 extern const char BitSDivLabel[];
 using bitsdiv_op = MakeBitBinaryOperation<reduce_sdiv, BitSDivLabel, BinaryOperation::flags::none>;
-extern template class MakeBitBinaryOperation<reduce_sdiv, BitSDivLabel, BinaryOperation::flags::none>;
+extern template class MakeBitBinaryOperation<
+    reduce_sdiv,
+    BitSDivLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_shl;
 extern const char BitShlLabel[];
@@ -159,7 +165,10 @@ extern template class MakeBitBinaryOperation<reduce_shr, BitShrLabel, BinaryOper
 struct reduce_smod;
 extern const char BitSModLabel[];
 using bitsmod_op = MakeBitBinaryOperation<reduce_smod, BitSModLabel, BinaryOperation::flags::none>;
-extern template class MakeBitBinaryOperation<reduce_smod, BitSModLabel, BinaryOperation::flags::none>;
+extern template class MakeBitBinaryOperation<
+    reduce_smod,
+    BitSModLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_smulh;
 extern const char BitSMulHLabel[];
@@ -178,12 +187,18 @@ extern template class MakeBitBinaryOperation<reduce_sub, BitSubLabel, BinaryOper
 struct reduce_udiv;
 extern const char BitUDivLabel[];
 using bitudiv_op = MakeBitBinaryOperation<reduce_udiv, BitUDivLabel, BinaryOperation::flags::none>;
-extern template class MakeBitBinaryOperation<reduce_udiv, BitUDivLabel, BinaryOperation::flags::none>;
+extern template class MakeBitBinaryOperation<
+    reduce_udiv,
+    BitUDivLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_umod;
 extern const char BitUModLabel[];
 using bitumod_op = MakeBitBinaryOperation<reduce_umod, BitUModLabel, BinaryOperation::flags::none>;
-extern template class MakeBitBinaryOperation<reduce_umod, BitUModLabel, BinaryOperation::flags::none>;
+extern template class MakeBitBinaryOperation<
+    reduce_umod,
+    BitUModLabel,
+    BinaryOperation::flags::none>;
 
 struct reduce_umulh;
 extern const char BitUMulHLabel[];

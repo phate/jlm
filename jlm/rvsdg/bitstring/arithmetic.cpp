@@ -172,7 +172,10 @@ struct reduce_smulh
 };
 
 const char BitSMulHLabel[] = "BitSMulH";
-template class MakeBitBinaryOperation<reduce_smulh, BitSMulHLabel, BinaryOperation::flags::commutative>;
+template class MakeBitBinaryOperation<
+    reduce_smulh,
+    BitSMulHLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_sub
 {
@@ -220,7 +223,10 @@ struct reduce_umulh
 };
 
 const char BitUMulHLabel[] = "BitUMulH";
-template class MakeBitBinaryOperation<reduce_umulh, BitUMulHLabel, BinaryOperation::flags::commutative>;
+template class MakeBitBinaryOperation<
+    reduce_umulh,
+    BitUMulHLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_xor
 {

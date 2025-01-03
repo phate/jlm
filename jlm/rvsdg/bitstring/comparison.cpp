@@ -20,7 +20,10 @@ struct reduce_eq
 };
 
 const char BitEqLabel[] = "BitEq";
-template class MakeBitComparisonOperation<reduce_eq, BitEqLabel, BinaryOperation::flags::commutative>;
+template class MakeBitComparisonOperation<
+    reduce_eq,
+    BitEqLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_ne
 {
@@ -32,7 +35,10 @@ struct reduce_ne
 };
 
 const char BitNeLabel[] = "BitNe";
-template class MakeBitComparisonOperation<reduce_ne, BitNeLabel, BinaryOperation::flags::commutative>;
+template class MakeBitComparisonOperation<
+    reduce_ne,
+    BitNeLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_sge
 {
