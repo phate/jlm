@@ -12,9 +12,11 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -382,6 +384,8 @@ JlmOptCommand::CreateOptimization(
   using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
   using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
+  using TopDownLifetimeMnp =
+      llvm::aa::EliminatedMemoryNodeProvider<AgnosticMnp, llvm::aa::TopDownMemoryNodeEliminator>;
 
   switch (optimizationId)
   {
@@ -389,6 +393,8 @@ JlmOptCommand::CreateOptimization(
     return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
     return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
