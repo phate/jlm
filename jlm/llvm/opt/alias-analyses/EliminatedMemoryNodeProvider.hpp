@@ -59,6 +59,16 @@ public:
     return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedProvisioning, statisticsCollector);
   }
 
+  static std::unique_ptr<MemoryNodeProvisioning>
+  Create(
+      const RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph,
+      util::StatisticsCollector & statisticsCollector)
+  {
+    EliminatedMemoryNodeProvider provider{};
+    return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
+  }
+
 private:
   Provider Provider_;
   Eliminator Eliminator_;
