@@ -270,6 +270,16 @@ ReduceGammaControlConstant(Node & node)
   return true;
 }
 
+bool
+ReduceGammaInvariantVariables(Node & node)
+{
+  const auto gammaNode = dynamic_cast<GammaNode *>(&node);
+  if (gammaNode == nullptr)
+    return false;
+
+  return !perform_invariant_reduction(gammaNode);
+}
+
 GammaOperation::~GammaOperation() noexcept
 {}
 
