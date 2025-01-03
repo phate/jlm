@@ -417,6 +417,31 @@ ReduceGammaWithStaticallyKnownPredicate(Node & node);
 bool
 ReduceGammaControlConstant(Node & node);
 
+/**
+ * Reduces all invariant variables of gamma node and diverts the users of the gamma node's exit
+ * variables to the respective origin of the invariant variable.
+ * x = ...
+ * xo = gamma p xi
+ * [xa <= xi]
+ * [xr <= xa]
+ * [xa <= xi]
+ * [xr <= xa]
+ * ... = anyOp xo
+ * =>
+ * x = ...
+ * xo = gamma p xi
+ * [xa <= xi]
+ * [xo <= xa]
+ * [xa <= xi]
+ * [xo <= xa]
+ * ... = anyOp x //xo changed to x
+ *
+ * @param node A gamma node that is supposed to be reduced.
+ * @return True, if the transformation was successful, otherwise false.
+ */
+bool
+ReduceGammaInvariantVariables(Node & node);
+
 }
 
 #endif
