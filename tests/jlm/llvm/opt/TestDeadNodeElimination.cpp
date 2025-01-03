@@ -348,10 +348,10 @@ TestPhi()
   phiBuilder.begin(&rvsdg.GetRootRegion());
   auto & phiSubregion = *phiBuilder.subregion();
 
-  auto rv1 = phiBuilder.add_recvar(PointerType::Create());
-  auto rv2 = phiBuilder.add_recvar(PointerType::Create());
-  auto rv3 = phiBuilder.add_recvar(PointerType::Create());
-  auto rv4 = phiBuilder.add_recvar(PointerType::Create());
+  auto rv1 = phiBuilder.add_recvar(functionType);
+  auto rv2 = phiBuilder.add_recvar(functionType);
+  auto rv3 = phiBuilder.add_recvar(functionType);
+  auto rv4 = phiBuilder.add_recvar(functionType);
   auto dx = phiBuilder.add_ctxvar(x);
   auto dy = phiBuilder.add_ctxvar(y);
   auto dz = phiBuilder.add_ctxvar(z);

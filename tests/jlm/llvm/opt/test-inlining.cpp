@@ -132,7 +132,7 @@ test2()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto i = &jlm::tests::GraphImport::Create(graph, pt, "i");
+  auto i = &jlm::tests::GraphImport::Create(graph, functionType2, "i");
 
   auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
   {
@@ -164,7 +164,8 @@ test2()
   };
 
   auto f1 = SetupF1(functionType1);
-  auto f2 = SetupF2(f1);
+  auto f2 = SetupF2(
+      jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ f1 }, functionType1).output(0));
 
   GraphExport::Create(*f2, "f2");
 

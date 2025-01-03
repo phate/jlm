@@ -24,11 +24,13 @@ private:
   GraphImport(
       rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::ValueType> valueType,
+      std::shared_ptr<const rvsdg::ValueType> importedType,
       std::string name,
       llvm::linkage linkage)
-      : rvsdg::GraphImport(graph, PointerType::Create(), std::move(name)),
+      : rvsdg::GraphImport(graph, importedType, std::move(name)),
         Linkage_(std::move(linkage)),
-        ValueType_(std::move(valueType))
+        ValueType_(std::move(valueType)),
+        ImportedType_(std::move(importedType))
   {}
 
 public:
@@ -44,6 +46,12 @@ public:
     return ValueType_;
   }
 
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::ValueType> &
+  ImportedType() const noexcept
+  {
+    return ImportedType_;
+  }
+
   GraphImport &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
@@ -51,11 +59,16 @@ public:
   Create(
       rvsdg::Graph & graph,
       std::shared_ptr<const rvsdg::ValueType> valueType,
+      std::shared_ptr<const rvsdg::ValueType> importedType,
       std::string name,
       llvm::linkage linkage)
   {
-    auto graphImport =
-        new GraphImport(graph, std::move(valueType), std::move(name), std::move(linkage));
+    auto graphImport = new GraphImport(
+        graph,
+        std::move(valueType),
+        std::move(importedType),
+        std::move(name),
+        std::move(linkage));
     graph.GetRootRegion().append_argument(graphImport);
     return *graphImport;
   }
@@ -63,6 +76,7 @@ public:
 private:
   llvm::linkage Linkage_;
   std::shared_ptr<const rvsdg::ValueType> ValueType_;
+  std::shared_ptr<const rvsdg::ValueType> ImportedType_;
 };
 
 /**
