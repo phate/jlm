@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -491,6 +492,21 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
     else if (dynamic_cast<const delta::node *>(node))
     {
       // Nothing needs to be done.
+    }
+    else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
+    {
+      if (dynamic_cast<const FunctionToPointerOperation *>(&simpleNode->GetOperation()))
+      {
+        // Nothing needs to be done.
+      }
+      else if (dynamic_cast<const PointerToFunctionOperation *>(&simpleNode->GetOperation()))
+      {
+        // Nothing needs to be done.
+      }
+      else
+      {
+        JLM_UNREACHABLE("Unhandled node type!");
+      }
     }
     else
     {
