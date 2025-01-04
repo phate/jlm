@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -83,6 +84,12 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
     {
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.
+    }
+    else if (
+        is<FunctionToPointerOperation>(node->GetOperation())
+        || is<PointerToFunctionOperation>(node->GetOperation()))
+    {
+      // Nothing needs to be done.
     }
     else
     {
