@@ -1201,7 +1201,7 @@ ConvertInterProceduralGraphModule(
   nf->set_mutable(false);
 
   /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
-  rvsdg::binary_op::normal_form(graph)->set_flatten(false);
+  rvsdg::BinaryOperation::normal_form(graph)->set_flatten(false);
 
   RegionalizedVariableMap regionalizedVariableMap(
       interProceduralGraphModule,

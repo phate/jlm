@@ -710,13 +710,13 @@ enum class cmp
   le
 };
 
-class ptrcmp_op final : public jlm::rvsdg::binary_op
+class ptrcmp_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~ptrcmp_op();
 
   inline ptrcmp_op(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
-      : binary_op({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
@@ -938,18 +938,20 @@ enum class fpcmp
   uno
 };
 
-class fpcmp_op final : public jlm::rvsdg::binary_op
+class fpcmp_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~fpcmp_op();
 
   inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
-      : binary_op({ fptype::Create(size), fptype::Create(size) }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation(
+            { fptype::Create(size), fptype::Create(size) },
+            jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
   inline fpcmp_op(const fpcmp & cmp, const std::shared_ptr<const fptype> & fpt)
-      : binary_op({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
@@ -1147,18 +1149,18 @@ enum class fpop
   mod
 };
 
-class fpbin_op final : public jlm::rvsdg::binary_op
+class fpbin_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~fpbin_op();
 
   inline fpbin_op(const llvm::fpop & op, const fpsize & size)
-      : binary_op({ fptype::Create(size), fptype::Create(size) }, fptype::Create(size)),
+      : BinaryOperation({ fptype::Create(size), fptype::Create(size) }, fptype::Create(size)),
         op_(op)
   {}
 
   inline fpbin_op(const llvm::fpop & op, const std::shared_ptr<const fptype> & fpt)
-      : binary_op({ fpt, fpt }, fpt),
+      : BinaryOperation({ fpt, fpt }, fpt),
         op_(op)
   {}
 
@@ -2229,7 +2231,7 @@ public:
   virtual ~vectorbinary_op();
 
   inline vectorbinary_op(
-      const jlm::rvsdg::binary_op & binop,
+      const rvsdg::BinaryOperation & binop,
       const std::shared_ptr<const vectortype> & op1,
       const std::shared_ptr<const vectortype> & op2,
       const std::shared_ptr<const vectortype> & result)
@@ -2282,10 +2284,10 @@ public:
     return *this;
   }
 
-  inline const jlm::rvsdg::binary_op &
+  const rvsdg::BinaryOperation &
   operation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::binary_op *>(op_.get());
+    return *static_cast<const rvsdg::BinaryOperation *>(op_.get());
   }
 
   virtual bool
@@ -2299,7 +2301,7 @@ public:
 
   static inline std::unique_ptr<llvm::tac>
   create(
-      const jlm::rvsdg::binary_op & binop,
+      const rvsdg::BinaryOperation & binop,
       const llvm::variable * op1,
       const llvm::variable * op2,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
