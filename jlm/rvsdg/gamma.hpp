@@ -17,56 +17,6 @@
 namespace jlm::rvsdg
 {
 
-/* gamma normal form */
-
-class gamma_normal_form final : public structural_normal_form
-{
-public:
-  virtual ~gamma_normal_form() noexcept;
-
-  gamma_normal_form(
-      const std::type_info & operator_class,
-      jlm::rvsdg::node_normal_form * parent,
-      Graph * graph) noexcept;
-
-  virtual bool
-  normalize_node(Node * node) const override;
-
-  virtual void
-  set_predicate_reduction(bool enable);
-
-  inline bool
-  get_predicate_reduction() const noexcept
-  {
-    return enable_predicate_reduction_;
-  }
-
-  virtual void
-  set_invariant_reduction(bool enable);
-
-  inline bool
-  get_invariant_reduction() const noexcept
-  {
-    return enable_invariant_reduction_;
-  }
-
-  virtual void
-  set_control_constant_reduction(bool enable);
-
-  inline bool
-  get_control_constant_reduction() const noexcept
-  {
-    return enable_control_constant_reduction_;
-  }
-
-private:
-  bool enable_predicate_reduction_;
-  bool enable_invariant_reduction_;
-  bool enable_control_constant_reduction_;
-};
-
-/* gamma operation */
-
 class output;
 class Type;
 
@@ -94,13 +44,6 @@ public:
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
-
-  static jlm::rvsdg::gamma_normal_form *
-  normal_form(Graph * graph) noexcept
-  {
-    return static_cast<jlm::rvsdg::gamma_normal_form *>(
-        graph->GetNodeNormalForm(typeid(GammaOperation)));
-  }
 
 private:
   size_t nalternatives_;
