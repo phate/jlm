@@ -392,7 +392,7 @@ JLM_UNIT_TEST_REGISTER(
     TestLoadStoreStateReduction)
 
 static int
-TestLoadStoreReduction()
+TestLoadStoreReduction_Success()
 {
   using namespace jlm::llvm;
 
@@ -434,8 +434,66 @@ TestLoadStoreReduction()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction",
-    TestLoadStoreReduction)
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_Success",
+    TestLoadStoreReduction_Success)
+
+/**
+ * Tests the load-store reduction with the value type of the store being different from the
+ * value type of the load.
+ */
+static int
+LoadStoreReduction_DifferentValueOperandType()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  jlm::rvsdg::Graph graph;
+  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
+  nf->set_mutable(false);
+  nf->set_load_store_reducible(false);
+
+  auto & address = jlm::tests::GraphImport::Create(graph, pointerType, "address");
+  auto & value = jlm::tests::GraphImport::Create(graph, jlm::rvsdg::bittype::Create(32), "value");
+  auto memoryState = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memoryState");
+
+  auto & storeNode = StoreNonVolatileNode::CreateNode(address, value, { memoryState }, 4);
+  auto & loadNode = LoadNonVolatileNode::CreateNode(
+      address,
+      outputs(&storeNode),
+      jlm::rvsdg::bittype::Create(8),
+      4);
+
+  auto & exportedValue = GraphExport::Create(*loadNode.output(0), "v");
+  GraphExport::Create(*loadNode.output(1), "s");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success =
+      jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStore, loadNode);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success == false);
+
+  const auto expectedLoadNode = jlm::rvsdg::output::GetNode(*exportedValue.origin());
+  assert(expectedLoadNode == &loadNode);
+  assert(expectedLoadNode->ninputs() == 2);
+
+  const auto expectedStoreNode = jlm::rvsdg::output::GetNode(*expectedLoadNode->input(1)->origin());
+  assert(expectedStoreNode == &storeNode);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_DifferentValueOperandType",
+    LoadStoreReduction_DifferentValueOperandType)
 
 static int
 TestLoadLoadReduction()
