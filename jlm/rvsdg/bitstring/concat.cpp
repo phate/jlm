@@ -350,10 +350,10 @@ bitconcat_op::reduce_operand_pair(
   return NULL;
 }
 
-enum jlm::rvsdg::binary_op::flags
+enum BinaryOperation::flags
 bitconcat_op::flags() const noexcept
 {
-  return binary_op::flags::associative;
+  return BinaryOperation::flags::associative;
 }
 
 std::string

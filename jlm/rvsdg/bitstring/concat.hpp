@@ -16,13 +16,13 @@
 namespace jlm::rvsdg
 {
 
-class bitconcat_op final : public jlm::rvsdg::binary_op
+class bitconcat_op final : public BinaryOperation
 {
 public:
   virtual ~bitconcat_op() noexcept;
 
   explicit inline bitconcat_op(const std::vector<std::shared_ptr<const bittype>> types)
-      : binary_op({ types.begin(), types.end() }, aggregate_arguments(types))
+      : BinaryOperation({ types.begin(), types.end() }, aggregate_arguments(types))
   {}
 
   virtual bool
@@ -38,7 +38,7 @@ public:
       jlm::rvsdg::output * arg1,
       jlm::rvsdg::output * arg2) const override;
 
-  virtual enum jlm::rvsdg::binary_op::flags
+  enum BinaryOperation::flags
   flags() const noexcept override;
 
   virtual std::string

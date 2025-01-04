@@ -208,7 +208,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/TestDeadNodeElimination \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-inversion \
-    tests/jlm/llvm/opt/TestLoadMuxReduction \
     tests/jlm/llvm/opt/TestLoadStoreReduction \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
