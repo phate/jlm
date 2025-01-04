@@ -132,7 +132,7 @@ is_unary_node(const rvsdg::Node * node) noexcept
 
 /* binary operation */
 
-class binary_op final : public rvsdg::binary_op
+class binary_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~binary_op() noexcept;
@@ -140,8 +140,8 @@ public:
   inline binary_op(
       const std::shared_ptr<const rvsdg::Type> & srctype,
       std::shared_ptr<const rvsdg::Type> dsttype,
-      const enum rvsdg::binary_op::flags & flags) noexcept
-      : rvsdg::binary_op({ srctype, srctype }, std::move(dsttype)),
+      const enum BinaryOperation::flags & flags) noexcept
+      : BinaryOperation({ srctype, srctype }, std::move(dsttype)),
         flags_(flags)
   {}
 
@@ -156,7 +156,7 @@ public:
   reduce_operand_pair(rvsdg::unop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
       const override;
 
-  virtual enum rvsdg::binary_op::flags
+  enum BinaryOperation::flags
   flags() const noexcept override;
 
   virtual std::string
@@ -172,7 +172,7 @@ public:
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
-    binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
+    binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
     return rvsdg::SimpleNode::create(op1->region(), op, { op1, op2 });
   }
 
@@ -183,12 +183,12 @@ public:
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
-    binary_op op(srctype, std::move(dsttype), rvsdg::binary_op::flags::none);
+    binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
     return rvsdg::SimpleNode::create_normalized(op1->region(), op, { op1, op2 })[0];
   }
 
 private:
-  enum rvsdg::binary_op::flags flags_;
+  enum BinaryOperation::flags flags_;
 };
 
 /* structural operation */
