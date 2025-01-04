@@ -104,7 +104,7 @@ NormalizeUnaryOperation(const unary_op & operation, const std::vector<rvsdg::out
   if (const auto reduction = operation.can_reduce_operand(&operand);
       reduction != unop_reduction_none)
   {
-    return std::vector(1, operation.reduce_operand(reduction, &operand));
+    return { { operation.reduce_operand(reduction, &operand) } };
   }
 
   return std::nullopt;
