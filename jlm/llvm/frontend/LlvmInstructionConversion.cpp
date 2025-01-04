@@ -535,11 +535,14 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto type = ConvertType(i->getType(), ctx);
 
-  JLM_ASSERT(is<rvsdg::binary_op>(*binop));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
   if (t->isVectorTy())
   {
-    tacs.push_back(
-        vectorbinary_op::create(*static_cast<rvsdg::binary_op *>(binop.get()), op1, op2, type));
+    tacs.push_back(vectorbinary_op::create(
+        *static_cast<rvsdg::BinaryOperation *>(binop.get()),
+        op1,
+        op2,
+        type));
   }
   else
   {
@@ -1044,11 +1047,11 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
 
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
-  JLM_ASSERT(is<rvsdg::binary_op>(*operation));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(*operation));
 
   if (i->getType()->isVectorTy())
   {
-    auto & binop = *static_cast<rvsdg::binary_op *>(operation.get());
+    auto & binop = *static_cast<rvsdg::BinaryOperation *>(operation.get());
     tacs.push_back(vectorbinary_op::create(binop, op1, op2, type));
   }
   else
