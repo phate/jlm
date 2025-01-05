@@ -97,97 +97,6 @@ public:
   }
 
   /**
-   * Remove theta outputs and their respective results.
-   *
-   * An output must match the condition specified by \p match and it must be dead.
-   *
-   * @tparam F A type that supports the function call operator: bool operator(const ThetaOutput&)
-   * @param match Defines the condition of the elements to remove.
-   * @return The inputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * inputs might refer to outputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaInputsWhere()
-   * \see ThetaOutput#IsDead()
-   */
-  template<typename F>
-  util::HashSet<const rvsdg::input *>
-  RemoveThetaOutputsWhere(const F & match);
-
-  /**
-   * Remove all dead theta outputs and their respective results.
-   *
-   * @return The inputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * inputs might refer to outputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaOutputsWhere()
-   * \see ThetaOutput#IsDead()
-   */
-  util::HashSet<const rvsdg::input *>
-  PruneThetaOutputs()
-  {
-    auto match = [](const rvsdg::output &)
-    {
-      return true;
-    };
-
-    return RemoveThetaOutputsWhere(match);
-  }
-
-  /**
-   * Remove theta inputs and their respective arguments.
-   *
-   * An input must match the condition specified by \p match and its respective argument must be
-   * dead.
-   *
-   * @tparam F A type that supports the function call operator: bool operator(const jlm::input&)
-   * @param match Defines the condition of the elements to remove.
-   * @return The outputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * outputs might refer to inputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaOutputsWhere()
-   * \see RegionArgument#IsDead()
-   */
-  template<typename F>
-  util::HashSet<const rvsdg::output *>
-  RemoveThetaInputsWhere(const F & match);
-
-  /**
-   * Remove all dead theta inputs and their respective arguments.
-   *
-   * @return The outputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * outputs might refer to inputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaInputsWhere()
-   * \see RegionArgument#IsDead()
-   */
-  util::HashSet<const rvsdg::output *>
-  PruneThetaInputs()
-  {
-    auto match = [](const rvsdg::input &)
-    {
-      return true;
-    };
-
-    return RemoveThetaInputsWhere(match);
-  }
-
-  /**
    * \brief Creates a new loop-carried variable.
    *
    * \param origin
@@ -204,6 +113,27 @@ public:
    */
   LoopVar
   AddLoopVar(rvsdg::output * origin);
+
+  /**
+   * \brief Removes loop variables.
+   *
+   * \param loopvars
+   *   The loop variables to be removed.
+   *
+   * \pre
+   *   For each loopvar in \p loopvars the following must hold:
+   *   - loopvar.pre->origin() == loopvar.post
+   *   - loopvar.pre has no other users besides loopvar.post
+   *   - loopvar.output has no users
+   *
+   * Removes loop variables from this theta construct. The
+   * loop variables must be loop-invariant and otherwise unused.
+   * See dead node elimination that is explicitly structured
+   * to restructure loops before processing to ensure this
+   * invariant.
+   */
+  void
+  RemoveLoopVars(std::vector<LoopVar> loopvars);
 
   virtual ThetaNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
@@ -288,88 +218,12 @@ public:
    */
   [[nodiscard]] std::vector<LoopVar>
   GetLoopVars() const;
-
-private:
-  // Calling RemoveThetaInputsWhere/RemoveThetaOutputsWhere can result
-  // in inputs (and pre-loop arguments) and outputs (and post-loop results)
-  // to become unmatched. In this case, the theta node itself has
-  // "invalid" shape until fixed properly.
-  // The indices of unmatched inputs/outputs are tracked here to
-  // detect this situation, and also to provide correct mapping.
-  // Computing the mapping is a bit fiddly as it requires adjusting
-  // indices accordingly, should seriously consider whether this
-  // is really necessary or things can rather be reformulated such that
-  // inputs/outputs are always consistent.
-
-  std::optional<std::size_t>
-  MapInputToOutputIndex(std::size_t index) const noexcept;
-
-  std::optional<std::size_t>
-  MapOutputToInputIndex(std::size_t index) const noexcept;
-
-  void
-  MarkInputIndexErased(std::size_t index) noexcept;
-
-  void
-  MarkOutputIndexErased(std::size_t index) noexcept;
-
-  std::vector<std::size_t> unmatchedInputs;
-  std::vector<std::size_t> unmatchedOutputs;
 };
 
 static inline bool
 ThetaLoopVarIsInvariant(const ThetaNode::LoopVar & loopVar) noexcept
 {
   return loopVar.post->origin() == loopVar.pre;
-}
-
-/* theta node method definitions */
-
-template<typename F>
-util::HashSet<const rvsdg::input *>
-ThetaNode::RemoveThetaOutputsWhere(const F & match)
-{
-  util::HashSet<const rvsdg::input *> deadInputs;
-
-  auto loopvars = GetLoopVars();
-  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
-  for (size_t n = loopvars.size(); n > 0; --n)
-  {
-    auto & loopvar = loopvars[n - 1];
-    if (loopvar.output->IsDead() && match(*loopvar.output))
-    {
-      deadInputs.Insert(loopvar.input);
-      subregion()->RemoveResult(loopvar.post->index());
-      MarkOutputIndexErased(loopvar.output->index());
-      RemoveOutput(loopvar.output->index());
-    }
-  }
-
-  return deadInputs;
-}
-
-template<typename F>
-util::HashSet<const rvsdg::output *>
-ThetaNode::RemoveThetaInputsWhere(const F & match)
-{
-  util::HashSet<const rvsdg::output *> deadOutputs;
-
-  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto & thetaInput = *input(n);
-    auto loopvar = MapInputLoopVar(thetaInput);
-
-    if (loopvar.pre->IsDead() && match(thetaInput))
-    {
-      deadOutputs.Insert(loopvar.output);
-      subregion()->RemoveArgument(loopvar.pre->index());
-      MarkInputIndexErased(thetaInput.index());
-      RemoveInput(thetaInput.index());
-    }
-  }
-
-  return deadOutputs;
 }
 
 }
