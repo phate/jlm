@@ -10,9 +10,7 @@
 #include <optional>
 
 #include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/structural-normal-form.hpp>
 
 namespace jlm::rvsdg
 {

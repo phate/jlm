@@ -96,9 +96,6 @@ class StructuralOperation : public Operation
 public:
   virtual bool
   operator==(const Operation & other) const noexcept override;
-
-  static jlm::rvsdg::structural_normal_form *
-  normal_form(Graph * graph) noexcept;
 };
 
 }
