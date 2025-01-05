@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -872,6 +873,14 @@ RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
     else if (dynamic_cast<const delta::node *>(node))
     {
       // Nothing needs to be done for delta nodes.
+      continue;
+    }
+    else if (
+        is<FunctionToPointerOperation>(node->GetOperation())
+        || is<PointerToFunctionOperation>(node->GetOperation()))
+    {
+      // Few operators may appear as top-level constructs and simply must
+      // be ignored.
       continue;
     }
     else
