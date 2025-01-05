@@ -56,8 +56,6 @@ test_predicate_reduction()
 
   // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_predicate_reduction(false);
-
   bittype bits2(2);
 
   auto v0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
@@ -127,7 +125,6 @@ test_control_constant_reduction()
 
   // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_control_constant_reduction(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(1), "x");
 
@@ -170,7 +167,6 @@ test_control_constant_reduction2()
 
   // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_control_constant_reduction(false);
 
   auto import = &jlm::tests::GraphImport::Create(graph, bittype::Create(2), "import");
 
