@@ -1420,17 +1420,17 @@ ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
       jlm::rvsdg::output::GetNode(*test.lambda->GetFunctionResults()[0]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
 
-  auto thetaOutput =
-      jlm::util::AssertedCast<jlm::rvsdg::ThetaOutput>(lambda_exit_mux->input(0)->origin());
-  auto theta = jlm::rvsdg::output::GetNode(*thetaOutput);
+  auto thetaOutput = lambda_exit_mux->input(0)->origin();
+  auto theta = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*thetaOutput);
   assert(theta == test.theta);
 
-  auto storeStateOutput = thetaOutput->result()->origin();
+  auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
+  auto storeStateOutput = loopvar.post->origin();
   auto store = jlm::rvsdg::output::GetNode(*storeStateOutput);
   assert(is<StoreNonVolatileOperation>(*store, 4, 2));
-  assert(store->input(storeStateOutput->index() + 2)->origin() == thetaOutput->argument());
+  assert(store->input(storeStateOutput->index() + 2)->origin() == loopvar.pre);
 
-  auto lambda_entry_mux = jlm::rvsdg::output::GetNode(*thetaOutput->input()->origin());
+  auto lambda_entry_mux = jlm::rvsdg::output::GetNode(*loopvar.input->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 2));
 }
 
@@ -1445,17 +1445,17 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
       jlm::rvsdg::output::GetNode(*test.lambda->GetFunctionResults()[0]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto thetaOutput =
-      jlm::util::AssertedCast<jlm::rvsdg::ThetaOutput>(lambdaExitMerge->input(0)->origin());
-  auto theta = jlm::rvsdg::output::GetNode(*thetaOutput);
+  auto thetaOutput = lambdaExitMerge->input(0)->origin();
+  auto theta = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*thetaOutput);
   assert(theta == test.theta);
+  auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
 
-  auto storeStateOutput = thetaOutput->result()->origin();
+  auto storeStateOutput = loopvar.post->origin();
   auto store = jlm::rvsdg::output::GetNode(*storeStateOutput);
   assert(is<StoreNonVolatileOperation>(*store, 4, 2));
-  assert(store->input(storeStateOutput->index() + 2)->origin() == thetaOutput->argument());
+  assert(store->input(storeStateOutput->index() + 2)->origin() == loopvar.pre);
 
-  auto lambdaEntrySplit = jlm::rvsdg::output::GetNode(*thetaOutput->input()->origin());
+  auto lambdaEntrySplit = jlm::rvsdg::output::GetNode(*loopvar.input->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
@@ -1470,17 +1470,17 @@ ValidateThetaTestSteensgaardAgnosticTopDown(const jlm::tests::ThetaTest & test)
       jlm::rvsdg::output::GetNode(*test.lambda->GetFunctionResults()[0]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambda_exit_mux, 2, 1));
 
-  auto thetaOutput =
-      jlm::util::AssertedCast<jlm::rvsdg::ThetaOutput>(lambda_exit_mux->input(0)->origin());
-  auto theta = jlm::rvsdg::output::GetNode(*thetaOutput);
+  auto thetaOutput = lambda_exit_mux->input(0)->origin();
+  auto theta = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*thetaOutput);
   assert(theta == test.theta);
+  auto loopvar = theta->MapOutputLoopVar(*thetaOutput);
 
-  auto storeStateOutput = thetaOutput->result()->origin();
+  auto storeStateOutput = loopvar.post->origin();
   auto store = jlm::rvsdg::output::GetNode(*storeStateOutput);
   assert(is<StoreNonVolatileOperation>(*store, 4, 2));
-  assert(store->input(storeStateOutput->index() + 2)->origin() == thetaOutput->argument());
+  assert(store->input(storeStateOutput->index() + 2)->origin() == loopvar.pre);
 
-  auto lambda_entry_mux = jlm::rvsdg::output::GetNode(*thetaOutput->input()->origin());
+  auto lambda_entry_mux = jlm::rvsdg::output::GetNode(*loopvar.input->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambda_entry_mux, 1, 2));
 }
 

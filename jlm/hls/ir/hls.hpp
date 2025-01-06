@@ -787,7 +787,7 @@ public:
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
   rvsdg::StructuralOutput *
-  add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer = nullptr);
+  AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer = nullptr);
 
   jlm::rvsdg::output *
   add_loopconst(jlm::rvsdg::output * origin);

@@ -84,7 +84,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   }
   else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
   {
-    output = theta->add_loopvar(output)->argument();
+    output = theta->AddLoopVar(output).pre;
   }
   else if (auto lambda = dynamic_cast<llvm::lambda::node *>(region->node()))
   {
