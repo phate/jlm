@@ -1075,107 +1075,257 @@ types_bitstring_test_reduction()
 }
 
 static int
-types_bitstring_test_slice_concat()
+SliceOfConstant()
 {
   using namespace jlm::rvsdg;
 
-  Graph graph;
+  // Arrange & Act
+  const Graph graph;
+  const auto constant = create_bitconstant(&graph.GetRootRegion(), "00110111");
+  const auto slice = bitslice(constant, 2, 6);
+  auto & ex = jlm::tests::GraphExport::Create(*slice, "dummy");
 
-  auto base_const1 = create_bitconstant(&graph.GetRootRegion(), "00110111");
-  auto base_const2 = create_bitconstant(&graph.GetRootRegion(), "11001000");
+  view(graph, stdout);
 
-  auto base_x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
-  auto base_y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
-  auto base_z = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "z");
-
-  {
-    /* slice of constant */
-    auto a = output::GetNode(*jlm::rvsdg::bitslice(base_const1, 2, 6));
-
-    auto & op = dynamic_cast<const bitconstant_op &>(a->GetOperation());
-    assert(op.value() == bitvalue_repr("1101"));
-  }
-
-  {
-    /* slice of slice */
-    auto a = jlm::rvsdg::bitslice(base_x, 2, 6);
-    auto b = output::GetNode(*jlm::rvsdg::bitslice(a, 1, 3));
-
-    assert(dynamic_cast<const bitslice_op *>(&b->GetOperation()));
-    const bitslice_op * attrs;
-    attrs = dynamic_cast<const bitslice_op *>(&b->GetOperation());
-    assert(attrs->low() == 3 && attrs->high() == 5);
-  }
-
-  {
-    /* slice of full node */
-    auto a = jlm::rvsdg::bitslice(base_x, 0, 8);
-
-    assert(a == base_x);
-  }
-
-  {
-    /* slice of concat */
-    auto a = jlm::rvsdg::bitconcat({ base_x, base_y });
-    auto b = jlm::rvsdg::bitslice(a, 0, 8);
-
-    assert(static_cast<const bittype *>(&b->type())->nbits() == 8);
-
-    assert(b == base_x);
-  }
-
-  {
-    /* concat flattening */
-    auto a = jlm::rvsdg::bitconcat({ base_x, base_y });
-    auto b = output::GetNode(*jlm::rvsdg::bitconcat({ a, base_z }));
-
-    assert(dynamic_cast<const bitconcat_op *>(&b->GetOperation()));
-    assert(b->ninputs() == 3);
-    assert(b->input(0)->origin() == base_x);
-    assert(b->input(1)->origin() == base_y);
-    assert(b->input(2)->origin() == base_z);
-  }
-
-  {
-    /* concat of single node */
-    auto a = jlm::rvsdg::bitconcat({ base_x });
-
-    assert(a == base_x);
-  }
-
-  {
-    /* concat of slices */
-    auto a = jlm::rvsdg::bitslice(base_x, 0, 4);
-    auto b = jlm::rvsdg::bitslice(base_x, 4, 8);
-    auto c = jlm::rvsdg::bitconcat({ a, b });
-
-    assert(c == base_x);
-  }
-
-  {
-    /* concat of constants */
-    auto a = output::GetNode(*jlm::rvsdg::bitconcat({ base_const1, base_const2 }));
-
-    auto & op = dynamic_cast<const bitconstant_op &>(a->GetOperation());
-    assert(op.value() == bitvalue_repr("0011011111001000"));
-  }
-
-  {
-    /* CSE */
-    auto b = create_bitconstant(&graph.GetRootRegion(), "00110111");
-    assert(b == base_const1);
-
-    auto c = jlm::rvsdg::bitslice(base_x, 2, 6);
-    auto d = jlm::rvsdg::bitslice(base_x, 2, 6);
-    assert(c == d);
-
-    auto e = jlm::rvsdg::bitconcat({ base_x, base_y });
-    auto f = jlm::rvsdg::bitconcat({ base_x, base_y });
-    assert(e == f);
-  }
+  // Assert
+  const auto node = output::GetNode(*ex.origin());
+  auto & operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
+  assert(operation.value() == bitvalue_repr("1101"));
 
   return 0;
 }
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConstant", SliceOfConstant);
+
+static int
+SliceOfSlice()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+
+  auto slice1 = bitslice(x, 2, 6);
+  auto slice2 = bitslice(slice1, 1, 3);
+
+  auto & ex = jlm::tests::GraphExport::Create(*slice2, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  const auto node = output::GetNode(*ex.origin());
+  const auto operation = dynamic_cast<const bitslice_op *>(&node->GetOperation());
+  assert(operation->low() == 3 && operation->high() == 5);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfSlice", SliceOfSlice);
+
+static int
+SliceOfFullNode()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+  const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+
+  auto sliceResult = bitslice(x, 0, 8);
+
+  auto & ex = jlm::tests::GraphExport::Create(*sliceResult, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  assert(ex.origin() == x);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfFullNode", SliceOfFullNode);
+
+static int
+SliceOfConcat()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
+
+  auto concatResult = bitconcat({ x, y });
+  auto sliceResult = bitslice(concatResult, 0, 8);
+
+  auto & ex = jlm::tests::GraphExport::Create(*sliceResult, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  const auto bitType = dynamic_cast<const bittype *>(&ex.origin()->type());
+  assert(bitType && bitType->nbits() == 8);
+  assert(ex.origin() == x);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConcat", SliceOfConcat);
+
+static int
+ConcatFlattening()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "z");
+
+  auto concatResult1 = bitconcat({ x, y });
+  auto concatResult2 = bitconcat({ concatResult1, z });
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatResult2, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  auto node = output::GetNode(*ex.origin());
+  assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
+  assert(node->ninputs() == 3);
+  assert(node->input(0)->origin() == x);
+  assert(node->input(1)->origin() == y);
+  assert(node->input(2)->origin() == z);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatFlattening", ConcatFlattening);
+
+static int
+ConcatWithSingleOperand()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+
+  const auto concatResult = bitconcat({ x });
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  assert(ex.origin() == x);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/bitstring/bitstring-ConcatWithSingleOperand",
+    ConcatWithSingleOperand);
+
+static int
+ConcatOfSlices()
+{
+  using namespace jlm::rvsdg;
+
+  // Assert & Act
+  Graph graph;
+
+  const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+
+  auto sliceResult1 = bitslice(x, 0, 4);
+  auto sliceResult2 = bitslice(x, 4, 8);
+  const auto concatResult = bitconcat({ sliceResult1, sliceResult2 });
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  assert(ex.origin() == x);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatWithOfSlices", ConcatOfSlices);
+
+static int
+ConcatOfConstants()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+
+  auto c1 = create_bitconstant(&graph.GetRootRegion(), "00110111");
+  auto c2 = create_bitconstant(&graph.GetRootRegion(), "11001000");
+
+  auto concatResult = bitconcat({ c1, c2 });
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  auto node = output::GetNode(*ex.origin());
+  auto operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
+  assert(operation.value() == bitvalue_repr("0011011111001000"));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatOfConstants", ConcatOfConstants);
+
+static int
+ConcatCne()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
+
+  auto slice1 = bitslice(x, 2, 6);
+  auto slice2 = bitslice(x, 2, 6);
+  assert(slice1 == slice2);
+
+  auto concat1 = bitconcat({ x, y });
+  auto concat2 = bitconcat({ x, y });
+  assert(concat1 == concat2);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatCne", ConcatCne);
+
+static int
+SliceCne()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange & Act
+  Graph graph;
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+
+  auto slice1 = bitslice(x, 2, 6);
+  auto slice2 = bitslice(x, 2, 6);
+
+  auto & ex1 = jlm::tests::GraphExport::Create(*slice1, "dummy");
+  auto & ex2 = jlm::tests::GraphExport::Create(*slice2, "dummy");
+  view(graph, stdout);
+
+  // Assert
+  assert(ex1.origin() == ex2.origin());
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceCne", SliceCne);
 
 static const char * bs[] = { "00000000", "11111111", "10000000", "01111111", "00001111",
                              "XXXX0011", "XD001100", "XXXXDDDD", "10XDDX01", "0DDDDDD1" };
@@ -1704,7 +1854,6 @@ RunTests()
   types_bitstring_test_constant();
   types_bitstring_test_normalize();
   types_bitstring_test_reduction();
-  types_bitstring_test_slice_concat();
   types_bitstring_test_value_representation();
 
   return 0;
