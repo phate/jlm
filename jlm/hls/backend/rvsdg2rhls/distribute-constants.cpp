@@ -36,10 +36,8 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
           loopvar.output->divert_users(
               rvsdg::SimpleNode::create_normalized(out->region(), op, {})[0]);
           distribute_constant(op, arg_replacement);
-          theta->subregion()->RemoveResult(loopvar.post->index());
-          theta->subregion()->RemoveArgument(loopvar.pre->index());
-          theta->RemoveInput(loopvar.input->index());
-          theta->RemoveOutput(loopvar.output->index());
+          loopvar.post->divert_to(loopvar.pre);
+          theta->RemoveLoopVars({loopvar});
           changed = true;
           break;
         }
