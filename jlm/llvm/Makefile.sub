@@ -27,6 +27,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/delta.cpp \
+    jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
@@ -123,6 +124,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/MemoryStateOperations.hpp \
+	jlm/llvm/ir/operators/FunctionPointer.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
 	jlm/llvm/ir/operators/Store.hpp \
@@ -208,8 +210,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/TestDeadNodeElimination \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-inversion \
-    tests/jlm/llvm/opt/TestLoadMuxReduction \
-    tests/jlm/llvm/opt/TestLoadStoreReduction \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
     tests/jlm/llvm/opt/test-unroll \

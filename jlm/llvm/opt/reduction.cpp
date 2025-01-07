@@ -165,7 +165,7 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
     // See github issue #304
     return false;
   }
-  if (is<rvsdg::binary_op>(&simpleNode))
+  if (is<rvsdg::BinaryOperation>(&simpleNode))
   {
     return ReduceBinaryNode(simpleNode);
   }
@@ -192,9 +192,9 @@ NodeReduction::ReduceStoreNode(rvsdg::Node & simpleNode)
 bool
 NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
 {
-  JLM_ASSERT(is<rvsdg::binary_op>(&simpleNode));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(&simpleNode));
 
-  return rvsdg::ReduceNode<rvsdg::binary_op>(rvsdg::NormalizeBinaryOperation, simpleNode);
+  return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
 }
 
 std::optional<std::vector<rvsdg::output *>>

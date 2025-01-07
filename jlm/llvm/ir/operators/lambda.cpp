@@ -304,17 +304,17 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    if (auto theta_input = dynamic_cast<rvsdg::ThetaInput *>(input))
+    if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input))
     {
-      auto argument = theta_input->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto loopvar = theta->MapInputLoopVar(*input);
+      worklist.insert(worklist.end(), loopvar.pre->begin(), loopvar.pre->end());
       continue;
     }
 
-    if (auto thetaResult = dynamic_cast<const rvsdg::ThetaResult *>(input))
+    if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input))
     {
-      auto output = thetaResult->output();
-      worklist.insert(worklist.end(), output->begin(), output->end());
+      auto loopvar = theta->MapPostLoopVar(*input);
+      worklist.insert(worklist.end(), loopvar.output->begin(), loopvar.output->end());
       continue;
     }
 

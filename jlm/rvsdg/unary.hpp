@@ -10,7 +10,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
-#include <jlm/util/common.hpp>
+
+#include <optional>
 
 namespace jlm::rvsdg
 {
@@ -89,6 +90,21 @@ static const unop_reduction_path_t unop_reduction_inverse = 4;
 static const unop_reduction_path_t unop_reduction_narrow = 5;
 /* operation can be distributed into operands of preceding operation */
 static const unop_reduction_path_t unop_reduction_distribute = 6;
+
+/**
+ * \brief Applies the reductions implemented in the unary operations reduction functions.
+ *
+ * @param operation The unary operation on which the transformation is performed.
+ * @param operands The single(!) operand of the unary node. It should only be a single operand.
+ *
+ * @return If the normalization could be applied, then the single(!) result of the unary operation
+ * after the transformation. Otherwise, std::nullopt.
+ *
+ * \see unary_op::can_reduce_operand()
+ * \see unary_op::reduce_operand()
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeUnaryOperation(const unary_op & operation, const std::vector<rvsdg::output *> & operands);
 
 }
 

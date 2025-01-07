@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -84,6 +85,12 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.
     }
+    else if (
+        is<FunctionToPointerOperation>(node->GetOperation())
+        || is<PointerToFunctionOperation>(node->GetOperation()))
+    {
+      // Nothing needs to be done.
+    }
     else
     {
       JLM_UNREACHABLE("Unhandled node type.");
@@ -152,15 +159,15 @@ InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 void
 InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
-  for (const auto & thetaOutput : thetaNode)
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<iostatetype>(thetaOutput->type()))
+    if (rvsdg::is<iostatetype>(loopVar.input->type()))
       continue;
 
-    if (rvsdg::is_invariant(thetaOutput))
-      thetaOutput->divert_users(thetaOutput->input()->origin());
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+      loopVar.output->divert_users(loopVar.input->origin());
   }
 }
 

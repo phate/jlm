@@ -56,8 +56,6 @@ test_predicate_reduction()
 
   // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_predicate_reduction(false);
-
   bittype bits2(2);
 
   auto v0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "");
@@ -93,23 +91,28 @@ test_invariant_reduction()
 {
   using namespace jlm::rvsdg;
 
-  auto vtype = jlm::tests::valuetype::Create();
-
+  // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_invariant_reduction(true);
+  const auto valueType = jlm::tests::valuetype::Create();
 
-  auto pred = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
-  auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
+  const auto predicate = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
+  const auto value = &jlm::tests::GraphImport::Create(graph, valueType, "");
 
-  auto gamma = GammaNode::create(pred, 2);
-  auto ev = gamma->AddEntryVar(v);
-  gamma->AddExitVar(ev.branchArgument);
+  const auto gammaNode = GammaNode::create(predicate, 2);
+  auto [input, branchArgument] = gammaNode->AddEntryVar(value);
+  gammaNode->AddExitVar(branchArgument);
 
-  auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
+  auto & ex = jlm::tests::GraphExport::Create(*gammaNode->output(0), "");
 
-  graph.Normalize();
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  assert(r.origin() == v);
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = ReduceGammaInvariantVariables(*gammaNode);
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(ex.origin() == value);
 
   graph.PruneNodes();
   assert(graph.GetRootRegion().nnodes() == 0);
@@ -122,7 +125,6 @@ test_control_constant_reduction()
 
   // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_control_constant_reduction(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(1), "x");
 
@@ -165,7 +167,6 @@ test_control_constant_reduction2()
 
   // Arrange
   Graph graph;
-  GammaOperation::normal_form(&graph)->set_control_constant_reduction(false);
 
   auto import = &jlm::tests::GraphImport::Create(graph, bittype::Create(2), "import");
 

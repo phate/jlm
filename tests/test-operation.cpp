@@ -78,7 +78,7 @@ binary_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, r
   return nullptr;
 }
 
-enum rvsdg::binary_op::flags
+enum rvsdg::BinaryOperation::flags
 binary_op::flags() const noexcept
 {
   return flags_;

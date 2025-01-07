@@ -44,15 +44,15 @@ TestSingleLoad()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto loadAddress = theta->add_loopvar(functionArguments[0]);
-  auto memoryStateArgument = theta->add_loopvar(functionArguments[1]);
+  auto loadAddress = theta->AddLoopVar(functionArguments[0]);
+  auto memoryStateArgument = theta->AddLoopVar(functionArguments[1]);
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress->argument(),
-      { memoryStateArgument->argument() },
+      loadAddress.pre,
+      { memoryStateArgument.pre },
       PointerType::Create(),
       32);
-  loadAddress->result()->divert_to(loadOutput[0]);
-  memoryStateArgument->result()->divert_to(loadOutput[1]);
+  loadAddress.post->divert_to(loadOutput[0]);
+  memoryStateArgument.post->divert_to(loadOutput[1]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(1) });
   GraphExport::Create(*lambdaOutput, "f");
@@ -122,22 +122,22 @@ TestLoadStore()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto loadAddress = theta->add_loopvar(functionArguments[0]);
-  auto storeAddress = theta->add_loopvar(functionArguments[1]);
-  auto memoryStateArgument = theta->add_loopvar(functionArguments[2]);
+  auto loadAddress = theta->AddLoopVar(functionArguments[0]);
+  auto storeAddress = theta->AddLoopVar(functionArguments[1]);
+  auto memoryStateArgument = theta->AddLoopVar(functionArguments[2]);
   auto loadOutput = LoadNonVolatileNode::Create(
-      loadAddress->argument(),
-      { memoryStateArgument->argument() },
+      loadAddress.pre,
+      { memoryStateArgument.pre },
       PointerType::Create(),
       32);
   auto storeOutput = StoreNonVolatileNode::Create(
-      storeAddress->argument(),
+      storeAddress.pre,
       jlm::rvsdg::create_bitconstant(theta->subregion(), 32, 1),
       { loadOutput[1] },
       32);
 
-  loadAddress->result()->divert_to(loadOutput[0]);
-  memoryStateArgument->result()->divert_to(storeOutput[0]);
+  loadAddress.post->divert_to(loadOutput[0]);
+  memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(2) });
   GraphExport::Create(*lambdaOutput, "f");
@@ -205,18 +205,18 @@ TestAddrQueue()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto address = theta->add_loopvar(functionArguments[0]);
-  auto memoryStateArgument = theta->add_loopvar(functionArguments[1]);
+  auto address = theta->AddLoopVar(functionArguments[0]);
+  auto memoryStateArgument = theta->AddLoopVar(functionArguments[1]);
   auto loadOutput = LoadNonVolatileNode::Create(
-      address->argument(),
-      { memoryStateArgument->argument() },
+      address.pre,
+      { memoryStateArgument.pre },
       PointerType::Create(),
       32);
   auto storeOutput =
-      StoreNonVolatileNode::Create(address->argument(), loadOutput[0], { loadOutput[1] }, 32);
+      StoreNonVolatileNode::Create(address.pre, loadOutput[0], { loadOutput[1] }, 32);
 
-  address->result()->divert_to(loadOutput[0]);
-  memoryStateArgument->result()->divert_to(storeOutput[0]);
+  address.post->divert_to(loadOutput[0]);
+  memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(1) });
   GraphExport::Create(*lambdaOutput, "f");

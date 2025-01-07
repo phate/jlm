@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
@@ -1001,6 +1002,26 @@ convert(
   return nullptr;
 }
 
+static ::llvm::Value *
+convert(
+    const PointerToFunctionOperation &,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> &,
+    context & ctx)
+{
+  return ctx.value(operands[0]);
+}
+
+static ::llvm::Value *
+convert(
+    const FunctionToPointerOperation &,
+    const std::vector<const variable *> & operands,
+    ::llvm::IRBuilder<> &,
+    context & ctx)
+{
+  return ctx.value(operands[0]);
+}
+
 template<class OP>
 static ::llvm::Value *
 convert(
@@ -1094,7 +1115,9 @@ convert_operation(
             { typeid(CallEntryMemoryStateMergeOperation),
               convert<CallEntryMemoryStateMergeOperation> },
             { typeid(CallExitMemoryStateSplitOperation),
-              convert<CallExitMemoryStateSplitOperation> } });
+              convert<CallExitMemoryStateSplitOperation> },
+            { typeid(PointerToFunctionOperation), convert<PointerToFunctionOperation> },
+            { typeid(FunctionToPointerOperation), convert<FunctionToPointerOperation> } });
   /* FIXME: AddrSpaceCast instruction is not supported */
 
   JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());

@@ -66,17 +66,22 @@ invariantInput(
   return nullptr;
 }
 
-static rvsdg::ThetaInput *
-invariantInput(const rvsdg::ThetaOutput & output, InvariantOutputMap & invariantOutputs)
+static rvsdg::input *
+invariantInput(
+    const rvsdg::ThetaNode & theta,
+    const rvsdg::output & output,
+    InvariantOutputMap & invariantOutputs)
 {
-  auto origin = output.result()->origin();
+  auto loopvar = theta.MapOutputLoopVar(output);
+
+  auto origin = loopvar.post->origin();
 
   while (true)
   {
-    if (origin == output.argument())
+    if (origin == loopvar.pre)
     {
-      invariantOutputs[&output] = output.input();
-      return output.input();
+      invariantOutputs[&output] = loopvar.input;
+      return loopvar.input;
     }
 
     if (auto input = invariantInput(*origin, invariantOutputs))
@@ -101,13 +106,13 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
   if (invariantOutputs.find(&output) != invariantOutputs.end())
     return invariantOutputs[&output];
 
-  if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(&output))
-    return invariantInput(*thetaOutput, invariantOutputs);
+  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+    return invariantInput(*theta, output, invariantOutputs);
 
-  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
+  if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
-    auto thetaInput = static_cast<const rvsdg::ThetaInput *>(thetaArgument->input());
-    return invariantInput(*thetaInput->output(), invariantOutputs);
+    auto loopvar = theta->MapPreLoopVar(output);
+    return invariantInput(*loopvar.output, invariantOutputs);
   }
 
   if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
@@ -205,9 +210,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       continue;
     }
 
-    if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(origin))
+    if (rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*origin))
     {
-      if (auto input = invariantInput(*thetaOutput))
+      if (auto input = invariantInput(*origin))
       {
         origin = input->origin();
         continue;
@@ -216,9 +221,9 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(origin))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*origin))
     {
-      if (auto input = invariantInput(*thetaArgument))
+      if (auto input = invariantInput(*origin))
       {
         origin = input->origin();
         continue;

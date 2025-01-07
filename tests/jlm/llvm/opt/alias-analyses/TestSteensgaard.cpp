@@ -702,7 +702,7 @@ TestTheta()
 
     auto & gepOutput = pointsToGraph.GetRegisterNode(*test.gep->output(0));
 
-    auto & thetaArgument2 = pointsToGraph.GetRegisterNode(*test.theta->output(2)->argument());
+    auto & thetaArgument2 = pointsToGraph.GetRegisterNode(*test.theta->GetLoopVars()[2].pre);
     auto & thetaOutput2 = pointsToGraph.GetRegisterNode(*test.theta->output(2));
 
     assertTargets(lambdaArgument1, { &lambda, &pointsToGraph.GetExternalMemoryNode() });

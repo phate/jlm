@@ -6,7 +6,6 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
-#include <jlm/rvsdg/structural-normal-form.hpp>
 
 namespace jlm::rvsdg
 {
@@ -57,13 +56,6 @@ bool
 StructuralOperation::operator==(const Operation & other) const noexcept
 {
   return typeid(*this) == typeid(other);
-}
-
-jlm::rvsdg::structural_normal_form *
-StructuralOperation::normal_form(Graph * graph) noexcept
-{
-  return static_cast<structural_normal_form *>(
-      graph->GetNodeNormalForm(typeid(StructuralOperation)));
 }
 
 }

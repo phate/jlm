@@ -49,13 +49,13 @@ public:
 /* Represents a binary operation (possibly normalized n-ary if associative)
  * on a bitstring of a specific width, produces another bitstring of the
  * same width. */
-class bitbinary_op : public jlm::rvsdg::binary_op
+class bitbinary_op : public BinaryOperation
 {
 public:
   virtual ~bitbinary_op() noexcept;
 
   inline bitbinary_op(const std::shared_ptr<const bittype> type, size_t arity = 2) noexcept
-      : binary_op({ arity, type }, type)
+      : BinaryOperation({ arity, type }, type)
   {}
 
   /* reduction methods */
@@ -89,13 +89,13 @@ enum class compare_result
   static_false
 };
 
-class bitcompare_op : public jlm::rvsdg::binary_op
+class bitcompare_op : public BinaryOperation
 {
 public:
   virtual ~bitcompare_op() noexcept;
 
   inline bitcompare_op(std::shared_ptr<const bittype> type) noexcept
-      : binary_op({ type, type }, bittype::Create(1))
+      : BinaryOperation({ type, type }, bittype::Create(1))
   {}
 
   virtual binop_reduction_path_t

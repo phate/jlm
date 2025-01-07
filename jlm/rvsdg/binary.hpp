@@ -19,7 +19,7 @@ namespace jlm::rvsdg
 
 typedef size_t binop_reduction_path_t;
 
-class binary_op;
+class BinaryOperation;
 
 class binary_normal_form final : public simple_normal_form
 {
@@ -87,7 +87,7 @@ public:
 
 private:
   bool
-  normalize_node(Node * node, const binary_op & op) const;
+  normalize_node(Node * node, const BinaryOperation & op) const;
 
   bool enable_reducible_;
   bool enable_reorder_;
@@ -119,12 +119,10 @@ public:
 };
 
 /**
-  \brief Binary operator
-
-  Operator taking two arguments (with well-defined reduction for more
-  operands if operator is associative).
-*/
-class binary_op : public SimpleOperation
+ * Binary operation taking two arguments (with well-defined reduction for more
+ * operands if operator is associative).
+ */
+class BinaryOperation : public SimpleOperation
 {
 public:
   enum class flags
@@ -134,9 +132,9 @@ public:
     commutative = 2
   };
 
-  virtual ~binary_op() noexcept;
+  ~BinaryOperation() noexcept override;
 
-  inline binary_op(
+  BinaryOperation(
       const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
       std::shared_ptr<const jlm::rvsdg::Type> result)
       : SimpleOperation(std::move(operands), { std::move(result) })
@@ -152,7 +150,7 @@ public:
       jlm::rvsdg::output * op1,
       jlm::rvsdg::output * op2) const = 0;
 
-  virtual jlm::rvsdg::binary_op::flags
+  virtual BinaryOperation::flags
   flags() const noexcept;
 
   inline bool
@@ -165,7 +163,7 @@ public:
   normal_form(Graph * graph) noexcept
   {
     return static_cast<jlm::rvsdg::binary_normal_form *>(
-        graph->GetNodeNormalForm(typeid(binary_op)));
+        graph->GetNodeNormalForm(typeid(BinaryOperation)));
   }
 };
 
@@ -186,7 +184,7 @@ public:
  */
 std::optional<std::vector<rvsdg::output *>>
 FlattenAssociativeBinaryOperation(
-    const binary_op & operation,
+    const BinaryOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
 /**
@@ -203,7 +201,7 @@ FlattenAssociativeBinaryOperation(
  */
 std::optional<std::vector<rvsdg::output *>>
 NormalizeBinaryOperation(
-    const binary_op & operation,
+    const BinaryOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
 class flattened_binary_op final : public SimpleOperation
@@ -217,16 +215,16 @@ public:
 
   virtual ~flattened_binary_op() noexcept;
 
-  inline flattened_binary_op(std::unique_ptr<binary_op> op, size_t narguments) noexcept
+  inline flattened_binary_op(std::unique_ptr<BinaryOperation> op, size_t narguments) noexcept
       : SimpleOperation({ narguments, op->argument(0) }, { op->result(0) }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
-  inline flattened_binary_op(const binary_op & op, size_t narguments)
+  flattened_binary_op(const BinaryOperation & op, size_t narguments)
       : SimpleOperation({ narguments, op.argument(0) }, { op.result(0) }),
-        op_(std::unique_ptr<binary_op>(static_cast<binary_op *>(op.copy().release())))
+        op_(std::unique_ptr<BinaryOperation>(static_cast<BinaryOperation *>(op.copy().release())))
   {
     JLM_ASSERT(op_->is_associative());
   }
@@ -240,7 +238,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const binary_op &
+  const BinaryOperation &
   bin_operation() const noexcept
   {
     return *op_;
@@ -268,35 +266,35 @@ public:
   }
 
 private:
-  std::unique_ptr<binary_op> op_;
+  std::unique_ptr<BinaryOperation> op_;
 };
 
 /* binary flags operators */
 
-static inline constexpr enum binary_op::flags
-operator|(enum binary_op::flags a, enum binary_op::flags b)
+static constexpr enum BinaryOperation::flags
+operator|(enum BinaryOperation::flags a, enum BinaryOperation::flags b)
 {
-  return static_cast<enum binary_op::flags>(static_cast<int>(a) | static_cast<int>(b));
+  return static_cast<enum BinaryOperation::flags>(static_cast<int>(a) | static_cast<int>(b));
 }
 
-static inline constexpr enum binary_op::flags
-operator&(enum binary_op::flags a, enum binary_op::flags b)
+static constexpr enum BinaryOperation::flags
+operator&(enum BinaryOperation::flags a, enum BinaryOperation::flags b)
 {
-  return static_cast<enum binary_op::flags>(static_cast<int>(a) & static_cast<int>(b));
+  return static_cast<enum BinaryOperation::flags>(static_cast<int>(a) & static_cast<int>(b));
 }
 
 /* binary methods */
 
 inline bool
-binary_op::is_associative() const noexcept
+BinaryOperation::is_associative() const noexcept
 {
-  return static_cast<int>(flags() & binary_op::flags::associative);
+  return static_cast<int>(flags() & BinaryOperation::flags::associative);
 }
 
 inline bool
-binary_op::is_commutative() const noexcept
+BinaryOperation::is_commutative() const noexcept
 {
-  return static_cast<int>(flags() & binary_op::flags::commutative);
+  return static_cast<int>(flags() & BinaryOperation::flags::commutative);
 }
 
 static const binop_reduction_path_t binop_reduction_none = 0;

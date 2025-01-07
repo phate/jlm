@@ -180,32 +180,39 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (o1->type() != o2->type())
     return false;
 
-  if (is<rvsdg::ThetaArgument>(o1) && is<rvsdg::ThetaArgument>(o2))
+  if (auto theta1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1))
   {
-    JLM_ASSERT(o1->region()->node() == o2->region()->node());
-    auto a1 = static_cast<rvsdg::RegionArgument *>(o1);
-    auto a2 = static_cast<rvsdg::RegionArgument *>(o2);
-    vs.insert(a1, a2);
-    auto i1 = a1->input(), i2 = a2->input();
-    if (!congruent(a1->input()->origin(), a2->input()->origin(), vs, ctx))
-      return false;
+    if (auto theta2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2))
+    {
+      JLM_ASSERT(o1->region()->node() == o2->region()->node());
+      auto loopvar1 = theta1->MapPreLoopVar(*o1);
+      auto loopvar2 = theta2->MapPreLoopVar(*o2);
+      vs.insert(o1, o2);
+      auto i1 = loopvar1.input, i2 = loopvar2.input;
+      if (!congruent(loopvar1.input->origin(), loopvar2.input->origin(), vs, ctx))
+        return false;
 
-    auto output1 = o1->region()->node()->output(i1->index());
-    auto output2 = o2->region()->node()->output(i2->index());
-    return congruent(output1, output2, vs, ctx);
+      auto output1 = o1->region()->node()->output(i1->index());
+      auto output2 = o2->region()->node()->output(i2->index());
+      return congruent(output1, output2, vs, ctx);
+    }
+  }
+
+  if (auto theta1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1))
+  {
+    if (auto theta2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2))
+    {
+      vs.insert(o1, o2);
+      auto loopvar1 = theta1->MapOutputLoopVar(*o1);
+      auto loopvar2 = theta2->MapOutputLoopVar(*o2);
+      auto r1 = loopvar1.post;
+      auto r2 = loopvar2.post;
+      return congruent(r1->origin(), r2->origin(), vs, ctx);
+    }
   }
 
   auto n1 = jlm::rvsdg::output::GetNode(*o1);
   auto n2 = jlm::rvsdg::output::GetNode(*o2);
-  if (is<rvsdg::ThetaOperation>(n1) && is<rvsdg::ThetaOperation>(n2) && n1 == n2)
-  {
-    auto so1 = static_cast<rvsdg::StructuralOutput *>(o1);
-    auto so2 = static_cast<rvsdg::StructuralOutput *>(o2);
-    vs.insert(o1, o2);
-    auto r1 = so1->results.first();
-    auto r2 = so2->results.first();
-    return congruent(r1->origin(), r2->origin(), vs, ctx);
-  }
 
   if (rvsdg::is<rvsdg::GammaOperation>(n1) && n1 == n2)
   {
@@ -315,10 +322,12 @@ mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
     {
       auto input1 = theta->input(i1);
       auto input2 = theta->input(i2);
-      if (congruent(input1->argument(), input2->argument(), ctx))
+      auto loopvar1 = theta->MapInputLoopVar(*input1);
+      auto loopvar2 = theta->MapInputLoopVar(*input2);
+      if (congruent(loopvar1.pre, loopvar2.pre, ctx))
       {
-        ctx.mark(input1->argument(), input2->argument());
-        ctx.mark(input1->output(), input2->output());
+        ctx.mark(loopvar1.pre, loopvar2.pre);
+        ctx.mark(loopvar1.output, loopvar2.output);
       }
     }
   }
@@ -491,11 +500,11 @@ divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
   auto theta = static_cast<rvsdg::ThetaNode *>(node);
   auto subregion = node->subregion(0);
 
-  for (const auto & lv : *theta)
+  for (const auto & lv : theta->GetLoopVars())
   {
-    JLM_ASSERT(ctx.set(lv->argument())->size() == ctx.set(lv)->size());
-    divert_users(lv->argument(), ctx);
-    divert_users(lv, ctx);
+    JLM_ASSERT(ctx.set(lv.pre)->size() == ctx.set(lv.output)->size());
+    divert_users(lv.pre, ctx);
+    divert_users(lv.output, ctx);
   }
 
   divert(subregion, ctx);

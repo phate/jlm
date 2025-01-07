@@ -149,99 +149,6 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & ou
   }
 }
 
-gamma_normal_form::~gamma_normal_form() noexcept
-{}
-
-gamma_normal_form::gamma_normal_form(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    Graph * graph) noexcept
-    : structural_normal_form(operator_class, parent, graph),
-      enable_predicate_reduction_(false),
-      enable_invariant_reduction_(false),
-      enable_control_constant_reduction_(false)
-{
-  if (auto p = dynamic_cast<gamma_normal_form *>(parent))
-  {
-    enable_predicate_reduction_ = p->enable_predicate_reduction_;
-    enable_invariant_reduction_ = p->enable_invariant_reduction_;
-    enable_control_constant_reduction_ = p->enable_control_constant_reduction_;
-  }
-}
-
-bool
-gamma_normal_form::normalize_node(Node * node_) const
-{
-  auto node = util::AssertedCast<GammaNode>(node_);
-
-  if (!get_mutable())
-    return true;
-
-  if (get_predicate_reduction() && is_predicate_reducible(node))
-  {
-    perform_predicate_reduction(node);
-    return false;
-  }
-
-  bool was_normalized = true;
-  if (get_invariant_reduction())
-    was_normalized |= perform_invariant_reduction(node);
-
-  auto outputs = is_control_constant_reducible(node);
-  if (get_control_constant_reduction() && !outputs.empty())
-  {
-    perform_control_constant_reduction(outputs);
-    was_normalized = false;
-  }
-
-  return was_normalized;
-}
-
-void
-gamma_normal_form::set_predicate_reduction(bool enable)
-{
-  if (enable_predicate_reduction_ == enable)
-  {
-    return;
-  }
-
-  children_set<gamma_normal_form, &gamma_normal_form::set_predicate_reduction>(enable);
-
-  enable_predicate_reduction_ = enable;
-
-  if (enable && get_mutable())
-    graph()->MarkDenormalized();
-}
-
-void
-gamma_normal_form::set_invariant_reduction(bool enable)
-{
-  if (enable_invariant_reduction_ == enable)
-  {
-    return;
-  }
-
-  children_set<gamma_normal_form, &gamma_normal_form::set_invariant_reduction>(enable);
-
-  enable_invariant_reduction_ = enable;
-
-  if (enable && get_mutable())
-    graph()->MarkDenormalized();
-}
-
-void
-gamma_normal_form::set_control_constant_reduction(bool enable)
-{
-  if (enable_control_constant_reduction_ == enable)
-    return;
-
-  children_set<gamma_normal_form, &gamma_normal_form::set_control_constant_reduction>(enable);
-
-  enable_control_constant_reduction_ = enable;
-  if (enable && get_mutable())
-    graph()->MarkDenormalized();
-}
-
 bool
 ReduceGammaWithStaticallyKnownPredicate(Node & node)
 {
@@ -268,6 +175,16 @@ ReduceGammaControlConstant(Node & node)
 
   perform_control_constant_reduction(outputs);
   return true;
+}
+
+bool
+ReduceGammaInvariantVariables(Node & node)
+{
+  const auto gammaNode = dynamic_cast<GammaNode *>(&node);
+  if (gammaNode == nullptr)
+    return false;
+
+  return !perform_invariant_reduction(gammaNode);
 }
 
 GammaOperation::~GammaOperation() noexcept
@@ -487,21 +404,4 @@ GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exit
   return firstOrigin;
 }
 
-}
-
-jlm::rvsdg::node_normal_form *
-gamma_node_get_default_normal_form_(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::Graph * graph)
-{
-  return new jlm::rvsdg::gamma_normal_form(operator_class, parent, graph);
-}
-
-static void __attribute__((constructor))
-register_node_normal_form()
-{
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::GammaOperation),
-      gamma_node_get_default_normal_form_);
 }

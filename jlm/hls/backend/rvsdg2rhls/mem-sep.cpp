@@ -116,9 +116,9 @@ route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
     }
     else if (auto tn = dynamic_cast<rvsdg::ThetaNode *>(target->node()))
     {
-      auto lv = tn->add_loopvar(parent_response);
-      parrent_user->divert_to(lv);
-      return lv->argument();
+      auto lv = tn->AddLoopVar(parent_response);
+      parrent_user->divert_to(lv.output);
+      return lv.pre;
     }
     JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
   }
@@ -183,13 +183,12 @@ trace_edge(
     JLM_ASSERT(new_edge->nusers() == 1);
     auto user = *common_edge->begin();
     auto new_next = *new_edge->begin();
-    auto node = rvsdg::input::GetNode(*user);
     if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
     {
       // end of region reached
       return res;
     }
-    else if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(node))
+    else if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
     {
       auto ip = gammaNode->AddEntryVar(new_edge);
       std::vector<jlm::rvsdg::output *> vec;
@@ -208,13 +207,13 @@ trace_edge(
         common_edge = subres->output();
       }
     }
-    else if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
+    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))
     {
-      auto tn = ti->node();
-      auto lv = tn->add_loopvar(new_edge);
-      trace_edge(ti->argument(), lv->argument(), load_nodes, store_nodes, decouple_nodes);
-      common_edge = ti->output();
-      new_edge = lv;
+      auto olv = theta->MapInputLoopVar(*user);
+      auto lv = theta->AddLoopVar(new_edge);
+      trace_edge(olv.pre, lv.pre, load_nodes, store_nodes, decouple_nodes);
+      common_edge = olv.output;
+      new_edge = lv.output;
       new_next->divert_to(new_edge);
     }
     else if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))

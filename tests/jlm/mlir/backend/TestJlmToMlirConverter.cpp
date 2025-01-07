@@ -634,8 +634,8 @@ TestTheta()
 
     auto predicate = jlm::rvsdg::control_constant(rvsdgThetaNode->subregion(), 2, 0);
 
-    rvsdgThetaNode->add_loopvar(entryvar1);
-    rvsdgThetaNode->add_loopvar(entryvar2);
+    rvsdgThetaNode->AddLoopVar(entryvar1);
+    rvsdgThetaNode->AddLoopVar(entryvar2);
     rvsdgThetaNode->set_predicate(predicate);
 
     // Convert the RVSDG to MLIR

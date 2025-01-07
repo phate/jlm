@@ -11,11 +11,11 @@
 namespace jlm::rvsdg
 {
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 MakeBitComparisonOperation<reduction, name, opflags>::~MakeBitComparisonOperation() noexcept
 {}
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 bool
 MakeBitComparisonOperation<reduction, name, opflags>::operator==(
     const Operation & other) const noexcept
@@ -24,7 +24,7 @@ MakeBitComparisonOperation<reduction, name, opflags>::operator==(
   return op && op->type() == type();
 }
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 compare_result
 MakeBitComparisonOperation<reduction, name, opflags>::reduce_constants(
     const bitvalue_repr & arg1,
@@ -41,28 +41,28 @@ MakeBitComparisonOperation<reduction, name, opflags>::reduce_constants(
   }
 }
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
-enum binary_op::flags
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
+enum BinaryOperation::flags
 MakeBitComparisonOperation<reduction, name, opflags>::flags() const noexcept
 {
   return opflags;
 }
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 std::string
 MakeBitComparisonOperation<reduction, name, opflags>::debug_string() const
 {
   return jlm::util::strfmt(name, type().nbits());
 }
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 std::unique_ptr<Operation>
 MakeBitComparisonOperation<reduction, name, opflags>::copy() const
 {
   return std::make_unique<MakeBitComparisonOperation>(*this);
 }
 
-template<typename reduction, const char * name, enum binary_op::flags opflags>
+template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 std::unique_ptr<bitcompare_op>
 MakeBitComparisonOperation<reduction, name, opflags>::create(size_t nbits) const
 {

@@ -11,7 +11,6 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/region.cpp \
 	jlm/rvsdg/simple-normal-form.cpp \
 	jlm/rvsdg/simple-node.cpp \
-	jlm/rvsdg/structural-normal-form.cpp \
 	jlm/rvsdg/structural-node.cpp \
 	jlm/rvsdg/theta.cpp \
 	jlm/rvsdg/tracker.cpp \
@@ -53,7 +52,6 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/type.hpp \
 	jlm/rvsdg/binary.hpp \
 	jlm/rvsdg/theta.hpp \
-	jlm/rvsdg/structural-normal-form.hpp \
 	jlm/rvsdg/reduction-helpers.hpp \
 	jlm/rvsdg/RvsdgModule.hpp \
 	jlm/rvsdg/bitstring.hpp \
@@ -81,6 +79,7 @@ librvsdg_TESTS = \
 	tests/jlm/rvsdg/test-topdown \
 	tests/jlm/rvsdg/test-typemismatch \
 	tests/jlm/rvsdg/TestStructuralNode \
+	tests/jlm/rvsdg/UnaryOperationTests \
 
 librvsdg_TEST_LIBS = \
 	libjlmtest \

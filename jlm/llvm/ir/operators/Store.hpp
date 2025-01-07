@@ -17,70 +17,6 @@
 namespace jlm::llvm
 {
 
-/* store normal form */
-
-class store_normal_form final : public jlm::rvsdg::simple_normal_form
-{
-public:
-  virtual ~store_normal_form();
-
-  store_normal_form(
-      const std::type_info & opclass,
-      jlm::rvsdg::node_normal_form * parent,
-      rvsdg::Graph * graph) noexcept;
-
-  virtual bool
-  normalize_node(rvsdg::Node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const rvsdg::SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands) const override;
-
-  virtual void
-  set_store_mux_reducible(bool enable);
-
-  virtual void
-  set_store_store_reducible(bool enable);
-
-  virtual void
-  set_store_alloca_reducible(bool enable);
-
-  virtual void
-  set_multiple_origin_reducible(bool enable);
-
-  inline bool
-  get_store_mux_reducible() const noexcept
-  {
-    return enable_store_mux_;
-  }
-
-  inline bool
-  get_store_store_reducible() const noexcept
-  {
-    return enable_store_store_;
-  }
-
-  inline bool
-  get_store_alloca_reducible() const noexcept
-  {
-    return enable_store_alloca_;
-  }
-
-  inline bool
-  get_multiple_origin_reducible() const noexcept
-  {
-    return enable_multiple_origin_;
-  }
-
-private:
-  bool enable_store_mux_;
-  bool enable_store_store_;
-  bool enable_store_alloca_;
-  bool enable_multiple_origin_;
-};
-
 /**
  * Abstract base class for store operations.
  *
@@ -166,13 +102,6 @@ public:
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
-
-  static store_normal_form *
-  GetNormalForm(rvsdg::Graph * graph) noexcept
-  {
-    return util::AssertedCast<store_normal_form>(
-        graph->GetNodeNormalForm(typeid(StoreNonVolatileOperation)));
-  }
 
   static std::unique_ptr<llvm::tac>
   Create(const variable * address, const variable * value, const variable * state, size_t alignment)
