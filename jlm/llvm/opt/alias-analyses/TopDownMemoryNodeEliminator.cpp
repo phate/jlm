@@ -182,7 +182,7 @@ public:
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     JLM_ASSERT(CallNode::ClassifyCall(indirectCall)->IsIndirectCall());
-    auto & set = CreateIndirectCallNodesSet(indirectCall);
+    auto & set = GetOrCreateIndirectCallNodesSet(indirectCall);
     set.UnionWith(memoryNodes);
   }
 
@@ -251,10 +251,13 @@ private:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  CreateIndirectCallNodesSet(const CallNode & indirectCall)
+  GetOrCreateIndirectCallNodesSet(const CallNode & indirectCall)
   {
-    JLM_ASSERT(!HasIndirectCallNodesSet(indirectCall));
-    IndirectCallNodes_[&indirectCall] = {};
+    if (!HasIndirectCallNodesSet(indirectCall))
+    {
+      IndirectCallNodes_[&indirectCall] = {};
+    }
+
     return IndirectCallNodes_[&indirectCall];
   }
 
