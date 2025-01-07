@@ -757,6 +757,12 @@ std::string
 JlmHlsExtractCommand::ToString() const
 {
   return util::strfmt(
+      "gdb ",
+      "-ex ", "r ",
+      "-ex ", "bt ",
+      "-ex ", "detach ",
+      "-ex ", "quit ",
+      "--args ",
       "jlm-hls ",
       "--extract ",
       "--hls-function ",
