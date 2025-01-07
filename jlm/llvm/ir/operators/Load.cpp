@@ -566,110 +566,6 @@ perform_load_load_state_reduction(
   return ld;
 }
 
-load_normal_form::~load_normal_form()
-{}
-
-load_normal_form::load_normal_form(
-    const std::type_info & opclass,
-    rvsdg::node_normal_form * parent,
-    rvsdg::Graph * graph) noexcept
-    : simple_normal_form(opclass, parent, graph),
-      enable_load_mux_(false),
-      enable_load_store_(false),
-      enable_load_alloca_(false),
-      enable_load_load_state_(false),
-      enable_multiple_origin_(false),
-      enable_load_store_state_(false)
-{}
-
-bool
-load_normal_form::normalize_node(rvsdg::Node * node) const
-{
-  JLM_ASSERT(is<LoadNonVolatileOperation>(node->GetOperation()));
-  auto op = static_cast<const LoadNonVolatileOperation *>(&node->GetOperation());
-  auto operands = rvsdg::operands(node);
-
-  if (!get_mutable())
-    return true;
-
-  if (get_load_mux_reducible() && is_load_mux_reducible(operands))
-  {
-    divert_users(node, perform_load_mux_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_store_reducible() && is_load_store_reducible(*op, operands))
-  {
-    divert_users(node, perform_load_store_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_alloca_reducible() && is_load_alloca_reducible(operands))
-  {
-    divert_users(node, perform_load_alloca_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_store_state_reducible() && is_load_store_state_reducible(*op, operands))
-  {
-    divert_users(node, perform_load_store_state_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
-  {
-    divert_users(node, perform_multiple_origin_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
-  {
-    divert_users(node, perform_load_load_state_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  return simple_normal_form::normalize_node(node);
-}
-
-std::vector<rvsdg::output *>
-load_normal_form::normalized_create(
-    rvsdg::Region * region,
-    const rvsdg::SimpleOperation & op,
-    const std::vector<rvsdg::output *> & operands) const
-{
-  JLM_ASSERT(is<LoadNonVolatileOperation>(op));
-  auto lop = static_cast<const LoadNonVolatileOperation *>(&op);
-
-  if (!get_mutable())
-    return simple_normal_form::normalized_create(region, op, operands);
-
-  if (get_load_mux_reducible() && is_load_mux_reducible(operands))
-    return perform_load_mux_reduction(*lop, operands);
-
-  if (get_load_store_reducible() && is_load_store_reducible(*lop, operands))
-    return perform_load_store_reduction(*lop, operands);
-
-  if (get_load_alloca_reducible() && is_load_alloca_reducible(operands))
-    return perform_load_alloca_reduction(*lop, operands);
-
-  if (get_load_store_state_reducible() && is_load_store_state_reducible(*lop, operands))
-    return perform_load_store_state_reduction(*lop, operands);
-
-  if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
-    return perform_multiple_origin_reduction(*lop, operands);
-
-  if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
-    return perform_load_load_state_reduction(*lop, operands);
-
-  return simple_normal_form::normalized_create(region, op, operands);
-}
-
 std::optional<std::vector<rvsdg::output *>>
 NormalizeLoadMux(
     const LoadNonVolatileOperation & operation,
@@ -734,28 +630,6 @@ NormalizeLoadLoadState(
     return perform_load_load_state_reduction(operation, operands);
 
   return std::nullopt;
-}
-
-}
-
-namespace
-{
-
-static jlm::rvsdg::node_normal_form *
-create_load_normal_form(
-    const std::type_info & opclass,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::Graph * graph)
-{
-  return new jlm::llvm::load_normal_form(opclass, parent, graph);
-}
-
-static void __attribute__((constructor))
-register_normal_form()
-{
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::llvm::LoadNonVolatileOperation),
-      create_load_normal_form);
 }
 
 }

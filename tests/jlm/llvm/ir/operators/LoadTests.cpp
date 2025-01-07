@@ -90,10 +90,6 @@ TestLoadAllocaReduction()
   auto bt = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_alloca_reducible(false);
-
   auto size = &jlm::tests::GraphImport::Create(graph, bt, "v");
 
   auto alloca1 = alloca_op::create(bt, size, 4);
@@ -137,10 +133,6 @@ LoadMuxReduction_Success()
   const auto bitstringType = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_mux_reducible(false);
-
   const auto address = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
   auto s1 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "state1");
   auto s2 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "state2");
@@ -197,10 +189,6 @@ LoadMuxReduction_WrongNumberOfOperands()
   const auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_mux_reducible(false);
-
   const auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
   const auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
   const auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
@@ -246,10 +234,6 @@ LoadMuxReduction_LoadWithoutStates()
   const auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_mux_reducible(false);
-
   const auto address = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
 
   auto & loadNode = LoadNonVolatileNode::CreateNode(*address, {}, valueType, 4);
@@ -289,10 +273,6 @@ TestDuplicateStateReduction()
   const auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
-  const auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_multiple_origin_reducible(false);
-
   const auto a = &jlm::tests::GraphImport::Create(graph, pointerType, "a");
   auto s1 = &jlm::tests::GraphImport::Create(graph, memoryType, "s1");
   auto s2 = &jlm::tests::GraphImport::Create(graph, memoryType, "s2");
@@ -345,10 +325,6 @@ TestLoadStoreStateReduction()
   auto bt = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_store_state_reducible(false);
-
   auto size = &jlm::tests::GraphImport::Create(graph, bt, "v");
 
   auto alloca1 = alloca_op::create(bt, size, 4);
@@ -402,10 +378,6 @@ TestLoadStoreReduction_Success()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_store_reducible(false);
-
   auto a = &jlm::tests::GraphImport::Create(graph, pt, "address");
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "value");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "state");
@@ -451,10 +423,6 @@ LoadStoreReduction_DifferentValueOperandType()
   const auto memoryStateType = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-  nf->set_load_store_reducible(false);
-
   auto & address = jlm::tests::GraphImport::Create(graph, pointerType, "address");
   auto & value = jlm::tests::GraphImport::Create(graph, jlm::rvsdg::bittype::Create(32), "value");
   auto memoryState = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memoryState");
@@ -506,9 +474,6 @@ TestLoadLoadReduction()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(false);
-
   auto a1 = &jlm::tests::GraphImport::Create(graph, pt, "a1");
   auto a2 = &jlm::tests::GraphImport::Create(graph, pt, "a2");
   auto a3 = &jlm::tests::GraphImport::Create(graph, pt, "a3");
