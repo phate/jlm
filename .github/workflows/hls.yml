@@ -27,13 +27,13 @@ jobs:
     - name: "Run hls-test-suite"
       run: ./scripts/run-hls-test.sh
     - name: "Create comment if cycles differ"
-      if: ${{ hashFiles('./usr/hls-test-suite/Makefile') != '' }}
+      if: ${{ hashFiles('./usr/hls-test-suite/build/cycle-diff.log') != '' }}
       uses: actions/github-script@v7
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
           const fs = require("fs");
-          const comment = fs.readFileSync("./usr/hls-test-suite/Makefile", { encoding: "utf8" });
+          const comment = fs.readFileSync("./usr/hls-test-suite/build/cycle-diff.log", { encoding: "utf8" });
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
