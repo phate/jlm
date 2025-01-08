@@ -136,8 +136,8 @@ ThetaNode::MapPostLoopVar(const rvsdg::input & result) const
     // There is nothing sensible to return here.
     throw std::logic_error("cannot map loop continuation predicate to loop variable");
   }
-  return LoopVar{ input(result.index()),
-                  subregion()->argument(result.index()),
+  return LoopVar{ input(result.index() - 1),
+                  subregion()->argument(result.index() - 1),
                   const_cast<rvsdg::input *>(&result),
                   output(result.index() - 1) };
 }
