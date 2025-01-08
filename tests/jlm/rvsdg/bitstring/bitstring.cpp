@@ -8,6 +8,7 @@
 #include <test-operation.hpp>
 
 #include <jlm/rvsdg/bitstring.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static int
@@ -1176,8 +1177,10 @@ ConcatFlattening()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  const auto nf = graph.GetNodeNormalForm(typeid(bitconcat_op));
+  nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
@@ -1187,6 +1190,12 @@ ConcatFlattening()
   auto concatResult2 = bitconcat({ concatResult1, z });
 
   auto & ex = jlm::tests::GraphExport::Create(*concatResult2, "dummy");
+  view(graph, stdout);
+
+  // Act
+  const auto concatNode = output::GetNode(*ex.origin());
+  ReduceNode<bitconcat_op>(FlattenBitConcatOperation, *concatNode);
+
   view(graph, stdout);
 
   // Assert

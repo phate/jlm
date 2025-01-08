@@ -55,6 +55,11 @@ private:
 jlm::rvsdg::output *
 bitconcat(const std::vector<jlm::rvsdg::output *> & operands);
 
+std::optional<std::vector<rvsdg::output *>>
+FlattenBitConcatOperation(
+    const bitconcat_op & operation,
+    const std::vector<rvsdg::output *> & operands);
+
 }
 
 #endif
