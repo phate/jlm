@@ -19,7 +19,6 @@ runs:
       id: cache-mlir
       uses: actions/cache@v4
       with:
-        save-always: true
         path: |
           ${{ github.workspace }}/lib/mlir-rvsdg
         key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}
@@ -38,3 +37,11 @@ runs:
           --install-path ${{ github.workspace }}/lib/mlir-rvsdg
       shell: bash
 
+    - name: "Save MLIR to the cache"
+      if: steps.cache-mlir.outputs.cache-hit != 'true'
+      id: save-cache-circt
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ github.workspace }}/lib/mlir-rvsdg
+        key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}
