@@ -8,6 +8,7 @@
 #include <test-operation.hpp>
 
 #include <jlm/rvsdg/bitstring.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static int
@@ -15,25 +16,35 @@ types_bitstring_arithmetic_test_bitand()
 {
   using namespace jlm::rvsdg;
 
+  // Assert
   Graph graph;
+  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
+  nf->set_mutable(false);
 
-  auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
+  const auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
+  const auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
-  auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
-  auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
+  const auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
+  const auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
 
-  auto and0 = bitand_op::create(32, s0, s1);
-  auto and1 = bitand_op::create(32, c0, c1);
+  const auto and0 = bitand_op::create(32, s0, s1);
+  const auto and1 = bitand_op::create(32, c0, c1);
 
-  jlm::tests::GraphExport::Create(*and0, "dummy");
-  jlm::tests::GraphExport::Create(*and1, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*and0, "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*and1, "dummy");
 
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*and0)->GetOperation() == bitand_op(32));
-  assert(output::GetNode(*and1)->GetOperation() == int_constant_op(32, +1));
+  // Act
+  const auto node1 = output::GetNode(*ex1.origin());
+  ReduceNode<bitand_op>(NormalizeBinaryOperation, *node1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitand_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, +1));
 
   return 0;
 }
@@ -43,7 +54,10 @@ types_bitstring_arithmetic_test_bitashr()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitashr_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -53,26 +67,36 @@ types_bitstring_arithmetic_test_bitashr()
   auto c2 = create_bitconstant(&graph.GetRootRegion(), 32, 2);
   auto c3 = create_bitconstant(&graph.GetRootRegion(), 32, 32);
 
-  auto ashr0 = bitashr_op::create(32, s0, s1);
-  auto ashr1 = bitashr_op::create(32, c0, c2);
-  auto ashr2 = bitashr_op::create(32, c0, c3);
-  auto ashr3 = bitashr_op::create(32, c1, c2);
-  auto ashr4 = bitashr_op::create(32, c1, c3);
+  auto & ashr0 = CreateOpNode<bitashr_op>({ s0, s1 }, 32);
+  auto & ashr1 = CreateOpNode<bitashr_op>({ c0, c2 }, 32);
+  auto & ashr2 = CreateOpNode<bitashr_op>({ c0, c3 }, 32);
+  auto & ashr3 = CreateOpNode<bitashr_op>({ c1, c2 }, 32);
+  auto & ashr4 = CreateOpNode<bitashr_op>({ c1, c3 }, 32);
 
-  jlm::tests::GraphExport::Create(*ashr0, "dummy");
-  jlm::tests::GraphExport::Create(*ashr1, "dummy");
-  jlm::tests::GraphExport::Create(*ashr2, "dummy");
-  jlm::tests::GraphExport::Create(*ashr3, "dummy");
-  jlm::tests::GraphExport::Create(*ashr4, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*ashr0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*ashr1.output(0), "dummy");
+  auto & ex2 = jlm::tests::GraphExport::Create(*ashr2.output(0), "dummy");
+  auto & ex3 = jlm::tests::GraphExport::Create(*ashr3.output(0), "dummy");
+  auto & ex4 = jlm::tests::GraphExport::Create(*ashr4.output(0), "dummy");
 
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*ashr0)->GetOperation() == bitashr_op(32));
-  assert(output::GetNode(*ashr1)->GetOperation() == int_constant_op(32, 4));
-  assert(output::GetNode(*ashr2)->GetOperation() == int_constant_op(32, 0));
-  assert(output::GetNode(*ashr3)->GetOperation() == int_constant_op(32, -4));
-  assert(output::GetNode(*ashr4)->GetOperation() == int_constant_op(32, -1));
+  // Act
+  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr0);
+  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr1);
+  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr2);
+  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr3);
+  ReduceNode<bitashr_op>(NormalizeBinaryOperation, ashr4);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitashr_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, 4));
+  assert(output::GetNode(*ex2.origin())->GetOperation() == int_constant_op(32, 0));
+  assert(output::GetNode(*ex3.origin())->GetOperation() == int_constant_op(32, -4));
+  assert(output::GetNode(*ex4.origin())->GetOperation() == int_constant_op(32, -1));
 
   return 0;
 }
@@ -161,7 +185,10 @@ types_bitstring_arithmetic_test_bitor()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitor_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -169,17 +196,24 @@ types_bitstring_arithmetic_test_bitor()
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
 
-  auto or0 = bitor_op::create(32, s0, s1);
-  auto or1 = bitor_op::create(32, c0, c1);
+  auto & or0 = CreateOpNode<bitor_op>({ s0, s1 }, 32);
+  auto & or1 = CreateOpNode<bitor_op>({ c0, c1 }, 32);
 
-  jlm::tests::GraphExport::Create(*or0, "dummy");
-  jlm::tests::GraphExport::Create(*or1, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*or0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*or1.output(0), "dummy");
 
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*or0)->GetOperation() == bitor_op(32));
-  assert(output::GetNode(*or1)->GetOperation() == uint_constant_op(32, 7));
+  // Act
+  ReduceNode<bitor_op>(NormalizeBinaryOperation, or0);
+  ReduceNode<bitor_op>(NormalizeBinaryOperation, or1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitor_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 7));
 
   return 0;
 }
@@ -189,7 +223,10 @@ types_bitstring_arithmetic_test_bitproduct()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitashr_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -197,18 +234,24 @@ types_bitstring_arithmetic_test_bitproduct()
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
 
-  auto product0 = bitmul_op::create(32, s0, s1);
-  auto product1 = bitmul_op::create(32, c0, c1);
+  auto & product0 = CreateOpNode<bitmul_op>({ s0, s1 }, 32);
+  auto & product1 = CreateOpNode<bitmul_op>({ c0, c1 }, 32);
 
-  jlm::tests::GraphExport::Create(*product0, "dummy");
-  jlm::tests::GraphExport::Create(*product1, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*product0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*product1.output(0), "dummy");
 
-  graph.Normalize();
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*product0)->GetOperation() == bitmul_op(32));
-  assert(output::GetNode(*product1)->GetOperation() == uint_constant_op(32, 15));
+  // Act
+  ReduceNode<bitmul_op>(NormalizeBinaryOperation, product0);
+  ReduceNode<bitmul_op>(NormalizeBinaryOperation, product1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitmul_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 15));
 
   return 0;
 }
@@ -241,7 +284,10 @@ types_bitstring_arithmetic_test_bitshl()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitshl_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -250,20 +296,28 @@ types_bitstring_arithmetic_test_bitshl()
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 2);
   auto c2 = create_bitconstant(&graph.GetRootRegion(), 32, 32);
 
-  auto shl0 = bitshl_op::create(32, s0, s1);
-  auto shl1 = bitshl_op::create(32, c0, c1);
-  auto shl2 = bitshl_op::create(32, c0, c2);
+  auto & shl0 = CreateOpNode<bitshl_op>({ s0, s1 }, 32);
+  auto & shl1 = CreateOpNode<bitshl_op>({ c0, c1 }, 32);
+  auto & shl2 = CreateOpNode<bitshl_op>({ c0, c2 }, 32);
 
-  jlm::tests::GraphExport::Create(*shl0, "dummy");
-  jlm::tests::GraphExport::Create(*shl1, "dummy");
-  jlm::tests::GraphExport::Create(*shl2, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*shl0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*shl1.output(0), "dummy");
+  auto & ex2 = jlm::tests::GraphExport::Create(*shl2.output(0), "dummy");
 
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*shl0)->GetOperation() == bitshl_op(32));
-  assert(output::GetNode(*shl1)->GetOperation() == uint_constant_op(32, 64));
-  assert(output::GetNode(*shl2)->GetOperation() == uint_constant_op(32, 0));
+  // Act
+  ReduceNode<bitshl_op>(NormalizeBinaryOperation, shl0);
+  ReduceNode<bitshl_op>(NormalizeBinaryOperation, shl1);
+  ReduceNode<bitshl_op>(NormalizeBinaryOperation, shl2);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitshl_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 64));
+  assert(output::GetNode(*ex2.origin())->GetOperation() == uint_constant_op(32, 0));
 
   return 0;
 }
@@ -273,7 +327,10 @@ types_bitstring_arithmetic_test_bitshr()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitshr_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -282,20 +339,28 @@ types_bitstring_arithmetic_test_bitshr()
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 2);
   auto c2 = create_bitconstant(&graph.GetRootRegion(), 32, 32);
 
-  auto shr0 = bitshr_op::create(32, s0, s1);
-  auto shr1 = bitshr_op::create(32, c0, c1);
-  auto shr2 = bitshr_op::create(32, c0, c2);
+  auto & shr0 = CreateOpNode<bitshr_op>({ s0, s1 }, 32);
+  auto & shr1 = CreateOpNode<bitshr_op>({ c0, c1 }, 32);
+  auto & shr2 = CreateOpNode<bitshr_op>({ c0, c2 }, 32);
 
-  jlm::tests::GraphExport::Create(*shr0, "dummy");
-  jlm::tests::GraphExport::Create(*shr1, "dummy");
-  jlm::tests::GraphExport::Create(*shr2, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*shr0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*shr1.output(0), "dummy");
+  auto & ex2 = jlm::tests::GraphExport::Create(*shr2.output(0), "dummy");
 
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*shr0)->GetOperation() == bitshr_op(32));
-  assert(output::GetNode(*shr1)->GetOperation() == uint_constant_op(32, 4));
-  assert(output::GetNode(*shr2)->GetOperation() == uint_constant_op(32, 0));
+  // Act
+  ReduceNode<bitshr_op>(NormalizeBinaryOperation, shr0);
+  ReduceNode<bitshr_op>(NormalizeBinaryOperation, shr1);
+  ReduceNode<bitshr_op>(NormalizeBinaryOperation, shr2);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitshr_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 4));
+  assert(output::GetNode(*ex2.origin())->GetOperation() == uint_constant_op(32, 0));
 
   return 0;
 }
@@ -305,7 +370,10 @@ types_bitstring_arithmetic_test_bitsmod()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitsmod_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -313,18 +381,24 @@ types_bitstring_arithmetic_test_bitsmod()
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, -7);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
 
-  auto smod0 = bitsmod_op::create(32, s0, s1);
-  auto smod1 = bitsmod_op::create(32, c0, c1);
+  auto & smod0 = CreateOpNode<bitsmod_op>({ s0, s1 }, 32);
+  auto & smod1 = CreateOpNode<bitsmod_op>({ c0, c1 }, 32);
 
-  jlm::tests::GraphExport::Create(*smod0, "dummy");
-  jlm::tests::GraphExport::Create(*smod1, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*smod0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*smod1.output(0), "dummy");
 
-  graph.Normalize();
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*smod0)->GetOperation() == bitsmod_op(32));
-  assert(output::GetNode(*smod1)->GetOperation() == int_constant_op(32, -1));
+  // Act
+  ReduceNode<bitsmod_op>(NormalizeBinaryOperation, smod0);
+  ReduceNode<bitsmod_op>(NormalizeBinaryOperation, smod1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsmod_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, -1));
 
   return 0;
 }
@@ -334,7 +408,10 @@ types_bitstring_arithmetic_test_bitsquotient()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitsdiv_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
@@ -342,18 +419,24 @@ types_bitstring_arithmetic_test_bitsquotient()
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 7);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, -3);
 
-  auto squot0 = bitsdiv_op::create(32, s0, s1);
-  auto squot1 = bitsdiv_op::create(32, c0, c1);
+  auto & squot0 = CreateOpNode<bitsdiv_op>({ s0, s1 }, 32);
+  auto & squot1 = CreateOpNode<bitsdiv_op>({ c0, c1 }, 32);
 
-  jlm::tests::GraphExport::Create(*squot0, "dummy");
-  jlm::tests::GraphExport::Create(*squot1, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*squot0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*squot1.output(0), "dummy");
 
-  graph.Normalize();
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*squot0)->GetOperation() == bitsdiv_op(32));
-  assert(output::GetNode(*squot1)->GetOperation() == int_constant_op(32, -2));
+  // Act
+  ReduceNode<bitsdiv_op>(NormalizeBinaryOperation, squot0);
+  ReduceNode<bitsdiv_op>(NormalizeBinaryOperation, squot1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsdiv_op(32));
+  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, -2));
 
   return 0;
 }
