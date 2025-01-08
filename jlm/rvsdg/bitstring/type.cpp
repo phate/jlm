@@ -6,6 +6,7 @@
 
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/util/Hash.hpp>
 
 namespace jlm::rvsdg
 {
@@ -22,10 +23,18 @@ bittype::debug_string() const
 }
 
 bool
-bittype::operator==(const jlm::rvsdg::type & other) const noexcept
+bittype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   auto type = dynamic_cast<const bittype *>(&other);
   return type != nullptr && this->nbits() == type->nbits();
+}
+
+std::size_t
+bittype::ComputeHash() const noexcept
+{
+  auto typeHash = typeid(bittype).hash_code();
+  auto numBitsHash = std::hash<size_t>()(nbits_);
+  return util::CombineHashes(typeHash, numBitsHash);
 }
 
 std::shared_ptr<const bittype>

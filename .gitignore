@@ -3,4 +3,5 @@ Makefile.custom
 .idea
 docs/html
 build
-build-*
+build-*/
+usr

@@ -10,8 +10,6 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
-#include <assert.h>
-
 static inline void
 test_acyclic_structured()
 {

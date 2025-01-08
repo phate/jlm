@@ -17,7 +17,7 @@ TestPhiCreation()
 {
   using namespace jlm::llvm;
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
 
   auto vtype = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
@@ -29,22 +29,22 @@ TestPhiCreation()
       { vtype, iostatetype::Create(), MemoryStateType::Create() },
       { vtype, iostatetype::Create(), MemoryStateType::Create() });
 
-  auto SetupEmptyLambda = [&](jlm::rvsdg::region * region, const std::string & name)
+  auto SetupEmptyLambda = [&](jlm::rvsdg::Region * region, const std::string & name)
   {
     auto lambda = lambda::node::create(region, f0type, name, linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(1);
-    auto memoryStateArgument = lambda->fctargument(2);
+    auto iOStateArgument = lambda->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     return lambda->finalize({ iOStateArgument, memoryStateArgument });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::region * region, jlm::rvsdg::argument * f2)
+  auto SetupF2 = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * f2)
   {
     auto lambda = lambda::node::create(region, f1type, "f2", linkage::external_linkage);
-    auto ctxVarF2 = lambda->add_ctxvar(f2);
-    auto valueArgument = lambda->fctargument(0);
-    auto iOStateArgument = lambda->fctargument(1);
-    auto memoryStateArgument = lambda->fctargument(2);
+    auto ctxVarF2 = lambda->AddContextVar(*f2).inner;
+    auto valueArgument = lambda->GetFunctionArguments()[0];
+    auto iOStateArgument = lambda->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
     auto callResults =
         CallNode::Create(ctxVarF2, f1type, { valueArgument, iOStateArgument, memoryStateArgument });
@@ -53,7 +53,7 @@ TestPhiCreation()
   };
 
   phi::builder pb;
-  pb.begin(graph.root());
+  pb.begin(&graph.GetRootRegion());
   auto rv1 = pb.add_recvar(PointerType::Create());
   auto rv2 = pb.add_recvar(PointerType::Create());
   auto rv3 = pb.add_recvar(PointerType::Create());
@@ -67,12 +67,12 @@ TestPhiCreation()
   rv3->set_rvorigin(lambdaOutput2);
 
   auto phi = pb.end();
-  graph.add_export(phi->output(0), { phi->output(0)->Type(), "dummy" });
+  GraphExport::Create(*phi->output(0), "dummy");
 
-  graph.normalize();
-  graph.prune();
+  graph.Normalize();
+  graph.PruneNodes();
 
-  jlm::rvsdg::view(graph.root(), stderr);
+  jlm::rvsdg::view(&graph.GetRootRegion(), stderr);
 }
 
 static void
@@ -85,10 +85,10 @@ TestRemovePhiArgumentsWhere()
   auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -111,7 +111,7 @@ TestRemovePhiArgumentsWhere()
   // Act & Assert
   // Try to remove phiArgument0 even though it is used
   auto numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return argument.index() == phiOutput0->argument()->index();
       });
@@ -121,7 +121,7 @@ TestRemovePhiArgumentsWhere()
 
   // Remove phiArgument1
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return argument.index() == 1;
       });
@@ -135,7 +135,7 @@ TestRemovePhiArgumentsWhere()
 
   // Try to remove anything else, but the only dead argument, i.e, phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument & argument)
       {
         return argument.index() != phiArgument3->index();
       });
@@ -145,7 +145,7 @@ TestRemovePhiArgumentsWhere()
 
   // Remove everything that is dead, i.e., phiArgument3
   numRemovedArguments = phiNode.RemovePhiArgumentsWhere(
-      [&](const jlm::rvsdg::argument & argument)
+      [&](const jlm::rvsdg::RegionArgument &)
       {
         return true;
       });
@@ -168,10 +168,10 @@ TestPrunePhiArguments()
   auto valueType = jlm::tests::valuetype::Create();
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
-  auto x = rvsdgModule.Rvsdg().add_import({ valueType, "" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -215,7 +215,7 @@ TestRemovePhiOutputsWhere()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
@@ -245,7 +245,7 @@ TestRemovePhiOutputsWhere()
   assert(phiOutput2->index() == 1);
 
   numRemovedOutputs = phiNode.RemovePhiOutputsWhere(
-      [&](const phi::rvoutput & output)
+      [&](const phi::rvoutput &)
       {
         return true;
       });
@@ -264,7 +264,7 @@ TestPrunePhiOutputs()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
-  phiBuilder.begin(rvsdgModule.Rvsdg().root());
+  phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
 
   auto phiOutput0 = phiBuilder.add_recvar(valueType);
   auto phiOutput1 = phiBuilder.add_recvar(valueType);

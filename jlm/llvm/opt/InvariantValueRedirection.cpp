@@ -5,9 +5,10 @@
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/llvm/ir/operators/gamma.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -60,12 +61,12 @@ InvariantValueRedirection::run(
 }
 
 void
-InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
+InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 {
   // We require a topdown traversal in the root region to ensure that a lambda node is visited
   // before its call nodes. This ensures that all invariant values are redirected in the lambda
   // subregion before we try to detect invariant call outputs.
-  for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
+  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
   {
     if (auto lambdaNode = dynamic_cast<lambda::node *>(node))
     {
@@ -84,6 +85,12 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.
     }
+    else if (
+        is<FunctionToPointerOperation>(node->GetOperation())
+        || is<PointerToFunctionOperation>(node->GetOperation()))
+    {
+      // Nothing needs to be done.
+    }
     else
     {
       JLM_UNREACHABLE("Unhandled node type.");
@@ -92,25 +99,25 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::graph & rvsdg)
 }
 
 void
-InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
+InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
-  auto isGammaNode = is<rvsdg::gamma_op>(region.node());
-  auto isThetaNode = is<rvsdg::theta_op>(region.node());
+  auto isGammaNode = is<rvsdg::GammaOperation>(region.node());
+  auto isThetaNode = is<rvsdg::ThetaOperation>(region.node());
   auto isLambdaNode = is<lambda::operation>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
   // it is irrelevant in which order we handle the nodes.
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
-    if (auto gammaNode = dynamic_cast<rvsdg::gamma_node *>(&node))
+    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(&node))
     {
       // Ensure we redirect invariant values of all nodes in the gamma subregions first, otherwise
       // we might not be able to redirect some of the gamma outputs.
       RedirectInSubregions(*gammaNode);
       RedirectGammaOutputs(*gammaNode);
     }
-    else if (auto thetaNode = dynamic_cast<rvsdg::theta_node *>(&node))
+    else if (auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(&node))
     {
       // Ensure we redirect invariant values of all nodes in the theta subregion first, otherwise we
       // might not be able to redirect some of the theta outputs.
@@ -125,10 +132,10 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::region & region)
 }
 
 void
-InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structuralNode)
+InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structuralNode)
 {
-  auto isGammaNode = is<rvsdg::gamma_op>(&structuralNode);
-  auto isThetaNode = is<rvsdg::theta_op>(&structuralNode);
+  auto isGammaNode = is<rvsdg::GammaOperation>(&structuralNode);
+  auto isThetaNode = is<rvsdg::ThetaOperation>(&structuralNode);
   JLM_ASSERT(isGammaNode || isThetaNode);
 
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
@@ -138,32 +145,29 @@ InvariantValueRedirection::RedirectInSubregions(rvsdg::structural_node & structu
 }
 
 void
-InvariantValueRedirection::RedirectGammaOutputs(rvsdg::gamma_node & gammaNode)
+InvariantValueRedirection::RedirectGammaOutputs(rvsdg::GammaNode & gammaNode)
 {
-  for (auto it = gammaNode.begin_exitvar(); it != gammaNode.end_exitvar(); it++)
+  for (auto exitvar : gammaNode.GetExitVars())
   {
-    auto & gammaOutput = *it;
-
-    rvsdg::output * invariantOrigin = nullptr;
-    if (gammaOutput.IsInvariant(&invariantOrigin))
+    if (auto invariantOrigin = rvsdg::GetGammaInvariantOrigin(gammaNode, exitvar))
     {
-      it->divert_users(invariantOrigin);
+      exitvar.output->divert_users(*invariantOrigin);
     }
   }
 }
 
 void
-InvariantValueRedirection::RedirectThetaOutputs(rvsdg::theta_node & thetaNode)
+InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 {
-  for (const auto & thetaOutput : thetaNode)
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<iostatetype>(thetaOutput->type()))
+    if (rvsdg::is<iostatetype>(loopVar.input->type()))
       continue;
 
-    if (rvsdg::is_invariant(thetaOutput))
-      thetaOutput->divert_users(thetaOutput->input()->origin());
+    if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+      loopVar.output->divert_users(loopVar.input->origin());
   }
 }
 
@@ -179,21 +183,23 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   if (callType != CallTypeClassifier::CallType::NonRecursiveDirectCall)
     return;
 
-  auto & lambdaNode = *callTypeClassifier->GetLambdaOutput().node();
+  auto & lambdaNode =
+      rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
 
   // LLVM permits code where it can happen that the number and type of arguments handed in to the
   // call node do not agree with the number and type of lambda parameters, even though it is a
   // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. In this case, we cannot
   // redirect the call outputs to the call operand as the types would not align, resulting in type
   // errors.
-  if (callNode.NumArguments() != lambdaNode.nfctarguments())
+  if (callNode.NumArguments() != lambdaNode.GetFunctionArguments().size())
     return;
 
   auto memoryStateOutput = callNode.GetMemoryStateOutput();
   auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
 
-  JLM_ASSERT(callNode.noutputs() == lambdaNode.nfctresults());
+  auto results = lambdaNode.GetFunctionResults();
+  JLM_ASSERT(callNode.noutputs() == results.size());
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     auto callOutput = callNode.output(n);
@@ -216,7 +222,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
       for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
       {
         auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::node_output::node(lambdaExitMergeInput->origin());
+        auto node = rvsdg::output::GetNode(*lambdaExitMergeInput->origin());
         if (node == lambdaEntrySplit)
         {
           auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());
@@ -228,16 +234,21 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     }
     else
     {
-      auto & lambdaResult = *lambdaNode.fctresult(n);
-      if (auto lambdaFunctionArgument = dynamic_cast<lambda::fctargument *>(lambdaResult.origin()))
+      auto & lambdaResult = *results[n];
+      auto origin = lambdaResult.origin();
+      if (rvsdg::TryGetRegionParentNode<lambda::node>(*origin) == &lambdaNode)
       {
-        auto callOperand = callNode.Argument(lambdaFunctionArgument->index())->origin();
-        callOutput->divert_users(callOperand);
-      }
-      else if (dynamic_cast<lambda::cvargument *>(lambdaResult.origin()))
-      {
-        // FIXME: We would like to get this case working as well, but we need to route the origin of
-        // the respective lambda input to the subregion of the call node.
+        if (auto ctxvar = lambdaNode.MapBinderContextVar(*origin))
+        {
+          // This is a bound context variable.
+          // FIXME: We would like to get this case working as well, but we need to route the origin
+          // of the respective lambda input to the subregion of the call node.
+        }
+        else
+        {
+          auto callOperand = callNode.Argument(origin->index())->origin();
+          callOutput->divert_users(callOperand);
+        }
       }
     }
   }

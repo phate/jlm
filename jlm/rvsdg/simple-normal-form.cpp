@@ -6,15 +6,15 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-static jlm::rvsdg::node *
+static jlm::rvsdg::Node *
 node_cse(
-    jlm::rvsdg::region * region,
-    const jlm::rvsdg::operation & op,
+    jlm::rvsdg::Region * region,
+    const jlm::rvsdg::Operation & op,
     const std::vector<jlm::rvsdg::output *> & arguments)
 {
-  auto cse_test = [&](const jlm::rvsdg::node * node)
+  auto cse_test = [&](const jlm::rvsdg::Node * node)
   {
-    return node->operation() == op && arguments == jlm::rvsdg::operands(node);
+    return node->GetOperation() == op && arguments == operands(node);
   };
 
   if (!arguments.empty())
@@ -31,7 +31,7 @@ node_cse(
   }
   else
   {
-    for (auto & node : region->top_nodes)
+    for (auto & node : region->TopNodes())
     {
       if (cse_test(&node))
         return &node;
@@ -50,7 +50,7 @@ simple_normal_form::~simple_normal_form() noexcept
 simple_normal_form::simple_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph) noexcept
+    Graph * graph) noexcept
     : node_normal_form(operator_class, parent, graph),
       enable_cse_(true)
 {
@@ -59,14 +59,14 @@ simple_normal_form::simple_normal_form(
 }
 
 bool
-simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
+simple_normal_form::normalize_node(Node * node) const
 {
   if (!get_mutable())
     return true;
 
   if (get_cse())
   {
-    auto new_node = node_cse(node->region(), node->operation(), operands(node));
+    auto new_node = node_cse(node->region(), node->GetOperation(), operands(node));
     JLM_ASSERT(new_node);
     if (new_node != node)
     {
@@ -81,15 +81,15 @@ simple_normal_form::normalize_node(jlm::rvsdg::node * node) const
 
 std::vector<jlm::rvsdg::output *>
 simple_normal_form::normalized_create(
-    jlm::rvsdg::region * region,
-    const jlm::rvsdg::simple_op & op,
+    rvsdg::Region * region,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & arguments) const
 {
-  jlm::rvsdg::node * node = nullptr;
+  Node * node = nullptr;
   if (get_mutable() && get_cse())
     node = node_cse(region, op, arguments);
   if (!node)
-    node = simple_node::create(region, op, arguments);
+    node = SimpleNode::create(region, op, arguments);
 
   return outputs(node);
 }
@@ -104,7 +104,7 @@ simple_normal_form::set_cse(bool enable)
   children_set<simple_normal_form, &simple_normal_form::set_cse>(enable);
 
   if (get_mutable() && enable)
-    graph()->mark_denormalized();
+    graph()->MarkDenormalized();
 }
 
 }
@@ -113,14 +113,15 @@ static jlm::rvsdg::node_normal_form *
 get_default_normal_form(
     const std::type_info & operator_class,
     jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
+    jlm::rvsdg::Graph * graph)
 {
   return new jlm::rvsdg::simple_normal_form(operator_class, parent, graph);
 }
 
-static void __attribute__((constructor)) register_node_normal_form(void)
+static void __attribute__((constructor))
+register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::simple_op),
+      typeid(jlm::rvsdg::SimpleOperation),
       get_default_normal_form);
 }

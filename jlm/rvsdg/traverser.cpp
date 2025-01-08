@@ -18,11 +18,11 @@ namespace jlm::rvsdg
 topdown_traverser::~topdown_traverser() noexcept
 {}
 
-topdown_traverser::topdown_traverser(jlm::rvsdg::region * region)
+topdown_traverser::topdown_traverser(rvsdg::Region * region)
     : region_(region),
       tracker_(region->graph())
 {
-  for (auto & node : region->top_nodes)
+  for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
 
   for (size_t n = 0; n < region->narguments(); n++)
@@ -48,11 +48,11 @@ topdown_traverser::topdown_traverser(jlm::rvsdg::region * region)
 }
 
 bool
-topdown_traverser::predecessors_visited(const jlm::rvsdg::node * node) noexcept
+topdown_traverser::predecessors_visited(const Node * node) noexcept
 {
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto predecessor = node_output::node(node->input(n)->origin());
+    auto predecessor = output::GetNode(*node->input(n)->origin());
     if (!predecessor)
       continue;
 
@@ -63,10 +63,10 @@ topdown_traverser::predecessors_visited(const jlm::rvsdg::node * node) noexcept
   return true;
 }
 
-jlm::rvsdg::node *
+Node *
 topdown_traverser::next()
 {
-  jlm::rvsdg::node * node = tracker_.peek_top();
+  Node * node = tracker_.peek_top();
   if (!node)
     return nullptr;
 
@@ -88,7 +88,7 @@ topdown_traverser::next()
 }
 
 void
-topdown_traverser::node_create(jlm::rvsdg::node * node)
+topdown_traverser::node_create(Node * node)
 {
   if (node->region() != region())
     return;
@@ -100,7 +100,7 @@ topdown_traverser::node_create(jlm::rvsdg::node * node)
 }
 
 void
-topdown_traverser::input_change(input * in, output * old_origin, output * new_origin)
+topdown_traverser::input_change(input * in, output *, output *)
 {
   if (in->region() != region() || !is<node_input>(*in))
     return;
@@ -123,17 +123,19 @@ topdown_traverser::input_change(input * in, output * old_origin, output * new_or
 bottomup_traverser::~bottomup_traverser() noexcept
 {}
 
-bottomup_traverser::bottomup_traverser(jlm::rvsdg::region * region, bool revisit)
+bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
     : region_(region),
       tracker_(region->graph()),
       new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
 {
-  for (auto & node : region->bottom_nodes)
-    tracker_.set_nodestate(&node, traversal_nodestate::frontier);
+  for (auto & bottomNode : region->BottomNodes())
+  {
+    tracker_.set_nodestate(&bottomNode, traversal_nodestate::frontier);
+  }
 
   for (size_t n = 0; n < region->nresults(); n++)
   {
-    auto node = node_output::node(region->result(n)->origin());
+    auto node = output::GetNode(*region->result(n)->origin());
     if (node && !node->has_successors())
       tracker_.set_nodestate(node, traversal_nodestate::frontier);
   }
@@ -146,7 +148,7 @@ bottomup_traverser::bottomup_traverser(jlm::rvsdg::region * region, bool revisit
       on_input_change.connect(std::bind(&bottomup_traverser::input_change, this, _1, _2, _3)));
 }
 
-jlm::rvsdg::node *
+Node *
 bottomup_traverser::next()
 {
   auto node = tracker_.peek_bottom();
@@ -156,7 +158,7 @@ bottomup_traverser::next()
   tracker_.set_nodestate(node, traversal_nodestate::behind);
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto producer = node_output::node(node->input(n)->origin());
+    auto producer = output::GetNode(*node->input(n)->origin());
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
@@ -164,7 +166,7 @@ bottomup_traverser::next()
 }
 
 void
-bottomup_traverser::node_create(jlm::rvsdg::node * node)
+bottomup_traverser::node_create(Node * node)
 {
   if (node->region() != region())
     return;
@@ -173,26 +175,26 @@ bottomup_traverser::node_create(jlm::rvsdg::node * node)
 }
 
 void
-bottomup_traverser::node_destroy(jlm::rvsdg::node * node)
+bottomup_traverser::node_destroy(Node * node)
 {
   if (node->region() != region())
     return;
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto producer = node_output::node(node->input(n)->origin());
+    auto producer = output::GetNode(*node->input(n)->origin());
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
 }
 
 void
-bottomup_traverser::input_change(input * in, output * old_origin, output * new_origin)
+bottomup_traverser::input_change(input * in, output * old_origin, output *)
 {
   if (in->region() != region() || !is<node_input>(*in) || !is<node_output>(old_origin))
     return;
 
-  auto node = node_output::node(old_origin);
+  auto node = output::GetNode(*old_origin);
   traversal_nodestate state = tracker_.get_nodestate(node);
 
   /* ignore nodes that have been traversed already, or that are already

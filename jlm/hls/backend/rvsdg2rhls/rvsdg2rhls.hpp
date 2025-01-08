@@ -15,7 +15,7 @@ namespace jlm::hls
 {
 
 static inline bool
-is_constant(const jlm::rvsdg::node * node)
+is_constant(const rvsdg::Node * node)
 {
   return jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(node)
       || jlm::rvsdg::is<llvm::UndefValueOperation>(node)

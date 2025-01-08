@@ -14,13 +14,13 @@ namespace jlm::hls
 {
 
 std::string
-region_to_dot(jlm::rvsdg::region * region);
+region_to_dot(rvsdg::Region * region);
 
 std::string
-to_dot(jlm::rvsdg::region * region);
+to_dot(rvsdg::Region * region);
 
 void
-view_dot(jlm::rvsdg::region * region, FILE * out);
+view_dot(rvsdg::Region * region, FILE * out);
 
 void
 dump_dot(llvm::RvsdgModule & rvsdgModule, const std::string & file_name);

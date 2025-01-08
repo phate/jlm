@@ -66,7 +66,7 @@ static const variable *
 convert_int_constant(
     ::llvm::Constant * c,
     std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    context &)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantIntVal);
   const ::llvm::ConstantInt * constant = static_cast<const ::llvm::ConstantInt *>(c);
@@ -159,8 +159,8 @@ convert_constantPointerNull(
 static const variable *
 convert_blockAddress(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    std::vector<std::unique_ptr<llvm::tac>> &,
+    context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::BlockAddressVal);
 
@@ -278,8 +278,8 @@ convert_constantVector(
 static inline const variable *
 convert_globalAlias(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    std::vector<std::unique_ptr<llvm::tac>> &,
+    context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::GlobalAliasVal);
 
@@ -428,7 +428,7 @@ convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
 }
 
 static inline const variable *
-convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t &, context & ctx)
 {
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Unreachable);
   auto bb = ctx.get(i->getParent());
@@ -444,7 +444,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto t = i->getOperand(0)->getType();
 
   static std::
-      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::operation> (*)(size_t)>
+      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::Operation> (*)(size_t)>
           map({ { ::llvm::CmpInst::ICMP_SLT,
                   [](size_t nbits)
                   {
@@ -518,7 +518,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
 
-  std::unique_ptr<rvsdg::operation> binop;
+  std::unique_ptr<rvsdg::Operation> binop;
 
   if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy()))
   {
@@ -535,15 +535,18 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto type = ConvertType(i->getType(), ctx);
 
-  JLM_ASSERT(is<rvsdg::binary_op>(*binop));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
   if (t->isVectorTy())
   {
-    tacs.push_back(
-        vectorbinary_op::create(*static_cast<rvsdg::binary_op *>(binop.get()), op1, op2, type));
+    tacs.push_back(vectorbinary_op::create(
+        *static_cast<rvsdg::BinaryOperation *>(binop.get()),
+        op1,
+        op2,
+        type));
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(binop.get()), { op1, op2 }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(binop.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -677,17 +680,56 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   return nullptr;
 }
 
-static inline const variable *
+/**
+ * Given an LLVM phi instruction, checks if the instruction has only one predecessor basic block
+ * that is reachable (i.e., there exists a path from the entry point to the predecessor).
+ *
+ * @param phi the phi instruction
+ * @param ctx the context for the current LLVM to tac conversion
+ * @return the index of the single reachable predecessor basic block, or std::nullopt if it has many
+ */
+static std::optional<size_t>
+getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
+{
+  std::optional<size_t> predecessor = std::nullopt;
+  for (size_t n = 0; n < phi->getNumOperands(); n++)
+  {
+    if (!ctx.has(phi->getIncomingBlock(n)))
+      continue; // This predecessor was unreachable
+    if (predecessor.has_value())
+      return std::nullopt; // This is the second reachable predecessor. Abort!
+    predecessor = n;
+  }
+  // Any visited phi should have at least one predecessor
+  JLM_ASSERT(predecessor);
+  return predecessor;
+}
+
+static const variable *
 convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-  JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::PHI);
+  auto phi = ::llvm::dyn_cast<::llvm::PHINode>(i);
 
+  // If this phi instruction only has one predecessor basic block that is reachable,
+  // the phi operation can be removed.
+  if (auto singlePredecessor = getSinglePredecessor(phi, ctx))
+  {
+    // The incoming value is either a constant,
+    // or a value from the predecessor basic block that has already been converted
+    return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
+  }
+
+  // This phi instruction can be reached from multiple basic blocks.
+  // As some of these blocks might not be converted yet, some of the phi's operands may reference
+  // instructions that have not yet been converted.
+  // For now, a phi_op with no operands is created.
+  // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
   auto type = ConvertType(i->getType(), ctx);
   tacs.push_back(phi_op::create({}, type));
   return tacs.back()->result(0);
 }
 
-static inline const variable *
+static const variable *
 convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::GetElementPtrInst>(inst));
@@ -752,7 +794,7 @@ static bool
 IsVolatile(const ::llvm::Value & value)
 {
   auto constant = ::llvm::dyn_cast<const ::llvm::ConstantInt>(&value);
-  JLM_ASSERT(constant != nullptr && constant->getType()->getBitWidth() == 1);
+  JLM_ASSERT(constant != nullptr && constant->getType()->getIntegerBitWidth() == 1);
 
   auto apInt = constant->getValue();
   JLM_ASSERT(apInt.isZero() || apInt.isOne());
@@ -891,7 +933,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
 
   static std::unordered_map<
       const ::llvm::Instruction::BinaryOps,
-      std::unique_ptr<rvsdg::operation> (*)(size_t)>
+      std::unique_ptr<rvsdg::Operation> (*)(size_t)>
       bitmap({ { ::llvm::Instruction::Add,
                  [](size_t nbits)
                  {
@@ -982,9 +1024,10 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
       { { ::llvm::Type::HalfTyID, fpsize::half },
         { ::llvm::Type::FloatTyID, fpsize::flt },
         { ::llvm::Type::DoubleTyID, fpsize::dbl },
-        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 } });
+        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
+        { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
-  std::unique_ptr<rvsdg::operation> operation;
+  std::unique_ptr<rvsdg::Operation> operation;
   auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
   if (t->isIntegerTy())
   {
@@ -1004,16 +1047,17 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
 
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
-  JLM_ASSERT(is<rvsdg::binary_op>(*operation));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(*operation));
 
   if (i->getType()->isVectorTy())
   {
-    auto & binop = *static_cast<rvsdg::binary_op *>(operation.get());
+    auto & binop = *static_cast<rvsdg::BinaryOperation *>(operation.get());
     tacs.push_back(vectorbinary_op::create(binop, op1, op2, type));
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(operation.get()), { op1, op2 }));
+    tacs.push_back(
+        tac::create(*static_cast<rvsdg::SimpleOperation *>(operation.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -1118,10 +1162,10 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
 }
 
 template<class OP>
-static std::unique_ptr<rvsdg::operation>
-create_unop(std::shared_ptr<const rvsdg::type> st, std::shared_ptr<const rvsdg::type> dt)
+static std::unique_ptr<rvsdg::Operation>
+create_unop(std::shared_ptr<const rvsdg::Type> st, std::shared_ptr<const rvsdg::Type> dt)
 {
-  return std::unique_ptr<rvsdg::operation>(new OP(std::move(st), std::move(dt)));
+  return std::unique_ptr<rvsdg::Operation>(new OP(std::move(st), std::move(dt)));
 }
 
 static const variable *
@@ -1133,9 +1177,9 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   static std::unordered_map<
       unsigned,
-      std::unique_ptr<rvsdg::operation> (*)(
-          std::shared_ptr<const rvsdg::type>,
-          std::shared_ptr<const rvsdg::type>)>
+      std::unique_ptr<rvsdg::Operation> (*)(
+          std::shared_ptr<const rvsdg::Type>,
+          std::shared_ptr<const rvsdg::Type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<trunc_op> },
             { ::llvm::Instruction::ZExt, create_unop<zext_op> },
             { ::llvm::Instruction::UIToFP, create_unop<uitofp_op> },
@@ -1162,7 +1206,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   if (dt->isVectorTy())
     tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, type));
   else
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(unop.get()), { op }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 
   return tacs.back()->result(0);
 }

@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <assert.h>
-
 #include <jlm/util/intrusive-hash.hpp>
+
+#include <cassert>
 
 struct my_item
 {
@@ -82,7 +82,7 @@ struct my_stritem
 typedef jlm::util::intrusive_hash<std::string, my_stritem, my_stritem::hash_accessor> my_strhash;
 
 static void
-test_int_hash(void)
+test_int_hash()
 {
   my_hash m;
 
@@ -118,7 +118,7 @@ test_int_hash(void)
 }
 
 static void
-test_str_hash(void)
+test_str_hash()
 {
   my_strhash m;
 
@@ -154,7 +154,7 @@ test_str_hash(void)
 }
 
 static int
-test_main(void)
+test_main()
 {
   test_int_hash();
   test_str_hash();

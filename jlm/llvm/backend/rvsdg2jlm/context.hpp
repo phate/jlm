@@ -47,11 +47,11 @@ public:
   }
 
   inline void
-  insert(const rvsdg::output * port, const llvm::variable * v)
+  insert(const rvsdg::output * output, const llvm::variable * v)
   {
-    JLM_ASSERT(ports_.find(port) == ports_.end());
-    JLM_ASSERT(port->type() == v->type());
-    ports_[port] = v;
+    JLM_ASSERT(ports_.find(output) == ports_.end());
+    JLM_ASSERT(*output->Type() == *v->Type());
+    ports_[output] = v;
   }
 
   inline const llvm::variable *

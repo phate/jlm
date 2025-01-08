@@ -8,14 +8,14 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 
+namespace jlm::rvsdg
+{
+class GammaNode;
+class ThetaNode;
+}
+
 namespace jlm::llvm
 {
-
-namespace rvsdg
-{
-class gamma_node;
-class theta_node;
-}
 
 class RvsdgModule;
 
@@ -32,16 +32,16 @@ public:
 };
 
 void
-push_top(jlm::rvsdg::theta_node * theta);
+push_top(rvsdg::ThetaNode * theta);
 
 void
-push_bottom(jlm::rvsdg::theta_node * theta);
+push_bottom(rvsdg::ThetaNode * theta);
 
 void
-push(jlm::rvsdg::theta_node * theta);
+push(rvsdg::ThetaNode * theta);
 
 void
-push(jlm::rvsdg::gamma_node * gamma);
+push(rvsdg::GammaNode * gamma);
 
 }
 

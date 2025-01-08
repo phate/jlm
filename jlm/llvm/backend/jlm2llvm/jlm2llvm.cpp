@@ -42,7 +42,7 @@ has_return_value(const llvm::cfg & cfg)
   for (size_t n = 0; n < cfg.exit()->nresults(); n++)
   {
     auto result = cfg.exit()->result(n);
-    if (rvsdg::is<rvsdg::valuetype>(result->type()))
+    if (rvsdg::is<rvsdg::ValueType>(result->type()))
       return true;
   }
 
@@ -65,7 +65,7 @@ create_return(const cfg_node * node, context & ctx)
   }
 
   auto result = cfg.exit()->result(0);
-  JLM_ASSERT(rvsdg::is<rvsdg::valuetype>(result->type()));
+  JLM_ASSERT(rvsdg::is<rvsdg::ValueType>(result->type()));
   builder.CreateRet(ctx.value(result));
 }
 
@@ -119,7 +119,7 @@ create_switch(const cfg_node * node, context & ctx)
     auto sw = builder.CreateSwitch(condition, defbb);
     for (const auto & alt : *mop)
     {
-      auto & type = *static_cast<const rvsdg::bittype *>(&mop->argument(0).type());
+      auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
       auto value = ::llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
       sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
     }
@@ -179,6 +179,8 @@ convert_attribute_kind(const attribute::kind & kind)
         { attribute::kind::Builtin, ak::Builtin },
         { attribute::kind::Cold, ak::Cold },
         { attribute::kind::Convergent, ak::Convergent },
+        { attribute::kind::CoroDestroyOnlyWhenComplete, ak::CoroDestroyOnlyWhenComplete },
+        { attribute::kind::DeadOnUnwind, ak::DeadOnUnwind },
         { attribute::kind::DisableSanitizerInstrumentation, ak::DisableSanitizerInstrumentation },
         { attribute::kind::FnRetThunkExtern, ak::FnRetThunkExtern },
         { attribute::kind::Hot, ak::Hot },
@@ -214,6 +216,7 @@ convert_attribute_kind(const attribute::kind & kind)
         { attribute::kind::NonNull, ak::NonNull },
         { attribute::kind::NullPointerIsValid, ak::NullPointerIsValid },
         { attribute::kind::OptForFuzzing, ak::OptForFuzzing },
+        { attribute::kind::OptimizeForDebugging, ak::OptimizeForDebugging },
         { attribute::kind::OptimizeForSize, ak::OptimizeForSize },
         { attribute::kind::OptimizeNone, ak::OptimizeNone },
         { attribute::kind::PresplitCoroutine, ak::PresplitCoroutine },
@@ -240,6 +243,7 @@ convert_attribute_kind(const attribute::kind & kind)
         { attribute::kind::SwiftError, ak::SwiftError },
         { attribute::kind::SwiftSelf, ak::SwiftSelf },
         { attribute::kind::WillReturn, ak::WillReturn },
+        { attribute::kind::Writable, ak::Writable },
         { attribute::kind::WriteOnly, ak::WriteOnly },
         { attribute::kind::ZExt, ak::ZExt },
         { attribute::kind::LastEnumAttr, ak::LastEnumAttr },
@@ -271,42 +275,53 @@ convert_attribute_kind(const attribute::kind & kind)
   return map[kind];
 }
 
-static ::llvm::AttributeSet
-convert_attributes(const attributeset & as, context & ctx)
+static ::llvm::Attribute
+ConvertEnumAttribute(const llvm::enum_attribute & attribute, context & ctx)
 {
-  auto convert_attribute = [](const llvm::attribute & attribute, context & ctx)
-  {
-    auto & llvmctx = ctx.llvm_module().getContext();
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto kind = convert_attribute_kind(attribute.kind());
+  return ::llvm::Attribute::get(llvmContext, kind);
+}
 
-    if (auto sa = dynamic_cast<const string_attribute *>(&attribute))
-      return ::llvm::Attribute::get(llvmctx, sa->kind(), sa->value());
+static ::llvm::Attribute
+ConvertIntAttribute(const llvm::int_attribute & attribute, context & ctx)
+{
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto kind = convert_attribute_kind(attribute.kind());
+  return ::llvm::Attribute::get(llvmContext, kind, attribute.value());
+}
 
-    if (typeid(attribute) == typeid(enum_attribute))
-    {
-      auto ea = dynamic_cast<const enum_attribute *>(&attribute);
-      auto kind = convert_attribute_kind(ea->kind());
-      return ::llvm::Attribute::get(llvmctx, kind);
-    }
+static ::llvm::Attribute
+ConvertTypeAttribute(const llvm::type_attribute & attribute, context & ctx)
+{
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto kind = convert_attribute_kind(attribute.kind());
+  auto type = convert_type(attribute.type(), ctx);
+  return ::llvm::Attribute::get(llvmContext, kind, type);
+}
 
-    if (auto ia = dynamic_cast<const int_attribute *>(&attribute))
-    {
-      auto kind = convert_attribute_kind(ia->kind());
-      return ::llvm::Attribute::get(llvmctx, kind, ia->value());
-    }
+static ::llvm::Attribute
+ConvertStringAttribute(const llvm::string_attribute & attribute, context & ctx)
+{
+  auto & llvmContext = ctx.llvm_module().getContext();
+  return ::llvm::Attribute::get(llvmContext, attribute.kind(), attribute.value());
+}
 
-    if (auto ta = dynamic_cast<const type_attribute *>(&attribute))
-    {
-      auto kind = convert_attribute_kind(ta->kind());
-      auto type = convert_type(ta->type(), ctx);
-      return ::llvm::Attribute::get(llvmctx, kind, type);
-    }
-
-    JLM_UNREACHABLE("This should have never happened!");
-  };
-
+static ::llvm::AttributeSet
+convert_attributes(const attributeset & attributeSet, context & ctx)
+{
   ::llvm::AttrBuilder builder(ctx.llvm_module().getContext());
-  for (auto & attribute : as)
-    builder.addAttribute(convert_attribute(attribute, ctx));
+  for (auto & attribute : attributeSet.EnumAttributes())
+    builder.addAttribute(ConvertEnumAttribute(attribute, ctx));
+
+  for (auto & attribute : attributeSet.IntAttributes())
+    builder.addAttribute(ConvertIntAttribute(attribute, ctx));
+
+  for (auto & attribute : attributeSet.TypeAttributes())
+    builder.addAttribute(ConvertTypeAttribute(attribute, ctx));
+
+  for (auto & attribute : attributeSet.StringAttributes())
+    builder.addAttribute(ConvertStringAttribute(attribute, ctx));
 
   return ::llvm::AttributeSet::get(ctx.llvm_module().getContext(), builder);
 }
@@ -329,13 +344,37 @@ convert_attributes(const function_node & f, context & ctx)
   {
     auto argument = f.cfg()->entry()->argument(n);
 
-    if (rvsdg::is<rvsdg::statetype>(argument->type()))
+    if (rvsdg::is<rvsdg::StateType>(argument->type()))
       continue;
 
     argsets.push_back(convert_attributes(argument->attributes(), ctx));
   }
 
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
+}
+
+static std::vector<cfg_node *>
+ConvertBasicBlocks(
+    const llvm::cfg & controlFlowGraph,
+    ::llvm::Function & function,
+    jlm2llvm::context & context)
+{
+  auto nodes = breadth_first(controlFlowGraph);
+
+  uint64_t basicBlockCounter = 0;
+  for (const auto & node : nodes)
+  {
+    if (node == controlFlowGraph.entry())
+      continue;
+    if (node == controlFlowGraph.exit())
+      continue;
+
+    auto name = util::strfmt("bb", basicBlockCounter++);
+    auto * basicBlock = ::llvm::BasicBlock::Create(function.getContext(), name, &function);
+    context.insert(node, basicBlock);
+  }
+
+  return nodes;
 }
 
 static inline void
@@ -354,17 +393,8 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
   };
 
   straighten(cfg);
-  auto nodes = breadth_first(cfg);
 
-  /* create basic blocks */
-  for (const auto & node : nodes)
-  {
-    if (node == cfg.entry() || node == cfg.exit())
-      continue;
-
-    auto bb = ::llvm::BasicBlock::Create(f.getContext(), util::strfmt("bb", &node), &f);
-    ctx.insert(node, bb);
-  }
+  auto nodes = ConvertBasicBlocks(cfg, f, ctx);
 
   add_arguments(cfg, f, ctx);
 
@@ -467,7 +497,7 @@ convert_linkage(const llvm::linkage & linkage)
 }
 
 static void
-convert_ipgraph(const llvm::ipgraph & clg, context & ctx)
+convert_ipgraph(context & ctx)
 {
   auto & jm = ctx.module();
   auto & lm = ctx.llvm_module();
@@ -528,7 +558,7 @@ convert(ipgraph_module & im, ::llvm::LLVMContext & lctx)
   lm->setDataLayout(im.data_layout());
 
   context ctx(im, *lm);
-  convert_ipgraph(im.ipgraph(), ctx);
+  convert_ipgraph(ctx);
 
   return lm;
 }

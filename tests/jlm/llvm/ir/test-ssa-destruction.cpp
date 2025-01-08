@@ -49,11 +49,11 @@ test_two_phis()
   bb4->append_last(phi_op::create({ { v1, bb2 }, { v2, bb3 } }, vt));
   bb4->append_last(phi_op::create({ { v3, bb2 }, { v4, bb3 } }, vt));
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 
   destruct_ssa(cfg);
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 }
 
 static int

@@ -6,6 +6,7 @@
 #ifndef JLM_UTIL_HASHSET_HPP
 #define JLM_UTIL_HASHSET_HPP
 
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <unordered_set>
@@ -14,26 +15,8 @@ namespace jlm::util
 {
 
 /**
- * Our own version of std::hash that also supports hashing std::pair
- */
-template<typename T>
-struct Hash : std::hash<T>
-{
-};
-
-template<typename First, typename Second>
-struct Hash<std::pair<First, Second>>
-{
-  std::size_t
-  operator()(const std::pair<First, Second> & value) const noexcept
-  {
-    return std::hash<First>()(value.first) ^ std::hash<Second>()(value.second) << 1;
-  }
-};
-
-/**
- * Represents a set of values. A set is a collection that contains no duplicate elements, and whose
- * elements are in no particular order.
+ * Represents a set of values. A set is a collection that contains no duplicate elements, and
+ * whose elements are in no particular order.
  * @tparam ItemType The type of the items in the hash set.
  */
 template<typename ItemType, typename HashFunctor = Hash<ItemType>>
@@ -41,6 +24,7 @@ class HashSet
 {
   using InternalSet = std::unordered_set<ItemType, HashFunctor>;
 
+public:
   class ItemConstIterator final
   {
   public:
@@ -107,7 +91,6 @@ class HashSet
     typename InternalSet::const_iterator It_;
   };
 
-public:
   ~HashSet() noexcept = default;
 
   HashSet() = default;
@@ -314,6 +297,17 @@ public:
     }
 
     return numRemoved;
+  }
+
+  /**
+   * Removes the element pointed to by the given iterator
+   * @param iterator the element to remove
+   * @return an iterator to the element after the removed element
+   */
+  ItemConstIterator
+  Erase(ItemConstIterator iterator)
+  {
+    return ItemConstIterator(Set_.erase(iterator.It_));
   }
 
   /**

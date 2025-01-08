@@ -2,6 +2,11 @@ name: "Install packages"
 description: "Installs packages that the jlm framework depends on."
 
 inputs:
+  llvm-version:
+    description: "LLVM/MLIR version that is installed"
+    default: 18
+    required: false
+
   install-llvm:
     description: "Install LLVM package. Default is 'false'."
     default: "false"
@@ -19,6 +24,11 @@ inputs:
 
   install-clang-format:
     description: "Install clang-format package. Default is 'false'."
+    default: "false"
+    required: false
+
+  install-clang-tidy:
+    description: "Install clang-tidy package. Default is 'false'."
     default: "false"
     required: false
 
@@ -49,12 +59,13 @@ runs:
       if: ${{inputs.install-llvm == 'true'
         || inputs.install-clang == 'true'
         || inputs.install-mlir == 'true'
-        || inputs.install-clang-format == 'true'}}
+        || inputs.install-clang-format == 'true'
+        || inputs.install-clang-tidy == 'true'}}
       run: |
-        export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-17)
+        export HAS_LLVM_REPOSITORY=$(find /etc/apt/ -name *.list | xargs cat | grep llvm-toolchain-jammy-${{inputs.llvm-version}})
         if [[ -z $HAS_LLVM_REPOSITORY ]]; then
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
-          sudo add-apt-repository --no-update deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main
+          sudo add-apt-repository --no-update deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${{inputs.llvm-version}} main
         fi
       shell: bash
 
@@ -65,29 +76,34 @@ runs:
     - name: "Install LLVM package"
       if: ${{inputs.install-llvm == 'true'}}
       run: |
-        sudo apt-get install llvm-17-dev
-        pip install "lit~=17.0"
+        sudo apt-get install llvm-${{inputs.llvm-version}}-dev
+        pip install "lit~=${{inputs.llvm-version}}.0"
         pip show lit
       shell: bash
 
     - name: "Install clang package"
       if: ${{inputs.install-clang == 'true'}}
-      run: sudo apt-get install clang-17
+      run: sudo apt-get install clang-${{inputs.llvm-version}}
       shell: bash
 
     - name: "Install MLIR packages"
       if: ${{inputs.install-mlir == 'true'}}
       run: |
-        sudo apt-get install libmlir-17-dev mlir-17-tools
+        sudo apt-get install libmlir-${{inputs.llvm-version}}-dev mlir-${{inputs.llvm-version}}-tools
         if ! [ -f /usr/lib/x86_64-linux-gnu/libMLIR.so ]; then
-          sudo ln -s /usr/lib/llvm-17/lib/libMLIR.so.17 /usr/lib/x86_64-linux-gnu/
-          sudo ln -s /usr/lib/llvm-17/lib/libMLIR.so.17 /usr/lib/x86_64-linux-gnu/libMLIR.so
+          sudo ln -s /usr/lib/llvm-${{inputs.llvm-version}}/lib/libMLIR.so.${{inputs.llvm-version}}* /usr/lib/x86_64-linux-gnu/
+          sudo ln -s /usr/lib/llvm-${{inputs.llvm-version}}/lib/libMLIR.so.${{inputs.llvm-version}}* /usr/lib/x86_64-linux-gnu/libMLIR.so
         fi
       shell: bash
 
     - name: "Install clang-format package"
       if: ${{inputs.install-clang-format == 'true'}}
-      run: sudo apt-get install clang-format-17
+      run: sudo apt-get install clang-format-${{inputs.llvm-version}}
+      shell: bash
+
+    - name: "Install clang-tidy package"
+      if: ${{inputs.install-clang-tidy == 'true'}}
+      run: sudo apt-get install clang-tidy-${{inputs.llvm-version}}
       shell: bash
 
     - name: "Install ninja package"

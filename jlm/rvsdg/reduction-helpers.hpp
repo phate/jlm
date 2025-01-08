@@ -6,9 +6,9 @@
 #ifndef JLM_RVSDG_REDUCTION_HELPERS_HPP
 #define JLM_RVSDG_REDUCTION_HELPERS_HPP
 
-#include <algorithm>
-
 #include <jlm/rvsdg/node.hpp>
+
+#include <algorithm>
 
 namespace jlm::rvsdg
 {
@@ -48,11 +48,11 @@ pairwise_test_reduce(const Container & args, const ReductionTester & reduction_t
  * with the result if not nullptr. */
 template<typename Container, typename Reductor>
 Container
-pairwise_reduce(Container && args, const Reductor & reductor)
+pairwise_reduce(Container args, const Reductor & reductor)
 {
   if (args.empty())
   {
-    return std::move(args);
+    return args;
   }
 
   auto left = args.begin();
@@ -75,7 +75,7 @@ pairwise_reduce(Container && args, const Reductor & reductor)
   }
   args.erase(std::next(left), args.end());
 
-  return std::move(args);
+  return args;
 }
 
 /* Test whether any pair of elements of "args" can be reduced according
@@ -111,7 +111,7 @@ commutative_pairwise_test_reduce(
  * with the result if not nullptr. */
 template<typename Container, typename Reductor>
 Container
-commutative_pairwise_reduce(Container && args, const Reductor & reductor)
+commutative_pairwise_reduce(Container args, const Reductor & reductor)
 {
   auto left = args.begin();
   while (left != args.end())
@@ -137,7 +137,7 @@ commutative_pairwise_reduce(Container && args, const Reductor & reductor)
     ++left;
   }
 
-  return std::move(args);
+  return args;
 }
 
 /* Test whether "flatten_tester" applies to any element of "args". */
@@ -161,7 +161,7 @@ associative_flatten(std::vector<jlm::rvsdg::output *> args, const FlattenTester 
     {
       auto arg = args[n];
       JLM_ASSERT(is<node_output>(arg));
-      auto sub_args = jlm::rvsdg::operands(node_output::node(arg));
+      auto sub_args = jlm::rvsdg::operands(output::GetNode(*arg));
       args[n] = sub_args[0];
       args.insert(args.begin() + n + 1, sub_args.begin() + 1, sub_args.end());
     }

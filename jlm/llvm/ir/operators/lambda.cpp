@@ -5,13 +5,13 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 #include <deque>
 
 namespace jlm::llvm::lambda
 {
-
-/* lambda operation class */
 
 operation::~operation() = default;
 
@@ -22,159 +22,129 @@ operation::debug_string() const
 }
 
 bool
-operation::operator==(const jlm::rvsdg::operation & other) const noexcept
+operation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const lambda::operation *>(&other);
   return op && op->type() == type() && op->name() == name() && op->linkage() == linkage()
       && op->attributes() == attributes();
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new operation(*this));
+  return std::make_unique<lambda::operation>(*this);
 }
 
 /* lambda node class */
 
 node::~node() = default;
 
-node::fctargument_range
-node::fctarguments()
+node::node(rvsdg::Region & parent, lambda::operation op)
+    : StructuralNode(std::move(op), &parent, 1)
 {
-  fctargiterator end(nullptr);
-
-  if (nfctarguments() == 0)
-    return { end, end };
-
-  fctargiterator begin(fctargument(0));
-  return { begin, end };
+  ArgumentAttributes_.resize(GetOperation().Type()->NumArguments());
 }
 
-node::fctargument_constrange
-node::fctarguments() const
+const lambda::operation &
+node::GetOperation() const noexcept
 {
-  fctargconstiterator end(nullptr);
-
-  if (nfctarguments() == 0)
-    return { end, end };
-
-  fctargconstiterator begin(fctargument(0));
-  return { begin, end };
+  return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::GetOperation());
 }
 
-node::ctxvar_range
-node::ctxvars()
+[[nodiscard]] std::vector<rvsdg::output *>
+node::GetFunctionArguments() const
 {
-  cviterator end(nullptr);
-
-  if (ncvarguments() == 0)
-    return { end, end };
-
-  cviterator begin(input(0));
-  return { begin, end };
+  std::vector<rvsdg::output *> arguments;
+  const auto & type = GetOperation().Type();
+  for (std::size_t n = 0; n < type->Arguments().size(); ++n)
+  {
+    arguments.push_back(subregion()->argument(n));
+  }
+  return arguments;
 }
 
-node::ctxvar_constrange
-node::ctxvars() const
+[[nodiscard]] std::vector<rvsdg::input *>
+node::GetFunctionResults() const
 {
-  cvconstiterator end(nullptr);
-
-  if (ncvarguments() == 0)
-    return { end, end };
-
-  cvconstiterator begin(input(0));
-  return { begin, end };
+  std::vector<rvsdg::input *> results;
+  for (std::size_t n = 0; n < subregion()->nresults(); ++n)
+  {
+    results.push_back(subregion()->result(n));
+  }
+  return results;
 }
 
-node::fctresult_range
-node::fctresults()
+[[nodiscard]] node::ContextVar
+node::MapInputContextVar(const rvsdg::input & input) const noexcept
 {
-  fctresiterator end(nullptr);
-
-  if (nfctresults() == 0)
-    return { end, end };
-
-  fctresiterator begin(fctresult(0));
-  return { begin, end };
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<node>(input) == this);
+  return ContextVar{ const_cast<rvsdg::input *>(&input),
+                     subregion()->argument(GetOperation().Type()->NumArguments() + input.index()) };
 }
 
-node::fctresult_constrange
-node::fctresults() const
+[[nodiscard]] std::optional<node::ContextVar>
+node::MapBinderContextVar(const rvsdg::output & output) const noexcept
 {
-  fctresconstiterator end(nullptr);
-
-  if (nfctresults() == 0)
-    return { end, end };
-
-  fctresconstiterator begin(fctresult(0));
-  return { begin, end };
+  JLM_ASSERT(rvsdg::TryGetOwnerRegion(output) == subregion());
+  auto numArguments = GetOperation().Type()->NumArguments();
+  if (output.index() >= numArguments)
+  {
+    return ContextVar{ input(output.index() - GetOperation().Type()->NumArguments()),
+                       const_cast<rvsdg::output *>(&output) };
+  }
+  else
+  {
+    return std::nullopt;
+  }
 }
 
-cvinput *
-node::input(size_t n) const noexcept
+[[nodiscard]] std::vector<node::ContextVar>
+node::GetContextVars() const noexcept
 {
-  return util::AssertedCast<cvinput>(structural_node::input(n));
+  std::vector<ContextVar> vars;
+  for (size_t n = 0; n < ninputs(); ++n)
+  {
+    vars.push_back(
+        ContextVar{ input(n), subregion()->argument(n + GetOperation().Type()->NumArguments()) });
+  }
+  return vars;
 }
 
-lambda::output *
-node::output() const noexcept
+node::ContextVar
+node::AddContextVar(jlm::rvsdg::output & origin)
 {
-  return util::AssertedCast<lambda::output>(structural_node::output(0));
+  auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
+  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
+  return ContextVar{ input, argument };
 }
 
-lambda::fctargument *
-node::fctargument(size_t n) const noexcept
-{
-  return util::AssertedCast<lambda::fctargument>(subregion()->argument(n));
-}
-
-lambda::cvargument *
-node::cvargument(size_t n) const noexcept
-{
-  return input(n)->argument();
-}
-
-lambda::result *
-node::fctresult(size_t n) const noexcept
-{
-  return util::AssertedCast<lambda::result>(subregion()->result(n));
-}
-
-cvargument *
-node::add_ctxvar(jlm::rvsdg::output * origin)
-{
-  auto input = cvinput::create(this, origin);
-  return cvargument::create(subregion(), input);
-}
-
-rvsdg::argument &
+rvsdg::output &
 node::GetMemoryStateRegionArgument() const noexcept
 {
-  auto argument = fctargument(nfctarguments() - 1);
+  auto argument = GetFunctionArguments().back();
   JLM_ASSERT(is<MemoryStateType>(argument->type()));
   return *argument;
 }
 
-rvsdg::result &
+rvsdg::input &
 node::GetMemoryStateRegionResult() const noexcept
 {
-  auto result = fctresult(nfctresults() - 1);
+  auto result = GetFunctionResults().back();
   JLM_ASSERT(is<MemoryStateType>(result->type()));
   return *result;
 }
 
-rvsdg::simple_node *
+rvsdg::SimpleNode *
 node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
 {
   auto & result = lambdaNode.GetMemoryStateRegionResult();
 
-  auto node = rvsdg::node_output::node(result.origin());
-  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+  auto node = rvsdg::output::GetNode(*result.origin());
+  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                        : nullptr;
 }
 
-rvsdg::simple_node *
+rvsdg::SimpleNode *
 node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 {
   auto & argument = lambdaNode.GetMemoryStateRegionArgument();
@@ -185,28 +155,28 @@ node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
     return nullptr;
 
   auto node = rvsdg::node_input::GetNode(**argument.begin());
-  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
 }
 
 lambda::node *
 node::create(
-    jlm::rvsdg::region * parent,
+    rvsdg::Region * parent,
     std::shared_ptr<const jlm::llvm::FunctionType> type,
     const std::string & name,
     const llvm::linkage & linkage,
     const attributeset & attributes)
 {
   lambda::operation op(type, name, linkage, attributes);
-  auto node = new lambda::node(parent, std::move(op));
+  auto node = new lambda::node(*parent, std::move(op));
 
   for (auto & argumentType : type->Arguments())
-    lambda::fctargument::create(node->subregion(), argumentType);
+    rvsdg::RegionArgument::Create(*node->subregion(), nullptr, argumentType);
 
   return node;
 }
 
-lambda::output *
+rvsdg::output *
 node::finalize(const std::vector<jlm::rvsdg::output *> & results)
 {
   /* check if finalized was already called */
@@ -231,36 +201,44 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   }
 
   for (const auto & origin : results)
-    lambda::result::create(origin);
+    rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return output::create(this, PointerType::Create());
+  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, PointerType::Create()));
 }
 
-lambda::node *
-node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+rvsdg::output *
+node::output() const noexcept
 {
-  return util::AssertedCast<lambda::node>(jlm::rvsdg::node::copy(region, operands));
+  return StructuralNode::output(0);
 }
 
 lambda::node *
-node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+{
+  return util::AssertedCast<lambda::node>(rvsdg::Node::copy(region, operands));
+}
+
+lambda::node *
+node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto lambda = create(region, Type(), name(), linkage(), attributes());
 
   /* add context variables */
-  jlm::rvsdg::substitution_map subregionmap;
-  for (auto & cv : ctxvars())
+  rvsdg::SubstitutionMap subregionmap;
+  for (const auto & cv : GetContextVars())
   {
-    auto origin = smap.lookup(cv.origin());
-    auto newcv = lambda->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto origin = smap.lookup(cv.input->origin());
+    subregionmap.insert(cv.inner, lambda->AddContextVar(*origin).inner);
   }
 
   /* collect function arguments */
-  for (size_t n = 0; n < nfctarguments(); n++)
+  auto args = GetFunctionArguments();
+  auto newArgs = lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() == newArgs.size());
+  for (size_t n = 0; n < args.size(); n++)
   {
-    lambda->fctargument(n)->set_attributes(fctargument(n)->attributes());
-    subregionmap.insert(fctargument(n), lambda->fctargument(n));
+    lambda->SetArgumentAttributes(*newArgs[n], GetArgumentAttributes(*args[n]));
+    subregionmap.insert(args[n], newArgs[n]);
   }
 
   /* copy subregion */
@@ -268,12 +246,14 @@ node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) con
 
   /* collect function results */
   std::vector<jlm::rvsdg::output *> results;
-  for (auto & result : fctresults())
-    results.push_back(subregionmap.lookup(result.origin()));
+  for (auto result : GetFunctionResults())
+    results.push_back(subregionmap.lookup(result->origin()));
 
   /* finalize lambda */
   auto o = lambda->finalize(results);
   smap.insert(output(), o);
+
+  lambda->ArgumentAttributes_ = ArgumentAttributes_;
 
   return lambda;
 }
@@ -285,7 +265,7 @@ node::ComputeCallSummary() const
   worklist.insert(worklist.end(), output()->begin(), output()->end());
 
   std::vector<CallNode *> directCalls;
-  rvsdg::result * rvsdgExport = nullptr;
+  GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::input *> otherUsers;
 
   while (!worklist.empty())
@@ -293,44 +273,48 @@ node::ComputeCallSummary() const
     auto input = worklist.front();
     worklist.pop_front();
 
-    if (auto cvinput = dynamic_cast<lambda::cvinput *>(input))
+    auto inputNode = rvsdg::input::GetNode(*input);
+
+    if (auto lambdaNode = rvsdg::TryGetOwnerNode<lambda::node>(*input))
     {
-      auto argument = cvinput->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto & argument = *lambdaNode->MapInputContextVar(*input).inner;
+      worklist.insert(worklist.end(), argument.begin(), argument.end());
       continue;
     }
 
-    if (auto lambdaResult = dynamic_cast<lambda::result *>(input))
+    if (rvsdg::TryGetRegionParentNode<lambda::node>(*input))
     {
-      otherUsers.emplace_back(lambdaResult);
+      otherUsers.emplace_back(input);
       continue;
     }
 
-    if (auto gamma_input = dynamic_cast<rvsdg::gamma_input *>(input))
+    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(inputNode))
     {
-      for (auto & argument : *gamma_input)
-        worklist.insert(worklist.end(), argument.begin(), argument.end());
+      for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
+      {
+        worklist.insert(worklist.end(), argument->begin(), argument->end());
+      }
       continue;
     }
 
-    if (auto result = is_gamma_result(input))
+    if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*input))
     {
-      auto output = result->output();
+      auto output = gamma->MapBranchResultExitVar(*input).output;
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }
 
-    if (auto theta_input = dynamic_cast<rvsdg::theta_input *>(input))
+    if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input))
     {
-      auto argument = theta_input->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto loopvar = theta->MapInputLoopVar(*input);
+      worklist.insert(worklist.end(), loopvar.pre->begin(), loopvar.pre->end());
       continue;
     }
 
-    if (auto result = is_theta_result(input))
+    if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input))
     {
-      auto output = result->output();
-      worklist.insert(worklist.end(), output->begin(), output->end());
+      auto loopvar = theta->MapPostLoopVar(*input);
+      worklist.insert(worklist.end(), loopvar.output->begin(), loopvar.output->end());
       continue;
     }
 
@@ -364,22 +348,19 @@ node::ComputeCallSummary() const
       continue;
     }
 
-    auto inputNode = rvsdg::input::GetNode(*input);
     if (is<CallOperation>(inputNode) && input == inputNode->input(0))
     {
       directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
       continue;
     }
 
-    auto result = dynamic_cast<rvsdg::result *>(input);
-    if (result != nullptr && input->region() == graph()->root())
+    if (auto graphExport = dynamic_cast<GraphExport *>(input))
     {
-      rvsdgExport = result;
+      rvsdgExport = graphExport;
       continue;
     }
 
-    auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input);
-    if (simpleInput != nullptr)
+    if (auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input))
     {
       otherUsers.emplace_back(simpleInput);
       continue;
@@ -398,30 +379,17 @@ node::IsExported(const lambda::node & lambdaNode)
   return callSummary->IsExported();
 }
 
-/* lambda context variable input class */
-
-cvinput::~cvinput() = default;
-
-cvargument *
-cvinput::argument() const noexcept
+[[nodiscard]] const jlm::llvm::attributeset &
+node::GetArgumentAttributes(const rvsdg::output & argument) const noexcept
 {
-  return util::AssertedCast<cvargument>(arguments.first());
+  JLM_ASSERT(argument.index() < ArgumentAttributes_.size());
+  return ArgumentAttributes_[argument.index()];
 }
 
-/* lambda output class */
-
-output::~output() = default;
-
-/* lambda function argument class */
-
-fctargument::~fctargument() = default;
-
-/* lambda context variable argument class */
-
-cvargument::~cvargument() = default;
-
-/* lambda result class */
-
-result::~result() = default;
+void
+node::SetArgumentAttributes(rvsdg::output & argument, const jlm::llvm::attributeset & attributes)
+{
+  ArgumentAttributes_[argument.index()] = attributes;
+}
 
 }

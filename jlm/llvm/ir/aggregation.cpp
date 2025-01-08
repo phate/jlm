@@ -295,7 +295,7 @@ reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
  * Only the split node and the individual branch nodes are reduced. The join node is not reduced.
  */
 static cfg_node *
-reduce_branch(cfg_node * split, cfg_node ** entry, cfg_node ** exit, aggregation_map & map)
+reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
 {
   /* sanity checks */
   JLM_ASSERT(split->noutedges() > 1);
@@ -447,7 +447,7 @@ aggregate_acyclic_sese(cfg_node * node, cfg_node ** entry, cfg_node ** exit, agg
     */
     if (is_branch(node))
     {
-      auto sese = reduce_branch(node, entry, exit, map);
+      auto sese = reduce_branch(node, entry, map);
       aggregate_acyclic_sese(sese, entry, exit, map);
       return;
     }

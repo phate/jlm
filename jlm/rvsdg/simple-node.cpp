@@ -19,17 +19,15 @@ simple_input::~simple_input() noexcept
 }
 
 simple_input::simple_input(
-    jlm::rvsdg::simple_node * node,
+    jlm::rvsdg::SimpleNode * node,
     jlm::rvsdg::output * origin,
-    std::shared_ptr<const rvsdg::type> type)
+    std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {}
 
 /* outputs */
 
-simple_output::simple_output(
-    jlm::rvsdg::simple_node * node,
-    std::shared_ptr<const rvsdg::type> type)
+simple_output::simple_output(jlm::rvsdg::SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {}
 
@@ -38,50 +36,79 @@ simple_output::~simple_output() noexcept
   on_output_destroy(this);
 }
 
-/* simple nodes */
-
-simple_node::~simple_node()
+SimpleNode::~SimpleNode()
 {
   on_node_destroy(this);
 }
 
-simple_node::simple_node(
-    jlm::rvsdg::region * region,
-    const jlm::rvsdg::simple_op & op,
+SimpleNode::SimpleNode(
+    rvsdg::Region * region,
+    const SimpleOperation & op,
     const std::vector<jlm::rvsdg::output *> & operands)
-    : node(op.copy(), region)
+    : Node(op.copy(), region)
 {
-  if (operation().narguments() != operands.size())
+  if (SimpleNode::GetOperation().narguments() != operands.size())
     throw jlm::util::error(jlm::util::strfmt(
         "Argument error - expected ",
-        operation().narguments(),
+        SimpleNode::GetOperation().narguments(),
         ", received ",
         operands.size(),
         " arguments."));
 
-  for (size_t n = 0; n < operation().narguments(); n++)
+  for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
-    node::add_input(
-        std::make_unique<simple_input>(this, operands[n], operation().argument(n).Type()));
+    add_input(
+        std::make_unique<simple_input>(this, operands[n], SimpleNode::GetOperation().argument(n)));
   }
 
-  for (size_t n = 0; n < operation().nresults(); n++)
-    node::add_output(std::make_unique<simple_output>(this, operation().result(n).Type()));
+  for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
+    add_output(std::make_unique<simple_output>(this, SimpleNode::GetOperation().result(n)));
 
   on_node_create(this);
 }
 
-jlm::rvsdg::node *
-simple_node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
-    const
+SimpleNode::SimpleNode(
+    rvsdg::Region & region,
+    std::unique_ptr<SimpleOperation> operation,
+    const std::vector<jlm::rvsdg::output *> & operands)
+    : Node(std::move(operation), &region)
 {
-  auto node = create(region, *static_cast<const simple_op *>(&operation()), operands);
-  graph()->mark_denormalized();
+  if (SimpleNode::GetOperation().narguments() != operands.size())
+    throw jlm::util::error(jlm::util::strfmt(
+        "Argument error - expected ",
+        SimpleNode::GetOperation().narguments(),
+        ", received ",
+        operands.size(),
+        " arguments."));
+
+  for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
+  {
+    add_input(
+        std::make_unique<simple_input>(this, operands[n], SimpleNode::GetOperation().argument(n)));
+  }
+
+  for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
+    add_output(std::make_unique<simple_output>(this, SimpleNode::GetOperation().result(n)));
+
+  on_node_create(this);
+}
+
+const SimpleOperation &
+SimpleNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const SimpleOperation>(&Node::GetOperation());
+}
+
+Node *
+SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+{
+  auto node = create(region, GetOperation(), operands);
+  graph()->MarkDenormalized();
   return node;
 }
 
-jlm::rvsdg::node *
-simple_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+Node *
+SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
   std::vector<jlm::rvsdg::output *> operands;
   for (size_t n = 0; n < ninputs(); n++)

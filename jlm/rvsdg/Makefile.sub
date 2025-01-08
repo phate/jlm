@@ -11,8 +11,6 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/region.cpp \
 	jlm/rvsdg/simple-normal-form.cpp \
 	jlm/rvsdg/simple-node.cpp \
-	jlm/rvsdg/statemux.cpp \
-	jlm/rvsdg/structural-normal-form.cpp \
 	jlm/rvsdg/structural-node.cpp \
 	jlm/rvsdg/theta.cpp \
 	jlm/rvsdg/tracker.cpp \
@@ -46,7 +44,6 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/bitstring/comparison.hpp \
 	jlm/rvsdg/view.hpp \
 	jlm/rvsdg/traverser.hpp \
-	jlm/rvsdg/statemux.hpp \
 	jlm/rvsdg/graph.hpp \
 	jlm/rvsdg/substitution.hpp \
 	jlm/rvsdg/unary.hpp \
@@ -55,12 +52,12 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/type.hpp \
 	jlm/rvsdg/binary.hpp \
 	jlm/rvsdg/theta.hpp \
-	jlm/rvsdg/structural-normal-form.hpp \
 	jlm/rvsdg/reduction-helpers.hpp \
 	jlm/rvsdg/RvsdgModule.hpp \
 	jlm/rvsdg/bitstring.hpp \
 	jlm/rvsdg/node.hpp \
 	jlm/rvsdg/node-normal-form.hpp \
+	jlm/rvsdg/NodeNormalization.hpp \
 	jlm/rvsdg/nullary.hpp \
 	jlm/rvsdg/structural-node.hpp \
 	jlm/rvsdg/control.hpp \
@@ -69,18 +66,20 @@ librvsdg_HEADERS = \
 
 librvsdg_TESTS = \
 	tests/jlm/rvsdg/bitstring/bitstring \
+	tests/jlm/rvsdg/ArgumentTests \
+	tests/jlm/rvsdg/RegionTests \
+	tests/jlm/rvsdg/ResultTests \
 	tests/jlm/rvsdg/test-binary \
 	tests/jlm/rvsdg/test-bottomup \
 	tests/jlm/rvsdg/test-cse \
 	tests/jlm/rvsdg/test-gamma \
 	tests/jlm/rvsdg/test-graph \
 	tests/jlm/rvsdg/test-nodes \
-	tests/jlm/rvsdg/test-statemux \
 	tests/jlm/rvsdg/test-theta \
 	tests/jlm/rvsdg/test-topdown \
 	tests/jlm/rvsdg/test-typemismatch \
-	tests/jlm/rvsdg/TestRegion \
 	tests/jlm/rvsdg/TestStructuralNode \
+	tests/jlm/rvsdg/UnaryOperationTests \
 
 librvsdg_TEST_LIBS = \
 	libjlmtest \

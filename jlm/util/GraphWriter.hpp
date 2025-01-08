@@ -7,12 +7,9 @@
 #define JLM_UTIL_GRAPHWRITER_HPP
 
 #include <jlm/util/common.hpp>
-#include <jlm/util/iterator_range.hpp>
 
-#include <iostream>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -45,7 +42,6 @@ public:
 
   /**
    * Constructs a graph element with no label, attributes or associated program object
-   * @param label
    */
   GraphElement();
 
@@ -204,23 +200,28 @@ public:
   HasAttribute(const std::string & attribute) const;
 
   /**
-   * Retrieves the value of the given \p attribute, as a string.
-   * If the attribute holds a program object or another graph element, the string "?" is returned.
-   * @return the attribute's string value or "?"
-   * @throws jlm::util::error if the attribute doesn't exist
-   * @see GetAttributeOr to provide a fallback value
+   * Retrieves the value of the given \p attribute, if it exists and is assigned a string.
+   * @return the attribute's string value, or std::nullopt if it does not exist.
    */
-  [[nodiscard]] std::string_view
-  GetAttribute(const std::string & attribute);
+  [[nodiscard]] std::optional<std::string_view>
+  GetAttributeString(const std::string & attribute) const;
 
   /**
-   * Retrieves the value of the given \p attribute, as a string.
-   * If the attribute doesn't exist, the string \p otherwise is returned.
-   * If the attribute holds a program object or another graph element, the string "?" is returned.
-   * @return the attribute's string value, "?", or otherwise
+   * Retrieves the value of the given \p attribute, if it is assigned a program object.
+   * If the attribute does not exist, or is not holding a program object, std::nullopt is returned.
+   * @return the object assigned to the attribute, or std::nullopt if it does not exist.
    */
-  [[nodiscard]] std::string_view
-  GetAttributeOr(const std::string & attribute, std::string_view otherwise);
+  [[nodiscard]] std::optional<uintptr_t>
+  GetAttributeObject(const std::string & attribute) const;
+
+  /**
+   * Retrieves the value of the given \p attribute, if it is assigned a graph element.
+   * Otherwise, if the attribute is assigned a program object,
+   * and there exists a GraphElement representing that program object, that is returned.
+   * @return pointer to the GraphElement held in the attribute, or nullptr if it does not exist.
+   */
+  [[nodiscard]] const GraphElement *
+  GetAttributeGraphElement(const std::string & attribute) const;
 
   /**
    * Removes the attribute with the given name \p attribute, if it exists.
@@ -932,6 +933,9 @@ public:
   [[nodiscard]] GraphElement *
   GetElementFromProgramObject(const T & object) const
   {
+    // Check that object is not a reference to a pointer.
+    // If the user truly wants to use the address of a pointer, they can cast it to uintptr_t.
+    static_assert(!std::is_pointer_v<T>);
     return GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&object));
   }
 
@@ -947,7 +951,7 @@ public:
   GetFromProgramObject(const ProgramObject & object) const
   {
     static_assert(std::is_base_of_v<GraphElement, Element>);
-    GraphElement * element = GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&object));
+    GraphElement * element = GetElementFromProgramObject(object);
     auto result = dynamic_cast<Element *>(element);
     JLM_ASSERT(result);
     return *result;
@@ -1058,6 +1062,23 @@ public:
    */
   [[nodiscard]] GraphElement *
   GetElementFromProgramObject(uintptr_t object) const;
+
+  template<typename T>
+  [[nodiscard]] GraphElement *
+  GetElementFromProgramObject(const T & object) const
+  {
+    // Check that object is not a reference to a pointer.
+    // If the user truly wants to use the address of a pointer, they can cast it to uintptr_t.
+    static_assert(!std::is_pointer_v<T>);
+    return GetElementFromProgramObject(reinterpret_cast<uintptr_t>(&object));
+  }
+
+  /**
+   * Ensures that all graphs added to the graph writer so far are finalized.
+   * Recursively finalizes the GraphElements of each graph.
+   */
+  void
+  Finalize();
 
   /**
    * Finalizes and prints all graphs created in this GraphWriter.

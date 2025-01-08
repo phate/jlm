@@ -133,3 +133,26 @@ TestTwoPhaseLrfWorklist()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestWorklist-TestTwoPhaseLrfWorklist",
     TestTwoPhaseLrfWorklist)
+
+static int
+TestWorkset()
+{
+  jlm::util::Workset<size_t> ws;
+  assert(!ws.HasMoreWorkItems());
+  assert(!ws.HasWorkItem(7));
+  ws.PushWorkItem(7);
+  assert(ws.HasMoreWorkItems());
+  assert(ws.HasWorkItem(7));
+  ws.PushWorkItem(5);
+  assert(ws.HasWorkItem(5));
+  assert(ws.HasWorkItem(7));
+  ws.RemoveWorkItem(7);
+  assert(!ws.HasWorkItem(7));
+  assert(ws.HasWorkItem(5));
+  ws.RemoveWorkItem(5);
+  assert(!ws.HasMoreWorkItems());
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestWorklist-TestWorkset", TestWorkset)

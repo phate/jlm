@@ -26,15 +26,15 @@ class cfg_node;
 
 /* phi operator */
 
-class phi_op final : public jlm::rvsdg::simple_op
+class phi_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~phi_op() noexcept;
 
   inline phi_op(
       const std::vector<llvm::cfg_node *> & nodes,
-      const std::shared_ptr<const jlm::rvsdg::type> & type)
-      : jlm::rvsdg::simple_op({ nodes.size(), type }, { type }),
+      const std::shared_ptr<const jlm::rvsdg::Type> & type)
+      : SimpleOperation({ nodes.size(), type }, { type }),
         nodes_(nodes)
   {}
 
@@ -47,24 +47,24 @@ public:
   operator=(phi_op &&) = delete;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const jlm::rvsdg::type &
+  inline const jlm::rvsdg::Type &
   type() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  inline const std::shared_ptr<const jlm::rvsdg::Type> &
   Type() const noexcept
   {
-    return result(0).Type();
+    return result(0);
   }
 
   inline cfg_node *
@@ -77,7 +77,7 @@ public:
   static std::unique_ptr<llvm::tac>
   create(
       const std::vector<std::pair<const variable *, cfg_node *>> & arguments,
-      std::shared_ptr<const jlm::rvsdg::type> type)
+      std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     std::vector<cfg_node *> nodes;
     std::vector<const variable *> operands;
@@ -97,13 +97,13 @@ private:
 
 /* assignment operator */
 
-class assignment_op final : public jlm::rvsdg::simple_op
+class assignment_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~assignment_op() noexcept;
 
-  explicit inline assignment_op(const std::shared_ptr<const jlm::rvsdg::type> & type)
-      : simple_op({ type, type }, {})
+  explicit inline assignment_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+      : SimpleOperation({ type, type }, {})
   {}
 
   assignment_op(const assignment_op &) = default;
@@ -111,12 +111,12 @@ public:
   assignment_op(assignment_op &&) = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
@@ -131,34 +131,34 @@ public:
 
 /* select operator */
 
-class select_op final : public jlm::rvsdg::simple_op
+class select_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~select_op() noexcept;
 
-  explicit select_op(const std::shared_ptr<const jlm::rvsdg::type> & type)
-      : jlm::rvsdg::simple_op({ jlm::rvsdg::bittype::Create(1), type, type }, { type })
+  explicit select_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+      : SimpleOperation({ jlm::rvsdg::bittype::Create(1), type, type }, { type })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  const jlm::rvsdg::type &
+  [[nodiscard]] const jlm::rvsdg::Type &
   type() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
-  const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
   Type() const noexcept
   {
-    return result(0).Type();
+    return result(0);
   }
 
   static std::unique_ptr<llvm::tac>
@@ -171,7 +171,7 @@ public:
 
 /* vector select operator */
 
-class vectorselect_op final : public jlm::rvsdg::simple_op
+class vectorselect_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~vectorselect_op() noexcept;
@@ -180,29 +180,29 @@ private:
   vectorselect_op(
       const std::shared_ptr<const vectortype> & pt,
       const std::shared_ptr<const vectortype> & vt)
-      : jlm::rvsdg::simple_op({ pt, vt, vt }, { vt })
+      : SimpleOperation({ pt, vt, vt }, { vt })
   {}
 
 public:
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
-  const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
-    return result(0).Type();
+    return result(0);
   }
 
   size_t
@@ -254,8 +254,8 @@ public:
   {}
 
   inline fp2ui_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -268,12 +268,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -284,7 +284,7 @@ public:
       const override;
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const fptype>(operand->Type());
     if (!st)
@@ -317,8 +317,8 @@ public:
   {}
 
   inline fp2si_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : jlm::rvsdg::unary_op(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -331,12 +331,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -347,7 +347,7 @@ public:
       const override;
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const fptype>(operand->Type());
     if (!st)
@@ -364,30 +364,30 @@ public:
 
 /* ctl2bits operator */
 
-class ctl2bits_op final : public jlm::rvsdg::simple_op
+class ctl2bits_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ctl2bits_op() noexcept;
 
   inline ctl2bits_op(
-      std::shared_ptr<const jlm::rvsdg::ctltype> srctype,
+      std::shared_ptr<const rvsdg::ControlType> srctype,
       std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
-      : jlm::rvsdg::simple_op({ std::move(srctype) }, { std::move(dsttype) })
+      : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::ctltype>(operand->Type());
+    auto st = std::dynamic_pointer_cast<const rvsdg::ControlType>(operand->Type());
     if (!st)
       throw jlm::util::error("expected control type.");
 
@@ -402,34 +402,34 @@ public:
 
 /* branch operator */
 
-class branch_op final : public jlm::rvsdg::simple_op
+class branch_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~branch_op() noexcept;
 
-  explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ctltype> type)
-      : jlm::rvsdg::simple_op({ std::move(type) }, {})
+  explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ControlType> type)
+      : SimpleOperation({ std::move(type) }, {})
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline size_t
   nalternatives() const noexcept
   {
-    return static_cast<const jlm::rvsdg::ctltype *>(&argument(0).type())->nalternatives();
+    return std::static_pointer_cast<const rvsdg::ControlType>(argument(0))->nalternatives();
   }
 
   static std::unique_ptr<llvm::tac>
   create(size_t nalternatives, const variable * operand)
   {
-    branch_op op(jlm::rvsdg::ctltype::Create(nalternatives));
+    branch_op op(jlm::rvsdg::ControlType::Create(nalternatives));
     return tac::create(op, { operand });
   }
 };
@@ -438,47 +438,47 @@ public:
  *
  * This operator is the Jlm equivalent of LLVM's ConstantPointerNull constant.
  */
-class ConstantPointerNullOperation final : public jlm::rvsdg::simple_op
+class ConstantPointerNullOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~ConstantPointerNullOperation() noexcept override;
 
   explicit ConstantPointerNullOperation(std::shared_ptr<const PointerType> pointerType)
-      : simple_op({}, { std::move(pointerType) })
+      : SimpleOperation({}, { std::move(pointerType) })
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *jlm::util::AssertedCast<const PointerType>(&result(0).type());
+    return *util::AssertedCast<const PointerType>(result(0).get());
   }
 
   static std::unique_ptr<llvm::tac>
-  Create(std::shared_ptr<const rvsdg::type> type)
+  Create(std::shared_ptr<const rvsdg::Type> type)
   {
     ConstantPointerNullOperation operation(CheckAndExtractType(type));
     return tac::create(operation, {});
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
+  Create(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
   {
     ConstantPointerNullOperation operation(CheckAndExtractType(type));
-    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(region, operation, {})[0];
   }
 
 private:
   static const std::shared_ptr<const PointerType>
-  CheckAndExtractType(std::shared_ptr<const jlm::rvsdg::type> type)
+  CheckAndExtractType(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     if (auto pointerType = std::dynamic_pointer_cast<const PointerType>(type))
       return pointerType;
@@ -501,8 +501,8 @@ public:
   {}
 
   inline bits2ptr_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto at = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
@@ -515,12 +515,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -533,11 +533,11 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const jlm::rvsdg::bittype>(argument(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * argument, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(const variable * argument, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto at = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
     if (!at)
@@ -552,7 +552,7 @@ public:
   }
 
   static jlm::rvsdg::output *
-  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
@@ -563,7 +563,7 @@ public:
       throw jlm::util::error("expected pointer type.");
 
     bits2ptr_op op(ot, pt);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 };
 
@@ -581,8 +581,8 @@ public:
   {}
 
   inline ptr2bits_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto pt = dynamic_cast<const PointerType *>(srctype.get());
@@ -595,12 +595,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -613,11 +613,11 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * argument, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * argument, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto pt = std::dynamic_pointer_cast<const PointerType>(argument->Type());
     if (!pt)
@@ -634,37 +634,37 @@ public:
 
 /* Constant Data Array operator */
 
-class ConstantDataArray final : public jlm::rvsdg::simple_op
+class ConstantDataArray final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantDataArray();
 
-  ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::valuetype> & type, size_t size)
-      : simple_op({ size, type }, { arraytype::Create(type, size) })
+  ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
+      : SimpleOperation({ size, type }, { arraytype::Create(type, size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.");
   }
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   size_t
   size() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->nelements();
+    return std::static_pointer_cast<const arraytype>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->element_type();
+    return std::static_pointer_cast<const arraytype>(result(0))->element_type();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -673,7 +673,7 @@ public:
     if (elements.size() == 0)
       throw jlm::util::error("expected at least one element.");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
       throw jlm::util::error("expected value type.");
 
@@ -687,17 +687,14 @@ public:
     if (elements.empty())
       throw jlm::util::error("Expected at least one element.");
 
-    auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!valueType)
     {
       throw jlm::util::error("Expected value type.");
     }
 
     ConstantDataArray operation(std::move(valueType), elements.size());
-    return jlm::rvsdg::simple_node::create_normalized(
-        elements[0]->region(),
-        operation,
-        elements)[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(elements[0]->region(), operation, elements)[0];
   }
 };
 
@@ -713,23 +710,23 @@ enum class cmp
   le
 };
 
-class ptrcmp_op final : public jlm::rvsdg::binary_op
+class ptrcmp_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~ptrcmp_op();
 
   inline ptrcmp_op(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
-      : binary_op({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::binop_reduction_path_t
@@ -787,8 +784,8 @@ public:
   }
 
   inline zext_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
@@ -804,12 +801,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
@@ -822,17 +819,17 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto operandBitType = CheckAndExtractBitType(operand->Type());
     auto resultBitType = CheckAndExtractBitType(type);
@@ -842,18 +839,18 @@ public:
   }
 
   static rvsdg::output &
-  Create(rvsdg::output & operand, const std::shared_ptr<const rvsdg::type> & resultType)
+  Create(rvsdg::output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
   {
     auto operandBitType = CheckAndExtractBitType(operand.Type());
     auto resultBitType = CheckAndExtractBitType(resultType);
 
     zext_op operation(std::move(operandBitType), std::move(resultBitType));
-    return *rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand })[0];
+    return *rvsdg::SimpleNode::create_normalized(operand.region(), operation, { &operand })[0];
   }
 
 private:
   static std::shared_ptr<const rvsdg::bittype>
-  CheckAndExtractBitType(const std::shared_ptr<const rvsdg::type> & type)
+  CheckAndExtractBitType(const std::shared_ptr<const rvsdg::Type> & type)
   {
     if (auto bitType = std::dynamic_pointer_cast<const rvsdg::bittype>(type))
     {
@@ -866,28 +863,28 @@ private:
 
 /* floating point constant operator */
 
-class ConstantFP final : public jlm::rvsdg::simple_op
+class ConstantFP final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantFP();
 
   inline ConstantFP(const fpsize & size, const ::llvm::APFloat & constant)
-      : simple_op({}, { fptype::Create(size) }),
+      : SimpleOperation({}, { fptype::Create(size) }),
         constant_(constant)
   {}
 
   inline ConstantFP(std::shared_ptr<const fptype> fpt, const ::llvm::APFloat & constant)
-      : simple_op({}, { std::move(fpt) }),
+      : SimpleOperation({}, { std::move(fpt) }),
         constant_(constant)
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline const ::llvm::APFloat &
@@ -899,11 +896,11 @@ public:
   inline const fpsize &
   size() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto ft = std::dynamic_pointer_cast<const fptype>(type);
     if (!ft)
@@ -941,28 +938,30 @@ enum class fpcmp
   uno
 };
 
-class fpcmp_op final : public jlm::rvsdg::binary_op
+class fpcmp_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~fpcmp_op();
 
   inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
-      : binary_op({ fptype::Create(size), fptype::Create(size) }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation(
+            { fptype::Create(size), fptype::Create(size) },
+            jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
   inline fpcmp_op(const fpcmp & cmp, const std::shared_ptr<const fptype> & fpt)
-      : binary_op({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::binop_reduction_path_t
@@ -984,7 +983,7 @@ public:
   inline const fpsize &
   size() const noexcept
   {
-    return static_cast<const llvm::fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const llvm::fptype>(argument(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1006,13 +1005,13 @@ private:
  *
  * This operator is the Jlm equivalent of LLVM's UndefValue constant.
  */
-class UndefValueOperation final : public jlm::rvsdg::simple_op
+class UndefValueOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~UndefValueOperation() noexcept override;
 
-  explicit UndefValueOperation(std::shared_ptr<const jlm::rvsdg::type> type)
-      : simple_op({}, { std::move(type) })
+  explicit UndefValueOperation(std::shared_ptr<const jlm::rvsdg::Type> type)
+      : SimpleOperation({}, { std::move(type) })
   {}
 
   UndefValueOperation(const UndefValueOperation &) = default;
@@ -1024,36 +1023,36 @@ public:
   operator=(UndefValueOperation &&) = delete;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   GetType() const noexcept
   {
-    return result(0).type();
+    return *result(0);
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     UndefValueOperation operation(std::move(type));
-    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(&region, operation, {})[0];
   }
 
   static std::unique_ptr<llvm::tac>
-  Create(std::shared_ptr<const jlm::rvsdg::type> type)
+  Create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     UndefValueOperation operation(std::move(type));
     return tac::create(operation, {});
   }
 
   static std::unique_ptr<llvm::tac>
-  Create(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+  Create(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
   {
     UndefValueOperation operation(std::move(type));
     return tac::create(operation, {}, { name });
@@ -1076,13 +1075,13 @@ public:
  *
  * This operator is the Jlm equivalent of LLVM's PoisonValue constant.
  */
-class PoisonValueOperation final : public jlm::rvsdg::simple_op
+class PoisonValueOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~PoisonValueOperation() noexcept override;
 
-  explicit PoisonValueOperation(std::shared_ptr<const jlm::rvsdg::valuetype> type)
-      : jlm::rvsdg::simple_op({}, { std::move(type) })
+  explicit PoisonValueOperation(std::shared_ptr<const jlm::rvsdg::ValueType> type)
+      : SimpleOperation({}, { std::move(type) })
   {}
 
   PoisonValueOperation(const PoisonValueOperation &) = default;
@@ -1096,24 +1095,22 @@ public:
   operator=(PoisonValueOperation &&) = delete;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   std::string
   debug_string() const override;
 
-  std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   GetType() const noexcept
   {
-    auto & type = result(0).type();
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::valuetype *>(&type));
-    return *static_cast<const jlm::rvsdg::valuetype *>(&type);
+    return *util::AssertedCast<const rvsdg::ValueType>(result(0).get());
   }
 
   static std::unique_ptr<llvm::tac>
-  Create(const std::shared_ptr<const jlm::rvsdg::type> & type)
+  Create(const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto valueType = CheckAndConvertType(type);
 
@@ -1122,19 +1119,19 @@ public:
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  Create(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto valueType = CheckAndConvertType(type);
 
     PoisonValueOperation operation(std::move(valueType));
-    return jlm::rvsdg::simple_node::create_normalized(region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(region, operation, {})[0];
   }
 
 private:
-  static std::shared_ptr<const jlm::rvsdg::valuetype>
-  CheckAndConvertType(const std::shared_ptr<const jlm::rvsdg::type> & type)
+  static std::shared_ptr<const jlm::rvsdg::ValueType>
+  CheckAndConvertType(const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    if (auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(type))
+    if (auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(type))
       return valueType;
 
     throw jlm::util::error("Expected value type.");
@@ -1152,28 +1149,28 @@ enum class fpop
   mod
 };
 
-class fpbin_op final : public jlm::rvsdg::binary_op
+class fpbin_op final : public rvsdg::BinaryOperation
 {
 public:
   virtual ~fpbin_op();
 
   inline fpbin_op(const llvm::fpop & op, const fpsize & size)
-      : binary_op({ fptype::Create(size), fptype::Create(size) }, fptype::Create(size)),
+      : BinaryOperation({ fptype::Create(size), fptype::Create(size) }, fptype::Create(size)),
         op_(op)
   {}
 
   inline fpbin_op(const llvm::fpop & op, const std::shared_ptr<const fptype> & fpt)
-      : binary_op({ fpt, fpt }, fpt),
+      : BinaryOperation({ fpt, fpt }, fpt),
         op_(op)
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::binop_reduction_path_t
@@ -1195,7 +1192,7 @@ public:
   inline const fpsize &
   size() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1237,8 +1234,8 @@ public:
   }
 
   inline fpext_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -1254,12 +1251,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1272,17 +1269,17 @@ public:
   inline const fpsize &
   srcsize() const noexcept
   {
-    return static_cast<const fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const fptype>(argument(0))->size();
   }
 
   inline const fpsize &
   dstsize() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const fptype>(operand->Type());
     if (!st)
@@ -1313,12 +1310,12 @@ public:
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1331,7 +1328,7 @@ public:
   const fpsize &
   size() const noexcept
   {
-    return static_cast<const fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const fptype>(argument(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1371,8 +1368,8 @@ public:
   }
 
   inline fptrunc_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
@@ -1385,16 +1382,16 @@ public:
 
     if (st->size() == fpsize::half || (st->size() == fpsize::flt && dt->size() != fpsize::half)
         || (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
-      throw jlm::util::error("destination tpye size must be smaller than source size type.");
+      throw jlm::util::error("destination type size must be smaller than source size type.");
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1407,17 +1404,17 @@ public:
   inline const fpsize &
   srcsize() const noexcept
   {
-    return static_cast<const fptype *>(&argument(0).type())->size();
+    return std::static_pointer_cast<const fptype>(argument(0))->size();
   }
 
   inline const fpsize &
   dstsize() const noexcept
   {
-    return static_cast<const fptype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const fptype>(result(0))->size();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(const variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto st = std::dynamic_pointer_cast<const fptype>(operand->Type());
     if (!st)
@@ -1434,13 +1431,13 @@ public:
 
 /* valist operator */
 
-class valist_op final : public jlm::rvsdg::simple_op
+class valist_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~valist_op();
 
-  explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::type>> types)
-      : simple_op(std::move(types), { varargtype::Create() })
+  explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
+      : SimpleOperation(std::move(types), { varargtype::Create() })
   {}
 
   valist_op(const valist_op &) = default;
@@ -1452,18 +1449,18 @@ public:
   operator=(valist_op &&) = delete;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
   create(const std::vector<const variable *> & arguments)
   {
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> operands;
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands;
     for (const auto & argument : arguments)
       operands.push_back(argument->Type());
 
@@ -1472,15 +1469,15 @@ public:
   }
 
   static rvsdg::output *
-  Create(rvsdg::region & region, const std::vector<rvsdg::output *> & operands)
+  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> operandTypes;
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
     operandTypes.reserve(operands.size());
     for (auto & operand : operands)
       operandTypes.emplace_back(operand->Type());
 
     valist_op operation(std::move(operandTypes));
-    return jlm::rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 };
 
@@ -1492,14 +1489,14 @@ public:
   virtual ~bitcast_op();
 
   inline bitcast_op(
-      std::shared_ptr<const jlm::rvsdg::valuetype> srctype,
-      std::shared_ptr<const jlm::rvsdg::valuetype> dsttype)
+      std::shared_ptr<const jlm::rvsdg::ValueType> srctype,
+      std::shared_ptr<const jlm::rvsdg::ValueType> dsttype)
       : unary_op(std::move(srctype), std::move(dsttype))
   {}
 
   inline bitcast_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     check_types(srctype, dsttype);
@@ -1507,21 +1504,21 @@ public:
 
   bitcast_op(const bitcast_op &) = default;
 
-  bitcast_op(jlm::rvsdg::operation &&) = delete;
+  bitcast_op(Operation &&) = delete;
 
   bitcast_op &
-  operator=(const jlm::rvsdg::operation &) = delete;
+  operator=(const Operation &) = delete;
 
   bitcast_op &
-  operator=(jlm::rvsdg::operation &&) = delete;
+  operator=(Operation &&) = delete;
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1532,7 +1529,7 @@ public:
       const override;
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(const variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto pair = check_types(operand->Type(), type);
 
@@ -1541,27 +1538,27 @@ public:
   }
 
   static jlm::rvsdg::output *
-  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::type> rtype)
+  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
   {
     auto pair = check_types(operand->Type(), rtype);
 
     bitcast_op op(pair.first, pair.second);
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 
 private:
   static std::pair<
-      std::shared_ptr<const jlm::rvsdg::valuetype>,
-      std::shared_ptr<const jlm::rvsdg::valuetype>>
+      std::shared_ptr<const jlm::rvsdg::ValueType>,
+      std::shared_ptr<const jlm::rvsdg::ValueType>>
   check_types(
-      const std::shared_ptr<const jlm::rvsdg::type> & otype,
-      const std::shared_ptr<const jlm::rvsdg::type> & rtype)
+      const std::shared_ptr<const jlm::rvsdg::Type> & otype,
+      const std::shared_ptr<const jlm::rvsdg::Type> & rtype)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(otype);
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(otype);
     if (!ot)
       throw jlm::util::error("expected value type.");
 
-    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(rtype);
+    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(rtype);
     if (!rt)
       throw jlm::util::error("expected value type.");
 
@@ -1571,34 +1568,34 @@ private:
 
 /* ConstantStruct operator */
 
-class ConstantStruct final : public jlm::rvsdg::simple_op
+class ConstantStruct final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantStruct();
 
   inline ConstantStruct(std::shared_ptr<const StructType> type)
-      : simple_op(create_srctypes(*type), { type })
+      : SimpleOperation(create_srctypes(*type), { type })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const StructType &
   type() const noexcept
   {
-    return *static_cast<const StructType *>(&result(0).type());
+    return *std::static_pointer_cast<const StructType>(result(0));
   }
 
   static std::unique_ptr<llvm::tac>
   create(
       const std::vector<const variable *> & elements,
-      const std::shared_ptr<const jlm::rvsdg::type> & type)
+      const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto structType = CheckAndExtractStructType(type);
 
@@ -1608,21 +1605,21 @@ public:
 
   static rvsdg::output &
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const std::vector<rvsdg::output *> & operands,
-      std::shared_ptr<const rvsdg::type> resultType)
+      std::shared_ptr<const rvsdg::Type> resultType)
   {
     auto structType = CheckAndExtractStructType(std::move(resultType));
 
     ConstantStruct operation(std::move(structType));
-    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return *rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 
 private:
-  static inline std::vector<std::shared_ptr<const rvsdg::type>>
+  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
   create_srctypes(const StructType & type)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types;
+    std::vector<std::shared_ptr<const rvsdg::Type>> types;
     for (size_t n = 0; n < type.GetDeclaration().NumElements(); n++)
       types.push_back(type.GetDeclaration().GetElementType(n));
 
@@ -1630,7 +1627,7 @@ private:
   }
 
   static std::shared_ptr<const StructType>
-  CheckAndExtractStructType(std::shared_ptr<const rvsdg::type> type)
+  CheckAndExtractStructType(std::shared_ptr<const rvsdg::Type> type)
   {
     if (auto structType = std::dynamic_pointer_cast<const StructType>(type))
     {
@@ -1658,8 +1655,8 @@ public:
   }
 
   inline trunc_op(
-      std::shared_ptr<const jlm::rvsdg::type> optype,
-      std::shared_ptr<const jlm::rvsdg::type> restype)
+      std::shared_ptr<const jlm::rvsdg::Type> optype,
+      std::shared_ptr<const jlm::rvsdg::Type> restype)
       : unary_op(optype, restype)
   {
     auto ot = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
@@ -1675,12 +1672,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
@@ -1693,17 +1690,17 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return static_cast<const jlm::rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
@@ -1725,7 +1722,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     trunc_op op(std::move(ot), jlm::rvsdg::bittype::Create(ndstbits));
-    return jlm::rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 };
 
@@ -1743,8 +1740,8 @@ public:
   {}
 
   inline uitofp_op(
-      std::shared_ptr<const jlm::rvsdg::type> optype,
-      std::shared_ptr<const jlm::rvsdg::type> restype)
+      std::shared_ptr<const jlm::rvsdg::Type> optype,
+      std::shared_ptr<const jlm::rvsdg::Type> restype)
       : unary_op(optype, restype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
@@ -1757,12 +1754,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
@@ -1773,7 +1770,7 @@ public:
       const override;
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!st)
@@ -1802,8 +1799,8 @@ public:
   {}
 
   inline sitofp_op(
-      std::shared_ptr<const jlm::rvsdg::type> srctype,
-      std::shared_ptr<const jlm::rvsdg::type> dsttype)
+      std::shared_ptr<const jlm::rvsdg::Type> srctype,
+      std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
@@ -1816,12 +1813,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
@@ -1832,7 +1829,7 @@ public:
       const override;
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!st)
@@ -1849,37 +1846,37 @@ public:
 
 /* ConstantArray */
 
-class ConstantArray final : public jlm::rvsdg::simple_op
+class ConstantArray final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantArray();
 
-  ConstantArray(const std::shared_ptr<const jlm::rvsdg::valuetype> & type, size_t size)
-      : jlm::rvsdg::simple_op({ size, type }, { arraytype::Create(type, size) })
+  ConstantArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
+      : SimpleOperation({ size, type }, { arraytype::Create(type, size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.\n");
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   size_t
   size() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->nelements();
+    return std::static_pointer_cast<const arraytype>(result(0))->nelements();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return static_cast<const arraytype *>(&result(0).type())->element_type();
+    return std::static_pointer_cast<const arraytype>(result(0))->element_type();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1888,9 +1885,9 @@ public:
     if (elements.size() == 0)
       throw jlm::util::error("expected at least one element.\n");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
-      throw jlm::util::error("expected value type.\n");
+      throw jlm::util::error("expected value Type.\n");
 
     ConstantArray op(vt, elements.size());
     return tac::create(op, elements);
@@ -1902,26 +1899,26 @@ public:
     if (operands.empty())
       throw util::error("Expected at least one element.\n");
 
-    auto valueType = std::dynamic_pointer_cast<const rvsdg::valuetype>(operands[0]->Type());
+    auto valueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(operands[0]->Type());
     if (!valueType)
     {
       throw util::error("Expected value type.\n");
     }
 
     ConstantArray operation(valueType, operands.size());
-    return rvsdg::simple_node::create_normalized(operands[0]->region(), operation, operands)[0];
+    return rvsdg::SimpleNode::create_normalized(operands[0]->region(), operation, operands)[0];
   }
 };
 
 /* ConstantAggregateZero operator */
 
-class ConstantAggregateZero final : public jlm::rvsdg::simple_op
+class ConstantAggregateZero final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~ConstantAggregateZero();
 
-  ConstantAggregateZero(std::shared_ptr<const jlm::rvsdg::type> type)
-      : simple_op({}, { type })
+  ConstantAggregateZero(std::shared_ptr<const jlm::rvsdg::Type> type)
+      : SimpleOperation({}, { type })
   {
     auto st = dynamic_cast<const StructType *>(type.get());
     auto at = dynamic_cast<const arraytype *>(type.get());
@@ -1931,32 +1928,32 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
-  create(std::shared_ptr<const jlm::rvsdg::type> type)
+  create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     ConstantAggregateZero op(std::move(type));
     return tac::create(op, {});
   }
 
   static jlm::rvsdg::output *
-  Create(jlm::rvsdg::region & region, std::shared_ptr<const jlm::rvsdg::type> type)
+  Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     ConstantAggregateZero operation(std::move(type));
-    return jlm::rvsdg::simple_node::create_normalized(&region, operation, {})[0];
+    return jlm::rvsdg::SimpleNode::create_normalized(&region, operation, {})[0];
   }
 };
 
 /* extractelement operator */
 
-class extractelement_op final : public jlm::rvsdg::simple_op
+class extractelement_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~extractelement_op();
@@ -1964,16 +1961,16 @@ public:
   inline extractelement_op(
       const std::shared_ptr<const vectortype> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
-      : simple_op({ vtype, btype }, { vtype->Type() })
+      : SimpleOperation({ vtype, btype }, { vtype->Type() })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -1994,30 +1991,30 @@ public:
 
 /* shufflevector operator */
 
-class shufflevector_op final : public jlm::rvsdg::simple_op
+class shufflevector_op final : public rvsdg::SimpleOperation
 {
 public:
   ~shufflevector_op() override;
 
   shufflevector_op(const std::shared_ptr<const fixedvectortype> & v, const std::vector<int> & mask)
-      : simple_op({ v, v }, { v }),
+      : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
 
   shufflevector_op(
       const std::shared_ptr<const scalablevectortype> & v,
       const std::vector<int> & mask)
-      : simple_op({ v, v }, { v }),
+      : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const ::llvm::ArrayRef<int>
@@ -2053,28 +2050,28 @@ private:
 
 /* constantvector operator */
 
-class constantvector_op final : public jlm::rvsdg::simple_op
+class constantvector_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~constantvector_op();
 
   explicit inline constantvector_op(const std::shared_ptr<const vectortype> & vt)
-      : simple_op({ vt->size(), vt->Type() }, { vt })
+      : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
   create(
       const std::vector<const variable *> & operands,
-      const std::shared_ptr<const jlm::rvsdg::type> & type)
+      const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto vt = std::dynamic_pointer_cast<const vectortype>(type);
     if (!vt)
@@ -2087,16 +2084,16 @@ public:
 
 /* insertelement operator */
 
-class insertelement_op final : public jlm::rvsdg::simple_op
+class insertelement_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~insertelement_op();
 
   inline insertelement_op(
       const std::shared_ptr<const vectortype> & vectype,
-      const std::shared_ptr<const jlm::rvsdg::valuetype> & vtype,
+      const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
-      : simple_op({ vectype, vtype, btype }, { vectype })
+      : SimpleOperation({ vectype, vtype, btype }, { vectype })
   {
     if (vectype->type() != *vtype)
     {
@@ -2107,12 +2104,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
@@ -2122,7 +2119,7 @@ public:
     if (!vct)
       throw jlm::util::error("expected vector type.");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(value->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value->Type());
     if (!vt)
       throw jlm::util::error("expected value type.");
 
@@ -2137,7 +2134,7 @@ public:
 
 /* vectorunary operator */
 
-class vectorunary_op final : public jlm::rvsdg::simple_op
+class vectorunary_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~vectorunary_op();
@@ -2146,31 +2143,31 @@ public:
       const jlm::rvsdg::unary_op & op,
       const std::shared_ptr<const vectortype> & operand,
       const std::shared_ptr<const vectortype> & result)
-      : simple_op({ operand }, { result }),
+      : SimpleOperation({ operand }, { result }),
         op_(op.copy())
   {
-    if (operand->type() != op.argument(0).type())
+    if (operand->type() != *op.argument(0))
     {
       auto received = operand->type().debug_string();
-      auto expected = op.argument(0).type().debug_string();
+      auto expected = op.argument(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
 
-    if (result->type() != op.result(0).type())
+    if (result->type() != *op.result(0))
     {
       auto received = result->type().debug_string();
-      auto expected = op.result(0).type().debug_string();
+      auto expected = op.result(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
 
   inline vectorunary_op(const vectorunary_op & other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
   inline vectorunary_op(vectorunary_op && other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
@@ -2199,19 +2196,19 @@ public:
   }
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
   create(
       const jlm::rvsdg::unary_op & unop,
       const llvm::variable * operand,
-      const std::shared_ptr<const jlm::rvsdg::type> & type)
+      const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto vct1 = std::dynamic_pointer_cast<const vectortype>(operand->Type());
     auto vct2 = std::dynamic_pointer_cast<const vectortype>(type);
@@ -2223,49 +2220,49 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::rvsdg::operation> op_;
+  std::unique_ptr<Operation> op_;
 };
 
 /* vectorbinary operator */
 
-class vectorbinary_op final : public jlm::rvsdg::simple_op
+class vectorbinary_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~vectorbinary_op();
 
   inline vectorbinary_op(
-      const jlm::rvsdg::binary_op & binop,
+      const rvsdg::BinaryOperation & binop,
       const std::shared_ptr<const vectortype> & op1,
       const std::shared_ptr<const vectortype> & op2,
       const std::shared_ptr<const vectortype> & result)
-      : simple_op({ op1, op2 }, { result }),
+      : SimpleOperation({ op1, op2 }, { result }),
         op_(binop.copy())
   {
     if (*op1 != *op2)
       throw jlm::util::error("expected the same vector types.");
 
-    if (op1->type() != binop.argument(0).type())
+    if (op1->type() != *binop.argument(0))
     {
       auto received = op1->type().debug_string();
-      auto expected = binop.argument(0).type().debug_string();
+      auto expected = binop.argument(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
 
-    if (result->type() != binop.result(0).type())
+    if (result->type() != *binop.result(0))
     {
       auto received = result->type().debug_string();
-      auto expected = binop.result(0).type().debug_string();
+      auto expected = binop.result(0)->debug_string();
       throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
 
   inline vectorbinary_op(const vectorbinary_op & other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
   inline vectorbinary_op(vectorbinary_op && other)
-      : simple_op(other),
+      : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
@@ -2287,27 +2284,27 @@ public:
     return *this;
   }
 
-  inline const jlm::rvsdg::binary_op &
+  const rvsdg::BinaryOperation &
   operation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::binary_op *>(op_.get());
+    return *static_cast<const rvsdg::BinaryOperation *>(op_.get());
   }
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static inline std::unique_ptr<llvm::tac>
   create(
-      const jlm::rvsdg::binary_op & binop,
+      const rvsdg::BinaryOperation & binop,
       const llvm::variable * op1,
       const llvm::variable * op2,
-      const std::shared_ptr<const jlm::rvsdg::type> & type)
+      const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto vct1 = std::dynamic_pointer_cast<const vectortype>(op1->Type());
     auto vct2 = std::dynamic_pointer_cast<const vectortype>(op2->Type());
@@ -2320,41 +2317,41 @@ public:
   }
 
 private:
-  std::unique_ptr<jlm::rvsdg::operation> op_;
+  std::unique_ptr<Operation> op_;
 };
 
 /* constant data vector operator */
 
-class constant_data_vector_op final : public jlm::rvsdg::simple_op
+class constant_data_vector_op final : public rvsdg::SimpleOperation
 {
 public:
   ~constant_data_vector_op() override;
 
 private:
   explicit constant_data_vector_op(const std::shared_ptr<const vectortype> & vt)
-      : simple_op({ vt->size(), vt->Type() }, { vt })
+      : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
 public:
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   size_t
   size() const noexcept
   {
-    return static_cast<const vectortype *>(&result(0).type())->size();
+    return std::static_pointer_cast<const vectortype>(result(0))->size();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return static_cast<const vectortype *>(&result(0).type())->type();
+    return std::static_pointer_cast<const vectortype>(result(0))->type();
   }
 
   static std::unique_ptr<tac>
@@ -2363,7 +2360,7 @@ public:
     if (elements.empty())
       throw jlm::util::error("Expected at least one element.");
 
-    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::valuetype>(elements[0]->Type());
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
       throw jlm::util::error("Expected value type.");
 
@@ -2374,7 +2371,7 @@ public:
 
 /* ExtractValue operator */
 
-class ExtractValue final : public jlm::rvsdg::simple_op
+class ExtractValue final : public rvsdg::SimpleOperation
 {
   typedef std::vector<unsigned>::const_iterator const_iterator;
 
@@ -2382,9 +2379,9 @@ public:
   virtual ~ExtractValue();
 
   inline ExtractValue(
-      const std::shared_ptr<const jlm::rvsdg::type> & aggtype,
+      const std::shared_ptr<const jlm::rvsdg::Type> & aggtype,
       const std::vector<unsigned> & indices)
-      : simple_op({ aggtype }, { dsttype(aggtype, indices) }),
+      : SimpleOperation({ aggtype }, { dsttype(aggtype, indices) }),
         indices_(indices)
   {
     if (indices.empty())
@@ -2392,12 +2389,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const_iterator
@@ -2412,10 +2409,10 @@ public:
     return indices_.end();
   }
 
-  const jlm::rvsdg::valuetype &
+  const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::valuetype *>(&argument(0).type());
+    return *std::static_pointer_cast<const rvsdg::ValueType>(argument(0));
   }
 
   static inline std::unique_ptr<llvm::tac>
@@ -2426,12 +2423,12 @@ public:
   }
 
 private:
-  static inline std::vector<std::shared_ptr<const rvsdg::type>>
+  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
   dsttype(
-      const std::shared_ptr<const jlm::rvsdg::type> & aggtype,
+      const std::shared_ptr<const jlm::rvsdg::Type> & aggtype,
       const std::vector<unsigned> & indices)
   {
-    std::shared_ptr<const jlm::rvsdg::type> type = aggtype;
+    std::shared_ptr<const jlm::rvsdg::Type> type = aggtype;
     for (const auto & index : indices)
     {
       if (auto st = std::dynamic_pointer_cast<const StructType>(type))
@@ -2460,35 +2457,35 @@ private:
 
 /* malloc operator */
 
-class malloc_op final : public jlm::rvsdg::simple_op
+class malloc_op final : public rvsdg::SimpleOperation
 {
 public:
   virtual ~malloc_op();
 
   explicit malloc_op(std::shared_ptr<const jlm::rvsdg::bittype> btype)
-      : simple_op({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
+      : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   const jlm::rvsdg::bittype &
   size_type() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
   }
 
   FunctionType
   fcttype() const
   {
     JLM_ASSERT(narguments() == 1 && nresults() == 2);
-    return FunctionType({ argument(0).Type() }, { result(0).Type(), result(1).Type() });
+    return FunctionType({ argument(0) }, { result(0), result(1) });
   }
 
   static std::unique_ptr<llvm::tac>
@@ -2510,7 +2507,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     malloc_op op(std::move(bt));
-    return jlm::rvsdg::simple_node::create_normalized(size->region(), op, { size });
+    return jlm::rvsdg::SimpleNode::create_normalized(size->region(), op, { size });
   }
 };
 
@@ -2519,22 +2516,22 @@ public:
  *
  * This operation has no equivalent LLVM instruction.
  */
-class FreeOperation final : public jlm::rvsdg::simple_op
+class FreeOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~FreeOperation() noexcept override;
 
   explicit FreeOperation(size_t numMemoryStates)
-      : simple_op(CreateOperandTypes(numMemoryStates), CreateResultTypes(numMemoryStates))
+      : SimpleOperation(CreateOperandTypes(numMemoryStates), CreateResultTypes(numMemoryStates))
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
@@ -2564,28 +2561,28 @@ public:
     operands.push_back(iOState);
 
     FreeOperation operation(memoryStates.size());
-    return jlm::rvsdg::simple_node::create_normalized(pointer->region(), operation, operands);
+    return jlm::rvsdg::SimpleNode::create_normalized(pointer->region(), operation, operands);
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> memoryStates(
+    std::vector<std::shared_ptr<const rvsdg::Type>> memoryStates(
         numMemoryStates,
         MemoryStateType::Create());
 
-    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     types.insert(types.end(), memoryStates.begin(), memoryStates.end());
     types.emplace_back(iostatetype::Create());
 
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
         numMemoryStates,
         MemoryStateType::Create());
     types.emplace_back(iostatetype::Create());

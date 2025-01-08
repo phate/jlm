@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 void
-check_rhls(jlm::rvsdg::region * sr);
+check_rhls(rvsdg::Region * sr);
 
 void
 check_rhls(llvm::RvsdgModule & rm);

@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/llvm-test-suite.git
-GIT_COMMIT=ec4ff100968c86381ee20b1347ac7abebc7bd74e
+GIT_COMMIT=ebdef97621d4e024dca3ec0095de958e6ccb3ad8
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"

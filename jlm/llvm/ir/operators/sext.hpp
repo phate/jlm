@@ -30,8 +30,8 @@ public:
   }
 
   inline sext_op(
-      std::shared_ptr<const rvsdg::type> srctype,
-      std::shared_ptr<const rvsdg::type> dsttype)
+      std::shared_ptr<const rvsdg::Type> srctype,
+      std::shared_ptr<const rvsdg::Type> dsttype)
       : unary_op(srctype, dsttype)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(srctype);
@@ -47,12 +47,12 @@ public:
   }
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual rvsdg::unop_reduction_path_t
@@ -64,17 +64,17 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return static_cast<const rvsdg::bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return static_cast<const rvsdg::bittype *>(&result(0).type())->nbits();
+    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::tac>
-  create(const variable * operand, const std::shared_ptr<const rvsdg::type> & type)
+  create(const variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)
@@ -96,7 +96,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     sext_op op(std::move(ot), rvsdg::bittype::Create(ndstbits));
-    return rvsdg::simple_node::create_normalized(operand->region(), op, { operand })[0];
+    return rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
   }
 };
 

@@ -27,7 +27,7 @@ taclist::~taclist()
 
 static void
 check_operands(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
   if (operands.size() != operation.narguments())
@@ -35,14 +35,14 @@ check_operands(
 
   for (size_t n = 0; n < operands.size(); n++)
   {
-    if (operands[n]->type() != operation.argument(n).type())
+    if (operands[n]->type() != *operation.argument(n))
       throw util::error("invalid type.");
   }
 }
 
 static void
 check_results(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<std::unique_ptr<tacvariable>> & results)
 {
   if (results.size() != operation.nresults())
@@ -50,12 +50,12 @@ check_results(
 
   for (size_t n = 0; n < results.size(); n++)
   {
-    if (results[n]->type() != operation.result(n).type())
+    if (results[n]->type() != *operation.result(n))
       throw util::error("invalid type.");
   }
 }
 
-tac::tac(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands)
+tac::tac(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
     : operands_(operands),
       operation_(operation.copy())
 {
@@ -66,7 +66,7 @@ tac::tac(const jlm::rvsdg::simple_op & operation, const std::vector<const variab
 }
 
 tac::tac(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     const std::vector<std::string> & names)
     : operands_(operands),
@@ -81,7 +81,7 @@ tac::tac(
 }
 
 tac::tac(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     std::vector<std::unique_ptr<tacvariable>> results)
     : operands_(operands),
@@ -94,7 +94,7 @@ tac::tac(
 
 void
 tac::convert(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
   check_operands(operation, operands);
@@ -109,7 +109,7 @@ tac::convert(
 
 void
 tac::replace(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
   check_operands(operation, operands);
@@ -117,6 +117,32 @@ tac::replace(
 
   operands_ = operands;
   operation_ = operation.copy();
+}
+
+std::string
+tac::ToAscii(const jlm::llvm::tac & threeAddressCode)
+{
+  std::string resultString;
+  for (size_t n = 0; n < threeAddressCode.nresults(); n++)
+  {
+    resultString += threeAddressCode.result(n)->debug_string();
+    if (n != threeAddressCode.nresults() - 1)
+      resultString += ", ";
+  }
+
+  std::string operandString;
+  for (size_t n = 0; n < threeAddressCode.noperands(); n++)
+  {
+    operandString += threeAddressCode.operand(n)->debug_string();
+    if (n != threeAddressCode.noperands() - 1)
+      operandString += ", ";
+  }
+
+  std::string operationString = threeAddressCode.operation().debug_string();
+  std::string resultOperationSeparator = resultString.empty() ? "" : " = ";
+  std::string operationOperandSeparator = operandString.empty() ? "" : " ";
+  return resultString + resultOperationSeparator + operationString + operationOperandSeparator
+       + operandString;
 }
 
 }

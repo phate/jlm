@@ -12,11 +12,23 @@
 namespace jlm::hls
 {
 
+/**
+ * Adds a fork for every output that has multiple consumers (node inputs). The original output is
+ * connected to the fork's input and each consumer is connected to one of the fork's outputs.
+ *
+ * /param region The region for which to insert forks.
+ */
 void
-add_forks(rvsdg::region * region);
+add_forks(rvsdg::Region * region);
 
+/**
+ * Adds a fork for every output that has multiple consumers (node inputs). The original output is
+ * connected to the fork's input and each consumer is connected to one of the fork's outputs.
+ *
+ * /param rvsdgModule The RVSDG module for which to insert forks.
+ */
 void
-add_forks(llvm::RvsdgModule & rm);
+add_forks(llvm::RvsdgModule & rvsdgModule);
 
 }
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_FORKS_HPP

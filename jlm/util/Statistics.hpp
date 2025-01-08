@@ -50,6 +50,7 @@ public:
     RvsdgConstruction,
     RvsdgDestruction,
     RvsdgOptimization,
+    RvsdgTreePrinter,
     SteensgaardAnalysis,
     ThetaGammaInversion,
     TopDownMemoryNodeEliminator,
@@ -161,7 +162,7 @@ protected:
   /**
    * Adds a measurement, identified by \p name, with the given value.
    * Requires that the measurement doesn't already exist.
-   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint16_4, double
+   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint64_t, double
    */
   template<typename T>
   void
@@ -221,6 +222,10 @@ protected:
         "#PointsToGraphExternalMemorySources";
     inline static const char * NumPointsToGraphUnknownMemorySources =
         "#PointsToGraphUnknownMemorySources";
+
+    inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
+    inline static const char * NumPointsToGraphPointsToRelations =
+        "#PointsToGraphPointsToRelations";
 
     static inline const char * Timer = "Time";
   };

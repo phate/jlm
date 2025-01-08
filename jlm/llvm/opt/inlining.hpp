@@ -30,7 +30,7 @@ jlm::rvsdg::output *
 find_producer(jlm::rvsdg::input * input);
 
 void
-inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda);
+inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda);
 
 }
 

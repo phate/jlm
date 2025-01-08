@@ -35,7 +35,7 @@ public:
    *
    * @return The RVSDG of the module.
    */
-  jlm::rvsdg::graph &
+  jlm::rvsdg::Graph &
   Rvsdg() noexcept
   {
     return Rvsdg_;
@@ -45,14 +45,14 @@ public:
    *
    * @return The RVSDG of the module.
    */
-  [[nodiscard]] const jlm::rvsdg::graph &
+  [[nodiscard]] const Graph &
   Rvsdg() const noexcept
   {
     return Rvsdg_;
   }
 
 private:
-  graph Rvsdg_;
+  Graph Rvsdg_;
 };
 
 }

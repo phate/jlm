@@ -55,7 +55,7 @@ const char BitAddLabel[] = "BitAdd";
 template class MakeBitBinaryOperation<
     reduce_add,
     BitAddLabel,
-    binary_op::flags::associative | binary_op::flags::commutative>;
+    BinaryOperation::flags::associative | BinaryOperation::flags::commutative>;
 
 struct reduce_and
 {
@@ -70,7 +70,7 @@ const char BitAndLabel[] = "BitAnd";
 template class MakeBitBinaryOperation<
     reduce_and,
     BitAndLabel,
-    binary_op::flags::associative | binary_op::flags::commutative>;
+    BinaryOperation::flags::associative | BinaryOperation::flags::commutative>;
 
 struct reduce_ashr
 {
@@ -82,7 +82,7 @@ struct reduce_ashr
 };
 
 const char BitAShrLabel[] = "BitAShr";
-template class MakeBitBinaryOperation<reduce_ashr, BitAShrLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_ashr, BitAShrLabel, BinaryOperation::flags::none>;
 
 struct reduce_mul
 {
@@ -97,7 +97,7 @@ const char BitMulLabel[] = "BitMul";
 template class MakeBitBinaryOperation<
     reduce_mul,
     BitMulLabel,
-    binary_op::flags::associative | binary_op::flags::commutative>;
+    BinaryOperation::flags::associative | BinaryOperation::flags::commutative>;
 
 struct reduce_or
 {
@@ -112,7 +112,7 @@ const char BitOrLabel[] = "BitOr";
 template class MakeBitBinaryOperation<
     reduce_or,
     BitOrLabel,
-    binary_op::flags::associative | binary_op::flags::commutative>;
+    BinaryOperation::flags::associative | BinaryOperation::flags::commutative>;
 
 struct reduce_sdiv
 {
@@ -124,7 +124,7 @@ struct reduce_sdiv
 };
 
 const char BitSDivLabel[] = "BitSDiv";
-template class MakeBitBinaryOperation<reduce_sdiv, BitSDivLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_sdiv, BitSDivLabel, BinaryOperation::flags::none>;
 
 struct reduce_shl
 {
@@ -136,7 +136,7 @@ struct reduce_shl
 };
 
 const char BitShlLabel[] = "BitShl";
-template class MakeBitBinaryOperation<reduce_shl, BitShlLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_shl, BitShlLabel, BinaryOperation::flags::none>;
 
 struct reduce_shr
 {
@@ -148,7 +148,7 @@ struct reduce_shr
 };
 
 const char BitShrLabel[] = "BitShr";
-template class MakeBitBinaryOperation<reduce_shr, BitShrLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_shr, BitShrLabel, BinaryOperation::flags::none>;
 
 struct reduce_smod
 {
@@ -160,7 +160,7 @@ struct reduce_smod
 };
 
 const char BitSModLabel[] = "BitSMod";
-template class MakeBitBinaryOperation<reduce_smod, BitSModLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_smod, BitSModLabel, BinaryOperation::flags::none>;
 
 struct reduce_smulh
 {
@@ -172,7 +172,10 @@ struct reduce_smulh
 };
 
 const char BitSMulHLabel[] = "BitSMulH";
-template class MakeBitBinaryOperation<reduce_smulh, BitSMulHLabel, binary_op::flags::commutative>;
+template class MakeBitBinaryOperation<
+    reduce_smulh,
+    BitSMulHLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_sub
 {
@@ -184,7 +187,7 @@ struct reduce_sub
 };
 
 const char BitSubLabel[] = "BitSub";
-template class MakeBitBinaryOperation<reduce_sub, BitSubLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_sub, BitSubLabel, BinaryOperation::flags::none>;
 
 struct reduce_udiv
 {
@@ -196,7 +199,7 @@ struct reduce_udiv
 };
 
 const char BitUDivLabel[] = "BitUDiv";
-template class MakeBitBinaryOperation<reduce_udiv, BitUDivLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_udiv, BitUDivLabel, BinaryOperation::flags::none>;
 
 struct reduce_umod
 {
@@ -208,7 +211,7 @@ struct reduce_umod
 };
 
 const char BitUModLabel[] = "BitUMod";
-template class MakeBitBinaryOperation<reduce_umod, BitUModLabel, binary_op::flags::none>;
+template class MakeBitBinaryOperation<reduce_umod, BitUModLabel, BinaryOperation::flags::none>;
 
 struct reduce_umulh
 {
@@ -220,7 +223,10 @@ struct reduce_umulh
 };
 
 const char BitUMulHLabel[] = "BitUMulH";
-template class MakeBitBinaryOperation<reduce_umulh, BitUMulHLabel, binary_op::flags::commutative>;
+template class MakeBitBinaryOperation<
+    reduce_umulh,
+    BitUMulHLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_xor
 {
@@ -235,6 +241,6 @@ const char BitXorLabel[] = "BitXor";
 template class MakeBitBinaryOperation<
     reduce_xor,
     BitXorLabel,
-    binary_op::flags::associative | binary_op::flags::commutative>;
+    BinaryOperation::flags::associative | BinaryOperation::flags::commutative>;
 
 }

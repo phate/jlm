@@ -341,10 +341,7 @@ class JlmOptCommand final : public Command
 public:
   ~JlmOptCommand() override;
 
-  JlmOptCommand(std::string programName, JlmOptCommandLineOptions commandLineOptions)
-      : ProgramName_(std::move(programName)),
-        CommandLineOptions_(std::move(commandLineOptions))
-  {}
+  JlmOptCommand(std::string programName, const JlmOptCommandLineOptions & commandLineOptions);
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -356,7 +353,7 @@ public:
   Create(
       CommandGraph & commandGraph,
       std::string programName,
-      JlmOptCommandLineOptions commandLineOptions)
+      const JlmOptCommandLineOptions & commandLineOptions)
   {
     auto command =
         std::make_unique<JlmOptCommand>(std::move(programName), std::move(commandLineOptions));
@@ -368,6 +365,13 @@ public:
   {
     return CommandLineOptions_;
   }
+
+  static void
+  PrintRvsdgModule(
+      llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+      util::StatisticsCollector & statisticsCollector);
 
 private:
   std::unique_ptr<llvm::RvsdgModule>
@@ -383,13 +387,6 @@ private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseMlirIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
-
-  static void
-  PrintRvsdgModule(
-      llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
-      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
-      util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsAscii(
@@ -415,8 +412,28 @@ private:
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
+  static void
+  PrintAsRvsdgTree(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsDot(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  [[nodiscard]] std::vector<llvm::optimization *>
+  GetOptimizations() const;
+
+  [[nodiscard]] std::unique_ptr<llvm::optimization>
+  CreateOptimization(enum JlmOptCommandLineOptions::OptimizationId optimizationId) const;
+
   std::string ProgramName_;
   JlmOptCommandLineOptions CommandLineOptions_;
+  std::unordered_map<JlmOptCommandLineOptions::OptimizationId, std::unique_ptr<llvm::optimization>>
+      Optimizations_ = {};
 };
 
 /**
@@ -575,10 +592,9 @@ class JlmHlsCommand final : public Command
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder, bool useCirct)
+  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder)
       : InputFile_(std::move(inputFile)),
-        OutputFolder_(std::move(outputFolder)),
-        UseCirct_(useCirct)
+        OutputFolder_(std::move(outputFolder))
   {}
 
   [[nodiscard]] std::string
@@ -621,17 +637,15 @@ public:
   Create(
       CommandGraph & commandGraph,
       const util::filepath & inputFile,
-      const util::filepath & outputFolder,
-      bool useCirct)
+      const util::filepath & outputFolder)
   {
-    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder, useCirct));
+    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
   util::filepath InputFile_;
   util::filepath OutputFolder_;
-  bool UseCirct_;
 };
 
 /**

@@ -31,15 +31,16 @@ convert_instructions(::llvm::Function & function, context & ctx)
       if (auto result = ConvertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
-      if (auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction))
+      // When an LLVM PhiNode is converted to a jlm phi_op, some of its operands may not be ready.
+      // The created phi_op therefore has no operands, but is instead added to a list.
+      // Once all basic blocks have been converted, all phi_ops are revisited and given operands.
+      if (!tacs.empty() && is<phi_op>(tacs.back()->operation()))
       {
+        auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);
         phis.push_back(phi);
-        ctx.get(bb)->append_first(tacs);
       }
-      else
-      {
-        ctx.get(bb)->append_last(tacs);
-      }
+
+      ctx.get(bb)->append_last(tacs);
     }
   }
 
@@ -55,14 +56,23 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
-      tacsvector_t tacs;
+      // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
+      // These are not visited during convert_basic_blocks, and thus do not have corresponding
+      // jlm::llvm::basic_blocks. The phi_op can safely ignore these, as they are dead.
+      if (!ctx.has(phi->getIncomingBlock(n)))
+        continue;
+
       auto bb = ctx.get(phi->getIncomingBlock(n));
+      tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       bb->insert_before_branch(tacs);
       nodes.push_back(bb);
     }
 
-    auto phi_tac = static_cast<const tacvariable *>(ctx.lookup_value(phi))->tac();
+    // Phi instructions with a single reachable predecessor should have already been elided
+    JLM_ASSERT(operands.size() >= 2);
+
+    auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
   }
 }
@@ -92,6 +102,8 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::Builtin, attribute::kind::Builtin },
         { ak::Cold, attribute::kind::Cold },
         { ak::Convergent, attribute::kind::Convergent },
+        { ak::CoroDestroyOnlyWhenComplete, attribute::kind::CoroDestroyOnlyWhenComplete },
+        { ak::DeadOnUnwind, attribute::kind::DeadOnUnwind },
         { ak::DisableSanitizerInstrumentation, attribute::kind::DisableSanitizerInstrumentation },
         { ak::FnRetThunkExtern, attribute::kind::FnRetThunkExtern },
         { ak::Hot, attribute::kind::Hot },
@@ -127,6 +139,7 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::NonNull, attribute::kind::NonNull },
         { ak::NullPointerIsValid, attribute::kind::NullPointerIsValid },
         { ak::OptForFuzzing, attribute::kind::OptForFuzzing },
+        { ak::OptimizeForDebugging, attribute::kind::OptimizeForDebugging },
         { ak::OptimizeForSize, attribute::kind::OptimizeForSize },
         { ak::OptimizeNone, attribute::kind::OptimizeNone },
         { ak::PresplitCoroutine, attribute::kind::PresplitCoroutine },
@@ -153,6 +166,7 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
         { ak::SwiftError, attribute::kind::SwiftError },
         { ak::SwiftSelf, attribute::kind::SwiftSelf },
         { ak::WillReturn, attribute::kind::WillReturn },
+        { ak::Writable, attribute::kind::Writable },
         { ak::WriteOnly, attribute::kind::WriteOnly },
         { ak::ZExt, attribute::kind::ZExt },
         { ak::LastEnumAttr, attribute::kind::LastEnumAttr },
@@ -181,75 +195,78 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
   return map[kind];
 }
 
-static std::unique_ptr<llvm::attribute>
-convert_attribute(const ::llvm::Attribute & attribute, context & ctx)
+static enum_attribute
+ConvertEnumAttribute(const ::llvm::Attribute & attribute)
 {
-  auto convert_type_attribute = [](const ::llvm::Attribute & attribute, context & ctx)
+  JLM_ASSERT(attribute.isEnumAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return enum_attribute(kind);
+}
+
+static int_attribute
+ConvertIntAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isIntAttribute());
+  auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
+  return { kind, attribute.getValueAsInt() };
+}
+
+static type_attribute
+ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
+{
+  JLM_ASSERT(attribute.isTypeAttribute());
+
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
   {
-    JLM_ASSERT(attribute.isTypeAttribute());
+    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    return { attribute::kind::ByVal, std::move(type) };
+  }
 
-    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
-    {
-      auto type = ConvertType(attribute.getValueAsType(), ctx);
-      return type_attribute::create_byval(std::move(type));
-    }
-
-    if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
-    {
-      auto type = ConvertType(attribute.getValueAsType(), ctx);
-      return type_attribute::CreateStructRetAttribute(std::move(type));
-    }
-
-    JLM_UNREACHABLE("Unhandled attribute");
-  };
-
-  auto convert_string_attribute = [](const ::llvm::Attribute & attribute)
+  if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
   {
-    JLM_ASSERT(attribute.isStringAttribute());
-    return string_attribute::create(
-        attribute.getKindAsString().str(),
-        attribute.getValueAsString().str());
-  };
-
-  auto convert_enum_attribute = [](const ::llvm::Attribute & attribute)
-  {
-    JLM_ASSERT(attribute.isEnumAttribute());
-
-    auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-    return enum_attribute::create(kind);
-  };
-
-  auto convert_int_attribute = [](const ::llvm::Attribute & attribute)
-  {
-    JLM_ASSERT(attribute.isIntAttribute());
-
-    auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-    return int_attribute::create(kind, attribute.getValueAsInt());
-  };
-
-  if (attribute.isTypeAttribute())
-    return convert_type_attribute(attribute, ctx);
-
-  if (attribute.isStringAttribute())
-    return convert_string_attribute(attribute);
-
-  if (attribute.isEnumAttribute())
-    return convert_enum_attribute(attribute);
-
-  if (attribute.isIntAttribute())
-    return convert_int_attribute(attribute);
+    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    return { attribute::kind::StructRet, std::move(type) };
+  }
 
   JLM_UNREACHABLE("Unhandled attribute");
+}
+
+static string_attribute
+ConvertStringAttribute(const ::llvm::Attribute & attribute)
+{
+  JLM_ASSERT(attribute.isStringAttribute());
+  return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
 static attributeset
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributes;
+  attributeset attributeSet;
   for (auto & attribute : as)
-    attributes.insert(convert_attribute(attribute, ctx));
+  {
+    if (attribute.isEnumAttribute())
+    {
+      attributeSet.InsertEnumAttribute(ConvertEnumAttribute(attribute));
+    }
+    else if (attribute.isIntAttribute())
+    {
+      attributeSet.InsertIntAttribute(ConvertIntAttribute(attribute));
+    }
+    else if (attribute.isTypeAttribute())
+    {
+      attributeSet.InsertTypeAttribute(ConvertTypeAttribute(attribute, ctx));
+    }
+    else if (attribute.isStringAttribute())
+    {
+      attributeSet.InsertStringAttribute(ConvertStringAttribute(attribute));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled attribute");
+    }
+  }
 
-  return attributes;
+  return attributeSet;
 }
 
 static std::unique_ptr<llvm::argument>

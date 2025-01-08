@@ -39,6 +39,7 @@ GetStatisticsIdNames()
     { Statistics::Id::RvsdgConstruction, "InterProceduralGraphToRvsdg" },
     { Statistics::Id::RvsdgDestruction, "RVSDGDESTRUCTION" },
     { Statistics::Id::RvsdgOptimization, "RVSDGOPTIMIZATION" },
+    { Statistics::Id::RvsdgTreePrinter, "RvsdgTreePrinter" },
     { Statistics::Id::SteensgaardAnalysis, "SteensgaardAnalysis" },
     { Statistics::Id::ThetaGammaInversion, "IVT" },
     { Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }

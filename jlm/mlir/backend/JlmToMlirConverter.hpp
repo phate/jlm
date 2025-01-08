@@ -11,11 +11,15 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
 #include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
+
+// MLIR JLM dialects
+#include <JLM/JLMOps.h>
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
@@ -70,7 +74,7 @@ private:
    * \return An MLIR RVSDG OmegaNode.
    */
   ::mlir::rvsdg::OmegaNode
-  ConvertOmega(const rvsdg::graph & graph);
+  ConvertOmega(const rvsdg::Graph & graph);
 
   /**
    * Converts all nodes in an RVSDG region. Conversion of structural nodes cause their regions to
@@ -81,7 +85,7 @@ private:
    * \return A list of outputs of the converted region/block.
    */
   ::llvm::SmallVector<::mlir::Value>
-  ConvertRegion(rvsdg::region & region, ::mlir::Block & block);
+  ConvertRegion(rvsdg::Region & region, ::mlir::Block & block);
 
   /**
    * Retreive the previously converted MLIR values from the map of operations
@@ -92,8 +96,8 @@ private:
    */
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
-      const rvsdg::node & node,
-      const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+      const rvsdg::Node & node,
+      const std::unordered_map<rvsdg::Node *, ::mlir::Operation *> & operationsMap,
       ::mlir::Block & block);
 
   /**
@@ -105,7 +109,7 @@ private:
    */
   ::mlir::Operation *
   ConvertNode(
-      const rvsdg::node & node,
+      const rvsdg::Node & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
@@ -117,7 +121,7 @@ private:
    */
   ::mlir::Operation *
   ConvertBitBinaryNode(
-      const jlm::rvsdg::simple_op & bitOp,
+      const rvsdg::SimpleOperation & bitOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
@@ -127,18 +131,18 @@ private:
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
-  BitCompareNode(const jlm::rvsdg::simple_op & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
+  BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG simple_node to an MLIR RVSDG operation.
+   * Converts an RVSDG SimpleNode to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-   * \param inputs The inputs to the simple_node.
+   * \param inputs The inputs to the SimpleNode.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   ConvertSimpleNode(
-      const rvsdg::simple_node & node,
+      const rvsdg::SimpleNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
@@ -160,7 +164,13 @@ private:
    */
   ::mlir::Operation *
   ConvertGamma(
-      const rvsdg::gamma_node & gammaNode,
+      const rvsdg::GammaNode & gammaNode,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  ::mlir::Operation *
+  ConvertTheta(
+      const rvsdg::ThetaNode & thetaNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
@@ -170,7 +180,7 @@ private:
    * \result The corresponding MLIR RVSDG type.
    */
   ::mlir::Type
-  ConvertType(const rvsdg::type & type);
+  ConvertType(const rvsdg::Type & type);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;

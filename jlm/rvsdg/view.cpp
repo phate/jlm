@@ -13,7 +13,7 @@ namespace jlm::rvsdg
 
 static std::string
 region_to_string(
-    const jlm::rvsdg::region * region,
+    const rvsdg::Region * region,
     size_t depth,
     std::unordered_map<const output *, std::string> &);
 
@@ -28,14 +28,14 @@ create_port_name(
     const jlm::rvsdg::output * port,
     std::unordered_map<const output *, std::string> & map)
 {
-  std::string name = dynamic_cast<const jlm::rvsdg::argument *>(port) ? "a" : "o";
+  std::string name = dynamic_cast<const rvsdg::RegionArgument *>(port) ? "a" : "o";
   name += jlm::util::strfmt(map.size());
   return name;
 }
 
 static std::string
 node_to_string(
-    const jlm::rvsdg::node * node,
+    const Node * node,
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
@@ -47,7 +47,7 @@ node_to_string(
     s = s + name + " ";
   }
 
-  s += ":= " + node->operation().debug_string() + " ";
+  s += ":= " + node->GetOperation().debug_string() + " ";
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -57,7 +57,7 @@ node_to_string(
   }
   s += "\n";
 
-  if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(node))
+  if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(node))
   {
     for (size_t n = 0; n < snode->nsubregions(); n++)
       s += region_to_string(snode->subregion(n), depth + 1, map);
@@ -67,9 +67,7 @@ node_to_string(
 }
 
 static std::string
-region_header(
-    const jlm::rvsdg::region * region,
-    std::unordered_map<const output *, std::string> & map)
+region_header(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
 {
   std::string header("[");
   for (size_t n = 0; n < region->narguments(); n++)
@@ -92,12 +90,12 @@ region_header(
 
 static std::string
 region_body(
-    const jlm::rvsdg::region * region,
+    const rvsdg::Region * region,
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
-  std::vector<std::vector<const jlm::rvsdg::node *>> context;
-  for (const auto & node : region->nodes)
+  std::vector<std::vector<const Node *>> context;
+  for (const auto & node : region->Nodes())
   {
     if (node.depth() >= context.size())
       context.resize(node.depth() + 1);
@@ -115,9 +113,7 @@ region_body(
 }
 
 static std::string
-region_footer(
-    const jlm::rvsdg::region * region,
-    std::unordered_map<const output *, std::string> & map)
+region_footer(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
 {
   std::string footer("}[");
   for (size_t n = 0; n < region->nresults(); n++)
@@ -139,7 +135,7 @@ region_footer(
 
 static std::string
 region_to_string(
-    const jlm::rvsdg::region * region,
+    const rvsdg::Region * region,
     size_t depth,
     std::unordered_map<const output *, std::string> & map)
 {
@@ -151,66 +147,22 @@ region_to_string(
 }
 
 std::string
-view(const jlm::rvsdg::region * region)
+view(const rvsdg::Region * region)
 {
   std::unordered_map<const output *, std::string> map;
   return view(region, map);
 }
 
 std::string
-view(const jlm::rvsdg::region * region, std::unordered_map<const output *, std::string> & map)
+view(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
 {
   return region_to_string(region, 0, map);
 }
 
 void
-view(const jlm::rvsdg::region * region, FILE * out)
+view(const rvsdg::Region * region, FILE * out)
 {
   fputs(view(region).c_str(), out);
-  fflush(out);
-}
-
-std::string
-region_tree(const jlm::rvsdg::region * region)
-{
-  std::function<std::string(const jlm::rvsdg::region *, size_t)> f =
-      [&](const jlm::rvsdg::region * region, size_t depth)
-  {
-    std::string subtree;
-    if (region->node())
-    {
-      if (region->node()->nsubregions() != 1)
-      {
-        subtree += std::string(depth, '-') + jlm::util::strfmt(region) + "\n";
-        depth += 1;
-      }
-    }
-    else
-    {
-      subtree = "ROOT\n";
-      depth += 1;
-    }
-
-    for (const auto & node : region->nodes)
-    {
-      if (auto snode = dynamic_cast<const jlm::rvsdg::structural_node *>(&node))
-      {
-        subtree += std::string(depth, '-') + snode->operation().debug_string() + "\n";
-        for (size_t n = 0; n < snode->nsubregions(); n++)
-          subtree += f(snode->subregion(n), depth + 1);
-      }
-    }
-
-    return subtree;
-  };
-
-  return f(region, 0);
-}
-
-void
-region_tree(const jlm::rvsdg::region * region, FILE * out)
-{
-  fputs(region_tree(region).c_str(), out);
   fflush(out);
 }
 
@@ -242,13 +194,13 @@ id(const jlm::rvsdg::input * port)
 }
 
 static inline std::string
-id(const jlm::rvsdg::node * node)
+id(const Node * node)
 {
   return jlm::util::strfmt("n", (intptr_t)node);
 }
 
 static inline std::string
-id(const jlm::rvsdg::region * region)
+id(const rvsdg::Region * region)
 {
   return jlm::util::strfmt("r", (intptr_t)region);
 }
@@ -296,7 +248,7 @@ region_starttag(const std::string & id)
 }
 
 static inline std::string
-region_endtag(const std::string & id)
+region_endtag(const std::string &)
 {
   return "</region>\n";
 }
@@ -308,26 +260,26 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 }
 
 static inline std::string
-type(const jlm::rvsdg::node * n)
+type(const Node * n)
 {
-  if (dynamic_cast<const jlm::rvsdg::gamma_op *>(&n->operation()))
+  if (dynamic_cast<const GammaOperation *>(&n->GetOperation()))
     return "gamma";
 
-  if (dynamic_cast<const jlm::rvsdg::theta_op *>(&n->operation()))
+  if (dynamic_cast<const ThetaOperation *>(&n->GetOperation()))
     return "theta";
 
   return "";
 }
 
 static std::string
-convert_region(const jlm::rvsdg::region * region);
+convert_region(const jlm::rvsdg::Region * region);
 
 static inline std::string
-convert_simple_node(const jlm::rvsdg::simple_node * node)
+convert_simple_node(const jlm::rvsdg::SimpleNode * node)
 {
   std::string s;
 
-  s += node_starttag(id(node), node->operation().debug_string(), "");
+  s += node_starttag(id(node), node->GetOperation().debug_string(), "");
   for (size_t n = 0; n < node->ninputs(); n++)
     s += input_tag(id(node->input(n)));
   for (size_t n = 0; n < node->noutputs(); n++)
@@ -345,7 +297,7 @@ convert_simple_node(const jlm::rvsdg::simple_node * node)
 }
 
 static inline std::string
-convert_structural_node(const jlm::rvsdg::structural_node * node)
+convert_structural_node(const rvsdg::StructuralNode * node)
 {
   std::string s;
   s += node_starttag(id(node), "", type(node));
@@ -370,12 +322,12 @@ convert_structural_node(const jlm::rvsdg::structural_node * node)
 }
 
 static inline std::string
-convert_node(const jlm::rvsdg::node * node)
+convert_node(const Node * node)
 {
-  if (auto n = dynamic_cast<const simple_node *>(node))
+  if (auto n = dynamic_cast<const SimpleNode *>(node))
     return convert_simple_node(n);
 
-  if (auto n = dynamic_cast<const structural_node *>(node))
+  if (auto n = dynamic_cast<const StructuralNode *>(node))
     return convert_structural_node(n);
 
   JLM_ASSERT(0);
@@ -383,7 +335,7 @@ convert_node(const jlm::rvsdg::node * node)
 }
 
 static inline std::string
-convert_region(const jlm::rvsdg::region * region)
+convert_region(const rvsdg::Region * region)
 {
   std::string s;
   s += region_starttag(id(region));
@@ -391,7 +343,7 @@ convert_region(const jlm::rvsdg::region * region)
   for (size_t n = 0; n < region->narguments(); n++)
     s += argument_tag(id(region->argument(n)));
 
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
     s += convert_node(&node);
 
   for (size_t n = 0; n < region->nresults(); n++)
@@ -410,7 +362,7 @@ convert_region(const jlm::rvsdg::region * region)
 }
 
 std::string
-to_xml(const jlm::rvsdg::region * region)
+to_xml(const rvsdg::Region * region)
 {
   std::string s;
   s += xml_header();
@@ -422,7 +374,7 @@ to_xml(const jlm::rvsdg::region * region)
 }
 
 void
-view_xml(const jlm::rvsdg::region * region, FILE * out)
+view_xml(const rvsdg::Region * region, FILE * out)
 {
   fputs(to_xml(region).c_str(), out);
   fflush(out);

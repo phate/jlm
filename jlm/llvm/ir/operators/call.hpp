@@ -19,18 +19,18 @@ namespace jlm::llvm
 /** \brief Call operation class
  *
  */
-class CallOperation final : public jlm::rvsdg::simple_op
+class CallOperation final : public jlm::rvsdg::SimpleOperation
 {
 public:
   ~CallOperation() override;
 
   explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
-      : simple_op(create_srctypes(*functionType), functionType->Results()),
+      : SimpleOperation(create_srctypes(*functionType), functionType->Results()),
         FunctionType_(std::move(functionType))
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -41,7 +41,7 @@ public:
     return FunctionType_;
   }
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::unique_ptr<tac>
@@ -59,10 +59,10 @@ public:
   }
 
 private:
-  static inline std::vector<std::shared_ptr<const rvsdg::type>>
+  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
   create_srctypes(const FunctionType & functionType)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     for (auto & argumentType : functionType.Arguments())
       types.emplace_back(argumentType);
 
@@ -70,7 +70,7 @@ private:
   }
 
   static void
-  CheckFunctionInputType(const jlm::rvsdg::type & type)
+  CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
     if (!is<PointerType>(type))
       throw jlm::util::error("Expected pointer type.");
@@ -172,23 +172,22 @@ public:
    *
    * @return The called function.
    */
-  [[nodiscard]] lambda::output &
+  [[nodiscard]] rvsdg::output &
   GetLambdaOutput() const noexcept
   {
     if (GetCallType() == CallType::NonRecursiveDirectCall)
     {
-      return *jlm::util::AssertedCast<lambda::output>(Output_);
+      return *Output_;
     }
 
     JLM_ASSERT(GetCallType() == CallType::RecursiveDirectCall);
-    auto argument = jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    auto argument = jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(Output_);
     /*
      * FIXME: This assumes that all recursion variables where added before the dependencies. It
      * would be better if we did not use the index for retrieving the result, but instead
      * explicitly encoded it in an phi_argument.
      */
-    return *jlm::util::AssertedCast<lambda::output>(
-        argument->region()->result(argument->index())->origin());
+    return *argument->region()->result(argument->index())->origin();
   }
 
   /** \brief Returns the imported function.
@@ -197,11 +196,11 @@ public:
    *
    * @return The imported function.
    */
-  [[nodiscard]] jlm::rvsdg::argument &
+  [[nodiscard]] rvsdg::RegionArgument &
   GetImport() const noexcept
   {
     JLM_ASSERT(GetCallType() == CallType::ExternalCall);
-    return *jlm::util::AssertedCast<jlm::rvsdg::argument>(Output_);
+    return *jlm::util::AssertedCast<rvsdg::RegionArgument>(Output_);
   }
 
   /** \brief Return origin of a call node's function input.
@@ -218,26 +217,60 @@ public:
     return *Output_;
   }
 
+  /**
+    \brief Classify callee as non-recursive.
+
+    \param output
+      Output representing the function called (must be a lambda).
+
+    \pre
+      The given output must belong to a lambda node.
+  */
   static std::unique_ptr<CallTypeClassifier>
-  CreateNonRecursiveDirectCallClassifier(lambda::output & output)
+  CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
   {
+    rvsdg::AssertGetOwnerNode<lambda::node>(output);
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }
 
+  /**
+    \brief Classify callee as recursive.
+
+    \param output
+      Output representing the function called (must be phi argument).
+
+    \pre
+      The given output must belong to a phi node.
+  */
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(jlm::rvsdg::argument & output)
+  CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
   {
-    JLM_ASSERT(is_phi_recvar_argument(&output));
+    JLM_ASSERT(is<phi::rvargument>(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
+  /**
+    \brief Classify callee as external.
+
+    \param argument
+      Output representing the function called (must be graph argument).
+
+    \pre
+      The given output must be an argument to the root region of the graph.
+  */
   static std::unique_ptr<CallTypeClassifier>
-  CreateExternalCallClassifier(jlm::rvsdg::argument & argument)
+  CreateExternalCallClassifier(rvsdg::RegionArgument & argument)
   {
-    JLM_ASSERT(argument.region() == argument.region()->graph()->root());
+    JLM_ASSERT(argument.region() == &argument.region()->graph()->GetRootRegion());
     return std::make_unique<CallTypeClassifier>(CallType::ExternalCall, argument);
   }
 
+  /**
+    \brief Classify callee as inderict.
+
+    \param output
+      Output representing the function called (supposed to be pointer).
+  */
   static std::unique_ptr<CallTypeClassifier>
   CreateIndirectCallClassifier(jlm::rvsdg::output & output)
   {
@@ -252,21 +285,21 @@ private:
 /** \brief Call node
  *
  */
-class CallNode final : public jlm::rvsdg::simple_node
+class CallNode final : public jlm::rvsdg::SimpleNode
 {
 private:
   CallNode(
-      jlm::rvsdg::region & region,
+      rvsdg::Region & region,
       const CallOperation & operation,
       const std::vector<jlm::rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : SimpleNode(&region, operation, operands)
   {}
 
 public:
   [[nodiscard]] const CallOperation &
-  GetOperation() const noexcept
+  GetOperation() const noexcept override
   {
-    return *jlm::util::AssertedCast<const CallOperation>(&operation());
+    return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
   }
 
   /**
@@ -385,11 +418,11 @@ public:
    * @see GetMemoryStateInput()
    * @see GetMemoryStateExitSplit()
    */
-  [[nodiscard]] static rvsdg::simple_node *
+  [[nodiscard]] static rvsdg::SimpleNode *
   GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
   {
-    auto node = rvsdg::node_output::node(callNode.GetMemoryStateInput()->origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+    auto node = rvsdg::output::GetNode(*callNode.GetMemoryStateInput()->origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
   }
 
@@ -402,7 +435,7 @@ public:
    * @see GetMemoryStateOutput()
    * @see GetMemoryStateEntryMerge()
    */
-  [[nodiscard]] static rvsdg::simple_node *
+  [[nodiscard]] static rvsdg::SimpleNode *
   GetMemoryStateExitSplit(const CallNode & callNode) noexcept
   {
     // If a memory state exit split node is present, then we would expect the node to be the only
@@ -411,12 +444,12 @@ public:
       return nullptr;
 
     auto node = rvsdg::node_input::GetNode(**callNode.GetMemoryStateOutput()->begin());
-    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::simple_node *>(node)
+    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                        : nullptr;
   }
 
-  rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  Node *
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<jlm::rvsdg::output *>
   Create(
@@ -429,7 +462,7 @@ public:
 
   static std::vector<jlm::rvsdg::output *>
   Create(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const CallOperation & callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -438,7 +471,7 @@ public:
 
   static CallNode &
   CreateNode(
-      rvsdg::region & region,
+      rvsdg::Region & region,
       const CallOperation & callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
@@ -488,7 +521,7 @@ public:
 
 private:
   static void
-  CheckFunctionInputType(const jlm::rvsdg::type & type)
+  CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
     if (!is<PointerType>(type))
       throw jlm::util::error("Expected pointer type.");

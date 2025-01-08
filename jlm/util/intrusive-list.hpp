@@ -116,7 +116,7 @@ public:
     {}
 
     inline const iterator &
-    operator++(void) noexcept
+    operator++() noexcept
     {
       element_ = list_->accessor_.get_next(element_);
       return *this;
@@ -131,7 +131,7 @@ public:
     }
 
     inline const iterator &
-    operator--(void) noexcept
+    operator--() noexcept
     {
       if (element_)
       {
@@ -216,7 +216,7 @@ public:
     {}
 
     inline const const_iterator &
-    operator++(void) noexcept
+    operator++() noexcept
     {
       element_ = list_->accessor_.get_next(element_);
       return *this;
@@ -231,7 +231,7 @@ public:
     }
 
     inline const const_iterator &
-    operator--(void) noexcept
+    operator--() noexcept
     {
       if (element_)
       {

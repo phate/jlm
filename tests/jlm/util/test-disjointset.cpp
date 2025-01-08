@@ -7,9 +7,6 @@
 
 #include <jlm/util/disjointset.hpp>
 
-#include <assert.h>
-#include <iostream>
-
 static void
 print(const jlm::util::disjointset<int>::set & set)
 {

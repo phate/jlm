@@ -12,6 +12,7 @@ libmlir_HEADERS = \
 libmlir_TESTS += \
 	tests/jlm/mlir/backend/TestJlmToMlirConverter \
 	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
+	tests/jlm/mlir/TestJlmToMlirToJlm \
 
 libmlir_TEST_LIBS += \
 	libmlir \
@@ -21,7 +22,7 @@ libmlir_TEST_LIBS += \
 	libjlmtest \
 
 libmlir_TEST_EXTRA_LDFLAGS = \
-	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
 	$(MLIR_LDFLAGS) \
+	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
 
 $(eval $(call common_library,libmlir))

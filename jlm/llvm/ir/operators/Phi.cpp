@@ -13,8 +13,6 @@ namespace jlm::llvm
 namespace phi
 {
 
-/* phi operation class */
-
 operation::~operation()
 {}
 
@@ -24,10 +22,10 @@ operation::debug_string() const
   return "PHI";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new phi::operation(*this));
+  return std::make_unique<phi::operation>(*this);
 }
 
 /* phi node class */
@@ -35,16 +33,22 @@ operation::copy() const
 node::~node()
 {}
 
+[[nodiscard]] const phi::operation &
+node::GetOperation() const noexcept
+{
+  return *static_cast<const phi::operation *>(&StructuralNode::GetOperation());
+}
+
 cvinput *
 node::input(size_t n) const noexcept
 {
-  return static_cast<cvinput *>(structural_node::input(n));
+  return static_cast<cvinput *>(StructuralNode::input(n));
 }
 
 rvoutput *
 node::output(size_t n) const noexcept
 {
-  return static_cast<rvoutput *>(structural_node::output(n));
+  return static_cast<rvoutput *>(StructuralNode::output(n));
 }
 
 cvargument *
@@ -55,13 +59,13 @@ node::add_ctxvar(jlm::rvsdg::output * origin)
 }
 
 phi::node *
-node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
+node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   phi::builder pb;
   pb.begin(region);
 
   /* add context variables */
-  jlm::rvsdg::substitution_map subregionmap;
+  rvsdg::SubstitutionMap subregionmap;
   for (auto it = begin_cv(); it != end_cv(); it++)
   {
     auto origin = smap.lookup(it->origin());
@@ -100,7 +104,7 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
   std::function<void(const phi::node &, std::vector<lambda::node *> &)> extractLambdaNodes =
       [&](auto & phiNode, auto & lambdaNodes)
   {
-    for (auto & node : phiNode.subregion()->nodes)
+    for (auto & node : phiNode.subregion()->Nodes())
     {
       if (auto lambdaNode = dynamic_cast<lambda::node *>(&node))
       {
@@ -122,7 +126,7 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
 /* phi builder class */
 
 rvoutput *
-builder::add_recvar(std::shared_ptr<const jlm::rvsdg::type> type)
+builder::add_recvar(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   if (!node_)
     return nullptr;
@@ -168,15 +172,36 @@ rvoutput::~rvoutput()
 rvargument::~rvargument()
 {}
 
+rvargument &
+rvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+{
+  JLM_ASSERT(input == nullptr);
+  return *rvargument::create(&region, Type());
+}
+
 /* phi context variable argument class */
 
 cvargument::~cvargument()
 {}
 
+cvargument &
+cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+{
+  auto phiInput = util::AssertedCast<cvinput>(input);
+  return *cvargument::create(&region, phiInput, Type());
+}
+
 /* phi recursion variable result class */
 
 rvresult::~rvresult()
 {}
+
+rvresult &
+rvresult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+{
+  auto phiOutput = util::AssertedCast<rvoutput>(output);
+  return *rvresult::create(origin.region(), &origin, phiOutput, origin.Type());
+}
 
 }
 }

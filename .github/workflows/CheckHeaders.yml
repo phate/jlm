@@ -1,0 +1,23 @@
+name: CheckHeaders
+
+on:
+  pull_request:
+    branches: [ master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  CheckHeaders:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install LLVM"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-llvm: true # Needed to configure jlm
+      - name: "Configure jlm with HLS and MLIR enabled"
+        run: ./configure.sh --enable-mlir --enable-hls
+      - name: "Check headers"
+        run: make check-headers
