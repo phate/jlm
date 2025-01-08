@@ -17,108 +17,6 @@
 namespace jlm::llvm
 {
 
-/* load normal form */
-
-class load_normal_form final : public rvsdg::simple_normal_form
-{
-public:
-  virtual ~load_normal_form();
-
-  load_normal_form(
-      const std::type_info & opclass,
-      rvsdg::node_normal_form * parent,
-      rvsdg::Graph * graph) noexcept;
-
-  virtual bool
-  normalize_node(rvsdg::Node * node) const override;
-
-  virtual std::vector<rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const rvsdg::SimpleOperation & op,
-      const std::vector<rvsdg::output *> & operands) const override;
-
-  inline void
-  set_load_mux_reducible(bool enable) noexcept
-  {
-    enable_load_mux_ = enable;
-  }
-
-  inline bool
-  get_load_mux_reducible() const noexcept
-  {
-    return enable_load_mux_;
-  }
-
-  inline void
-  set_load_alloca_reducible(bool enable) noexcept
-  {
-    enable_load_alloca_ = enable;
-  }
-
-  inline bool
-  get_load_alloca_reducible() const noexcept
-  {
-    return enable_load_alloca_;
-  }
-
-  inline void
-  set_multiple_origin_reducible(bool enable) noexcept
-  {
-    enable_multiple_origin_ = enable;
-  }
-
-  inline bool
-  get_multiple_origin_reducible() const noexcept
-  {
-    return enable_multiple_origin_;
-  }
-
-  inline void
-  set_load_store_state_reducible(bool enable) noexcept
-  {
-    enable_load_store_state_ = enable;
-  }
-
-  inline bool
-  get_load_store_state_reducible() const noexcept
-  {
-    return enable_load_store_state_;
-  }
-
-  inline void
-  set_load_store_reducible(bool enable) noexcept
-  {
-    enable_load_store_ = enable;
-  }
-
-  inline bool
-  get_load_store_reducible() const noexcept
-  {
-    return enable_load_store_;
-  }
-
-  void
-  set_load_load_state_reducible(bool enable) noexcept
-  {
-    enable_load_load_state_ = enable;
-  }
-
-  bool
-  get_load_load_state_reducible() const noexcept
-  {
-    return enable_load_load_state_;
-  }
-
-private:
-  bool enable_load_mux_;
-  bool enable_load_store_;
-  bool enable_load_alloca_;
-  bool enable_load_load_state_;
-  bool enable_multiple_origin_;
-  bool enable_load_store_state_;
-};
-
 /**
  * Abstract base class for load operations.
  *
@@ -462,13 +360,6 @@ public:
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
-
-  static load_normal_form *
-  GetNormalForm(rvsdg::Graph * graph) noexcept
-  {
-    return jlm::util::AssertedCast<load_normal_form>(
-        graph->GetNodeNormalForm(typeid(LoadNonVolatileOperation)));
-  }
 
   static std::unique_ptr<llvm::tac>
   Create(
