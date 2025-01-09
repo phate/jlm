@@ -502,6 +502,14 @@ flattened_binary_op::reduce(
   JLM_ASSERT(!Region::Contains<flattened_binary_op>(*region, true));
 }
 
+std::optional<std::vector<rvsdg::output *>>
+NormalizeFlattenedBinaryOperation(
+    const flattened_binary_op & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  return NormalizeBinaryOperation(operation.bin_operation(), operands);
+}
+
 }
 
 jlm::rvsdg::node_normal_form *
