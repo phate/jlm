@@ -14,6 +14,12 @@ namespace jlm::hls
 {
 
 static bool
+IsPassthroughLoopVar(const rvsdg::ThetaNode::LoopVar & loopvar)
+{
+  return loopvar.pre->nusers() == 1 && loopvar.post->origin() == loopvar.pre;
+}
+
+static bool
 IsPassthroughArgument(const rvsdg::output & argument)
 {
   if (argument.nusers() != 1)
@@ -115,22 +121,6 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 }
 
 static void
-RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
-{
-  auto origin = argument.input()->origin();
-  auto result = dynamic_cast<rvsdg::RegionResult *>(*argument.begin());
-  argument.region()->node()->output(result->output()->index())->divert_users(origin);
-
-  auto inputIndex = argument.input()->index();
-  auto outputIndex = result->output()->index();
-  auto region = argument.region();
-  region->RemoveResult(result->index());
-  region->RemoveArgument(argument.index());
-  region->node()->RemoveInput(inputIndex);
-  region->node()->RemoveOutput(outputIndex);
-}
-
-static void
 RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 {
   auto entryvars = gammaNode.GetEntryVars();
@@ -177,15 +167,16 @@ RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 static void
 RemoveUnusedStatesFromThetaNode(rvsdg::ThetaNode & thetaNode)
 {
-  auto thetaSubregion = thetaNode.subregion();
-  for (int i = thetaSubregion->narguments() - 1; i >= 0; --i)
+  std::vector<rvsdg::ThetaNode::LoopVar> loopvars;
+  for (const auto & loopvar : thetaNode.GetLoopVars())
   {
-    auto & argument = *thetaSubregion->argument(i);
-    if (IsPassthroughArgument(argument))
+    if (IsPassthroughLoopVar(loopvar))
     {
-      RemovePassthroughArgument(argument);
+      loopvar.output->divert_users(loopvar.input->origin());
+      loopvars.push_back(loopvar);
     }
   }
+  thetaNode.RemoveLoopVars(std::move(loopvars));
 }
 
 static void
