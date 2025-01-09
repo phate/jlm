@@ -162,7 +162,14 @@ convert_undef(
     context & ctx)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
-  return ::llvm::UndefValue::get(convert_type(*op.result(0), ctx));
+
+  auto & result_type = *op.result(0);
+
+  // MemoryStates have no llvm representation.
+  if (is<MemoryStateType>(result_type))
+    return nullptr;
+
+  return ::llvm::UndefValue::get(convert_type(result_type, ctx));
 }
 
 static ::llvm::Value *
