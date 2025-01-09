@@ -335,7 +335,7 @@ class RegionAwareMemoryNodeProvisioning final : public MemoryNodeProvisioning
     RegionSummaryMap::const_iterator it_;
   };
 
-  using RegionSummaryConstRange = util::iterator_range<RegionSummaryConstIterator>;
+  using RegionSummaryConstRange = util::IteratorRange<RegionSummaryConstIterator>;
 
 public:
   explicit RegionAwareMemoryNodeProvisioning(const PointsToGraph & pointsToGraph)
