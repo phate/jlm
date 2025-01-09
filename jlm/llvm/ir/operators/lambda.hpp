@@ -435,8 +435,8 @@ private:
  */
 class node::CallSummary final
 {
-  using DirectCallsConstRange = util::iterator_range<std::vector<CallNode *>::const_iterator>;
-  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::input *>::const_iterator>;
+  using DirectCallsConstRange = util::IteratorRange<std::vector<CallNode *>::const_iterator>;
+  using OtherUsersConstRange = util::IteratorRange<std::vector<rvsdg::input *>::const_iterator>;
 
 public:
   CallSummary(

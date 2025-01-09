@@ -16,16 +16,16 @@ namespace jlm::util
  * A range-compatible interface wrapping a pair of iterators.
  */
 template<typename T>
-class iterator_range
+class IteratorRange
 {
 public:
-  iterator_range(T begin, T end)
+  IteratorRange(T begin, T end)
       : begin_(std::move(begin)),
         end_(std::move(end))
   {}
 
   template<typename container_t>
-  iterator_range(container_t && c)
+  explicit IteratorRange(container_t && c)
       : begin_(c.begin()),
         end_(c.end())
   {}
