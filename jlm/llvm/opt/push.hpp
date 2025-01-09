@@ -7,6 +7,7 @@
 #define JLM_LLVM_OPT_PUSH_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
 {
@@ -17,18 +18,16 @@ class ThetaNode;
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
 /**
  * \brief Node Push-Out Optimization
  */
-class pushout final : public optimization
+class pushout final : public rvsdg::Transformation
 {
 public:
   virtual ~pushout();
 
-  virtual void
-  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 void

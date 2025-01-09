@@ -17,8 +17,6 @@ class GammaNode;
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
 /**
  * \brief Node Pull-In Optimization
  */
@@ -27,8 +25,8 @@ class pullin final : public optimization
 public:
   virtual ~pullin();
 
-  virtual void
-  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 void

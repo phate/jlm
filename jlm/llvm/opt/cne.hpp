@@ -6,23 +6,21 @@
 #ifndef JLM_LLVM_OPT_CNE_HPP
 #define JLM_LLVM_OPT_CNE_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
 /**
  * \brief Common Node Elimination
  */
-class cne final : public optimization
+class cne final : public rvsdg::Transformation
 {
 public:
   virtual ~cne();
 
-  virtual void
-  run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

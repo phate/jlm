@@ -47,10 +47,12 @@ public:
 InvariantValueRedirection::~InvariantValueRedirection() = default;
 
 void
-InvariantValueRedirection::run(
-    RvsdgModule & rvsdgModule,
+InvariantValueRedirection::Run(
+    rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
 
   statistics->Start();

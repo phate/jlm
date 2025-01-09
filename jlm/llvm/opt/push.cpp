@@ -430,9 +430,10 @@ pushout::~pushout()
 {}
 
 void
-pushout::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+pushout::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  push(module, statisticsCollector);
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+  push(rvsdgModule, statisticsCollector);
 }
 
 }

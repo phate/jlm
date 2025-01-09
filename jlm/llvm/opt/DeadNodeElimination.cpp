@@ -154,12 +154,16 @@ DeadNodeElimination::run(rvsdg::Region & region)
 }
 
 void
-DeadNodeElimination::run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+DeadNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
+  const auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+
   Context_ = Context::Create();
 
   auto & rvsdg = module.Rvsdg();
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->StartMarkStatistics(rvsdg);
   MarkRegion(rvsdg.GetRootRegion());
   statistics->StopMarkStatistics();

@@ -45,8 +45,10 @@ public:
 RvsdgTreePrinter::~RvsdgTreePrinter() noexcept = default;
 
 void
-RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+RvsdgTreePrinter::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start();
 
@@ -56,13 +58,6 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & sta
 
   statistics->Stop();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
-
-void
-RvsdgTreePrinter::run(RvsdgModule & rvsdgModule)
-{
-  util::StatisticsCollector collector;
-  run(rvsdgModule, collector);
 }
 
 util::AnnotationMap

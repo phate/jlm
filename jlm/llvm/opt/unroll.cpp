@@ -528,13 +528,15 @@ loopunroll::~loopunroll()
 {}
 
 void
-loopunroll::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+loopunroll::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
+  const auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+
   if (factor_ < 2)
     return;
 
   auto & graph = module.Rvsdg();
-  auto statistics = unrollstat::Create(module.SourceFileName());
+  auto statistics = unrollstat::Create(rvsdgModule.SourceFileName());
 
   statistics->start(module.Rvsdg());
   unroll(&graph.GetRootRegion(), factor_);

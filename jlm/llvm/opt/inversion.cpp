@@ -318,9 +318,10 @@ tginversion::~tginversion()
 {}
 
 void
-tginversion::run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+tginversion::Run(rvsdg::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
 {
-  invert(module, statisticsCollector);
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+  invert(rvsdgModule, statisticsCollector);
 }
 
 }

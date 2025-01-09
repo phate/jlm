@@ -54,6 +54,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/theta.hpp \
 	jlm/rvsdg/reduction-helpers.hpp \
 	jlm/rvsdg/RvsdgModule.hpp \
+	jlm/rvsdg/Transformation.hpp \
 	jlm/rvsdg/bitstring.hpp \
 	jlm/rvsdg/node.hpp \
 	jlm/rvsdg/node-normal-form.hpp \

@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_RVSDGTREEPRINTER_HPP
 #define JLM_LLVM_OPT_RVSDGTREEPRINTER_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/AnnotationMap.hpp>
 #include <jlm/util/file.hpp>
 #include <jlm/util/HashSet.hpp>
@@ -26,13 +26,11 @@ class StatisticsCollector;
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
 /** \brief RVSDG tree printer debug pass
  *
  * Prints an RVSDG tree to a file.
  */
-class RvsdgTreePrinter final : public optimization
+class RvsdgTreePrinter final : public rvsdg::Transformation
 {
   class Statistics;
 
@@ -117,10 +115,7 @@ public:
   operator=(RvsdgTreePrinter &&) = delete;
 
   void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
-
-  void
-  run(RvsdgModule & rvsdgModule);
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   /**

@@ -179,9 +179,10 @@ fctinline::~fctinline()
 {}
 
 void
-fctinline::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+fctinline::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  inlining(module, statisticsCollector);
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+  inlining(rvsdgModule, statisticsCollector);
 }
 
 }

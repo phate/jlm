@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_REDUCTION_HPP
 #define JLM_LLVM_OPT_REDUCTION_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <optional>
@@ -31,7 +31,7 @@ class StoreNonVolatileOperation;
  * nodes in a region are visited top-down and reductions are performed until a fix-point is reached,
  * i.e., until no peephole optimization can be applied any longer to any node in a region.
  */
-class NodeReduction final : public optimization
+class NodeReduction final : public rvsdg::Transformation
 {
 public:
   class Statistics;
@@ -51,10 +51,7 @@ public:
   operator=(NodeReduction &&) = delete;
 
   void
-  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
-
-  void
-  run(RvsdgModule & rvsdgModule);
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void

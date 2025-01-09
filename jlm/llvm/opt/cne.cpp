@@ -586,9 +586,10 @@ cne::~cne()
 {}
 
 void
-cne::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  llvm::cne(module, statisticsCollector);
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+  llvm::cne(rvsdgModule, statisticsCollector);
 }
 
 }

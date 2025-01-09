@@ -322,9 +322,10 @@ pullin::~pullin()
 {}
 
 void
-pullin::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+pullin::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  pull(module, statisticsCollector);
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
+  pull(rvsdgModule, statisticsCollector);
 }
 
 }

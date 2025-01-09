@@ -6,23 +6,21 @@
 #ifndef JLM_LLVM_OPT_INVERSION_HPP
 #define JLM_LLVM_OPT_INVERSION_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
 /**
  * \brief Theta-Gamma Inversion
  */
-class tginversion final : public optimization
+class tginversion final : public rvsdg::Transformation
 {
 public:
   virtual ~tginversion();
 
-  virtual void
-  run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

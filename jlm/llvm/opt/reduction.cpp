@@ -53,15 +53,9 @@ NodeReduction::~NodeReduction() noexcept = default;
 NodeReduction::NodeReduction() = default;
 
 void
-NodeReduction::run(RvsdgModule & rvsdgModule)
+NodeReduction::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  util::StatisticsCollector statisticsCollector;
-  run(rvsdgModule, statisticsCollector);
-}
-
-void
-NodeReduction::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
-{
+  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&rvsdgModule);
   const auto & graph = rvsdgModule.Rvsdg();
 
   Statistics_ = Statistics::Create(rvsdgModule.SourceFileName());
