@@ -435,8 +435,8 @@ private:
  */
 class node::CallSummary final
 {
-  using DirectCallsConstRange = util::iterator_range<std::vector<CallNode *>::const_iterator>;
-  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::input *>::const_iterator>;
+  using DirectCallsConstRange = util::IteratorRange<std::vector<CallNode *>::const_iterator>;
+  using OtherUsersConstRange = util::IteratorRange<std::vector<rvsdg::input *>::const_iterator>;
 
 public:
   CallSummary(
@@ -549,9 +549,9 @@ public:
   }
 
   /**
-   * Returns an \ref util::iterator_range for iterating through all direct call sites.
+   * Returns an \ref util::IteratorRange for iterating through all direct call sites.
    *
-   * @return An \ref util::iterator_range of all direct call sites.
+   * @return An \ref util::IteratorRange of all direct call sites.
    */
   [[nodiscard]] DirectCallsConstRange
   DirectCalls() const noexcept
@@ -560,9 +560,9 @@ public:
   }
 
   /**
-   * Returns an \ref util::iterator_range for iterating through all other usages.
+   * Returns an \ref util::IteratorRange for iterating through all other usages.
    *
-   * @return An \ref util::iterator_range of all other usages.
+   * @return An \ref util::IteratorRange of all other usages.
    */
   [[nodiscard]] OtherUsersConstRange
   OtherUsers() const noexcept
