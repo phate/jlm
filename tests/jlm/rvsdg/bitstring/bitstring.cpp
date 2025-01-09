@@ -16,9 +16,9 @@ types_bitstring_arithmetic_test_bitand()
 {
   using namespace jlm::rvsdg;
 
-  // Assert
+  // Arrange
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
+  const auto nf = graph.GetNodeNormalForm(typeid(bitand_op));
   nf->set_mutable(false);
 
   const auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
@@ -27,17 +27,17 @@ types_bitstring_arithmetic_test_bitand()
   const auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   const auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
 
-  const auto and0 = bitand_op::create(32, s0, s1);
-  const auto and1 = bitand_op::create(32, c0, c1);
+  auto & and0 = CreateOpNode<bitand_op>({ s0, s1 }, 32);
+  auto & and1 = CreateOpNode<bitand_op>({ c0, c1 }, 32);
 
-  auto & ex0 = jlm::tests::GraphExport::Create(*and0, "dummy");
-  auto & ex1 = jlm::tests::GraphExport::Create(*and1, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*and0.output(0), "dummy");
+  auto & ex1 = jlm::tests::GraphExport::Create(*and1.output(0), "dummy");
 
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  const auto node1 = output::GetNode(*ex1.origin());
-  ReduceNode<bitand_op>(NormalizeBinaryOperation, *node1);
+  ReduceNode<bitand_op>(NormalizeBinaryOperation, and0);
+  ReduceNode<bitand_op>(NormalizeBinaryOperation, and1);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -106,20 +106,28 @@ types_bitstring_arithmetic_test_bitdifference()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(bitsub_op));
+  nf->set_mutable(false);
 
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
-  auto diff = bitsub_op::create(32, s0, s1);
+  auto & diff = CreateOpNode<bitsub_op>({ s0, s1 }, 32);
 
-  jlm::tests::GraphExport::Create(*diff, "dummy");
+  auto & ex0 = jlm::tests::GraphExport::Create(*diff.output(0), "dummy");
 
-  graph.Normalize();
-  graph.PruneNodes();
   view(&graph.GetRootRegion(), stdout);
 
-  assert(output::GetNode(*diff)->GetOperation() == bitsub_op(32));
+  // Act
+  ReduceNode<bitsub_op>(NormalizeBinaryOperation, diff);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsub_op(32));
 
   return 0;
 }
