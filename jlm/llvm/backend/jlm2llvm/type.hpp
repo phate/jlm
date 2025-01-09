@@ -38,7 +38,7 @@ convert_type(const rvsdg::bittype & type, context & ctx)
 }
 
 static inline ::llvm::FunctionType *
-convert_type(const FunctionType & type, context & ctx)
+convert_type(const rvsdg::FunctionType & type, context & ctx)
 {
   auto t = convert_type(*static_cast<const rvsdg::Type *>(&type), ctx);
   JLM_ASSERT(t->getTypeID() == ::llvm::Type::FunctionTyID);

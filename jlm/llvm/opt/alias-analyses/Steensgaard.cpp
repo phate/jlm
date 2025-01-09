@@ -25,7 +25,7 @@ namespace jlm::llvm::aa
 static bool
 HasOrContainsPointerType(const rvsdg::output & output)
 {
-  return IsOrContains<PointerType>(output.type()) || is<llvm::FunctionType>(output.type());
+  return IsOrContains<PointerType>(output.type()) || is<rvsdg::FunctionType>(output.type());
 }
 
 /**
@@ -493,7 +493,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<FunctionType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<rvsdg::FunctionType>(graphImport.type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.

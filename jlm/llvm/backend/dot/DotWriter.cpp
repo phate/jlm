@@ -60,7 +60,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
     auto & elementTypeNode = GetOrCreateTypeGraphNode(vectorType->type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
   }
-  else if (auto functionType = dynamic_cast<const FunctionType *>(&type))
+  else if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(&type))
   {
     for (size_t n = 0; n < functionType->NumArguments(); n++)
     {

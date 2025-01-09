@@ -69,7 +69,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
     resultTypes.emplace_back(operation.result(n));
   }
 
-  auto functionType = FunctionType::Create(operandTypes, resultTypes);
+  auto functionType = jlm::rvsdg::FunctionType::Create(operandTypes, resultTypes);
 
   auto functionNode =
       function_node::create(ipgraph, "test", functionType, linkage::external_linkage);

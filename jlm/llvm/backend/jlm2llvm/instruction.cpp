@@ -896,7 +896,7 @@ convert(
 {
   auto & llvmmod = ctx.llvm_module();
 
-  auto fcttype = convert_type(FunctionType({ op.argument(0) }, {}), ctx);
+  auto fcttype = convert_type(rvsdg::FunctionType({ op.argument(0) }, {}), ctx);
   auto function = llvmmod.getOrInsertFunction("free", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, ctx.value(args[0]));
   return builder.CreateCall(function, operands);

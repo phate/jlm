@@ -26,7 +26,7 @@ TestSingleLoad()
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
@@ -102,7 +102,7 @@ TestLoadStore()
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::llvm::PointerType::Create(),
         MemoryStateType::Create() },
@@ -187,7 +187,7 @@ TestAddrQueue()
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 

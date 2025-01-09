@@ -43,7 +43,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
   {
     new_result_types.push_back(old_fcttype.Results()[i]);
   }
-  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
+  auto new_fcttype = rvsdg::FunctionType::Create(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
       ln->region(),
       new_fcttype,

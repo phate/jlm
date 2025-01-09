@@ -32,8 +32,9 @@ PrintRvsdgTree()
   std::string fileName = "PrintTreeTest";
   auto rvsdgModule = RvsdgModule::Create({ fileName }, "", "");
 
-  auto functionType =
-      FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { MemoryStateType::Create() },
+      { MemoryStateType::Create() });
   auto lambda = lambda::node::create(
       &rvsdgModule->Rvsdg().GetRootRegion(),
       functionType,

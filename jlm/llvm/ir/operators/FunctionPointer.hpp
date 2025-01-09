@@ -22,7 +22,7 @@ class FunctionToPointerOperation final : public rvsdg::unary_op
 public:
   ~FunctionToPointerOperation() noexcept override;
 
-  FunctionToPointerOperation(std::shared_ptr<const llvm::FunctionType> fn);
+  FunctionToPointerOperation(std::shared_ptr<const rvsdg::FunctionType> fn);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -40,16 +40,16 @@ public:
   reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
 
   static std::unique_ptr<FunctionToPointerOperation>
-  Create(std::shared_ptr<const llvm::FunctionType> fn);
+  Create(std::shared_ptr<const rvsdg::FunctionType> fn);
 
-  inline const std::shared_ptr<const jlm::llvm::FunctionType> &
+  inline const std::shared_ptr<const jlm::rvsdg::FunctionType> &
   FunctionType() const noexcept
   {
     return FunctionType_;
   }
 
 private:
-  std::shared_ptr<const llvm::FunctionType> FunctionType_;
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
 
 /**
@@ -60,7 +60,7 @@ class PointerToFunctionOperation final : public rvsdg::unary_op
 public:
   ~PointerToFunctionOperation() noexcept override;
 
-  PointerToFunctionOperation(std::shared_ptr<const llvm::FunctionType> fn);
+  PointerToFunctionOperation(std::shared_ptr<const rvsdg::FunctionType> fn);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -78,16 +78,16 @@ public:
   reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
 
   static std::unique_ptr<PointerToFunctionOperation>
-  Create(std::shared_ptr<const llvm::FunctionType> fn);
+  Create(std::shared_ptr<const rvsdg::FunctionType> fn);
 
-  inline const std::shared_ptr<const llvm::FunctionType> &
+  inline const std::shared_ptr<const rvsdg::FunctionType> &
   FunctionType() const noexcept
   {
     return FunctionType_;
   }
 
 private:
-  std::shared_ptr<const llvm::FunctionType> FunctionType_;
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
 
 }
