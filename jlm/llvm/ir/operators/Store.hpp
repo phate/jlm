@@ -188,8 +188,8 @@ public:
     }
   };
 
-  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = util::IteratorRange<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
 
   [[nodiscard]] const StoreOperation &
   GetOperation() const noexcept override;

@@ -132,8 +132,8 @@ class node final : public rvsdg::StructuralNode
   class cviterator;
   class cvconstiterator;
 
-  using ctxvar_range = jlm::util::iterator_range<cviterator>;
-  using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
+  using ctxvar_range = util::IteratorRange<cviterator>;
+  using ctxvar_constrange = util::IteratorRange<cvconstiterator>;
 
 public:
   ~node() override;

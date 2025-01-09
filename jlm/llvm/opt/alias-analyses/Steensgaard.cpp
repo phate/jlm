@@ -543,7 +543,7 @@ class Steensgaard::Context final
 {
 public:
   using DisjointLocationSetConstRange =
-      util::iterator_range<const DisjointLocationSet::set_iterator>;
+      util::IteratorRange<const DisjointLocationSet::set_iterator>;
 
   ~Context() = default;
 

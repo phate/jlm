@@ -219,7 +219,7 @@ public:
    *
    * @return A iterator_range.
    */
-  [[nodiscard]] iterator_range<ItemConstIterator>
+  [[nodiscard]] IteratorRange<ItemConstIterator>
   Items() const noexcept
   {
     return { ItemConstIterator(Set_.begin()), ItemConstIterator(Set_.end()) };
