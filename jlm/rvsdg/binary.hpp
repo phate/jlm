@@ -269,6 +269,23 @@ private:
   std::unique_ptr<BinaryOperation> op_;
 };
 
+/**
+ * \brief Applies the reductions of the binary operation represented by the flattened binary
+ * operation.
+ *
+ * @param operation The flattened binary operation on which the transformation is performed.
+ * @param operands The operands of the flattened binary node.
+ *
+ * @return If the normalization could be applied, then the results of the flattened binary operation
+ * after the transformation. Otherwise, std::nullopt.
+ *
+ * \see NormalizeBinaryOperation()
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeFlattenedBinaryOperation(
+    const flattened_binary_op & operation,
+    const std::vector<rvsdg::output *> & operands);
+
 /* binary flags operators */
 
 static constexpr enum BinaryOperation::flags
