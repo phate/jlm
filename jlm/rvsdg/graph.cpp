@@ -46,6 +46,7 @@ Graph::Copy() const
 node_normal_form *
 Graph::GetNodeNormalForm(const std::type_info & type) noexcept
 {
+/*
   auto i = NodeNormalForms_.find(std::type_index(type));
   if (i != NodeNormalForms_.end())
     return i.ptr();
@@ -59,6 +60,9 @@ Graph::GetNodeNormalForm(const std::type_info & type) noexcept
   NodeNormalForms_.insert(std::move(nf));
 
   return result;
+*/
+  exit(1) ;
+  return nullptr;
 }
 
 std::vector<Node *>

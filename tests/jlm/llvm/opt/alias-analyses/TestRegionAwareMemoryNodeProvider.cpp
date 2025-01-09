@@ -1465,9 +1465,9 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  assert(statistics.GetMeasurementValue<size_t>("#RvsdgNodes") == 3);
-  assert(statistics.GetMeasurementValue<size_t>("#RvsdgRegions") == 2);
-  assert(statistics.GetMeasurementValue<size_t>("#PointsToGraphMemoryNodes") == 2);
+  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes") == 3);
+  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions") == 2);
+  assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes") == 2);
 
   assert(statistics.HasTimer("AnnotationTime"));
   assert(statistics.HasTimer("PropagationPass1Time"));

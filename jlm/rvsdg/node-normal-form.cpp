@@ -49,6 +49,7 @@ typedef std::unordered_map<std::type_index, create_node_normal_form_functor>
 
 std::unique_ptr<node_normal_form_registry> registry;
 
+/*
 create_node_normal_form_functor
 lookup_factory_functor(const std::type_info * info)
 {
@@ -69,6 +70,7 @@ lookup_factory_functor(const std::type_info * info)
     info = cinfo.__base_type;
   }
 }
+*/
 
 }
 
@@ -88,6 +90,7 @@ node_normal_form::register_factory(
   (*registry)[std::type_index(operator_class)] = fn;
 }
 
+/*
 node_normal_form *
 node_normal_form::create(
     const std::type_info & operator_class,
@@ -96,5 +99,6 @@ node_normal_form::create(
 {
   return lookup_factory_functor(&operator_class)(operator_class, parent, graph);
 }
+*/
 
 }
