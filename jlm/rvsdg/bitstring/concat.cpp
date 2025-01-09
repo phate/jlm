@@ -368,4 +368,39 @@ bitconcat_op::copy() const
   return std::make_unique<bitconcat_op>(*this);
 }
 
+static std::vector<std::shared_ptr<const bittype>>
+GetTypesFromOperands(const std::vector<rvsdg::output *> & args)
+{
+  std::vector<std::shared_ptr<const bittype>> types;
+  for (const auto arg : args)
+  {
+    types.push_back(std::dynamic_pointer_cast<const bittype>(arg->Type()));
+  }
+  return types;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+FlattenBitConcatOperation(const bitconcat_op &, const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+
+  const auto newOperands = base::detail::associative_flatten(
+      operands,
+      [](jlm::rvsdg::output * arg)
+      {
+        // FIXME: switch to comparing operator, not just typeid, after
+        // converting "concat" to not be a binary operator anymore
+        return is<bitconcat_op>(output::GetNode(*arg));
+      });
+
+  if (operands == newOperands)
+  {
+    JLM_ASSERT(newOperands.size() == 2);
+    return std::nullopt;
+  }
+
+  JLM_ASSERT(newOperands.size() > 2);
+  return outputs(&CreateOpNode<bitconcat_op>(newOperands, GetTypesFromOperands(newOperands)));
+}
+
 }
