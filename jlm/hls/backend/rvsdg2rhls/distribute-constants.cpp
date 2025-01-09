@@ -33,8 +33,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
           auto arg_replacement = dynamic_cast<rvsdg::simple_output *>(
               rvsdg::SimpleNode::create_normalized(theta->subregion(), op, {})[0]);
           loopvar.pre->divert_users(arg_replacement);
-          loopvar.output->divert_users(
-              rvsdg::SimpleNode::create_normalized(out->region(), op, {})[0]);
+          loopvar.output->divert_users(out);
           distribute_constant(op, arg_replacement);
           theta->subregion()->RemoveResult(loopvar.post->index());
           theta->subregion()->RemoveArgument(loopvar.pre->index());
