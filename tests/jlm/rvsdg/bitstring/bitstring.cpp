@@ -1269,7 +1269,10 @@ types_bitstring_test_normalize()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto sum_nf = graph.GetNodeNormalForm(typeid(Operation));
+  sum_nf->set_mutable(false);
 
   bittype bits32(32);
   auto imp = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "imp");
@@ -1277,29 +1280,27 @@ types_bitstring_test_normalize()
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
 
-  auto sum_nf = graph.GetNodeNormalForm(typeid(bitadd_op));
-  assert(sum_nf);
-  sum_nf->set_mutable(false);
+  auto & sum0 = CreateOpNode<bitadd_op>({ imp, c0 }, 32);
+  auto & sum1 = CreateOpNode<bitadd_op>({ sum0.output(0), c1 }, 32);
 
-  auto sum0 = output::GetNode(*bitadd_op::create(32, imp, c0));
-  assert(sum0->GetOperation() == bitadd_op(32));
-  assert(sum0->ninputs() == 2);
+  auto & ex = jlm::tests::GraphExport::Create(*sum1.output(0), "dummy");
 
-  auto sum1 = output::GetNode(*bitadd_op::create(32, sum0->output(0), c1));
-  assert(sum1->GetOperation() == bitadd_op(32));
-  assert(sum1->ninputs() == 2);
+  view(&graph.GetRootRegion(), stdout);
 
-  auto & exp = jlm::tests::GraphExport::Create(*sum1->output(0), "dummy");
-
-  sum_nf->set_mutable(true);
-  graph.Normalize();
+  // Act
+  ReduceNode<bitadd_op>(FlattenAssociativeBinaryOperation, sum1);
+  auto & flattenedBinaryNode = *output::GetNode(*ex.origin());
+  ReduceNode<flattened_binary_op>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
   graph.PruneNodes();
 
-  auto origin = dynamic_cast<node_output *>(exp.origin());
-  assert(origin->node()->GetOperation() == bitadd_op(32));
-  assert(origin->node()->ninputs() == 2);
-  auto op1 = origin->node()->input(0)->origin();
-  auto op2 = origin->node()->input(1)->origin();
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  auto node = output::GetNode(*ex.origin());
+  assert(node->GetOperation() == bitadd_op(32));
+  assert(node->ninputs() == 2);
+  auto op1 = node->input(0)->origin();
+  auto op2 = node->input(1)->origin();
   if (!is<node_output>(op1))
   {
     auto tmp = op1;
@@ -1328,19 +1329,58 @@ types_bitstring_test_reduction()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit4Type = bittype::Create(4);
+  std::vector types({ bit4Type, bit4Type });
 
   auto a = create_bitconstant(&graph.GetRootRegion(), "1100");
   auto b = create_bitconstant(&graph.GetRootRegion(), "1010");
 
-  assert_constant(bitand_op::create(4, a, b), 4, "1000");
-  assert_constant(bitor_op::create(4, a, b), 4, "1110");
-  assert_constant(bitxor_op::create(4, a, b), 4, "0110");
-  assert_constant(bitadd_op::create(4, a, b), 4, "0001");
-  assert_constant(bitmul_op::create(4, a, b), 4, "1111");
-  assert_constant(jlm::rvsdg::bitconcat({ a, b }), 8, "11001010");
-  assert_constant(bitneg_op::create(4, a), 4, "1011");
-  assert_constant(bitneg_op::create(4, b), 4, "1101");
+  auto & bitAndNode = CreateOpNode<bitand_op>({ a, b }, 4);
+  auto & bitOrNode = CreateOpNode<bitor_op>({ a, b }, 4);
+  auto & bitXorNode = CreateOpNode<bitxor_op>({ a, b }, 4);
+  auto & bitAddNode = CreateOpNode<bitadd_op>({ a, b }, 4);
+  auto & bitMulNode = CreateOpNode<bitmul_op>({ a, b }, 4);
+  auto & bitConcatNode = CreateOpNode<bitconcat_op>({ a, b }, types);
+  auto & bitNegNode1 = CreateOpNode<bitneg_op>({ a }, 4);
+  auto & bitNegNode2 = CreateOpNode<bitneg_op>({ b }, 4);
+
+  auto & exBitAnd = jlm::tests::GraphExport::Create(*bitAndNode.output(0), "bitAnd");
+  auto & exBitOr = jlm::tests::GraphExport::Create(*bitOrNode.output(0), "bitOr");
+  auto & exBitXor = jlm::tests::GraphExport::Create(*bitXorNode.output(0), "bitXor");
+  auto & exBitAdd = jlm::tests::GraphExport::Create(*bitAddNode.output(0), "bitAdd");
+  auto & exBitMul = jlm::tests::GraphExport::Create(*bitMulNode.output(0), "bitMul");
+  auto & exBitConcat = jlm::tests::GraphExport::Create(*bitConcatNode.output(0), "bitConcat");
+  auto & exBitNeg1 = jlm::tests::GraphExport::Create(*bitNegNode1.output(0), "bitNeg1");
+  auto & exBitNeg2 = jlm::tests::GraphExport::Create(*bitNegNode2.output(0), "bitNeg2");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<bitand_op>(NormalizeBinaryOperation, bitAndNode);
+  ReduceNode<bitor_op>(NormalizeBinaryOperation, bitOrNode);
+  ReduceNode<bitxor_op>(NormalizeBinaryOperation, bitXorNode);
+  ReduceNode<bitadd_op>(NormalizeBinaryOperation, bitAddNode);
+  ReduceNode<bitmul_op>(NormalizeBinaryOperation, bitMulNode);
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, bitConcatNode);
+  ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode1);
+  ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode2);
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert_constant(exBitAnd.origin(), 4, "1000");
+  assert_constant(exBitOr.origin(), 4, "1110");
+  assert_constant(exBitXor.origin(), 4, "0110");
+  assert_constant(exBitAdd.origin(), 4, "0001");
+  assert_constant(exBitMul.origin(), 4, "1111");
+  assert_constant(exBitConcat.origin(), 8, "11001010");
+  assert_constant(exBitNeg1.origin(), 4, "1011");
+  assert_constant(exBitNeg2.origin(), 4, "1101");
 
   graph.PruneNodes();
 
