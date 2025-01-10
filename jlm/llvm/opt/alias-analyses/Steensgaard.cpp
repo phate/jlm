@@ -24,7 +24,7 @@ namespace jlm::llvm::aa
 static bool
 HasOrContainsPointerType(const rvsdg::output & output)
 {
-  return IsOrContains<PointerType>(output.type());
+  return IsOrContains<PointerType>(output.type()) || is<llvm::FunctionType>(output.type());
 }
 
 /**
@@ -492,7 +492,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<FunctionType>(graphImport.type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
@@ -1060,6 +1060,14 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeVaList(node);
   }
+  else if (is<PointerToFunctionOperation>(&node))
+  {
+    AnalyzePointerToFunction(node);
+  }
+  else if (is<FunctionToPointerOperation>(&node))
+  {
+    AnalyzeFunctionToPointer(node);
+  }
   else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
   {
     // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
@@ -1472,6 +1480,22 @@ Steensgaard::AnalyzeVaList(const rvsdg::SimpleNode & node)
       MarkAsEscaped(origin);
     }
   }
+}
+
+void
+Steensgaard::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
+{
+  auto & outputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
+  auto & originLocation = Context_->GetOrInsertRegisterLocation(*node.input(0)->origin());
+  Context_->Join(outputLocation, originLocation);
+}
+
+void
+Steensgaard::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
+{
+  auto & outputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
+  auto & originLocation = Context_->GetOrInsertRegisterLocation(*node.input(0)->origin());
+  Context_->Join(outputLocation, originLocation);
 }
 
 void
