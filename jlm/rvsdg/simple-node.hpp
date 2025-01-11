@@ -77,6 +77,9 @@ public:
     auto nf = static_cast<simple_normal_form *>(region->graph()->GetNodeNormalForm(typeid(op)));
     return nf->normalized_create(region, op, operands);
   }
+
+private:
+  std::unique_ptr<SimpleOperation> Operation_;
 };
 
 /* inputs */

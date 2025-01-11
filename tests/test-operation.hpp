@@ -216,10 +216,13 @@ public:
 
 private:
   structural_node(rvsdg::Region * parent, size_t nsubregions)
-      : rvsdg::StructuralNode(structural_op(), parent, nsubregions)
+      : rvsdg::StructuralNode(parent, nsubregions)
   {}
 
 public:
+  [[nodiscard]] const structural_op &
+  GetOperation() const noexcept override;
+
   StructuralNodeInput &
   AddInput(rvsdg::output & origin);
 

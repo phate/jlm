@@ -132,7 +132,7 @@ public:
   ~node() override;
 
 private:
-  node(rvsdg::Region & parent, lambda::operation op);
+  node(rvsdg::Region & parent, std::unique_ptr<lambda::operation> op);
 
 public:
   /**
@@ -423,6 +423,7 @@ public:
 
 private:
   std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
+  std::unique_ptr<lambda::operation> Operation_;
 };
 
 /**
