@@ -1556,13 +1556,24 @@ SliceOfFullNode()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit8Type = bittype::Create(8);
+
   const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
 
-  auto sliceResult = bitslice(x, 0, 8);
+  auto & sliceNode = CreateOpNode<bitslice_op>({ x }, bit8Type, 0, 8);
 
-  auto & ex = jlm::tests::GraphExport::Create(*sliceResult, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
