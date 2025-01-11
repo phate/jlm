@@ -1671,14 +1671,25 @@ ConcatWithSingleOperand()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto bit8Type = bittype::Create(8);
+  std::vector bit8Types({ bit8Type });
 
-  const auto concatResult = bitconcat({ x });
+  auto x = &jlm::tests::GraphImport::Create(graph, bit8Type, "x");
 
-  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  auto & concatNode = CreateOpNode<bitconcat_op>({ x }, bit8Types);
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
