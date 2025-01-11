@@ -1589,16 +1589,32 @@ SliceOfConcat()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit16Type = bittype::Create(16);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
 
   auto concatResult = bitconcat({ x, y });
-  auto sliceResult = bitslice(concatResult, 0, 8);
+  auto & sliceNode = CreateOpNode<bitslice_op>({ concatResult }, bit16Type, 0, 8);
 
-  auto & ex = jlm::tests::GraphExport::Create(*sliceResult, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  auto concatNode = output::GetNode(*ex.origin());
+  ReduceNode<bitslice_op>(
+      NormalizeUnaryOperation,
+      *output::GetNode(*concatNode->input(0)->origin()));
+  concatNode = output::GetNode(*ex.origin());
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *concatNode);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
