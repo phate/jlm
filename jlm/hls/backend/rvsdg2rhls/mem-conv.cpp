@@ -574,7 +574,8 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // Converting loads and stores to explicitly use memory ports
   // This modifies the function signature so we create a new lambda node to replace the old one
   //
-  auto oldFunctionType = lambda->type();
+  const auto & op = lambda->GetOperation();
+  auto oldFunctionType = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
@@ -643,9 +644,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   auto newLambda = jlm::llvm::lambda::node::create(
       lambda->region(),
       newFunctionType,
-      lambda->name(),
-      lambda->linkage(),
-      lambda->attributes());
+      op.name(),
+      op.linkage(),
+      op.attributes());
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : lambda->GetContextVars())

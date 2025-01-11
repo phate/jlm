@@ -18,8 +18,9 @@ namespace jlm::hls
 llvm::lambda::node *
 change_function_name(llvm::lambda::node * ln, const std::string & name)
 {
+  const auto & op = ln->GetOperation();
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->Type(), name, ln->linkage(), ln->attributes());
+      llvm::lambda::node::create(ln->region(), op.Type(), name, op.linkage(), op.attributes());
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -65,7 +66,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   auto newLambda = change_function_name(lambda, "instrumented_ref");
 
-  auto functionType = newLambda->type();
+  auto functionType = newLambda->GetOperation().type();
   auto numArguments = functionType.NumArguments();
   if (numArguments == 0)
   {

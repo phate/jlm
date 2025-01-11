@@ -187,14 +187,14 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
     return output();
   }
 
-  if (type().NumResults() != results.size())
+  if (GetOperation().type().NumResults() != results.size())
     throw util::error("Incorrect number of results.");
 
   for (size_t n = 0; n < results.size(); n++)
   {
-    auto & expected = type().ResultType(n);
+    auto & expected = GetOperation().type().ResultType(n);
     auto & received = results[n]->type();
-    if (results[n]->type() != type().ResultType(n))
+    if (results[n]->type() != GetOperation().type().ResultType(n))
       throw util::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
     if (results[n]->region() != subregion())
@@ -204,7 +204,7 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   for (const auto & origin : results)
     rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, Type()));
+  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, GetOperation().Type()));
 }
 
 rvsdg::output *
@@ -222,7 +222,8 @@ node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 lambda::node *
 node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto lambda = create(region, Type(), name(), linkage(), attributes());
+  const auto & op = GetOperation();
+  auto lambda = create(region, op.Type(), op.name(), op.linkage(), op.attributes());
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;

@@ -415,11 +415,11 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
       Builder_->getStringAttr("sym_name"),
-      Builder_->getStringAttr(lambdaNode.name()));
+      Builder_->getStringAttr(lambdaNode.GetOperation().name()));
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(lambdaNode.linkage())));
+      Builder_->getStringAttr(llvm::ToString(lambdaNode.GetOperation().linkage())));
   attributes.push_back(linkage);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(

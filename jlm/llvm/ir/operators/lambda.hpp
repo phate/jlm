@@ -183,36 +183,6 @@ public:
   [[nodiscard]] const lambda::operation &
   GetOperation() const noexcept override;
 
-  [[nodiscard]] const jlm::rvsdg::FunctionType &
-  type() const noexcept
-  {
-    return GetOperation().type();
-  }
-
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::FunctionType> &
-  Type() const noexcept
-  {
-    return GetOperation().Type();
-  }
-
-  [[nodiscard]] const std::string &
-  name() const noexcept
-  {
-    return GetOperation().name();
-  }
-
-  [[nodiscard]] const jlm::llvm::linkage &
-  linkage() const noexcept
-  {
-    return GetOperation().linkage();
-  }
-
-  [[nodiscard]] const jlm::llvm::attributeset &
-  attributes() const noexcept
-  {
-    return GetOperation().attributes();
-  }
-
   /**
    * \brief Adds a context/free variable to the lambda node.
    *

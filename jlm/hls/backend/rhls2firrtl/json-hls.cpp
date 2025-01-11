@@ -14,7 +14,7 @@ JsonHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream json;
   const auto & ln = *get_hls_lambda(rm);
-  auto function_name = ln.name();
+  auto function_name = ln.GetOperation().name();
   auto file_name = get_base_file_name(rm);
   json << "{\n";
 

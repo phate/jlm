@@ -43,7 +43,7 @@ ConvertToCType(const rvsdg::Type * type)
 std::optional<std::string>
 GetReturnTypeAsC(const llvm::lambda::node & kernel)
 {
-  const auto & results = kernel.type().Results();
+  const auto & results = kernel.GetOperation().type().Results();
 
   if (results.empty())
     return std::nullopt;
@@ -71,7 +71,7 @@ GetParameterListAsC(const llvm::lambda::node & kernel)
   std::ostringstream parameters;
   std::ostringstream arguments;
 
-  for (auto & argType : kernel.type().Arguments())
+  for (auto & argType : kernel.GetOperation().type().Arguments())
   {
     if (rvsdg::is<rvsdg::StateType>(argType))
       continue;
@@ -97,7 +97,7 @@ VerilatorHarnessHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream cpp;
   const auto & kernel = *get_hls_lambda(rm);
-  const auto & function_name = kernel.name();
+  const auto & function_name = kernel.GetOperation().name();
 
   // The request and response parts of memory queues
   const auto mem_reqs = get_mem_reqs(kernel);

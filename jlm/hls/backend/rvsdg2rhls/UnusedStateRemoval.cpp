@@ -35,7 +35,8 @@ IsPassthroughResult(const rvsdg::input & result)
 static void
 RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 {
-  auto & oldFunctionType = lambdaNode.type();
+  const auto & op = lambdaNode.GetOperation();
+  auto & oldFunctionType = op.type();
 
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
@@ -67,9 +68,9 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
   auto newLambda = llvm::lambda::node::create(
       lambdaNode.region(),
       newFunctionType,
-      lambdaNode.name(),
-      lambdaNode.linkage(),
-      lambdaNode.attributes());
+      op.name(),
+      op.linkage(),
+      op.attributes());
 
   rvsdg::SubstitutionMap substitutionMap;
   for (const auto & ctxvar : lambdaNode.GetContextVars())
