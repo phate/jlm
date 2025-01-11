@@ -19,8 +19,6 @@ namespace jlm::rvsdg
 
 typedef size_t binop_reduction_path_t;
 
-class BinaryOperation;
-
 /**
  * Binary operation taking two arguments (with well-defined reduction for more
  * operands if operator is associative).
