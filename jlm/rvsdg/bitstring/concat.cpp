@@ -327,15 +327,9 @@ bitconcat_op::reduce_operand_pair(
     auto & arg1_constant = static_cast<const bitconstant_op &>(node1->GetOperation());
     auto & arg2_constant = static_cast<const bitconstant_op &>(node2->GetOperation());
 
-    size_t nbits = arg1_constant.value().nbits() + arg2_constant.value().nbits();
-    std::vector<char> bits(nbits);
-    memcpy(&bits[0], &arg1_constant.value()[0], arg1_constant.value().nbits());
-    memcpy(
-        &bits[0] + arg1_constant.value().nbits(),
-        &arg2_constant.value()[0],
-        arg2_constant.value().nbits());
-
-    return create_bitconstant(arg1->region(), &bits[0]);
+    bitvalue_repr bits(arg1_constant.value());
+    bits.Append(arg2_constant.value());
+    return create_bitconstant(arg1->region(), std::move(bits));
   }
 
   if (path == binop_reduction_merge)
