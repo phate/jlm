@@ -1707,16 +1707,28 @@ ConcatOfSlices()
 {
   using namespace jlm::rvsdg;
 
-  // Assert & Act
+  // Assert
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit4Type = bittype::Create(4);
+  std::vector bit4Types({ bit4Type, bit4Type });
 
   const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
 
   auto sliceResult1 = bitslice(x, 0, 4);
   auto sliceResult2 = bitslice(x, 4, 8);
-  const auto concatResult = bitconcat({ sliceResult1, sliceResult2 });
+  auto & concatNode = CreateOpNode<bitconcat_op>({ sliceResult1, sliceResult2 }, bit4Types);
 
-  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, *output::GetNode(*ex.origin()));
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
