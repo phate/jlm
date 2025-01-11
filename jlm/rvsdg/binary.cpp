@@ -273,43 +273,6 @@ binary_normal_form::set_factorize(bool enable)
     graph()->MarkDenormalized();
 }
 
-/* flattened binary normal form */
-
-flattened_binary_normal_form::~flattened_binary_normal_form() noexcept
-{}
-
-flattened_binary_normal_form::flattened_binary_normal_form(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    Graph * graph)
-    : simple_normal_form(operator_class, parent, graph)
-{}
-
-bool
-flattened_binary_normal_form::normalize_node(Node * node) const
-{
-  const auto & op = static_cast<const flattened_binary_op &>(node->GetOperation());
-  const auto & bin_op = op.bin_operation();
-  auto nf = graph()->GetNodeNormalForm(typeid(bin_op));
-
-  return static_cast<const binary_normal_form *>(nf)->normalize_node(node, bin_op);
-}
-
-std::vector<jlm::rvsdg::output *>
-flattened_binary_normal_form::normalized_create(
-    rvsdg::Region * region,
-    const SimpleOperation & base_op,
-    const std::vector<jlm::rvsdg::output *> & arguments) const
-{
-  const auto & op = static_cast<const flattened_binary_op &>(base_op);
-  const auto & bin_op = op.bin_operation();
-
-  auto nf = static_cast<const binary_normal_form *>(graph()->GetNodeNormalForm(typeid(bin_op)));
-  return nf->normalized_create(region, bin_op, arguments);
-}
-
-/* binary operator */
-
 BinaryOperation::~BinaryOperation() noexcept = default;
 
 enum BinaryOperation::flags
@@ -521,22 +484,10 @@ binary_operation_get_default_normal_form_(
   return new jlm::rvsdg::binary_normal_form(operator_class, parent, graph);
 }
 
-jlm::rvsdg::node_normal_form *
-flattened_binary_operation_get_default_normal_form_(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::Graph * graph)
-{
-  return new jlm::rvsdg::flattened_binary_normal_form(operator_class, parent, graph);
-}
-
 static void __attribute__((constructor))
 register_node_normal_form()
 {
   jlm::rvsdg::node_normal_form::register_factory(
       typeid(jlm::rvsdg::BinaryOperation),
       binary_operation_get_default_normal_form_);
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::flattened_binary_op),
-      flattened_binary_operation_get_default_normal_form_);
 }
