@@ -367,16 +367,16 @@ NormalizeBinaryOperation(
 
   auto newOperands = reduce_operands(operation, operands);
 
-  if (newOperands == operands)
-  {
-    // The operands did not change, which means that none of the normalizations triggered.
-    return std::nullopt;
-  }
-
   if (newOperands.size() == 1)
   {
     // The operands could be reduced to a single value by applying constant folding.
     return newOperands;
+  }
+
+  if (newOperands == operands)
+  {
+    // The operands did not change, which means that none of the normalizations triggered.
+    return std::nullopt;
   }
 
   JLM_ASSERT(newOperands.size() == 2);
