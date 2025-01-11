@@ -98,26 +98,6 @@ private:
   friend class flattened_binary_normal_form;
 };
 
-class flattened_binary_normal_form final : public simple_normal_form
-{
-public:
-  virtual ~flattened_binary_normal_form() noexcept;
-
-  flattened_binary_normal_form(
-      const std::type_info & operator_class,
-      jlm::rvsdg::node_normal_form * parent,
-      Graph * graph);
-
-  virtual bool
-  normalize_node(Node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & arguments) const override;
-};
-
 /**
  * Binary operation taking two arguments (with well-defined reduction for more
  * operands if operator is associative).
@@ -242,13 +222,6 @@ public:
   bin_operation() const noexcept
   {
     return *op_;
-  }
-
-  static jlm::rvsdg::flattened_binary_normal_form *
-  normal_form(Graph * graph) noexcept
-  {
-    return static_cast<flattened_binary_normal_form *>(
-        graph->GetNodeNormalForm(typeid(flattened_binary_op)));
   }
 
   jlm::rvsdg::output *
