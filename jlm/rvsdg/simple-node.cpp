@@ -161,9 +161,12 @@ NormalizeSimpleOperationCommonNodeElimination(
   {
     for (const auto & user : *operands[0])
     {
-      if (const auto node = TryGetOwnerNode<SimpleNode>(*user); isCongruent(*node))
+      if (const auto node = TryGetOwnerNode<SimpleNode>(*user))
       {
-        return outputs(node);
+        if (isCongruent(*node))
+        {
+          return outputs(node);
+        }
       }
     }
   }
