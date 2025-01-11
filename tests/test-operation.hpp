@@ -416,9 +416,9 @@ class SimpleNode final : public rvsdg::SimpleNode
 private:
   SimpleNode(
       rvsdg::Region & region,
-      const test_op & operation,
+      std::unique_ptr<test_op> operation,
       const std::vector<rvsdg::output *> & operands)
-      : rvsdg::SimpleNode(&region, operation, operands)
+      : rvsdg::SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -433,9 +433,9 @@ public:
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     auto operandTypes = ExtractTypes(operands);
-    test_op operation(std::move(operandTypes), std::move(resultTypes));
+    auto operation = std::make_unique<test_op>(std::move(operandTypes), std::move(resultTypes));
 
-    auto node = new SimpleNode(region, operation, operands);
+    auto node = new SimpleNode(region, std::move(operation), operands);
     return *node;
   }
 
