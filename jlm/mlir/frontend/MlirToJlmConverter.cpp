@@ -84,10 +84,10 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   // Create an RVSDG node for each MLIR operation and store each pair in a
   // hash map for easy lookup of corresponding RVSDG nodes
   std::unordered_map<::mlir::Operation *, rvsdg::Node *> operationsMap;
+  ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
   for (auto & mlirOp : block.getOperations())
   {
-    ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
-        GetConvertedInputs(mlirOp, operationsMap, rvsdgRegion);
+    inputs = GetConvertedInputs(mlirOp, operationsMap, rvsdgRegion);
 
     if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
     {
@@ -96,9 +96,13 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   }
 
   // The results of the region/block are encoded in the terminator operation
-  ::mlir::Operation * terminator = block.getTerminator();
+  if (block.mightHaveTerminator())
+  {
+    ::mlir::Operation * terminator = block.getTerminator();
+    inputs = GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
+  }
 
-  return GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
+  return inputs;
 }
 
 rvsdg::Node *
