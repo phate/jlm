@@ -1486,11 +1486,22 @@ SliceOfConstant()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
-  const Graph graph;
+  // Arrange
+  Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit8Type = bittype::Create(8);
+
   const auto constant = create_bitconstant(&graph.GetRootRegion(), "00110111");
-  const auto slice = bitslice(constant, 2, 6);
-  auto & ex = jlm::tests::GraphExport::Create(*slice, "dummy");
+  auto & sliceNode = CreateOpNode<bitslice_op>({ constant }, bit8Type, 2, 6);
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "dummy");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  graph.PruneNodes();
 
   view(graph, stdout);
 
