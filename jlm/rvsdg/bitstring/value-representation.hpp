@@ -689,6 +689,12 @@ public:
     return product.slice(nbits(), 2 * nbits());
   }
 
+  void
+  Append(const bitvalue_repr & other)
+  {
+    data_.insert(data_.end(), other.data_.begin(), other.data_.end());
+  }
+
 private:
   /* [lsb ... msb] */
   std::vector<char> data_;
