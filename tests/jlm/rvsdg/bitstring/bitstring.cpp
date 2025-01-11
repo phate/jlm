@@ -1520,14 +1520,25 @@ SliceOfSlice()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit4Type = bittype::Create(4);
+
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
 
   auto slice1 = bitslice(x, 2, 6);
-  auto slice2 = bitslice(slice1, 1, 3);
+  auto & sliceNode2 = CreateOpNode<bitslice_op>({ slice1 }, bit4Type, 1, 3);
 
-  auto & ex = jlm::tests::GraphExport::Create(*slice2, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode2.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode2);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
