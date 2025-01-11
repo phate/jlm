@@ -1382,40 +1382,104 @@ types_bitstring_test_reduction()
   assert_constant(exBitNeg1.origin(), 4, "1011");
   assert_constant(exBitNeg2.origin(), 4, "1101");
 
+  return 0;
+}
+
+static int
+SliceOfConcatReduction()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit16Type = bittype::Create(16);
+  auto bit32Type = bittype::Create(32);
+  std::vector types({ bit16Type, bit16Type });
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bit16Type, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bit16Type, "y");
+
+  auto & concatNode = CreateOpNode<bitconcat_op>({ x, y }, types);
+  auto & sliceNode = CreateOpNode<bitslice_op>({ concatNode.output(0) }, bit32Type, 8, 24);
+
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "bitAnd");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
   graph.PruneNodes();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(16), "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(16), "y");
+  view(&graph.GetRootRegion(), stdout);
 
-  {
-    auto concat = jlm::rvsdg::bitconcat({ x, y });
-    auto node = output::GetNode(*jlm::rvsdg::bitslice(concat, 8, 24));
-    auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
-    auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
-    assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
-    assert(node->ninputs() == 2);
-    assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
-    assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
+  // Assert
+  const auto node = output::GetNode(*ex.origin());
+  const auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
+  const auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
+  assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
+  assert(node->ninputs() == 2);
+  assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
 
-    const bitslice_op * attrs;
-    attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
-    assert((attrs->low() == 8) && (attrs->high() == 16));
-    attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
-    assert((attrs->low() == 0) && (attrs->high() == 8));
+  auto attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
+  assert((attrs->low() == 8) && (attrs->high() == 16));
+  attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
+  assert((attrs->low() == 0) && (attrs->high() == 8));
 
-    assert(o0->node()->input(0)->origin() == x);
-    assert(o1->node()->input(0)->origin() == y);
-  }
-
-  {
-    auto slice1 = jlm::rvsdg::bitslice(x, 0, 8);
-    auto slice2 = jlm::rvsdg::bitslice(x, 8, 16);
-    auto concat = jlm::rvsdg::bitconcat({ slice1, slice2 });
-    assert(concat == x);
-  }
+  assert(o0->node()->input(0)->origin() == x);
+  assert(o1->node()->input(0)->origin() == y);
 
   return 0;
 }
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/bitstring/bitstring-SliceOfConcatReduction",
+    SliceOfConcatReduction);
+
+static int
+ConcatOfSliceReduction()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit8Type = bittype::Create(8);
+  auto bit16Type = bittype::Create(16);
+  std::vector types({ bit8Type, bit8Type });
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bit16Type, "x");
+
+  auto slice1 = bitslice(x, 0, 8);
+  auto slice2 = bitslice(x, 8, 16);
+  auto & concatNode = CreateOpNode<bitconcat_op>({ slice1, slice2 }, types);
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "bitAnd");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  const auto sliceNode = output::GetNode(*ex.origin());
+  assert(sliceNode->GetOperation() == bitslice_op(bit16Type, 0, 16));
+  assert(sliceNode->input(0)->origin() == x);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/bitstring/bitstring-ConcatOfSliceReduction",
+    ConcatOfSliceReduction);
 
 static int
 SliceOfConstant()
