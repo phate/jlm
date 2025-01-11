@@ -1269,7 +1269,10 @@ types_bitstring_test_normalize()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto sum_nf = graph.GetNodeNormalForm(typeid(Operation));
+  sum_nf->set_mutable(false);
 
   bittype bits32(32);
   auto imp = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "imp");
@@ -1277,29 +1280,27 @@ types_bitstring_test_normalize()
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
 
-  auto sum_nf = graph.GetNodeNormalForm(typeid(bitadd_op));
-  assert(sum_nf);
-  sum_nf->set_mutable(false);
+  auto & sum0 = CreateOpNode<bitadd_op>({ imp, c0 }, 32);
+  auto & sum1 = CreateOpNode<bitadd_op>({ sum0.output(0), c1 }, 32);
 
-  auto sum0 = output::GetNode(*bitadd_op::create(32, imp, c0));
-  assert(sum0->GetOperation() == bitadd_op(32));
-  assert(sum0->ninputs() == 2);
+  auto & ex = jlm::tests::GraphExport::Create(*sum1.output(0), "dummy");
 
-  auto sum1 = output::GetNode(*bitadd_op::create(32, sum0->output(0), c1));
-  assert(sum1->GetOperation() == bitadd_op(32));
-  assert(sum1->ninputs() == 2);
+  view(&graph.GetRootRegion(), stdout);
 
-  auto & exp = jlm::tests::GraphExport::Create(*sum1->output(0), "dummy");
-
-  sum_nf->set_mutable(true);
-  graph.Normalize();
+  // Act
+  ReduceNode<bitadd_op>(FlattenAssociativeBinaryOperation, sum1);
+  auto & flattenedBinaryNode = *output::GetNode(*ex.origin());
+  ReduceNode<flattened_binary_op>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
   graph.PruneNodes();
 
-  auto origin = dynamic_cast<node_output *>(exp.origin());
-  assert(origin->node()->GetOperation() == bitadd_op(32));
-  assert(origin->node()->ninputs() == 2);
-  auto op1 = origin->node()->input(0)->origin();
-  auto op2 = origin->node()->input(1)->origin();
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  auto node = output::GetNode(*ex.origin());
+  assert(node->GetOperation() == bitadd_op(32));
+  assert(node->ninputs() == 2);
+  auto op1 = node->input(0)->origin();
+  auto op2 = node->input(1)->origin();
   if (!is<node_output>(op1))
   {
     auto tmp = op1;
@@ -1328,65 +1329,179 @@ types_bitstring_test_reduction()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit4Type = bittype::Create(4);
+  std::vector types({ bit4Type, bit4Type });
 
   auto a = create_bitconstant(&graph.GetRootRegion(), "1100");
   auto b = create_bitconstant(&graph.GetRootRegion(), "1010");
 
-  assert_constant(bitand_op::create(4, a, b), 4, "1000");
-  assert_constant(bitor_op::create(4, a, b), 4, "1110");
-  assert_constant(bitxor_op::create(4, a, b), 4, "0110");
-  assert_constant(bitadd_op::create(4, a, b), 4, "0001");
-  assert_constant(bitmul_op::create(4, a, b), 4, "1111");
-  assert_constant(jlm::rvsdg::bitconcat({ a, b }), 8, "11001010");
-  assert_constant(bitneg_op::create(4, a), 4, "1011");
-  assert_constant(bitneg_op::create(4, b), 4, "1101");
+  auto & bitAndNode = CreateOpNode<bitand_op>({ a, b }, 4);
+  auto & bitOrNode = CreateOpNode<bitor_op>({ a, b }, 4);
+  auto & bitXorNode = CreateOpNode<bitxor_op>({ a, b }, 4);
+  auto & bitAddNode = CreateOpNode<bitadd_op>({ a, b }, 4);
+  auto & bitMulNode = CreateOpNode<bitmul_op>({ a, b }, 4);
+  auto & bitConcatNode = CreateOpNode<bitconcat_op>({ a, b }, types);
+  auto & bitNegNode1 = CreateOpNode<bitneg_op>({ a }, 4);
+  auto & bitNegNode2 = CreateOpNode<bitneg_op>({ b }, 4);
 
-  graph.PruneNodes();
+  auto & exBitAnd = jlm::tests::GraphExport::Create(*bitAndNode.output(0), "bitAnd");
+  auto & exBitOr = jlm::tests::GraphExport::Create(*bitOrNode.output(0), "bitOr");
+  auto & exBitXor = jlm::tests::GraphExport::Create(*bitXorNode.output(0), "bitXor");
+  auto & exBitAdd = jlm::tests::GraphExport::Create(*bitAddNode.output(0), "bitAdd");
+  auto & exBitMul = jlm::tests::GraphExport::Create(*bitMulNode.output(0), "bitMul");
+  auto & exBitConcat = jlm::tests::GraphExport::Create(*bitConcatNode.output(0), "bitConcat");
+  auto & exBitNeg1 = jlm::tests::GraphExport::Create(*bitNegNode1.output(0), "bitNeg1");
+  auto & exBitNeg2 = jlm::tests::GraphExport::Create(*bitNegNode2.output(0), "bitNeg2");
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(16), "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(16), "y");
+  view(&graph.GetRootRegion(), stdout);
 
-  {
-    auto concat = jlm::rvsdg::bitconcat({ x, y });
-    auto node = output::GetNode(*jlm::rvsdg::bitslice(concat, 8, 24));
-    auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
-    auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
-    assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
-    assert(node->ninputs() == 2);
-    assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
-    assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
+  // Act
+  ReduceNode<bitand_op>(NormalizeBinaryOperation, bitAndNode);
+  ReduceNode<bitor_op>(NormalizeBinaryOperation, bitOrNode);
+  ReduceNode<bitxor_op>(NormalizeBinaryOperation, bitXorNode);
+  ReduceNode<bitadd_op>(NormalizeBinaryOperation, bitAddNode);
+  ReduceNode<bitmul_op>(NormalizeBinaryOperation, bitMulNode);
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, bitConcatNode);
+  ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode1);
+  ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode2);
 
-    const bitslice_op * attrs;
-    attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
-    assert((attrs->low() == 8) && (attrs->high() == 16));
-    attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
-    assert((attrs->low() == 0) && (attrs->high() == 8));
+  view(&graph.GetRootRegion(), stdout);
 
-    assert(o0->node()->input(0)->origin() == x);
-    assert(o1->node()->input(0)->origin() == y);
-  }
-
-  {
-    auto slice1 = jlm::rvsdg::bitslice(x, 0, 8);
-    auto slice2 = jlm::rvsdg::bitslice(x, 8, 16);
-    auto concat = jlm::rvsdg::bitconcat({ slice1, slice2 });
-    assert(concat == x);
-  }
+  // Assert
+  assert_constant(exBitAnd.origin(), 4, "1000");
+  assert_constant(exBitOr.origin(), 4, "1110");
+  assert_constant(exBitXor.origin(), 4, "0110");
+  assert_constant(exBitAdd.origin(), 4, "0001");
+  assert_constant(exBitMul.origin(), 4, "1111");
+  assert_constant(exBitConcat.origin(), 8, "11001010");
+  assert_constant(exBitNeg1.origin(), 4, "1011");
+  assert_constant(exBitNeg2.origin(), 4, "1101");
 
   return 0;
 }
+
+static int
+SliceOfConcatReduction()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit16Type = bittype::Create(16);
+  auto bit32Type = bittype::Create(32);
+  std::vector types({ bit16Type, bit16Type });
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bit16Type, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bit16Type, "y");
+
+  auto & concatNode = CreateOpNode<bitconcat_op>({ x, y }, types);
+  auto & sliceNode = CreateOpNode<bitslice_op>({ concatNode.output(0) }, bit32Type, 8, 24);
+
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "bitAnd");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  const auto node = output::GetNode(*ex.origin());
+  const auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
+  const auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
+  assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
+  assert(node->ninputs() == 2);
+  assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
+
+  auto attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
+  assert((attrs->low() == 8) && (attrs->high() == 16));
+  attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
+  assert((attrs->low() == 0) && (attrs->high() == 8));
+
+  assert(o0->node()->input(0)->origin() == x);
+  assert(o1->node()->input(0)->origin() == y);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/bitstring/bitstring-SliceOfConcatReduction",
+    SliceOfConcatReduction);
+
+static int
+ConcatOfSliceReduction()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit8Type = bittype::Create(8);
+  auto bit16Type = bittype::Create(16);
+  std::vector types({ bit8Type, bit8Type });
+
+  auto x = &jlm::tests::GraphImport::Create(graph, bit16Type, "x");
+
+  auto slice1 = bitslice(x, 0, 8);
+  auto slice2 = bitslice(x, 8, 16);
+  auto & concatNode = CreateOpNode<bitconcat_op>({ slice1, slice2 }, types);
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "bitAnd");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  const auto sliceNode = output::GetNode(*ex.origin());
+  assert(sliceNode->GetOperation() == bitslice_op(bit16Type, 0, 16));
+  assert(sliceNode->input(0)->origin() == x);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/bitstring/bitstring-ConcatOfSliceReduction",
+    ConcatOfSliceReduction);
 
 static int
 SliceOfConstant()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
-  const Graph graph;
+  // Arrange
+  Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit8Type = bittype::Create(8);
+
   const auto constant = create_bitconstant(&graph.GetRootRegion(), "00110111");
-  const auto slice = bitslice(constant, 2, 6);
-  auto & ex = jlm::tests::GraphExport::Create(*slice, "dummy");
+  auto & sliceNode = CreateOpNode<bitslice_op>({ constant }, bit8Type, 2, 6);
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "dummy");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  graph.PruneNodes();
 
   view(graph, stdout);
 
@@ -1405,14 +1520,25 @@ SliceOfSlice()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit4Type = bittype::Create(4);
+
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
 
   auto slice1 = bitslice(x, 2, 6);
-  auto slice2 = bitslice(slice1, 1, 3);
+  auto & sliceNode2 = CreateOpNode<bitslice_op>({ slice1 }, bit4Type, 1, 3);
 
-  auto & ex = jlm::tests::GraphExport::Create(*slice2, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode2.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode2);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
@@ -1430,13 +1556,24 @@ SliceOfFullNode()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit8Type = bittype::Create(8);
+
   const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
 
-  auto sliceResult = bitslice(x, 0, 8);
+  auto & sliceNode = CreateOpNode<bitslice_op>({ x }, bit8Type, 0, 8);
 
-  auto & ex = jlm::tests::GraphExport::Create(*sliceResult, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
@@ -1452,16 +1589,32 @@ SliceOfConcat()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit16Type = bittype::Create(16);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
 
   auto concatResult = bitconcat({ x, y });
-  auto sliceResult = bitslice(concatResult, 0, 8);
+  auto & sliceNode = CreateOpNode<bitslice_op>({ concatResult }, bit16Type, 0, 8);
 
-  auto & ex = jlm::tests::GraphExport::Create(*sliceResult, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
+  auto concatNode = output::GetNode(*ex.origin());
+  ReduceNode<bitslice_op>(
+      NormalizeUnaryOperation,
+      *output::GetNode(*concatNode->input(0)->origin()));
+  concatNode = output::GetNode(*ex.origin());
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *concatNode);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
@@ -1518,14 +1671,25 @@ ConcatWithSingleOperand()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto bit8Type = bittype::Create(8);
+  std::vector bit8Types({ bit8Type });
 
-  const auto concatResult = bitconcat({ x });
+  auto x = &jlm::tests::GraphImport::Create(graph, bit8Type, "x");
 
-  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  auto & concatNode = CreateOpNode<bitconcat_op>({ x }, bit8Types);
+
+  auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
@@ -1543,16 +1707,28 @@ ConcatOfSlices()
 {
   using namespace jlm::rvsdg;
 
-  // Assert & Act
+  // Assert
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
+
+  auto bit4Type = bittype::Create(4);
+  std::vector bit4Types({ bit4Type, bit4Type });
 
   const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
 
   auto sliceResult1 = bitslice(x, 0, 4);
   auto sliceResult2 = bitslice(x, 4, 8);
-  const auto concatResult = bitconcat({ sliceResult1, sliceResult2 });
+  auto & concatNode = CreateOpNode<bitconcat_op>({ sliceResult1, sliceResult2 }, bit4Types);
 
-  auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
+  auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "dummy");
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, *output::GetNode(*ex.origin()));
+  graph.PruneNodes();
+
   view(graph, stdout);
 
   // Assert
@@ -1568,8 +1744,10 @@ ConcatOfConstants()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
 
   auto c1 = create_bitconstant(&graph.GetRootRegion(), "00110111");
   auto c2 = create_bitconstant(&graph.GetRootRegion(), "11001000");
@@ -1578,6 +1756,9 @@ ConcatOfConstants()
 
   auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
   view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *output::GetNode(*ex.origin()));
 
   // Assert
   auto node = output::GetNode(*ex.origin());
