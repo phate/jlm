@@ -1744,8 +1744,10 @@ ConcatOfConstants()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto nf = graph.GetNodeNormalForm(typeid(Operation));
+  nf->set_mutable(false);
 
   auto c1 = create_bitconstant(&graph.GetRootRegion(), "00110111");
   auto c2 = create_bitconstant(&graph.GetRootRegion(), "11001000");
@@ -1754,6 +1756,9 @@ ConcatOfConstants()
 
   auto & ex = jlm::tests::GraphExport::Create(*concatResult, "dummy");
   view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *output::GetNode(*ex.origin()));
 
   // Assert
   auto node = output::GetNode(*ex.origin());
