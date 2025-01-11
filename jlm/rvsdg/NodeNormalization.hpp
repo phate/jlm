@@ -51,6 +51,14 @@ ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, Node & node)
   if (auto results = nodeNormalization(*operation, operands))
   {
     divert_users(&node, *results);
+    if (node.output(0)->nusers() != 0)
+    {
+      // In case of common node elimination, it can happen that the outputs of the current node are
+      // returned. The diversion of its users above is therefore a no-op. However, this means that
+      // the outputs of node still have users, and we can not just remove the node below.
+      return false;
+    }
+
     remove(&node);
     return true;
   }

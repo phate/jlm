@@ -12,32 +12,6 @@
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-class NullaryOperation final : public jlm::rvsdg::nullary_op
-{
-public:
-  explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
-      : nullary_op(resultType)
-  {}
-
-  bool
-  operator==(const Operation &) const noexcept override
-  {
-    JLM_UNREACHABLE("Not implemented.");
-  }
-
-  [[nodiscard]] std::string
-  debug_string() const override
-  {
-    return "NullaryOperation";
-  }
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override
-  {
-    return std::make_unique<NullaryOperation>(this->result(0));
-  }
-};
-
 class UnaryOperation final : public jlm::rvsdg::unary_op
 {
 public:
@@ -52,7 +26,7 @@ public:
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
-        jlm::rvsdg::is<NullaryOperation>(node))
+        jlm::rvsdg::is<jlm::tests::NullaryOperation>(node))
     {
       return jlm::rvsdg::unop_reduction_constant;
     }
@@ -100,7 +74,7 @@ NormalizeUnaryOperation_Success()
   Graph graph;
   const auto valueType = jlm::tests::valuetype::Create();
 
-  const NullaryOperation nullaryOperation(valueType);
+  const jlm::tests::NullaryOperation nullaryOperation(valueType);
   const auto nullaryNode = SimpleNode::create(&graph.GetRootRegion(), nullaryOperation, {});
 
   const UnaryOperation unaryOperation(valueType, valueType);

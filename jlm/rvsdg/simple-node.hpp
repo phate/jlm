@@ -11,6 +11,8 @@
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-normal-form.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
 
@@ -78,6 +80,21 @@ public:
     return nf->normalized_create(region, op, operands);
   }
 };
+
+/**
+ * \brief Performs common node elimination for a given operation and operands in a region.
+ *
+ * @param region The region in which common node elimination is performed.
+ * @param operation The simple operation on which the transformation is performed.
+ * @param operands The operands of the simple node.
+ * @return If the normalization could be applied, then the results of the binary operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSimpleOperationCommonNodeElimination(
+    Region & region,
+    const SimpleOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 /* inputs */
 
