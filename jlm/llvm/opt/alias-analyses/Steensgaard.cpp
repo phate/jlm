@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
@@ -1515,8 +1516,8 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   }
 
   // Handle function arguments
-  auto callSummary = lambda.ComputeCallSummary();
-  if (callSummary->HasOnlyDirectCalls())
+  auto callSummary = ComputeCallSummary(lambda);
+  if (callSummary.HasOnlyDirectCalls())
   {
     for (auto & argument : lambda.GetFunctionArguments())
     {
@@ -1544,7 +1545,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   AnalyzeRegion(*lambda.subregion());
 
   // Handle function results
-  if (lambda::node::IsExported(lambda))
+  if (callSummary.IsExported())
   {
     for (auto result : lambda.GetFunctionResults())
     {
