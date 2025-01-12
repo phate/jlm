@@ -174,7 +174,7 @@ class PointerObjectSet final
 
   std::unordered_map<const delta::node *, PointerObjectIndex> GlobalMap_;
 
-  util::BijectiveMap<const lambda::node *, PointerObjectIndex> FunctionMap_;
+  util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> FunctionMap_;
 
   std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
 
@@ -289,7 +289,7 @@ public:
    * @return the index of the new PointerObject in the PointerObjectSet
    */
   [[nodiscard]] PointerObjectIndex
-  CreateFunctionMemoryObject(const lambda::node & lambdaNode);
+  CreateFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode);
 
   /**
    * Retrieves the PointerObject of Function kind associated with the given lambda node
@@ -297,14 +297,14 @@ public:
    * @return the index of the associated PointerObject
    */
   [[nodiscard]] PointerObjectIndex
-  GetFunctionMemoryObject(const lambda::node & lambdaNode) const;
+  GetFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode) const;
 
   /**
    * Gets the lambda node associated with a given PointerObject.
    * @param index the index of the PointerObject
    * @return the lambda node associated with the PointerObject
    */
-  [[nodiscard]] const lambda::node &
+  [[nodiscard]] const rvsdg::LambdaNode &
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
@@ -322,7 +322,7 @@ public:
   const std::unordered_map<const delta::node *, PointerObjectIndex> &
   GetGlobalMap() const noexcept;
 
-  const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
+  const util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
   const std::unordered_map<const GraphImport *, PointerObjectIndex> &

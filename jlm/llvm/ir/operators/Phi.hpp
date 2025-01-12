@@ -8,6 +8,7 @@
 #define JLM_LLVM_IR_OPERATORS_PHI_HPP
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -15,11 +16,6 @@
 
 namespace jlm::llvm
 {
-
-namespace lambda
-{
-class node;
-}
 
 namespace phi
 {
@@ -493,7 +489,7 @@ public:
    * @param phiNode The phi node from which the lambda nodes should be extracted.
    * @return A vector of lambda nodes.
    */
-  static std::vector<lambda::node *>
+  static std::vector<rvsdg::LambdaNode *>
   ExtractLambdaNodes(const phi::node & phiNode);
 };
 

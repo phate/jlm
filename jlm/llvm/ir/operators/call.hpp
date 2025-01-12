@@ -229,7 +229,7 @@ public:
   static std::unique_ptr<CallTypeClassifier>
   CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
   {
-    rvsdg::AssertGetOwnerNode<lambda::node>(output);
+    rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(output);
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }
 

@@ -384,7 +384,9 @@ test_lambda()
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto lambda = lambda::node::create(&graph.GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto d1 = lambda->AddContextVar(*x).inner;
   auto d2 = lambda->AddContextVar(*x).inner;
@@ -427,11 +429,15 @@ test_phi()
   auto r1 = pb.add_recvar(ft);
   auto r2 = pb.add_recvar(ft);
 
-  auto lambda1 = lambda::node::create(region, ft, "f", linkage::external_linkage);
+  auto lambda1 = jlm::rvsdg::LambdaNode::Create(
+      *region,
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
   auto cv1 = lambda1->AddContextVar(*d1).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
-  auto lambda2 = lambda::node::create(region, ft, "f", linkage::external_linkage);
+  auto lambda2 = jlm::rvsdg::LambdaNode::Create(
+      *region,
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
   auto cv2 = lambda2->AddContextVar(*d2).inner;
   auto f2 = lambda2->finalize({ cv2 });
 
@@ -449,8 +455,8 @@ test_phi()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(
-      jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).input(0)->origin()
-      == jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f2).input(0)->origin());
+      jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).input(0)->origin()
+      == jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
 }
 
 static int

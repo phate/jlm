@@ -58,11 +58,9 @@ PrintRvsdgTree()
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { MemoryStateType::Create() },
       { MemoryStateType::Create() });
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "f",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   auto lambdaOutput = lambda->finalize({ lambda->GetFunctionArguments()[0] });
   jlm::tests::GraphExport::Create(*lambdaOutput, "f");
 

@@ -153,7 +153,7 @@ private:
    * \return The converted MLIR RVSDG LambdaNode.
    */
   ::mlir::Operation *
-  ConvertLambda(const llvm::lambda::node & node, ::mlir::Block & block);
+  ConvertLambda(const rvsdg::LambdaNode & node, ::mlir::Block & block);
 
   /**
    * Converts an RVSDG gamma node to an MLIR RVSDG GammaNode.

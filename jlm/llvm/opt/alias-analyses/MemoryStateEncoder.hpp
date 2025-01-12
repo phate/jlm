@@ -132,13 +132,13 @@ private:
   EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
 
   void
-  EncodeLambda(const lambda::node & lambda);
+  EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeLambdaEntry(const lambda::node & lambdaNode);
+  EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EncodeLambdaExit(const lambda::node & lambdaNode);
+  EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
   EncodePhi(const phi::node & phiNode);

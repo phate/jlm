@@ -252,11 +252,12 @@ TestLambda()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
 
-  auto lambda = lambda::node::create(
-      &graph.GetRootRegion(),
-      jlm::rvsdg::FunctionType::Create({ vt }, { vt, vt }),
-      "f",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(
+          jlm::rvsdg::FunctionType::Create({ vt }, { vt, vt }),
+          "f",
+          linkage::external_linkage));
 
   auto cv1 = lambda->AddContextVar(*x).inner;
   auto cv2 = lambda->AddContextVar(*y).inner;
@@ -295,7 +296,9 @@ TestPhi()
   auto setupF1 =
       [&](jlm::rvsdg::Region & region, phi::rvoutput & rv2, jlm::rvsdg::RegionArgument & dx)
   {
-    auto lambda1 = lambda::node::create(&region, functionType, "f1", linkage::external_linkage);
+    auto lambda1 = jlm::rvsdg::LambdaNode::Create(
+        region,
+        LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
     auto f2Argument = lambda1->AddContextVar(*rv2.argument()).inner;
     auto xArgument = lambda1->AddContextVar(dx).inner;
 
@@ -311,7 +314,9 @@ TestPhi()
   auto setupF2 =
       [&](jlm::rvsdg::Region & region, phi::rvoutput & rv1, jlm::rvsdg::RegionArgument & dy)
   {
-    auto lambda2 = lambda::node::create(&region, functionType, "f2", linkage::external_linkage);
+    auto lambda2 = jlm::rvsdg::LambdaNode::Create(
+        region,
+        LlvmLambdaOperation::Create(functionType, "f2", linkage::external_linkage));
     auto f1Argument = lambda2->AddContextVar(*rv1.argument()).inner;
     lambda2->AddContextVar(dy);
 
@@ -326,7 +331,9 @@ TestPhi()
 
   auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::RegionArgument & dz)
   {
-    auto lambda3 = lambda::node::create(&region, functionType, "f3", linkage::external_linkage);
+    auto lambda3 = jlm::rvsdg::LambdaNode::Create(
+        region,
+        LlvmLambdaOperation::Create(functionType, "f3", linkage::external_linkage));
     auto zArgument = lambda3->AddContextVar(dz).inner;
 
     auto result = jlm::tests::SimpleNode::Create(
@@ -340,7 +347,9 @@ TestPhi()
 
   auto setupF4 = [&](jlm::rvsdg::Region & region)
   {
-    auto lambda = lambda::node::create(&region, functionType, "f4", linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        region,
+        LlvmLambdaOperation::Create(functionType, "f4", linkage::external_linkage));
     return lambda->finalize({ lambda->GetFunctionArguments()[0] });
   };
 

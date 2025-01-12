@@ -10,7 +10,7 @@ namespace jlm::llvm
 {
 
 rvsdg::output &
-GetMemoryStateRegionArgument(const lambda::node & lambdaNode) noexcept
+GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto argument = lambdaNode.GetFunctionArguments().back();
   JLM_ASSERT(is<MemoryStateType>(argument->type()));
@@ -18,7 +18,7 @@ GetMemoryStateRegionArgument(const lambda::node & lambdaNode) noexcept
 }
 
 rvsdg::input &
-GetMemoryStateRegionResult(const lambda::node & lambdaNode) noexcept
+GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto result = lambdaNode.GetFunctionResults().back();
   JLM_ASSERT(is<MemoryStateType>(result->type()));
@@ -26,7 +26,7 @@ GetMemoryStateRegionResult(const lambda::node & lambdaNode) noexcept
 }
 
 rvsdg::SimpleNode *
-GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
+GetMemoryStateExitMerge(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto & result = GetMemoryStateRegionResult(lambdaNode);
 
@@ -36,7 +36,7 @@ GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
 }
 
 rvsdg::SimpleNode *
-GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
+GetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto & argument = GetMemoryStateRegionArgument(lambdaNode);
 

@@ -35,7 +35,7 @@ namespace jlm::llvm
  *   llvm function representation as lambdas and memory state encoding.
  */
 [[nodiscard]] rvsdg::output &
-GetMemoryStateRegionArgument(const lambda::node & lambdaNode) noexcept;
+GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept;
 
 /**
  * Determines the formal return value representing global memory state
@@ -51,7 +51,7 @@ GetMemoryStateRegionArgument(const lambda::node & lambdaNode) noexcept;
  *   llvm function representation as lambdas and memory state encoding.
  */
 [[nodiscard]] rvsdg::input &
-GetMemoryStateRegionResult(const lambda::node & lambdaNode) noexcept;
+GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept;
 
 /**
  * Determines the memory state split node at entry.
@@ -70,7 +70,7 @@ GetMemoryStateRegionResult(const lambda::node & lambdaNode) noexcept;
  * \see GetMemoryStateExitMerge()
  */
 rvsdg::SimpleNode *
-GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
+GetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept;
 
 /**
  * Determines the memory state merge node at exit.
@@ -89,7 +89,7 @@ GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
  * \see GetMemoryStateEntrySplit()
  */
 [[nodiscard]] rvsdg::SimpleNode *
-GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept;
+GetMemoryStateExitMerge(const rvsdg::LambdaNode & lambdaNode) noexcept;
 
 }
 
