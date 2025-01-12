@@ -402,6 +402,12 @@ private:
   AnalyzeValist(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzePointerToFunction(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void

@@ -472,7 +472,9 @@ TestCallSummaryComputationFunctionPointerInDelta()
       linkage::external_linkage,
       "",
       false);
-  auto argument = deltaNode->add_ctxvar(lambdaNode->output());
+  auto argument = deltaNode->add_ctxvar(
+      jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ lambdaNode->output() }, functionType)
+          .output(0));
   deltaNode->finalize(argument);
 
   GraphExport::Create(*deltaNode->output(), "fp");
@@ -508,7 +510,9 @@ TestCallSummaryComputationLambdaResult()
   auto lambdaNodeF =
       lambda::node::create(&rvsdg.GetRootRegion(), functionTypeF, "f", linkage::external_linkage);
   auto lambdaGArgument = lambdaNodeF->AddContextVar(*lambdaOutputG).inner;
-  auto lambdaOutputF = lambdaNodeF->finalize({ lambdaGArgument });
+  auto lambdaOutputF = lambdaNodeF->finalize(
+      { jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ lambdaGArgument }, functionTypeG)
+            .output(0) });
 
   GraphExport::Create(*lambdaOutputF, "f");
 

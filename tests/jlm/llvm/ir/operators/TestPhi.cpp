@@ -54,9 +54,9 @@ TestPhiCreation()
 
   phi::builder pb;
   pb.begin(&graph.GetRootRegion());
-  auto rv1 = pb.add_recvar(PointerType::Create());
-  auto rv2 = pb.add_recvar(PointerType::Create());
-  auto rv3 = pb.add_recvar(PointerType::Create());
+  auto rv1 = pb.add_recvar(f0type);
+  auto rv2 = pb.add_recvar(f0type);
+  auto rv3 = pb.add_recvar(f1type);
 
   auto lambdaOutput0 = SetupEmptyLambda(pb.subregion(), "f0");
   auto lambdaOutput1 = SetupEmptyLambda(pb.subregion(), "f1");
