@@ -39,12 +39,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
-      jlm::llvm::attributeset attributes)
-      : type_(std::move(type)),
-        name_(std::move(name)),
-        linkage_(linkage),
-        attributes_(std::move(attributes))
-  {}
+      jlm::llvm::attributeset attributes);
 
   operation(const operation & other) = default;
 
@@ -95,11 +90,18 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] const jlm::llvm::attributeset &
+  GetArgumentAttributes(std::size_t index) const noexcept;
+
+  void
+  SetArgumentAttributes(std::size_t index, const jlm::llvm::attributeset & attributes);
+
 private:
   std::shared_ptr<const jlm::rvsdg::FunctionType> type_;
   std::string name_;
   jlm::llvm::linkage linkage_;
   jlm::llvm::attributeset attributes_;
+  std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
 };
 
 /** \brief Lambda node
@@ -180,7 +182,7 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  [[nodiscard]] const lambda::operation &
+  [[nodiscard]] lambda::operation &
   GetOperation() const noexcept override;
 
   /**
@@ -371,7 +373,6 @@ public:
   finalize(const std::vector<jlm::rvsdg::output *> & results);
 
 private:
-  std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
   std::unique_ptr<lambda::operation> Operation_;
 };
 

@@ -15,6 +15,19 @@ namespace jlm::llvm::lambda
 
 operation::~operation() = default;
 
+operation::operation(
+    std::shared_ptr<const jlm::rvsdg::FunctionType> type,
+    std::string name,
+    const jlm::llvm::linkage & linkage,
+    jlm::llvm::attributeset attributes)
+    : type_(std::move(type)),
+      name_(std::move(name)),
+      linkage_(linkage),
+      attributes_(std::move(attributes))
+{
+  ArgumentAttributes_.resize(Type()->NumArguments());
+}
+
 std::string
 operation::debug_string() const
 {
@@ -35,6 +48,20 @@ operation::copy() const
   return std::make_unique<lambda::operation>(*this);
 }
 
+[[nodiscard]] const jlm::llvm::attributeset &
+operation::GetArgumentAttributes(std::size_t index) const noexcept
+{
+  JLM_ASSERT(index < ArgumentAttributes_.size());
+  return ArgumentAttributes_[index];
+}
+
+void
+operation::SetArgumentAttributes(std::size_t index, const jlm::llvm::attributeset & attributes)
+{
+  JLM_ASSERT(index < ArgumentAttributes_.size());
+  ArgumentAttributes_[index] = attributes;
+}
+
 /* lambda node class */
 
 node::~node() = default;
@@ -42,11 +69,9 @@ node::~node() = default;
 node::node(rvsdg::Region & parent, std::unique_ptr<lambda::operation> op)
     : StructuralNode(&parent, 1),
       Operation_(std::move(op))
-{
-  ArgumentAttributes_.resize(GetOperation().Type()->NumArguments());
-}
+{}
 
-const lambda::operation &
+lambda::operation &
 node::GetOperation() const noexcept
 {
   return *Operation_;
@@ -237,11 +262,6 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   auto args = GetFunctionArguments();
   auto newArgs = lambda->GetFunctionArguments();
   JLM_ASSERT(args.size() == newArgs.size());
-  for (size_t n = 0; n < args.size(); n++)
-  {
-    lambda->SetArgumentAttributes(*newArgs[n], GetArgumentAttributes(*args[n]));
-    subregionmap.insert(args[n], newArgs[n]);
-  }
 
   /* copy subregion */
   subregion()->copy(lambda->subregion(), subregionmap, false, false);
@@ -255,22 +275,7 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   auto o = lambda->finalize(results);
   smap.insert(output(), o);
 
-  lambda->ArgumentAttributes_ = ArgumentAttributes_;
-
   return lambda;
-}
-
-[[nodiscard]] const jlm::llvm::attributeset &
-node::GetArgumentAttributes(const rvsdg::output & argument) const noexcept
-{
-  JLM_ASSERT(argument.index() < ArgumentAttributes_.size());
-  return ArgumentAttributes_[argument.index()];
-}
-
-void
-node::SetArgumentAttributes(rvsdg::output & argument, const jlm::llvm::attributeset & attributes)
-{
-  ArgumentAttributes_[argument.index()] = attributes;
 }
 
 }

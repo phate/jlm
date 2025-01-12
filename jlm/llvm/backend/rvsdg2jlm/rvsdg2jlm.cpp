@@ -131,8 +131,10 @@ create_cfg(const lambda::node & lambda, context & ctx)
   for (auto fctarg : lambda.GetFunctionArguments())
   {
     auto name = util::strfmt("_a", fctarg->index(), "_");
-    auto argument =
-        llvm::argument::create(name, fctarg->Type(), lambda.GetArgumentAttributes(*fctarg));
+    auto argument = llvm::argument::create(
+        name,
+        fctarg->Type(),
+        lambda.GetOperation().GetArgumentAttributes(fctarg->index()));
     auto v = cfg->entry()->append_argument(std::move(argument));
     ctx.insert(fctarg, v);
   }
