@@ -751,12 +751,15 @@ public:
 
 private:
   inline loop_node(rvsdg::Region * parent)
-      : StructuralNode(loop_op(), parent, 1)
+      : StructuralNode(parent, 1)
   {}
 
   jlm::rvsdg::node_output * _predicate_buffer;
 
 public:
+  [[nodiscard]] const rvsdg::Operation &
+  GetOperation() const noexcept override;
+
   static loop_node *
   create(rvsdg::Region * parent, bool init = true);
 

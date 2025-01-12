@@ -290,9 +290,9 @@ class CallNode final : public jlm::rvsdg::SimpleNode
 private:
   CallNode(
       rvsdg::Region & region,
-      const CallOperation & operation,
+      std::unique_ptr<CallOperation> operation,
       const std::vector<jlm::rvsdg::output *> & operands)
-      : SimpleNode(&region, operation, operands)
+      : SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -463,21 +463,21 @@ public:
   static std::vector<jlm::rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const CallOperation & callOperation,
+      std::unique_ptr<CallOperation> callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return CreateNode(region, callOperation, operands).Results();
+    return CreateNode(region, std::move(callOperation), operands).Results();
   }
 
   static CallNode &
   CreateNode(
       rvsdg::Region & region,
-      const CallOperation & callOperation,
+      std::unique_ptr<CallOperation> callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    CheckFunctionType(*callOperation.GetFunctionType());
+    CheckFunctionType(*callOperation->GetFunctionType());
 
-    return *(new CallNode(region, callOperation, operands));
+    return *(new CallNode(region, std::move(callOperation), operands));
   }
 
   static CallNode &
@@ -488,11 +488,11 @@ public:
   {
     CheckFunctionInputType(function->type());
 
-    CallOperation callOperation(std::move(functionType));
+    auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
     std::vector<rvsdg::output *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
 
-    return CreateNode(*function->region(), callOperation, operands);
+    return CreateNode(*function->region(), std::move(callOperation), operands);
   }
 
   /**

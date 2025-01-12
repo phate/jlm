@@ -39,8 +39,9 @@ operation::copy() const
 
 node::~node() = default;
 
-node::node(rvsdg::Region & parent, lambda::operation op)
-    : StructuralNode(std::move(op), &parent, 1)
+node::node(rvsdg::Region & parent, std::unique_ptr<lambda::operation> op)
+    : StructuralNode(&parent, 1),
+      Operation_(std::move(op))
 {
   ArgumentAttributes_.resize(GetOperation().Type()->NumArguments());
 }
@@ -48,7 +49,7 @@ node::node(rvsdg::Region & parent, lambda::operation op)
 const lambda::operation &
 node::GetOperation() const noexcept
 {
-  return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::GetOperation());
+  return *Operation_;
 }
 
 [[nodiscard]] std::vector<rvsdg::output *>
@@ -167,7 +168,7 @@ node::create(
     const llvm::linkage & linkage,
     const attributeset & attributes)
 {
-  lambda::operation op(type, name, linkage, attributes);
+  auto op = std::make_unique<lambda::operation>(type, name, linkage, attributes);
   auto node = new lambda::node(*parent, std::move(op));
 
   for (auto & argumentType : type->Arguments())

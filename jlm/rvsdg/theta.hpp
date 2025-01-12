@@ -66,6 +66,9 @@ public:
     rvsdg::output * output;
   };
 
+  [[nodiscard]] const ThetaOperation &
+  GetOperation() const noexcept override;
+
   static ThetaNode *
   create(rvsdg::Region * parent)
   {

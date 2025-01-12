@@ -91,7 +91,9 @@ rvsdg::Node *
 LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<LoadNonVolatileOperation> op(
+      util::AssertedCast<LoadNonVolatileOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
@@ -166,7 +168,9 @@ LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & m
 rvsdg::Node *
 LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<LoadVolatileOperation> op(
+      util::AssertedCast<LoadVolatileOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 /* load normal form */
