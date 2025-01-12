@@ -55,7 +55,7 @@ ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, Node & node)
     {
       // In case of common node elimination, it can happen that the outputs of the current node are
       // returned. The diversion of its users above is therefore a no-op. However, this means that
-      // the outputs of node still have users, and we can not just remove the node below.
+      // the outputs of the node still have users, and we can not just remove the node below.
       return false;
     }
 
