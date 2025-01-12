@@ -511,8 +511,9 @@ Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::Variab
     operands.push_back(variableMap.lookup(operand));
   }
 
-  auto operation = util::AssertedCast<const TOperation>(&threeAddressCode.operation());
-  auto results = TNode::Create(region, *operation, operands);
+  std::unique_ptr<TOperation> operation(
+      util::AssertedCast<TOperation>(threeAddressCode.operation().copy().release()));
+  auto results = TNode::Create(region, std::move(operation), operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());
   for (size_t n = 0; n < threeAddressCode.nresults(); n++)
@@ -994,6 +995,7 @@ ConvertFunctionNode(
     return &GraphImport::Create(
         *region.graph(),
         functionNode.GetFunctionType(),
+        functionNode.GetFunctionType(),
         functionNode.name(),
         functionNode.linkage());
   }
@@ -1035,6 +1037,7 @@ ConvertDataNode(
       return &GraphImport::Create(
           *region.graph(),
           dataNode.GetValueType(),
+          PointerType::Create(),
           dataNode.name(),
           dataNode.linkage());
     }
@@ -1200,9 +1203,6 @@ ConvertInterProceduralGraphModule(
 
   auto nf = graph->GetNodeNormalForm(typeid(rvsdg::Operation));
   nf->set_mutable(false);
-
-  /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
-  rvsdg::BinaryOperation::normal_form(graph)->set_flatten(false);
 
   RegionalizedVariableMap regionalizedVariableMap(
       interProceduralGraphModule,

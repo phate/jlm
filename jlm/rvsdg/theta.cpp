@@ -26,8 +26,17 @@ ThetaOperation::copy() const
 
 ThetaNode::~ThetaNode() noexcept = default;
 
+[[nodiscard]] const ThetaOperation &
+ThetaNode::GetOperation() const noexcept
+{
+  // Theta presently has no parametrization, so we can indeed
+  // just return a singleton here.
+  static const ThetaOperation singleton;
+  return singleton;
+}
+
 ThetaNode::ThetaNode(rvsdg::Region & parent)
-    : StructuralNode(ThetaOperation(), &parent, 1)
+    : StructuralNode(&parent, 1)
 {
   auto predicate = control_false(subregion());
   RegionResult::Create(*subregion(), *predicate, nullptr, ControlType::Create(2));

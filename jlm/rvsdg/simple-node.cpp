@@ -42,38 +42,13 @@ SimpleNode::~SimpleNode()
 }
 
 SimpleNode::SimpleNode(
-    rvsdg::Region * region,
-    const SimpleOperation & op,
-    const std::vector<jlm::rvsdg::output *> & operands)
-    : Node(op.copy(), region)
-{
-  if (SimpleNode::GetOperation().narguments() != operands.size())
-    throw jlm::util::error(jlm::util::strfmt(
-        "Argument error - expected ",
-        SimpleNode::GetOperation().narguments(),
-        ", received ",
-        operands.size(),
-        " arguments."));
-
-  for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
-  {
-    add_input(
-        std::make_unique<simple_input>(this, operands[n], SimpleNode::GetOperation().argument(n)));
-  }
-
-  for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<simple_output>(this, SimpleNode::GetOperation().result(n)));
-
-  on_node_create(this);
-}
-
-SimpleNode::SimpleNode(
     rvsdg::Region & region,
     std::unique_ptr<SimpleOperation> operation,
     const std::vector<jlm::rvsdg::output *> & operands)
-    : Node(std::move(operation), &region)
+    : Node(&region),
+      Operation_(std::move(operation))
 {
-  if (SimpleNode::GetOperation().narguments() != operands.size())
+  if (GetOperation().narguments() != operands.size())
     throw jlm::util::error(jlm::util::strfmt(
         "Argument error - expected ",
         SimpleNode::GetOperation().narguments(),
@@ -96,7 +71,7 @@ SimpleNode::SimpleNode(
 const SimpleOperation &
 SimpleNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const SimpleOperation>(&Node::GetOperation());
+  return *Operation_;
 }
 
 Node *

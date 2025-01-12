@@ -111,14 +111,13 @@ function_node::name() const noexcept
 const jlm::rvsdg::Type &
 function_node::type() const noexcept
 {
-  static PointerType pointerType;
-  return pointerType;
+  return *FunctionType_;
 }
 
 std::shared_ptr<const jlm::rvsdg::Type>
 function_node::Type() const
 {
-  return PointerType::Create();
+  return FunctionType_;
 }
 
 const llvm::linkage &

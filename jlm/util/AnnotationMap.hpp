@@ -168,7 +168,7 @@ class AnnotationMap final
     typename AnnotationMapType::const_iterator It_ = {};
   };
 
-  using AnnotationRange = iterator_range<AnnotationMap::ConstIterator>;
+  using AnnotationRange = IteratorRange<AnnotationMap::ConstIterator>;
 
 public:
   /**
