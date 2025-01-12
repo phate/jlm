@@ -8,8 +8,6 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <deque>
-
 namespace jlm::llvm::lambda
 {
 
@@ -142,47 +140,6 @@ node::AddContextVar(jlm::rvsdg::output & origin)
   auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
   auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
   return ContextVar{ input, argument };
-}
-
-rvsdg::output &
-node::GetMemoryStateRegionArgument() const noexcept
-{
-  auto argument = GetFunctionArguments().back();
-  JLM_ASSERT(is<MemoryStateType>(argument->type()));
-  return *argument;
-}
-
-rvsdg::input &
-node::GetMemoryStateRegionResult() const noexcept
-{
-  auto result = GetFunctionResults().back();
-  JLM_ASSERT(is<MemoryStateType>(result->type()));
-  return *result;
-}
-
-rvsdg::SimpleNode *
-node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
-{
-  auto & result = lambdaNode.GetMemoryStateRegionResult();
-
-  auto node = rvsdg::output::GetNode(*result.origin());
-  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                       : nullptr;
-}
-
-rvsdg::SimpleNode *
-node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
-{
-  auto & argument = lambdaNode.GetMemoryStateRegionArgument();
-
-  // If a memory state entry split node is present, then we would expect the node to be the only
-  // user of the memory state argument.
-  if (argument.nusers() != 1)
-    return nullptr;
-
-  auto node = rvsdg::node_input::GetNode(**argument.begin());
-  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
 }
 
 lambda::node *

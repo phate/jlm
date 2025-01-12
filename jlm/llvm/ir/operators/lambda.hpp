@@ -21,8 +21,6 @@
 namespace jlm::llvm
 {
 
-class CallNode;
-
 namespace lambda
 {
 
@@ -170,12 +168,6 @@ public:
   [[nodiscard]] std::vector<rvsdg::input *>
   GetFunctionResults() const;
 
-  [[nodiscard]] const jlm::llvm::attributeset &
-  GetArgumentAttributes(const rvsdg::output & argument) const noexcept;
-
-  void
-  SetArgumentAttributes(rvsdg::output & argument, const jlm::llvm::attributeset & attributes);
-
   [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
@@ -290,42 +282,6 @@ public:
 
   lambda::node *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
-
-  /**
-   * @return The memory state argument of the lambda subregion.
-   */
-  [[nodiscard]] rvsdg::output &
-  GetMemoryStateRegionArgument() const noexcept;
-
-  /**
-   * @return The memory state result of the lambda subregion.
-   */
-  [[nodiscard]] rvsdg::input &
-  GetMemoryStateRegionResult() const noexcept;
-
-  /**
-   *
-   * @param lambdaNode The lambda node for which to retrieve the
-   * LambdaEntryMemoryStateSplitOperation node.
-   * @return The LambdaEntryMemoryStateSplitOperation node connected to the memory state input if
-   * present, otherwise nullptr.
-   *
-   * @see GetMemoryStateExitMerge()
-   */
-  static rvsdg::SimpleNode *
-  GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
-
-  /**
-   *
-   * @param lambdaNode The lambda node for which to retrieve the
-   * LambdaExitMemoryStateMergeOperation node.
-   * @return The LambdaExitMemoryStateMergeOperation node connected to the memory state output if
-   * present, otherwise nullptr.
-   *
-   * @see GetMemoryStateEntrySplit()
-   */
-  [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept;
 
   /**
    * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
