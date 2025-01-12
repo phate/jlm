@@ -27,11 +27,6 @@ public:
 
 protected:
   SimpleNode(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands);
-
-  SimpleNode(
       rvsdg::Region & region,
       std::unique_ptr<SimpleOperation> operation,
       const std::vector<jlm::rvsdg::output *> & operands);
@@ -58,7 +53,9 @@ public:
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
-    return new SimpleNode(region, op, operands);
+    std::unique_ptr<SimpleOperation> newOp(
+        util::AssertedCast<SimpleOperation>(op.copy().release()));
+    return new SimpleNode(*region, std::move(newOp), operands);
   }
 
   static inline jlm::rvsdg::SimpleNode &
@@ -79,6 +76,9 @@ public:
     auto nf = static_cast<simple_normal_form *>(region->graph()->GetNodeNormalForm(typeid(op)));
     return nf->normalized_create(region, op, operands);
   }
+
+private:
+  std::unique_ptr<SimpleOperation> Operation_;
 };
 
 /**

@@ -351,6 +351,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           auto & newGraphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
               oldGraphImport->ValueType(),
+              oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
               oldGraphImport->Linkage());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
@@ -373,6 +374,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           auto & graphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
               odn->Type(),
+              llvm::PointerType::Create(),
               odn->name(),
               llvm::linkage::external_linkage);
           smap.insert(ln->input(i)->origin(), &graphImport);
@@ -393,6 +395,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       // add function as input to rm and remove it
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
+          ln->Type(),
           ln->Type(),
           ln->name(),
           llvm::linkage::external_linkage); // TODO: change linkage?

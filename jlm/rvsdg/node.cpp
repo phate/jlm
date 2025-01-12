@@ -188,11 +188,10 @@ node_output::GetOwner() const noexcept
 
 /* node class */
 
-Node::Node(std::unique_ptr<Operation> op, Region * region)
+Node::Node(Region * region)
     : depth_(0),
       graph_(region->graph()),
-      region_(region),
-      operation_(std::move(op))
+      region_(region)
 {
   bool wasAdded = region->AddBottomNode(*this);
   JLM_ASSERT(wasAdded);

@@ -89,7 +89,9 @@ rvsdg::Node *
 StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<StoreNonVolatileOperation> op(
+      util::AssertedCast<StoreNonVolatileOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
@@ -164,7 +166,9 @@ StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & 
 rvsdg::Node *
 StoreVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<StoreVolatileOperation> op(
+      util::AssertedCast<StoreVolatileOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 /* store normal form */
