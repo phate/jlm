@@ -54,10 +54,10 @@ public:
 namespace rvsdg2jlm
 {
 
-static std::shared_ptr<const FunctionType>
+static std::shared_ptr<const rvsdg::FunctionType>
 is_function_import(const llvm::GraphImport * graphImport)
 {
-  return std::dynamic_pointer_cast<const FunctionType>(graphImport->ValueType());
+  return std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType());
 }
 
 static std::unique_ptr<data_node_init>

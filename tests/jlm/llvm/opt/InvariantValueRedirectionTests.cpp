@@ -37,8 +37,9 @@ TestGamma()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionType =
-      FunctionType::Create({ controlType, valueType, valueType }, { valueType, valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { controlType, valueType, valueType },
+      { valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -89,7 +90,7 @@ TestTheta()
   auto ioStateType = iostatetype::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType },
       { controlType, valueType, ioStateType });
 
@@ -145,7 +146,7 @@ TestCall()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionTypeTest1 = FunctionType::Create(
+  auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, valueType, ioStateType, memoryStateType },
       { valueType, valueType, ioStateType, memoryStateType });
 
@@ -188,7 +189,7 @@ TestCall()
 
   jlm::rvsdg::output * lambdaOutputTest2;
   {
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, valueType, ioStateType, memoryStateType },
         { valueType, valueType, ioStateType, memoryStateType });
 
@@ -240,7 +241,7 @@ TestCallWithMemoryStateNodes()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionTypeTest1 = FunctionType::Create(
+  auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
@@ -283,7 +284,7 @@ TestCallWithMemoryStateNodes()
 
   jlm::rvsdg::output * lambdaOutputTest2;
   {
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, ioStateType, memoryStateType },
         { valueType, ioStateType, memoryStateType });
 

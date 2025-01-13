@@ -20,7 +20,7 @@ TestArgumentIterators()
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   {
-    auto functionType = FunctionType::Create({ vt }, { vt });
+    auto functionType = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
 
     auto lambda = lambda::node::create(
         &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -38,7 +38,7 @@ TestArgumentIterators()
   }
 
   {
-    auto functionType = FunctionType::Create({}, { vt });
+    auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
     auto lambda = lambda::node::create(
         &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -56,7 +56,7 @@ TestArgumentIterators()
   {
     auto rvsdgImport = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), vt, "");
 
-    auto functionType = FunctionType::Create({ vt, vt, vt }, { vt, vt });
+    auto functionType = jlm::rvsdg::FunctionType::Create({ vt, vt, vt }, { vt, vt });
 
     auto lambda = lambda::node::create(
         &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -85,7 +85,7 @@ TestInvalidOperandRegion()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create({}, { vt });
+  auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
@@ -117,7 +117,7 @@ TestRemoveLambdaInputsWhere()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create({}, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -186,7 +186,7 @@ TestPruneLambdaInputs()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create({}, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();

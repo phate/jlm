@@ -25,7 +25,7 @@ void
 convert_prints(
     rvsdg::Region * region,
     rvsdg::output * printf,
-    const std::shared_ptr<const llvm::FunctionType> & functionType);
+    const std::shared_ptr<const rvsdg::FunctionType> & functionType);
 
 rvsdg::output *
 route_to_region(rvsdg::output * output, rvsdg::Region * region);
