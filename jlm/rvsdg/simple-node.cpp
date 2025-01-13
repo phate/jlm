@@ -119,7 +119,9 @@ NormalizeSimpleOperationCommonNodeElimination(
 {
   auto isCongruent = [&](const Node & node)
   {
-    return node.GetOperation() == operation && operands == rvsdg::operands(&node);
+    auto & nodeOperation = node.GetOperation();
+    return nodeOperation == operation && operands == rvsdg::operands(&node)
+        && &nodeOperation != &operation;
   };
 
   if (operands.empty())

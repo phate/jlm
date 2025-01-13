@@ -125,3 +125,61 @@ NormalizeSimpleOperationCne_NodesWithOperands()
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithOperands",
     NormalizeSimpleOperationCne_NodesWithOperands)
+
+static int
+NormalizeSimpleOperationCne_Failure()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  Graph graph;
+  const auto valueType = jlm::tests::valuetype::Create();
+  const auto stateType = jlm::tests::statetype::Create();
+
+  auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
+  auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
+
+  auto & nullaryValueNode =
+      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
+  auto & nullaryStateNode =
+      CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
+  auto & unaryValueNode = CreateOpNode<jlm::tests::unary_op>({ v1 }, valueType, valueType);
+  auto & unaryStateNode = CreateOpNode<jlm::tests::unary_op>({ s1 }, stateType, stateType);
+
+  auto & exNullaryValueNode = jlm::tests::GraphExport::Create(*nullaryValueNode.output(0), "nvn1");
+  auto & exNullaryStateNode = jlm::tests::GraphExport::Create(*nullaryStateNode.output(0), "nvn2");
+  auto & exUnaryValueNode = jlm::tests::GraphExport::Create(*unaryValueNode.output(0), "nsn1");
+  auto & exUnaryStateNode = jlm::tests::GraphExport::Create(*unaryStateNode.output(0), "nsn2");
+
+  view(graph, stdout);
+
+  // Act
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  {
+    return NormalizeSimpleOperationCommonNodeElimination(
+        graph.GetRootRegion(),
+        operation,
+        operands);
+  };
+
+  // Act
+  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryValueNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryStateNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exUnaryValueNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exUnaryStateNode.origin()));
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  assert(output::GetNode(*exNullaryValueNode.origin()) == &nullaryValueNode);
+  assert(output::GetNode(*exNullaryStateNode.origin()) == &nullaryStateNode);
+  assert(output::GetNode(*exUnaryValueNode.origin()) == &unaryValueNode);
+  assert(output::GetNode(*exUnaryStateNode.origin()) == &unaryStateNode);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/NormalizeSimpleOperationCne_Failure",
+    NormalizeSimpleOperationCne_Failure)
