@@ -50,8 +50,7 @@ GetStatisticsIdNames()
   return mapping;
 }
 
-Statistics::~
-Statistics() = default;
+Statistics::~Statistics() = default;
 
 std::string_view
 Statistics::GetName() const

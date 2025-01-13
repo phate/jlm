@@ -66,8 +66,7 @@ public:
       LastEnumValue
     };
 
-    Configuration(
-        util::HashSet<Annotation> requiredAnnotations)
+    Configuration(util::HashSet<Annotation> requiredAnnotations)
         : RequiredAnnotations_(std::move(requiredAnnotations))
     {}
 

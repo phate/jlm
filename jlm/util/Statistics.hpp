@@ -9,8 +9,8 @@
 
 #include <jlm/util/file.hpp>
 #include <jlm/util/HashSet.hpp>
-#include <jlm/util/time.hpp>
 #include <jlm/util/strfmt.hpp>
+#include <jlm/util/time.hpp>
 
 #include <cstdint>
 #include <list>
@@ -65,8 +65,7 @@ public:
   using MeasurementList = std::list<std::pair<std::string, Measurement>>;
   using TimerList = std::list<std::pair<std::string, util::timer>>;
 
-  virtual ~
-  Statistics();
+  virtual ~Statistics();
 
   Statistics(const Statistics::Id & statisticsId, util::filepath sourceFile)
       : StatisticsId_(statisticsId),
@@ -251,14 +250,15 @@ public:
    * Creates settings for a StatisticsCollector that neither demands any statistics,
    * nor specifies a directory to place statistics and debug output files in.
    */
-  StatisticsCollectorSettings() {}
+  StatisticsCollectorSettings()
+  {}
 
   /**
-   * Creates settings for a StatisticsCollector that demands the given statistics be collected in memory.
+   * Creates settings for a StatisticsCollector that demands the given statistics be collected in
+   * memory.
    * @param demandedStatistics a hash set of statistics ids to collect
    */
-  explicit
-  StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
+  explicit StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
       : DemandedStatistics_(std::move(demandedStatistics))
   {}
 
@@ -417,8 +417,7 @@ class StatisticsCollector final
   private:
     friend StatisticsCollector;
 
-    explicit
-    StatisticsIterator(const std::vector<std::unique_ptr<Statistics>>::const_iterator & it)
+    explicit StatisticsIterator(const std::vector<std::unique_ptr<Statistics>>::const_iterator & it)
         : it_(it)
     {}
 
@@ -479,8 +478,7 @@ public:
   StatisticsCollector()
   {}
 
-  explicit
-  StatisticsCollector(StatisticsCollectorSettings settings)
+  explicit StatisticsCollector(StatisticsCollectorSettings settings)
       : Settings_(std::move(settings))
   {}
 

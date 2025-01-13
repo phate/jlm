@@ -8,7 +8,8 @@
 
 #include <random>
 
-namespace jlm::util {
+namespace jlm::util
+{
 
 std::string
 CreateRandomAlphanumericString(std::size_t length)

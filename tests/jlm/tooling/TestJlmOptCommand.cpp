@@ -24,7 +24,8 @@ TestStatistics()
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::SteensgaardAnalysis },
-      expectedStatisticsDir, "inputFile");
+      expectedStatisticsDir,
+      "inputFile");
 
   JlmOptCommandLineOptions commandLineOptions(
       jlm::util::filepath("inputFile.ll"),

@@ -915,8 +915,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   util::StatisticsCollectorSettings statisticsCollectorSettings(
       std::move(demandedStatistics),
       statisticsDirectoryFilePath,
-      inputFilePath.base()
-      );
+      inputFilePath.base());
 
   util::HashSet<llvm::RvsdgTreePrinter::Configuration::Annotation> demandedAnnotations(
       { rvsdgTreePrinterAnnotations.begin(), rvsdgTreePrinterAnnotations.end() });
