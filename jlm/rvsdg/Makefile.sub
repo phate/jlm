@@ -69,6 +69,7 @@ librvsdg_TESTS = \
 	tests/jlm/rvsdg/ArgumentTests \
 	tests/jlm/rvsdg/RegionTests \
 	tests/jlm/rvsdg/ResultTests \
+	tests/jlm/rvsdg/SimpleOperationTests \
 	tests/jlm/rvsdg/test-binary \
 	tests/jlm/rvsdg/test-bottomup \
 	tests/jlm/rvsdg/test-cse \
