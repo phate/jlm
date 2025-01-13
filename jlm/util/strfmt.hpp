@@ -39,6 +39,15 @@ strfmt(Args... args)
   return os.str();
 }
 
+/**
+ * Creates a string of the given length using random letters and digits.
+ * Uses letters a-z, A-Z and digits 0-9
+ * @param length the length of the string
+ * @return the created string
+ */
+std::string
+CreateRandomAlphanumericString(std::size_t length);
+
 }
 
 #endif

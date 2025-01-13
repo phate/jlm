@@ -328,10 +328,12 @@ JlmOptCommand::ToString() const
   }
 
   std::string statisticsDirArgument =
-      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetFilePath().path() + " ";
+      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetOutputDirectory().to_str()
+      + " ";
 
   return util::strfmt(
-      ProgramName_ + " ",
+      ProgramName_,
+      " ",
       outputFormatArgument,
       optimizationArguments,
       statisticsDirArgument,

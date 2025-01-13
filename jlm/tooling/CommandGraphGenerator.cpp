@@ -129,20 +129,19 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
     {
       util::filepath tempDirectory(std::filesystem::temp_directory_path());
       auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
-      auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          tempDirectory,
-          compilation.InputFile());
+
       util::StatisticsCollectorSettings statisticsCollectorSettings(
-          statisticsFilePath,
-          commandLineOptions.JlmOptPassStatistics_);
+          commandLineOptions.JlmOptPassStatistics_,
+          tempDirectory,
+          compilation.InputFile().base());
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
           clangCommand->OutputFile(),
           JlmOptCommandLineOptions::InputFormat::Llvm,
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
-          statisticsCollectorSettings,
-          jlm::llvm::RvsdgTreePrinter::Configuration(tempDirectory, {}),
+          std::move(statisticsCollectorSettings),
+          jlm::llvm::RvsdgTreePrinter::Configuration({}),
           commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode =

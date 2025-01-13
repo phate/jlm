@@ -9,6 +9,7 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/util/Statistics.hpp>
 
 #include <fstream>
 
@@ -22,6 +23,29 @@ ReadFile(const std::string & outputFilePath)
   return buffer.str();
 }
 
+/**
+ * Runs the given RvsdgTreePrinter on the given module, reads the file back in, and deletes the file
+ */
+static std::string
+RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter & printer)
+{
+  using namespace jlm::util;
+
+  auto tmpDir = std::filesystem::temp_directory_path();
+  StatisticsCollectorSettings settings({}, filepath(tmpDir), "TestTreePrinter");
+  StatisticsCollector collector(settings);
+
+  printer.run(module, collector);
+
+  auto fileName = tmpDir / ("TestTreePrinter-" + settings.GetUniqueString() + "-rvsdgTree-0.txt");
+  auto result = ReadFile(fileName);
+
+  // Cleanup
+  std::filesystem::remove(fileName);
+
+  return result;
+}
+
 static int
 PrintRvsdgTree()
 {
@@ -29,8 +53,7 @@ PrintRvsdgTree()
   using namespace jlm::util;
 
   // Arrange
-  std::string fileName = "PrintTreeTest";
-  auto rvsdgModule = RvsdgModule::Create({ fileName }, "", "");
+  auto rvsdgModule = RvsdgModule::Create({ "" }, "", "");
 
   auto functionType =
       FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
@@ -42,17 +65,14 @@ PrintRvsdgTree()
   auto lambdaOutput = lambda->finalize({ lambda->GetFunctionArguments()[0] });
   jlm::tests::GraphExport::Create(*lambdaOutput, "f");
 
-  auto tempDirectory = std::filesystem::temp_directory_path();
-  RvsdgTreePrinter::Configuration configuration({ tempDirectory }, {});
+  RvsdgTreePrinter::Configuration configuration({});
   RvsdgTreePrinter printer(configuration);
 
   // Act
-  printer.run(*rvsdgModule);
-
-  // Assert
-  auto tree = ReadFile(tempDirectory.string() + "/" + fileName + "-rvsdgTree-0");
+  auto tree = RunAndExtractFile(*rvsdgModule, printer);
   std::cout << tree;
 
+  // Assert
   auto expectedTree = "RootRegion\n"
                       "-LAMBDA[f]\n"
                       "--Region[0]\n\n";
@@ -71,8 +91,7 @@ PrintNumRvsdgNodesAnnotation()
   using namespace jlm::util;
 
   // Arrange
-  std::string fileName = "PrintNumRvsdgNodesAnnotationTest";
-  auto rvsdgModule = RvsdgModule::Create({ fileName }, "", "");
+  auto rvsdgModule = RvsdgModule::Create({ "" }, "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = jlm::tests::structural_node::create(rootRegion, 2);
@@ -81,19 +100,15 @@ PrintNumRvsdgNodesAnnotation()
 
   jlm::tests::test_op::create(rootRegion, {}, {});
 
-  auto tempDirectory = std::filesystem::temp_directory_path();
   RvsdgTreePrinter::Configuration configuration(
-      { tempDirectory },
       { RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes });
   RvsdgTreePrinter printer(configuration);
 
   // Act
-  printer.run(*rvsdgModule);
-
-  // Assert
-  auto tree = ReadFile(tempDirectory.string() + "/" + fileName + "-rvsdgTree-0");
+  auto tree = RunAndExtractFile(*rvsdgModule, printer);
   std::cout << tree;
 
+  // Assert
   auto expectedTree = "RootRegion NumRvsdgNodes:2\n"
                       "-STRUCTURAL_TEST_NODE NumRvsdgNodes:2\n"
                       "--Region[0] NumRvsdgNodes:1\n"
@@ -118,8 +133,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 
-  std::string fileName = "PrintNumMemoryStateInputsOutputsAnnotationTest";
-  auto rvsdgModule = RvsdgModule::Create({ fileName }, "", "");
+  auto rvsdgModule = RvsdgModule::Create({ "" }, "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
@@ -135,19 +149,15 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   jlm::tests::GraphExport::Create(ox, "x");
   jlm::tests::GraphExport::Create(oy, "y");
 
-  auto tempDirectory = std::filesystem::temp_directory_path();
   RvsdgTreePrinter::Configuration configuration(
-      { tempDirectory },
       { RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs });
   RvsdgTreePrinter printer(configuration);
 
   // Act
-  printer.run(*rvsdgModule);
-
-  // Assert
-  auto tree = ReadFile(tempDirectory.string() + "/" + fileName + "-rvsdgTree-0");
+  auto tree = RunAndExtractFile(*rvsdgModule, printer);
   std::cout << tree;
 
+  // Assert
   auto expectedTree =
       "RootRegion NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
       "-STRUCTURAL_TEST_NODE NumMemoryStateTypeInputs:1 NumMemoryStateTypeOutputs:1\n"

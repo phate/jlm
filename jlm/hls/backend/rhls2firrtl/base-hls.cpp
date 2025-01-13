@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace jlm::hls
 {

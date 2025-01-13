@@ -3,6 +3,7 @@ libutil_SOURCES = \
 	jlm/util/common.cpp \
 	jlm/util/GraphWriter.cpp \
 	jlm/util/Statistics.cpp \
+	jlm/util/strfmt.cpp \
 
 libutil_HEADERS = \
     jlm/util/AnnotationMap.hpp \

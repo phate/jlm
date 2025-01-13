@@ -8,7 +8,6 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/util/AnnotationMap.hpp>
-#include <jlm/util/file.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::rvsdg
@@ -67,24 +66,9 @@ public:
       LastEnumValue
     };
 
-    Configuration(
-        const util::filepath & outputDirectory,
-        util::HashSet<Annotation> requiredAnnotations)
-        : OutputDirectory_(std::move(outputDirectory)),
-          RequiredAnnotations_(std::move(requiredAnnotations))
-    {
-      JLM_ASSERT(outputDirectory.IsDirectory());
-      JLM_ASSERT(outputDirectory.Exists());
-    }
-
-    /**
-     * The output directory for the RVSDG tree files.
-     */
-    [[nodiscard]] const util::filepath &
-    OutputDirectory() const noexcept
-    {
-      return OutputDirectory_;
-    }
+    Configuration(util::HashSet<Annotation> requiredAnnotations)
+        : RequiredAnnotations_(std::move(requiredAnnotations))
+    {}
 
     /**
      * The required annotations for the RVSDG tree.
@@ -96,7 +80,6 @@ public:
     }
 
   private:
-    util::filepath OutputDirectory_;
     util::HashSet<Annotation> RequiredAnnotations_ = {};
   };
 
@@ -117,10 +100,7 @@ public:
   operator=(RvsdgTreePrinter &&) = delete;
 
   void
-  run(RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector & statisticsCollector) override;
-
-  void
-  run(RvsdgModule & rvsdgModule);
+  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   /**
@@ -158,15 +138,6 @@ private:
   AnnotateNumMemoryStateInputsOutputs(
       const rvsdg::Graph & rvsdg,
       util::AnnotationMap & annotationMap);
-
-  void
-  WriteTreeToFile(const RvsdgModule & rvsdgModule, const std::string & tree) const;
-
-  [[nodiscard]] util::file
-  CreateOutputFile(const RvsdgModule & rvsdgModule) const;
-
-  static uint64_t
-  GetOutputFileNameCounter(const RvsdgModule & rvsdgModule);
 
   [[nodiscard]] static bool
   IsMemoryStateInput(const rvsdg::input * input) noexcept;

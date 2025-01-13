@@ -825,11 +825,9 @@ TestStatistics()
 {
   // Arrange
   jlm::tests::LoadTest1 test;
-  jlm::util::filepath filePath("/tmp/TestStatistics");
   auto pointsToGraph = RunSteensgaard(test.module());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      filePath,
       { jlm::util::Statistics::Id::AgnosticMemoryNodeProvisioning });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
