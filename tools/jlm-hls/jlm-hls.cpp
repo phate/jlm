@@ -57,10 +57,19 @@ main(int argc, char ** argv)
     exit(1);
   }
 
+  // TODO: Get demanded statistics and output folder from command line options
+  auto statisticsFolder = std::filesystem::temp_directory_path();
+  auto moduleName = commandLineOptions.InputFile_.base();
+  jlm::util::StatisticsCollectorSettings settings(
+      {},
+      jlm::util::filepath(statisticsFolder),
+      moduleName);
+  jlm::util::StatisticsCollector collector(std::move(settings));
+
   /* LLVM to JLM pass */
   auto jlmModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
-  jlm::util::StatisticsCollector statisticsCollector;
-  auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(*jlmModule, statisticsCollector);
+
+  auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(*jlmModule, collector);
 
   if (commandLineOptions.ExtractHlsFunction_)
   {
@@ -75,7 +84,7 @@ main(int argc, char ** argv)
       == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Firrtl)
   {
     jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.to_str() + ".ref.ll");
-    jlm::hls::rvsdg2rhls(*rvsdgModule);
+    jlm::hls::rvsdg2rhls(*rvsdgModule, collector);
 
     // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
     // Could potentially change to pass the FIRRTL directly to the converter, but the converter
@@ -101,7 +110,7 @@ main(int argc, char ** argv)
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)
   {
-    jlm::hls::rvsdg2rhls(*rvsdgModule);
+    jlm::hls::rvsdg2rhls(*rvsdgModule, collector);
 
     jlm::hls::DotHLS dhls;
     stringToFile(dhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.path() + "/jlm_hls.dot");
@@ -110,6 +119,8 @@ main(int argc, char ** argv)
   {
     JLM_UNREACHABLE("Format not supported.\n");
   }
+
+  collector.PrintStatistics();
 
   return 0;
 }

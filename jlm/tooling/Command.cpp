@@ -50,9 +50,11 @@
 namespace jlm::tooling
 {
 
-Command::~Command() = default;
+Command::~
+Command() = default;
 
-PrintCommandsCommand::~PrintCommandsCommand() = default;
+PrintCommandsCommand::~
+PrintCommandsCommand() = default;
 
 std::string
 PrintCommandsCommand::ToString() const
@@ -81,7 +83,8 @@ PrintCommandsCommand::Create(std::unique_ptr<CommandGraph> commandGraph)
   return newCommandGraph;
 }
 
-ClangCommand::~ClangCommand() = default;
+ClangCommand::~
+ClangCommand() = default;
 
 std::string
 ClangCommand::ToString() const
@@ -234,7 +237,8 @@ ClangCommand::Run() const
     exit(EXIT_FAILURE);
 }
 
-LlcCommand::~LlcCommand() = default;
+LlcCommand::~
+LlcCommand() = default;
 
 std::string
 LlcCommand::ToString() const
@@ -286,9 +290,11 @@ LlcCommand::ToString(const RelocationModel & relocationModel)
   return map[relocationModel];
 }
 
-JlmOptCommand::~JlmOptCommand() = default;
+JlmOptCommand::~
+JlmOptCommand() = default;
 
-JlmOptCommand::JlmOptCommand(
+JlmOptCommand::
+JlmOptCommand(
     std::string programName,
     const jlm::tooling::JlmOptCommandLineOptions & commandLineOptions)
     : ProgramName_(std::move(programName)),
@@ -328,10 +334,11 @@ JlmOptCommand::ToString() const
   }
 
   std::string statisticsDirArgument =
-      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetFilePath().path() + " ";
+      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetOutputDirectory().to_str()
+      + " ";
 
   return util::strfmt(
-      ProgramName_ + " ",
+      ProgramName_, " ",
       outputFormatArgument,
       optimizationArguments,
       statisticsDirArgument,
@@ -642,7 +649,8 @@ JlmOptCommand::PrintRvsdgModule(
   }
 }
 
-MkdirCommand::~MkdirCommand() noexcept = default;
+MkdirCommand::~
+MkdirCommand() noexcept = default;
 
 std::string
 MkdirCommand::ToString() const
@@ -657,7 +665,8 @@ MkdirCommand::Run() const
     throw util::error("mkdir failed: " + Path_.to_str());
 }
 
-LlvmOptCommand::~LlvmOptCommand() noexcept = default;
+LlvmOptCommand::~
+LlvmOptCommand() noexcept = default;
 
 std::string
 LlvmOptCommand::ToString() const
@@ -709,7 +718,8 @@ LlvmOptCommand::ToString(const Optimization & optimization)
   return map[optimization];
 }
 
-LlvmLinkCommand::~LlvmLinkCommand() noexcept = default;
+LlvmLinkCommand::~
+LlvmLinkCommand() noexcept = default;
 
 std::string
 LlvmLinkCommand::ToString() const
@@ -736,7 +746,8 @@ LlvmLinkCommand::Run() const
     exit(EXIT_FAILURE);
 }
 
-JlmHlsCommand::~JlmHlsCommand() noexcept = default;
+JlmHlsCommand::~
+JlmHlsCommand() noexcept = default;
 
 std::string
 JlmHlsCommand::ToString() const
@@ -751,7 +762,8 @@ JlmHlsCommand::Run() const
     exit(EXIT_FAILURE);
 }
 
-JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept = default;
+JlmHlsExtractCommand::~
+JlmHlsExtractCommand() noexcept = default;
 
 std::string
 JlmHlsExtractCommand::ToString() const

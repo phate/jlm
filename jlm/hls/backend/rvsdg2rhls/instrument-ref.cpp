@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+#include <cmath>
+
 namespace jlm::hls
 {
 

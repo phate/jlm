@@ -975,7 +975,6 @@ TestStatistics()
   // Arrange
   jlm::tests::LoadTest1 test;
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      jlm::util::filepath("/tmp/stats.txt"),
       { jlm::util::Statistics::Id::AndersenAnalysis });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
