@@ -61,7 +61,7 @@ convert_prints(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   // TODO: make this less hacky by using the correct state types
   auto fct =
-      llvm::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
+      rvsdg::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
   auto & printf =
       llvm::GraphImport::Create(graph, fct, fct, "printnode", llvm::linkage::external_linkage);
   convert_prints(root, &printf, fct);
@@ -102,7 +102,7 @@ void
 convert_prints(
     rvsdg::Region * region,
     jlm::rvsdg::output * printf,
-    const std::shared_ptr<const llvm::FunctionType> & functionType)
+    const std::shared_ptr<const rvsdg::FunctionType> & functionType)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {

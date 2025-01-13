@@ -19,7 +19,7 @@ namespace jlm::llvm::aa
 bool
 IsOrContainsPointerType(const rvsdg::Type & type)
 {
-  return IsOrContains<PointerType>(type) || is<llvm::FunctionType>(type);
+  return IsOrContains<PointerType>(type) || is<rvsdg::FunctionType>(type);
 }
 
 std::string
@@ -976,7 +976,7 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
   // For pointer analysis purposes, function objects and pointers
   // to functions are treated as being the same.
   const auto & baseRegister = *node.input(0)->origin();
-  JLM_ASSERT(is<FunctionType>(baseRegister.type()));
+  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.type()));
 
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
   const auto & outputRegister = *node.output(0);

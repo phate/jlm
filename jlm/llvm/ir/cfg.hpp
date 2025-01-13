@@ -356,7 +356,7 @@ public:
     return module_;
   }
 
-  FunctionType
+  rvsdg::FunctionType
   fcttype() const
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> arguments;
@@ -367,7 +367,7 @@ public:
     for (size_t n = 0; n < exit()->nresults(); n++)
       results.push_back(exit()->result(n)->Type());
 
-    return FunctionType(arguments, results);
+    return rvsdg::FunctionType(arguments, results);
   }
 
   static std::unique_ptr<cfg>

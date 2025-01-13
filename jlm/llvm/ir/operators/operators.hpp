@@ -2481,11 +2481,11 @@ public:
     return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
   }
 
-  FunctionType
+  rvsdg::FunctionType
   fcttype() const
   {
     JLM_ASSERT(narguments() == 1 && nresults() == 2);
-    return FunctionType({ argument(0) }, { result(0), result(1) });
+    return rvsdg::FunctionType({ argument(0) }, { result(0), result(1) });
   }
 
   static std::unique_ptr<llvm::tac>

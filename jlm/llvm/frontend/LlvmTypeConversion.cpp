@@ -69,7 +69,7 @@ convert_function_type(const ::llvm::Type * t, context & ctx)
   resultTypes.push_back(iostatetype::Create());
   resultTypes.push_back(MemoryStateType::Create());
 
-  return FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
+  return rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 }
 
 static std::shared_ptr<const rvsdg::ValueType>

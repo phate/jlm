@@ -254,7 +254,7 @@ TestLambda()
 
   auto lambda = lambda::node::create(
       &graph.GetRootRegion(),
-      FunctionType::Create({ vt }, { vt, vt }),
+      jlm::rvsdg::FunctionType::Create({ vt }, { vt, vt }),
       "f",
       linkage::external_linkage);
 
@@ -284,7 +284,7 @@ TestPhi()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create({ valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
 
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();

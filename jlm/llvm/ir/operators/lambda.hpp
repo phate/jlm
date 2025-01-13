@@ -28,7 +28,7 @@ namespace lambda
 
 /** \brief Lambda operation
  *
- * A lambda operation determines a lambda's name and \ref FunctionType "function type".
+ * A lambda operation determines a lambda's name and \ref rvsdg::FunctionType "function type".
  */
 class operation final : public rvsdg::StructuralOperation
 {
@@ -36,7 +36,7 @@ public:
   ~operation() override;
 
   operation(
-      std::shared_ptr<const jlm::llvm::FunctionType> type,
+      std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
       jlm::llvm::attributeset attributes)
@@ -56,13 +56,13 @@ public:
   operation &
   operator=(operation && other) noexcept = default;
 
-  [[nodiscard]] const jlm::llvm::FunctionType &
+  [[nodiscard]] const jlm::rvsdg::FunctionType &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::FunctionType> &
   Type() const noexcept
   {
     return type_;
@@ -96,7 +96,7 @@ public:
   copy() const override;
 
 private:
-  std::shared_ptr<const jlm::llvm::FunctionType> type_;
+  std::shared_ptr<const jlm::rvsdg::FunctionType> type_;
   std::string name_;
   jlm::llvm::linkage linkage_;
   jlm::llvm::attributeset attributes_;
@@ -183,13 +183,13 @@ public:
   [[nodiscard]] const lambda::operation &
   GetOperation() const noexcept override;
 
-  [[nodiscard]] const jlm::llvm::FunctionType &
+  [[nodiscard]] const jlm::rvsdg::FunctionType &
   type() const noexcept
   {
     return GetOperation().type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::FunctionType> &
   Type() const noexcept
   {
     return GetOperation().Type();
@@ -372,7 +372,7 @@ public:
   static node *
   create(
       rvsdg::Region * parent,
-      std::shared_ptr<const jlm::llvm::FunctionType> type,
+      std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage,
       const jlm::llvm::attributeset & attributes);
@@ -383,7 +383,7 @@ public:
   static node *
   create(
       rvsdg::Region * parent,
-      std::shared_ptr<const jlm::llvm::FunctionType> type,
+      std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage)
   {

@@ -1,6 +1,7 @@
 librvsdg_SOURCES = \
 	jlm/rvsdg/binary.cpp \
 	jlm/rvsdg/control.cpp \
+	jlm/rvsdg/FunctionType.cpp \
 	jlm/rvsdg/gamma.cpp \
 	jlm/rvsdg/graph.cpp \
 	jlm/rvsdg/node-normal-form.cpp \
@@ -29,6 +30,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/bitstring/value-representation.cpp \
 
 librvsdg_HEADERS = \
+	jlm/rvsdg/FunctionType.hpp \
 	jlm/rvsdg/operation.hpp \
 	jlm/rvsdg/gamma.hpp \
 	jlm/rvsdg/notifiers.hpp \

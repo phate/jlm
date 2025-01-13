@@ -639,7 +639,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
   // Create new lambda and copy the region from the old lambda
   //
-  auto newFunctionType = jlm::llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
+  auto newFunctionType = jlm::rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = jlm::llvm::lambda::node::create(
       lambda->region(),
       newFunctionType,

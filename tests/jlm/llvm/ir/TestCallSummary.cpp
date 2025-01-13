@@ -19,7 +19,7 @@ TestCallSummaryComputationDead()
 
   // Arrange
   auto vt = tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create({}, { vt });
+  auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -53,7 +53,7 @@ TestCallSummaryComputationExport()
 
   // Arrange
   auto vt = tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create({}, { vt });
+  auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -88,7 +88,7 @@ TestCallSummaryComputationDirectCalls()
 
   // Arrange
   auto vt = tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() },
       { vt, jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
 
@@ -250,7 +250,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
   nf->set_mutable(false);
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create({ valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
 
   auto lambdaNode =
       lambda::node::create(&rvsdg->GetRootRegion(), functionType, "f", linkage::external_linkage);
@@ -289,8 +289,8 @@ TestCallSummaryComputationLambdaResult()
 
   auto pointerType = PointerType::Create();
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionTypeG = FunctionType::Create({ valueType }, { valueType });
-  auto functionTypeF = FunctionType::Create({ valueType }, { PointerType::Create() });
+  auto functionTypeG = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
+  auto functionTypeF = jlm::rvsdg::FunctionType::Create({ valueType }, { PointerType::Create() });
 
   auto lambdaNodeG =
       lambda::node::create(&rvsdg.GetRootRegion(), functionTypeG, "g", linkage::external_linkage);

@@ -22,7 +22,7 @@ TestCopy()
   auto valueType = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, iostatetype::Create(), MemoryStateType::Create() },
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -60,7 +60,7 @@ TestCallNodeAccessors()
   auto valueType = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, iostatetype::Create(), MemoryStateType::Create() },
       { valueType, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -103,10 +103,10 @@ TestCallTypeClassifierIndirectCall()
   auto vt = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto fcttype1 = FunctionType::Create(
+  auto fcttype1 = jlm::rvsdg::FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
-  auto fcttype2 = FunctionType::Create(
+  auto fcttype2 = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -176,7 +176,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  auto functionTypeG = FunctionType::Create(
+  auto functionTypeG = jlm::rvsdg::FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -223,7 +223,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
 
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -276,7 +276,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  auto functionTypeG = FunctionType::Create(
+  auto functionTypeG = jlm::rvsdg::FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -340,7 +340,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
 
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -395,7 +395,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto pbit64 = PointerType::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { jlm::rvsdg::bittype::Create(64),
           PointerType::Create(),
           iostatetype::Create(),

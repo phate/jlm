@@ -77,7 +77,7 @@ TestTheta()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
@@ -127,7 +127,7 @@ TestLambda()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
 

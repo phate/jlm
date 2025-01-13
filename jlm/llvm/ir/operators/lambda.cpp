@@ -163,7 +163,7 @@ node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 lambda::node *
 node::create(
     rvsdg::Region * parent,
-    std::shared_ptr<const jlm::llvm::FunctionType> type,
+    std::shared_ptr<const jlm::rvsdg::FunctionType> type,
     const std::string & name,
     const llvm::linkage & linkage,
     const attributeset & attributes)

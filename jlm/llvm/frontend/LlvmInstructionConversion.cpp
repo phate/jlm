@@ -48,7 +48,7 @@ const variable *
 ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
   const variable * var = ConvertValueOrFunction(v, tacs, ctx);
-  if (auto fntype = std::dynamic_pointer_cast<const FunctionType>(var->Type()))
+  if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(var->Type()))
   {
     std::unique_ptr<tac> ptr_cast = tac::create(FunctionToPointerOperation(fntype), { var });
     var = ptr_cast->result(0);
@@ -926,7 +926,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     callee = callee_cast->result(0);
     tacs.push_back(std::move(callee_cast));
   }
-  else if (auto fntype = std::dynamic_pointer_cast<const FunctionType>(callee->Type()))
+  else if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(callee->Type()))
   {
     // Llvm also allows argument type mismatches if the function
     // features varargs. The code here could be made more precise by

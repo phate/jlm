@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
 #include <jlm/llvm/backend/jlm2llvm/type.hpp>
+#include <jlm/rvsdg/FunctionType.hpp>
 
 #include <llvm/IR/Module.h>
 
@@ -24,7 +25,7 @@ convert(const rvsdg::bittype & type, context & ctx)
 }
 
 static ::llvm::Type *
-convert(const FunctionType & functionType, context & ctx)
+convert(const rvsdg::FunctionType & functionType, context & ctx)
 {
   auto & lctx = ctx.llvm_module().getContext();
 
@@ -140,7 +141,7 @@ convert_type(const rvsdg::Type & type, context & ctx)
   static std::
       unordered_map<std::type_index, std::function<::llvm::Type *(const rvsdg::Type &, context &)>>
           map({ { typeid(rvsdg::bittype), convert<rvsdg::bittype> },
-                { typeid(FunctionType), convert<FunctionType> },
+                { typeid(rvsdg::FunctionType), convert<rvsdg::FunctionType> },
                 { typeid(PointerType), convert<PointerType> },
                 { typeid(arraytype), convert<arraytype> },
                 { typeid(rvsdg::ControlType), convert<rvsdg::ControlType> },

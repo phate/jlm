@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_TYPES_HPP
 #define JLM_LLVM_IR_TYPES_HPP
 
+#include <jlm/rvsdg/FunctionType.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
@@ -15,79 +16,6 @@
 
 namespace jlm::llvm
 {
-
-/** \brief Function type class
- *
- */
-class FunctionType final : public jlm::rvsdg::ValueType
-{
-public:
-  ~FunctionType() noexcept override;
-
-  FunctionType(
-      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
-      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes);
-
-  FunctionType(const FunctionType & other);
-
-  FunctionType(FunctionType && other) noexcept;
-
-  FunctionType &
-  operator=(const FunctionType & other);
-
-  FunctionType &
-  operator=(FunctionType && other) noexcept;
-
-  const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> &
-  Arguments() const noexcept;
-
-  const std::vector<std::shared_ptr<const jlm::rvsdg::Type>> &
-  Results() const noexcept;
-
-  size_t
-  NumResults() const noexcept
-  {
-    return ResultTypes_.size();
-  }
-
-  size_t
-  NumArguments() const noexcept
-  {
-    return ArgumentTypes_.size();
-  }
-
-  const jlm::rvsdg::Type &
-  ResultType(size_t index) const noexcept
-  {
-    JLM_ASSERT(index < ResultTypes_.size());
-    return *ResultTypes_[index];
-  }
-
-  const jlm::rvsdg::Type &
-  ArgumentType(size_t index) const noexcept
-  {
-    JLM_ASSERT(index < ArgumentTypes_.size());
-    return *ArgumentTypes_[index];
-  }
-
-  std::string
-  debug_string() const override;
-
-  bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override;
-
-  [[nodiscard]] std::size_t
-  ComputeHash() const noexcept override;
-
-  static std::shared_ptr<const FunctionType>
-  Create(
-      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
-      std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes);
-
-private:
-  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> ResultTypes_;
-  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> ArgumentTypes_;
-};
 
 /** \brief PointerType class
  *

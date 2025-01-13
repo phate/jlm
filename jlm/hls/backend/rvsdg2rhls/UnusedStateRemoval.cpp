@@ -63,7 +63,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     }
   }
 
-  auto newFunctionType = llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
+  auto newFunctionType = rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = llvm::lambda::node::create(
       lambdaNode.region(),
       newFunctionType,

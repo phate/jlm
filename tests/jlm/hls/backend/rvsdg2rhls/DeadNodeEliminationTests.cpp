@@ -16,7 +16,7 @@ TestDeadLoopNode()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
 
@@ -47,7 +47,7 @@ TestDeadLoopNodeOutput()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });
 

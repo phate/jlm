@@ -18,7 +18,7 @@ LoadConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() });
 
@@ -80,7 +80,7 @@ LoadVolatileConversion()
   auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto bit64Type = jlm::rvsdg::bittype::Create(64);
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(64), iostatetype::Create(), MemoryStateType::Create() });
 
