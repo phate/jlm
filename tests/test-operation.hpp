@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -63,6 +64,33 @@ public:
     auto graphExport = new GraphExport(origin, std::move(name));
     origin.region()->graph()->GetRootRegion().append_result(graphExport);
     return *graphExport;
+  }
+};
+
+class NullaryOperation final : public rvsdg::nullary_op
+{
+public:
+  explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
+      : nullary_op(resultType)
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override
+  {
+    const auto nullaryOperation = dynamic_cast<const NullaryOperation *>(&other);
+    return nullaryOperation && *result(0) == *nullaryOperation->result(0);
+  }
+
+  [[nodiscard]] std::string
+  debug_string() const override
+  {
+    return "NullaryOperation";
+  }
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override
+  {
+    return std::make_unique<NullaryOperation>(this->result(0));
   }
 };
 

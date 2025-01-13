@@ -111,4 +111,44 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
   return node;
 }
 
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSimpleOperationCommonNodeElimination(
+    Region & region,
+    const SimpleOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  auto isCongruent = [&](const Node & node)
+  {
+    auto & nodeOperation = node.GetOperation();
+    return nodeOperation == operation && operands == rvsdg::operands(&node)
+        && &nodeOperation != &operation;
+  };
+
+  if (operands.empty())
+  {
+    for (auto & node : region.TopNodes())
+    {
+      if (isCongruent(node))
+      {
+        return outputs(&node);
+      }
+    }
+  }
+  else
+  {
+    for (const auto & user : *operands[0])
+    {
+      if (const auto node = TryGetOwnerNode<SimpleNode>(*user))
+      {
+        if (isCongruent(*node))
+        {
+          return outputs(node);
+        }
+      }
+    }
+  }
+
+  return std::nullopt;
+}
+
 }
