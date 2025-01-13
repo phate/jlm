@@ -50,7 +50,7 @@ TestThetaCreation()
 }
 
 static void
-TestRemoveThetaOutputsWhere()
+TestThetaLoopVarRemoval()
 {
   using namespace jlm::rvsdg;
 
@@ -64,182 +64,32 @@ TestRemoveThetaOutputsWhere()
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
-  auto thetaOutput0 = thetaNode->AddLoopVar(ctl);
-  auto thetaOutput1 = thetaNode->AddLoopVar(x);
-  auto thetaOutput2 = thetaNode->AddLoopVar(y);
-  thetaNode->set_predicate(thetaOutput0.pre);
+  auto lv0 = thetaNode->AddLoopVar(ctl);
+  auto lv1 = thetaNode->AddLoopVar(x);
+  auto lv2 = thetaNode->AddLoopVar(y);
+  thetaNode->set_predicate(lv0.pre);
 
-  jlm::tests::GraphExport::Create(*thetaOutput0.output, "");
+  jlm::tests::GraphExport::Create(*lv0.output, "");
 
   // Act & Assert
-  auto deadInputs = thetaNode->RemoveThetaOutputsWhere(
-      [&](const jlm::rvsdg::output & output)
-      {
-        return output.index() == thetaOutput1.output->index();
-      });
-  assert(deadInputs.Size() == 1);
-  assert(deadInputs.Contains(thetaNode->input(1)));
-  assert(thetaNode->noutputs() == 2);
-  assert(thetaNode->subregion()->nresults() == 3);
-  assert(thetaOutput0.output->index() == 0);
-  assert(thetaOutput0.post->index() == 1);
-  assert(thetaOutput2.output->index() == 1);
-  assert(thetaOutput2.post->index() == 2);
-
-  deadInputs = thetaNode->RemoveThetaOutputsWhere(
-      [](const jlm::rvsdg::output &)
-      {
-        return true;
-      });
-  assert(deadInputs.Size() == 1);
-  assert(deadInputs.Contains(thetaNode->input(2)));
-  assert(thetaNode->noutputs() == 1);
-  assert(thetaNode->subregion()->nresults() == 2);
-  assert(thetaOutput0.output->index() == 0);
-  assert(thetaOutput0.post->index() == 1);
-}
-
-static void
-TestPruneThetaOutputs()
-{
-  using namespace jlm::rvsdg;
-
-  // Arrange
-  Graph rvsdg;
-  auto valueType = jlm::tests::valuetype::Create();
-
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-
-  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
-
-  auto thetaOutput0 = thetaNode->AddLoopVar(ctl);
-  thetaNode->AddLoopVar(x);
-  thetaNode->AddLoopVar(y);
-  thetaNode->set_predicate(thetaOutput0.pre);
-
-  jlm::tests::GraphExport::Create(*thetaOutput0.output, "");
-
-  // Act
-  auto deadInputs = thetaNode->PruneThetaOutputs();
-
-  // Assert
-  assert(deadInputs.Size() == 2);
-  assert(deadInputs.Contains(thetaNode->input(1)));
-  assert(deadInputs.Contains(thetaNode->input(2)));
-  assert(thetaNode->noutputs() == 1);
-  assert(thetaNode->subregion()->nresults() == 2);
-  assert(thetaOutput0.output->index() == 0);
-  assert(thetaOutput0.post->index() == 1);
-}
-
-static void
-TestRemoveThetaInputsWhere()
-{
-  using namespace jlm::rvsdg;
-
-  // Arrange
-  Graph rvsdg;
-  auto valueType = jlm::tests::valuetype::Create();
-
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-
-  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
-
-  auto thetaOutput0 = thetaNode->AddLoopVar(ctl);
-  auto thetaOutput1 = thetaNode->AddLoopVar(x);
-  auto thetaOutput2 = thetaNode->AddLoopVar(y);
-  thetaNode->set_predicate(thetaOutput0.pre);
-
-  auto result =
-      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { valueType }).output(0);
-
-  thetaOutput1.post->divert_to(result);
-  thetaOutput2.post->divert_to(result);
-
-  jlm::tests::GraphExport::Create(*thetaOutput0.output, "");
-
-  // Act & Assert
-  auto deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [&](const jlm::rvsdg::input & input)
-      {
-        return input.index() == thetaOutput1.input->index();
-      });
-  assert(deadOutputs.Size() == 1);
-  assert(deadOutputs.Contains(thetaNode->output(1)));
-  assert(thetaNode->ninputs() == 2);
-  assert(thetaNode->subregion()->narguments() == 2);
-  assert(thetaOutput0.input->index() == 0);
-  assert(thetaOutput0.pre->index() == 0);
-  assert(thetaOutput2.input->index() == 1);
-  assert(thetaOutput2.pre->index() == 1);
-
-  auto expectDeadOutput = thetaNode->output(2);
-  deadOutputs = thetaNode->RemoveThetaInputsWhere(
-      [](const jlm::rvsdg::input & /* input */)
-      {
-        return true;
-      });
-  assert(deadOutputs.Size() == 1);
-  assert(deadOutputs.Contains(expectDeadOutput));
-  assert(thetaNode->ninputs() == 1);
-  assert(thetaNode->subregion()->narguments() == 1);
-  assert(thetaOutput0.input->index() == 0);
-  assert(thetaOutput0.pre->index() == 0);
-}
-
-static void
-TestPruneThetaInputs()
-{
-  using namespace jlm::rvsdg;
-
-  // Arrange
-  Graph rvsdg;
-  auto valueType = jlm::tests::valuetype::Create();
-
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-
-  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
-
-  auto thetaOutput0 = thetaNode->AddLoopVar(ctl);
-  auto thetaOutput1 = thetaNode->AddLoopVar(x);
-  auto thetaOutput2 = thetaNode->AddLoopVar(y);
-  thetaNode->set_predicate(thetaOutput0.pre);
-
-  auto result =
-      jlm::tests::SimpleNode::Create(*thetaNode->subregion(), {}, { valueType }).output(0);
-
-  thetaOutput1.post->divert_to(result);
-  thetaOutput2.post->divert_to(result);
-
-  jlm::tests::GraphExport::Create(*thetaOutput0.output, "");
-
-  // Act
-  auto deadOutputs = thetaNode->PruneThetaInputs();
-
-  // Assert
-  assert(deadOutputs.Size() == 2);
-  assert(deadOutputs.Contains(thetaNode->output(1)));
-  assert(deadOutputs.Contains(thetaNode->output(2)));
-  assert(thetaNode->ninputs() == 1);
-  assert(thetaNode->subregion()->narguments() == 1);
-  assert(thetaOutput0.input->index() == 0);
-  assert(thetaOutput0.pre->index() == 0);
+  thetaNode->RemoveLoopVars({ lv1 });
+  auto loopvars = thetaNode->GetLoopVars();
+  assert(loopvars.size() == 2);
+  assert(loopvars[0].input = lv0.input);
+  assert(loopvars[0].pre = lv0.pre);
+  assert(loopvars[0].post = lv0.post);
+  assert(loopvars[0].output = lv0.output);
+  assert(loopvars[1].input = lv2.input);
+  assert(loopvars[1].pre = lv2.pre);
+  assert(loopvars[1].post = lv2.post);
+  assert(loopvars[1].output = lv2.output);
 }
 
 static int
 TestTheta()
 {
   TestThetaCreation();
-  TestRemoveThetaOutputsWhere();
-  TestPruneThetaOutputs();
-  TestRemoveThetaInputsWhere();
-  TestPruneThetaInputs();
+  TestThetaLoopVarRemoval();
 
   return 0;
 }

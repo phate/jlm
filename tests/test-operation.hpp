@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -63,6 +64,33 @@ public:
     auto graphExport = new GraphExport(origin, std::move(name));
     origin.region()->graph()->GetRootRegion().append_result(graphExport);
     return *graphExport;
+  }
+};
+
+class NullaryOperation final : public rvsdg::nullary_op
+{
+public:
+  explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
+      : nullary_op(resultType)
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override
+  {
+    const auto nullaryOperation = dynamic_cast<const NullaryOperation *>(&other);
+    return nullaryOperation && *result(0) == *nullaryOperation->result(0);
+  }
+
+  [[nodiscard]] std::string
+  debug_string() const override
+  {
+    return "NullaryOperation";
+  }
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override
+  {
+    return std::make_unique<NullaryOperation>(this->result(0));
   }
 };
 
@@ -216,10 +244,13 @@ public:
 
 private:
   structural_node(rvsdg::Region * parent, size_t nsubregions)
-      : rvsdg::StructuralNode(structural_op(), parent, nsubregions)
+      : rvsdg::StructuralNode(parent, nsubregions)
   {}
 
 public:
+  [[nodiscard]] const structural_op &
+  GetOperation() const noexcept override;
+
   StructuralNodeInput &
   AddInput(rvsdg::output & origin);
 
@@ -413,9 +444,9 @@ class SimpleNode final : public rvsdg::SimpleNode
 private:
   SimpleNode(
       rvsdg::Region & region,
-      const test_op & operation,
+      std::unique_ptr<test_op> operation,
       const std::vector<rvsdg::output *> & operands)
-      : rvsdg::SimpleNode(&region, operation, operands)
+      : rvsdg::SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -430,9 +461,9 @@ public:
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     auto operandTypes = ExtractTypes(operands);
-    test_op operation(std::move(operandTypes), std::move(resultTypes));
+    auto operation = std::make_unique<test_op>(std::move(operandTypes), std::move(resultTypes));
 
-    auto node = new SimpleNode(region, operation, operands);
+    auto node = new SimpleNode(region, std::move(operation), operands);
     return *node;
   }
 

@@ -86,7 +86,7 @@ class VariableSet final
     std::unordered_set<const llvm::variable *>::const_iterator It_;
   };
 
-  using ConstRange = jlm::util::iterator_range<ConstIterator>;
+  using ConstRange = util::IteratorRange<ConstIterator>;
 
 public:
   VariableSet() = default;

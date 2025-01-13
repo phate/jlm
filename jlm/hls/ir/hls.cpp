@@ -88,6 +88,13 @@ loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
   return output;
 }
 
+[[nodiscard]] const rvsdg::Operation &
+loop_node::GetOperation() const noexcept
+{
+  static const loop_op singleton;
+  return singleton;
+}
+
 jlm::rvsdg::output *
 loop_node::add_loopconst(jlm::rvsdg::output * origin)
 {

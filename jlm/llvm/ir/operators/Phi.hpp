@@ -304,17 +304,20 @@ public:
   ~node() override;
 
 private:
-  node(rvsdg::Region * parent, const phi::operation & op)
-      : StructuralNode(op, parent, 1)
+  explicit node(rvsdg::Region * parent)
+      : StructuralNode(parent, 1)
   {}
 
   static phi::node *
-  create(rvsdg::Region * parent, const phi::operation & op)
+  create(rvsdg::Region * parent)
   {
-    return new phi::node(parent, op);
+    return new phi::node(parent);
   }
 
 public:
+  [[nodiscard]] const phi::operation &
+  GetOperation() const noexcept override;
+
   cvconstiterator
   begin_cv() const
   {
@@ -380,9 +383,6 @@ public:
   {
     return StructuralNode::subregion(0);
   }
-
-  [[nodiscard]] const phi::operation &
-  GetOperation() const noexcept override;
 
   cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);
@@ -520,7 +520,7 @@ public:
     if (node_)
       return;
 
-    node_ = phi::node::create(parent, phi::operation());
+    node_ = phi::node::create(parent);
   }
 
   phi::cvargument *

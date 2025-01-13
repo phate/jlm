@@ -627,13 +627,10 @@ class Node
 public:
   virtual ~Node();
 
-  Node(std::unique_ptr<Operation> op, Region * region);
+  explicit Node(Region * region);
 
   [[nodiscard]] virtual const Operation &
-  GetOperation() const noexcept
-  {
-    return *operation_;
-  }
+  GetOperation() const noexcept = 0;
 
   inline bool
   has_users() const noexcept
@@ -877,7 +874,6 @@ private:
   size_t depth_;
   Graph * graph_;
   rvsdg::Region * region_;
-  std::unique_ptr<Operation> operation_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
 };

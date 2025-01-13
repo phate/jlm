@@ -156,7 +156,9 @@ CallOperation::copy() const
 rvsdg::Node *
 CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<CallOperation> op(
+      util::AssertedCast<CallOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 rvsdg::output *

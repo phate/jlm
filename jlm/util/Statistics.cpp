@@ -115,7 +115,7 @@ Statistics::GetMeasurement(const std::string & name) const
   JLM_UNREACHABLE("Unknown measurement");
 }
 
-util::iterator_range<Statistics::MeasurementList::const_iterator>
+IteratorRange<Statistics::MeasurementList::const_iterator>
 Statistics::GetMeasurements() const
 {
   return { Measurements_.begin(), Measurements_.end() };
@@ -145,10 +145,10 @@ Statistics::GetTimer(const std::string & name) const
   return const_cast<Statistics *>(this)->GetTimer(name);
 }
 
-util::iterator_range<Statistics::TimerList::const_iterator>
+IteratorRange<Statistics::TimerList::const_iterator>
 Statistics::GetTimers() const
 {
-  return Timers_;
+  return { Timers_.begin(), Timers_.end() };
 }
 
 util::timer &

@@ -309,10 +309,10 @@ class attributeset final
   using TypeAttributeHashSet = util::HashSet<type_attribute>;
   using StringAttributeHashSet = util::HashSet<string_attribute>;
 
-  using EnumAttributeRange = util::iterator_range<EnumAttributeHashSet::ItemConstIterator>;
-  using IntAttributeRange = util::iterator_range<IntAttributeHashSet::ItemConstIterator>;
-  using TypeAttributeRange = util::iterator_range<TypeAttributeHashSet::ItemConstIterator>;
-  using StringAttributeRange = util::iterator_range<StringAttributeHashSet::ItemConstIterator>;
+  using EnumAttributeRange = util::IteratorRange<EnumAttributeHashSet::ItemConstIterator>;
+  using IntAttributeRange = util::IteratorRange<IntAttributeHashSet::ItemConstIterator>;
+  using TypeAttributeRange = util::IteratorRange<TypeAttributeHashSet::ItemConstIterator>;
+  using StringAttributeRange = util::IteratorRange<StringAttributeHashSet::ItemConstIterator>;
 
 public:
   [[nodiscard]] EnumAttributeRange

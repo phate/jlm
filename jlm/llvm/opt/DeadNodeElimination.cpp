@@ -434,25 +434,28 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 void
 DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
-  auto & thetaSubregion = *thetaNode.subregion();
-
-  auto matchOutput = [&](const rvsdg::output & output)
+  // Determine loop variables to be removed.
+  std::vector<rvsdg::ThetaNode::LoopVar> loopvars;
+  for (const auto & loopvar : thetaNode.GetLoopVars())
   {
-    auto loopvar = thetaNode.MapOutputLoopVar(output);
-    return !Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output);
-  };
-  auto deadInputs = thetaNode.RemoveThetaOutputsWhere(matchOutput);
+    if (!Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output))
+    {
+      loopvar.post->divert_to(loopvar.pre);
+      loopvars.push_back(loopvar);
+    }
+  }
 
-  SweepRegion(thetaSubregion);
+  // Now that the loop variables to be eliminated only point to
+  // their own pre-iteration values, any outputs within the subregion
+  // that only contributed to computing the post-iteration values
+  // of the variables are unlinked and can be removed as well.
+  SweepRegion(*thetaNode.subregion());
 
-  auto matchInput = [&](const rvsdg::input & input)
-  {
-    return deadInputs.Contains(&input);
-  };
-  thetaNode.RemoveThetaInputsWhere(matchInput);
-
-  JLM_ASSERT(thetaNode.ninputs() == thetaNode.noutputs());
-  JLM_ASSERT(thetaSubregion.narguments() == thetaSubregion.nresults() - 1);
+  // There are now no other users of the pre-iteration values of the
+  // variables to be removed left in the subregion anymore.
+  // The variables have become "loop-invariant" and can simply
+  // be eliminated from the theta node.
+  thetaNode.RemoveLoopVars(std::move(loopvars));
 }
 
 void

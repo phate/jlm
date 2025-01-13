@@ -80,87 +80,107 @@ private:
 };
 
 static int
-FlattenedBinaryReduction()
+ReduceFlattenedBinaryReductionParallel()
 {
   using namespace jlm::rvsdg;
 
-  auto vt = jlm::tests::valuetype::Create();
-  jlm::tests::binary_op op(vt, vt, jlm::rvsdg::BinaryOperation::flags::associative);
+  // Arrange
+  const auto valueType = jlm::tests::valuetype::Create();
+  const jlm::tests::binary_op binaryOperation(
+      valueType,
+      valueType,
+      jlm::rvsdg::BinaryOperation::flags::associative);
 
-  /* test paralell reduction */
-  {
-    Graph graph;
-    auto i0 = &jlm::tests::GraphImport::Create(graph, vt, "");
-    auto i1 = &jlm::tests::GraphImport::Create(graph, vt, "");
-    auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
-    auto i3 = &jlm::tests::GraphImport::Create(graph, vt, "");
+  Graph graph;
+  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
+  nf->set_mutable(false);
 
-    auto o1 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { i0, i1 })[0];
-    auto o2 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { o1, i2 })[0];
-    auto o3 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { o2, i3 })[0];
+  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
 
-    auto & ex = jlm::tests::GraphExport::Create(*o3, "");
-    graph.PruneNodes();
+  auto & node = CreateOpNode<flattened_binary_op>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
-    jlm::rvsdg::view(graph, stdout);
-    assert(
-        graph.GetRootRegion().nnodes() == 1
-        && Region::Contains<flattened_binary_op>(graph.GetRootRegion(), false));
+  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
 
-    flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::parallel);
-    jlm::rvsdg::view(graph, stdout);
+  view(graph, stdout);
 
-    assert(graph.GetRootRegion().nnodes() == 3);
+  // Act
+  flattened_binary_op::reduce(&graph, flattened_binary_op::reduction::parallel);
+  graph.PruneNodes();
+  view(graph, stdout);
 
-    auto node0 = output::GetNode(*ex.origin());
-    assert(is<jlm::tests::binary_op>(node0));
+  // Assert
+  assert(graph.GetRootRegion().nnodes() == 3);
 
-    auto node1 = output::GetNode(*node0->input(0)->origin());
-    assert(is<jlm::tests::binary_op>(node1));
+  auto node0 = output::GetNode(*ex.origin());
+  assert(is<jlm::tests::binary_op>(node0));
 
-    auto node2 = output::GetNode(*node0->input(1)->origin());
-    assert(is<jlm::tests::binary_op>(node2));
-  }
+  auto node1 = output::GetNode(*node0->input(0)->origin());
+  assert(is<jlm::tests::binary_op>(node1));
 
-  /* test linear reduction */
-  {
-    Graph graph;
-    auto i0 = &jlm::tests::GraphImport::Create(graph, vt, "");
-    auto i1 = &jlm::tests::GraphImport::Create(graph, vt, "");
-    auto i2 = &jlm::tests::GraphImport::Create(graph, vt, "");
-    auto i3 = &jlm::tests::GraphImport::Create(graph, vt, "");
-
-    auto o1 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { i0, i1 })[0];
-    auto o2 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { o1, i2 })[0];
-    auto o3 = SimpleNode::create_normalized(&graph.GetRootRegion(), op, { o2, i3 })[0];
-
-    auto & ex = jlm::tests::GraphExport::Create(*o3, "");
-    graph.PruneNodes();
-
-    jlm::rvsdg::view(graph, stdout);
-    assert(
-        graph.GetRootRegion().nnodes() == 1
-        && Region::Contains<flattened_binary_op>(graph.GetRootRegion(), false));
-
-    flattened_binary_op::reduce(&graph, jlm::rvsdg::flattened_binary_op::reduction::linear);
-    jlm::rvsdg::view(graph, stdout);
-
-    assert(graph.GetRootRegion().nnodes() == 3);
-
-    auto node0 = output::GetNode(*ex.origin());
-    assert(is<jlm::tests::binary_op>(node0));
-
-    auto node1 = output::GetNode(*node0->input(0)->origin());
-    assert(is<jlm::tests::binary_op>(node1));
-
-    auto node2 = output::GetNode(*node1->input(0)->origin());
-    assert(is<jlm::tests::binary_op>(node2));
-  }
+  auto node2 = output::GetNode(*node0->input(1)->origin());
+  assert(is<jlm::tests::binary_op>(node2));
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-binary-FlattenedBinaryReduction", FlattenedBinaryReduction)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionParallel",
+    ReduceFlattenedBinaryReductionParallel)
+
+static int
+ReduceFlattenedBinaryReductionLinear()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::valuetype::Create();
+  const jlm::tests::binary_op binaryOperation(
+      valueType,
+      valueType,
+      jlm::rvsdg::BinaryOperation::flags::associative);
+
+  Graph graph;
+  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
+  nf->set_mutable(false);
+
+  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+
+  auto & node = CreateOpNode<flattened_binary_op>({ i0, i1, i2, i3 }, binaryOperation, 4);
+
+  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
+
+  view(graph, stdout);
+
+  // Act
+  flattened_binary_op::reduce(&graph, flattened_binary_op::reduction::linear);
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  assert(graph.GetRootRegion().nnodes() == 3);
+
+  auto node0 = output::GetNode(*ex.origin());
+  assert(is<jlm::tests::binary_op>(node0));
+
+  auto node1 = output::GetNode(*node0->input(0)->origin());
+  assert(is<jlm::tests::binary_op>(node1));
+
+  auto node2 = output::GetNode(*node1->input(0)->origin());
+  assert(is<jlm::tests::binary_op>(node2));
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionLinear",
+    ReduceFlattenedBinaryReductionLinear)
 
 static int
 FlattenAssociativeBinaryOperation_NotAssociativeBinary()

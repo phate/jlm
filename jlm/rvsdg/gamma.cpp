@@ -214,10 +214,17 @@ GammaOperation::operator==(const Operation & other) const noexcept
 GammaNode::~GammaNode() noexcept = default;
 
 GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
-    : StructuralNode(GammaOperation(nalternatives), predicate->region(), nalternatives)
+    : StructuralNode(predicate->region(), nalternatives),
+      Operation_(nalternatives)
 {
   add_input(std::unique_ptr<node_input>(
       new StructuralInput(this, predicate, ControlType::Create(nalternatives))));
+}
+
+[[nodiscard]] const GammaOperation &
+GammaNode::GetOperation() const noexcept
+{
+  return Operation_;
 }
 
 GammaNode::EntryVar

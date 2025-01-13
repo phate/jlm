@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -150,11 +151,11 @@ inlining(rvsdg::Graph & rvsdg)
   {
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
-      auto callSummary = lambda->ComputeCallSummary();
+      auto callSummary = jlm::llvm::ComputeCallSummary(*lambda);
 
-      if (callSummary->HasOnlyDirectCalls() && callSummary->NumDirectCalls() == 1)
+      if (callSummary.HasOnlyDirectCalls() && callSummary.NumDirectCalls() == 1)
       {
-        inlineCall(*callSummary->DirectCalls().begin(), lambda);
+        inlineCall(*callSummary.DirectCalls().begin(), lambda);
       }
     }
   }

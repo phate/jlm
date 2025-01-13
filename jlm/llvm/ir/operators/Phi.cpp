@@ -36,7 +36,9 @@ node::~node()
 [[nodiscard]] const phi::operation &
 node::GetOperation() const noexcept
 {
-  return *static_cast<const phi::operation *>(&StructuralNode::GetOperation());
+  // Phi nodes are not parameterized, so we can return operation singleton.
+  static const phi::operation singleton;
+  return singleton;
 }
 
 cvinput *

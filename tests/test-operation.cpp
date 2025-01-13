@@ -154,6 +154,13 @@ structural_op::copy() const
 structural_node::~structural_node()
 {}
 
+[[nodiscard]] const structural_op &
+structural_node::GetOperation() const noexcept
+{
+  static structural_op singleton;
+  return singleton;
+}
+
 structural_node *
 structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) const
 {

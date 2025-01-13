@@ -88,6 +88,9 @@ public:
     rvsdg::output * output;
   };
 
+  [[nodiscard]] const GammaOperation &
+  GetOperation() const noexcept override;
+
   static GammaNode *
   create(jlm::rvsdg::output * predicate, size_t nalternatives)
   {
@@ -257,6 +260,9 @@ public:
 
   virtual GammaNode *
   copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
+
+private:
+  GammaOperation Operation_;
 };
 
 /**

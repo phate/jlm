@@ -24,11 +24,7 @@ public:
   ~StructuralNode() noexcept override;
 
 protected:
-  StructuralNode(
-      /* FIXME: use move semantics instead of copy semantics for op */
-      const StructuralOperation & op,
-      rvsdg::Region * region,
-      size_t nsubregions);
+  StructuralNode(rvsdg::Region * region, size_t nsubregions);
 
 public:
   inline size_t

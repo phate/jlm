@@ -148,9 +148,9 @@ class StoreNode : public rvsdg::SimpleNode
 protected:
   StoreNode(
       rvsdg::Region & region,
-      const StoreOperation & operation,
+      std::unique_ptr<StoreOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : SimpleNode(&region, operation, operands)
+      : SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -188,8 +188,8 @@ public:
     }
   };
 
-  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = util::IteratorRange<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
 
   [[nodiscard]] const StoreOperation &
   GetOperation() const noexcept override;
@@ -246,9 +246,9 @@ class StoreNonVolatileNode final : public StoreNode
 private:
   StoreNonVolatileNode(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & operation,
+      std::unique_ptr<StoreNonVolatileOperation> operation,
       const std::vector<jlm::rvsdg::output *> & operands)
-      : StoreNode(region, operation, operands)
+      : StoreNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -289,26 +289,29 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreNonVolatileOperation storeOperation(std::move(storedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), storeOperation, operands);
+    auto operation = std::make_unique<StoreNonVolatileOperation>(
+        std::move(storedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & storeOperation,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, storeOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
 
   static StoreNonVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & storeOperation,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new StoreNonVolatileNode(region, storeOperation, operands));
+    return *(new StoreNonVolatileNode(region, std::move(storeOperation), operands));
   }
 
 private:
@@ -417,9 +420,9 @@ class StoreVolatileNode final : public StoreNode
 {
   StoreVolatileNode(
       rvsdg::Region & region,
-      const StoreVolatileOperation & operation,
+      std::unique_ptr<StoreVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : StoreNode(region, operation, operands)
+      : StoreNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -457,10 +460,10 @@ public:
   static StoreVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const StoreVolatileOperation & storeOperation,
+      std::unique_ptr<StoreVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new StoreVolatileNode(region, storeOperation, operands));
+    return *(new StoreVolatileNode(region, std::move(storeOperation), operands));
   }
 
   static StoreVolatileNode &
@@ -476,17 +479,18 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value, &ioState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreVolatileOperation storeOperation(storedType, memoryStates.size(), alignment);
-    return CreateNode(*address.region(), storeOperation, operands);
+    auto operation =
+        std::make_unique<StoreVolatileOperation>(storedType, memoryStates.size(), alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const StoreVolatileOperation & loadOperation,
+      std::unique_ptr<StoreVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
 
 private:

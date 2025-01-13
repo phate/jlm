@@ -27,7 +27,7 @@ test()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
-  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, "", linkage::external_linkage);
+  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, pt, "", linkage::external_linkage);
 
   phi::builder pb;
   pb.begin(&rm.Rvsdg().GetRootRegion());

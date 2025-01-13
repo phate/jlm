@@ -131,7 +131,7 @@ public:
   /**
    * Retrieves the full list of measurements
    */
-  [[nodiscard]] util::iterator_range<MeasurementList::const_iterator>
+  [[nodiscard]] IteratorRange<MeasurementList::const_iterator>
   GetMeasurements() const;
 
   /**
@@ -155,7 +155,7 @@ public:
   /**
    * Retrieves the full list of timers
    */
-  [[nodiscard]] util::iterator_range<TimerList::const_iterator>
+  [[nodiscard]] IteratorRange<TimerList::const_iterator>
   GetTimers() const;
 
 protected:
@@ -383,7 +383,7 @@ class StatisticsCollector final
   };
 
 public:
-  using StatisticsRange = iterator_range<StatisticsIterator>;
+  using StatisticsRange = IteratorRange<StatisticsIterator>;
 
   StatisticsCollector()
   {}
