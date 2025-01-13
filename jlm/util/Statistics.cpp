@@ -59,7 +59,7 @@ Statistics::GetName() const
   return GetStatisticsIdNames().LookupKey(StatisticsId_);
 }
 
-const util::filepath &
+std::optional<filepath>
 Statistics::GetSourceFile() const
 {
   return SourceFile_;
@@ -71,7 +71,7 @@ Statistics::Serialize(char fieldSeparator, char nameValueSeparator) const
   std::ostringstream ss;
 
   ss << GetName() << fieldSeparator;
-  ss << GetSourceFile().to_str();
+  ss << (GetSourceFile().has_value() ? GetSourceFile().value().to_str() : "None");
 
   for (const auto & [mName, measurement] : Measurements_)
   {
