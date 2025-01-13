@@ -153,6 +153,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
     tests/jlm/llvm/frontend/llvm/LlvmTypeConversionTests  \
