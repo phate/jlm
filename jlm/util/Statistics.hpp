@@ -385,7 +385,7 @@ public:
 
   /**
    * Sets the unique string to be included in the name of all created files
-   * @param the unique string
+   * @param uniqueString the new unique string
    */
   void
   SetUniqueString(std::string uniqueString)
