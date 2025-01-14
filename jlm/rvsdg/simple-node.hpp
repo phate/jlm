@@ -67,14 +67,18 @@ public:
     return *new SimpleNode(region, std::move(operation), operands);
   }
 
+  /**
+   * @deprecated Please use SimpleNode::Create()
+   */
   static inline std::vector<jlm::rvsdg::output *>
   create_normalized(
       rvsdg::Region * region,
       const SimpleOperation & op,
       const std::vector<jlm::rvsdg::output *> & operands)
   {
-    auto nf = static_cast<simple_normal_form *>(region->graph()->GetNodeNormalForm(typeid(op)));
-    return nf->normalized_create(region, op, operands);
+    std::unique_ptr<SimpleOperation> operation(
+        util::AssertedCast<SimpleOperation>(op.copy().release()));
+    return outputs(&Create(*region, std::move(operation), operands));
   }
 
 private:
