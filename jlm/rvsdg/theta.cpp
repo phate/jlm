@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
