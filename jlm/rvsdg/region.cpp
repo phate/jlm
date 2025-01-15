@@ -43,6 +43,12 @@ RegionArgument::RegionArgument(
   }
 }
 
+std::string
+RegionArgument::debug_string() const
+{
+  return util::strfmt("a", index());
+}
+
 [[nodiscard]] std::variant<Node *, Region *>
 RegionArgument::GetOwner() const noexcept
 {
@@ -94,6 +100,12 @@ RegionResult::RegionResult(
 
     output->results.push_back(this);
   }
+}
+
+std::string
+RegionResult::debug_string() const
+{
+  return util::strfmt("r", index());
 }
 
 [[nodiscard]] std::variant<Node *, Region *>

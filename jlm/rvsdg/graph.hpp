@@ -29,6 +29,9 @@ public:
     return Name_;
   }
 
+  [[nodiscard]] std::string
+  debug_string() const override;
+
 private:
   std::string Name_;
 };
@@ -47,6 +50,9 @@ public:
   {
     return Name_;
   }
+
+  [[nodiscard]] std::string
+  debug_string() const override;
 
 private:
   std::string Name_;

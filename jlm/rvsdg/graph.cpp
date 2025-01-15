@@ -19,10 +19,22 @@ GraphImport::GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type,
       Name_(std::move(name))
 {}
 
+std::string
+GraphImport::debug_string() const
+{
+  return util::strfmt("import[", Name_, "]");
+}
+
 GraphExport::GraphExport(rvsdg::output & origin, std::string name)
     : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
+
+std::string
+GraphExport::debug_string() const
+{
+  return util::strfmt("export[", Name_, "]");
+}
 
 Graph::~Graph()
 {
