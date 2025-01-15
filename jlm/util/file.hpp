@@ -216,16 +216,17 @@ public:
   }
 
   /**
-   * Creates a directory with the given filepath.
+   * Creates the directory represented by this filepath object.
+   * The parent directory must already exist.
+   * The directory can also exist already, in which case this is a no-op.
    *
-   * @throws jlm::util::error if the filepath aleady exists, if the parent directory does not exist,
-   * or if any other filesystem error occurs
+   * @throws jlm::util::error if an error occurs
    */
   void
   CreateDirectory() const
   {
-    if (Exists())
-      throw error("filepath already exists: " + path_);
+    if (IsFile())
+      throw error("file already exists: " + path_);
 
     filepath baseDir(path());
     if (!baseDir.IsDirectory())
@@ -235,7 +236,7 @@ public:
     std::filesystem::create_directory(path_, ec);
 
     if (ec.value() != 0)
-      throw error("cannot create directory '" + path_ + "': " + ec.message());
+      throw error("could not create directory '" + path_ + "': " + ec.message());
   }
 
   [[nodiscard]] std::string

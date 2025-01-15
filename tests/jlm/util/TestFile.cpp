@@ -50,6 +50,7 @@ TestCreateDirectory()
   // Remove the directory if it survived from a previous test
   if (filepath.Exists())
     std::filesystem::remove(path);
+  assert(!filepath.Exists());
 
   // Act
   filepath.CreateDirectory();
@@ -57,14 +58,8 @@ TestCreateDirectory()
   // Assert that the directory now exists
   assert(filepath.Exists() && filepath.IsDirectory());
 
-  // Try creating a directory that already exists
-  try
-  {
-    filepath.CreateDirectory();
-    assert(false);
-  }
-  catch (...)
-  {}
+  // Try creating a directory that already exists, should be no issue
+  filepath.CreateDirectory();
 
   // Try creating a directory in a location that does not exist
   try

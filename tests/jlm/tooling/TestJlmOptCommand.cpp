@@ -52,9 +52,6 @@ TestStatistics()
       "-o outputFile.ll ",
       "inputFile.ll");
 
-  std::cout << "rec: " << receivedCommandLine << std::endl;
-  std::cout << "exp: " << expectedCommandLine << std::endl;
-
   assert(receivedCommandLine == expectedCommandLine);
 }
 
