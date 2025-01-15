@@ -24,7 +24,7 @@ class CallOperation final : public jlm::rvsdg::SimpleOperation
 public:
   ~CallOperation() override;
 
-  explicit CallOperation(std::shared_ptr<const FunctionType> functionType)
+  explicit CallOperation(std::shared_ptr<const rvsdg::FunctionType> functionType)
       : SimpleOperation(create_srctypes(functionType), functionType->Results()),
         FunctionType_(std::move(functionType))
   {}
@@ -35,7 +35,7 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] const std::shared_ptr<const FunctionType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::FunctionType> &
   GetFunctionType() const noexcept
   {
     return FunctionType_;
@@ -47,7 +47,7 @@ public:
   static std::unique_ptr<tac>
   create(
       const variable * function,
-      std::shared_ptr<const FunctionType> functionType,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
       const std::vector<const variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
@@ -60,7 +60,7 @@ public:
 
 private:
   static inline std::vector<std::shared_ptr<const rvsdg::Type>>
-  create_srctypes(const std::shared_ptr<const FunctionType> & functionType)
+  create_srctypes(const std::shared_ptr<const rvsdg::FunctionType> & functionType)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types({ functionType });
     for (auto & argumentType : functionType->Arguments())
@@ -72,11 +72,11 @@ private:
   static void
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
-    if (!is<FunctionType>(type))
+    if (!is<rvsdg::FunctionType>(type))
       throw jlm::util::error("Expected function type.");
   }
 
-  std::shared_ptr<const FunctionType> FunctionType_;
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
 
 /** \brief Call node classifier
@@ -360,7 +360,7 @@ public:
   GetFunctionInput() const noexcept
   {
     auto functionInput = input(0);
-    JLM_ASSERT(is<FunctionType>(functionInput->type()));
+    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
     return functionInput;
   }
 
@@ -454,7 +454,7 @@ public:
   static std::vector<jlm::rvsdg::output *>
   Create(
       rvsdg::output * function,
-      std::shared_ptr<const FunctionType> functionType,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
     return CreateNode(function, std::move(functionType), arguments).Results();
@@ -483,7 +483,7 @@ public:
   static CallNode &
   CreateNode(
       rvsdg::output * function,
-      std::shared_ptr<const FunctionType> functionType,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
     CheckFunctionInputType(function->type());
@@ -523,14 +523,14 @@ private:
   static void
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
-    if (!is<FunctionType>(type))
+    if (!is<rvsdg::FunctionType>(type))
       throw jlm::util::error("Expected function type.");
   }
 
   static void
-  CheckFunctionType(const FunctionType & functionType)
+  CheckFunctionType(const rvsdg::FunctionType & functionType)
   {
-    auto CheckArgumentTypes = [](const FunctionType & functionType)
+    auto CheckArgumentTypes = [](const rvsdg::FunctionType & functionType)
     {
       if (functionType.NumArguments() < 2)
         throw jlm::util::error("Expected at least three argument types.");
@@ -545,7 +545,7 @@ private:
         throw jlm::util::error("Expected IO state type.");
     };
 
-    auto CheckResultTypes = [](const FunctionType & functionType)
+    auto CheckResultTypes = [](const rvsdg::FunctionType & functionType)
     {
       if (functionType.NumResults() < 2)
         throw jlm::util::error("Expected at least three result types.");

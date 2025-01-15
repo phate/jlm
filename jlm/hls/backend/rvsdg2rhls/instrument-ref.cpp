@@ -85,7 +85,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
-  auto loadFunctionType = jlm::llvm::FunctionType::Create(
+  auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         llvm::iostatetype::Create(),
@@ -98,7 +98,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       "reference_load",
       llvm::linkage::external_linkage);
   // addr, data, width, memstate
-  auto storeFunctionType = jlm::llvm::FunctionType::Create(
+  auto storeFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         jlm::rvsdg::bittype::Create(64),
@@ -112,7 +112,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       "reference_store",
       llvm::linkage::external_linkage);
   // addr, size, memstate
-  auto allocaFunctionType = jlm::llvm::FunctionType::Create(
+  auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         llvm::iostatetype::Create(),
@@ -141,11 +141,11 @@ instrument_ref(
     rvsdg::Region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    const std::shared_ptr<const jlm::llvm::FunctionType> & loadFunctionType,
+    const std::shared_ptr<const jlm::rvsdg::FunctionType> & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    const std::shared_ptr<const jlm::llvm::FunctionType> & storeFunctionType,
+    const std::shared_ptr<const jlm::rvsdg::FunctionType> & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    const std::shared_ptr<const jlm::llvm::FunctionType> & allocaFunctionType)
+    const std::shared_ptr<const jlm::rvsdg::FunctionType> & allocaFunctionType)
 {
   load_func = route_to_region(load_func, region);
   store_func = route_to_region(store_func, region);

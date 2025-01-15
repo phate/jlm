@@ -162,7 +162,14 @@ convert_undef(
     context & ctx)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
-  return ::llvm::UndefValue::get(convert_type(*op.result(0), ctx));
+
+  auto & resultType = *op.result(0);
+
+  // MemoryState has no llvm representation.
+  if (is<MemoryStateType>(resultType))
+    return nullptr;
+
+  return ::llvm::UndefValue::get(convert_type(resultType, ctx));
 }
 
 static ::llvm::Value *
@@ -896,7 +903,7 @@ convert(
 {
   auto & llvmmod = ctx.llvm_module();
 
-  auto fcttype = convert_type(FunctionType({ op.argument(0) }, {}), ctx);
+  auto fcttype = convert_type(rvsdg::FunctionType({ op.argument(0) }, {}), ctx);
   auto function = llvmmod.getOrInsertFunction("free", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, ctx.value(args[0]));
   return builder.CreateCall(function, operands);

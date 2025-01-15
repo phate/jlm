@@ -206,7 +206,7 @@ private:
   inline function_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      std::shared_ptr<const FunctionType> type,
+      std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
       : ipgraph_node(clg),
@@ -229,13 +229,13 @@ public:
   std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
-  const FunctionType &
+  const rvsdg::FunctionType &
   fcttype() const noexcept
   {
     return *FunctionType_;
   }
 
-  const std::shared_ptr<const FunctionType> &
+  const std::shared_ptr<const rvsdg::FunctionType> &
   GetFunctionType() const noexcept
   {
     return FunctionType_;
@@ -267,7 +267,7 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      std::shared_ptr<const FunctionType> type,
+      std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
   {
@@ -282,14 +282,14 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      std::shared_ptr<const FunctionType> type,
+      std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage)
   {
     return create(ipg, name, std::move(type), linkage, {});
   }
 
 private:
-  std::shared_ptr<const FunctionType> FunctionType_;
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
   attributeset attributes_;

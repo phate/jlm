@@ -921,7 +921,7 @@ ConvertAggregationTreeToLambda(
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
-    std::shared_ptr<const FunctionType> functionType,
+    std::shared_ptr<const rvsdg::FunctionType> functionType,
     const linkage & functionLinkage,
     const attributeset & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
