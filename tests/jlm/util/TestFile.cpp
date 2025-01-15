@@ -65,7 +65,7 @@ TestCreateDirectory()
   try
   {
     jlm::util::filepath noSuchParent("/non-existant/test-dir");
-    filepath.CreateDirectory();
+    noSuchParent.CreateDirectory();
     assert(false);
   }
   catch (...)
