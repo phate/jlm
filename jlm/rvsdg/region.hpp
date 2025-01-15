@@ -62,6 +62,9 @@ public:
   RegionArgument &
   operator=(RegionArgument &&) = delete;
 
+  [[nodiscard]] std::string
+  debug_string() const override;
+
   [[nodiscard]] StructuralInput *
   input() const noexcept
   {
@@ -141,6 +144,9 @@ public:
 
   RegionResult &
   operator=(RegionResult &&) = delete;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
 
   [[nodiscard]] StructuralOutput *
   output() const noexcept

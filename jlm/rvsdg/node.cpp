@@ -42,7 +42,7 @@ input::input(
 std::string
 input::debug_string() const
 {
-  return jlm::util::strfmt(index());
+  return jlm::util::strfmt("i", index());
 }
 
 void
@@ -92,7 +92,7 @@ output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
 std::string
 output::debug_string() const
 {
-  return jlm::util::strfmt(index());
+  return jlm::util::strfmt("o", index());
 }
 
 Node *
