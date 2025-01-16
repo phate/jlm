@@ -17,6 +17,7 @@
 #include <jlm/util/time.hpp>
 
 #include <deque>
+#include <typeindex>
 
 namespace jlm::llvm
 {

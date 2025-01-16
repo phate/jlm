@@ -7,10 +7,8 @@
 #ifndef JLM_RVSDG_NULLARY_HPP
 #define JLM_RVSDG_NULLARY_HPP
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/util/common.hpp>
 
 namespace jlm::rvsdg
 {

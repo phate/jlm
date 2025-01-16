@@ -30,8 +30,6 @@ GammaWithMatch()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -85,8 +83,6 @@ GammaWithoutMatch()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -140,8 +136,6 @@ EmptyGammaWithThreeSubregions()
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
       &rvsdgModule.Rvsdg().GetRootRegion(),

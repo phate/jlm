@@ -77,9 +77,7 @@ SimpleNode::GetOperation() const noexcept
 Node *
 SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  auto node = create(region, GetOperation(), operands);
-  graph()->MarkDenormalized();
-  return node;
+  return create(region, GetOperation(), operands);
 }
 
 Node *

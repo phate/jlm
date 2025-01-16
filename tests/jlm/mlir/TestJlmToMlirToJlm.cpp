@@ -21,8 +21,6 @@ TestUndef()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
   {
     // Create an undef operation
     std::cout << "Undef Operation" << std::endl;

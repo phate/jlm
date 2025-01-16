@@ -1201,9 +1201,6 @@ ConvertInterProceduralGraphModule(
       std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
-
   RegionalizedVariableMap regionalizedVariableMap(
       interProceduralGraphModule,
       graph->GetRootRegion());

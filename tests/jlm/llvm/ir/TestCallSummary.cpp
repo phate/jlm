@@ -246,9 +246,6 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto nf = rvsdg->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
 
@@ -283,9 +280,6 @@ TestCallSummaryComputationLambdaResult()
 
   // Arrange
   jlm::rvsdg::Graph rvsdg;
-
-  auto nf = rvsdg.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto pointerType = PointerType::Create();
   auto valueType = jlm::tests::valuetype::Create();

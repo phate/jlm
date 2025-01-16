@@ -9,7 +9,6 @@
 #include <jlm/rvsdg/tracker.hpp>
 
 #include <algorithm>
-#include <cxxabi.h>
 
 namespace jlm::rvsdg
 {
@@ -42,8 +41,7 @@ Graph::~Graph()
 }
 
 Graph::Graph()
-    : Normalized_(false),
-      RootRegion_(new Region(nullptr, this))
+    : RootRegion_(new Region(nullptr, this))
 {}
 
 std::unique_ptr<Graph>
@@ -53,24 +51,6 @@ Graph::Copy() const
   auto graph = std::make_unique<Graph>();
   GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap, true, true);
   return graph;
-}
-
-node_normal_form *
-Graph::GetNodeNormalForm(const std::type_info & type) noexcept
-{
-  auto i = NodeNormalForms_.find(std::type_index(type));
-  if (i != NodeNormalForms_.end())
-    return i.ptr();
-
-  const auto cinfo = dynamic_cast<const abi::__si_class_type_info *>(&type);
-  auto parent_normal_form = cinfo ? GetNodeNormalForm(*cinfo->__base_type) : nullptr;
-
-  std::unique_ptr<node_normal_form> nf(node_normal_form::create(type, parent_normal_form, this));
-
-  node_normal_form * result = nf.get();
-  NodeNormalForms_.insert(std::move(nf));
-
-  return result;
 }
 
 std::vector<Node *>

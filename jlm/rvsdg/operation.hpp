@@ -18,7 +18,6 @@ namespace jlm::rvsdg
 
 class Graph;
 class Node;
-class node_normal_form;
 class output;
 class Region;
 
@@ -41,9 +40,6 @@ public:
   {
     return !(*this == other);
   }
-
-  static jlm::rvsdg::node_normal_form *
-  normal_form(Graph * graph) noexcept;
 };
 
 template<class T>

@@ -24,7 +24,6 @@ class type;
 }
 
 class Graph;
-class node_normal_form;
 class output;
 class SubstitutionMap;
 
@@ -1075,9 +1074,6 @@ is(const Node * node) noexcept
 
 Node *
 producer(const jlm::rvsdg::output * output) noexcept;
-
-bool
-normalize(Node * node);
 
 }
 

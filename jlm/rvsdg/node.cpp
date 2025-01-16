@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -65,7 +64,6 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   if (is<node_input>(*this))
     static_cast<node_input *>(this)->node()->recompute_depth();
 
-  region()->graph()->MarkDenormalized();
   on_input_change(this, old_origin, new_origin);
 }
 
@@ -134,30 +132,6 @@ output::add_user(jlm::rvsdg::input * user)
   }
   users_.insert(user);
 }
-
-}
-
-jlm::rvsdg::node_normal_form *
-node_get_default_normal_form_(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::Graph * graph)
-{
-  return new jlm::rvsdg::node_normal_form(operator_class, parent, graph);
-}
-
-static void __attribute__((constructor))
-register_node_normal_form()
-{
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::Operation),
-      node_get_default_normal_form_);
-}
-
-namespace jlm::rvsdg
-{
-
-/* node_input  class */
 
 node_input::node_input(
     jlm::rvsdg::output * origin,
@@ -356,14 +330,6 @@ producer(const jlm::rvsdg::output * output) noexcept
     return nullptr;
 
   return producer(argument->input()->origin());
-}
-
-bool
-normalize(Node * node)
-{
-  const auto & op = node->GetOperation();
-  auto nf = node->graph()->GetNodeNormalForm(typeid(op));
-  return nf->normalize_node(node);
 }
 
 /**

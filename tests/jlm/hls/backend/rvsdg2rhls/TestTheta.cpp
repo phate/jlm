@@ -21,8 +21,6 @@ TestUnknownBoundaries()
   auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambda =
       lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);

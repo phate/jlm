@@ -11,6 +11,8 @@
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
+#include <typeindex>
+
 #include <deque>
 
 namespace jlm::llvm

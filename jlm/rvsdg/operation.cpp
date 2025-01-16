@@ -11,12 +11,6 @@ namespace jlm::rvsdg
 
 Operation::~Operation() noexcept = default;
 
-jlm::rvsdg::node_normal_form *
-Operation::normal_form(Graph * graph) noexcept
-{
-  return graph->GetNodeNormalForm(typeid(Operation));
-}
-
 SimpleOperation::~SimpleOperation() noexcept = default;
 
 size_t
