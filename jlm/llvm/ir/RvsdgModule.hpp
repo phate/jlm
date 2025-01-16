@@ -116,13 +116,13 @@ public:
   {}
 
   RvsdgModule(
-      jlm::util::filepath sourceFileName,
+      util::filepath sourceFileName,
       std::string targetTriple,
       std::string dataLayout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations)
-      : DataLayout_(std::move(dataLayout)),
+      : rvsdg::RvsdgModule(std::move(sourceFileName)),
+        DataLayout_(std::move(dataLayout)),
         TargetTriple_(std::move(targetTriple)),
-        SourceFileName_(std::move(sourceFileName)),
         StructTypeDeclarations_(std::move(declarations))
   {}
 
@@ -136,10 +136,10 @@ public:
   RvsdgModule &
   operator=(RvsdgModule &&) = delete;
 
-  [[nodiscard]] const jlm::util::filepath &
+  [[nodiscard]] const util::filepath &
   SourceFileName() const noexcept
   {
-    return SourceFileName_;
+    return SourceFilePath().value();
   }
 
   [[nodiscard]] const std::string &
@@ -205,7 +205,6 @@ public:
 private:
   std::string DataLayout_;
   std::string TargetTriple_;
-  const jlm::util::filepath SourceFileName_;
   std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
