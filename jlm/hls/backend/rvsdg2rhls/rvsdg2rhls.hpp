@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::hls
 {
@@ -23,7 +24,7 @@ is_constant(const rvsdg::Node * node)
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rm);
+rvsdg2rhls(llvm::RvsdgModule & rm, util::StatisticsCollector & collector);
 
 void
 rvsdg2ref(llvm::RvsdgModule & rm, std::string path);
