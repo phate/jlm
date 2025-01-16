@@ -19,7 +19,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
@@ -418,14 +417,24 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rhls)
 {
   pre_opt(rhls);
+  // TODO
+  // merge_gamma() performs a number of optimizations that operates on R-LLVM nodes.
+  // Thus, it should be possible to either replace these with other passes or move 
+  // them to the llvm backend.
   merge_gamma(rhls);
   util::StatisticsCollector statisticsCollector;
   llvm::DeadNodeElimination llvmDne;
   llvmDne.run(rhls, statisticsCollector);
 
   mem_sep_argument(rhls);
-  remove_unused_state(rhls);
-  // main conversion steps
+  llvm::InvariantValueRedirection llvmIvr;
+  llvmIvr.run(rhls, statisticsCollector);
+  llvm::NodeReduction llvmRed;
+  // TODO
+  // Would probably want to perform the NodeReduction pass here but it breaks assumptions
+  // in the memory optimization passes.
+
+  // main R-LLVM to R-HLS conversion steps
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
@@ -435,13 +444,16 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
+  // TODO
+  // Move llvmRed.run() earlier in the pipeline.
+  llvmRed.run(rhls, statisticsCollector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
   add_buffers(rhls, true);
-  // ensure that all rhls rules are met
+  // Ensure that all R-HLS rules are met
   check_rhls(rhls);
 }
 

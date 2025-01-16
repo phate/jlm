@@ -14,10 +14,12 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/Statistics.hpp>
 
 jlm::rvsdg::output *
 jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
@@ -723,6 +725,12 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // once.
   //
   remove_unused_state(root);
+  // TODO
+  // remove_unused_state() should be replaced with the following code
+  //  jlm::util::StatisticsCollector statisticsCollector;
+  //  llvm::InvariantValueRedirection llvmIvr;
+  //  llvmIvr.run(rm, statisticsCollector);
+
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);
