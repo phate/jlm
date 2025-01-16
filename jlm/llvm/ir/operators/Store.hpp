@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 

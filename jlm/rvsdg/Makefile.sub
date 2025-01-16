@@ -10,7 +10,6 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/nullary.cpp \
 	jlm/rvsdg/operation.cpp \
 	jlm/rvsdg/region.cpp \
-	jlm/rvsdg/simple-normal-form.cpp \
 	jlm/rvsdg/simple-node.cpp \
 	jlm/rvsdg/structural-node.cpp \
 	jlm/rvsdg/theta.cpp \
@@ -63,7 +62,6 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/nullary.hpp \
 	jlm/rvsdg/structural-node.hpp \
 	jlm/rvsdg/control.hpp \
-	jlm/rvsdg/simple-normal-form.hpp \
 	jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \
