@@ -23,8 +23,9 @@ TestStatistics()
   std::string expectedStatisticsDir = "/myStatisticsDir/";
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      jlm::util::filepath(expectedStatisticsDir + "myStatisticsFile"),
-      { jlm::util::Statistics::Id::SteensgaardAnalysis });
+      { jlm::util::Statistics::Id::SteensgaardAnalysis },
+      expectedStatisticsDir,
+      "inputFile");
 
   JlmOptCommandLineOptions commandLineOptions(
       jlm::util::filepath("inputFile.ll"),
@@ -32,7 +33,7 @@ TestStatistics()
       jlm::util::filepath("outputFile.ll"),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       statisticsCollectorSettings,
-      RvsdgTreePrinter::Configuration({ std::filesystem::temp_directory_path() }, {}),
+      RvsdgTreePrinter::Configuration({}),
       { JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
         JlmOptCommandLineOptions::OptimizationId::LoopUnrolling });
 
@@ -88,7 +89,7 @@ OptimizationIdToOptimizationTranslation()
       filepath(""),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       StatisticsCollectorSettings(),
-      RvsdgTreePrinter::Configuration(filepath(std::filesystem::temp_directory_path()), {}),
+      RvsdgTreePrinter::Configuration({}),
       optimizationIds);
 
   // Act & Assert
