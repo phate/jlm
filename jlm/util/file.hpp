@@ -7,9 +7,9 @@
 #define JLM_UTIL_FILE_HPP
 
 #include <jlm/util/common.hpp>
+#include <jlm/util/strfmt.hpp>
 
 #include <filesystem>
-#include <random>
 #include <string>
 
 namespace jlm::util
@@ -18,7 +18,7 @@ namespace jlm::util
 class filepath final
 {
 public:
-  inline filepath(const std::string & path)
+  filepath(const std::string & path)
       : path_(path)
   {}
 
@@ -26,7 +26,7 @@ public:
       : path_(other.path_)
   {}
 
-  filepath(filepath && other)
+  filepath(filepath && other) noexcept
       : path_(std::move(other.path_))
   {}
 
@@ -41,7 +41,7 @@ public:
   }
 
   filepath &
-  operator=(filepath && other)
+  operator=(filepath && other) noexcept
   {
     if (this == &other)
       return *this;
@@ -57,7 +57,7 @@ public:
    *    jlm::file f("/tmp/archive.tar.gz");
    *    auto base = f.base(); // base = "archive"
    */
-  inline std::string
+  [[nodiscard]] std::string
   base() const noexcept
   {
     auto fn = name();
@@ -77,7 +77,7 @@ public:
    *
    * @return The name of the file
    */
-  inline std::string
+  [[nodiscard]] std::string
   name() const noexcept
   {
     auto pos = path_.find_last_of("/");
@@ -94,7 +94,7 @@ public:
    *    jlm::file f("/tmp/archive.tar.gz");
    *    auto ext = f.complete_suffix(); // ext = "tar.gz"
    */
-  inline std::string
+  [[nodiscard]] std::string
   complete_suffix() const noexcept
   {
     auto fn = name();
@@ -112,7 +112,7 @@ public:
    *    jlm::file f("/tmp/archive.tar.gz");
    *    auto ext = f.suffix(); // ext = "gz"
    */
-  std::string
+  [[nodiscard]] std::string
   suffix() const noexcept
   {
     auto fn = name();
@@ -124,20 +124,61 @@ public:
   }
 
   /**
-   * \brief Returns a file's path, excluding the file name.
+   * \brief Returns the path to the file or directory's parent directory.
    *
-   * Example:
-   *    jlm::file f("/tmp/archive.tar.gz");
-   *    auto path = f.path(); // path = "/tmp/"
+   * If the current path does not contain a parent directory, either "/" or "" is returned,
+   * depending on whether this is an absolute or relative path.
+   *
+   * This function does not respect ".." and instead treats it like any other folder,
+   * just like the GNU coreutil "dirname"
+   *
+   * Examples:
+   *    "/tmp/archive.tar.gz" => "/tmp/"
+   *    "/tmp/jlm/" => "/tmp/"
+   *    "dir/file.txt" => "dir/"
+   *    "test.txt" => ""
+   * Special cases:
+   *    "/" => "/"
+   *    "." => ""
+   *    "" => ""
    */
-  std::string
+  [[nodiscard]] std::string
   path() const noexcept
   {
-    auto pos = path_.find_last_of("/");
+    if (path_.empty())
+      return "";
+    if (path_ == "/")
+      return "/";
+
+    // Ignore a potential trailing '/'
+    auto pos = path_.find_last_of("/", path_.size() - 2);
+
+    // If no / was found, path_ is a file in the current working directory
     if (pos == std::string::npos)
       return "";
 
     return path_.substr(0, pos + 1);
+  }
+
+  /**
+   * Creates a new filepath "this / other".
+   *
+   * If other is an absolute path, the "this"-part is completely ignored.
+   *
+   * Examples:
+   *  "/tmp/" join "a.txt"    => "/tmp/a.txt"
+   *  "a/b" join "c/d"        => "a/b/c/d"
+   *  "a/b" join "/tmp/x"     => "/tmp/x"
+   *
+   * @param other the second part of the path
+   * @return the joined file path
+   */
+  [[nodiscard]] util::filepath
+  join(const util::filepath & other) const
+  {
+    std::filesystem::path t(to_str());
+    t.append(other.to_str());
+    return t.string();
   }
 
   /**
@@ -174,19 +215,43 @@ public:
     return std::filesystem::is_regular_file(fileStatus);
   }
 
-  inline std::string
+  /**
+   * Creates the directory represented by this filepath object.
+   * The parent directory must already exist.
+   * The directory can also exist already, in which case this is a no-op.
+   *
+   * @throws jlm::util::error if an error occurs
+   */
+  void
+  CreateDirectory() const
+  {
+    if (IsFile())
+      throw error("file already exists: " + path_);
+
+    filepath baseDir(path());
+    if (!baseDir.IsDirectory())
+      throw error("parent directory is not a directory: " + baseDir.to_str());
+
+    std::error_code ec;
+    std::filesystem::create_directory(path_, ec);
+
+    if (ec.value() != 0)
+      throw error("could not create directory '" + path_ + "': " + ec.message());
+  }
+
+  [[nodiscard]] std::string
   to_str() const noexcept
   {
     return path_;
   }
 
-  inline bool
+  [[nodiscard]] bool
   operator==(const filepath & other) const noexcept
   {
     return path_ == other.path_;
   }
 
-  inline bool
+  [[nodiscard]] bool
   operator==(const std::string & f) const noexcept
   {
     return path_ == f;
@@ -206,7 +271,7 @@ public:
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)
   {
-    auto randomString = CreateRandomString(6);
+    auto randomString = CreateRandomAlphanumericString(6);
     filepath filePath(directory.to_str() + "/" + fileNamePrefix + randomString + fileNameSuffix);
 
     JLM_ASSERT(!filePath.Exists());
@@ -214,25 +279,6 @@ public:
   }
 
 private:
-  static std::string
-  CreateRandomString(std::size_t length)
-  {
-    const std::string characterSet =
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-    std::random_device random_device;
-    std::mt19937 generator(random_device());
-    std::uniform_int_distribution<> distribution(0, characterSet.size() - 1);
-
-    std::string result;
-    for (std::size_t i = 0; i < length; ++i)
-    {
-      result += characterSet[distribution(generator)];
-    }
-
-    return result;
-  }
-
   std::string path_;
 };
 

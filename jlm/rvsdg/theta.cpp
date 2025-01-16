@@ -8,6 +8,8 @@
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <algorithm>
+
 namespace jlm::rvsdg
 {
 

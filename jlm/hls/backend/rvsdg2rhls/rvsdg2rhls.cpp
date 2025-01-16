@@ -416,13 +416,13 @@ rvsdg2ref(llvm::RvsdgModule & rhls, std::string path)
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rhls)
+rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
   merge_gamma(rhls);
-  util::StatisticsCollector statisticsCollector;
+
   llvm::DeadNodeElimination llvmDne;
-  llvmDne.run(rhls, statisticsCollector);
+  llvmDne.run(rhls, collector);
 
   mem_sep_argument(rhls);
   remove_unused_state(rhls);
@@ -431,7 +431,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
-  hlsCne.run(rhls, statisticsCollector);
+  hlsCne.run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);

@@ -1301,11 +1301,8 @@ TestStatistics()
 {
   // Arrange
   jlm::tests::LoadTest1 test;
-  jlm::util::filepath filePath("/tmp/TestDisabledStatistics");
-  std::remove(filePath.to_str().c_str());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      filePath,
       { jlm::util::Statistics::Id::SteensgaardAnalysis });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
