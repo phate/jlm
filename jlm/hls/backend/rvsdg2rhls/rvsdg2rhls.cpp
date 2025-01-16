@@ -419,7 +419,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   pre_opt(rhls);
   // TODO
   // merge_gamma() performs a number of optimizations that operates on R-LLVM nodes.
-  // Thus, it should be possible to either replace these with other passes or move 
+  // Thus, it should be possible to either replace these with other passes or move
   // them to the llvm backend.
   merge_gamma(rhls);
   util::StatisticsCollector statisticsCollector;
