@@ -9,9 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 namespace jlm::llvm
 {
