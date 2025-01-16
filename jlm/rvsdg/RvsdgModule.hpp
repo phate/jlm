@@ -7,6 +7,8 @@
 #define JLM_RVSDG_RVSDGMODULE_HPP
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/util/file.hpp>
+#include <optional>
 
 namespace jlm::rvsdg
 {
@@ -20,6 +22,10 @@ public:
   virtual ~RvsdgModule() noexcept = default;
 
   RvsdgModule() = default;
+
+  explicit RvsdgModule(util::filepath sourceFilePath)
+      : SourceFilePath_(std::move(sourceFilePath))
+  {}
 
   RvsdgModule(const RvsdgModule &) = delete;
 
@@ -51,8 +57,15 @@ public:
     return Rvsdg_;
   }
 
+  [[nodiscard]] const std::optional<util::filepath> &
+  SourceFilePath() const noexcept
+  {
+    return SourceFilePath_;
+  }
+
 private:
   Graph Rvsdg_;
+  std::optional<util::filepath> SourceFilePath_{};
 };
 
 }
