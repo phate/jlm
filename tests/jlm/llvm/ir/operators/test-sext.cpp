@@ -22,9 +22,6 @@ test_bitunary_reduction()
 
   // Arrange
   Graph graph;
-  auto nf = jlm::llvm::sext_op::normal_form(&graph);
-  nf->set_mutable(false);
-
   auto bitType32 = bittype::Create(32);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bitType32, "x");
@@ -54,9 +51,6 @@ test_bitbinary_reduction()
 
   // Arrange
   Graph graph;
-  auto nf = sext_op::normal_form(&graph);
-  nf->set_mutable(false);
-
   auto bt32 = bittype::Create(32);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
@@ -87,9 +81,6 @@ test_inverse_reduction()
 
   // Arrange
   Graph graph;
-  auto nf = sext_op::normal_form(&graph);
-  nf->set_mutable(false);
-
   auto bt64 = bittype::Create(64);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bt64, "x");

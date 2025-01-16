@@ -368,22 +368,6 @@ Region::prune(bool recursive)
   }
 }
 
-void
-Region::normalize(bool recursive)
-{
-  for (auto node : jlm::rvsdg::topdown_traverser(this))
-  {
-    if (auto structnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        structnode->subregion(n)->normalize(recursive);
-    }
-
-    const auto & op = node->GetOperation();
-    graph()->GetNodeNormalForm(typeid(op))->normalize_node(node);
-  }
-}
-
 bool
 Region::IsRootRegion() const noexcept
 {

@@ -7,7 +7,6 @@
 #ifndef JLM_RVSDG_GRAPH_HPP
 #define JLM_RVSDG_GRAPH_HPP
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 
@@ -77,27 +76,11 @@ public:
     return *RootRegion_;
   }
 
-  void
-  MarkDenormalized() noexcept
-  {
-    Normalized_ = false;
-  }
-
-  void
-  Normalize()
-  {
-    GetRootRegion().normalize(true);
-    Normalized_ = true;
-  }
-
   /**
    * @return A copy of the RVSDG.
    */
   [[nodiscard]] std::unique_ptr<Graph>
   Copy() const;
-
-  node_normal_form *
-  GetNodeNormalForm(const std::type_info & type) noexcept;
 
   /**
    * Remove all dead nodes in the graph.
@@ -123,9 +106,7 @@ public:
   ExtractTailNodes(const Graph & rvsdg);
 
 private:
-  bool Normalized_;
   std::unique_ptr<Region> RootRegion_;
-  node_normal_form_hash NodeNormalForms_{};
 };
 
 }

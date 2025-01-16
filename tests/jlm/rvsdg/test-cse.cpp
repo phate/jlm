@@ -16,8 +16,6 @@ test_main()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
 
   auto NormalizeCne =
       [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)

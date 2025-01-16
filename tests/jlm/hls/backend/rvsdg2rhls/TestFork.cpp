@@ -22,8 +22,6 @@ TestFork()
   auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambda =
       lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
@@ -91,8 +89,6 @@ TestConstantFork()
   auto ft = jlm::rvsdg::FunctionType::Create({ b32 }, { b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambda =
       lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);

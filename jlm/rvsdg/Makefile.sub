@@ -4,7 +4,6 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/FunctionType.cpp \
 	jlm/rvsdg/gamma.cpp \
 	jlm/rvsdg/graph.cpp \
-	jlm/rvsdg/node-normal-form.cpp \
 	jlm/rvsdg/node.cpp \
 	jlm/rvsdg/notifiers.cpp \
 	jlm/rvsdg/nullary.cpp \
@@ -57,7 +56,6 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/RvsdgModule.hpp \
 	jlm/rvsdg/bitstring.hpp \
 	jlm/rvsdg/node.hpp \
-	jlm/rvsdg/node-normal-form.hpp \
 	jlm/rvsdg/NodeNormalization.hpp \
 	jlm/rvsdg/nullary.hpp \
 	jlm/rvsdg/structural-node.hpp \

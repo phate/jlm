@@ -92,9 +92,6 @@ ReduceFlattenedBinaryReductionParallel()
       jlm::rvsdg::BinaryOperation::flags::associative);
 
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
-  nf->set_mutable(false);
-
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
@@ -143,9 +140,6 @@ ReduceFlattenedBinaryReductionLinear()
       jlm::rvsdg::BinaryOperation::flags::associative);
 
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
-  nf->set_mutable(false);
-
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");

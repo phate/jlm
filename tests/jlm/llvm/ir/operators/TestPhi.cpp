@@ -69,10 +69,9 @@ TestPhiCreation()
   auto phi = pb.end();
   GraphExport::Create(*phi->output(0), "dummy");
 
-  graph.Normalize();
   graph.PruneNodes();
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stderr);
+  view(&graph.GetRootRegion(), stderr);
 }
 
 static void
