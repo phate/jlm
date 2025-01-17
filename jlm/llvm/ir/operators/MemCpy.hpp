@@ -197,8 +197,10 @@ public:
     std::vector<rvsdg::output *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
-    return *rvsdg::SimpleNode::Create(destination.region(), operation, operands);
+    return rvsdg::CreateOpNode<MemCpyVolatileOperation>(
+        operands,
+        length.Type(),
+        memoryStates.size());
   }
 
 private:
