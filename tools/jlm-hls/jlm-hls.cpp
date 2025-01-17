@@ -22,23 +22,23 @@
 #include <llvm/Support/SourceMgr.h>
 
 static void
-stringToFile(std::string output, std::string fileName)
+stringToFile(const std::string & output, const jlm::util::filepath & fileName)
 {
   std::ofstream outputFile;
-  outputFile.open(fileName);
+  outputFile.open(fileName.to_str());
   outputFile << output;
   outputFile.close();
 }
 
 static void
-llvmToFile(jlm::llvm::RvsdgModule & module, std::string fileName)
+llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::filepath & fileName)
 {
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
   auto jm = jlm::llvm::rvsdg2jlm::rvsdg2jlm(module, statisticsCollector);
   auto lm = jlm::llvm::jlm2llvm::convert(*jm, ctx);
   std::error_code EC;
-  llvm::raw_fd_ostream os(fileName, EC);
+  llvm::raw_fd_ostream os(fileName.to_str(), EC);
   lm->print(os, nullptr);
 }
 
@@ -50,7 +50,7 @@ main(int argc, char ** argv)
   llvm::LLVMContext ctx;
   llvm::SMDiagnostic err;
   auto llvmModule = llvm::parseIRFile(commandLineOptions.InputFile_.to_str(), err, ctx);
-  llvmModule->setSourceFileName(commandLineOptions.OutputFiles_.path() + "/jlm_hls");
+  llvmModule->setSourceFileName(commandLineOptions.OutputFiles_.Dirname().Join("jlm_hls").to_str());
   if (!llvmModule)
   {
     err.print(argv[0], llvm::errs());
@@ -58,11 +58,10 @@ main(int argc, char ** argv)
   }
 
   // TODO: Get demanded statistics and output folder from command line options
-  auto statisticsFolder = std::filesystem::temp_directory_path();
   auto moduleName = commandLineOptions.InputFile_.base();
   jlm::util::StatisticsCollectorSettings settings(
       {},
-      jlm::util::filepath(statisticsFolder),
+      jlm::util::filepath::TempDirectoryPath(),
       moduleName);
   jlm::util::StatisticsCollector collector(std::move(settings));
 
@@ -75,15 +74,15 @@ main(int argc, char ** argv)
   {
     auto hlsFunction = jlm::hls::split_hls_function(*rvsdgModule, commandLineOptions.HlsFunction_);
 
-    llvmToFile(*rvsdgModule, commandLineOptions.OutputFiles_.to_str() + ".rest.ll");
-    llvmToFile(*hlsFunction, commandLineOptions.OutputFiles_.to_str() + ".function.ll");
+    llvmToFile(*rvsdgModule, commandLineOptions.OutputFiles_.WithSuffix(".rest.ll"));
+    llvmToFile(*hlsFunction, commandLineOptions.OutputFiles_.WithSuffix(".function.ll"));
     return 0;
   }
 
   if (commandLineOptions.OutputFormat_
       == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Firrtl)
   {
-    jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.to_str() + ".ref.ll");
+    jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.WithSuffix(".ref.ll"));
     jlm::hls::rvsdg2rhls(*rvsdgModule, collector);
 
     // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
@@ -91,9 +90,11 @@ main(int argc, char ** argv)
     // is based on CIRCT's Firtool library, which assumes that the FIRRTL is read from a file.
     jlm::hls::RhlsToFirrtlConverter hls;
     auto output = hls.ToString(*rvsdgModule);
-    jlm::util::filepath firrtlFile(commandLineOptions.OutputFiles_.to_str() + ".fir");
-    stringToFile(output, firrtlFile.to_str());
-    jlm::util::filepath outputVerilogFile(commandLineOptions.OutputFiles_.to_str() + ".v");
+
+    const auto firrtlFile = commandLineOptions.OutputFiles_.WithSuffix(".fir");
+    stringToFile(output, firrtlFile);
+
+    const auto outputVerilogFile = commandLineOptions.OutputFiles_.WithSuffix(".v");
     if (!jlm::hls::FirrtlToVerilogConverter::Convert(firrtlFile, outputVerilogFile))
     {
       std::cerr << "The FIRRTL to Verilog conversion failed.\n" << std::endl;
@@ -101,11 +102,13 @@ main(int argc, char ** argv)
     }
 
     jlm::hls::VerilatorHarnessHLS vhls(outputVerilogFile);
-    stringToFile(vhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".harness.cpp");
+    stringToFile(
+        vhls.run(*rvsdgModule),
+        commandLineOptions.OutputFiles_.WithSuffix(".harness.cpp"));
 
     // TODO: hide behind flag
     jlm::hls::JsonHLS jhls;
-    stringToFile(jhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.to_str() + ".json");
+    stringToFile(jhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.WithSuffix(".json"));
   }
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)
@@ -113,7 +116,9 @@ main(int argc, char ** argv)
     jlm::hls::rvsdg2rhls(*rvsdgModule, collector);
 
     jlm::hls::DotHLS dhls;
-    stringToFile(dhls.run(*rvsdgModule), commandLineOptions.OutputFiles_.path() + "/jlm_hls.dot");
+    stringToFile(
+        dhls.run(*rvsdgModule),
+        commandLineOptions.OutputFiles_.Dirname().Join("jlm_hls.dot"));
   }
   else
   {

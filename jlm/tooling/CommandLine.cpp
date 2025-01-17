@@ -626,20 +626,21 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
 
   for (auto & inputFile : inputFiles)
   {
-    if (IsObjectFile(inputFile))
+    util::filepath inputFilePath(inputFile);
+    if (IsObjectFile(inputFilePath))
     {
       /* FIXME: print a warning like clang if noLinking is true */
       CommandLineOptions_.Compilations_.push_back(
-          { inputFile, util::filepath(""), inputFile, "", false, false, false, true });
+          { inputFilePath, util::filepath(""), inputFilePath, "", false, false, false, true });
 
       continue;
     }
 
     CommandLineOptions_.Compilations_.push_back(
-        { inputFile,
-          mF.empty() ? ToDependencyFile(inputFile) : util::filepath(mF),
-          ToObjectFile(inputFile),
-          mT.empty() ? ToObjectFile(inputFile).name() : mT,
+        { inputFilePath,
+          mF.empty() ? ToDependencyFile(inputFilePath) : util::filepath(mF),
+          ToObjectFile(inputFilePath),
+          mT.empty() ? ToObjectFile(inputFilePath).name() : mT,
           true,
           true,
           true,
@@ -648,14 +649,15 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
 
   if (!outputFile.empty())
   {
+    util::filepath outputFilePath(outputFile);
     if (noLinking)
     {
       JLM_ASSERT(CommandLineOptions_.Compilations_.size() == 1);
-      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFile);
+      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFilePath);
     }
     else
     {
-      CommandLineOptions_.OutputFile_ = util::filepath(outputFile);
+      CommandLineOptions_.OutputFile_ = outputFilePath;
     }
   }
 
@@ -686,13 +688,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc("Write output to <file>"),
       cl::value_desc("file"));
 
-  std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path() / "jlm";
+  const auto statisticsDirectoryDefault = util::filepath::TempDirectoryPath().Join("jlm");
   const auto statisticDirectoryDescription =
       "Write statistics and debug output to files in <dir>. Default is "
-      + statisticsDirectoryDefault + ".";
+      + statisticsDirectoryDefault.to_str() + ".";
   cl::opt<std::string> statisticDirectory(
       "s",
-      cl::init(statisticsDirectoryDefault),
+      cl::init(statisticsDirectoryDefault.to_str()),
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
@@ -925,7 +927,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
       inputFormat,
-      outputFile,
+      util::filepath(outputFile),
       outputFormat,
       std::move(statisticsCollectorSettings),
       std::move(treePrinterConfiguration),
@@ -995,9 +997,9 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
     throw jlm::util::error(
         "jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
 
-  CommandLineOptions_.InputFile_ = inputFile;
+  CommandLineOptions_.InputFile_ = util::filepath(inputFile);
   CommandLineOptions_.HlsFunction_ = std::move(hlsFunction);
-  CommandLineOptions_.OutputFiles_ = outputFolder;
+  CommandLineOptions_.OutputFiles_ = util::filepath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
 
@@ -1228,20 +1230,21 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const * 
 
   for (auto & inputFile : inputFiles)
   {
-    if (IsObjectFile(inputFile))
+    util::filepath inputFilePath(inputFile);
+    if (IsObjectFile(inputFilePath))
     {
       /* FIXME: print a warning like clang if noLinking is true */
       CommandLineOptions_.Compilations_.push_back(
-          { inputFile, util::filepath(""), inputFile, "", false, false, false, true });
+          { inputFilePath, util::filepath(""), inputFilePath, "", false, false, false, true });
 
       continue;
     }
 
     CommandLineOptions_.Compilations_.push_back(
-        { inputFile,
-          mF.empty() ? CreateDependencyFileFromFile(inputFile) : util::filepath(mF),
-          CreateObjectFileFromFile(inputFile),
-          mT.empty() ? CreateObjectFileFromFile(inputFile).name() : mT,
+        { inputFilePath,
+          mF.empty() ? CreateDependencyFileFromFile(inputFilePath) : util::filepath(mF),
+          CreateObjectFileFromFile(inputFilePath),
+          mT.empty() ? CreateObjectFileFromFile(inputFilePath).name() : mT,
           true,
           true,
           true,
@@ -1250,14 +1253,15 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const * 
 
   if (!outputFile.empty())
   {
+    util::filepath outputFilePath(outputFile);
     if (noLinking)
     {
       JLM_ASSERT(CommandLineOptions_.Compilations_.size() == 1);
-      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFile);
+      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFilePath);
     }
     else
     {
-      CommandLineOptions_.OutputFile_ = util::filepath(outputFile);
+      CommandLineOptions_.OutputFile_ = outputFilePath;
     }
   }
 
@@ -1273,13 +1277,13 @@ JhlsCommandLineParser::IsObjectFile(const util::filepath & file)
 util::filepath
 JhlsCommandLineParser::CreateObjectFileFromFile(const util::filepath & f)
 {
-  return { f.path() + f.base() + ".o" };
+  return f.Dirname().Join(f.base() + ".o");
 }
 
 util::filepath
 JhlsCommandLineParser::CreateDependencyFileFromFile(const util::filepath & f)
 {
-  return { f.path() + f.base() + ".d" };
+  return f.Dirname().Join(f.base() + ".d");
 }
 
 const JhlsCommandLineOptions &
