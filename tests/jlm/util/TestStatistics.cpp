@@ -129,16 +129,15 @@ TestStatisticsPrinting()
   using namespace jlm::util;
 
   // Arrange
-  auto testOutputDir = std::filesystem::temp_directory_path() / "jlm-test-statistics";
-  auto testOutputPath = filepath(testOutputDir);
+  auto testOutputDir = filepath::TempDirectoryPath().Join("jlm-test-statistics");
 
   // Remove the output dir if it was not properly cleaned up last time
-  std::filesystem::remove(testOutputDir);
-  assert(!testOutputPath.Exists());
+  std::filesystem::remove(testOutputDir.to_str());
+  assert(!testOutputDir.Exists());
 
   StatisticsCollectorSettings settings(
       { Statistics::Id::Aggregation },
-      testOutputPath,
+      testOutputDir,
       "test-module");
 
   StatisticsCollector collector(settings);
@@ -155,10 +154,10 @@ TestStatisticsPrinting()
   collector.PrintStatistics();
 
   // Assert
-  assert(testOutputPath.IsDirectory());
+  assert(testOutputDir.IsDirectory());
 
   const auto outputFileName = "test-module-" + settings.GetUniqueString() + "-statistics.log";
-  std::ifstream file(testOutputDir / outputFileName);
+  std::ifstream file(testOutputDir.Join(outputFileName).to_str());
   std::string name, fileName, measurement;
   file >> name >> fileName >> measurement;
 
@@ -167,7 +166,7 @@ TestStatisticsPrinting()
   assert(measurement == "count:10");
 
   // Cleanup
-  std::filesystem::remove_all(testOutputDir);
+  std::filesystem::remove_all(testOutputDir.to_str());
 
   return 0;
 }

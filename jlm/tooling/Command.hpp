@@ -32,7 +32,7 @@ public:
   ToString() const = 0;
 
   virtual void
-  Run() const = 0;
+  Run() const;
 };
 
 /**
@@ -160,9 +160,6 @@ public:
 
   [[nodiscard]] std::string
   ToString() const override;
-
-  void
-  Run() const override;
 
   [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
@@ -297,9 +294,6 @@ public:
 
   [[nodiscard]] std::string
   ToString() const override;
-
-  void
-  Run() const override;
 
   [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
@@ -498,9 +492,6 @@ public:
     return OutputFile_;
   }
 
-  void
-  Run() const override;
-
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
@@ -547,9 +538,6 @@ public:
 
   [[nodiscard]] std::string
   ToString() const override;
-
-  void
-  Run() const override;
 
   [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
@@ -600,31 +588,28 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  void
-  Run() const override;
-
   [[nodiscard]] util::filepath
   FirrtlFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".fir";
+    return OutputFolder_.WithSuffix(".fir");
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".rest.ll";
+    return OutputFolder_.WithSuffix(".rest.ll");
   }
 
   [[nodiscard]] util::filepath
   RefFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".ref.ll";
+    return OutputFolder_.WithSuffix(".ref.ll");
   }
 
   [[nodiscard]] util::filepath
   HarnessFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".harness.cpp";
+    return OutputFolder_.WithSuffix(".harness.cpp");
   }
 
   [[nodiscard]] const util::filepath &
@@ -669,19 +654,16 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  void
-  Run() const override;
-
   [[nodiscard]] util::filepath
   HlsFunctionFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".function.ll";
+    return OutputFolder_.WithSuffix(".function.ll");
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".rest.ll";
+    return OutputFolder_.WithSuffix(".rest.ll");
   }
 
   [[nodiscard]] const util::filepath &

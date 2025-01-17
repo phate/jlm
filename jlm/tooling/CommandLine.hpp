@@ -619,13 +619,13 @@ private:
   static util::filepath
   ToObjectFile(const util::filepath & file)
   {
-    return { file.path() + file.base() + ".o" };
+    return file.Dirname().Join(file.base() + ".o");
   }
 
   static util::filepath
   ToDependencyFile(const util::filepath & file)
   {
-    return { file.path() + file.base() + ".d" };
+    return file.Dirname().Join(file.base() + ".d");
   }
 
   JlcCommandLineOptions CommandLineOptions_;

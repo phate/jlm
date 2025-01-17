@@ -18,7 +18,7 @@ namespace jlm::util
 class filepath final
 {
 public:
-  filepath(const std::string & path)
+  explicit filepath(const std::string & path)
       : path_(path)
   {}
 
@@ -142,28 +142,29 @@ public:
    *    "." => ""
    *    "" => ""
    */
-  [[nodiscard]] std::string
-  path() const noexcept
+  [[nodiscard]] filepath
+  Dirname() const noexcept
   {
     if (path_.empty())
-      return "";
+      return filepath("");
     if (path_ == "/")
-      return "/";
+      return filepath("/");
 
     // Ignore a potential trailing '/'
     auto pos = path_.find_last_of("/", path_.size() - 2);
 
     // If no / was found, path_ is a file in the current working directory
     if (pos == std::string::npos)
-      return "";
+      return filepath("");
 
-    return path_.substr(0, pos + 1);
+    return filepath(path_.substr(0, pos + 1));
   }
 
   /**
    * Creates a new filepath "this / other".
    *
    * If other is an absolute path, the "this"-part is completely ignored.
+   * What constitutes an absolute path is platform specific.
    *
    * Examples:
    *  "/tmp/" join "a.txt"    => "/tmp/a.txt"
@@ -173,12 +174,28 @@ public:
    * @param other the second part of the path
    * @return the joined file path
    */
-  [[nodiscard]] util::filepath
-  join(const util::filepath & other) const
+  [[nodiscard]] filepath
+  Join(const std::string & other) const
   {
     std::filesystem::path t(to_str());
-    t.append(other.to_str());
-    return t.string();
+    t.append(other);
+    return filepath(t.string());
+  }
+
+  [[nodiscard]] filepath
+  Join(const filepath & other) const
+  {
+    return Join(other.to_str());
+  }
+
+  /**
+   * Creates a new filepath by adding the given suffix
+   * @return the new filepath
+   */
+  [[nodiscard]] filepath
+  WithSuffix(const std::string & suffix) const
+  {
+    return filepath(path_ + suffix);
   }
 
   /**
@@ -228,7 +245,7 @@ public:
     if (IsFile())
       throw error("file already exists: " + path_);
 
-    filepath baseDir(path());
+    filepath baseDir(Dirname());
     if (!baseDir.IsDirectory())
       throw error("parent directory is not a directory: " + baseDir.to_str());
 
@@ -239,7 +256,7 @@ public:
       throw error("could not create directory '" + path_ + "': " + ec.message());
   }
 
-  [[nodiscard]] std::string
+  [[nodiscard]] const std::string &
   to_str() const noexcept
   {
     return path_;
@@ -265,9 +282,9 @@ public:
    *
    * @return A unique file
    */
-  static jlm::util::filepath
+  static filepath
   CreateUniqueFileName(
-      const jlm::util::filepath & directory,
+      const filepath & directory,
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)
   {
@@ -276,6 +293,15 @@ public:
 
     JLM_ASSERT(!filePath.Exists());
     return filePath;
+  }
+
+  /**
+   * @return a directory suitable for temporary files
+   */
+  [[nodiscard]] static filepath
+  TempDirectoryPath()
+  {
+    return filepath(std::filesystem::temp_directory_path().string());
   }
 
 private:

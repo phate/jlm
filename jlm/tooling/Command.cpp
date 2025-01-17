@@ -52,6 +52,18 @@ namespace jlm::tooling
 
 Command::~Command() = default;
 
+void
+Command::Run() const
+{
+  const auto command = ToString();
+  const auto returnCode = system(command.c_str());
+  if (returnCode != EXIT_SUCCESS)
+  {
+    throw util::error(
+        util::strfmt("Subcommand failed with status code ", returnCode, ": ", command));
+  }
+}
+
 PrintCommandsCommand::~PrintCommandsCommand() = default;
 
 std::string
@@ -227,13 +239,6 @@ ClangCommand::ReplaceAll(std::string str, const std::string & from, const std::s
   return str;
 }
 
-void
-ClangCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
 LlcCommand::~LlcCommand() = default;
 
 std::string
@@ -252,13 +257,6 @@ LlcCommand::ToString() const
       OutputFile_.to_str(),
       " ",
       InputFile_.to_str());
-}
-
-void
-LlcCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 std::string
@@ -684,20 +682,14 @@ LlvmOptCommand::ToString() const
   }
 
   return util::strfmt(
-      clangpath.path() + "opt ",
+      clangpath.Dirname().Join("opt").to_str(),
+      " ",
       optimizationArguments,
       WriteLlvmAssembly_ ? "-S " : "",
       "-o ",
       OutputFile().to_str(),
       " ",
       InputFile_.to_str());
-}
-
-void
-LlvmOptCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 std::string
@@ -721,8 +713,8 @@ LlvmLinkCommand::ToString() const
     inputFilesArgument += inputFile.to_str() + " ";
 
   return util::strfmt(
-      clangpath.path(),
-      "llvm-link ",
+      clangpath.Dirname().Join("llvm-link").to_str(),
+      " ",
       WriteLlvmAssembly_ ? "-S " : "",
       Verbose_ ? "-v " : "",
       "-o ",
@@ -731,26 +723,12 @@ LlvmLinkCommand::ToString() const
       inputFilesArgument);
 }
 
-void
-LlvmLinkCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
 JlmHlsCommand::~JlmHlsCommand() noexcept = default;
 
 std::string
 JlmHlsCommand::ToString() const
 {
   return util::strfmt("jlm-hls ", "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
-}
-
-void
-JlmHlsCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept = default;
@@ -768,13 +746,6 @@ JlmHlsExtractCommand::ToString() const
       OutputFolder_.to_str(),
       " ",
       InputFile().to_str());
-}
-
-void
-JlmHlsExtractCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 }
