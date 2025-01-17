@@ -30,12 +30,12 @@ ExtractFloatingPointSize(const ::llvm::Type * type);
 std::shared_ptr<const rvsdg::ValueType>
 ConvertType(const ::llvm::Type * type, context & ctx);
 
-static inline std::shared_ptr<const FunctionType>
+static inline std::shared_ptr<const rvsdg::FunctionType>
 ConvertFunctionType(const ::llvm::FunctionType * type, context & ctx)
 {
   auto t = ConvertType(::llvm::cast<::llvm::Type>(type), ctx);
-  JLM_ASSERT(dynamic_cast<const FunctionType *>(t.get()));
-  return std::dynamic_pointer_cast<const FunctionType>(t);
+  JLM_ASSERT(dynamic_cast<const rvsdg::FunctionType *>(t.get()));
+  return std::dynamic_pointer_cast<const rvsdg::FunctionType>(t);
 }
 
 static inline std::shared_ptr<const PointerType>

@@ -11,9 +11,9 @@ namespace jlm::rvsdg
 jlm::util::notifier<rvsdg::Region *> on_region_create;
 jlm::util::notifier<rvsdg::Region *> on_region_destroy;
 
-jlm::util::notifier<jlm::rvsdg::node *> on_node_create;
-jlm::util::notifier<jlm::rvsdg::node *> on_node_destroy;
-jlm::util::notifier<jlm::rvsdg::node *, size_t> on_node_depth_change;
+util::notifier<rvsdg::Node *> on_node_create;
+util::notifier<rvsdg::Node *> on_node_destroy;
+util::notifier<rvsdg::Node *, size_t> on_node_depth_change;
 
 jlm::util::notifier<jlm::rvsdg::input *> on_input_create;
 jlm::util::notifier<

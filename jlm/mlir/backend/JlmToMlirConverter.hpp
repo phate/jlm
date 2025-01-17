@@ -18,6 +18,9 @@
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
+// MLIR JLM dialects
+#include <JLM/JLMOps.h>
+
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
 
@@ -71,7 +74,7 @@ private:
    * \return An MLIR RVSDG OmegaNode.
    */
   ::mlir::rvsdg::OmegaNode
-  ConvertOmega(const rvsdg::graph & graph);
+  ConvertOmega(const rvsdg::Graph & graph);
 
   /**
    * Converts all nodes in an RVSDG region. Conversion of structural nodes cause their regions to
@@ -93,8 +96,8 @@ private:
    */
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
-      const rvsdg::node & node,
-      const std::unordered_map<rvsdg::node *, ::mlir::Operation *> & operationsMap,
+      const rvsdg::Node & node,
+      const std::unordered_map<rvsdg::Node *, ::mlir::Operation *> & operationsMap,
       ::mlir::Block & block);
 
   /**
@@ -106,7 +109,7 @@ private:
    */
   ::mlir::Operation *
   ConvertNode(
-      const rvsdg::node & node,
+      const rvsdg::Node & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
@@ -118,7 +121,7 @@ private:
    */
   ::mlir::Operation *
   ConvertBitBinaryNode(
-      const jlm::rvsdg::simple_op & bitOp,
+      const rvsdg::SimpleOperation & bitOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
@@ -128,18 +131,18 @@ private:
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
-  BitCompareNode(const jlm::rvsdg::simple_op & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
+  BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG simple_node to an MLIR RVSDG operation.
+   * Converts an RVSDG SimpleNode to an MLIR RVSDG operation.
    * \param node The RVSDG node to be converted
    * \param block The MLIR RVSDG block to insert the converted node.
-   * \param inputs The inputs to the simple_node.
+   * \param inputs The inputs to the SimpleNode.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   ConvertSimpleNode(
-      const rvsdg::simple_node & node,
+      const rvsdg::SimpleNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

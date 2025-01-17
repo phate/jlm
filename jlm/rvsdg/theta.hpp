@@ -12,10 +12,12 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/util/HashSet.hpp>
 
+#include <optional>
+
 namespace jlm::rvsdg
 {
 
-class ThetaOperation final : public structural_op
+class ThetaOperation final : public StructuralOperation
 {
 public:
   ~ThetaOperation() noexcept override;
@@ -23,74 +25,50 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 };
-
-class ThetaInput;
-class ThetaOutput;
 
 class ThetaNode final : public StructuralNode
 {
 public:
-  class loopvar_iterator
-  {
-  public:
-    constexpr loopvar_iterator(ThetaOutput * output) noexcept
-        : output_(output)
-    {}
-
-    const loopvar_iterator &
-    operator++() noexcept;
-
-    inline const loopvar_iterator
-    operator++(int) noexcept
-    {
-      loopvar_iterator it(*this);
-      ++(*this);
-      return it;
-    }
-
-    inline bool
-    operator==(const loopvar_iterator & other) const noexcept
-    {
-      return output_ == other.output_;
-    }
-
-    inline bool
-    operator!=(const loopvar_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    ThetaOutput *
-    operator*() noexcept
-    {
-      return output_;
-    }
-
-    ThetaOutput **
-    operator->() noexcept
-    {
-      return &output_;
-    }
-
-    ThetaOutput *
-    output() const noexcept
-    {
-      return output_;
-    }
-
-  private:
-    ThetaOutput * output_;
-  };
-
   ~ThetaNode() noexcept override;
 
 private:
   explicit ThetaNode(rvsdg::Region & parent);
 
 public:
+  /**
+   * \brief Description of a loop-carried variable.
+   *
+   * A loop-carried variable from the POV of a theta node has
+   * multiple representations (entry, pre-iteration,
+   * post-iteration, exit). This structure bundles
+   * all representations of a single loop-carried variable.
+   */
+  struct LoopVar
+  {
+    /**
+     * \brief Variable at loop entry (input to theta).
+     */
+    rvsdg::input * input;
+    /**
+     * \brief Variable before iteration (input argument to subregion).
+     */
+    rvsdg::output * pre;
+    /**
+     * \brief Variable after iteration (output result from subregion).
+     */
+    rvsdg::input * post;
+    /**
+     * \brief Variable at loop exit (output of theta).
+     */
+    rvsdg::output * output;
+  };
+
+  [[nodiscard]] const ThetaOperation &
+  GetOperation() const noexcept override;
+
   static ThetaNode *
   create(rvsdg::Region * parent)
   {
@@ -121,378 +99,134 @@ public:
       remove(node);
   }
 
-  inline size_t
-  nloopvars() const noexcept
-  {
-    JLM_ASSERT(ninputs() == noutputs());
-    return ninputs();
-  }
-
-  inline ThetaNode::loopvar_iterator
-  begin() const
-  {
-    if (ninputs() == 0)
-      return loopvar_iterator(nullptr);
-
-    return loopvar_iterator(output(0));
-  }
-
-  inline ThetaNode::loopvar_iterator
-  end() const
-  {
-    return loopvar_iterator(nullptr);
-  }
+  /**
+   * \brief Creates a new loop-carried variable.
+   *
+   * \param origin
+   *   Input value at start of loop.
+   *
+   * \returns
+   *   Loop variable description.
+   *
+   * Creates a new variable that is routed through the loop. The variable
+   * is set up such that the post-iteration value is the same as the
+   * pre-iteration value (i.e. the value remains unchanged through
+   * the loop). Caller can redirect edges inside the loop to turn this
+   * into a variable changed by the loop
+   */
+  LoopVar
+  AddLoopVar(rvsdg::output * origin);
 
   /**
-   * Remove theta outputs and their respective results.
+   * \brief Removes loop variables.
    *
-   * An output must match the condition specified by \p match and it must be dead.
+   * \param loopvars
+   *   The loop variables to be removed.
    *
-   * @tparam F A type that supports the function call operator: bool operator(const ThetaOutput&)
-   * @param match Defines the condition of the elements to remove.
-   * @return The inputs corresponding to the removed outputs.
+   * \pre
+   *   For each loopvar in \p loopvars the following must hold:
+   *   - loopvar.pre->origin() == loopvar.post
+   *   - loopvar.pre has no other users besides loopvar.post
+   *   - loopvar.output has no users
    *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * inputs might refer to outputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaInputsWhere()
-   * \see ThetaOutput#IsDead()
+   * Removes loop variables from this theta construct. The
+   * loop variables must be loop-invariant and otherwise unused.
+   * See dead node elimination that is explicitly structured
+   * to restructure loops before processing to ensure this
+   * invariant.
    */
-  template<typename F>
-  util::HashSet<const ThetaInput *>
-  RemoveThetaOutputsWhere(const F & match);
-
-  /**
-   * Remove all dead theta outputs and their respective results.
-   *
-   * @return The inputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * inputs might refer to outputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaOutputsWhere()
-   * \see ThetaOutput#IsDead()
-   */
-  util::HashSet<const ThetaInput *>
-  PruneThetaOutputs()
-  {
-    auto match = [](const ThetaOutput &)
-    {
-      return true;
-    };
-
-    return RemoveThetaOutputsWhere(match);
-  }
-
-  /**
-   * Remove theta inputs and their respective arguments.
-   *
-   * An input must match the condition specified by \p match and its respective argument must be
-   * dead.
-   *
-   * @tparam F A type that supports the function call operator: bool operator(const ThetaInput&)
-   * @param match Defines the condition of the elements to remove.
-   * @return The outputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * outputs might refer to inputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaOutputsWhere()
-   * \see RegionArgument#IsDead()
-   */
-  template<typename F>
-  util::HashSet<const ThetaOutput *>
-  RemoveThetaInputsWhere(const F & match);
-
-  /**
-   * Remove all dead theta inputs and their respective arguments.
-   *
-   * @return The outputs corresponding to the removed outputs.
-   *
-   * \note The application of this method might leave the theta node in an invalid state. Some
-   * outputs might refer to inputs that have been removed by the application of this method. It
-   * is up to the caller to ensure that the invariants of the theta node will eventually be met
-   * again.
-   *
-   * \see RemoveThetaInputsWhere()
-   * \see RegionArgument#IsDead()
-   */
-  util::HashSet<const ThetaOutput *>
-  PruneThetaInputs()
-  {
-    auto match = [](const ThetaInput &)
-    {
-      return true;
-    };
-
-    return RemoveThetaInputsWhere(match);
-  }
-
-  ThetaInput *
-  input(size_t index) const noexcept;
-
-  ThetaOutput *
-  output(size_t index) const noexcept;
-
-  ThetaOutput *
-  add_loopvar(jlm::rvsdg::output * origin);
+  void
+  RemoveLoopVars(std::vector<LoopVar> loopvars);
 
   virtual ThetaNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
-};
 
-class ThetaInput final : public structural_input
-{
-  friend ThetaNode;
-  friend ThetaOutput;
+  /**
+   * \brief Maps variable at entry to full varibale description.
+   *
+   * \param input
+   *   Input to the theta node.
+   *
+   * \returns
+   *   The loop variable description.
+   *
+   * \pre
+   *   \p input must be an input to this node.
+   *
+   * Returns the full description of the loop variable corresponding
+   * to this entry into the theta node.
+   */
+  [[nodiscard]] LoopVar
+  MapInputLoopVar(const rvsdg::input & input) const;
 
-public:
-  ~ThetaInput() noexcept override;
+  /**
+   * \brief Maps variable at start of loop iteration to full varibale description.
+   *
+   * \param argument
+   *   Argument of theta region.
+   *
+   * \returns
+   *   The loop variable description.
+   *
+   * \pre
+   *   \p argument must be an argument to the subregion of this node.
+   *
+   * Returns the full description of the loop variable corresponding
+   * to this variable at the start of each loop iteration.
+   */
+  [[nodiscard]] LoopVar
+  MapPreLoopVar(const rvsdg::output & argument) const;
 
-  ThetaInput(ThetaNode * node, jlm::rvsdg::output * origin, std::shared_ptr<const rvsdg::Type> type)
-      : structural_input(node, origin, std::move(type)),
-        output_(nullptr)
-  {}
+  /**
+   * \brief Maps variable at end of loop iteration to full varibale description.
+   *
+   * \param result
+   *   Result of theta region.
+   *
+   * \returns
+   *   The loop variable description.
+   *
+   * \pre
+   *   \p result must be a result to the subregion of this node.
+   *
+   * Returns the full description of the loop variable corresponding
+   * to this variable at the end of each loop iteration.
+   */
+  [[nodiscard]] LoopVar
+  MapPostLoopVar(const rvsdg::input & result) const;
 
-  ThetaNode *
-  node() const noexcept
-  {
-    return static_cast<ThetaNode *>(structural_input::node());
-  }
+  /**
+   * \brief Maps variable at exit to full varibale description.
+   *
+   * \param output
+   *   Output of this theta node
+   *
+   * \returns
+   *   The loop variable description
+   *
+   * \pre
+   *   \p output must be an output of this node
+   *
+   * Returns the full description of the loop variable corresponding
+   * to this loop exit value.
+   */
+  [[nodiscard]] LoopVar
+  MapOutputLoopVar(const rvsdg::output & output) const;
 
-  ThetaOutput *
-  output() const noexcept
-  {
-    return output_;
-  }
-
-  inline RegionArgument *
-  argument() const noexcept
-  {
-    JLM_ASSERT(arguments.size() == 1);
-    return arguments.first();
-  }
-
-  [[nodiscard]] inline RegionResult *
-  result() const noexcept;
-
-private:
-  ThetaOutput * output_;
-};
-
-static inline bool
-is_invariant(const ThetaInput * input) noexcept
-{
-  return input->result()->origin() == input->argument();
-}
-
-class ThetaOutput final : public structural_output
-{
-  friend ThetaNode;
-  friend ThetaInput;
-
-public:
-  ~ThetaOutput() noexcept override;
-
-  ThetaOutput(ThetaNode * node, const std::shared_ptr<const rvsdg::Type> type)
-      : structural_output(node, std::move(type)),
-        input_(nullptr)
-  {}
-
-  ThetaNode *
-  node() const noexcept
-  {
-    return static_cast<ThetaNode *>(structural_output::node());
-  }
-
-  [[nodiscard]] ThetaInput *
-  input() const noexcept
-  {
-    return input_;
-  }
-
-  inline RegionArgument *
-  argument() const noexcept
-  {
-    return input_->argument();
-  }
-
-  [[nodiscard]] RegionResult *
-  result() const noexcept
-  {
-    JLM_ASSERT(results.size() == 1);
-    return results.first();
-  }
-
-private:
-  ThetaInput * input_;
-};
-
-/**
- * Represents a region argument in a theta subregion.
- */
-class ThetaArgument final : public RegionArgument
-{
-  friend ThetaNode;
-
-public:
-  ~ThetaArgument() noexcept override;
-
-  ThetaArgument &
-  Copy(rvsdg::Region & region, structural_input * input) override;
-
-private:
-  ThetaArgument(rvsdg::Region & region, ThetaInput & input)
-      : RegionArgument(&region, &input, input.Type())
-  {
-    JLM_ASSERT(is<ThetaOperation>(region.node()));
-  }
-
-  static ThetaArgument &
-  Create(rvsdg::Region & region, ThetaInput & input)
-  {
-    auto thetaArgument = new ThetaArgument(region, input);
-    region.append_argument(thetaArgument);
-    return *thetaArgument;
-  }
-};
-
-/**
- * Represents a region result in a theta subregion.
- */
-class ThetaResult final : public RegionResult
-{
-  friend ThetaNode;
-
-public:
-  ~ThetaResult() noexcept override;
-
-  ThetaResult &
-  Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output) override;
-
-private:
-  ThetaResult(rvsdg::output & origin, ThetaOutput & thetaOutput)
-      : RegionResult(origin.region(), &origin, &thetaOutput, origin.Type())
-  {
-    JLM_ASSERT(is<ThetaOperation>(origin.region()->node()));
-  }
-
-  static ThetaResult &
-  Create(rvsdg::output & origin, ThetaOutput & thetaOutput)
-  {
-    auto thetaResult = new ThetaResult(origin, thetaOutput);
-    origin.region()->append_result(thetaResult);
-    return *thetaResult;
-  }
-};
-
-/**
- * Represents the predicate result of a theta subregion.
- */
-class ThetaPredicateResult final : public RegionResult
-{
-  friend ThetaNode;
-
-public:
-  ~ThetaPredicateResult() noexcept override;
-
-  ThetaPredicateResult &
-  Copy(rvsdg::output & origin, structural_output * output) override;
-
-private:
-  explicit ThetaPredicateResult(rvsdg::output & origin)
-      : RegionResult(origin.region(), &origin, nullptr, ControlType::Create(2))
-  {
-    JLM_ASSERT(is<ThetaOperation>(origin.region()->node()));
-  }
-
-  static ThetaPredicateResult &
-  Create(rvsdg::output & origin)
-  {
-    auto thetaResult = new ThetaPredicateResult(origin);
-    origin.region()->append_result(thetaResult);
-    return *thetaResult;
-  }
+  /**
+   * \brief Returns all loop variables.
+   *
+   * \returns
+   *   List of loop variable descriptions.
+   */
+  [[nodiscard]] std::vector<LoopVar>
+  GetLoopVars() const;
 };
 
 static inline bool
-is_invariant(const ThetaOutput * output) noexcept
+ThetaLoopVarIsInvariant(const ThetaNode::LoopVar & loopVar) noexcept
 {
-  return output->result()->origin() == output->argument();
-}
-
-/* theta node method definitions */
-
-inline ThetaInput *
-ThetaNode::input(size_t index) const noexcept
-{
-  return static_cast<ThetaInput *>(node::input(index));
-}
-
-inline ThetaOutput *
-ThetaNode::output(size_t index) const noexcept
-{
-  return static_cast<ThetaOutput *>(node::output(index));
-}
-
-template<typename F>
-util::HashSet<const ThetaInput *>
-ThetaNode::RemoveThetaOutputsWhere(const F & match)
-{
-  util::HashSet<const ThetaInput *> deadInputs;
-
-  // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
-  for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto & thetaOutput = *output(n);
-    auto & thetaResult = *thetaOutput.result();
-
-    if (thetaOutput.IsDead() && match(thetaOutput))
-    {
-      deadInputs.Insert(thetaOutput.input());
-      subregion()->RemoveResult(thetaResult.index());
-      RemoveOutput(thetaOutput.index());
-    }
-  }
-
-  return deadInputs;
-}
-
-template<typename F>
-util::HashSet<const ThetaOutput *>
-ThetaNode::RemoveThetaInputsWhere(const F & match)
-{
-  util::HashSet<const ThetaOutput *> deadOutputs;
-
-  // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
-  for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    auto & thetaInput = *input(n);
-    auto & thetaArgument = *thetaInput.argument();
-
-    if (thetaArgument.IsDead() && match(thetaInput))
-    {
-      deadOutputs.Insert(thetaInput.output());
-      subregion()->RemoveArgument(thetaArgument.index());
-      RemoveInput(thetaInput.index());
-    }
-  }
-
-  return deadOutputs;
-}
-
-/* theta input method definitions */
-
-[[nodiscard]] inline RegionResult *
-ThetaInput::result() const noexcept
-{
-  return output_->result();
+  return loopVar.post->origin() == loopVar.pre;
 }
 
 }

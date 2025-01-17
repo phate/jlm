@@ -10,74 +10,11 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
+
+#include <optional>
 
 namespace jlm::llvm
 {
-
-/* store normal form */
-
-class store_normal_form final : public jlm::rvsdg::simple_normal_form
-{
-public:
-  virtual ~store_normal_form();
-
-  store_normal_form(
-      const std::type_info & opclass,
-      jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph) noexcept;
-
-  virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const jlm::rvsdg::simple_op & op,
-      const std::vector<jlm::rvsdg::output *> & operands) const override;
-
-  virtual void
-  set_store_mux_reducible(bool enable);
-
-  virtual void
-  set_store_store_reducible(bool enable);
-
-  virtual void
-  set_store_alloca_reducible(bool enable);
-
-  virtual void
-  set_multiple_origin_reducible(bool enable);
-
-  inline bool
-  get_store_mux_reducible() const noexcept
-  {
-    return enable_store_mux_;
-  }
-
-  inline bool
-  get_store_store_reducible() const noexcept
-  {
-    return enable_store_store_;
-  }
-
-  inline bool
-  get_store_alloca_reducible() const noexcept
-  {
-    return enable_store_alloca_;
-  }
-
-  inline bool
-  get_multiple_origin_reducible() const noexcept
-  {
-    return enable_multiple_origin_;
-  }
-
-private:
-  bool enable_store_mux_;
-  bool enable_store_store_;
-  bool enable_store_alloca_;
-  bool enable_multiple_origin_;
-};
 
 /**
  * Abstract base class for store operations.
@@ -85,14 +22,14 @@ private:
  * @see StoreVolatileOperation
  * @see StoreNonVolatileOperation
  */
-class StoreOperation : public rvsdg::simple_op
+class StoreOperation : public rvsdg::SimpleOperation
 {
 protected:
   StoreOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
-      : simple_op(operandTypes, resultTypes),
+      : SimpleOperation(operandTypes, resultTypes),
         Alignment_(alignment)
   {
     JLM_ASSERT(operandTypes.size() >= 2);
@@ -154,23 +91,16 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
-
-  static store_normal_form *
-  GetNormalForm(rvsdg::graph * graph) noexcept
-  {
-    return util::AssertedCast<store_normal_form>(
-        graph->node_normal_form(typeid(StoreNonVolatileOperation)));
-  }
 
   static std::unique_ptr<llvm::tac>
   Create(const variable * address, const variable * value, const variable * state, size_t alignment)
@@ -212,14 +142,14 @@ private:
  * @see StoreVolatileNode
  * @see StoreNonVolatileNode
  */
-class StoreNode : public rvsdg::simple_node
+class StoreNode : public rvsdg::SimpleNode
 {
 protected:
   StoreNode(
       rvsdg::Region & region,
-      const StoreOperation & operation,
+      std::unique_ptr<StoreOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -257,11 +187,11 @@ public:
     }
   };
 
-  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = util::IteratorRange<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
 
-  [[nodiscard]] virtual const StoreOperation &
-  GetOperation() const noexcept = 0;
+  [[nodiscard]] const StoreOperation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept
@@ -315,9 +245,9 @@ class StoreNonVolatileNode final : public StoreNode
 private:
   StoreNonVolatileNode(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & operation,
+      std::unique_ptr<StoreNonVolatileOperation> operation,
       const std::vector<jlm::rvsdg::output *> & operands)
-      : StoreNode(region, operation, operands)
+      : StoreNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -333,7 +263,7 @@ public:
   [[nodiscard]] StoreNonVolatileNode &
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<rvsdg::output *>
@@ -358,26 +288,29 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreNonVolatileOperation storeOperation(std::move(storedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), storeOperation, operands);
+    auto operation = std::make_unique<StoreNonVolatileOperation>(
+        std::move(storedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & storeOperation,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, storeOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
 
   static StoreNonVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & storeOperation,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new StoreNonVolatileNode(region, storeOperation, operands));
+    return *(new StoreNonVolatileNode(region, std::move(storeOperation), operands));
   }
 
 private:
@@ -420,12 +353,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -486,9 +419,9 @@ class StoreVolatileNode final : public StoreNode
 {
   StoreVolatileNode(
       rvsdg::Region & region,
-      const StoreVolatileOperation & operation,
+      std::unique_ptr<StoreVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : StoreNode(region, operation, operands)
+      : StoreNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -520,16 +453,16 @@ public:
     return *ioStateOutput;
   }
 
-  rvsdg::node *
+  Node *
   copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static StoreVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const StoreVolatileOperation & storeOperation,
+      std::unique_ptr<StoreVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new StoreVolatileNode(region, storeOperation, operands));
+    return *(new StoreVolatileNode(region, std::move(storeOperation), operands));
   }
 
   static StoreVolatileNode &
@@ -545,17 +478,18 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value, &ioState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreVolatileOperation storeOperation(storedType, memoryStates.size(), alignment);
-    return CreateNode(*address.region(), storeOperation, operands);
+    auto operation =
+        std::make_unique<StoreVolatileOperation>(storedType, memoryStates.size(), alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const StoreVolatileOperation & loadOperation,
+      std::unique_ptr<StoreVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
 
 private:
@@ -568,6 +502,89 @@ private:
     throw jlm::util::error("Expected value type.");
   }
 };
+
+/**
+ * \brief Swaps a memory state merge operation and a store operation.
+ *
+ * sx1 = MemStateMerge si1 ... siM
+ * sl1 = StoreNonVolatile a v sx1
+ * =>
+ * sl1 ... slM = StoreNonVolatile a v si1 ... siM
+ * sx1 = MemStateMerge sl1 ... slM
+ *
+ * FIXME: The reduction can be generalized: A store node can have multiple operands from different
+ * merge nodes.
+ *
+ * @param operation The operation of the StoreNonVolatile node.
+ * @param operands The operands of the StoreNonVolatile node.
+ *
+ * @return If the normalization could be applied, then the results of the store operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreMux(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Removes a duplicated store to the same address.
+ *
+ * so1 so2 = StoreNonVolatile a v1 si1 si2
+ * sx1 sx2 = StoreNonVolatile a v2 so1 so2
+ * =>
+ * sx1 sx2 = StoreNonVolatile a v2 si1 si2
+ *
+ * @param operation The operation of the StoreNonVolatile node.
+ * @param operands The operands of the StoreNonVolatile node.
+ *
+ * @return If the normalization could be applied, then the results of the store operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreStore(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Removes unnecessary state from a store node when its address originates directly from an
+ * alloca node.
+ *
+ * a s = Alloca b
+ * so1 so2 = StoreNonVolatile a v s si1 si2
+ * ... = AnyOp so1 so2
+ * =>
+ * a s = Alloca b
+ * so1 = StoreNonVolatile a v s
+ * ... = AnyOp so1 so1
+ *
+ * @param operation The operation of the StoreNonVolatile node.
+ * @param operands The operands of the StoreNonVolatile node.
+ *
+ * @return If the normalization could be applied, then the results of the store operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreAlloca(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Remove duplicated state operands
+ *
+ * so1 so2 so3 = StoreNonVolatile a v si1 si1 si1
+ * =>
+ * so1 = StoreNonVolatile a v si1
+ *
+ * @param operation The load operation on which the transformation is performed.
+ * @param operands The operands of the load node.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeStoreDuplicateState(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 

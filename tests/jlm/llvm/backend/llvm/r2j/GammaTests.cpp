@@ -25,26 +25,26 @@ GammaWithMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType, valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(1), valueType, valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
-  auto gammaInput1 = gamma->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gamma->add_entryvar(lambdaNode->fctargument(2));
-  auto gammaOutput = gamma->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
+  auto gammaInput1 = gamma->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
+  auto gammaInput2 = gamma->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
+  auto gammaOutput =
+      gamma->AddExitVar({ gammaInput1.branchArgument[0], gammaInput2.branchArgument[1] });
 
-  auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
+  auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
@@ -78,26 +78,25 @@ GammaWithoutMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->fctargument(0), 2);
-  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->fctargument(2));
-  auto gammaOutput = gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput2->argument(1) });
+  auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->GetFunctionArguments()[0], 2);
+  auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
+  auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
+  auto gammaOutput =
+      gammaNode->AddExitVar({ gammaInput1.branchArgument[0], gammaInput2.branchArgument[1] });
 
-  auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
+  auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
@@ -132,29 +131,29 @@ EmptyGammaWithThreeSubregions()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->fctargument(0));
+  auto match =
+      jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->GetFunctionArguments()[0]);
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 3);
-  auto gammaInput1 = gammaNode->add_entryvar(lambdaNode->fctargument(1));
-  auto gammaInput2 = gammaNode->add_entryvar(lambdaNode->fctargument(2));
-  auto gammaOutput = gammaNode->add_exitvar(
-      { gammaInput1->argument(0), gammaInput1->argument(1), gammaInput2->argument(2) });
+  auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
+  auto gammaInput2 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[2]);
+  auto gammaOutput = gammaNode->AddExitVar({ gammaInput1.branchArgument[0],
+                                             gammaInput1.branchArgument[1],
+                                             gammaInput2.branchArgument[2] });
 
-  auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
+  auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
@@ -187,27 +186,28 @@ PartialEmptyGamma()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(1), valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
 
   auto lambdaNode = lambda::node::create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       functionType,
       "lambdaOutput",
       linkage::external_linkage);
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->fctargument(0));
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
-  auto gammaInput = gammaNode->add_entryvar(lambdaNode->fctargument(1));
+  auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
   auto output = jlm::tests::create_testop(
       gammaNode->subregion(1),
-      { gammaInput->argument(1) },
+      { gammaInput.branchArgument[1] },
       { valueType })[0];
-  auto gammaOutput = gammaNode->add_exitvar({ gammaInput->argument(0), output });
+  auto gammaOutput = gammaNode->AddExitVar({ gammaInput.branchArgument[0], output });
 
-  auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
+  auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
 
   jlm::llvm::GraphExport::Create(*lambdaOutput, "");
 

@@ -3,11 +3,11 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=d0bb58feb2432aefbc65364e10fded264c024fd8
+GIT_COMMIT=1365c30074f921733dec6c5fc949bd1cb64ae001
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-JLM_ROOT_DIR=${SCRIPT_DIR}/..
+JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 
 # Set default path for where the benchmark will be cloned and make target for running it
@@ -50,7 +50,7 @@ while [[ "$#" -ge 1 ]] ; do
 			commit >&2
 			exit 1
 			;;
-		--help)
+		--help|*)
 			usage >&2
 			exit 1
 			;;
@@ -60,7 +60,7 @@ done
 # Check if verilator exists
 if ! command -v verilator &> /dev/null
 then
-	echo "No verilator in ${PATH}" 
+	echo "No verilator in ${PATH}"
 	echo "Consider installing the verilator package for your Linux distro."
 	exit 1
 fi
@@ -68,6 +68,8 @@ fi
 if [ ! -d "$BENCHMARK_DIR" ] ;
 then
 	git clone ${GIT_REPOSITORY} ${BENCHMARK_DIR}
+else
+	git -C ${BENCHMARK_DIR} fetch origin
 fi
 
 export PATH=${JLM_BIN_DIR}:${PATH}

@@ -20,7 +20,10 @@ struct reduce_eq
 };
 
 const char BitEqLabel[] = "BitEq";
-template class MakeBitComparisonOperation<reduce_eq, BitEqLabel, binary_op::flags::commutative>;
+template class MakeBitComparisonOperation<
+    reduce_eq,
+    BitEqLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_ne
 {
@@ -32,7 +35,10 @@ struct reduce_ne
 };
 
 const char BitNeLabel[] = "BitNe";
-template class MakeBitComparisonOperation<reduce_ne, BitNeLabel, binary_op::flags::commutative>;
+template class MakeBitComparisonOperation<
+    reduce_ne,
+    BitNeLabel,
+    BinaryOperation::flags::commutative>;
 
 struct reduce_sge
 {
@@ -44,7 +50,7 @@ struct reduce_sge
 };
 
 const char BitSgeLabel[] = "BitSge";
-template class MakeBitComparisonOperation<reduce_sge, BitSgeLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_sge, BitSgeLabel, BinaryOperation::flags::none>;
 
 struct reduce_sgt
 {
@@ -56,7 +62,7 @@ struct reduce_sgt
 };
 
 const char BitSgtLabel[] = "BitSgt";
-template class MakeBitComparisonOperation<reduce_sgt, BitSgtLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_sgt, BitSgtLabel, BinaryOperation::flags::none>;
 
 struct reduce_sle
 {
@@ -68,7 +74,7 @@ struct reduce_sle
 };
 
 const char BitSleLabel[] = "BitSle";
-template class MakeBitComparisonOperation<reduce_sle, BitSleLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_sle, BitSleLabel, BinaryOperation::flags::none>;
 
 struct reduce_slt
 {
@@ -80,7 +86,7 @@ struct reduce_slt
 };
 
 const char BitSltLabel[] = "BitSlt";
-template class MakeBitComparisonOperation<reduce_slt, BitSltLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_slt, BitSltLabel, BinaryOperation::flags::none>;
 
 struct reduce_uge
 {
@@ -92,7 +98,7 @@ struct reduce_uge
 };
 
 const char BitUgeLabel[] = "BitUge";
-template class MakeBitComparisonOperation<reduce_uge, BitUgeLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_uge, BitUgeLabel, BinaryOperation::flags::none>;
 
 struct reduce_ugt
 {
@@ -104,7 +110,7 @@ struct reduce_ugt
 };
 
 const char BitUgtLabel[] = "BitUgt";
-template class MakeBitComparisonOperation<reduce_ugt, BitUgtLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_ugt, BitUgtLabel, BinaryOperation::flags::none>;
 
 struct reduce_ule
 {
@@ -116,7 +122,7 @@ struct reduce_ule
 };
 
 const char BitUleLabel[] = "BitUle";
-template class MakeBitComparisonOperation<reduce_ule, BitUleLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_ule, BitUleLabel, BinaryOperation::flags::none>;
 
 struct reduce_ult
 {
@@ -128,6 +134,6 @@ struct reduce_ult
 };
 
 const char BitUltLabel[] = "BitUlt";
-template class MakeBitComparisonOperation<reduce_ult, BitUltLabel, binary_op::flags::none>;
+template class MakeBitComparisonOperation<reduce_ult, BitUltLabel, BinaryOperation::flags::none>;
 
 }

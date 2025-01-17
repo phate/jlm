@@ -20,13 +20,13 @@ namespace jlm::llvm
  * @see MemCpyNonVolatileOperation
  * @see MemCpyVolatileOperation
  */
-class MemCpyOperation : public rvsdg::simple_op
+class MemCpyOperation : public rvsdg::SimpleOperation
 {
 protected:
   MemCpyOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes)
-      : simple_op(operandTypes, resultTypes)
+      : SimpleOperation(operandTypes, resultTypes)
   {
     JLM_ASSERT(operandTypes.size() >= 4);
 
@@ -79,12 +79,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -115,7 +115,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
-    return rvsdg::simple_node::create_normalized(destination->region(), operation, operands);
+    return rvsdg::SimpleNode::create_normalized(destination->region(), operation, operands);
   }
 
 private:
@@ -158,12 +158,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -184,7 +184,7 @@ public:
     return tac::create(operation, operands);
   }
 
-  static rvsdg::simple_node &
+  static rvsdg::SimpleNode &
   CreateNode(
       rvsdg::output & destination,
       rvsdg::output & source,
@@ -196,7 +196,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
-    return *rvsdg::simple_node::create(destination.region(), operation, operands);
+    return *rvsdg::SimpleNode::create(destination.region(), operation, operands);
   }
 
 private:

@@ -11,12 +11,16 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Graph;
+class Region;
+class StructuralNode;
 class ThetaNode;
 }
 
 namespace jlm::llvm
 {
 
+class CallNode;
 class RvsdgModule;
 
 /** \brief Invariant Value Redirection Optimization
@@ -58,7 +62,7 @@ public:
 
 private:
   static void
-  RedirectInRootRegion(rvsdg::graph & rvsdg);
+  RedirectInRootRegion(rvsdg::Graph & rvsdg);
 
   static void
   RedirectInRegion(rvsdg::Region & region);

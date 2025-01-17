@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -42,7 +41,7 @@ input::input(
 std::string
 input::debug_string() const
 {
-  return jlm::util::strfmt(index());
+  return jlm::util::strfmt("i", index());
 }
 
 void
@@ -65,11 +64,10 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   if (is<node_input>(*this))
     static_cast<node_input *>(this)->node()->recompute_depth();
 
-  region()->graph()->mark_denormalized();
   on_input_change(this, old_origin, new_origin);
 }
 
-rvsdg::node *
+Node *
 input::GetNode(const rvsdg::input & input) noexcept
 {
   auto nodeInput = dynamic_cast<const rvsdg::node_input *>(&input);
@@ -92,10 +90,10 @@ output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
 std::string
 output::debug_string() const
 {
-  return jlm::util::strfmt(index());
+  return jlm::util::strfmt("o", index());
 }
 
-rvsdg::node *
+Node *
 output::GetNode(const rvsdg::output & output) noexcept
 {
   auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
@@ -135,39 +133,15 @@ output::add_user(jlm::rvsdg::input * user)
   users_.insert(user);
 }
 
-}
-
-jlm::rvsdg::node_normal_form *
-node_get_default_normal_form_(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
-{
-  return new jlm::rvsdg::node_normal_form(operator_class, parent, graph);
-}
-
-static void __attribute__((constructor))
-register_node_normal_form(void)
-{
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::operation),
-      node_get_default_normal_form_);
-}
-
-namespace jlm::rvsdg
-{
-
-/* node_input  class */
-
 node_input::node_input(
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::node * node,
+    Node * node,
     std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
-[[nodiscard]] std::variant<node *, Region *>
+[[nodiscard]] std::variant<Node *, Region *>
 node_input::GetOwner() const noexcept
 {
   return node_;
@@ -175,12 +149,12 @@ node_input::GetOwner() const noexcept
 
 /* node_output class */
 
-node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::Type> type)
+node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}
 
-[[nodiscard]] std::variant<node *, Region *>
+[[nodiscard]] std::variant<Node *, Region *>
 node_output::GetOwner() const noexcept
 {
   return node_;
@@ -188,40 +162,46 @@ node_output::GetOwner() const noexcept
 
 /* node class */
 
-node::node(std::unique_ptr<jlm::rvsdg::operation> op, rvsdg::Region * region)
+Node::Node(Region * region)
     : depth_(0),
       graph_(region->graph()),
-      region_(region),
-      operation_(std::move(op))
+      region_(region)
 {
   bool wasAdded = region->AddBottomNode(*this);
   JLM_ASSERT(wasAdded);
-  region->top_nodes.push_back(this);
-  region->nodes.push_back(this);
+  wasAdded = region->AddTopNode(*this);
+  JLM_ASSERT(wasAdded);
+  wasAdded = region->AddNode(*this);
+  JLM_ASSERT(wasAdded);
 }
 
-node::~node()
+Node::~Node()
 {
   outputs_.clear();
   bool wasRemoved = region()->RemoveBottomNode(*this);
   JLM_ASSERT(wasRemoved);
 
   if (ninputs() == 0)
-    region()->top_nodes.erase(this);
+  {
+    wasRemoved = region()->RemoveTopNode(*this);
+    JLM_ASSERT(wasRemoved);
+  }
   inputs_.clear();
 
-  region()->nodes.erase(this);
+  wasRemoved = region()->RemoveNode(*this);
+  JLM_ASSERT(wasRemoved);
 }
 
 node_input *
-node::add_input(std::unique_ptr<node_input> input)
+Node::add_input(std::unique_ptr<node_input> input)
 {
   auto producer = output::GetNode(*input->origin());
 
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    region()->top_nodes.erase(this);
+    const auto wasRemoved = region()->RemoveTopNode(*this);
+    JLM_ASSERT(wasRemoved);
   }
 
   input->index_ = ninputs();
@@ -235,7 +215,7 @@ node::add_input(std::unique_ptr<node_input> input)
 }
 
 void
-node::RemoveInput(size_t index)
+Node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
   auto producer = output::GetNode(*input(index)->origin());
@@ -262,12 +242,13 @@ node::RemoveInput(size_t index)
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    region()->top_nodes.push_back(this);
+    const auto wasAdded = region()->AddTopNode(*this);
+    JLM_ASSERT(wasAdded);
   }
 }
 
 void
-node::RemoveOutput(size_t index)
+Node::RemoveOutput(size_t index)
 {
   JLM_ASSERT(index < noutputs());
 
@@ -280,7 +261,7 @@ node::RemoveOutput(size_t index)
 }
 
 void
-node::recompute_depth() noexcept
+Node::recompute_depth() noexcept
 {
   /*
     FIXME: This function is inefficient, as it can visit the
@@ -314,8 +295,8 @@ node::recompute_depth() noexcept
   }
 }
 
-jlm::rvsdg::node *
-node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+Node *
+Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
   SubstitutionMap smap;
 
@@ -326,11 +307,21 @@ node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
   return copy(region, smap);
 }
 
-jlm::rvsdg::node *
+Node *
 producer(const jlm::rvsdg::output * output) noexcept
 {
   if (auto node = output::GetNode(*output))
     return node;
+
+  if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
+  {
+    auto loopvar = theta->MapPreLoopVar(*output);
+    if (loopvar.post->origin() != output)
+    {
+      return nullptr;
+    }
+    return producer(loopvar.input->origin());
+  }
 
   JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
   auto argument = static_cast<const RegionArgument *>(output);
@@ -338,19 +329,7 @@ producer(const jlm::rvsdg::output * output) noexcept
   if (!argument->input())
     return nullptr;
 
-  if (is<ThetaOperation>(argument->region()->node())
-      && (argument->region()->result(argument->index() + 1)->origin() != argument))
-    return nullptr;
-
   return producer(argument->input()->origin());
-}
-
-bool
-normalize(jlm::rvsdg::node * node)
-{
-  const auto & op = node->operation();
-  auto nf = node->graph()->node_normal_form(typeid(op));
-  return nf->normalize_node(node);
 }
 
 /**

@@ -23,8 +23,8 @@ namespace jlm::hls
 class TraceAllocaUses
 {
 public:
-  std::vector<jlm::rvsdg::simple_node *> load_nodes;
-  std::vector<jlm::rvsdg::simple_node *> store_nodes;
+  std::vector<jlm::rvsdg::SimpleNode *> load_nodes;
+  std::vector<jlm::rvsdg::SimpleNode *> store_nodes;
 
   TraceAllocaUses(jlm::rvsdg::output * op)
   {
@@ -51,16 +51,16 @@ private:
       if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
       {
         auto simplenode = si->node();
-        if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+        if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
         {
           store_nodes.push_back(simplenode);
         }
         else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
-                     &simplenode->operation()))
+                     &simplenode->GetOperation()))
         {
           load_nodes.push_back(simplenode);
         }
-        else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+        else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
         {
           // TODO: verify this is the right type of function call
           throw jlm::util::error("encountered a call for an alloca");
@@ -73,7 +73,7 @@ private:
           }
         }
       }
-      else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+      else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(user))
       {
         for (auto & arg : sti->arguments)
         {
@@ -107,7 +107,7 @@ gep_to_index(jlm::rvsdg::output * o)
   // TODO: handle geps that are not direct predecessors
   auto no = dynamic_cast<jlm::rvsdg::node_output *>(o);
   JLM_ASSERT(no);
-  auto gep = dynamic_cast<const jlm::llvm::GetElementPtrOperation *>(&no->node()->operation());
+  auto gep = dynamic_cast<const jlm::llvm::GetElementPtrOperation *>(&no->node()->GetOperation());
   JLM_ASSERT(gep);
   // pointer to array, i.e. first index is zero
   // TODO: check
@@ -127,14 +127,14 @@ alloca_conv(rvsdg::Region * region)
         alloca_conv(structnode->subregion(n));
       }
     }
-    else if (auto po = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->operation())))
+    else if (auto po = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->GetOperation())))
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);
       auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
-      auto constant_operation =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&constant_output->node()->operation());
+      auto constant_operation = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(
+          &constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       // ensure that the alloca is an array type
@@ -200,7 +200,7 @@ alloca_conv(rvsdg::Region * region)
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto merge_in = *node->output(1)->begin();
       auto merge_node = rvsdg::input::GetNode(*merge_in);
-      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&merge_node->operation()))
+      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&merge_node->GetOperation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(merge_node->ninputs() == 2);
@@ -228,7 +228,7 @@ void
 alloca_conv(jlm::llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   alloca_conv(root);
 }
 

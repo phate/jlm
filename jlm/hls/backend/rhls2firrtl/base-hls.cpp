@@ -4,10 +4,9 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
-#include <jlm/hls/ir/hls.hpp>
 
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 
 namespace jlm::hls
 {
@@ -22,8 +21,10 @@ isForbiddenChar(char c)
   return true;
 }
 
+BaseHLS::~BaseHLS() = default;
+
 std::string
-BaseHLS::get_node_name(const jlm::rvsdg::node * node)
+BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 {
   auto found = node_map.find(node);
   if (found != node_map.end())
@@ -47,7 +48,8 @@ BaseHLS::get_node_name(const jlm::rvsdg::node * node)
     append.append("_W");
     append.append(std::to_string(JlmSize(&node->output(outPorts - 1)->type())));
   }
-  auto name = util::strfmt("op_", node->operation().debug_string(), append, "_", node_map.size());
+  auto name =
+      util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
   node_map[node] = name;
@@ -90,7 +92,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
   {
     result += "o";
   }
-  else if (dynamic_cast<const jlm::rvsdg::structural_output *>(port))
+  else if (dynamic_cast<const rvsdg::StructuralOutput *>(port))
   {
     result += "so";
   }
@@ -139,9 +141,9 @@ BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 void
 BaseHLS::create_node_names(rvsdg::Region * r)
 {
-  for (auto & node : r->nodes)
+  for (auto & node : r->Nodes())
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(&node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(&node))
     {
       get_node_name(&node);
     }
@@ -152,7 +154,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
     else
     {
       throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node.operation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node.GetOperation().debug_string());
     }
   }
 }
@@ -160,8 +162,8 @@ BaseHLS::create_node_names(rvsdg::Region * r)
 const jlm::llvm::lambda::node *
 BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 {
-  auto region = rm.Rvsdg().root();
-  auto ln = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto region = &rm.Rvsdg().GetRootRegion();
+  auto ln = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   if (region->nnodes() == 1 && ln)
   {
     return ln;

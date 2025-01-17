@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/graph.hpp>
 
 #include <string>
+#include <unordered_map>
 
 namespace jlm::rvsdg
 {
@@ -51,9 +52,9 @@ view(const rvsdg::Region * region, FILE * out);
  * @param out the file to be written to.
  */
 inline void
-view(const jlm::rvsdg::graph & graph, FILE * out)
+view(const Graph & graph, FILE * out)
 {
-  return view(graph.root(), out);
+  return view(&graph.GetRootRegion(), out);
 }
 
 std::string

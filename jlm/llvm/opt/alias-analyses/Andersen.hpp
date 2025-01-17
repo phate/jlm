@@ -348,13 +348,13 @@ private:
   AnalyzeRegion(rvsdg::Region & region);
 
   void
-  AnalyzeSimpleNode(const rvsdg::simple_node & node);
+  AnalyzeSimpleNode(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeAlloca(const rvsdg::simple_node & node);
+  AnalyzeAlloca(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeMalloc(const rvsdg::simple_node & node);
+  AnalyzeMalloc(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeLoad(const LoadNode & loadNode);
@@ -366,40 +366,46 @@ private:
   AnalyzeCall(const CallNode & callNode);
 
   void
-  AnalyzeGep(const rvsdg::simple_node & node);
+  AnalyzeGep(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeBitcast(const rvsdg::simple_node & node);
+  AnalyzeBitcast(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeBits2ptr(const rvsdg::simple_node & node);
+  AnalyzeBits2ptr(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzePtr2bits(const rvsdg::simple_node & node);
+  AnalyzePtr2bits(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantPointerNull(const rvsdg::simple_node & node);
+  AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeUndef(const rvsdg::simple_node & node);
+  AnalyzeUndef(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeMemcpy(const rvsdg::simple_node & node);
+  AnalyzeMemcpy(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantArray(const rvsdg::simple_node & node);
+  AnalyzeConstantArray(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantStruct(const rvsdg::simple_node & node);
+  AnalyzeConstantStruct(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantAggregateZero(const rvsdg::simple_node & node);
+  AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeExtractValue(const rvsdg::simple_node & node);
+  AnalyzeExtractValue(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeValist(const rvsdg::simple_node & node);
+  AnalyzeValist(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzePointerToFunction(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
@@ -420,7 +426,7 @@ private:
   AnalyzeTheta(const rvsdg::ThetaNode & node);
 
   void
-  AnalyzeRvsdg(const rvsdg::graph & graph);
+  AnalyzeRvsdg(const rvsdg::Graph & graph);
 
   /**
    * Traverses the given module, and initializes the members Set_ and Constraints_ with

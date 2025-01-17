@@ -20,7 +20,7 @@ DotHLS::extension()
 }
 
 std::string
-DotHLS::get_text(llvm::RvsdgModule & rm)
+DotHLS::GetText(llvm::RvsdgModule & rm)
 {
   return subregion_to_dot(get_hls_lambda(rm)->subregion());
 }
@@ -64,11 +64,11 @@ DotHLS::result_to_dot(rvsdg::RegionResult * port)
 }
 
 std::string
-DotHLS::node_to_dot(const jlm::rvsdg::node * node)
+DotHLS::node_to_dot(const rvsdg::Node * node)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_node_name(node);
-  auto opname = node->operation().debug_string();
+  auto opname = node->GetOperation().debug_string();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::string inputs;
@@ -203,7 +203,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "color=\"#ff8080\"\n";
 
   std::set<jlm::rvsdg::output *> back_outputs;
-  std::set<jlm::rvsdg::node *> top_nodes; // no artificial top nodes for now
+  std::set<rvsdg::Node *> top_nodes; // no artificial top nodes for now
   for (size_t i = 0; i < sr->narguments(); ++i)
   {
     auto arg = sr->argument(i);
@@ -216,7 +216,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
 
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_dot = node_to_dot(node);
       if (top_nodes.count(node))
@@ -240,7 +240,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
     }
   }
 
@@ -248,8 +248,8 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    auto mx = dynamic_cast<const hls::mux_op *>(&node->operation());
-    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->operation());
+    auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
+    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
     if ((mx && !mx->discarding && mx->loop) || lc)
     {
       dot << get_node_name(node) << " ";
@@ -260,7 +260,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    auto br = dynamic_cast<const hls::branch_op *>(&node->operation());
+    auto br = dynamic_cast<const hls::branch_op *>(&node->GetOperation());
     if (br && br->loop)
     {
       dot << get_node_name(node) << " ";
@@ -272,9 +272,9 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   // do edges outside in order not to pull other nodes into the cluster
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      auto mx = dynamic_cast<const hls::mux_op *>(&node->operation());
+      auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->ninputs(); ++i)
       {
@@ -286,7 +286,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
                  && (/*i==0||*/ i == 2); // back_outputs.count(node->input(i)->origin());
         auto origin_out = dynamic_cast<jlm::rvsdg::node_output *>(node->input(i)->origin());
         if (origin_out
-            && dynamic_cast<const predicate_buffer_op *>(&origin_out->node()->operation()))
+            && dynamic_cast<const predicate_buffer_op *>(&origin_out->node()->GetOperation()))
         {
           //
           back = true;
@@ -307,7 +307,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
   // just translate outputs
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->noutputs(); ++i)
@@ -322,7 +322,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
     }
   }
   for (size_t i = 0; i < sr->narguments(); ++i)
@@ -388,7 +388,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
   // process nodes
   for (auto node : jlm::rvsdg::topdown_traverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_dot = node_to_dot(node);
       dot << node_dot;
@@ -414,7 +414,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
     }
   }
   // process results

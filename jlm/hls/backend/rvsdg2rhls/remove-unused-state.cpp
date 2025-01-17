@@ -5,6 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -44,9 +45,9 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
   // exit will come before entry
   for (auto & node : jlm::rvsdg::bottomup_traverser(region))
   {
-    if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->operation()))
+      if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&node->GetOperation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->ninputs(); ++i)
@@ -54,7 +55,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
           if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(simplenode->input(i)->origin()))
           {
             if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
-                    &so->node()->operation()))
+                    &so->node()->GetOperation()))
             {
               // skip things coming from entry
               continue;
@@ -68,7 +69,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
           auto entry_node =
               dynamic_cast<jlm::rvsdg::node_output *>(simplenode->input(0)->origin())->node();
           JLM_ASSERT(dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
-              &entry_node->operation()));
+              &entry_node->GetOperation()));
           simplenode->output(0)->divert_users(entry_node->input(0)->origin());
           remove(simplenode);
           remove(entry_node);
@@ -80,7 +81,8 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
           remove(simplenode);
         }
       }
-      else if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&node->operation()))
+      else if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
+                   &node->GetOperation()))
       {
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
@@ -122,18 +124,19 @@ void
 remove_unused_state(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   remove_unused_state(root);
 }
 
 void
 remove_gamma_passthrough(rvsdg::GammaNode * gn)
 { // remove inputs in reverse
-  for (int i = gn->nentryvars() - 1; i >= 0; --i)
+  auto entryvars = gn->GetEntryVars();
+  for (int i = entryvars.size() - 1; i >= 0; --i)
   {
     bool can_remove = true;
     size_t res_index = 0;
-    auto arg = gn->subregion(0)->argument(i);
+    auto arg = entryvars[i].branchArgument[0];
     if (arg->nusers() == 1)
     {
       auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
@@ -149,7 +152,7 @@ remove_gamma_passthrough(rvsdg::GammaNode * gn)
     }
     if (can_remove)
     {
-      auto origin = gn->entryvar(i)->origin();
+      auto origin = entryvars[i].input->origin();
       // divert users of output to origin of input
 
       gn->output(res_index)->divert_users(origin);
@@ -196,7 +199,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       new_result_types.push_back(old_fcttype.Results()[i]);
     }
   }
-  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
+  auto new_fcttype = rvsdg::FunctionType::Create(new_argument_types, new_result_types);
   auto new_lambda = llvm::lambda::node::create(
       ln->region(),
       new_fcttype,
@@ -205,28 +208,30 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       ln->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < ln->ncvarguments(); ++i)
+  for (const auto & ctxvar : ln->GetContextVars())
   {
-    // copy over cvarguments
-    smap.insert(ln->cvargument(i), new_lambda->add_ctxvar(ln->cvargument(i)->input()->origin()));
+    // copy over context vars
+    smap.insert(ctxvar.inner, new_lambda->AddContextVar(*ctxvar.input->origin()).inner);
   }
 
   size_t new_i = 0;
-  for (size_t i = 0; i < ln->nfctarguments(); ++i)
+  auto args = ln->GetFunctionArguments();
+  auto new_args = new_lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() >= new_args.size());
+  for (size_t i = 0; i < args.size(); ++i)
   {
-    auto arg = ln->fctargument(i);
+    auto arg = args[i];
     if (!is_passthrough(arg))
     {
-      smap.insert(arg, new_lambda->fctargument(new_i));
+      smap.insert(arg, new_args[new_i]);
       new_i++;
     }
   }
   ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
 
   std::vector<jlm::rvsdg::output *> new_results;
-  for (size_t i = 0; i < ln->type().NumResults(); ++i)
+  for (auto res : ln->GetFunctionResults())
   {
-    auto res = ln->fctresult(i);
     if (!is_passthrough(res))
     {
       new_results.push_back(smap.lookup(res->origin()));
@@ -235,13 +240,13 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   auto new_out = new_lambda->finalize(new_results);
 
   // TODO handle functions at other levels?
-  JLM_ASSERT(ln->region() == ln->region()->graph()->root());
-  JLM_ASSERT((*ln->output()->begin())->region() == ln->region()->graph()->root());
+  JLM_ASSERT(ln->region() == &ln->region()->graph()->GetRootRegion());
+  JLM_ASSERT((*ln->output()->begin())->region() == &ln->region()->graph()->GetRootRegion());
 
   //	ln->output()->divert_users(new_out); // can't divert since the type changed
   JLM_ASSERT(ln->output()->nusers() == 1);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
-  auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
   return new_lambda;
@@ -262,7 +267,7 @@ remove_region_passthrough(const rvsdg::RegionArgument * arg)
 }
 
 bool
-is_passthrough(const rvsdg::RegionResult * res)
+is_passthrough(const rvsdg::input * res)
 {
   auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
   if (arg)
@@ -273,7 +278,7 @@ is_passthrough(const rvsdg::RegionResult * res)
 }
 
 bool
-is_passthrough(const rvsdg::RegionArgument * arg)
+is_passthrough(const rvsdg::output * arg)
 {
   if (arg->nusers() == 1)
   {

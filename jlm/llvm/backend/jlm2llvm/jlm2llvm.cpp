@@ -497,7 +497,7 @@ convert_linkage(const llvm::linkage & linkage)
 }
 
 static void
-convert_ipgraph(const llvm::ipgraph & clg, context & ctx)
+convert_ipgraph(context & ctx)
 {
   auto & jm = ctx.module();
   auto & lm = ctx.llvm_module();
@@ -558,7 +558,7 @@ convert(ipgraph_module & im, ::llvm::LLVMContext & lctx)
   lm->setDataLayout(im.data_layout());
 
   context ctx(im, *lm);
-  convert_ipgraph(im.ipgraph(), ctx);
+  convert_ipgraph(ctx);
 
   return lm;
 }

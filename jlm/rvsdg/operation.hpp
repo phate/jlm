@@ -16,57 +16,49 @@
 namespace jlm::rvsdg
 {
 
-class graph;
-class node;
-class node_normal_form;
+class Graph;
+class Node;
 class output;
 class Region;
-class simple_normal_form;
-class structural_normal_form;
 
-class operation
+class Operation
 {
 public:
-  virtual ~operation() noexcept;
+  virtual ~Operation() noexcept;
 
   virtual bool
-  operator==(const operation & other) const noexcept = 0;
+  operator==(const Operation & other) const noexcept = 0;
 
   virtual std::string
   debug_string() const = 0;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] virtual std::unique_ptr<Operation>
   copy() const = 0;
 
   inline bool
-  operator!=(const operation & other) const noexcept
+  operator!=(const Operation & other) const noexcept
   {
     return !(*this == other);
   }
-
-  static jlm::rvsdg::node_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept;
 };
 
 template<class T>
 static inline bool
-is(const jlm::rvsdg::operation & operation) noexcept
+is(const Operation & operation) noexcept
 {
   static_assert(
-      std::is_base_of<jlm::rvsdg::operation, T>::value,
+      std::is_base_of<Operation, T>::value,
       "Template parameter T must be derived from jlm::rvsdg::operation.");
 
   return dynamic_cast<const T *>(&operation) != nullptr;
 }
 
-/* simple operation */
-
-class simple_op : public operation
+class SimpleOperation : public Operation
 {
 public:
-  virtual ~simple_op();
+  ~SimpleOperation() noexcept override;
 
-  simple_op(
+  SimpleOperation(
       std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands,
       std::vector<std::shared_ptr<const jlm::rvsdg::Type>> results)
       : operands_(std::move(operands)),
@@ -85,24 +77,16 @@ public:
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   result(size_t index) const noexcept;
 
-  static jlm::rvsdg::simple_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept;
-
 private:
   std::vector<std::shared_ptr<const rvsdg::Type>> operands_;
   std::vector<std::shared_ptr<const rvsdg::Type>> results_;
 };
 
-/* structural operation */
-
-class structural_op : public operation
+class StructuralOperation : public Operation
 {
 public:
   virtual bool
-  operator==(const operation & other) const noexcept override;
-
-  static jlm::rvsdg::structural_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept;
+  operator==(const Operation & other) const noexcept override;
 };
 
 }

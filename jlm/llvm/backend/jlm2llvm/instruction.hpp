@@ -6,6 +6,8 @@
 #ifndef JLM_LLVM_BACKEND_JLM2LLVM_INSTRUCTION_HPP
 #define JLM_LLVM_BACKEND_JLM2LLVM_INSTRUCTION_HPP
 
+#include <jlm/llvm/ir/tac.hpp>
+
 namespace llvm
 {
 
@@ -16,6 +18,7 @@ class Constant;
 namespace jlm::llvm
 {
 
+class cfg_node;
 class tac;
 
 namespace jlm2llvm

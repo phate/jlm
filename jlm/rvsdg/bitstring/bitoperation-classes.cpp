@@ -10,8 +10,6 @@
 namespace jlm::rvsdg
 {
 
-/* bitunary operation */
-
 bitunary_op::~bitunary_op() noexcept
 {}
 
@@ -30,14 +28,12 @@ bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg
   if (path == unop_reduction_constant)
   {
     auto p = producer(arg);
-    auto & c = static_cast<const bitconstant_op &>(p->operation());
+    auto & c = static_cast<const bitconstant_op &>(p->GetOperation());
     return create_bitconstant(p->region(), reduce_constant(c.value()));
   }
 
   return nullptr;
 }
-
-/* bitbinary operation */
 
 bitbinary_op::~bitbinary_op() noexcept
 {}
@@ -61,15 +57,13 @@ bitbinary_op::reduce_operand_pair(
 {
   if (path == binop_reduction_constants)
   {
-    auto & c1 = static_cast<const bitconstant_op &>(producer(arg1)->operation());
-    auto & c2 = static_cast<const bitconstant_op &>(producer(arg2)->operation());
+    auto & c1 = static_cast<const bitconstant_op &>(producer(arg1)->GetOperation());
+    auto & c2 = static_cast<const bitconstant_op &>(producer(arg2)->GetOperation());
     return create_bitconstant(arg1->region(), reduce_constants(c1.value(), c2.value()));
   }
 
   return nullptr;
 }
-
-/* bitcompare operation */
 
 bitcompare_op::~bitcompare_op() noexcept
 {}
@@ -82,12 +76,12 @@ bitcompare_op::can_reduce_operand_pair(
   auto p = producer(arg1);
   const bitconstant_op * c1_op = nullptr;
   if (p)
-    c1_op = dynamic_cast<const bitconstant_op *>(&p->operation());
+    c1_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());
 
   p = producer(arg2);
   const bitconstant_op * c2_op = nullptr;
   if (p)
-    c2_op = dynamic_cast<const bitconstant_op *>(&p->operation());
+    c2_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());
 
   bitvalue_repr arg1_repr = c1_op ? c1_op->value() : bitvalue_repr::repeat(type().nbits(), 'D');
   bitvalue_repr arg2_repr = c2_op ? c2_op->value() : bitvalue_repr::repeat(type().nbits(), 'D');
@@ -109,7 +103,7 @@ jlm::rvsdg::output *
 bitcompare_op::reduce_operand_pair(
     binop_reduction_path_t path,
     jlm::rvsdg::output * arg1,
-    jlm::rvsdg::output * arg2) const
+    jlm::rvsdg::output *) const
 {
   if (path == 1)
   {

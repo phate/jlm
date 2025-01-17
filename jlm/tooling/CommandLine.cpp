@@ -108,6 +108,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
+        { OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_,
+          OptimizationId::AAAndersenTopDownLifetimeAware },
         { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
           OptimizationId::AASteensgaardAgnostic },
         { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
@@ -141,6 +143,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
           OptimizationCommandLineArgument::AaAndersenRegionAware_ },
+        { OptimizationId::AAAndersenTopDownLifetimeAware,
+          OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_ },
         { OptimizationId::AASteensgaardAgnostic,
           OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
         { OptimizationId::AASteensgaardRegionAware,
@@ -682,7 +686,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc("Write output to <file>"),
       cl::value_desc("file"));
 
-  std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path();
+  std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path() / "jlm";
   const auto statisticDirectoryDescription =
       "Write statistics and debug output to files in <dir>. Default is "
       + statisticsDirectoryDefault + ".";
@@ -806,6 +810,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
+  auto aAAndersenTopDownLifetimeAware =
+      JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware;
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
   auto aASteensgaardRegionAware =
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
@@ -831,6 +837,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
+          ::clEnumValN(
+              aAAndersenTopDownLifetimeAware,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenTopDownLifetimeAware),
+              "Andersen alias analysis with top-down lifetime-aware memory node elimination"),
           ::clEnumValN(
               aASteensgaardAgnostic,
               JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
@@ -897,27 +907,20 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   cl::ParseCommandLineOptions(argc, argv);
 
   jlm::util::filepath statisticsDirectoryFilePath(statisticDirectory);
-  if (!statisticsDirectoryFilePath.Exists() && !statisticsDirectoryFilePath.IsDirectory())
-  {
-    throw CommandLineParser::Exception(
-        statisticsDirectoryFilePath.to_str() + " does not exist or is not a directory.");
-  }
-
   jlm::util::filepath inputFilePath(inputFile);
-  jlm::util::filepath statisticsFilePath =
-      jlm::util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          statisticsDirectoryFilePath,
-          inputFilePath);
 
   util::HashSet<util::Statistics::Id> demandedStatistics(
       { printStatistics.begin(), printStatistics.end() });
 
   util::StatisticsCollectorSettings statisticsCollectorSettings(
-      statisticsFilePath,
-      demandedStatistics);
+      std::move(demandedStatistics),
+      statisticsDirectoryFilePath,
+      inputFilePath.base());
 
   util::HashSet<llvm::RvsdgTreePrinter::Configuration::Annotation> demandedAnnotations(
       { rvsdgTreePrinterAnnotations.begin(), rvsdgTreePrinterAnnotations.end() });
+
+  llvm::RvsdgTreePrinter::Configuration treePrinterConfiguration(std::move(demandedAnnotations));
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
@@ -925,9 +928,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFile,
       outputFormat,
       std::move(statisticsCollectorSettings),
-      llvm::RvsdgTreePrinter::Configuration(
-          statisticsDirectoryFilePath,
-          std::move(demandedAnnotations)),
+      std::move(treePrinterConfiguration),
       std::move(optimizationIds));
 
   return *CommandLineOptions_;

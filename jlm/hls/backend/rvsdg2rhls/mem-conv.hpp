@@ -13,20 +13,26 @@ namespace jlm::hls
 {
 
 typedef std::vector<std::tuple<
-    std::vector<jlm::rvsdg::simple_node *>,
-    std::vector<jlm::rvsdg::simple_node *>,
-    std::vector<jlm::rvsdg::simple_node *>>>
+    std::vector<jlm::rvsdg::SimpleNode *>,
+    std::vector<jlm::rvsdg::SimpleNode *>,
+    std::vector<jlm::rvsdg::SimpleNode *>>>
     port_load_store_decouple;
 
+/**
+ * Traces all pointer arguments of a lambda node and finds all memory operations.
+ * Pointers read from memory is not traced, i.e., the output of load operations is not traced.
+ * @param lambda The lambda node for which to trace all pointer arguments
+ * @param portNodes A vector where each element contains all memory operations traced from a pointer
+ */
 void
-trace_pointer_arguments(const llvm::lambda::node * ln, port_load_store_decouple & port_nodes);
+TracePointerArguments(const llvm::lambda::node * lambda, port_load_store_decouple & portNodes);
 
 void
 MemoryConverter(llvm::RvsdgModule & rm);
 
 /**
  * @param lambda The lambda node for wich the load and store operations are to be connected to
- * response (arguemnts) ports
+ * response (argument) ports
  * @param argumentIndex The index of the reponse (argument) port to be connected
  * @param smap The substitution map for the lambda node
  * @param originalLoadNodes The load nodes to be connected to the reponse port
@@ -39,18 +45,18 @@ ConnectRequestResponseMemPorts(
     const llvm::lambda::node * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
-    const std::vector<jlm::rvsdg::simple_node *> & originalLoadNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalStoreNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalDecoupledNodes);
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalStoreNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalDecoupledNodes);
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::simple_node * originalLoad,
+    const jlm::rvsdg::SimpleNode * originalLoad,
     jlm::rvsdg::output * response);
 
-jlm::rvsdg::simple_node *
-ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_node * originalStore);
+jlm::rvsdg::SimpleNode *
+ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore);
 
 jlm::rvsdg::output *
 route_response(rvsdg::Region * target, jlm::rvsdg::output * response);

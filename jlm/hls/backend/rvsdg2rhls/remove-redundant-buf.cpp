@@ -16,19 +16,33 @@ eliminate_buf(jlm::rvsdg::output * o)
   if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(o))
   {
     auto node = so->node();
-    if (dynamic_cast<const branch_op *>(&node->operation()))
+    if (jlm::rvsdg::is<const branch_op>(node->GetOperation()))
     {
       return eliminate_buf(node->input(1)->origin());
     }
-    else if (dynamic_cast<const local_load_op *>(&node->operation()))
+    else if (jlm::rvsdg::is<const jlm::hls::fork_op>(node->GetOperation()))
+    {
+      // part of memory disambiguation
+      return eliminate_buf(node->input(0)->origin());
+    }
+    else if (jlm::rvsdg::is<const local_load_op>(node->GetOperation()))
     {
       return true;
     }
-    else if (dynamic_cast<const local_store_op *>(&node->operation()))
+    else if (jlm::rvsdg::is<const local_store_op>(node->GetOperation()))
+    {
+      return true;
+    }
+    else if (jlm::rvsdg::is<const jlm::hls::load_op>(node->GetOperation()))
+    {
+      return true;
+    }
+    else if (jlm::rvsdg::is<const jlm::hls::store_op>(node->GetOperation()))
     {
       return true;
     }
   }
+
   return false;
 }
 
@@ -44,9 +58,9 @@ remove_redundant_buf(rvsdg::Region * region)
         remove_redundant_buf(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (auto buf = dynamic_cast<const buffer_op *>(&node->operation()))
+      if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
       {
         if (std::dynamic_pointer_cast<const jlm::llvm::MemoryStateType>(buf->argument(0)))
         {
@@ -66,7 +80,7 @@ void
 remove_redundant_buf(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   remove_redundant_buf(root);
 }
 

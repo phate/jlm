@@ -27,10 +27,10 @@ test()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
 
-  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, "", linkage::external_linkage);
+  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, pt, "", linkage::external_linkage);
 
   phi::builder pb;
-  pb.begin(rm.Rvsdg().root());
+  pb.begin(&rm.Rvsdg().GetRootRegion());
   auto region = pb.subregion();
   auto r1 = pb.add_recvar(pt);
   auto r2 = pb.add_recvar(pt);

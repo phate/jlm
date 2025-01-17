@@ -12,16 +12,16 @@
 static void
 test_initialization()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto vtype = jlm::tests::valuetype::Create();
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, {});
-  auto n2 = jlm::tests::test_op::create(graph.root(), {}, { vtype });
+  auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, {});
+  auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { vtype });
 
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   bool n1_visited = false;
   bool n2_visited = false;
-  for (const auto & node : jlm::rvsdg::bottomup_traverser(graph.root()))
+  for (const auto & node : jlm::rvsdg::bottomup_traverser(&graph.GetRootRegion()))
   {
     if (node == n1)
       n1_visited = true;
@@ -36,16 +36,19 @@ test_initialization()
 static void
 test_basic_traversal()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0), n1->output(1) }, { type });
+  auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(
+      &graph.GetRootRegion(),
+      { n1->output(0), n1->output(1) },
+      { type });
 
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::node * tmp;
-    jlm::rvsdg::bottomup_traverser trav(graph.root());
+    jlm::rvsdg::Node * tmp;
+    jlm::rvsdg::bottomup_traverser trav(&graph.GetRootRegion());
     tmp = trav.next();
     assert(tmp == n2);
     tmp = trav.next();
@@ -60,15 +63,18 @@ test_basic_traversal()
 static void
 test_order_enforcement_traversal()
 {
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto type = jlm::tests::valuetype::Create();
-  auto n1 = jlm::tests::test_op::create(graph.root(), {}, { type, type });
-  auto n2 = jlm::tests::test_op::create(graph.root(), { n1->output(0) }, { type });
-  auto n3 = jlm::tests::test_op::create(graph.root(), { n2->output(0), n1->output(1) }, { type });
+  auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
+  auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 = jlm::tests::test_op::create(
+      &graph.GetRootRegion(),
+      { n2->output(0), n1->output(1) },
+      { type });
 
-  jlm::rvsdg::node * tmp;
+  jlm::rvsdg::Node * tmp;
   {
-    jlm::rvsdg::bottomup_traverser trav(graph.root());
+    jlm::rvsdg::bottomup_traverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
     assert(tmp == n3);

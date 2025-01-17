@@ -16,7 +16,7 @@ TestDeadLoopNode()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
 
@@ -24,14 +24,14 @@ TestDeadLoopNode()
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::llvm::lambda::node::create(
-      rvsdg.root(),
+      &rvsdg.GetRootRegion(),
       functionType,
       "f",
       jlm::llvm::linkage::external_linkage);
 
   loop_node::create(lambdaNode->subregion());
 
-  lambdaNode->finalize({ lambdaNode->fctargument(1) });
+  lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[1] });
 
   // Act
   EliminateDeadNodes(rvsdgModule);
@@ -47,7 +47,7 @@ TestDeadLoopNodeOutput()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });
 
@@ -55,19 +55,19 @@ TestDeadLoopNodeOutput()
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::llvm::lambda::node::create(
-      rvsdg.root(),
+      &rvsdg.GetRootRegion(),
       functionType,
       "f",
       jlm::llvm::linkage::external_linkage);
 
-  auto p = lambdaNode->fctargument(0);
-  auto x = lambdaNode->fctargument(1);
+  auto p = lambdaNode->GetFunctionArguments()[0];
+  auto x = lambdaNode->GetFunctionArguments()[1];
 
   auto loopNode = loop_node::create(lambdaNode->subregion());
 
   jlm::rvsdg::output * buffer;
-  auto output0 = loopNode->add_loopvar(p, &buffer);
-  loopNode->add_loopvar(x);
+  auto output0 = loopNode->AddLoopVar(p, &buffer);
+  loopNode->AddLoopVar(x);
   loopNode->set_predicate(buffer);
 
   auto lambdaOutput = lambdaNode->finalize({ output0 });

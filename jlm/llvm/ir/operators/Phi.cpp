@@ -13,8 +13,6 @@ namespace jlm::llvm
 namespace phi
 {
 
-/* phi operation class */
-
 operation::~operation()
 {}
 
@@ -24,16 +22,24 @@ operation::debug_string() const
   return "PHI";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new phi::operation(*this));
+  return std::make_unique<phi::operation>(*this);
 }
 
 /* phi node class */
 
 node::~node()
 {}
+
+[[nodiscard]] const phi::operation &
+node::GetOperation() const noexcept
+{
+  // Phi nodes are not parameterized, so we can return operation singleton.
+  static const phi::operation singleton;
+  return singleton;
+}
 
 cvinput *
 node::input(size_t n) const noexcept
@@ -100,7 +106,7 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
   std::function<void(const phi::node &, std::vector<lambda::node *> &)> extractLambdaNodes =
       [&](auto & phiNode, auto & lambdaNodes)
   {
-    for (auto & node : phiNode.subregion()->nodes)
+    for (auto & node : phiNode.subregion()->Nodes())
     {
       if (auto lambdaNode = dynamic_cast<lambda::node *>(&node))
       {
@@ -169,7 +175,7 @@ rvargument::~rvargument()
 {}
 
 rvargument &
-rvargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+rvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
   return *rvargument::create(&region, Type());
@@ -181,7 +187,7 @@ cvargument::~cvargument()
 {}
 
 cvargument &
-cvargument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   auto phiInput = util::AssertedCast<cvinput>(input);
   return *cvargument::create(&region, phiInput, Type());
@@ -193,7 +199,7 @@ rvresult::~rvresult()
 {}
 
 rvresult &
-rvresult::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+rvresult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   auto phiOutput = util::AssertedCast<rvoutput>(output);
   return *rvresult::create(origin.region(), &origin, phiOutput, origin.Type());

@@ -35,23 +35,25 @@ test_gamma()
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
-  auto evx = gamma->add_entryvar(x);
-  auto evs = gamma->add_entryvar(s);
+  auto evx = gamma->AddEntryVar(x);
+  auto evs = gamma->AddEntryVar(s);
 
   auto null = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
-  auto bin = jlm::tests::create_testop(gamma->subregion(0), { null, evx->argument(0) }, { vt })[0];
-  auto state = jlm::tests::create_testop(gamma->subregion(0), { bin, evs->argument(0) }, { st })[0];
+  auto bin =
+      jlm::tests::create_testop(gamma->subregion(0), { null, evx.branchArgument[0] }, { vt })[0];
+  auto state =
+      jlm::tests::create_testop(gamma->subregion(0), { bin, evs.branchArgument[0] }, { st })[0];
 
-  gamma->add_exitvar({ state, evs->argument(1) });
+  gamma->AddExitVar({ state, evs.branchArgument[1] });
 
   GraphExport::Create(*gamma->output(0), "x");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::pushout pushout;
   pushout.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.root()->nodes.size() == 3);
+  assert(graph.GetRootRegion().nnodes() == 3);
 }
 
 static inline void
@@ -72,34 +74,31 @@ test_theta()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lv1 = theta->add_loopvar(c);
-  auto lv2 = theta->add_loopvar(x);
-  auto lv3 = theta->add_loopvar(x);
-  auto lv4 = theta->add_loopvar(s);
+  auto lv1 = theta->AddLoopVar(c);
+  auto lv2 = theta->AddLoopVar(x);
+  auto lv3 = theta->AddLoopVar(x);
+  auto lv4 = theta->AddLoopVar(s);
 
   auto o1 = jlm::tests::create_testop(theta->subregion(), {}, { vt })[0];
-  auto o2 = jlm::tests::create_testop(theta->subregion(), { o1, lv3->argument() }, { vt })[0];
-  auto o3 = jlm::tests::create_testop(theta->subregion(), { lv2->argument(), o2 }, { vt })[0];
-  auto o4 = jlm::tests::create_testop(
-      theta->subregion(),
-      { lv3->argument(), lv4->argument() },
-      { st })[0];
+  auto o2 = jlm::tests::create_testop(theta->subregion(), { o1, lv3.pre }, { vt })[0];
+  auto o3 = jlm::tests::create_testop(theta->subregion(), { lv2.pre, o2 }, { vt })[0];
+  auto o4 = jlm::tests::create_testop(theta->subregion(), { lv3.pre, lv4.pre }, { st })[0];
 
-  lv2->result()->divert_to(o3);
-  lv4->result()->divert_to(o4);
+  lv2.post->divert_to(o3);
+  lv4.post->divert_to(o4);
 
-  theta->set_predicate(lv1->argument());
+  theta->set_predicate(lv1.pre);
 
   GraphExport::Create(*theta->output(0), "c");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::pushout pushout;
   pushout.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.root()->nodes.size() == 3);
+  assert(graph.GetRootRegion().nnodes() == 3);
 }
 
 static inline void
@@ -111,26 +110,25 @@ test_push_theta_bottom()
   auto pt = PointerType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::rvsdg::graph graph;
+  jlm::rvsdg::Graph graph;
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lvc = theta->add_loopvar(c);
-  auto lva = theta->add_loopvar(a);
-  auto lvv = theta->add_loopvar(v);
-  auto lvs = theta->add_loopvar(s);
+  auto lvc = theta->AddLoopVar(c);
+  auto lva = theta->AddLoopVar(a);
+  auto lvv = theta->AddLoopVar(v);
+  auto lvs = theta->AddLoopVar(s);
 
-  auto s1 =
-      StoreNonVolatileNode::Create(lva->argument(), lvv->argument(), { lvs->argument() }, 4)[0];
+  auto s1 = StoreNonVolatileNode::Create(lva.pre, lvv.pre, { lvs.pre }, 4)[0];
 
-  lvs->result()->divert_to(s1);
-  theta->set_predicate(lvc->argument());
+  lvs.post->divert_to(s1);
+  theta->set_predicate(lvc.pre);
 
-  auto & ex = GraphExport::Create(*lvs, "s");
+  auto & ex = GraphExport::Create(*lvs.output, "s");
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::push_bottom(theta);

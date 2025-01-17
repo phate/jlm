@@ -23,14 +23,14 @@ operation::debug_string() const
   return util::strfmt("DELTA[", name(), "]");
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 operation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new delta::operation(*this));
+  return std::make_unique<delta::operation>(*this);
 }
 
 bool
-operation::operator==(const jlm::rvsdg::operation & other) const noexcept
+operation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const delta::operation *>(&other);
   return op && op->name_ == name_ && op->linkage_ == linkage_ && op->constant_ == constant_
@@ -42,10 +42,16 @@ operation::operator==(const jlm::rvsdg::operation & other) const noexcept
 node::~node()
 {}
 
+const delta::operation &
+node::GetOperation() const noexcept
+{
+  return *Operation_;
+}
+
 delta::node *
 node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  return static_cast<delta::node *>(jlm::rvsdg::node::copy(region, operands));
+  return static_cast<delta::node *>(rvsdg::Node::copy(region, operands));
 }
 
 delta::node *
@@ -173,7 +179,7 @@ cvargument::~cvargument()
 {}
 
 cvargument &
-cvargument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
+cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   auto deltaInput = util::AssertedCast<delta::cvinput>(input);
   return *cvargument::create(&region, deltaInput);
@@ -185,7 +191,7 @@ result::~result()
 {}
 
 result &
-result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *result::create(&origin);

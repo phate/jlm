@@ -20,7 +20,7 @@ namespace jlm::llvm
  * FIXME: We currently do not support vector of pointers for the baseAddress.
  *
  */
-class GetElementPtrOperation final : public rvsdg::simple_op
+class GetElementPtrOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~GetElementPtrOperation() noexcept override;
@@ -29,7 +29,7 @@ public:
   GetElementPtrOperation(
       const std::vector<std::shared_ptr<const rvsdg::bittype>> & offsetTypes,
       std::shared_ptr<const rvsdg::ValueType> pointeeType)
-      : simple_op(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
+      : SimpleOperation(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
         PointeeType_(std::move(pointeeType))
   {}
 
@@ -38,12 +38,12 @@ public:
   GetElementPtrOperation(GetElementPtrOperation && other) noexcept = default;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] const rvsdg::ValueType &
@@ -111,7 +111,7 @@ public:
     std::vector<rvsdg::output *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-    return rvsdg::simple_node::create_normalized(baseAddress->region(), operation, operands)[0];
+    return rvsdg::SimpleNode::create_normalized(baseAddress->region(), operation, operands)[0];
   }
 
 private:

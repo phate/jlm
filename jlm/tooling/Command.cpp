@@ -12,9 +12,11 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -326,10 +328,12 @@ JlmOptCommand::ToString() const
   }
 
   std::string statisticsDirArgument =
-      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetFilePath().path() + " ";
+      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetOutputDirectory().to_str()
+      + " ";
 
   return util::strfmt(
-      ProgramName_ + " ",
+      ProgramName_,
+      " ",
       outputFormatArgument,
       optimizationArguments,
       statisticsDirArgument,
@@ -382,6 +386,8 @@ JlmOptCommand::CreateOptimization(
   using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
   using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
+  using TopDownLifetimeMnp =
+      llvm::aa::EliminatedMemoryNodeProvider<AgnosticMnp, llvm::aa::TopDownMemoryNodeEliminator>;
 
   switch (optimizationId)
   {
@@ -389,6 +395,8 @@ JlmOptCommand::CreateOptimization(
     return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
     return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
@@ -408,7 +416,7 @@ JlmOptCommand::CreateOptimization(
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
     return std::make_unique<llvm::pushout>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
-    return std::make_unique<llvm::nodereduction>();
+    return std::make_unique<llvm::NodeReduction>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
     return std::make_unique<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
@@ -448,9 +456,7 @@ JlmOptCommand::ParseLlvmIrFile(
 }
 
 std::unique_ptr<llvm::RvsdgModule>
-JlmOptCommand::ParseMlirIrFile(
-    const util::filepath & mlirIrFile,
-    util::StatisticsCollector & statisticsCollector) const
+JlmOptCommand::ParseMlirIrFile(const util::filepath & mlirIrFile, util::StatisticsCollector &) const
 {
 #ifdef ENABLE_MLIR
   jlm::mlir::MlirToJlmConverter rvsdggen;
@@ -487,7 +493,7 @@ JlmOptCommand::PrintAsAscii(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto ascii = rvsdg::view(rvsdgModule.Rvsdg().root());
+  auto ascii = view(&rvsdgModule.Rvsdg().GetRootRegion());
 
   if (outputFile == "")
   {
@@ -509,7 +515,7 @@ JlmOptCommand::PrintAsXml(
 {
   auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
 
-  jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), fd);
+  view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), fd);
 
   if (fd != stdout)
     fclose(fd);
@@ -561,7 +567,7 @@ JlmOptCommand::PrintAsRvsdgTree(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
   auto tree = rvsdg::Region::ToTree(rootRegion);
 
   if (outputFile == "")
@@ -583,7 +589,7 @@ JlmOptCommand::PrintAsDot(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   util::GraphWriter writer;
   jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);

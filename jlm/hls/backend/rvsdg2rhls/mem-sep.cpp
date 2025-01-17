@@ -26,7 +26,7 @@ void
 mem_sep_independent(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   mem_sep_independent(root);
 }
 
@@ -34,7 +34,7 @@ void
 mem_sep_argument(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   mem_sep_argument(root);
 }
 
@@ -67,7 +67,7 @@ GetMemoryStateResult(const llvm::lambda::node & lambda)
 }
 
 void
-gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::simple_node *> & mem_nodes)
+gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & mem_nodes)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -76,13 +76,13 @@ gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::simple_node *> 
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         gather_mem_nodes(structnode->subregion(n), mem_nodes);
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         mem_nodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         mem_nodes.push_back(simplenode);
       }
@@ -103,27 +103,22 @@ route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
     auto parrent_user = *parent_response->begin();
     if (auto gn = dynamic_cast<rvsdg::GammaNode *>(target->node()))
     {
-      auto ip = gn->add_entryvar(parent_response);
-      std::vector<jlm::rvsdg::output *> vec;
-      for (auto & arg : ip->arguments)
+      auto ip = gn->AddEntryVar(parent_response);
+      parrent_user->divert_to(gn->AddExitVar(ip.branchArgument).output);
+      for (auto arg : ip.branchArgument)
       {
-        vec.push_back(&arg);
-      }
-      parrent_user->divert_to(gn->add_exitvar(vec));
-      for (auto & arg : ip->arguments)
-      {
-        if (arg.region() == target)
+        if (arg->region() == target)
         {
-          return &arg;
+          return arg;
         }
       }
       JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
     }
     else if (auto tn = dynamic_cast<rvsdg::ThetaNode *>(target->node()))
     {
-      auto lv = tn->add_loopvar(parent_response);
-      parrent_user->divert_to(lv);
-      return lv->argument();
+      auto lv = tn->AddLoopVar(parent_response);
+      parrent_user->divert_to(lv.output);
+      return lv.pre;
     }
     JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
   }
@@ -133,7 +128,7 @@ route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
 void
 mem_sep_independent(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
@@ -142,7 +137,7 @@ mem_sep_independent(rvsdg::Region * region)
     return;
   }
   auto state_user = *state_arg->begin();
-  std::vector<jlm::rvsdg::simple_node *> mem_nodes;
+  std::vector<jlm::rvsdg::SimpleNode *> mem_nodes;
   gather_mem_nodes(lambda_region, mem_nodes);
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + mem_nodes.size());
@@ -174,9 +169,9 @@ rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::output * common_edge,
     jlm::rvsdg::output * new_edge,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    const std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & decouple_nodes)
+    std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & decouple_nodes)
 {
   // follows along common edge and routes new edge through the same regions
   // redirects the supplied loads, stores and decouples to the new edge
@@ -193,37 +188,38 @@ trace_edge(
       // end of region reached
       return res;
     }
-    else if (auto gi = dynamic_cast<rvsdg::GammaInput *>(user))
+    else if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
     {
-      auto gn = gi->node();
-      auto ip = gn->add_entryvar(new_edge);
+      auto ip = gammaNode->AddEntryVar(new_edge);
       std::vector<jlm::rvsdg::output *> vec;
-      for (auto & arg : ip->arguments)
-      {
-        vec.push_back(&arg);
-      }
-      new_edge = gn->add_exitvar(vec);
+      new_edge = gammaNode->AddExitVar(ip.branchArgument).output;
       new_next->divert_to(new_edge);
-      for (size_t i = 0; i < gn->nsubregions(); ++i)
+
+      auto entryvar = gammaNode->MapInputEntryVar(*user);
+      for (size_t i = 0; i < gammaNode->nsubregions(); ++i)
       {
-        auto subres =
-            trace_edge(gi->argument(i), ip->argument(i), load_nodes, store_nodes, decouple_nodes);
+        auto subres = trace_edge(
+            entryvar.branchArgument[i],
+            ip.branchArgument[i],
+            load_nodes,
+            store_nodes,
+            decouple_nodes);
         common_edge = subres->output();
       }
     }
-    else if (auto ti = dynamic_cast<rvsdg::ThetaInput *>(user))
+    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))
     {
-      auto tn = ti->node();
-      auto lv = tn->add_loopvar(new_edge);
-      trace_edge(ti->argument(), lv->argument(), load_nodes, store_nodes, decouple_nodes);
-      common_edge = ti->output();
-      new_edge = lv;
+      auto olv = theta->MapInputLoopVar(*user);
+      auto lv = theta->AddLoopVar(new_edge);
+      trace_edge(olv.pre, lv.pre, load_nodes, store_nodes, decouple_nodes);
+      common_edge = olv.output;
+      new_edge = lv.output;
       new_next->divert_to(new_edge);
     }
     else if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto sn = si->node();
-      auto op = &si->node()->operation();
+      auto op = &si->node()->GetOperation();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
         JLM_ASSERT(sn->noutputs() == 1);
@@ -277,7 +273,7 @@ trace_edge(
 void
 mem_sep_argument(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
@@ -287,7 +283,7 @@ mem_sep_argument(rvsdg::Region * region)
   }
   auto state_user = *state_arg->begin();
   port_load_store_decouple port_nodes;
-  trace_pointer_arguments(lambda, port_nodes);
+  TracePointerArguments(lambda, port_nodes);
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
   auto state_result = GetMemoryStateResult(*lambda);

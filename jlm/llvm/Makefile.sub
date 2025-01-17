@@ -18,6 +18,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/Annotation.cpp \
     jlm/llvm/ir/attribute.cpp \
     jlm/llvm/ir/basic-block.cpp \
+    jlm/llvm/ir/CallSummary.cpp \
     jlm/llvm/ir/cfg.cpp \
     jlm/llvm/ir/cfg-structure.cpp \
     jlm/llvm/ir/cfg-node.cpp \
@@ -27,6 +28,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/delta.cpp \
+    jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
@@ -107,6 +109,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/linkage.hpp \
 	jlm/llvm/ir/Annotation.hpp \
 	jlm/llvm/ir/attribute.hpp \
+	jlm/llvm/ir/CallSummary.hpp \
 	jlm/llvm/ir/tac.hpp \
 	jlm/llvm/ir/domtree.hpp \
 	jlm/llvm/ir/cfg-node.hpp \
@@ -123,6 +126,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/MemoryStateOperations.hpp \
+	jlm/llvm/ir/operators/FunctionPointer.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
 	jlm/llvm/ir/operators/Store.hpp \
@@ -149,6 +153,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
     tests/jlm/llvm/frontend/llvm/LlvmTypeConversionTests  \
@@ -190,6 +195,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/test-ssa-destruction \
     tests/jlm/llvm/ir/TestTypes \
     tests/jlm/llvm/ir/TestAnnotation \
+    tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
@@ -202,13 +208,12 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
     tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
+    tests/jlm/llvm/opt/NodeReductionTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
     tests/jlm/llvm/opt/test-cne \
     tests/jlm/llvm/opt/TestDeadNodeElimination \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-inversion \
-    tests/jlm/llvm/opt/TestLoadMuxReduction \
-    tests/jlm/llvm/opt/TestLoadStoreReduction \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
     tests/jlm/llvm/opt/test-unroll \

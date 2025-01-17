@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -25,16 +26,16 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph)
+  start(const rvsdg::Graph & graph)
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  stop(const jlm::rvsdg::graph & graph)
+  stop(const rvsdg::Graph & graph)
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -54,7 +55,7 @@ find_producer(jlm::rvsdg::input * input)
   if (argument == nullptr)
     return input->origin();
 
-  if (argument->region() == graph->root())
+  if (argument->region() == &graph->GetRootRegion())
     return argument;
 
   JLM_ASSERT(argument->input() != nullptr);
@@ -73,16 +74,16 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 
   if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
-    gamma->add_entryvar(output);
+    gamma->AddEntryVar(output);
     output = region->argument(region->narguments() - 1);
   }
   else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
   {
-    output = theta->add_loopvar(output)->argument();
+    output = theta->AddLoopVar(output).pre;
   }
   else if (auto lambda = dynamic_cast<lambda::node *>(region->node()))
   {
-    output = lambda->add_ctxvar(output);
+    output = lambda->AddContextVar(*output).inner;
   }
   else if (auto phi = dynamic_cast<phi::node *>(region->node()))
   {
@@ -97,7 +98,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 }
 
 static std::vector<jlm::rvsdg::output *>
-route_dependencies(const lambda::node * lambda, const jlm::rvsdg::simple_node * apply)
+route_dependencies(const lambda::node * lambda, const jlm::rvsdg::SimpleNode * apply)
 {
   JLM_ASSERT(is<CallOperation>(apply));
 
@@ -114,21 +115,23 @@ route_dependencies(const lambda::node * lambda, const jlm::rvsdg::simple_node * 
 }
 
 void
-inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
+inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
 {
   JLM_ASSERT(is<CallOperation>(call));
 
   auto deps = route_dependencies(lambda, call);
-  JLM_ASSERT(lambda->ncvarguments() == deps.size());
+  auto ctxvars = lambda->GetContextVars();
+  JLM_ASSERT(ctxvars.size() == deps.size());
 
   rvsdg::SubstitutionMap smap;
+  auto args = lambda->GetFunctionArguments();
   for (size_t n = 1; n < call->ninputs(); n++)
   {
-    auto argument = lambda->fctargument(n - 1);
+    auto argument = args[n - 1];
     smap.insert(argument, call->input(n)->origin());
   }
-  for (size_t n = 0; n < lambda->ncvarguments(); n++)
-    smap.insert(lambda->cvargument(n), deps[n]);
+  for (size_t n = 0; n < ctxvars.size(); n++)
+    smap.insert(ctxvars[n].inner, deps[n]);
 
   lambda->subregion()->copy(call->region(), smap, false, false);
 
@@ -142,17 +145,17 @@ inlineCall(jlm::rvsdg::simple_node * call, const lambda::node * lambda)
 }
 
 static void
-inlining(jlm::rvsdg::graph & rvsdg)
+inlining(rvsdg::Graph & rvsdg)
 {
-  for (auto node : rvsdg::topdown_traverser(rvsdg.root()))
+  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
   {
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
-      auto callSummary = lambda->ComputeCallSummary();
+      auto callSummary = jlm::llvm::ComputeCallSummary(*lambda);
 
-      if (callSummary->HasOnlyDirectCalls() && callSummary->NumDirectCalls() == 1)
+      if (callSummary.HasOnlyDirectCalls() && callSummary.NumDirectCalls() == 1)
       {
-        inlineCall(*callSummary->DirectCalls().begin(), lambda);
+        inlineCall(*callSummary.DirectCalls().begin(), lambda);
       }
     }
   }

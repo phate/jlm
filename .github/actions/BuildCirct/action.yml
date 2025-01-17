@@ -4,21 +4,6 @@ description: "Builds CIRCT, which is used for the HLS backend"
 runs:
   using: "composite"
   steps:
-    - name: "Get the commit used for building CIRCT and use it as the cache key"
-      id: get-circt-hash
-      run: |
-        echo "hash=$(./scripts/build-circt.sh --get-commit-hash)" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: "Try to fetch CIRCT from the cache"
-      id: cache-circt
-      uses: actions/cache@v4
-      with:
-        save-always: true
-        path: |
-          ${{ github.workspace }}/build-circt/circt
-        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
-
     - name: "Install LLVM, Clang, MLIR, and Ninja"
       uses: ./.github/actions/InstallPackages
       with:
@@ -26,11 +11,33 @@ runs:
         install-mlir: true
         install-ninja: true
 
+    - name: "Get the commit used for building CIRCT and use it as the cache key"
+      id: get-circt-hash
+      run: |
+        echo "hash=$(./scripts/build-circt.sh --get-commit-hash)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: "Try to fetch CIRCT from the cache"
+      id: restore-cache-circt
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ${{ github.workspace }}/build-circt/circt
+        key: ${{ runner.os }}-circt-${{ steps.get-circt-hash.outputs.hash }}
+
     - name: "Build CIRCT if we didn't hit in the cache"
-      if: steps.cache-circt.outputs.cache-hit != 'true'
+      if: steps.restore-cache-circt.outputs.cache-hit != 'true'
       run: |
         ./scripts/build-circt.sh \
           --build-path ${{ github.workspace }}/build-circt \
-          --install-path ${{ github.workspace }}/build-circt/circt \
-          --llvm-lit-path ~/.local/bin/lit
+          --install-path ${{ github.workspace }}/build-circt/circt
       shell: bash
+
+    - name: "Save CIRCT to the cache"
+      if: steps.restore-cache-circt.outputs.cache-hit != 'true'
+      id: save-cache-circt
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ github.workspace }}/build-circt/circt
+        key: ${{ steps.restore-cache-circt.outputs.cache-primary-key }}

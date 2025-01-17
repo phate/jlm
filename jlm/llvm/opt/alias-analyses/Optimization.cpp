@@ -6,10 +6,12 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -41,5 +43,8 @@ template class AliasAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider
 template class AliasAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
 template class AliasAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
 template class AliasAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
+template class AliasAnalysisStateEncoder<
+    Andersen,
+    EliminatedMemoryNodeProvider<AgnosticMemoryNodeProvider, TopDownMemoryNodeEliminator>>;
 
 }

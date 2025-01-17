@@ -21,20 +21,20 @@ TestLambda()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto constant = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
@@ -101,7 +101,7 @@ TestLambda()
  * recursively. For each operation the operand 0 is checked until the definingOperations is empty.
  *
  * \param operation The starting operation to check. (the lambda result for example)
- * \param succesorOperations The trace of operations to check. The last operation is the direct user
+ * \param definingOperations The trace of operations to check. The last operation is the direct user
  * of the given operation operand and the first operation is the last operation that will be checked
  * on the chain.
  */
@@ -140,20 +140,20 @@ TestAddOperation()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
@@ -241,20 +241,20 @@ TestComZeroExt()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     // Create add operation
     std::cout << "Add Operation" << std::endl;
@@ -264,10 +264,8 @@ TestComZeroExt()
 
     // zero extension of constant1
     auto zeroExtOp = jlm::llvm::zext_op(8, 16);
-    auto zeroExt = jlm::rvsdg::simple_node::create_normalized(
-        lambda->subregion(),
-        zeroExtOp,
-        { constant1 })[0];
+    auto zeroExt =
+        jlm::rvsdg::SimpleNode::create_normalized(lambda->subregion(), zeroExtOp, { constant1 })[0];
 
     auto mul = jlm::rvsdg::bitmul_op::create(16, zeroExt, zeroExt);
 
@@ -387,20 +385,20 @@ TestMatch()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::ControlType::Create(2), iostatetype::Create(), MemoryStateType::Create() });
 
-    auto lambda =
-        lambda::node::create(graph->root(), functionType, "test", linkage::external_linkage);
-    auto iOStateArgument = lambda->fctargument(0);
-    auto memoryStateArgument = lambda->fctargument(1);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
+    auto iOStateArgument = lambda->GetFunctionArguments()[0];
+    auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     // Create a match operation
     std::cout << "Match Operation" << std::endl;
@@ -494,23 +492,20 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
   {
 
     // Create a gamma operation
     std::cout << "Gamma Operation" << std::endl;
-    auto CtrlConstant = jlm::rvsdg::control_constant(graph->root(), 3, 1);
-    auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
-    auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
+    auto CtrlConstant = jlm::rvsdg::control_constant(&graph->GetRootRegion(), 3, 1);
+    auto entryvar1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 5);
+    auto entryvar2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 6);
     auto rvsdgGammaNode = jlm::rvsdg::GammaNode::create(
         CtrlConstant, // predicate
         3             // nalternatives
     );
 
-    rvsdgGammaNode->add_entryvar(entryvar1);
-    rvsdgGammaNode->add_entryvar(entryvar2);
+    rvsdgGammaNode->AddEntryVar(entryvar1);
+    rvsdgGammaNode->AddEntryVar(entryvar2);
 
     std::vector<jlm::rvsdg::output *> exitvars1;
     std::vector<jlm::rvsdg::output *> exitvars2;
@@ -521,8 +516,8 @@ TestGamma()
           jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, 10 * (i + 1)));
     }
 
-    rvsdgGammaNode->add_exitvar(exitvars1);
-    rvsdgGammaNode->add_exitvar(exitvars2);
+    rvsdgGammaNode->AddExitVar(exitvars1);
+    rvsdgGammaNode->AddExitVar(exitvars2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -613,19 +608,17 @@ TestTheta()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
   {
     // Create a theta operation
     std::cout << "Theta Operation" << std::endl;
-    auto entryvar1 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 5);
-    auto entryvar2 = jlm::rvsdg::create_bitconstant(graph->root(), 32, 6);
-    jlm::rvsdg::ThetaNode * rvsdgThetaNode = jlm::rvsdg::ThetaNode::create(graph->root());
+    auto entryvar1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 5);
+    auto entryvar2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 6);
+    jlm::rvsdg::ThetaNode * rvsdgThetaNode = jlm::rvsdg::ThetaNode::create(&graph->GetRootRegion());
 
     auto predicate = jlm::rvsdg::control_constant(rvsdgThetaNode->subregion(), 2, 0);
 
-    rvsdgThetaNode->add_loopvar(entryvar1);
-    rvsdgThetaNode->add_loopvar(entryvar2);
+    rvsdgThetaNode->AddLoopVar(entryvar1);
+    rvsdgThetaNode->AddLoopVar(entryvar2);
     rvsdgThetaNode->set_predicate(predicate);
 
     // Convert the RVSDG to MLIR

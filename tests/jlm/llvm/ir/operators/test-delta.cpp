@@ -25,7 +25,7 @@ TestDeltaCreation()
   auto imp = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   auto delta1 = delta::node::Create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       valueType,
       "test-delta1",
       linkage::external_linkage,
@@ -36,7 +36,7 @@ TestDeltaCreation()
       delta1->finalize(jlm::tests::create_testop(delta1->subregion(), { dep }, { valueType })[0]);
 
   auto delta2 = delta::node::Create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       valueType,
       "test-delta2",
       linkage::internal_linkage,
@@ -50,7 +50,7 @@ TestDeltaCreation()
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
-  assert(rvsdgModule.Rvsdg().root()->nnodes() == 2);
+  assert(rvsdgModule.Rvsdg().GetRootRegion().nnodes() == 2);
 
   assert(delta1->linkage() == linkage::external_linkage);
   assert(delta1->constant() == true);
@@ -73,7 +73,7 @@ TestRemoveDeltaInputsWhere()
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   auto deltaNode = delta::node::Create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       valueType,
       "delta",
       linkage::external_linkage,
@@ -140,7 +140,7 @@ TestPruneDeltaInputs()
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   auto deltaNode = delta::node::Create(
-      rvsdgModule.Rvsdg().root(),
+      &rvsdgModule.Rvsdg().GetRootRegion(),
       valueType,
       "delta",
       linkage::external_linkage,

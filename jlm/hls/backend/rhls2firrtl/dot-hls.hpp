@@ -18,7 +18,7 @@ class DotHLS : public BaseHLS
   extension() override;
 
   std::string
-  get_text(llvm::RvsdgModule & rm) override;
+  GetText(llvm::RvsdgModule & rm) override;
 
 private:
   std::string
@@ -28,7 +28,7 @@ private:
   result_to_dot(rvsdg::RegionResult * port);
 
   std::string
-  node_to_dot(const jlm::rvsdg::node * node);
+  node_to_dot(const rvsdg::Node * node);
 
   std::string
   edge(std::string src, std::string snk, const jlm::rvsdg::Type & type, bool back = false);

@@ -156,11 +156,11 @@ TestPointerObjectUnification()
   assert(set.GetUnificationRoot(dummy0) == root);
   assert(set.GetUnificationRoot(dummy1) == root);
 
-  // Exactly one of the PointerObjects is the root
+  // Exactly one of the PointerObjects is the GetRootRegion
   assert((root == dummy0) != (root == dummy1));
   assert(set.IsUnificationRoot(root));
 
-  // Trying to unify again gives the same root
+  // Trying to unify again gives the same GetRootRegion
   assert(set.UnifyPointerObjects(dummy0, dummy1) == root);
 
   auto notRoot = dummy0 + dummy1 - root;
@@ -473,7 +473,7 @@ TestEscapedFunctionConstraint()
   const auto & localFunction = rvsdg.GetLocalFunction();
   const auto & localFunctionRegister = rvsdg.GetLocalFunctionRegister();
   const auto & exportedFunction = rvsdg.GetExportedFunction();
-  const auto & exportedFunctionReturn = *exportedFunction.fctresult(0)->origin();
+  const auto & exportedFunctionReturn = *exportedFunction.GetFunctionResults()[0]->origin();
 
   PointerObjectSet set;
   const auto localFunctionPO = set.CreateFunctionMemoryObject(localFunction);
@@ -633,8 +633,10 @@ TestFunctionCallConstraint()
   PointerObjectSet set;
   const auto lambdaF = set.CreateFunctionMemoryObject(*rvsdg.lambda_f);
   const auto lambdaFRegister = set.CreateRegisterPointerObject(*rvsdg.lambda_f->output());
-  const auto lambdaFArgumentX = set.CreateRegisterPointerObject(*rvsdg.lambda_f->fctargument(0));
-  const auto lambdaFArgumentY = set.CreateRegisterPointerObject(*rvsdg.lambda_f->fctargument(1));
+  const auto lambdaFArgumentX =
+      set.CreateRegisterPointerObject(*rvsdg.lambda_f->GetFunctionArguments()[0]);
+  const auto lambdaFArgumentY =
+      set.CreateRegisterPointerObject(*rvsdg.lambda_f->GetFunctionArguments()[1]);
   const auto allocaX = set.CreateAllocaMemoryObject(*rvsdg.alloca_x, true);
   const auto allocaY = set.CreateAllocaMemoryObject(*rvsdg.alloca_y, true);
   const auto allocaXRegister = set.CreateRegisterPointerObject(*rvsdg.alloca_x->output(0));
@@ -777,10 +779,11 @@ TestDrawSubsetGraph()
   // Assert
   assert(graph.NumNodes() == set.NumPointerObjects());
 
-  // Check that the unified node that is not the root, contains the index of the root
+  // Check that the unified node that is not the GetRootRegion, contains the index of the
+  // GetRootRegion
   assert(StringContains(graph.GetNode(nonRoot).GetLabel(), "#" + std::to_string(root)));
 
-  // Check that the unification root's label indicates pointing to external
+  // Check that the unification GetRootRegion's label indicates pointing to external
   assert(StringContains(graph.GetNode(root).GetLabel(), "{+}"));
 
   // Check that allocaReg0 points to alloca0

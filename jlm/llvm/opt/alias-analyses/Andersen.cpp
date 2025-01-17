@@ -19,7 +19,7 @@ namespace jlm::llvm::aa
 bool
 IsOrContainsPointerType(const rvsdg::Type & type)
 {
-  return IsOrContains<PointerType>(type);
+  return IsOrContains<PointerType>(type) || is<rvsdg::FunctionType>(type);
 }
 
 std::string
@@ -276,9 +276,9 @@ public:
   {}
 
   void
-  StartAndersenStatistics(const rvsdg::graph & graph) noexcept
+  StartAndersenStatistics(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(AnalysisTimer_).start();
   }
 
@@ -650,9 +650,9 @@ public:
 };
 
 void
-Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
+Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 {
-  const auto & op = node.operation();
+  const auto & op = node.GetOperation();
 
   if (is<alloca_op>(op))
     AnalyzeAlloca(node);
@@ -688,6 +688,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeExtractValue(node);
   else if (is<valist_op>(op))
     AnalyzeValist(node);
+  else if (is<PointerToFunctionOperation>(op))
+    AnalyzePointerToFunction(node);
+  else if (is<FunctionToPointerOperation>(op))
+    AnalyzeFunctionToPointer(node);
   else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
@@ -703,9 +707,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
+Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 {
-  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.operation());
+  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.GetOperation());
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -716,7 +720,7 @@ Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
+Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
@@ -797,7 +801,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Andersen::AnalyzeGep(const rvsdg::simple_node & node)
+Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
@@ -812,7 +816,7 @@ Andersen::AnalyzeGep(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
+Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bitcast_op>(&node));
 
@@ -831,7 +835,7 @@ Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
+Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
   const auto & output = *node.output(0);
@@ -845,7 +849,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
+Andersen::AnalyzePtr2bits(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ptr2bits_op>(&node));
   const auto & inputRegister = *node.input(0)->origin();
@@ -857,7 +861,7 @@ Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
   const auto & output = *node.output(0);
@@ -869,7 +873,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
+Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<UndefValueOperation>(&node));
   const auto & output = *node.output(0);
@@ -883,7 +887,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
+Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(&node));
 
@@ -905,7 +909,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantArray>(&node));
 
@@ -927,7 +931,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
@@ -950,7 +954,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto & output = *node.output(0);
@@ -964,7 +968,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
+Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ExtractValue>(&node));
 
@@ -979,7 +983,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeValist(const rvsdg::simple_node & node)
+Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<valist_op>(&node));
 
@@ -997,6 +1001,36 @@ Andersen::AnalyzeValist(const rvsdg::simple_node & node)
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
   }
+}
+
+void
+Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<PointerToFunctionOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<FunctionToPointerOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
 }
 
 void
@@ -1020,22 +1054,22 @@ void
 Andersen::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv.type()))
+    if (!IsOrContainsPointerType(cv.input->type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
   // Create Register PointerObjects for each argument of pointing type in the function
-  for (auto & argument : lambda.fctarguments())
+  for (auto argument : lambda.GetFunctionArguments())
   {
-    if (IsOrContainsPointerType(argument.type()))
-      (void)Set_->CreateRegisterPointerObject(argument);
+    if (IsOrContainsPointerType(argument->type()))
+      (void)Set_->CreateRegisterPointerObject(*argument);
   }
 
   AnalyzeRegion(*lambda.subregion());
@@ -1138,16 +1172,16 @@ void
 Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 {
   // Handle input variables
-  for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)
+  for (const auto & ev : gamma.GetEntryVars())
   {
-    if (!IsOrContainsPointerType(ev->type()))
+    if (!IsOrContainsPointerType(ev.input->type()))
       continue;
 
-    auto & inputRegister = *ev->origin();
+    auto & inputRegister = *ev.input->origin();
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
 
-    for (auto & argument : *ev)
-      Set_->MapRegisterToExistingPointerObject(argument, inputRegisterPO);
+    for (auto & argument : ev.branchArgument)
+      Set_->MapRegisterToExistingPointerObject(*argument, inputRegisterPO);
   }
 
   // Handle subregions
@@ -1155,17 +1189,17 @@ Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
     AnalyzeRegion(*gamma.subregion(n));
 
   // Handle exit variables
-  for (auto ex = gamma.begin_exitvar(); ex != gamma.end_exitvar(); ++ex)
+  for (const auto & ex : gamma.GetExitVars())
   {
-    if (!IsOrContainsPointerType(ex->type()))
+    if (!IsOrContainsPointerType(ex.output->type()))
       continue;
 
-    auto & outputRegister = *ex.output();
-    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    auto & outputRegister = ex.output;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(*outputRegister);
 
-    for (auto & result : *ex)
+    for (auto result : ex.branchResult)
     {
-      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result.origin());
+      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result->origin());
       Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, resultRegisterPO));
     }
   }
@@ -1176,13 +1210,13 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 {
   // Create a PointerObject for each argument in the inner region
   // And make it point to a superset of the corresponding input register
-  for (const auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(thetaOutput->type()))
+    if (!IsOrContainsPointerType(loopVar.input->type()))
       continue;
 
-    auto & inputReg = *thetaOutput->input()->origin();
-    auto & innerArgumentReg = *thetaOutput->argument();
+    auto & inputReg = *loopVar.input->origin();
+    auto & innerArgumentReg = *loopVar.pre;
     const auto inputRegPO = Set_->GetRegisterPointerObject(inputReg);
     const auto innerArgumentRegPO = Set_->CreateRegisterPointerObject(innerArgumentReg);
 
@@ -1194,14 +1228,14 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 
   // Iterate over loop variables again, making the inner arguments point to a superset
   // of what the corresponding result registers point to
-  for (const auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(thetaOutput->type()))
+    if (!IsOrContainsPointerType(loopVar.input->type()))
       continue;
 
-    auto & innerArgumentReg = *thetaOutput->argument();
-    auto & innerResultReg = *thetaOutput->result()->origin();
-    auto & outputReg = *thetaOutput;
+    auto & innerArgumentReg = *loopVar.pre;
+    auto & innerResultReg = *loopVar.post->origin();
+    auto & outputReg = *loopVar.output;
 
     const auto innerArgumentRegPO = Set_->GetRegisterPointerObject(innerArgumentReg);
     const auto innerResultRegPO = Set_->GetRegisterPointerObject(innerResultReg);
@@ -1232,7 +1266,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
   // PointerObjects for any of the node's outputs of pointer type
   for (const auto node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
       AnalyzeSimpleNode(*simpleNode);
     else if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
       AnalyzeStructuralNode(*structuralNode);
@@ -1249,9 +1283,9 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 }
 
 void
-Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
+Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
-  auto & rootRegion = *graph.root();
+  auto & rootRegion = graph.GetRootRegion();
 
   // Iterate over all arguments to the root region - symbols imported from other modules
   // These symbols can either be global variables or functions

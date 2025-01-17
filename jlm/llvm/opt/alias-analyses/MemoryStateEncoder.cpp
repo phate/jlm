@@ -27,9 +27,9 @@ public:
   {}
 
   void
-  Start(const rvsdg::graph & graph)
+  Start(const rvsdg::Graph & graph)
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
@@ -471,7 +471,7 @@ MemoryStateEncoder::Encode(
   auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
 
   statistics->Start(rvsdgModule.Rvsdg());
-  EncodeRegion(*rvsdgModule.Rvsdg().root());
+  EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion());
   statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -492,7 +492,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
   topdown_traverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
     {
       EncodeSimpleNode(*simpleNode);
     }
@@ -537,7 +537,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
 }
 
 void
-MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
+MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
   if (is<alloca_op>(&simpleNode))
   {
@@ -579,7 +579,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::simple_node & simpleNode)
 }
 
 void
-MemoryStateEncoder::EncodeAlloca(const rvsdg::simple_node & allocaNode)
+MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
 {
   JLM_ASSERT(is<alloca_op>(&allocaNode));
 
@@ -602,7 +602,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::simple_node & allocaNode)
 }
 
 void
-MemoryStateEncoder::EncodeMalloc(const rvsdg::simple_node & mallocNode)
+MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   JLM_ASSERT(is<malloc_op>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -657,7 +657,7 @@ MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
 }
 
 void
-MemoryStateEncoder::EncodeFree(const rvsdg::simple_node & freeNode)
+MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode)
 {
   JLM_ASSERT(is<FreeOperation>(&freeNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -725,7 +725,7 @@ MemoryStateEncoder::EncodeCallExit(const CallNode & callNode)
 }
 
 void
-MemoryStateEncoder::EncodeMemcpy(const rvsdg::simple_node & memcpyNode)
+MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode)
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -858,9 +858,9 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
-    auto gammaInput = gammaNode.add_entryvar(&memoryNodeStatePair->State());
-    for (auto & argument : *gammaInput)
-      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), argument);
+    auto gammaInput = gammaNode.AddEntryVar(&memoryNodeStatePair->State());
+    for (auto & argument : gammaInput.branchArgument)
+      stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *argument);
   }
 }
 
@@ -882,7 +882,7 @@ MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
       states.push_back(&state);
     }
 
-    auto state = gammaNode.add_exitvar(states);
+    auto state = gammaNode.AddExitVar(states).output;
     memoryNodeStatePair->ReplaceState(*state);
   }
 }
@@ -899,20 +899,20 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
 }
 
-std::vector<rvsdg::ThetaOutput *>
+std::vector<rvsdg::output *>
 MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetThetaEntryExitNodes(thetaNode);
 
-  std::vector<rvsdg::ThetaOutput *> thetaStateOutputs;
+  std::vector<rvsdg::output *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
-    auto thetaStateOutput = thetaNode.add_loopvar(&memoryNodeStatePair->State());
-    stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *thetaStateOutput->argument());
-    thetaStateOutputs.push_back(thetaStateOutput);
+    auto loopvar = thetaNode.AddLoopVar(&memoryNodeStatePair->State());
+    stateMap.InsertState(memoryNodeStatePair->MemoryNode(), *loopvar.pre);
+    thetaStateOutputs.push_back(loopvar.output);
   }
 
   return thetaStateOutputs;
@@ -921,7 +921,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 void
 MemoryStateEncoder::EncodeThetaExit(
     rvsdg::ThetaNode & thetaNode,
-    const std::vector<rvsdg::ThetaOutput *> & thetaStateOutputs)
+    const std::vector<rvsdg::output *> & thetaStateOutputs)
 {
   auto subregion = thetaNode.subregion();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -934,10 +934,11 @@ MemoryStateEncoder::EncodeThetaExit(
     auto thetaStateOutput = thetaStateOutputs[n];
     auto & memoryNodeStatePair = memoryNodeStatePairs[n];
     auto & memoryNode = memoryNodeStatePair->MemoryNode();
-    JLM_ASSERT(thetaStateOutput->input()->origin() == &memoryNodeStatePair->State());
+    auto loopvar = thetaNode.MapOutputLoopVar(*thetaStateOutput);
+    JLM_ASSERT(loopvar.input->origin() == &memoryNodeStatePair->State());
 
     auto & subregionState = stateMap.GetState(*subregion, memoryNode)->State();
-    thetaStateOutput->result()->divert_to(&subregionState);
+    loopvar.post->divert_to(&subregionState);
     memoryNodeStatePair->ReplaceState(*thetaStateOutput);
   }
 }
@@ -989,7 +990,7 @@ MemoryStateEncoder::ReplaceStoreNode(
 
 std::vector<rvsdg::output *>
 MemoryStateEncoder::ReplaceMemcpyNode(
-    const rvsdg::simple_node & memcpyNode,
+    const rvsdg::SimpleNode & memcpyNode,
     const std::vector<rvsdg::output *> & memoryStates)
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
@@ -1022,7 +1023,7 @@ MemoryStateEncoder::ReplaceMemcpyNode(
 }
 
 bool
-MemoryStateEncoder::ShouldHandle(const rvsdg::simple_node & simpleNode) noexcept
+MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
 {
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
   {

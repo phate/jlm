@@ -10,20 +10,20 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static inline void
+static int
 TestUnknownBoundaries()
 {
   using namespace jlm::llvm;
+  using namespace jlm::hls;
 
   // Arrange
   auto b32 = jlm::rvsdg::bittype::Create(32);
-  auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
+  auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda =
+      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitsgt_op sgt(32);
@@ -32,43 +32,46 @@ TestUnknownBoundaries()
 
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto subregion = theta->subregion();
-  auto idv = theta->add_loopvar(lambda->fctargument(0));
-  auto lvs = theta->add_loopvar(lambda->fctargument(1));
-  auto lve = theta->add_loopvar(lambda->fctargument(2));
+  auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
+  auto lvs = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
+  auto lve = theta->AddLoopVar(lambda->GetFunctionArguments()[2]);
 
-  auto arm = jlm::rvsdg::simple_node::create_normalized(
-      subregion,
-      add,
-      { idv->argument(), lvs->argument() })[0];
-  auto cmp =
-      jlm::rvsdg::simple_node::create_normalized(subregion, ult, { arm, lve->argument() })[0];
+  auto arm = jlm::rvsdg::SimpleNode::create_normalized(subregion, add, { idv.pre, lvs.pre })[0];
+  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lve.pre })[0];
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
-  idv->result()->divert_to(arm);
+  idv.post->divert_to(arm);
   theta->set_predicate(match);
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
-  jlm::llvm::GraphExport::Create(*f, "");
+  GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Act
-  jlm::hls::ConvertThetaNodes(rm);
+  ConvertThetaNodes(rm);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::loop_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::predicate_buffer_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::branch_op>(*lambda->subregion(), true));
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
-}
-
-static int
-Test()
-{
-  TestUnknownBoundaries();
+  auto lambdaRegion = lambda->subregion();
+  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::Contains<predicate_buffer_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::branch_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::Contains<mux_op>(*lambdaRegion, true));
+  // Check that two constant buffers are created for the loop invariant variables
+  assert(jlm::rvsdg::Region::Contains<loop_constant_buffer_op>(*lambdaRegion, true));
+  assert(lambdaRegion->argument(0)->nusers() == 1);
+  auto loopInput =
+      jlm::util::AssertedCast<jlm::rvsdg::StructuralInput>(*lambdaRegion->argument(0)->begin());
+  auto loopNode = jlm::util::AssertedCast<loop_node>(loopInput->node());
+  auto loopConstInput = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(
+      *loopNode->subregion()->argument(3)->begin());
+  jlm::util::AssertedCast<const loop_constant_buffer_op>(&loopConstInput->node()->GetOperation());
+  loopConstInput = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(
+      *loopNode->subregion()->argument(4)->begin());
+  jlm::util::AssertedCast<const loop_constant_buffer_op>(&loopConstInput->node()->GetOperation());
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", Test)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", TestUnknownBoundaries)

@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -30,7 +31,7 @@ jlm::hls::route_response(rvsdg::Region * target, jlm::rvsdg::output * response)
     auto parent_response = route_response(target->node()->region(), response);
     auto ln = dynamic_cast<jlm::hls::loop_node *>(target->node());
     JLM_ASSERT(ln);
-    auto input = jlm::rvsdg::structural_input::create(ln, parent_response, parent_response->Type());
+    auto input = rvsdg::StructuralInput::create(ln, parent_response, parent_response->Type());
     auto & argument = EntryArgument::Create(*target, *input, response->Type());
     return &argument;
   }
@@ -47,14 +48,14 @@ jlm::hls::route_request(rvsdg::Region * target, jlm::rvsdg::output * request)
   {
     auto ln = dynamic_cast<jlm::hls::loop_node *>(request->region()->node());
     JLM_ASSERT(ln);
-    auto output = jlm::rvsdg::structural_output::create(ln, request->Type());
+    auto output = rvsdg::StructuralOutput::create(ln, request->Type());
     ExitResult::Create(*request, *output);
     return route_request(target, output);
   }
 }
 
-jlm::rvsdg::simple_node *
-replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
+jlm::rvsdg::SimpleNode *
+replace_load(jlm::rvsdg::SimpleNode * orig, jlm::rvsdg::output * resp)
 {
   auto addr = orig->input(0)->origin();
   std::vector<jlm::rvsdg::output *> states;
@@ -62,7 +63,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
   {
     states.push_back(orig->input(i)->origin());
   }
-  jlm::rvsdg::node * nn;
+  jlm::rvsdg::Node * nn;
   if (states.empty())
   {
     auto outputs = jlm::hls::decoupled_load_op::create(*addr, *resp);
@@ -78,7 +79,7 @@ replace_load(jlm::rvsdg::simple_node * orig, jlm::rvsdg::output * resp)
     orig->output(i)->divert_users(nn->output(i));
   }
   remove(orig);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nn);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
 const jlm::rvsdg::bitconstant_op *
@@ -90,7 +91,7 @@ trace_channel(const jlm::rvsdg::output * dst)
   }
   else if (auto so = dynamic_cast<const jlm::rvsdg::simple_output *>(dst))
   {
-    if (auto co = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&so->node()->operation()))
+    if (auto co = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&so->node()->GetOperation()))
     {
       return co;
     }
@@ -123,7 +124,7 @@ trace_call(const jlm::rvsdg::output * output)
   if (auto argument = dynamic_cast<const jlm::rvsdg::RegionArgument *>(output))
   {
     auto graph = output->region()->graph();
-    if (argument->region() == graph->root())
+    if (argument->region() == &graph->GetRootRegion())
     {
       return argument;
     }
@@ -134,7 +135,7 @@ trace_call(const jlm::rvsdg::output * output)
     }
     return trace_call(argument->input());
   }
-  else if (auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(output))
+  else if (auto so = dynamic_cast<const jlm::rvsdg::StructuralOutput *>(output))
   {
     for (auto & r : so->results)
     {
@@ -177,22 +178,22 @@ get_impport_function_name(jlm::rvsdg::input * input)
 // trace function ptr to its call
 void
 trace_function_calls(
-    jlm::rvsdg::output * op,
-    std::vector<jlm::rvsdg::simple_node *> & calls,
+    jlm::rvsdg::output * output,
+    std::vector<jlm::rvsdg::SimpleNode *> & calls,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
-  if (visited.count(op))
+  if (visited.count(output))
   {
     // skip already processed outputs
     return;
   }
-  visited.insert(op);
-  for (auto user : *op)
+  visited.insert(output);
+  for (auto user : *output)
   {
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
-      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
         calls.push_back(simplenode);
@@ -205,7 +206,7 @@ trace_function_calls(
         }
       }
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : sti->arguments)
       {
@@ -230,23 +231,23 @@ trace_function_calls(
   }
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 find_decouple_response(
     const jlm::llvm::lambda::node * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
-  jlm::rvsdg::RegionArgument * response_function = nullptr;
-  for (size_t i = 0; i < lambda->ncvarguments(); ++i)
+  jlm::rvsdg::output * response_function = nullptr;
+  for (const auto & ctxvar : lambda->GetContextVars())
   {
-    auto ip = lambda->cvargument(i)->input();
+    auto ip = ctxvar.input;
     if (dynamic_cast<const jlm::llvm::PointerType *>(ip)
         && get_impport_function_name(ip) == "decouple_response")
     {
-      response_function = lambda->cvargument(i);
+      response_function = ctxvar.inner;
     }
   }
   JLM_ASSERT(response_function == nullptr);
-  std::vector<jlm::rvsdg::simple_node *> reponse_calls;
+  std::vector<jlm::rvsdg::SimpleNode *> reponse_calls;
   std::unordered_set<jlm::rvsdg::output *> visited;
   trace_function_calls(response_function, reponse_calls, visited);
   JLM_ASSERT(!reponse_calls.empty());
@@ -261,13 +262,13 @@ find_decouple_response(
   JLM_UNREACHABLE("No response found");
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 replace_decouple(
     const jlm::llvm::lambda::node * lambda,
-    jlm::rvsdg::simple_node * decouple_request,
+    jlm::rvsdg::SimpleNode * decouple_request,
     jlm::rvsdg::output * resp)
 {
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decouple_request->operation()));
+  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decouple_request->GetOperation()));
   auto channel = decouple_request->input(1)->origin();
   auto channel_constant = trace_channel(channel);
 
@@ -299,11 +300,11 @@ replace_decouple(
   remove(decouple_response);
 
   auto nn = dynamic_cast<jlm::rvsdg::node_output *>(dload_out[0])->node();
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nn);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
-jlm::rvsdg::simple_node *
-replace_store(jlm::rvsdg::simple_node * orig)
+jlm::rvsdg::SimpleNode *
+replace_store(jlm::rvsdg::SimpleNode * orig)
 {
   auto addr = orig->input(0)->origin();
   auto data = orig->input(1)->origin();
@@ -319,119 +320,119 @@ replace_store(jlm::rvsdg::simple_node * orig)
     orig->output(i)->divert_users(nn->output(i));
   }
   remove(orig);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nn);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
 void
 gather_mem_nodes(
     jlm::rvsdg::Region * region,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & decouple_nodes,
-    std::unordered_set<jlm::rvsdg::simple_node *> exclude)
+    std::vector<jlm::rvsdg::SimpleNode *> & loadNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & storeNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & decoupleNodes,
+    std::unordered_set<jlm::rvsdg::SimpleNode *> exclude)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gather_mem_nodes(
-            structnode->subregion(n),
-            load_nodes,
-            store_nodes,
-            decouple_nodes,
-            exclude);
+        gather_mem_nodes(structnode->subregion(n), loadNodes, storeNodes, decoupleNodes, exclude);
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (exclude.find(simplenode) != exclude.end())
       {
         continue;
       }
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
-        store_nodes.push_back(simplenode);
+        storeNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
+                   &simplenode->GetOperation()))
       {
-        load_nodes.push_back(simplenode);
+        loadNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
-        decouple_nodes.push_back(simplenode);
+        decoupleNodes.push_back(simplenode);
       }
     }
   }
 }
 
-// trace each input pointer to loads and stores
+/**
+ * If the output is a pointer, it traces it to all memory operations it reaches.
+ * Pointers read from memory is not traced, i.e., the output of load operations is not traced.
+ * @param output The output to trace
+ * @param loadNodes A vector containing all load nodes that are reached
+ * @param storeNodes A vector containing all store nodes that are reached
+ * @param decoupleNodes A vector containing all decoupled load nodes that are reached
+ * @param visited A set of already visited outputs
+ */
 void
-trace_pointer_argument(
-    jlm::rvsdg::output * op,
-    std::vector<jlm::rvsdg::simple_node *> & load_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & store_nodes,
-    std::vector<jlm::rvsdg::simple_node *> & decouple_nodes,
+TracePointer(
+    jlm::rvsdg::output * output,
+    std::vector<jlm::rvsdg::SimpleNode *> & loadNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & storeNodes,
+    std::vector<jlm::rvsdg::SimpleNode *> & decoupleNodes,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
-  if (!dynamic_cast<const jlm::llvm::PointerType *>(&op->type()))
+  if (!dynamic_cast<const jlm::llvm::PointerType *>(&output->type()))
   {
-    // only process pointer outputs
+    // Only process pointer outputs
     return;
   }
-  if (visited.count(op))
+  if (visited.count(output))
   {
-    // skip already processed outputs
+    // Skip already processed outputs
     return;
   }
-  visited.insert(op);
-  for (auto user : *op)
+  visited.insert(output);
+  for (auto user : *output)
   {
     if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simplenode = si->node();
-      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
-        store_nodes.push_back(simplenode);
+        storeNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(
+                   &simplenode->GetOperation()))
       {
-        load_nodes.push_back(simplenode);
+        loadNodes.push_back(simplenode);
       }
-      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->operation()))
+      else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
-        decouple_nodes.push_back(simplenode);
+        decoupleNodes.push_back(simplenode);
       }
       else
       {
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
         {
-          trace_pointer_argument(
-              simplenode->output(i),
-              load_nodes,
-              store_nodes,
-              decouple_nodes,
-              visited);
+          TracePointer(simplenode->output(i), loadNodes, storeNodes, decoupleNodes, visited);
         }
       }
     }
-    else if (auto sti = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : sti->arguments)
       {
-        trace_pointer_argument(&arg, load_nodes, store_nodes, decouple_nodes, visited);
+        TracePointer(&arg, loadNodes, storeNodes, decoupleNodes, visited);
       }
     }
     else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
       if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
       {
-        trace_pointer_argument(ber->argument(), load_nodes, store_nodes, decouple_nodes, visited);
+        TracePointer(ber->argument(), loadNodes, storeNodes, decoupleNodes, visited);
       }
       else
       {
-        trace_pointer_argument(r->output(), load_nodes, store_nodes, decouple_nodes, visited);
+        TracePointer(r->output(), loadNodes, storeNodes, decoupleNodes, visited);
       }
     }
     else
@@ -445,12 +446,19 @@ trace_pointer_argument(
  * Decoupled loads are user specified and encoded as function calls that need special treatment.
  * This function traces the output to all nodes and checks if it is the first argument to a call
  * operation.
+ * @param output The output to check if it is a function pointer
+ * @param visited A set of already visited outputs (nodes)
+ * @return True if the output is a function pointer
  */
 bool
 IsDecoupledFunctionPointer(
     jlm::rvsdg::output * output,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
+  if (!output)
+  {
+    return false;
+  }
   if (!dynamic_cast<const jlm::llvm::PointerType *>(&output->type()))
   {
     // Only process pointer outputs
@@ -464,12 +472,13 @@ IsDecoupledFunctionPointer(
   visited.insert(output);
 
   bool isDecoupled = false;
+  // Iterate through all users of the output
   for (auto user : *output)
   {
     if (auto simpleInput = dynamic_cast<jlm::rvsdg::simple_input *>(user))
     {
       auto simpleNode = simpleInput->node();
-      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->operation()))
+      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->GetOperation()))
       {
         if (simpleNode->input(0)->origin() == output)
         {
@@ -489,7 +498,7 @@ IsDecoupledFunctionPointer(
         }
       }
     }
-    else if (auto structuralInput = dynamic_cast<jlm::rvsdg::structural_input *>(user))
+    else if (auto structuralInput = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       for (auto & arg : structuralInput->arguments)
       {
@@ -517,13 +526,13 @@ IsDecoupledFunctionPointer(
 }
 
 void
-jlm::hls::trace_pointer_arguments(
-    const jlm::llvm::lambda::node * ln,
-    port_load_store_decouple & port_nodes)
+jlm::hls::TracePointerArguments(
+    const jlm::llvm::lambda::node * lambda,
+    port_load_store_decouple & portNodes)
 {
-  for (size_t i = 0; i < ln->subregion()->narguments(); ++i)
+  for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
   {
-    auto arg = ln->subregion()->argument(i);
+    auto arg = lambda->subregion()->argument(i);
     if (dynamic_cast<const jlm::llvm::PointerType *>(&arg->type()))
     {
       // Decoupled loads are user specified and encoded as function calls that need special
@@ -535,12 +544,12 @@ jlm::hls::trace_pointer_arguments(
         continue;
       }
       visited.clear();
-      port_nodes.emplace_back();
-      trace_pointer_argument(
+      portNodes.emplace_back();
+      TracePointer(
           arg,
-          std::get<0>(port_nodes.back()),
-          std::get<1>(port_nodes.back()),
-          std::get<2>(port_nodes.back()),
+          std::get<0>(portNodes.back()),
+          std::get<1>(portNodes.back()),
+          std::get<2>(portNodes.back()),
           visited);
     }
   }
@@ -558,8 +567,8 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // arguments.
   //
 
-  auto root = rm.Rvsdg().root();
-  auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->nodes.begin().ptr());
+  auto root = &rm.Rvsdg().GetRootRegion();
+  auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->Nodes().begin().ptr());
 
   //
   // Converting loads and stores to explicitly use memory ports
@@ -582,13 +591,13 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // response and request ports
   //
   port_load_store_decouple portNodes;
-  trace_pointer_arguments(lambda, portNodes);
+  TracePointerArguments(lambda, portNodes);
 
   auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(64));
   auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(64), false);
   auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(64), true);
 
-  std::unordered_set<jlm::rvsdg::simple_node *> accountedNodes;
+  std::unordered_set<jlm::rvsdg::SimpleNode *> accountedNodes;
   for (auto & portNode : portNodes)
   {
     newArgumentTypes.push_back(responseTypePtr);
@@ -604,9 +613,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
     accountedNodes.insert(std::get<1>(portNode).begin(), std::get<1>(portNode).end());
     accountedNodes.insert(std::get<2>(portNode).begin(), std::get<2>(portNode).end());
   }
-  std::vector<jlm::rvsdg::simple_node *> unknownLoadNodes;
-  std::vector<jlm::rvsdg::simple_node *> unknownStoreNodes;
-  std::vector<jlm::rvsdg::simple_node *> unknownDecoupledNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> unknownLoadNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> unknownStoreNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> unknownDecoupledNodes;
   gather_mem_nodes(
       root,
       unknownLoadNodes,
@@ -630,7 +639,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
   // Create new lambda and copy the region from the old lambda
   //
-  auto newFunctionType = jlm::llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
+  auto newFunctionType = jlm::rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = jlm::llvm::lambda::node::create(
       lambda->region(),
       newFunctionType,
@@ -639,16 +648,20 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
       lambda->attributes());
 
   rvsdg::SubstitutionMap smap;
-  for (size_t i = 0; i < lambda->ncvarguments(); ++i)
+  for (const auto & ctxvar : lambda->GetContextVars())
   {
-    smap.insert(
-        lambda->cvargument(i),
-        newLambda->add_ctxvar(lambda->cvargument(i)->input()->origin()));
+    smap.insert(ctxvar.inner, newLambda->AddContextVar(*ctxvar.input->origin()).inner);
   }
 
-  for (size_t i = 0; i < lambda->nfctarguments(); ++i)
+  auto args = lambda->GetFunctionArguments();
+  auto newArgs = newLambda->GetFunctionArguments();
+  // The new function has more arguments than the old function.
+  // Substitution of existing arguments is safe, but note
+  // that this is not an isomorphism.
+  JLM_ASSERT(args.size() <= newArgs.size());
+  for (size_t i = 0; i < args.size(); ++i)
   {
-    smap.insert(lambda->fctargument(i), newLambda->fctargument(i));
+    smap.insert(args[i], newArgs[i]);
   }
   lambda->subregion()->copy(newLambda->subregion(), smap, false, false);
 
@@ -661,7 +674,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   std::vector<jlm::rvsdg::output *> newResults;
   // The new arguments are placed directly after the original arguments so we create an index that
   // points to the first new argument
-  auto newArgumentsIndex = lambda->nfctarguments();
+  auto newArgumentsIndex = args.size();
   for (auto & portNode : portNodes)
   {
     auto loadNodes = std::get<0>(portNode);
@@ -687,13 +700,13 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
 
   std::vector<jlm::rvsdg::output *> originalResults;
-  for (auto & result : lambda->fctresults())
+  for (auto result : lambda->GetFunctionResults())
   {
-    originalResults.push_back(smap.lookup(result.origin()));
+    originalResults.push_back(smap.lookup(result->origin()));
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  auto oldExport = lambda->ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(*lambda).GetRvsdgExport();
   llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
@@ -710,20 +723,26 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // once.
   //
   remove_unused_state(root);
+
+  // Need to get the lambda from the root since remote_unused_state replaces the lambda
+  JLM_ASSERT(root->nnodes() == 1);
+  newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->Nodes().begin().ptr());
+
   // Go through in reverse since we are removing things
-  for (int i = newLambda->ncvarguments() - 1; i >= 0; --i)
+  auto ctxvars = newLambda->GetContextVars();
+  for (size_t n = ctxvars.size(); n > 0; --n)
   {
-    auto cvarg = newLambda->cvargument(i);
-    if (dynamic_cast<const jlm::llvm::PointerType *>(&cvarg->type()))
+    const auto & ctxvar = ctxvars[n - 1];
+    if (dynamic_cast<const jlm::llvm::PointerType *>(&ctxvar.input->type()))
     {
       // The only functions at this time is decoupled loads that are encoded as functions by the
       // user
       auto visited = std::unordered_set<jlm::rvsdg::output *>();
-      if (IsDecoupledFunctionPointer(cvarg->input()->origin(), visited))
+      if (IsDecoupledFunctionPointer(ctxvar.input->origin(), visited))
       {
-        JLM_ASSERT(cvarg->nusers() == 0);
-        auto cvip = cvarg->input();
-        newLambda->subregion()->RemoveArgument(cvarg->index());
+        JLM_ASSERT(ctxvar.inner->nusers() == 0);
+        auto cvip = ctxvar.input;
+        newLambda->subregion()->RemoveArgument(ctxvar.inner->index());
         // TODO: work around const
         newLambda->RemoveInput(cvip->index());
         auto graphImport = util::AssertedCast<const llvm::GraphImport>(cvip->origin());
@@ -738,15 +757,15 @@ jlm::hls::ConnectRequestResponseMemPorts(
     const jlm::llvm::lambda::node * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
-    const std::vector<jlm::rvsdg::simple_node *> & originalLoadNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalStoreNodes,
-    const std::vector<jlm::rvsdg::simple_node *> & originalDecoupledNodes)
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalStoreNodes,
+    const std::vector<jlm::rvsdg::SimpleNode *> & originalDecoupledNodes)
 {
   //
   // We have the memory operations from the original lambda and need to lookup the corresponding
   // nodes in the new lambda
   //
-  std::vector<jlm::rvsdg::simple_node *> loadNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> loadNodes;
   std::vector<std::shared_ptr<const jlm::rvsdg::ValueType>> loadTypes;
   for (auto loadNode : originalLoadNodes)
   {
@@ -754,17 +773,17 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto loadOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(loadNode->output(0)));
     loadNodes.push_back(loadOutput->node());
     auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
-        &loadOutput->node()->operation());
+        &loadOutput->node()->GetOperation());
     loadTypes.push_back(loadOp->GetLoadedType());
   }
-  std::vector<jlm::rvsdg::simple_node *> storeNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> storeNodes;
   for (auto storeNode : originalStoreNodes)
   {
     JLM_ASSERT(smap.contains(*storeNode->output(0)));
     auto storeOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(storeNode->output(0)));
     storeNodes.push_back(storeOutput->node());
   }
-  std::vector<jlm::rvsdg::simple_node *> decoupledNodes;
+  std::vector<jlm::rvsdg::SimpleNode *> decoupledNodes;
   for (auto decoupledNode : originalDecoupledNodes)
   {
     JLM_ASSERT(smap.contains(*decoupledNode->output(0)));
@@ -789,19 +808,19 @@ jlm::hls::ConnectRequestResponseMemPorts(
     auto address = route_request(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
     std::shared_ptr<const jlm::rvsdg::ValueType> type;
-    if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->operation()))
+    if (auto loadOperation = dynamic_cast<const jlm::hls::load_op *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
     else if (
         auto loadOperation =
-            dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation()))
+            dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
     else
     {
-      JLM_UNREACHABLE("Unknown load operation");
+      JLM_UNREACHABLE("Unknown load GetOperation");
     }
     JLM_ASSERT(type);
     loadTypes.push_back(type);
@@ -818,8 +837,9 @@ jlm::hls::ConnectRequestResponseMemPorts(
     // TODO: routing is probably not necessary
     auto addr = route_request(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
-    loadTypes.push_back(dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->operation())
-                            ->GetLoadedType());
+    loadTypes.push_back(
+        dynamic_cast<const jlm::hls::decoupled_load_op *>(&replacement->GetOperation())
+            ->GetLoadedType());
   }
   std::vector<jlm::rvsdg::output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
@@ -836,10 +856,10 @@ jlm::hls::ConnectRequestResponseMemPorts(
   return mem_req_op::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 jlm::hls::ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::simple_node * originalLoad,
+    const jlm::rvsdg::SimpleNode * originalLoad,
     jlm::rvsdg::output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
@@ -854,7 +874,7 @@ jlm::hls::ReplaceLoad(
     states.push_back(replacedLoad->input(i)->origin());
   }
 
-  jlm::rvsdg::node * newLoad;
+  rvsdg::Node * newLoad;
   if (states.empty())
   {
     auto outputs = jlm::hls::decoupled_load_op::create(*loadAddress, *response);
@@ -872,11 +892,11 @@ jlm::hls::ReplaceLoad(
     replacedLoad->output(i)->divert_users(newLoad->output(i));
   }
   remove(replacedLoad);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(newLoad);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(newLoad);
 }
 
-jlm::rvsdg::simple_node *
-jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_node * originalStore)
+jlm::rvsdg::SimpleNode *
+jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore)
 {
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
@@ -899,14 +919,14 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::simple_n
     replacedStore->output(i)->divert_users(newStore->output(i));
   }
   remove(replacedStore);
-  return dynamic_cast<jlm::rvsdg::simple_node *>(newStore);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(newStore);
 }
 
-jlm::rvsdg::simple_node *
+jlm::rvsdg::SimpleNode *
 ReplaceDecouple(
     jlm::rvsdg::SubstitutionMap & smap,
     const jlm::llvm::lambda::node * lambda,
-    jlm::rvsdg::simple_node * originalDecoupleRequest,
+    jlm::rvsdg::SimpleNode * originalDecoupleRequest,
     jlm::rvsdg::output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
@@ -915,7 +935,7 @@ ReplaceDecouple(
   auto decoupleRequest =
       ((jlm::rvsdg::simple_output *)smap.lookup(originalDecoupleRequest->output(0)))->node();
 
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->operation()));
+  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->GetOperation()));
   auto channel = decoupleRequest->input(1)->origin();
   auto channelConstant = trace_channel(channel);
 
@@ -947,5 +967,5 @@ ReplaceDecouple(
   remove(decoupledResponse);
 
   auto nodeOutput = dynamic_cast<jlm::rvsdg::node_output *>(decoupledLoadOutput[0])->node();
-  return dynamic_cast<jlm::rvsdg::simple_node *>(nodeOutput);
+  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nodeOutput);
 }

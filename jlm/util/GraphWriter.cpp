@@ -675,7 +675,7 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 }
 
 void
-InOutNode::SetShape(std::string shape)
+InOutNode::SetShape(std::string)
 {
   throw jlm::util::error("InOutNodes can not have custom shapes set");
 }
@@ -934,7 +934,7 @@ ArgumentNode::SetOutsideSource(const Port & outsideSource)
 }
 
 void
-ArgumentNode::OutputASCII(std::ostream & out, size_t indent) const
+ArgumentNode::OutputASCII(std::ostream & out, size_t) const
 {
   // In ASCII the argument is printed as part of an ARG line
   out << GetFullId();
@@ -975,7 +975,7 @@ ResultNode::SetOutsideDestination(const Port & outsideDestination)
 }
 
 void
-ResultNode::OutputASCII(std::ostream & out, size_t indent) const
+ResultNode::OutputASCII(std::ostream & out, size_t) const
 {
   // In ASCII the result is printed as part of an RES line
   OutputIncomingEdgesASCII(out);
@@ -1347,7 +1347,9 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   indent++;
 
   // Default node attributes. Filling nodes by default makes them easier to click
-  out << Indent(indent) << "node[shape=box style=filled fillcolor=white];" << std::endl;
+  out << Indent(indent)
+      << "node[shape=box style=filled fillcolor=white width=0.1 height=0.1 margin=0.05];"
+      << std::endl;
   out << Indent(indent) << "penwidth=6;" << std::endl;
   if (HasLabel())
   {

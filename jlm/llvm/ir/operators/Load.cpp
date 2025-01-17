@@ -7,14 +7,21 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
 {
 
+const LoadOperation &
+LoadNode::GetOperation() const noexcept
+{
+  return *util::AssertedCast<const LoadOperation>(&SimpleNode::GetOperation());
+}
+
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
-LoadNonVolatileOperation::operator==(const operation & other) const noexcept
+LoadNonVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const LoadNonVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -28,10 +35,10 @@ LoadNonVolatileOperation::debug_string() const
   return "Load";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 LoadNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadNonVolatileOperation(*this));
+  return std::make_unique<LoadNonVolatileOperation>(*this);
 }
 
 size_t
@@ -44,7 +51,7 @@ LoadNonVolatileOperation::NumMemoryStates() const noexcept
 const LoadNonVolatileOperation &
 LoadNonVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&operation());
+  return *util::AssertedCast<const LoadNonVolatileOperation>(&SimpleNode::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -80,17 +87,19 @@ LoadNonVolatileNode::CopyWithNewMemoryStates(
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
     const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<LoadNonVolatileOperation> op(
+      util::AssertedCast<LoadNonVolatileOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
 
 bool
-LoadVolatileOperation::operator==(const operation & other) const noexcept
+LoadVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
   return operation && operation->narguments() == narguments()
@@ -104,10 +113,10 @@ LoadVolatileOperation::debug_string() const
   return "LoadVolatile";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 LoadVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new LoadVolatileOperation(*this));
+  return std::make_unique<LoadVolatileOperation>(*this);
 }
 
 size_t
@@ -120,7 +129,7 @@ LoadVolatileOperation::NumMemoryStates() const noexcept
 [[nodiscard]] const LoadVolatileOperation &
 LoadVolatileNode::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const LoadVolatileOperation>(&operation());
+  return *util::AssertedCast<const LoadVolatileOperation>(&LoadNode::GetOperation());
 }
 
 [[nodiscard]] LoadNode::MemoryStateInputRange
@@ -156,10 +165,12 @@ LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & m
       GetAlignment());
 }
 
-rvsdg::node *
+rvsdg::Node *
 LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
 {
-  return &CreateNode(*region, GetOperation(), operands);
+  std::unique_ptr<LoadVolatileOperation> op(
+      util::AssertedCast<LoadVolatileOperation>(GetOperation().copy().release()));
+  return &CreateNode(*region, std::move(op), operands);
 }
 
 /* load normal form */
@@ -224,7 +235,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 }
 
 static bool
-is_reducible_state(const rvsdg::output * state, const rvsdg::node * loadalloca)
+is_reducible_state(const rvsdg::output * state, const rvsdg::Node * loadalloca)
 {
   if (is<StoreNonVolatileOperation>(rvsdg::output::GetNode(*state)))
   {
@@ -280,8 +291,8 @@ is_load_store_state_reducible(
 static bool
 is_multiple_origin_reducible(const std::vector<rvsdg::output *> & operands)
 {
-  std::unordered_set<rvsdg::output *> states(std::next(operands.begin()), operands.end());
-  return states.size() != operands.size() - 1;
+  const util::HashSet<rvsdg::output *> states(std::next(operands.begin()), operands.end());
+  return states.Size() != operands.size() - 1;
 }
 
 // s2 = store_op a v1 s1
@@ -350,7 +361,7 @@ is_load_store_reducible(
 
 static std::vector<rvsdg::output *>
 perform_load_store_reduction(
-    const LoadNonVolatileOperation & op,
+    const LoadNonVolatileOperation &,
     const std::vector<rvsdg::output *> & operands)
 {
   auto storenode = rvsdg::output::GetNode(*operands[1]);
@@ -447,31 +458,32 @@ perform_multiple_origin_reduction(
     const LoadNonVolatileOperation & op,
     const std::vector<rvsdg::output *> & operands)
 {
-  std::vector<rvsdg::output *> new_loadstates;
-  std::unordered_set<rvsdg::output *> seen_state;
-  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  JLM_ASSERT(operands.size() > 1);
+  const auto address = operands[0];
+
+  std::vector<rvsdg::output *> newInputStates;
+  std::unordered_map<rvsdg::output *, size_t> stateIndexMap;
   for (size_t n = 1; n < operands.size(); n++)
   {
     auto state = operands[n];
-    if (seen_state.find(state) != seen_state.end())
-      results[n] = state;
-    else
-      new_loadstates.push_back(state);
-
-    seen_state.insert(state);
+    if (stateIndexMap.find(state) == stateIndexMap.end())
+    {
+      const size_t resultIndex = 1 + newInputStates.size(); // loaded value + states seen so far
+      newInputStates.push_back(state);
+      stateIndexMap[state] = resultIndex;
+    }
   }
 
-  auto ld = LoadNonVolatileNode::Create(
-      operands[0],
-      new_loadstates,
-      op.GetLoadedType(),
-      op.GetAlignment());
+  const auto loadResults =
+      LoadNonVolatileNode::Create(address, newInputStates, op.GetLoadedType(), op.GetAlignment());
 
-  results[0] = ld[0];
-  for (size_t n = 1, s = 1; n < results.size(); n++)
+  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  results[0] = loadResults[0];
+  for (size_t n = 1; n < operands.size(); n++)
   {
-    if (results[n] == nullptr)
-      results[n] = ld[s++];
+    auto state = operands[n];
+    JLM_ASSERT(stateIndexMap.find(state) != stateIndexMap.end());
+    results[n] = loadResults[stateIndexMap[state]];
   }
 
   return results;
@@ -558,130 +570,70 @@ perform_load_load_state_reduction(
   return ld;
 }
 
-load_normal_form::~load_normal_form()
-{}
-
-load_normal_form::load_normal_form(
-    const std::type_info & opclass,
-    rvsdg::node_normal_form * parent,
-    rvsdg::graph * graph) noexcept
-    : simple_normal_form(opclass, parent, graph),
-      enable_load_mux_(false),
-      enable_load_store_(false),
-      enable_load_alloca_(false),
-      enable_load_load_state_(false),
-      enable_multiple_origin_(false),
-      enable_load_store_state_(false)
-{}
-
-bool
-load_normal_form::normalize_node(rvsdg::node * node) const
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadMux(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
 {
-  JLM_ASSERT(is<LoadNonVolatileOperation>(node->operation()));
-  auto op = static_cast<const LoadNonVolatileOperation *>(&node->operation());
-  auto operands = rvsdg::operands(node);
+  if (is_load_mux_reducible(operands))
+    return perform_load_mux_reduction(operation, operands);
 
-  if (!get_mutable())
-    return true;
-
-  if (get_load_mux_reducible() && is_load_mux_reducible(operands))
-  {
-    divert_users(node, perform_load_mux_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_store_reducible() && is_load_store_reducible(*op, operands))
-  {
-    divert_users(node, perform_load_store_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_alloca_reducible() && is_load_alloca_reducible(operands))
-  {
-    divert_users(node, perform_load_alloca_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_store_state_reducible() && is_load_store_state_reducible(*op, operands))
-  {
-    divert_users(node, perform_load_store_state_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
-  {
-    divert_users(node, perform_multiple_origin_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
-  {
-    divert_users(node, perform_load_load_state_reduction(*op, operands));
-    remove(node);
-    return false;
-  }
-
-  return simple_normal_form::normalize_node(node);
+  return std::nullopt;
 }
 
-std::vector<rvsdg::output *>
-load_normal_form::normalized_create(
-    rvsdg::Region * region,
-    const rvsdg::simple_op & op,
-    const std::vector<rvsdg::output *> & operands) const
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStore(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
 {
-  JLM_ASSERT(is<LoadNonVolatileOperation>(op));
-  auto lop = static_cast<const LoadNonVolatileOperation *>(&op);
+  if (is_load_store_reducible(operation, operands))
+    return perform_load_store_reduction(operation, operands);
 
-  if (!get_mutable())
-    return simple_normal_form::normalized_create(region, op, operands);
-
-  if (get_load_mux_reducible() && is_load_mux_reducible(operands))
-    return perform_load_mux_reduction(*lop, operands);
-
-  if (get_load_store_reducible() && is_load_store_reducible(*lop, operands))
-    return perform_load_store_reduction(*lop, operands);
-
-  if (get_load_alloca_reducible() && is_load_alloca_reducible(operands))
-    return perform_load_alloca_reduction(*lop, operands);
-
-  if (get_load_store_state_reducible() && is_load_store_state_reducible(*lop, operands))
-    return perform_load_store_state_reduction(*lop, operands);
-
-  if (get_multiple_origin_reducible() && is_multiple_origin_reducible(operands))
-    return perform_multiple_origin_reduction(*lop, operands);
-
-  if (get_load_load_state_reducible() && is_load_load_state_reducible(operands))
-    return perform_load_load_state_reduction(*lop, operands);
-
-  return simple_normal_form::normalized_create(region, op, operands);
+  return std::nullopt;
 }
 
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadAlloca(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_alloca_reducible(operands))
+    return perform_load_alloca_reduction(operation, operands);
+
+  return std::nullopt;
 }
 
-namespace
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStoreState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
 {
+  if (is_load_store_state_reducible(operation, operands))
+    return perform_load_store_state_reduction(operation, operands);
 
-static jlm::rvsdg::node_normal_form *
-create_load_normal_form(
-    const std::type_info & opclass,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
-{
-  return new jlm::llvm::load_normal_form(opclass, parent, graph);
+  return std::nullopt;
 }
 
-static void __attribute__((constructor))
-register_normal_form()
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadDuplicateState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
 {
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::llvm::LoadNonVolatileOperation),
-      create_load_normal_form);
+  if (is_multiple_origin_reducible(operands))
+    return perform_multiple_origin_reduction(operation, operands);
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadLoadState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (is_load_load_state_reducible(operands))
+    return perform_load_load_state_reduction(operation, operands);
+
+  return std::nullopt;
 }
 
 }

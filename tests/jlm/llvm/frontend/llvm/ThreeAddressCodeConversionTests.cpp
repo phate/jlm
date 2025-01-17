@@ -20,7 +20,7 @@
 static std::unique_ptr<jlm::llvm::cfg>
 SetupControlFlowGraph(
     jlm::llvm::ipgraph_module & ipgModule,
-    const jlm::rvsdg::simple_op & operation)
+    const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
@@ -50,7 +50,7 @@ SetupControlFlowGraph(
 }
 
 static std::unique_ptr<jlm::llvm::ipgraph_module>
-SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
+SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
@@ -69,7 +69,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
     resultTypes.emplace_back(operation.result(n));
   }
 
-  auto functionType = FunctionType::Create(operandTypes, resultTypes);
+  auto functionType = jlm::rvsdg::FunctionType::Create(operandTypes, resultTypes);
 
   auto functionNode =
       function_node::create(ipgraph, "test", functionType, linkage::external_linkage);
@@ -93,13 +93,13 @@ LoadVolatileConversion()
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(*ipgModule, statisticsCollector);
-  std::cout << jlm::rvsdg::view(rvsdgModule->Rvsdg().root()) << std::flush;
+  std::cout << jlm::rvsdg::view(&rvsdgModule->Rvsdg().GetRootRegion()) << std::flush;
 
   // Assert
-  auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
+  auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
   auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
-  auto loadVolatileNode = lambda->subregion()->nodes.first();
+  auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(dynamic_cast<const LoadVolatileNode *>(loadVolatileNode));
 
   return 0;
@@ -122,13 +122,13 @@ StoreVolatileConversion()
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(*ipgModule, statisticsCollector);
-  std::cout << jlm::rvsdg::view(rvsdgModule->Rvsdg().root()) << std::flush;
+  std::cout << jlm::rvsdg::view(&rvsdgModule->Rvsdg().GetRootRegion()) << std::flush;
 
   // Assert
-  auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
+  auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
   auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
-  auto storeVolatileNode = lambda->subregion()->nodes.first();
+  auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(dynamic_cast<const StoreVolatileNode *>(storeVolatileNode));
 
   return 0;

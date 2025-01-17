@@ -13,14 +13,14 @@ namespace jlm::rvsdg
 
 /* structural input */
 
-structural_input::~structural_input() noexcept
+StructuralInput::~StructuralInput() noexcept
 {
   JLM_ASSERT(arguments.empty());
 
   on_input_destroy(this);
 }
 
-structural_input::structural_input(
+StructuralInput::StructuralInput(
     rvsdg::StructuralNode * node,
     jlm::rvsdg::output * origin,
     std::shared_ptr<const rvsdg::Type> type)
@@ -31,14 +31,14 @@ structural_input::structural_input(
 
 /* structural output */
 
-structural_output::~structural_output() noexcept
+StructuralOutput::~StructuralOutput() noexcept
 {
   JLM_ASSERT(results.empty());
 
   on_output_destroy(this);
 }
 
-structural_output::structural_output(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type)
+StructuralOutput::StructuralOutput(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {
   on_output_create(this);
@@ -53,11 +53,8 @@ StructuralNode::~StructuralNode() noexcept
   subregions_.clear();
 }
 
-StructuralNode::StructuralNode(
-    const jlm::rvsdg::structural_op & op,
-    rvsdg::Region * region,
-    size_t nsubregions)
-    : node(op.copy(), region)
+StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
+    : Node(region)
 {
   if (nsubregions == 0)
     throw jlm::util::error("Number of subregions must be greater than zero.");
@@ -68,8 +65,8 @@ StructuralNode::StructuralNode(
   on_node_create(this);
 }
 
-structural_input *
-StructuralNode::append_input(std::unique_ptr<structural_input> input)
+StructuralInput *
+StructuralNode::append_input(std::unique_ptr<StructuralInput> input)
 {
   if (input->node() != this)
     throw jlm::util::error("Appending input to wrong node.");
@@ -80,11 +77,11 @@ StructuralNode::append_input(std::unique_ptr<structural_input> input)
     return this->input(index);
 
   auto sinput = std::unique_ptr<node_input>(input.release());
-  return static_cast<structural_input *>(node::add_input(std::move(sinput)));
+  return static_cast<StructuralInput *>(add_input(std::move(sinput)));
 }
 
-structural_output *
-StructuralNode::append_output(std::unique_ptr<structural_output> output)
+StructuralOutput *
+StructuralNode::append_output(std::unique_ptr<StructuralOutput> output)
 {
   if (output->node() != this)
     throw jlm::util::error("Appending output to wrong node.");
@@ -95,7 +92,7 @@ StructuralNode::append_output(std::unique_ptr<structural_output> output)
     return this->output(index);
 
   auto soutput = std::unique_ptr<node_output>(output.release());
-  return static_cast<structural_output *>(node::add_output(std::move(soutput)));
+  return static_cast<StructuralOutput *>(add_output(std::move(soutput)));
 }
 
 }

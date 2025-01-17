@@ -5,9 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <assert.h>
-
 #include <jlm/util/intrusive-list.hpp>
+
+#include <cassert>
 
 namespace
 {
@@ -39,7 +39,7 @@ typedef jlm::util::intrusive_list<my_item, my_item::accessor> my_list;
 typedef jlm::util::owner_intrusive_list<my_item, my_item::accessor> my_owner_list;
 
 static void
-test_simple_list(void)
+test_simple_list()
 {
   my_list l;
 
@@ -80,7 +80,7 @@ test_simple_list(void)
 }
 
 static void
-test_owner_list(void)
+test_owner_list()
 {
   int v1 = 1;
   int v2 = 2;
@@ -143,7 +143,7 @@ test_owner_list(void)
 }
 
 static int
-test_main(void)
+test_main()
 {
   test_simple_list();
   test_owner_list();

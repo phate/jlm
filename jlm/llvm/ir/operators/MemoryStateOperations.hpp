@@ -16,11 +16,11 @@ namespace jlm::llvm
 /**
  * Abstract base class for all memory state operations.
  */
-class MemoryStateOperation : public rvsdg::simple_op
+class MemoryStateOperation : public rvsdg::SimpleOperation
 {
 protected:
   MemoryStateOperation(size_t numOperands, size_t numResults)
-      : simple_op(
+      : SimpleOperation(
             { numOperands, MemoryStateType::Create() },
             { numResults, MemoryStateType::Create() })
   {}
@@ -42,12 +42,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::output *
@@ -58,7 +58,7 @@ public:
 
     MemoryStateMergeOperation operation(operands.size());
     auto region = operands.front()->region();
-    return rvsdg::simple_node::create_normalized(region, operation, operands)[0];
+    return rvsdg::SimpleNode::create_normalized(region, operation, operands)[0];
   }
 
   static std::unique_ptr<tac>
@@ -88,12 +88,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::vector<rvsdg::output *>
@@ -103,7 +103,7 @@ public:
       throw util::error("Insufficient number of results.");
 
     MemoryStateSplitOperation operation(numResults);
-    return rvsdg::simple_node::create_normalized(operand.region(), operation, { &operand });
+    return rvsdg::SimpleNode::create_normalized(operand.region(), operation, { &operand });
   }
 };
 
@@ -127,12 +127,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::vector<jlm::rvsdg::output *>
@@ -140,7 +140,7 @@ public:
   {
     auto region = output.region();
     LambdaEntryMemoryStateSplitOperation operation(numResults);
-    return rvsdg::simple_node::create_normalized(region, operation, { &output });
+    return rvsdg::SimpleNode::create_normalized(region, operation, { &output });
   }
 };
 
@@ -164,19 +164,19 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::output &
   Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::output *> & operands)
   {
     LambdaExitMemoryStateMergeOperation operation(operands.size());
-    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return *rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 };
 
@@ -200,19 +200,19 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static rvsdg::output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
   {
     CallEntryMemoryStateMergeOperation operation(operands.size());
-    return *rvsdg::simple_node::create_normalized(&region, operation, operands)[0];
+    return *rvsdg::SimpleNode::create_normalized(&region, operation, operands)[0];
   }
 };
 
@@ -236,12 +236,12 @@ public:
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   static std::vector<rvsdg::output *>
@@ -249,7 +249,7 @@ public:
   {
     auto region = output.region();
     CallExitMemoryStateSplitOperation operation(numResults);
-    return rvsdg::simple_node::create_normalized(region, operation, { &output });
+    return rvsdg::SimpleNode::create_normalized(region, operation, { &output });
   }
 };
 

@@ -36,7 +36,7 @@ std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 {
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
-  ConvertBlock(*block, *rvsdgModule->Rvsdg().root());
+  ConvertBlock(*block, rvsdgModule->Rvsdg().GetRootRegion());
 
   return rvsdgModule;
 }
@@ -53,7 +53,7 @@ MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdg
 ::llvm::SmallVector<jlm::rvsdg::output *>
 MlirToJlmConverter::GetConvertedInputs(
     ::mlir::Operation & mlirOp,
-    const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
+    const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
     const rvsdg::Region & rvsdgRegion)
 {
   ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
@@ -83,7 +83,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 
   // Create an RVSDG node for each MLIR operation and store each pair in a
   // hash map for easy lookup of corresponding RVSDG nodes
-  std::unordered_map<::mlir::Operation *, rvsdg::node *> operationsMap;
+  std::unordered_map<::mlir::Operation *, rvsdg::Node *> operationsMap;
   for (auto & mlirOp : block.getOperations())
   {
     ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
@@ -101,7 +101,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   return GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
 }
 
-rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertCmpIOp(
     ::mlir::arith::CmpIOp & CompOp,
     const ::llvm::SmallVector<rvsdg::output *> & inputs,
@@ -153,7 +153,7 @@ MlirToJlmConverter::ConvertCmpIOp(
   }
 }
 
-rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertBitBinaryNode(
     const ::mlir::Operation & mlirOperation,
     const ::llvm::SmallVector<rvsdg::output *> & inputs)
@@ -255,7 +255,7 @@ MlirToJlmConverter::ConvertBitBinaryNode(
   return nullptr;
 }
 
-rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertOperation(
     ::mlir::Operation & mlirOperation,
     rvsdg::Region & rvsdgRegion,
@@ -308,6 +308,14 @@ MlirToJlmConverter::ConvertOperation(
     return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
   }
 
+  else if (auto UndefOp = ::mlir::dyn_cast<::mlir::jlm::Undef>(&mlirOperation))
+  {
+    auto type = UndefOp.getResult().getType();
+    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
+    auto jlmUndefOutput = jlm::llvm::UndefValueOperation::Create(rvsdgRegion, jlmType);
+    return rvsdg::output::GetNode(*jlmUndefOutput);
+  }
+
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
@@ -327,7 +335,7 @@ MlirToJlmConverter::ConvertOperation(
     // Add inputs to the gamma node and to all it's subregions
     for (size_t i = 1; i < inputs.size(); i++)
     {
-      rvsdgGammaNode->add_entryvar(inputs[i]);
+      rvsdgGammaNode->AddEntryVar(inputs[i]);
     }
 
     ::llvm::SmallVector<::llvm::SmallVector<jlm::rvsdg::output *>> regionResults;
@@ -347,7 +355,7 @@ MlirToJlmConverter::ConvertOperation(
         JLM_ASSERT(regionResults[regionIndex].size() == regionResults[0].size());
         exitvars.push_back(regionResults[regionIndex][exitvarIndex]);
       }
-      rvsdgGammaNode->add_exitvar(exitvars);
+      rvsdgGammaNode->AddExitVar(exitvars);
     }
 
     return rvsdgGammaNode;
@@ -359,7 +367,7 @@ MlirToJlmConverter::ConvertOperation(
     // Add loop vars to the theta node
     for (size_t i = 0; i < inputs.size(); i++)
     {
-      rvsdgThetaNode->add_loopvar(inputs[i]);
+      rvsdgThetaNode->AddLoopVar(inputs[i]);
     }
 
     auto regionResults = ConvertRegion(mlirThetaNode.getRegion(), *rvsdgThetaNode->subregion());
@@ -420,7 +428,7 @@ MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & 
   ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
-jlm::rvsdg::node *
+rvsdg::Node *
 MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion)
 {
   // Get the name of the function
@@ -446,7 +454,7 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region 
   {
     resultTypes.push_back(ConvertType(returnType));
   }
-  auto functionType = llvm::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
+  auto functionType = rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 
   // FIXME
   // The linkage should be part of the MLIR attributes so it can be extracted here

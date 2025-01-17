@@ -11,6 +11,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <typeindex>
+
 namespace jlm::llvm
 {
 
@@ -58,9 +60,9 @@ public:
   }
 
   bool
-  IsAlive(const jlm::rvsdg::node & node) const noexcept
+  IsAlive(const rvsdg::Node & node) const noexcept
   {
-    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::simple_node *>(&node))
+    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
     {
       return SimpleNodes_.Contains(simpleNode);
     }
@@ -83,7 +85,7 @@ public:
   }
 
 private:
-  util::HashSet<const jlm::rvsdg::simple_node *> SimpleNodes_;
+  util::HashSet<const jlm::rvsdg::SimpleNode *> SimpleNodes_;
   util::HashSet<const jlm::rvsdg::output *> Outputs_;
 };
 
@@ -103,10 +105,10 @@ public:
   {}
 
   void
-  StartMarkStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StartMarkStatistics(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(MarkTimerLabel_).start();
   }
 
@@ -123,11 +125,11 @@ public:
   }
 
   void
-  StopSweepStatistics(const jlm::rvsdg::graph & graph) noexcept
+  StopSweepStatistics(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(SweepTimerLabel_).stop();
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
   }
 
   static std::unique_ptr<Statistics>
@@ -161,7 +163,7 @@ DeadNodeElimination::run(RvsdgModule & module, jlm::util::StatisticsCollector & 
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFileName());
   statistics->StartMarkStatistics(rvsdg);
-  MarkRegion(*rvsdg.root());
+  MarkRegion(rvsdg.GetRootRegion());
   statistics->StopMarkStatistics();
 
   statistics->StartSweepStatistics();
@@ -198,56 +200,61 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto gammaOutput = dynamic_cast<const rvsdg::GammaOutput *>(&output))
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gammaOutput->node()->predicate()->origin());
-    for (const auto & result : gammaOutput->results)
+    MarkOutput(*gamma->predicate()->origin());
+    for (const auto & result : gamma->MapOutputExitVar(output).branchResult)
     {
-      MarkOutput(*result.origin());
+      MarkOutput(*result->origin());
     }
     return;
   }
 
-  if (auto gammaArgument = dynamic_cast<const rvsdg::GammaArgument *>(&output))
+  if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gammaArgument->input()->origin());
+    MarkOutput(*gamma->MapBranchArgumentEntryVar(output).input->origin());
     return;
   }
 
-  if (auto thetaOutput = dynamic_cast<const rvsdg::ThetaOutput *>(&output))
+  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
   {
-    MarkOutput(*thetaOutput->node()->predicate()->origin());
-    MarkOutput(*thetaOutput->result()->origin());
-    MarkOutput(*thetaOutput->input()->origin());
+    auto loopvar = theta->MapOutputLoopVar(output);
+    MarkOutput(*theta->predicate()->origin());
+    MarkOutput(*loopvar.post->origin());
+    MarkOutput(*loopvar.input->origin());
     return;
   }
 
-  if (auto thetaArgument = dynamic_cast<const rvsdg::ThetaArgument *>(&output))
+  if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
-    auto thetaInput = util::AssertedCast<const rvsdg::ThetaInput>(thetaArgument->input());
-    MarkOutput(*thetaInput->output());
-    MarkOutput(*thetaInput->origin());
+    auto loopvar = theta->MapPreLoopVar(output);
+    MarkOutput(*loopvar.output);
+    MarkOutput(*loopvar.input->origin());
     return;
   }
 
-  if (auto o = dynamic_cast<const lambda::output *>(&output))
+  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(output))
   {
-    for (auto & result : o->node()->fctresults())
+    for (auto & result : lambda->GetFunctionResults())
     {
-      MarkOutput(*result.origin());
+      MarkOutput(*result->origin());
     }
     return;
   }
 
-  if (is<lambda::fctargument>(&output))
+  if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(output))
   {
-    return;
-  }
-
-  if (auto cv = dynamic_cast<const lambda::cvargument *>(&output))
-  {
-    MarkOutput(*cv->input()->origin());
-    return;
+    if (auto ctxvar = lambda->MapBinderContextVar(output))
+    {
+      // Bound context variable.
+      MarkOutput(*ctxvar->input->origin());
+      return;
+    }
+    else
+    {
+      // Function argument.
+      return;
+    }
   }
 
   if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))
@@ -294,16 +301,16 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 }
 
 void
-DeadNodeElimination::SweepRvsdg(jlm::rvsdg::graph & rvsdg) const
+DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
 {
-  SweepRegion(*rvsdg.root());
+  SweepRegion(rvsdg.GetRootRegion());
 
   // Remove dead imports
-  for (size_t n = rvsdg.root()->narguments() - 1; n != static_cast<size_t>(-1); n--)
+  for (size_t n = rvsdg.GetRootRegion().narguments() - 1; n != static_cast<size_t>(-1); n--)
   {
-    if (!Context_->IsAlive(*rvsdg.root()->argument(n)))
+    if (!Context_->IsAlive(*rvsdg.GetRootRegion().argument(n)))
     {
-      rvsdg.root()->RemoveArgument(n);
+      rvsdg.GetRootRegion().RemoveArgument(n);
     }
   }
 }
@@ -313,8 +320,8 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 {
   region.prune(false);
 
-  std::vector<std::vector<jlm::rvsdg::node *>> nodesTopDown(region.nnodes());
-  for (auto & node : region.nodes)
+  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.nnodes());
+  for (auto & node : region.Nodes())
   {
     nodesTopDown[node.depth()].push_back(&node);
   }
@@ -372,7 +379,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
             { typeid(phi::operation), sweepPhi },
             { typeid(delta::operation), sweepDelta } });
 
-  auto & op = node.operation();
+  auto & op = node.GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
   map[typeid(op)](*this, node);
 }
@@ -429,25 +436,28 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 void
 DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
-  auto & thetaSubregion = *thetaNode.subregion();
-
-  auto matchOutput = [&](const rvsdg::ThetaOutput & output)
+  // Determine loop variables to be removed.
+  std::vector<rvsdg::ThetaNode::LoopVar> loopvars;
+  for (const auto & loopvar : thetaNode.GetLoopVars())
   {
-    auto & argument = *output.argument();
-    return !Context_->IsAlive(argument) && !Context_->IsAlive(output);
-  };
-  auto deadInputs = thetaNode.RemoveThetaOutputsWhere(matchOutput);
+    if (!Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output))
+    {
+      loopvar.post->divert_to(loopvar.pre);
+      loopvars.push_back(loopvar);
+    }
+  }
 
-  SweepRegion(thetaSubregion);
+  // Now that the loop variables to be eliminated only point to
+  // their own pre-iteration values, any outputs within the subregion
+  // that only contributed to computing the post-iteration values
+  // of the variables are unlinked and can be removed as well.
+  SweepRegion(*thetaNode.subregion());
 
-  auto matchInput = [&](const rvsdg::ThetaInput & input)
-  {
-    return deadInputs.Contains(&input);
-  };
-  thetaNode.RemoveThetaInputsWhere(matchInput);
-
-  JLM_ASSERT(thetaNode.ninputs() == thetaNode.noutputs());
-  JLM_ASSERT(thetaSubregion.narguments() == thetaSubregion.nresults() - 1);
+  // There are now no other users of the pre-iteration values of the
+  // variables to be removed left in the subregion anymore.
+  // The variables have become "loop-invariant" and can simply
+  // be eliminated from the theta node.
+  thetaNode.RemoveLoopVars(std::move(loopvars));
 }
 
 void

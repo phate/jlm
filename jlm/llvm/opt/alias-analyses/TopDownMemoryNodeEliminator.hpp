@@ -28,9 +28,9 @@ class node;
 namespace jlm::rvsdg
 {
 class GammaNode;
-class node;
+class Node;
 class Region;
-class simple_node;
+class SimpleNode;
 class StructuralNode;
 class ThetaNode;
 }
@@ -155,10 +155,10 @@ private:
   EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode);
 
   void
-  EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode);
+  EliminateTopDownSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   void
-  EliminateTopDownAlloca(const rvsdg::simple_node & node);
+  EliminateTopDownAlloca(const rvsdg::SimpleNode & node);
 
   void
   EliminateTopDownCall(const CallNode & callNode);

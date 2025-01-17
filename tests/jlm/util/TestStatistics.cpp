@@ -36,7 +36,7 @@ public:
   }
 };
 
-void
+int
 TestStatisticsMeasurements()
 {
   using namespace jlm::util;
@@ -81,16 +81,21 @@ TestStatisticsMeasurements()
 
   auto timers = statistics.GetTimers();
   assert(timers.begin()->first == "Timer");
+
+  return 0;
 }
 
-void
+JLM_UNIT_TEST_REGISTER(
+    "jlm/util/TestStatistics-TestStatisticsMeasurements",
+    TestStatisticsMeasurements)
+
+int
 TestStatisticsCollection()
 {
   using namespace jlm::util;
-  /*
-   * Arrange
-   */
-  StatisticsCollectorSettings settings(filepath("stats.txt"), { Statistics::Id::Aggregation });
+
+  // Arrange
+  StatisticsCollectorSettings settings({ Statistics::Id::Aggregation });
   StatisticsCollector collector(std::move(settings));
 
   filepath path("file.ll");
@@ -99,15 +104,11 @@ TestStatisticsCollection()
   std::unique_ptr<Statistics> testStatistics2(
       new MyTestStatistics(Statistics::Id::LoopUnrolling, path));
 
-  /*
-   * Act
-   */
+  // Act
   collector.CollectDemandedStatistics(std::move(testStatistics1));
   collector.CollectDemandedStatistics(std::move(testStatistics2));
 
-  /*
-   * Assert
-   */
+  // Assert
   auto numCollectedStatistics =
       std::distance(collector.CollectedStatistics().begin(), collector.CollectedStatistics().end());
 
@@ -116,21 +117,31 @@ TestStatisticsCollection()
   {
     assert(statistic.GetId() == Statistics::Id::Aggregation);
   }
+
+  return 0;
 }
 
-void
+JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestStatisticsCollection", TestStatisticsCollection)
+
+int
 TestStatisticsPrinting()
 {
   using namespace jlm::util;
 
   // Arrange
-  filepath filePath(std::string(std::filesystem::temp_directory_path()) + "/TestStatistics");
+  auto testOutputDir = std::filesystem::temp_directory_path() / "jlm-test-statistics";
+  auto testOutputPath = filepath(testOutputDir);
 
-  // Ensure file is not around from last test run.
-  std::remove(filePath.to_str().c_str());
+  // Remove the output dir if it was not properly cleaned up last time
+  std::filesystem::remove(testOutputDir);
+  assert(!testOutputPath.Exists());
 
-  StatisticsCollectorSettings settings(filePath, { Statistics::Id::Aggregation });
-  StatisticsCollector collector(std::move(settings));
+  StatisticsCollectorSettings settings(
+      { Statistics::Id::Aggregation },
+      testOutputPath,
+      "test-module");
+
+  StatisticsCollector collector(settings);
 
   filepath path("file.ll");
   std::unique_ptr<MyTestStatistics> statistics(
@@ -144,23 +155,57 @@ TestStatisticsPrinting()
   collector.PrintStatistics();
 
   // Assert
-  std::ifstream file(filePath.to_str());
+  assert(testOutputPath.IsDirectory());
+
+  const auto outputFileName = "test-module-" + settings.GetUniqueString() + "-statistics.log";
+  std::ifstream file(testOutputDir / outputFileName);
   std::string name, fileName, measurement;
   file >> name >> fileName >> measurement;
 
   assert(name == "Aggregation");
   assert(fileName == path.to_str());
   assert(measurement == "count:10");
-}
 
-static int
-TestStatistics()
-{
-  TestStatisticsMeasurements();
-  TestStatisticsCollection();
-  TestStatisticsPrinting();
+  // Cleanup
+  std::filesystem::remove_all(testOutputDir);
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics", TestStatistics)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestStatisticsPrinting", TestStatisticsPrinting)
+
+int
+TestCreateOutputFile()
+{
+  using namespace jlm::util;
+
+  // Arrange
+  StatisticsCollectorSettings settings(
+      { Statistics::Id::Aggregation },
+      filepath("."),
+      "test-module");
+  settings.SetUniqueString("ABC");
+  StatisticsCollector collector(std::move(settings));
+
+  // Act
+  const auto statsFile = collector.CreateOutputFile("stats.log");
+
+  const auto cool0 = collector.CreateOutputFile("cool", true);
+  const auto cool1 = collector.CreateOutputFile("cool", true);
+
+  const auto nice0 = collector.CreateOutputFile("nice.txt", true);
+  const auto nice1 = collector.CreateOutputFile("nice.txt", true);
+
+  // Assert
+  assert(statsFile.path() == "./test-module-ABC-stats.log");
+
+  assert(cool0.path() == "./test-module-ABC-cool-0");
+  assert(cool1.path() == "./test-module-ABC-cool-1");
+
+  assert(nice0.path() == "./test-module-ABC-nice-0.txt");
+  assert(nice1.path() == "./test-module-ABC-nice-1.txt");
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestCreateOutputFile", TestCreateOutputFile)

@@ -11,7 +11,7 @@ namespace jlm::llvm
 MemCpyNonVolatileOperation::~MemCpyNonVolatileOperation() = default;
 
 bool
-MemCpyNonVolatileOperation::operator==(const operation & other) const noexcept
+MemCpyNonVolatileOperation::operator==(const Operation & other) const noexcept
 {
   auto operation = dynamic_cast<const MemCpyNonVolatileOperation *>(&other);
   return operation && operation->LengthType() == LengthType()
@@ -24,10 +24,10 @@ MemCpyNonVolatileOperation::debug_string() const
   return "MemCpy";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 MemCpyNonVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new MemCpyNonVolatileOperation(*this));
+  return std::make_unique<MemCpyNonVolatileOperation>(*this);
 }
 
 size_t
@@ -39,7 +39,7 @@ MemCpyNonVolatileOperation::NumMemoryStates() const noexcept
 MemCpyVolatileOperation::~MemCpyVolatileOperation() noexcept = default;
 
 bool
-MemCpyVolatileOperation::operator==(const operation & other) const noexcept
+MemCpyVolatileOperation::operator==(const Operation & other) const noexcept
 {
   // Avoid common node elimination for memcpy operator
   return this == &other;
@@ -51,10 +51,10 @@ MemCpyVolatileOperation::debug_string() const
   return "MemCpyVolatile";
 }
 
-std::unique_ptr<rvsdg::operation>
+std::unique_ptr<rvsdg::Operation>
 MemCpyVolatileOperation::copy() const
 {
-  return std::unique_ptr<rvsdg::operation>(new MemCpyVolatileOperation(*this));
+  return std::make_unique<MemCpyVolatileOperation>(*this);
 }
 
 size_t

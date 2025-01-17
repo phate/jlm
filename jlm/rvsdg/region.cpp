@@ -24,7 +24,7 @@ RegionArgument::~RegionArgument() noexcept
 
 RegionArgument::RegionArgument(
     rvsdg::Region * region,
-    jlm::rvsdg::structural_input * input,
+    StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
     : output(region, std::move(type)),
       input_(input)
@@ -43,14 +43,20 @@ RegionArgument::RegionArgument(
   }
 }
 
-[[nodiscard]] std::variant<node *, Region *>
+std::string
+RegionArgument::debug_string() const
+{
+  return util::strfmt("a", index());
+}
+
+[[nodiscard]] std::variant<Node *, Region *>
 RegionArgument::GetOwner() const noexcept
 {
   return region();
 }
 
 RegionArgument &
-RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
+RegionArgument::Copy(Region & region, StructuralInput * input)
 {
   return RegionArgument::Create(region, input, Type());
 }
@@ -58,7 +64,7 @@ RegionArgument::Copy(rvsdg::Region & region, structural_input * input)
 RegionArgument &
 RegionArgument::Create(
     rvsdg::Region & region,
-    rvsdg::structural_input * input,
+    StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
 {
   auto argument = new RegionArgument(&region, input, std::move(type));
@@ -77,7 +83,7 @@ RegionResult::~RegionResult() noexcept
 RegionResult::RegionResult(
     rvsdg::Region * region,
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::structural_output * output,
+    StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
     : input(origin, region, std::move(type)),
       output_(output)
@@ -96,14 +102,20 @@ RegionResult::RegionResult(
   }
 }
 
-[[nodiscard]] std::variant<node *, Region *>
+std::string
+RegionResult::debug_string() const
+{
+  return util::strfmt("r", index());
+}
+
+[[nodiscard]] std::variant<Node *, Region *>
 RegionResult::GetOwner() const noexcept
 {
   return region();
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::output & origin, structural_output * output)
+RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 {
   return RegionResult::Create(*origin.region(), origin, output, origin.Type());
 }
@@ -112,7 +124,7 @@ RegionResult &
 RegionResult::Create(
     rvsdg::Region & region,
     rvsdg::output & origin,
-    structural_output * output,
+    StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
   JLM_ASSERT(origin.region() == &region);
@@ -129,15 +141,15 @@ Region::~Region() noexcept
     RemoveResult(results_.size() - 1);
 
   prune(false);
-  JLM_ASSERT(nodes.empty());
-  JLM_ASSERT(top_nodes.empty());
+  JLM_ASSERT(nnodes() == 0);
+  JLM_ASSERT(NumTopNodes() == 0);
   JLM_ASSERT(NumBottomNodes() == 0);
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
 }
 
-Region::Region(rvsdg::Region * parent, jlm::rvsdg::graph * graph)
+Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
       node_(nullptr)
@@ -220,13 +232,28 @@ Region::RemoveResult(size_t index)
 }
 
 void
-Region::remove_node(jlm::rvsdg::node * node)
+Region::remove_node(Node * node)
 {
   delete node;
 }
 
 bool
-Region::AddBottomNode(rvsdg::node & node)
+Region::AddTopNode(Node & node)
+{
+  if (node.region() != this)
+    return false;
+
+  if (node.ninputs() != 0)
+    return false;
+
+  // FIXME: We should check that a node is not already part of the top nodes before adding it.
+  TopNodes_.push_back(&node);
+
+  return true;
+}
+
+bool
+Region::AddBottomNode(Node & node)
 {
   if (node.region() != this)
     return false;
@@ -241,11 +268,38 @@ Region::AddBottomNode(rvsdg::node & node)
 }
 
 bool
-Region::RemoveBottomNode(rvsdg::node & node)
+Region::AddNode(Node & node)
+{
+  if (node.region() != this)
+    return false;
+
+  Nodes_.push_back(&node);
+
+  return true;
+}
+
+bool
+Region::RemoveBottomNode(Node & node)
 {
   auto numBottomNodes = NumBottomNodes();
   BottomNodes_.erase(&node);
   return numBottomNodes != NumBottomNodes();
+}
+
+bool
+Region::RemoveTopNode(Node & node)
+{
+  auto numTopNodes = NumTopNodes();
+  TopNodes_.erase(&node);
+  return numTopNodes != NumTopNodes();
+}
+
+bool
+Region::RemoveNode(Node & node)
+{
+  auto numNodes = nnodes();
+  Nodes_.erase(&node);
+  return numNodes != nnodes();
 }
 
 void
@@ -254,8 +308,8 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   smap.insert(this, target);
 
   // order nodes top-down
-  std::vector<std::vector<const jlm::rvsdg::node *>> context(nnodes());
-  for (const auto & node : nodes)
+  std::vector<std::vector<const Node *>> context(nnodes());
+  for (const auto & node : Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
     context[node.depth()].push_back(&node);
@@ -289,7 +343,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
       auto oldResult = result(n);
       auto newOrigin = smap.lookup(oldResult->origin());
       JLM_ASSERT(newOrigin != nullptr);
-      auto newOutput = dynamic_cast<structural_output *>(smap.lookup(oldResult->output()));
+      auto newOutput = dynamic_cast<StructuralOutput *>(smap.lookup(oldResult->output()));
       oldResult->Copy(*newOrigin, newOutput);
     }
   }
@@ -304,7 +358,7 @@ Region::prune(bool recursive)
   if (!recursive)
     return;
 
-  for (const auto & node : nodes)
+  for (const auto & node : Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -314,33 +368,17 @@ Region::prune(bool recursive)
   }
 }
 
-void
-Region::normalize(bool recursive)
-{
-  for (auto node : jlm::rvsdg::topdown_traverser(this))
-  {
-    if (auto structnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        structnode->subregion(n)->normalize(recursive);
-    }
-
-    const auto & op = node->operation();
-    graph()->node_normal_form(typeid(op))->normalize_node(node);
-  }
-}
-
 bool
 Region::IsRootRegion() const noexcept
 {
-  return this->graph()->root() == this;
+  return &this->graph()->GetRootRegion() == this;
 }
 
 size_t
 Region::NumRegions(const rvsdg::Region & region) noexcept
 {
   size_t numRegions = 1;
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -394,11 +432,11 @@ Region::ToTree(
   // Convert the region's structural nodes with their subregions to a string
   indentationDepth++;
   indentationString = std::string(indentationDepth, indentationChar);
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto nodeString = structuralNode->operation().debug_string();
+      auto nodeString = structuralNode->GetOperation().debug_string();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,
@@ -476,7 +514,7 @@ size_t
 nnodes(const jlm::rvsdg::Region * region) noexcept
 {
   size_t n = region->nnodes();
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -492,7 +530,7 @@ size_t
 nstructnodes(const rvsdg::Region * region) noexcept
 {
   size_t n = 0;
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -509,7 +547,7 @@ size_t
 nsimpnodes(const rvsdg::Region * region) noexcept
 {
   size_t n = 0;
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
@@ -529,7 +567,7 @@ size_t
 ninputs(const rvsdg::Region * region) noexcept
 {
   size_t n = region->nresults();
-  for (const auto & node : region->nodes)
+  for (const auto & node : region->Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {

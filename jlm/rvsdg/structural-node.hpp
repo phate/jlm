@@ -14,21 +14,17 @@ namespace jlm::rvsdg
 
 /* structural node */
 
-class structural_input;
-class structural_op;
-class structural_output;
+class StructuralInput;
+class StructuralOperation;
+class StructuralOutput;
 
-class StructuralNode : public node
+class StructuralNode : public Node
 {
 public:
   ~StructuralNode() noexcept override;
 
 protected:
-  StructuralNode(
-      /* FIXME: use move semantics instead of copy semantics for op */
-      const jlm::rvsdg::structural_op & op,
-      rvsdg::Region * region,
-      size_t nsubregions);
+  StructuralNode(rvsdg::Region * region, size_t nsubregions);
 
 public:
   inline size_t
@@ -44,21 +40,21 @@ public:
     return subregions_[index].get();
   }
 
-  inline jlm::rvsdg::structural_input *
+  [[nodiscard]] inline StructuralInput *
   input(size_t index) const noexcept;
 
-  inline jlm::rvsdg::structural_output *
+  [[nodiscard]] inline StructuralOutput *
   output(size_t index) const noexcept;
 
-  structural_input *
-  append_input(std::unique_ptr<structural_input> input);
+  StructuralInput *
+  append_input(std::unique_ptr<StructuralInput> input);
 
-  structural_output *
-  append_output(std::unique_ptr<structural_output> output);
+  StructuralOutput *
+  append_output(std::unique_ptr<StructuralOutput> output);
 
-  using node::RemoveInput;
+  using Node::RemoveInput;
 
-  using node::RemoveOutput;
+  using Node::RemoveOutput;
 
 private:
   std::vector<std::unique_ptr<rvsdg::Region>> subregions_;
@@ -69,25 +65,25 @@ private:
 typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
     argument_list;
 
-class structural_input : public node_input
+class StructuralInput : public node_input
 {
   friend StructuralNode;
 
 public:
-  virtual ~structural_input() noexcept;
+  ~StructuralInput() noexcept override;
 
-  structural_input(
+  StructuralInput(
       StructuralNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
-  static structural_input *
+  static StructuralInput *
   create(
       StructuralNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto input = std::make_unique<structural_input>(node, origin, std::move(type));
+    auto input = std::make_unique<StructuralInput>(node, origin, std::move(type));
     return node->append_input(std::move(input));
   }
 
@@ -105,19 +101,19 @@ public:
 typedef jlm::util::intrusive_list<RegionResult, RegionResult::structural_output_accessor>
     result_list;
 
-class structural_output : public node_output
+class StructuralOutput : public node_output
 {
   friend StructuralNode;
 
 public:
-  virtual ~structural_output() noexcept;
+  ~StructuralOutput() noexcept override;
 
-  structural_output(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type);
+  StructuralOutput(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type);
 
-  static structural_output *
+  static StructuralOutput *
   create(StructuralNode * node, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto output = std::make_unique<structural_output>(node, std::move(type));
+    auto output = std::make_unique<StructuralOutput>(node, std::move(type));
     return node->append_output(std::move(output));
   }
 
@@ -132,23 +128,23 @@ public:
 
 /* structural node method definitions */
 
-inline jlm::rvsdg::structural_input *
+inline StructuralInput *
 StructuralNode::input(size_t index) const noexcept
 {
-  return static_cast<structural_input *>(node::input(index));
+  return static_cast<StructuralInput *>(Node::input(index));
 }
 
-inline jlm::rvsdg::structural_output *
+inline StructuralOutput *
 StructuralNode::output(size_t index) const noexcept
 {
-  return static_cast<structural_output *>(node::output(index));
+  return static_cast<StructuralOutput *>(Node::output(index));
 }
 
 template<class Operation>
 bool
 Region::Contains(const rvsdg::Region & region, bool checkSubregions)
 {
-  for (auto & node : region.nodes)
+  for (auto & node : region.Nodes())
   {
     if (is<Operation>(&node))
     {

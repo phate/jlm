@@ -28,6 +28,7 @@
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
@@ -59,7 +60,7 @@ split_opt(llvm::RvsdgModule & rm)
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
-  jlm::llvm::nodereduction red;
+  jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
   tgi.run(rm, statisticsCollector);
   dne.run(rm, statisticsCollector);
@@ -91,7 +92,7 @@ void
 dump_xml(llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
 {
   auto xml_file = fopen(file_name.c_str(), "w");
-  jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), xml_file);
+  jlm::rvsdg::view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), xml_file);
   fclose(xml_file);
 }
 
@@ -113,15 +114,15 @@ trace_call(jlm::rvsdg::input * input)
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
   const jlm::rvsdg::output * result;
-  if (auto to = dynamic_cast<const rvsdg::ThetaOutput *>(input->origin()))
+  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input->origin()))
   {
-    result = trace_call(to->input());
+    result = trace_call(theta->MapOutputLoopVar(*input->origin()).input);
   }
   else if (argument == nullptr)
   {
     result = input->origin();
   }
-  else if (argument->region() == graph->root())
+  else if (argument->region() == &graph->GetRootRegion())
   {
     result = argument;
   }
@@ -145,10 +146,10 @@ inline_calls(rvsdg::Region * region)
         inline_calls(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<const llvm::CallOperation *>(&(node->operation())))
+    else if (dynamic_cast<const llvm::CallOperation *>(&(node->GetOperation())))
     {
       auto traced = jlm::hls::trace_call(node->input(0));
-      auto so = dynamic_cast<const jlm::rvsdg::structural_output *>(traced);
+      auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
       if (!so)
       {
         if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
@@ -162,9 +163,9 @@ inline_calls(rvsdg::Region * region)
         }
       }
       JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
-      auto ln = dynamic_cast<const jlm::rvsdg::structural_output *>(traced)->node();
+      auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
       llvm::inlineCall(
-          dynamic_cast<jlm::rvsdg::simple_node *>(node),
+          dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
           dynamic_cast<const llvm::lambda::node *>(ln));
       // restart for this region
       inline_calls(region);
@@ -187,9 +188,9 @@ convert_alloca(rvsdg::Region * region)
         convert_alloca(structnode->subregion(n));
       }
     }
-    else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->operation())))
+    else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->GetOperation())))
     {
-      auto rr = region->graph()->root();
+      auto rr = &region->graph()->GetRootRegion();
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
       auto delta_type = llvm::PointerType::Create();
       std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
@@ -209,7 +210,7 @@ convert_alloca(rvsdg::Region * region)
       else
       {
         llvm::ConstantAggregateZero cop(po->ValueType());
-        cout = jlm::rvsdg::simple_node::create_normalized(db->subregion(), cop, {})[0];
+        cout = jlm::rvsdg::SimpleNode::create_normalized(db->subregion(), cop, {})[0];
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
@@ -220,7 +221,7 @@ convert_alloca(rvsdg::Region * region)
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
       auto mux_node = rvsdg::input::GetNode(*mux_in);
-      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->operation()))
+      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(mux_node->ninputs() == 2);
@@ -287,18 +288,21 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
-  for (auto & cv : ln->ctxvars())
+  for (const auto & cv : ln->GetContextVars())
   {
-    auto origin = cv.origin();
-    auto newcv = lambda->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto origin = cv.input->origin();
+    auto newcv = lambda->AddContextVar(*origin);
+    subregionmap.insert(cv.inner, newcv.inner);
   }
 
   /* collect function arguments */
-  for (size_t n = 0; n < ln->nfctarguments(); n++)
+  auto args = ln->GetFunctionArguments();
+  auto newArgs = lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() == newArgs.size());
+  for (size_t n = 0; n < args.size(); n++)
   {
-    lambda->fctargument(n)->set_attributes(ln->fctargument(n)->attributes());
-    subregionmap.insert(ln->fctargument(n), lambda->fctargument(n));
+    lambda->SetArgumentAttributes(*newArgs[n], ln->GetArgumentAttributes(*args[n]));
+    subregionmap.insert(args[n], newArgs[n]);
   }
 
   /* copy subregion */
@@ -306,8 +310,8 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 
   /* collect function results */
   std::vector<jlm::rvsdg::output *> results;
-  for (auto & result : ln->fctresults())
-    results.push_back(subregionmap.lookup(result.origin()));
+  for (auto result : ln->GetFunctionResults())
+    results.push_back(subregionmap.lookup(result->origin()));
 
   /* finalize lambda */
   lambda->finalize(results);
@@ -325,7 +329,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
   // create a copy of rm
   auto rhls = llvm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
   std::cout << "processing " << rm.SourceFileName().name() << "\n";
-  auto root = rm.Rvsdg().root();
+  auto root = &rm.Rvsdg().GetRootRegion();
   for (auto node : jlm::rvsdg::topdown_traverser(root))
   {
     if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
@@ -348,6 +352,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           auto & newGraphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
               oldGraphImport->ValueType(),
+              oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
               oldGraphImport->Linkage());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
@@ -370,6 +375,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           auto & graphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
               odn->Type(),
+              llvm::PointerType::Create(),
               odn->name(),
               llvm::linkage::external_linkage);
           smap.insert(ln->input(i)->origin(), &graphImport);
@@ -379,17 +385,18 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else
         {
-          throw jlm::util::error("Unsupported node type: " + orig_node->operation().debug_string());
+          throw util::error("Unsupported node type: " + orig_node->GetOperation().debug_string());
         }
       }
       // copy function into rhls
-      auto new_ln = ln->copy(rhls->Rvsdg().root(), smap);
+      auto new_ln = ln->copy(&rhls->Rvsdg().GetRootRegion(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
-      auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+      auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
       jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
+          ln->Type(),
           ln->Type(),
           ln->name(),
           llvm::linkage::external_linkage); // TODO: change linkage?
@@ -409,13 +416,13 @@ rvsdg2ref(llvm::RvsdgModule & rhls, std::string path)
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rhls)
+rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
   merge_gamma(rhls);
-  util::StatisticsCollector statisticsCollector;
+
   llvm::DeadNodeElimination llvmDne;
-  llvmDne.run(rhls, statisticsCollector);
+  llvmDne.run(rhls, collector);
 
   mem_sep_argument(rhls);
   remove_unused_state(rhls);
@@ -424,7 +431,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
-  hlsCne.run(rhls, statisticsCollector);
+  hlsCne.run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
@@ -446,13 +453,13 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
   rvsdg::SubstitutionMap smap;
-  rhls.Rvsdg().root()->copy(reference->Rvsdg().root(), smap, true, true);
+  rhls.Rvsdg().GetRootRegion().copy(&reference->Rvsdg().GetRootRegion(), smap, true, true);
   pre_opt(*reference);
   instrument_ref(*reference);
-  for (size_t i = 0; i < reference->Rvsdg().root()->narguments(); ++i)
+  for (size_t i = 0; i < reference->Rvsdg().GetRootRegion().narguments(); ++i)
   {
     auto graphImport =
-        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().root()->argument(i));
+        util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
     std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
               << "\n";
   }

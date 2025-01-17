@@ -10,11 +10,11 @@ namespace jlm::hls
 {
 
 std::string
-JsonHLS::get_text(llvm::RvsdgModule & rm)
+JsonHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream json;
-  auto ln = get_hls_lambda(rm);
-  auto function_name = ln->name();
+  const auto & ln = *get_hls_lambda(rm);
+  auto function_name = ln.name();
   auto file_name = get_base_file_name(rm);
   json << "{\n";
 

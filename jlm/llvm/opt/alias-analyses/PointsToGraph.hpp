@@ -49,16 +49,14 @@ public:
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
-  using AllocaNodeMap =
-      std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::AllocaNode>>;
+  using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<AllocaNode>>;
   using DeltaNodeMap =
       std::unordered_map<const delta::node *, std::unique_ptr<PointsToGraph::DeltaNode>>;
   using ImportNodeMap =
       std::unordered_map<const rvsdg::RegionArgument *, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap =
       std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
-  using MallocNodeMap =
-      std::unordered_map<const jlm::rvsdg::node *, std::unique_ptr<PointsToGraph::MallocNode>>;
+  using MallocNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<MallocNode>>;
   using RegisterNodeMap = std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterNode *>;
   using RegisterNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterNode>>;
 
@@ -80,8 +78,8 @@ public:
       AllocaNode,
       AllocaNodeMap::const_iterator,
       IteratorToPointerFunctor<AllocaNode, AllocaNodeMap::const_iterator>>;
-  using AllocaNodeRange = jlm::util::iterator_range<AllocaNodeIterator>;
-  using AllocaNodeConstRange = jlm::util::iterator_range<AllocaNodeConstIterator>;
+  using AllocaNodeRange = util::IteratorRange<AllocaNodeIterator>;
+  using AllocaNodeConstRange = util::IteratorRange<AllocaNodeConstIterator>;
 
   using DeltaNodeIterator = NodeIterator<
       DeltaNode,
@@ -91,8 +89,8 @@ public:
       DeltaNode,
       DeltaNodeMap::const_iterator,
       IteratorToPointerFunctor<DeltaNode, DeltaNodeMap::const_iterator>>;
-  using DeltaNodeRange = jlm::util::iterator_range<DeltaNodeIterator>;
-  using DeltaNodeConstRange = jlm::util::iterator_range<DeltaNodeConstIterator>;
+  using DeltaNodeRange = util::IteratorRange<DeltaNodeIterator>;
+  using DeltaNodeConstRange = util::IteratorRange<DeltaNodeConstIterator>;
 
   using ImportNodeIterator = NodeIterator<
       ImportNode,
@@ -102,8 +100,8 @@ public:
       ImportNode,
       ImportNodeMap::const_iterator,
       IteratorToPointerFunctor<ImportNode, ImportNodeMap::const_iterator>>;
-  using ImportNodeRange = jlm::util::iterator_range<ImportNodeIterator>;
-  using ImportNodeConstRange = jlm::util::iterator_range<ImportNodeConstIterator>;
+  using ImportNodeRange = jlm::util::IteratorRange<ImportNodeIterator>;
+  using ImportNodeConstRange = jlm::util::IteratorRange<ImportNodeConstIterator>;
 
   using LambdaNodeIterator = NodeIterator<
       LambdaNode,
@@ -113,8 +111,8 @@ public:
       LambdaNode,
       LambdaNodeMap::const_iterator,
       IteratorToPointerFunctor<LambdaNode, LambdaNodeMap::const_iterator>>;
-  using LambdaNodeRange = jlm::util::iterator_range<LambdaNodeIterator>;
-  using LambdaNodeConstRange = jlm::util::iterator_range<LambdaNodeConstIterator>;
+  using LambdaNodeRange = util::IteratorRange<LambdaNodeIterator>;
+  using LambdaNodeConstRange = util::IteratorRange<LambdaNodeConstIterator>;
 
   using MallocNodeIterator = NodeIterator<
       MallocNode,
@@ -124,8 +122,8 @@ public:
       MallocNode,
       MallocNodeMap::const_iterator,
       IteratorToPointerFunctor<MallocNode, MallocNodeMap::const_iterator>>;
-  using MallocNodeRange = jlm::util::iterator_range<MallocNodeIterator>;
-  using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
+  using MallocNodeRange = util::IteratorRange<MallocNodeIterator>;
+  using MallocNodeConstRange = util::IteratorRange<MallocNodeConstIterator>;
 
   template<class IteratorType>
   struct RegisterNodeIteratorToPointerFunctor
@@ -145,8 +143,8 @@ public:
       RegisterNode,
       RegisterNodeVector::const_iterator,
       RegisterNodeIteratorToPointerFunctor<RegisterNodeVector::const_iterator>>;
-  using RegisterNodeRange = util::iterator_range<RegisterNodeIterator>;
-  using RegisterNodeConstRange = util::iterator_range<RegisterNodeConstIterator>;
+  using RegisterNodeRange = util::IteratorRange<RegisterNodeIterator>;
+  using RegisterNodeConstRange = util::IteratorRange<RegisterNodeConstIterator>;
 
 private:
   PointsToGraph();
@@ -269,7 +267,7 @@ public:
   }
 
   const PointsToGraph::AllocaNode &
-  GetAllocaNode(const jlm::rvsdg::node & node) const
+  GetAllocaNode(const rvsdg::Node & node) const
   {
     auto it = AllocaNodes_.find(&node);
     if (it == AllocaNodes_.end())
@@ -309,7 +307,7 @@ public:
   }
 
   const PointsToGraph::MallocNode &
-  GetMallocNode(const jlm::rvsdg::node & node) const
+  GetMallocNode(const rvsdg::Node & node) const
   {
     auto it = MallocNodes_.find(&node);
     if (it == MallocNodes_.end())
@@ -451,11 +449,11 @@ class PointsToGraph::Node
   using TargetIterator = Iterator<PointsToGraph::MemoryNode>;
   using TargetConstIterator = ConstIterator<PointsToGraph::MemoryNode>;
 
-  using SourceRange = jlm::util::iterator_range<SourceIterator>;
-  using SourceConstRange = jlm::util::iterator_range<SourceConstIterator>;
+  using SourceRange = util::IteratorRange<SourceIterator>;
+  using SourceConstRange = util::IteratorRange<SourceConstIterator>;
 
-  using TargetRange = jlm::util::iterator_range<TargetIterator>;
-  using TargetConstRange = jlm::util::iterator_range<TargetConstIterator>;
+  using TargetRange = util::IteratorRange<TargetIterator>;
+  using TargetConstRange = util::IteratorRange<TargetConstIterator>;
 
 public:
   virtual ~Node() noexcept;
@@ -617,7 +615,7 @@ public:
   ~AllocaNode() noexcept override;
 
 private:
-  AllocaNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & allocaNode)
+  AllocaNode(PointsToGraph & pointsToGraph, const rvsdg::Node & allocaNode)
       : MemoryNode(pointsToGraph),
         AllocaNode_(&allocaNode)
   {
@@ -625,7 +623,7 @@ private:
   }
 
 public:
-  const jlm::rvsdg::node &
+  const rvsdg::Node &
   GetAllocaNode() const noexcept
   {
     return *AllocaNode_;
@@ -635,14 +633,14 @@ public:
   DebugString() const override;
 
   static PointsToGraph::AllocaNode &
-  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & node)
+  Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::AllocaNode>(new AllocaNode(pointsToGraph, node));
     return pointsToGraph.AddAllocaNode(std::move(n));
   }
 
 private:
-  const jlm::rvsdg::node * AllocaNode_;
+  const rvsdg::Node * AllocaNode_;
 };
 
 /** \brief PointsTo graph delta node
@@ -691,7 +689,7 @@ public:
   ~MallocNode() noexcept override;
 
 private:
-  MallocNode(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & mallocNode)
+  MallocNode(PointsToGraph & pointsToGraph, const rvsdg::Node & mallocNode)
       : MemoryNode(pointsToGraph),
         MallocNode_(&mallocNode)
   {
@@ -699,7 +697,7 @@ private:
   }
 
 public:
-  const jlm::rvsdg::node &
+  const rvsdg::Node &
   GetMallocNode() const noexcept
   {
     return *MallocNode_;
@@ -709,14 +707,14 @@ public:
   DebugString() const override;
 
   static PointsToGraph::MallocNode &
-  Create(PointsToGraph & pointsToGraph, const jlm::rvsdg::node & node)
+  Create(PointsToGraph & pointsToGraph, const rvsdg::Node & node)
   {
     auto n = std::unique_ptr<PointsToGraph::MallocNode>(new MallocNode(pointsToGraph, node));
     return pointsToGraph.AddMallocNode(std::move(n));
   }
 
 private:
-  const jlm::rvsdg::node * MallocNode_;
+  const rvsdg::Node * MallocNode_;
 };
 
 /** \brief PointsTo graph malloc node

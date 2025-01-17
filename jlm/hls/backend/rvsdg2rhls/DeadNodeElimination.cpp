@@ -113,14 +113,14 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
 void
 EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 {
-  auto & rootRegion = *rvsdgModule.Rvsdg().root();
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   if (rootRegion.nnodes() != 1)
   {
     throw util::error("Root should have only one node now");
   }
 
-  auto lambdaNode = dynamic_cast<const llvm::lambda::node *>(rootRegion.nodes.begin().ptr());
+  auto lambdaNode = dynamic_cast<const llvm::lambda::node *>(rootRegion.Nodes().begin().ptr());
   if (!lambdaNode)
   {
     throw util::error("Node needs to be a lambda");

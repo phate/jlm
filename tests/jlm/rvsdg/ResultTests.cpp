@@ -21,17 +21,17 @@ ResultNodeMismatch()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  jlm::rvsdg::graph graph;
+  Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
-  auto structuralNode1 = jlm::tests::structural_node::create(graph.root(), 1);
-  auto structuralNode2 = jlm::tests::structural_node::create(graph.root(), 2);
+  auto structuralNode1 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 1);
+  auto structuralNode2 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 2);
 
-  auto structuralInput = structural_input::create(structuralNode1, import, valueType);
+  auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
 
   auto & argument =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);
-  auto structuralOutput = structural_output::create(structuralNode1, valueType);
+  auto structuralOutput = StructuralOutput::create(structuralNode1, valueType);
 
   // Act
   bool outputErrorHandlerCalled = false;
@@ -63,10 +63,10 @@ ResultInputTypeMismatch()
   auto valueType = jlm::tests::valuetype::Create();
   auto stateType = jlm::tests::statetype::Create();
 
-  jlm::rvsdg::graph rvsdg;
+  jlm::rvsdg::Graph rvsdg;
 
-  auto structuralNode = structural_node::create(rvsdg.root(), 1);
-  auto structuralOutput = jlm::rvsdg::structural_output::create(structuralNode, valueType);
+  auto structuralNode = structural_node::create(&rvsdg.GetRootRegion(), 1);
+  auto structuralOutput = jlm::rvsdg::StructuralOutput::create(structuralNode, valueType);
 
   // Act & Assert
   bool exceptionWasCaught = false;

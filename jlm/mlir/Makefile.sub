@@ -12,6 +12,7 @@ libmlir_HEADERS = \
 libmlir_TESTS += \
 	tests/jlm/mlir/backend/TestJlmToMlirConverter \
 	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
+	tests/jlm/mlir/TestJlmToMlirToJlm \
 
 libmlir_TEST_LIBS += \
 	libmlir \

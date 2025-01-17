@@ -139,7 +139,7 @@ PointerObjectSet::CreateDummyRegisterPointerObject()
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode, bool canPoint)
+PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::Node & allocaNode, bool canPoint)
 {
   JLM_ASSERT(AllocaMap_.count(&allocaNode) == 0);
   return AllocaMap_[&allocaNode] =
@@ -147,7 +147,7 @@ PointerObjectSet::CreateAllocaMemoryObject(const rvsdg::node & allocaNode, bool 
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateMallocMemoryObject(const rvsdg::node & mallocNode, bool canPoint)
+PointerObjectSet::CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool canPoint)
 {
   JLM_ASSERT(MallocMap_.count(&mallocNode) == 0);
   return MallocMap_[&mallocNode] =
@@ -205,13 +205,13 @@ PointerObjectSet::GetRegisterMap() const noexcept
   return RegisterMap_;
 }
 
-const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
 PointerObjectSet::GetAllocaMap() const noexcept
 {
   return AllocaMap_;
 }
 
-const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
 PointerObjectSet::GetMallocMap() const noexcept
 {
   return MallocMap_;
@@ -712,10 +712,11 @@ HandleLambdaCallParameters(
     const lambda::node & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
-  for (size_t n = 0; n < callNode.NumArguments() && n < lambdaNode.nfctarguments(); n++)
+  auto lambdaArgs = lambdaNode.GetFunctionArguments();
+  for (size_t n = 0; n < callNode.NumArguments() && n < lambdaArgs.size(); n++)
   {
     const auto & inputRegister = *callNode.Argument(n)->origin();
-    const auto & argumentRegister = *lambdaNode.fctargument(n);
+    const auto & argumentRegister = *lambdaArgs[n];
 
     const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
     const auto argumentRegisterPO = set.TryGetRegisterPointerObject(argumentRegister);
@@ -738,10 +739,11 @@ HandleLambdaCallReturnValues(
     const lambda::node & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
-  for (size_t n = 0; n < callNode.NumResults() && n < lambdaNode.nfctresults(); n++)
+  auto lambdaResults = lambdaNode.GetFunctionResults();
+  for (size_t n = 0; n < callNode.NumResults() && n < lambdaResults.size(); n++)
   {
     const auto & outputRegister = *callNode.Result(n);
-    const auto & resultRegister = *lambdaNode.fctresult(n)->origin();
+    const auto & resultRegister = *lambdaResults[n]->origin();
 
     const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
     const auto resultRegisterPO = set.TryGetRegisterPointerObject(resultRegister);
@@ -927,10 +929,10 @@ HandleEscapedFunction(
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
 
   // All the function's arguments need to be flagged as PointsToExternal
-  for (auto & argument : lambdaNode.fctarguments())
+  for (auto argument : lambdaNode.GetFunctionArguments())
   {
     // Argument registers that are mapped to a register pointer object should point to external
-    const auto argumentPO = set.TryGetRegisterPointerObject(argument);
+    const auto argumentPO = set.TryGetRegisterPointerObject(*argument);
     if (!argumentPO)
       continue;
 
@@ -944,9 +946,9 @@ HandleEscapedFunction(
   }
 
   // All results of pointer type need to be flagged as pointees escaping
-  for (auto & result : lambdaNode.fctresults())
+  for (auto result : lambdaNode.GetFunctionResults())
   {
-    const auto resultPO = set.TryGetRegisterPointerObject(*result.origin());
+    const auto resultPO = set.TryGetRegisterPointerObject(*result->origin());
     if (!resultPO)
       continue;
 
@@ -1082,7 +1084,7 @@ PointerObjectConstraintSet::NumFlagConstraints() const noexcept
       numScalarFlagConstraints++;
 #endif
   }
-  return {numScalarFlagConstraints, numOtherFlagConstraints};
+  return { numScalarFlagConstraints, numOtherFlagConstraints };
 }
 
 /**
@@ -1291,17 +1293,19 @@ LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::Graph & gra
     graph.GetNode(pointerObject).AppendToLabel(util::strfmt("function", functionIndex));
 
     // Add labels to registers corresponding to arguments and results of the function
-    for (size_t i = 0; i < function->nfctarguments(); i++)
+    auto args = function->GetFunctionArguments();
+    for (size_t i = 0; i < args.size(); i++)
     {
-      if (auto argumentRegister = set.TryGetRegisterPointerObject(*function->fctargument(i)))
+      if (auto argumentRegister = set.TryGetRegisterPointerObject(*args[i]))
       {
         const auto label = util::strfmt("function", functionIndex, " arg", i);
         graph.GetNode(*argumentRegister).AppendToLabel(label);
       }
     }
-    for (size_t i = 0; i < function->nfctresults(); i++)
+    auto results = function->GetFunctionResults();
+    for (size_t i = 0; i < results.size(); i++)
     {
-      if (auto resultRegister = set.TryGetRegisterPointerObject(*function->fctresult(i)->origin()))
+      if (auto resultRegister = set.TryGetRegisterPointerObject(*results[i]->origin()))
       {
         const auto label = util::strfmt("function", functionIndex, " res", i);
         graph.GetNode(*resultRegister).AppendToLabel(label);
@@ -1341,9 +1345,9 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
   // Mark all function argument register nodes as not direct
   for (auto [lambda, _] : Set_.GetFunctionMap())
   {
-    for (size_t n = 0; n < lambda->nfctarguments(); n++)
+    for (auto arg : lambda->GetFunctionArguments())
     {
-      if (auto argumentPO = Set_.TryGetRegisterPointerObject(*lambda->fctargument(n)))
+      if (auto argumentPO = Set_.TryGetRegisterPointerObject(*arg))
         isDirectNode[*argumentPO] = false;
     }
   }

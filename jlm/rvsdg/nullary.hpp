@@ -7,10 +7,8 @@
 #ifndef JLM_RVSDG_NULLARY_HPP
 #define JLM_RVSDG_NULLARY_HPP
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/util/common.hpp>
 
 namespace jlm::rvsdg
 {
@@ -20,13 +18,13 @@ class output;
 /**
   \brief Nullary operator (operator taking no formal arguments)
 */
-class nullary_op : public simple_op
+class nullary_op : public SimpleOperation
 {
 public:
   virtual ~nullary_op() noexcept;
 
   inline explicit nullary_op(std::shared_ptr<const jlm::rvsdg::Type> result)
-      : simple_op({}, { std::move(result) })
+      : SimpleOperation({}, { std::move(result) })
   {}
 };
 
@@ -70,7 +68,7 @@ public:
   inline domain_const_op(domain_const_op && other) = default;
 
   virtual bool
-  operator==(const operation & other) const noexcept override
+  operator==(const Operation & other) const noexcept override
   {
     auto op = dynamic_cast<const domain_const_op *>(&other);
     return op && op->value_ == value_;
@@ -88,17 +86,17 @@ public:
     return value_;
   }
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::unique_ptr<jlm::rvsdg::operation>(new domain_const_op(*this));
+    return std::make_unique<domain_const_op>(*this);
   }
 
   static inline jlm::rvsdg::output *
   create(rvsdg::Region * region, const value_repr & vr)
   {
     domain_const_op op(vr);
-    return simple_node::create_normalized(region, op, {})[0];
+    return SimpleNode::create_normalized(region, op, {})[0];
   }
 
 private:

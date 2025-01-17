@@ -15,8 +15,6 @@
 
 #include <unordered_map>
 
-#include <inttypes.h>
-
 namespace jlm::rvsdg
 {
 
@@ -126,13 +124,13 @@ typedef domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_
     ctlconstant_op;
 
 static inline bool
-is_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
+is_ctlconstant_op(const Operation & op) noexcept
 {
   return dynamic_cast<const ctlconstant_op *>(&op) != nullptr;
 }
 
 static inline const ctlconstant_op &
-to_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
+to_ctlconstant_op(const Operation & op) noexcept
 {
   JLM_ASSERT(is_ctlconstant_op(op));
   return *static_cast<const ctlconstant_op *>(&op);
@@ -154,7 +152,7 @@ public:
       size_t nalternatives);
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
@@ -165,7 +163,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline uint64_t
@@ -218,7 +216,7 @@ public:
     auto bitType = CheckAndExtractBitType(predicate.type());
 
     match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
-    return rvsdg::simple_node::create_normalized(predicate.region(), operation, { &predicate })[0];
+    return rvsdg::SimpleNode::create_normalized(predicate.region(), operation, { &predicate })[0];
   }
 
 private:
@@ -253,7 +251,7 @@ extern template class domain_const_op<
     ctltype_of_value>;
 
 static inline const match_op &
-to_match_op(const jlm::rvsdg::operation & op) noexcept
+to_match_op(const Operation & op) noexcept
 {
   JLM_ASSERT(is<match_op>(op));
   return *static_cast<const match_op *>(&op);

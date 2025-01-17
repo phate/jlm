@@ -58,13 +58,13 @@ public:
   inline ~tac() noexcept
   {}
 
-  tac(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
+  tac(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
 
-  tac(const jlm::rvsdg::simple_op & operation,
+  tac(const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       const std::vector<std::string> & names);
 
-  tac(const jlm::rvsdg::simple_op & operation,
+  tac(const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       std::vector<std::unique_ptr<tacvariable>> results);
 
@@ -78,10 +78,10 @@ public:
   tac &
   operator=(llvm::tac &&) = delete;
 
-  inline const jlm::rvsdg::simple_op &
+  inline const rvsdg::SimpleOperation &
   operation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::simple_op *>(operation_.get());
+    return *static_cast<const rvsdg::SimpleOperation *>(operation_.get());
   }
 
   inline size_t
@@ -121,23 +121,23 @@ public:
   }
 
   void
-  replace(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
+  replace(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
 
   void
-  convert(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands);
+  convert(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
 
   static std::string
   ToAscii(const tac & threeAddressCode);
 
   static std::unique_ptr<llvm::tac>
-  create(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands)
+  create(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
   {
     return std::make_unique<llvm::tac>(operation, operands);
   }
 
   static std::unique_ptr<llvm::tac>
   create(
-      const jlm::rvsdg::simple_op & operation,
+      const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       const std::vector<std::string> & names)
   {
@@ -146,7 +146,7 @@ public:
 
   static std::unique_ptr<llvm::tac>
   create(
-      const jlm::rvsdg::simple_op & operation,
+      const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       std::vector<std::unique_ptr<tacvariable>> results)
   {
@@ -155,7 +155,7 @@ public:
 
 private:
   void
-  create_results(const jlm::rvsdg::simple_op & operation, const std::vector<std::string> & names)
+  create_results(const rvsdg::SimpleOperation & operation, const std::vector<std::string> & names)
   {
     JLM_ASSERT(names.size() == operation.nresults());
 
@@ -178,7 +178,7 @@ private:
   }
 
   std::vector<const variable *> operands_;
-  std::unique_ptr<jlm::rvsdg::operation> operation_;
+  std::unique_ptr<rvsdg::Operation> operation_;
   std::vector<std::unique_ptr<tacvariable>> results_;
 };
 

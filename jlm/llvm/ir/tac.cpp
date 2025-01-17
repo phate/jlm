@@ -27,7 +27,7 @@ taclist::~taclist()
 
 static void
 check_operands(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
   if (operands.size() != operation.narguments())
@@ -36,13 +36,15 @@ check_operands(
   for (size_t n = 0; n < operands.size(); n++)
   {
     if (operands[n]->type() != *operation.argument(n))
-      throw util::error("invalid type.");
+      throw util::type_error(
+          operands[n]->type().debug_string(),
+          operation.argument(n)->debug_string());
   }
 }
 
 static void
 check_results(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<std::unique_ptr<tacvariable>> & results)
 {
   if (results.size() != operation.nresults())
@@ -55,7 +57,7 @@ check_results(
   }
 }
 
-tac::tac(const jlm::rvsdg::simple_op & operation, const std::vector<const variable *> & operands)
+tac::tac(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
     : operands_(operands),
       operation_(operation.copy())
 {
@@ -66,7 +68,7 @@ tac::tac(const jlm::rvsdg::simple_op & operation, const std::vector<const variab
 }
 
 tac::tac(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     const std::vector<std::string> & names)
     : operands_(operands),
@@ -81,7 +83,7 @@ tac::tac(
 }
 
 tac::tac(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     std::vector<std::unique_ptr<tacvariable>> results)
     : operands_(operands),
@@ -94,7 +96,7 @@ tac::tac(
 
 void
 tac::convert(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
   check_operands(operation, operands);
@@ -109,7 +111,7 @@ tac::convert(
 
 void
 tac::replace(
-    const jlm::rvsdg::simple_op & operation,
+    const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
   check_operands(operation, operands);

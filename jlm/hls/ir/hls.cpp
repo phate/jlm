@@ -38,20 +38,20 @@ bundletype::ComputeHash() const noexcept
 EntryArgument::~EntryArgument() noexcept = default;
 
 EntryArgument &
-EntryArgument::Copy(rvsdg::Region & region, rvsdg::structural_input * input)
+EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   return EntryArgument::Create(region, *input, Type());
 }
 
 backedge_argument &
-backedge_argument::Copy(rvsdg::Region & region, jlm::rvsdg::structural_input * input)
+backedge_argument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
   return *backedge_argument::create(&region, Type());
 }
 
 backedge_result &
-backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * output)
+backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *backedge_result::create(&origin);
@@ -60,16 +60,16 @@ backedge_result::Copy(rvsdg::output & origin, jlm::rvsdg::structural_output * ou
 ExitResult::~ExitResult() noexcept = default;
 
 ExitResult &
-ExitResult::Copy(rvsdg::output & origin, rvsdg::structural_output * output)
+ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
   return Create(origin, *output);
 }
 
-jlm::rvsdg::structural_output *
-loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
+rvsdg::StructuralOutput *
+loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
-  auto output = jlm::rvsdg::structural_output::create(this, origin->Type());
+  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
+  auto output = rvsdg::StructuralOutput::create(this, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
   auto argument_loop = add_backedge(origin->Type());
@@ -88,10 +88,17 @@ loop_node::add_loopvar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer
   return output;
 }
 
+[[nodiscard]] const rvsdg::Operation &
+loop_node::GetOperation() const noexcept
+{
+  static const loop_op singleton;
+  return singleton;
+}
+
 jlm::rvsdg::output *
 loop_node::add_loopconst(jlm::rvsdg::output * origin)
 {
-  auto input = jlm::rvsdg::structural_input::create(this, origin, origin->Type());
+  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
   auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), argument_in)[0];
@@ -101,15 +108,12 @@ loop_node::add_loopconst(jlm::rvsdg::output * origin)
 loop_node *
 loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
   auto loop = create(region, false);
 
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
-    auto inp = jlm::rvsdg::structural_input::create(loop, in_origin, in_origin->Type());
+    auto inp = rvsdg::StructuralInput::create(loop, in_origin, in_origin->Type());
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto & narg = EntryArgument::Create(*loop->subregion(), *inp, oarg->Type());
@@ -117,7 +121,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
-    auto out = jlm::rvsdg::structural_output::create(loop, output(i)->Type());
+    auto out = rvsdg::StructuralOutput::create(loop, output(i)->Type());
     smap.insert(output(i), out);
     smap.insert(output(i), out);
   }
@@ -150,7 +154,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
     auto origin = smap.lookup(res->origin());
     ExitResult::Create(*origin, *loop->output(i));
   }
-  nf->set_mutable(true);
+
   return loop;
 }
 

@@ -31,7 +31,7 @@ add_prints(rvsdg::Region * region)
     //			auto po = hls::print_op::create(*node->input(1)->origin())[0];
     //			node->input(1)->divert_to(po);
     //		}
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(node) && node->noutputs() == 1
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
         && jlm::rvsdg::is<jlm::rvsdg::bittype>(node->output(0)->type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
@@ -50,7 +50,7 @@ void
 add_prints(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_prints(root);
 }
 
@@ -58,12 +58,12 @@ void
 convert_prints(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   // TODO: make this less hacky by using the correct state types
   auto fct =
-      llvm::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
+      rvsdg::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
   auto & printf =
-      llvm::GraphImport::Create(graph, fct, "printnode", llvm::linkage::external_linkage);
+      llvm::GraphImport::Create(graph, fct, fct, "printnode", llvm::linkage::external_linkage);
   convert_prints(root, &printf, fct);
 }
 
@@ -79,16 +79,16 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 
   if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
-    gamma->add_entryvar(output);
+    gamma->AddEntryVar(output);
     output = region->argument(region->narguments() - 1);
   }
   else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
   {
-    output = theta->add_loopvar(output)->argument();
+    output = theta->AddLoopVar(output).pre;
   }
   else if (auto lambda = dynamic_cast<llvm::lambda::node *>(region->node()))
   {
-    output = lambda->add_ctxvar(output);
+    output = lambda->AddContextVar(*output).inner;
   }
   else
   {
@@ -102,7 +102,7 @@ void
 convert_prints(
     rvsdg::Region * region,
     jlm::rvsdg::output * printf,
-    const std::shared_ptr<const llvm::FunctionType> & functionType)
+    const std::shared_ptr<const rvsdg::FunctionType> & functionType)
 {
   for (auto & node : jlm::rvsdg::topdown_traverser(region))
   {
@@ -113,7 +113,7 @@ convert_prints(
         convert_prints(structnode->subregion(n), printf, functionType);
       }
     }
-    else if (auto po = dynamic_cast<const print_op *>(&(node->operation())))
+    else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
     {
       auto printf_local = route_to_region(printf, region); // TODO: prevent repetition?
       auto bc = jlm::rvsdg::create_bitconstant(region, 64, po->id());
@@ -123,7 +123,7 @@ convert_prints(
         auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
         JLM_ASSERT(bt);
         auto op = llvm::zext_op(bt->nbits(), 64);
-        val = jlm::rvsdg::simple_node::create_normalized(region, op, { val })[0];
+        val = jlm::rvsdg::SimpleNode::create_normalized(region, op, { val })[0];
       }
       llvm::CallNode::Create(printf_local, functionType, { bc, val });
       node->output(0)->divert_users(node->input(0)->origin());

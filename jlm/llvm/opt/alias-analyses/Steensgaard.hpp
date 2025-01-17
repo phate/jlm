@@ -7,17 +7,44 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/disjointset.hpp>
 
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Graph;
+class output;
+class Region;
+class SimpleNode;
+class StructuralNode;
 class ThetaNode;
 }
 
-namespace jlm::llvm::aa
+namespace jlm::llvm
 {
 
+namespace delta
+{
+class node;
+}
+
+namespace lambda
+{
+class node;
+}
+
+namespace phi
+{
+class node;
+}
+
+class CallNode;
+class LoadNode;
+class StoreNode;
+
+namespace aa
+{
 class Location;
 class RegisterLocation;
 
@@ -64,13 +91,13 @@ public:
 
 private:
   void
-  AnalyzeRvsdg(const rvsdg::graph & graph);
+  AnalyzeRvsdg(const rvsdg::Graph & graph);
 
   void
-  AnalyzeImports(const rvsdg::graph & graph);
+  AnalyzeImports(const rvsdg::Graph & graph);
 
   void
-  AnalyzeExports(const rvsdg::graph & graph);
+  AnalyzeExports(const rvsdg::Graph & graph);
 
   void
   AnalyzeRegion(rvsdg::Region & region);
@@ -91,16 +118,16 @@ private:
   AnalyzeTheta(const rvsdg::ThetaNode & node);
 
   void
-  AnalyzeSimpleNode(const rvsdg::simple_node & node);
+  AnalyzeSimpleNode(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
-  AnalyzeAlloca(const rvsdg::simple_node & node);
+  AnalyzeAlloca(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeMalloc(const rvsdg::simple_node & node);
+  AnalyzeMalloc(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeLoad(const LoadNode & loadNode);
@@ -121,40 +148,46 @@ private:
   AnalyzeIndirectCall(const CallNode & callNode);
 
   void
-  AnalyzeGep(const rvsdg::simple_node & node);
+  AnalyzeGep(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeBitcast(const rvsdg::simple_node & node);
+  AnalyzeBitcast(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeBits2ptr(const rvsdg::simple_node & node);
+  AnalyzeBits2ptr(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzePtr2Bits(const rvsdg::simple_node & node);
+  AnalyzePtr2Bits(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantPointerNull(const rvsdg::simple_node & node);
+  AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeUndef(const rvsdg::simple_node & node);
+  AnalyzeUndef(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeMemcpy(const rvsdg::simple_node & node);
+  AnalyzeMemcpy(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantArray(const rvsdg::simple_node & node);
+  AnalyzeConstantArray(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantStruct(const rvsdg::simple_node & node);
+  AnalyzeConstantStruct(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeConstantAggregateZero(const rvsdg::simple_node & node);
+  AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeExtractValue(const rvsdg::simple_node & node);
+  AnalyzeExtractValue(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeVaList(const rvsdg::simple_node & node);
+  AnalyzeVaList(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzePointerToFunction(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   /**
    * Marks register \p output as escaping the module. This indicates that the pointer in \p output
@@ -244,6 +277,7 @@ private:
   std::unique_ptr<Context> Context_;
 };
 
+}
 }
 
 #endif

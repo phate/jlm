@@ -16,8 +16,13 @@
 namespace jlm::llvm
 {
 
+// Converts a value into a variable either representing the llvm
+// value or representing a function object.
+// The distinction stems from the fact that llvm treats functions simply
+// as pointers to the function code while we distinguish between the two.
+// This function can return either and caller needs to check / adapt.
 const variable *
-ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
+ConvertValueOrFunction(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
   auto node = ctx.node();
   if (node && ctx.has_value(v))
@@ -36,6 +41,20 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
     return ConvertConstant(c, tacs, ctx);
 
   JLM_UNREACHABLE("This should not have happened!");
+}
+
+// Converts a value into a variable representing the llvm value.
+const variable *
+ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
+{
+  const variable * var = ConvertValueOrFunction(v, tacs, ctx);
+  if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(var->Type()))
+  {
+    std::unique_ptr<tac> ptr_cast = tac::create(FunctionToPointerOperation(fntype), { var });
+    var = ptr_cast->result(0);
+    tacs.push_back(std::move(ptr_cast));
+  }
+  return var;
 }
 
 /* constant */
@@ -66,7 +85,7 @@ static const variable *
 convert_int_constant(
     ::llvm::Constant * c,
     std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    context &)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantIntVal);
   const ::llvm::ConstantInt * constant = static_cast<const ::llvm::ConstantInt *>(c);
@@ -159,8 +178,8 @@ convert_constantPointerNull(
 static const variable *
 convert_blockAddress(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    std::vector<std::unique_ptr<llvm::tac>> &,
+    context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::BlockAddressVal);
 
@@ -278,8 +297,8 @@ convert_constantVector(
 static inline const variable *
 convert_globalAlias(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context & ctx)
+    std::vector<std::unique_ptr<llvm::tac>> &,
+    context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::GlobalAliasVal);
 
@@ -428,7 +447,7 @@ convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
 }
 
 static inline const variable *
-convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t &, context & ctx)
 {
   JLM_ASSERT(i->getOpcode() == ::llvm::Instruction::Unreachable);
   auto bb = ctx.get(i->getParent());
@@ -444,7 +463,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto t = i->getOperand(0)->getType();
 
   static std::
-      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::operation> (*)(size_t)>
+      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::Operation> (*)(size_t)>
           map({ { ::llvm::CmpInst::ICMP_SLT,
                   [](size_t nbits)
                   {
@@ -518,7 +537,7 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
 
-  std::unique_ptr<rvsdg::operation> binop;
+  std::unique_ptr<rvsdg::Operation> binop;
 
   if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy()))
   {
@@ -535,15 +554,18 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto type = ConvertType(i->getType(), ctx);
 
-  JLM_ASSERT(is<rvsdg::binary_op>(*binop));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
   if (t->isVectorTy())
   {
-    tacs.push_back(
-        vectorbinary_op::create(*static_cast<rvsdg::binary_op *>(binop.get()), op1, op2, type));
+    tacs.push_back(vectorbinary_op::create(
+        *static_cast<rvsdg::BinaryOperation *>(binop.get()),
+        op1,
+        op2,
+        type));
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(binop.get()), { op1, op2 }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(binop.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -883,6 +905,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     return convert_memcpy_call(i, tacs, ctx);
 
   auto ftype = i->getFunctionType();
+  auto convertedFType = ConvertFunctionType(ftype, ctx);
 
   auto arguments = create_arguments(i, tacs, ctx);
   if (ftype->isVarArg())
@@ -890,8 +913,42 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   arguments.push_back(ctx.iostate());
   arguments.push_back(ctx.memory_state());
 
-  auto fctvar = ConvertValue(i->getCalledOperand(), tacs, ctx);
-  auto call = CallOperation::create(fctvar, ConvertFunctionType(ftype, ctx), arguments);
+  const variable * callee = ConvertValueOrFunction(i->getCalledOperand(), tacs, ctx);
+  // Llvm does not distinguish between "function objects" and
+  // "pointers to functions" while we need to be precise in modelling.
+  // If the called object is a function object, then we can just
+  // feed it to the call operator directly, otherwise we have
+  // to cast it into a function object.
+  if (is<PointerType>(*callee->Type()))
+  {
+    std::unique_ptr<tac> callee_cast =
+        tac::create(PointerToFunctionOperation(convertedFType), { callee });
+    callee = callee_cast->result(0);
+    tacs.push_back(std::move(callee_cast));
+  }
+  else if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(callee->Type()))
+  {
+    // Llvm also allows argument type mismatches if the function
+    // features varargs. The code here could be made more precise by
+    // validating and accepting only vararg-related mismatches.
+    if (*convertedFType != *fntype)
+    {
+      // Since vararg passing is not modelled explicitly, simply hide the
+      // argument mismtach via pointer casts.
+      std::unique_ptr<tac> ptrCast = tac::create(FunctionToPointerOperation(fntype), { callee });
+      std::unique_ptr<tac> fnCast =
+          tac::create(PointerToFunctionOperation(convertedFType), { ptrCast->result(0) });
+      callee = fnCast->result(0);
+      tacs.push_back(std::move(ptrCast));
+      tacs.push_back(std::move(fnCast));
+    }
+  }
+  else
+  {
+    throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
+  }
+
+  auto call = CallOperation::create(callee, convertedFType, arguments);
 
   auto result = call->result(0);
   auto iostate = call->result(call->nresults() - 2);
@@ -930,7 +987,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
 
   static std::unordered_map<
       const ::llvm::Instruction::BinaryOps,
-      std::unique_ptr<rvsdg::operation> (*)(size_t)>
+      std::unique_ptr<rvsdg::Operation> (*)(size_t)>
       bitmap({ { ::llvm::Instruction::Add,
                  [](size_t nbits)
                  {
@@ -1024,7 +1081,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
         { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
         { ::llvm::Type::FP128TyID, fpsize::fp128 } });
 
-  std::unique_ptr<rvsdg::operation> operation;
+  std::unique_ptr<rvsdg::Operation> operation;
   auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
   if (t->isIntegerTy())
   {
@@ -1044,16 +1101,17 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
 
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
-  JLM_ASSERT(is<rvsdg::binary_op>(*operation));
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(*operation));
 
   if (i->getType()->isVectorTy())
   {
-    auto & binop = *static_cast<rvsdg::binary_op *>(operation.get());
+    auto & binop = *static_cast<rvsdg::BinaryOperation *>(operation.get());
     tacs.push_back(vectorbinary_op::create(binop, op1, op2, type));
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(operation.get()), { op1, op2 }));
+    tacs.push_back(
+        tac::create(*static_cast<rvsdg::SimpleOperation *>(operation.get()), { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -1158,10 +1216,10 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
 }
 
 template<class OP>
-static std::unique_ptr<rvsdg::operation>
+static std::unique_ptr<rvsdg::Operation>
 create_unop(std::shared_ptr<const rvsdg::Type> st, std::shared_ptr<const rvsdg::Type> dt)
 {
-  return std::unique_ptr<rvsdg::operation>(new OP(std::move(st), std::move(dt)));
+  return std::unique_ptr<rvsdg::Operation>(new OP(std::move(st), std::move(dt)));
 }
 
 static const variable *
@@ -1173,7 +1231,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   static std::unordered_map<
       unsigned,
-      std::unique_ptr<rvsdg::operation> (*)(
+      std::unique_ptr<rvsdg::Operation> (*)(
           std::shared_ptr<const rvsdg::Type>,
           std::shared_ptr<const rvsdg::Type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<trunc_op> },
@@ -1202,7 +1260,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   if (dt->isVectorTy())
     tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, type));
   else
-    tacs.push_back(tac::create(*static_cast<rvsdg::simple_op *>(unop.get()), { op }));
+    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 
   return tacs.back()->result(0);
 }

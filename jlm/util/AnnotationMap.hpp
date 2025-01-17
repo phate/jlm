@@ -13,6 +13,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace jlm::util
 {
@@ -167,7 +168,7 @@ class AnnotationMap final
     typename AnnotationMapType::const_iterator It_ = {};
   };
 
-  using AnnotationRange = iterator_range<AnnotationMap::ConstIterator>;
+  using AnnotationRange = IteratorRange<AnnotationMap::ConstIterator>;
 
 public:
   /**

@@ -16,17 +16,17 @@
 namespace jlm::rvsdg
 {
 
-class bitconcat_op final : public jlm::rvsdg::binary_op
+class bitconcat_op final : public BinaryOperation
 {
 public:
   virtual ~bitconcat_op() noexcept;
 
   explicit inline bitconcat_op(const std::vector<std::shared_ptr<const bittype>> types)
-      : binary_op({ types.begin(), types.end() }, aggregate_arguments(types))
+      : BinaryOperation({ types.begin(), types.end() }, aggregate_arguments(types))
   {}
 
   virtual bool
-  operator==(const jlm::rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual binop_reduction_path_t
   can_reduce_operand_pair(const jlm::rvsdg::output * arg1, const jlm::rvsdg::output * arg2)
@@ -38,13 +38,13 @@ public:
       jlm::rvsdg::output * arg1,
       jlm::rvsdg::output * arg2) const override;
 
-  virtual enum jlm::rvsdg::binary_op::flags
+  enum BinaryOperation::flags
   flags() const noexcept override;
 
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
 private:
@@ -54,6 +54,11 @@ private:
 
 jlm::rvsdg::output *
 bitconcat(const std::vector<jlm::rvsdg::output *> & operands);
+
+std::optional<std::vector<rvsdg::output *>>
+FlattenBitConcatOperation(
+    const bitconcat_op & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 

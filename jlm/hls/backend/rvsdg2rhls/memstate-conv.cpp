@@ -20,7 +20,7 @@ void
 memstate_conv(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   memstate_conv(root);
 }
 
@@ -34,10 +34,12 @@ memstate_conv(rvsdg::Region * region)
       for (size_t n = 0; n < structnode->nsubregions(); n++)
         memstate_conv(structnode->subregion(n));
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&simplenode->operation())
-          || dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(&simplenode->operation()))
+      if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
+              &simplenode->GetOperation())
+          || dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(
+              &simplenode->GetOperation()))
       {
         auto new_outs =
             hls::fork_op::create(simplenode->noutputs(), *simplenode->input(0)->origin());
@@ -47,7 +49,7 @@ memstate_conv(rvsdg::Region * region)
         }
         remove(simplenode);
       }
-      // exit is handled as normal simple_op
+      // exit is handled as normal SimpleOperation
     }
   }
 }

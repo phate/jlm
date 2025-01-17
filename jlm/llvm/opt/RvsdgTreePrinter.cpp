@@ -51,21 +51,19 @@ RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & sta
   statistics->Start();
 
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
-  auto tree = rvsdg::Region::ToTree(*rvsdgModule.Rvsdg().root(), annotationMap);
-  WriteTreeToFile(rvsdgModule, tree);
+  auto tree = rvsdg::Region::ToTree(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
+
+  auto file = statisticsCollector.CreateOutputFile("rvsdgTree.txt", true);
+  file.open("w");
+  fprintf(file.fd(), "%s\n", tree.c_str());
+  file.close();
 
   statistics->Stop();
-}
-
-void
-RvsdgTreePrinter::run(RvsdgModule & rvsdgModule)
-{
-  util::StatisticsCollector collector;
-  run(rvsdgModule, collector);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 util::AnnotationMap
-RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::graph & rvsdg) const
+RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
 {
   util::AnnotationMap annotationMap;
   for (auto annotation : Configuration_.RequiredAnnotations().Items())
@@ -88,14 +86,14 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::graph & rvsdg) const
 
 void
 RvsdgTreePrinter::AnnotateNumRvsdgNodes(
-    const rvsdg::graph & rvsdg,
+    const rvsdg::Graph & rvsdg,
     util::AnnotationMap & annotationMap)
 {
   static std::string_view label("NumRvsdgNodes");
 
   std::function<size_t(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
-    for (auto & node : region.nodes)
+    for (auto & node : region.Nodes())
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
@@ -116,12 +114,12 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
     return numNodes;
   };
 
-  annotateRegion(*rvsdg.root());
+  annotateRegion(rvsdg.GetRootRegion());
 }
 
 void
 RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
-    const rvsdg::graph & rvsdg,
+    const rvsdg::Graph & rvsdg,
     util::AnnotationMap & annotationMap)
 {
   std::string_view argumentLabel("NumMemoryStateTypeArguments");
@@ -141,7 +139,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
         std::count_if(resultRange.begin(), resultRange.end(), IsMemoryStateInput);
     annotationMap.AddAnnotation(&region, { resultLabel, numMemoryStateResults });
 
-    for (auto & node : region.nodes)
+    for (auto & node : region.Nodes())
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
@@ -176,37 +174,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
     }
   };
 
-  annotateRegion(*rvsdg.root());
-}
-
-void
-RvsdgTreePrinter::WriteTreeToFile(const RvsdgModule & rvsdgModule, const std::string & tree) const
-{
-  auto outputFile = CreateOutputFile(rvsdgModule);
-
-  outputFile.open("w");
-  fprintf(outputFile.fd(), "%s\n", tree.c_str());
-  outputFile.close();
-}
-
-util::file
-RvsdgTreePrinter::CreateOutputFile(const RvsdgModule & rvsdgModule) const
-{
-  auto fileName = util::strfmt(
-      Configuration_.OutputDirectory().to_str(),
-      "/",
-      rvsdgModule.SourceFileName().base().c_str(),
-      "-rvsdgTree-",
-      GetOutputFileNameCounter(rvsdgModule));
-  return util::filepath(fileName);
-}
-
-uint64_t
-RvsdgTreePrinter::GetOutputFileNameCounter(const RvsdgModule & rvsdgModule)
-{
-  static std::unordered_map<std::string_view, uint64_t> RvsdgModuleCounterMap_;
-
-  return RvsdgModuleCounterMap_[rvsdgModule.SourceFileName().to_str()]++;
+  annotateRegion(rvsdg.GetRootRegion());
 }
 
 bool

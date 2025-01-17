@@ -17,7 +17,7 @@ void
 merge_gamma(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   merge_gamma(root);
 }
 
@@ -37,7 +37,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
         auto r = gamma->subregion(j)->result(i);
         if (auto so = dynamic_cast<rvsdg::simple_output *>(r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->operation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->GetOperation()))
           {
             if (j == ctl->value().alternative())
             {
@@ -82,7 +82,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
         auto r = old_gamma->subregion(j)->result(i);
         if (auto so = dynamic_cast<rvsdg::simple_output *>(r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->operation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->GetOperation()))
           {
             if (j != ctl->value().alternative())
             {
@@ -104,7 +104,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
     {
       return false;
     }
-    if (auto match = dynamic_cast<const rvsdg::match_op *>(&no->node()->operation()))
+    if (auto match = dynamic_cast<const rvsdg::match_op *>(&no->node()->GetOperation()))
     {
       if (match->nalternatives() == 2)
       {
@@ -114,30 +114,30 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
             { { 0, match->alternative(1) }, { 1, match->alternative(0) } },
             default_alternative,
             match->nalternatives());
-        auto new_match = rvsdg::simple_node::create_normalized(
+        auto new_match = rvsdg::SimpleNode::create_normalized(
             no->region(),
             op,
             { no->node()->input(0)->origin() })[0];
         auto new_gamma = rvsdg::GammaNode::create(new_match, match->nalternatives());
         rvsdg::SubstitutionMap rmap0; // subregion 0 of the new gamma - 1 of the old
         rvsdg::SubstitutionMap rmap1;
-        for (auto oev = old_gamma->begin_entryvar(); oev != old_gamma->end_entryvar(); oev++)
+        for (const auto & oev : old_gamma->GetEntryVars())
         {
-          auto nev = new_gamma->add_entryvar(oev->origin());
-          rmap0.insert(oev->argument(1), nev->argument(0));
-          rmap1.insert(oev->argument(0), nev->argument(1));
+          auto nev = new_gamma->AddEntryVar(oev.input->origin());
+          rmap0.insert(oev.branchArgument[1], nev.branchArgument[0]);
+          rmap1.insert(oev.branchArgument[0], nev.branchArgument[1]);
         }
         /* copy subregions */
         old_gamma->subregion(0)->copy(new_gamma->subregion(1), rmap1, false, false);
         old_gamma->subregion(1)->copy(new_gamma->subregion(0), rmap0, false, false);
 
-        for (auto oex = old_gamma->begin_exitvar(); oex != old_gamma->end_exitvar(); oex++)
+        for (auto oex : old_gamma->GetExitVars())
         {
           std::vector<rvsdg::output *> operands;
-          operands.push_back(rmap0.lookup(oex->result(1)->origin()));
-          operands.push_back(rmap1.lookup(oex->result(0)->origin()));
-          auto nex = new_gamma->add_exitvar(operands);
-          oex.output()->divert_users(nex);
+          operands.push_back(rmap0.lookup(oex.branchResult[1]->origin()));
+          operands.push_back(rmap1.lookup(oex.branchResult[0]->origin()));
+          auto nex = new_gamma->AddExitVar(operands).output;
+          oex.output->divert_users(nex);
         }
         remove(old_gamma);
         remove(no->node());
@@ -220,14 +220,14 @@ merge_gamma(rvsdg::Region * region)
 }
 
 bool
-is_output_of(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
+is_output_of(jlm::rvsdg::output * output, rvsdg::Node * node)
 {
   auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
   return no && no->node() == node;
 }
 
 bool
-depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
+depends_on(jlm::rvsdg::output * output, rvsdg::Node * node)
 {
   auto arg = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (arg)
@@ -250,18 +250,17 @@ depends_on(jlm::rvsdg::output * output, jlm::rvsdg::node * node)
   return false;
 }
 
-rvsdg::GammaInput *
+rvsdg::GammaNode::EntryVar
 get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
 {
   for (auto user : *origin)
   {
-    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
-    if (gi && gi->node() == gamma)
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user) == gamma)
     {
-      return gi;
+      return gamma->MapInputEntryVar(*user);
     }
   }
-  return gamma->add_entryvar(origin);
+  return gamma->AddEntryVar(origin);
 }
 
 bool
@@ -269,48 +268,44 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto gi = dynamic_cast<rvsdg::GammaInput *>(user);
-    if (gi && gi != gamma->predicate())
+    auto other_gamma = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+    if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate
-      auto other_gamma = gi->node();
       JLM_ASSERT(other_gamma->nsubregions() == gamma->nsubregions());
       bool can_merge = true;
-      for (size_t i = 0; i < gamma->nentryvars(); ++i)
+      for (const auto & ev : gamma->GetEntryVars())
       {
-        auto ev = gamma->entryvar(i);
         // we only merge gammas whose inputs directly, or not at all, depend on the gamma being
         // merged into
-        can_merge &=
-            is_output_of(ev->origin(), other_gamma) || !depends_on(ev->origin(), other_gamma);
+        can_merge &= is_output_of(ev.input->origin(), other_gamma)
+                  || !depends_on(ev.input->origin(), other_gamma);
       }
-      for (size_t i = 0; i < other_gamma->nentryvars(); ++i)
+      for (const auto & oev : other_gamma->GetEntryVars())
       {
-        auto oev = other_gamma->entryvar(i);
         // prevent cycles
-        can_merge &= !depends_on(oev->origin(), gamma);
+        can_merge &= !depends_on(oev.input->origin(), gamma);
       }
       if (can_merge)
       {
         std::vector<rvsdg::SubstitutionMap> rmap(gamma->nsubregions());
         // populate argument mappings
-        for (size_t i = 0; i < gamma->nentryvars(); ++i)
+        for (const auto & ev : gamma->GetEntryVars())
         {
-          auto ev = gamma->entryvar(i);
-          if (is_output_of(ev->origin(), other_gamma))
+          if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*ev.input->origin()) == other_gamma)
           {
-            auto go = dynamic_cast<rvsdg::GammaOutput *>(ev->origin());
+            auto oex = other_gamma->MapOutputExitVar(*ev.input->origin());
             for (size_t j = 0; j < gamma->nsubregions(); ++j)
             {
-              rmap[j].insert(ev->argument(j), go->result(j)->origin());
+              rmap[j].insert(ev.branchArgument[j], oex.branchResult[j]->origin());
             }
           }
           else
           {
-            auto oev = get_entryvar(ev->origin(), other_gamma);
+            auto oev = get_entryvar(ev.input->origin(), other_gamma);
             for (size_t j = 0; j < gamma->nsubregions(); ++j)
             {
-              rmap[j].insert(ev->argument(j), oev->argument(j));
+              rmap[j].insert(ev.branchArgument[j], oev.branchArgument[j]);
             }
           }
         }
@@ -320,16 +315,15 @@ merge_gamma(rvsdg::GammaNode * gamma)
           gamma->subregion(j)->copy(other_gamma->subregion(j), rmap[j], false, false);
         }
         // handle exitvars
-        for (size_t i = 0; i < gamma->nexitvars(); ++i)
+        for (const auto & ex : gamma->GetExitVars())
         {
-          auto ex = gamma->exitvar(i);
           std::vector<jlm::rvsdg::output *> operands;
-          for (size_t j = 0; j < ex->nresults(); j++)
+          for (size_t j = 0; j < ex.branchResult.size(); j++)
           {
-            operands.push_back(rmap[j].lookup(ex->result(j)->origin()));
+            operands.push_back(rmap[j].lookup(ex.branchResult[j]->origin()));
           }
-          auto oex = other_gamma->add_exitvar(operands);
-          ex->divert_users(oex);
+          auto oex = other_gamma->AddExitVar(operands).output;
+          ex.output->divert_users(oex);
         }
         remove(gamma);
         return true;

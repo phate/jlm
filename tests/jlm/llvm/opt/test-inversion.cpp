@@ -29,35 +29,35 @@ test1()
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lvx = theta->add_loopvar(x);
-  auto lvy = theta->add_loopvar(y);
-  theta->add_loopvar(z);
+  auto lvx = theta->AddLoopVar(x);
+  auto lvy = theta->AddLoopVar(y);
+  theta->AddLoopVar(z);
 
   auto a = jlm::tests::create_testop(
       theta->subregion(),
-      { lvx->argument(), lvy->argument() },
+      { lvx.pre, lvy.pre },
       { jlm::rvsdg::bittype::Create(1) })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
-  auto evx = gamma->add_entryvar(lvx->argument());
-  auto evy = gamma->add_entryvar(lvy->argument());
+  auto evx = gamma->AddEntryVar(lvx.pre);
+  auto evy = gamma->AddEntryVar(lvy.pre);
 
   auto b = jlm::tests::create_testop(
       gamma->subregion(0),
-      { evx->argument(0), evy->argument(0) },
+      { evx.branchArgument[0], evy.branchArgument[0] },
       { vt })[0];
   auto c = jlm::tests::create_testop(
       gamma->subregion(1),
-      { evx->argument(1), evy->argument(1) },
+      { evx.branchArgument[1], evy.branchArgument[1] },
       { vt })[0];
 
-  auto xvy = gamma->add_exitvar({ b, c });
+  auto xvy = gamma->AddExitVar({ b, c });
 
-  lvy->result()->divert_to(xvy);
+  lvy.post->divert_to(xvy.output);
 
   theta->set_predicate(predicate);
 
@@ -65,10 +65,10 @@ test1()
   auto & ex2 = GraphExport::Create(*theta->output(1), "y");
   auto & ex3 = GraphExport::Create(*theta->output(2), "z");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex1.origin())));
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex2.origin())));
@@ -85,37 +85,37 @@ test2()
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto theta = jlm::rvsdg::ThetaNode::create(graph.root());
+  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lv1 = theta->add_loopvar(x);
+  auto lv1 = theta->AddLoopVar(x);
 
   auto n1 = jlm::tests::create_testop(
       theta->subregion(),
-      { lv1->argument() },
+      { lv1.pre },
       { jlm::rvsdg::bittype::Create(1) })[0];
-  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1->argument() }, { vt })[0];
+  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1.pre }, { vt })[0];
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
-  auto ev1 = gamma->add_entryvar(n1);
-  auto ev2 = gamma->add_entryvar(lv1->argument());
-  auto ev3 = gamma->add_entryvar(n2);
+  auto ev1 = gamma->AddEntryVar(n1);
+  auto ev2 = gamma->AddEntryVar(lv1.pre);
+  auto ev3 = gamma->AddEntryVar(n2);
 
-  gamma->add_exitvar({ ev1->argument(0), ev1->argument(1) });
-  gamma->add_exitvar({ ev2->argument(0), ev2->argument(1) });
-  gamma->add_exitvar({ ev3->argument(0), ev3->argument(1) });
+  gamma->AddExitVar(ev1.branchArgument);
+  gamma->AddExitVar(ev2.branchArgument);
+  gamma->AddExitVar(ev3.branchArgument);
 
-  lv1->result()->divert_to(gamma->output(1));
+  lv1.post->divert_to(gamma->output(1));
 
   theta->set_predicate(predicate);
 
   auto & ex = GraphExport::Create(*theta->output(0), "x");
 
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::tginversion tginversion;
   tginversion.run(rm, statisticsCollector);
-  //	jlm::rvsdg::view(graph.root(), stdout);
+  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex.origin())));
 }

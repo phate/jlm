@@ -108,18 +108,18 @@ TestLambda()
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
     {
       using namespace jlm::rvsdg;
       std::cout << "Checking the result" << std::endl;
 
       assert(region->nnodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::lambda::operation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<bitconstant_op>(convertedLambda->subregion()->nodes.first()));
+      assert(is<bitconstant_op>(convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
   return 0;
@@ -257,7 +257,7 @@ TestDivOperation()
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     jlm::rvsdg::view(region, stdout);
 
@@ -268,7 +268,7 @@ TestDivOperation()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::lambda::operation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
@@ -279,8 +279,8 @@ TestDivOperation()
       assert(
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
-      jlm::rvsdg::node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
-      assert(is<bitudiv_op>(lambdaResultOriginNode->operation()));
+      Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
+      assert(is<bitudiv_op>(lambdaResultOriginNode->GetOperation()));
       assert(lambdaResultOriginNode->ninputs() == 2);
 
       // Check first input
@@ -296,10 +296,10 @@ TestDivOperation()
       assert(
           DivInput1NodeOuput =
               dynamic_cast<jlm::rvsdg::node_output *>(lambdaResultOriginNode->input(1)->origin()));
-      jlm::rvsdg::node * DivInput1Node = DivInput1NodeOuput->node();
-      assert(is<bitconstant_op>(DivInput1Node->operation()));
+      Node * DivInput1Node = DivInput1NodeOuput->node();
+      assert(is<bitconstant_op>(DivInput1Node->GetOperation()));
       const jlm::rvsdg::bitconstant_op * DivInput1Constant =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&DivInput1Node->operation());
+          dynamic_cast<const bitconstant_op *>(&DivInput1Node->GetOperation());
       assert(DivInput1Constant->value() == 5);
       assert(is<const bittype>(DivInput1Constant->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(DivInput1Constant->result(0))->nbits() == 32);
@@ -435,7 +435,7 @@ TestCompZeroExt()
     // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
@@ -446,7 +446,7 @@ TestCompZeroExt()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::lambda::operation>(convertedLambda));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
@@ -458,13 +458,13 @@ TestCompZeroExt()
       assert(
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
-      jlm::rvsdg::node * ZExtNode = lambdaResultOriginNodeOuput->node();
-      assert(is<jlm::llvm::zext_op>(ZExtNode->operation()));
+      Node * ZExtNode = lambdaResultOriginNodeOuput->node();
+      assert(is<jlm::llvm::zext_op>(ZExtNode->GetOperation()));
       assert(ZExtNode->ninputs() == 1);
 
       // Check ZExt
       const jlm::llvm::zext_op * ZExtOp =
-          dynamic_cast<const jlm::llvm::zext_op *>(&ZExtNode->operation());
+          dynamic_cast<const jlm::llvm::zext_op *>(&ZExtNode->GetOperation());
       assert(ZExtOp->nsrcbits() == 1);
       assert(ZExtOp->ndstbits() == 32);
 
@@ -472,38 +472,38 @@ TestCompZeroExt()
       std::cout << "Testing input 0\n";
       jlm::rvsdg::node_output * ZExtInput0;
       assert(ZExtInput0 = dynamic_cast<jlm::rvsdg::node_output *>(ZExtNode->input(0)->origin()));
-      jlm::rvsdg::node * BitEqNode = ZExtInput0->node();
-      assert(is<jlm::rvsdg::biteq_op>(BitEqNode->operation()));
+      Node * BitEqNode = ZExtInput0->node();
+      assert(is<jlm::rvsdg::biteq_op>(BitEqNode->GetOperation()));
 
       // Check BitEq
       assert(
-          dynamic_cast<const jlm::rvsdg::biteq_op *>(&BitEqNode->operation())->type().nbits()
+          dynamic_cast<const jlm::rvsdg::biteq_op *>(&BitEqNode->GetOperation())->type().nbits()
           == 32);
       assert(BitEqNode->ninputs() == 2);
 
       // Check BitEq input 0
       jlm::rvsdg::node_output * AddOuput;
       assert(AddOuput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(0)->origin()));
-      jlm::rvsdg::node * AddNode = AddOuput->node();
-      assert(is<bitadd_op>(AddNode->operation()));
+      Node * AddNode = AddOuput->node();
+      assert(is<bitadd_op>(AddNode->GetOperation()));
       assert(AddNode->ninputs() == 2);
 
       // Check BitEq input 1
       jlm::rvsdg::node_output * Const2Ouput;
       assert(Const2Ouput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(1)->origin()));
-      jlm::rvsdg::node * Const2Node = Const2Ouput->node();
-      assert(is<bitconstant_op>(Const2Node->operation()));
+      Node * Const2Node = Const2Ouput->node();
+      assert(is<bitconstant_op>(Const2Node->GetOperation()));
 
       // Check Const2
       const jlm::rvsdg::bitconstant_op * Const2Op =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&Const2Node->operation());
+          dynamic_cast<const bitconstant_op *>(&Const2Node->GetOperation());
       assert(Const2Op->value() == 5);
       assert(is<const bittype>(Const2Op->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(Const2Op->result(0))->nbits() == 32);
 
       // Check add op
       const jlm::rvsdg::bitadd_op * AddOp =
-          dynamic_cast<const jlm::rvsdg::bitadd_op *>(&AddNode->operation());
+          dynamic_cast<const bitadd_op *>(&AddNode->GetOperation());
       assert(AddOp->type().nbits() == 32);
 
       // Check add input0
@@ -515,12 +515,12 @@ TestCompZeroExt()
       // Check add input1
       jlm::rvsdg::node_output * Const1Output;
       assert(Const1Output = dynamic_cast<jlm::rvsdg::node_output *>(AddNode->input(1)->origin()));
-      jlm::rvsdg::node * Const1Node = Const1Output->node();
-      assert(is<bitconstant_op>(Const1Node->operation()));
+      Node * Const1Node = Const1Output->node();
+      assert(is<bitconstant_op>(Const1Node->GetOperation()));
 
       // Check Const1
       const jlm::rvsdg::bitconstant_op * Const1Op =
-          dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&Const1Node->operation());
+          dynamic_cast<const bitconstant_op *>(&Const1Node->GetOperation());
       assert(Const1Op->value() == 20);
       assert(is<const bittype>(Const1Op->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(Const1Op->result(0))->nbits() == 32);
@@ -652,14 +652,14 @@ TestMatchOp()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::lambda::operation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
@@ -667,10 +667,10 @@ TestMatchOp()
       jlm::rvsdg::node_output * matchOutput;
       assert(
           matchOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      jlm::rvsdg::node * matchNode = matchOutput->node();
-      assert(is<match_op>(matchNode->operation()));
+      Node * matchNode = matchOutput->node();
+      assert(is<match_op>(matchNode->GetOperation()));
 
-      auto matchOp = dynamic_cast<const match_op *>(&matchNode->operation());
+      auto matchOp = dynamic_cast<const match_op *>(&matchNode->GetOperation());
       assert(matchOp->narguments() == 1);
       assert(is<const bittype>(matchOp->argument(0)));
       assert(std::dynamic_pointer_cast<const bittype>(matchOp->argument(0))->nbits() == 32);
@@ -823,7 +823,7 @@ TestGammaOp()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
@@ -832,7 +832,7 @@ TestGammaOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::lambda::operation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
@@ -843,11 +843,11 @@ TestGammaOp()
       jlm::rvsdg::node_output * gammaOutput;
       assert(
           gammaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      jlm::rvsdg::node * gammaNode = gammaOutput->node();
-      assert(is<GammaOperation>(gammaNode->operation()));
+      Node * gammaNode = gammaOutput->node();
+      assert(is<GammaOperation>(gammaNode->GetOperation()));
 
       std::cout << "Checking gamma operation" << std::endl;
-      auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->operation());
+      auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->GetOperation());
       assert(gammaNode->ninputs() == 3);
       assert(gammaOp->nalternatives() == 3);
       assert(gammaNode->noutputs() == 2);
@@ -972,7 +972,7 @@ TestThetaOp()
     std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
-    auto region = rvsdgModule->Rvsdg().root();
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
 
     {
       using namespace jlm::rvsdg;
@@ -981,7 +981,7 @@ TestThetaOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->nodes.first());
+          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::lambda::operation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
@@ -992,13 +992,13 @@ TestThetaOp()
       jlm::rvsdg::node_output * thetaOutput;
       assert(
           thetaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      jlm::rvsdg::node * node = thetaOutput->node();
-      assert(is<ThetaOperation>(node->operation()));
+      Node * node = thetaOutput->node();
+      assert(is<ThetaOperation>(node->GetOperation()));
       auto thetaNode = dynamic_cast<const jlm::rvsdg::ThetaNode *>(node);
 
       std::cout << "Checking theta node" << std::endl;
       assert(thetaNode->ninputs() == 2);
-      assert(thetaNode->nloopvars() == 2);
+      assert(thetaNode->GetLoopVars().size() == 2);
       assert(thetaNode->noutputs() == 2);
       assert(thetaNode->nsubregions() == 1);
       assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->type()));

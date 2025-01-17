@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/theta.hpp>
 
 #include <JLM/JLMDialect.h>
+#include <JLM/JLMOps.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
@@ -109,7 +110,7 @@ private:
   static ::llvm::SmallVector<jlm::rvsdg::output *>
   GetConvertedInputs(
       ::mlir::Operation & mlirOp,
-      const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
+      const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
       const rvsdg::Region & rvsdgRegion);
 
   /**
@@ -119,7 +120,7 @@ private:
    * \param nbits The number of bits in the comparison.
    * \result The converted RVSDG node.
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertCmpIOp(
       ::mlir::arith::CmpIOp & CompOp,
       const ::llvm::SmallVector<rvsdg::output *> & inputs,
@@ -131,7 +132,7 @@ private:
    * \param inputs The inputs for the RVSDG node.
    * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertBitBinaryNode(
       const ::mlir::Operation & mlirOperation,
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
@@ -143,7 +144,7 @@ private:
    * \param inputs The inputs for the RVSDG node.
    * \result The converted RVSDG node.
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
@@ -163,7 +164,7 @@ private:
    * \param rvsdgRegion The RVSDG region that the lambda node will reside in.
    * \result The converted Lambda node.
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion);
 
   /**

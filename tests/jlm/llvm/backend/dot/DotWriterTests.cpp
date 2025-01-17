@@ -23,19 +23,21 @@ TestWriteGraphs()
 
   // Act
   GraphWriter writer;
-  dot::WriteGraphs(writer, *gammaTest.graph().root(), false);
+  dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
   writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
-  assert(rootGraph.GetProgramObject() == reinterpret_cast<uintptr_t>(gammaTest.graph().root()));
+  assert(
+      rootGraph.GetProgramObject()
+      == reinterpret_cast<uintptr_t>(&gammaTest.graph().GetRootRegion()));
   assert(rootGraph.NumNodes() == 1);       // Only the lambda node for "f"
   assert(rootGraph.NumResultNodes() == 1); // Exporting the function "f"
   auto & lambdaNode = *AssertedCast<InOutNode>(&rootGraph.GetNode(0));
 
   // The lambda only has one output, and a single subgraph
-  assert(lambdaNode.GetLabel() == gammaTest.lambda->operation().debug_string());
+  assert(lambdaNode.GetLabel() == gammaTest.lambda->GetOperation().debug_string());
   assert(lambdaNode.NumInputPorts() == 0);
   assert(lambdaNode.NumOutputPorts() == 1);
   assert(lambdaNode.NumSubgraphs() == 1);
@@ -48,7 +50,7 @@ TestWriteGraphs()
   auto & connections = fctBody.GetArgumentNode(1).GetConnections();
   assert(connections.size() == 1);
   auto & gammaNode = *AssertedCast<InOutNode>(&connections[0]->GetTo().GetNode());
-  assert(gammaNode.GetLabel() == gammaTest.gamma->operation().debug_string());
+  assert(gammaNode.GetLabel() == gammaTest.gamma->GetOperation().debug_string());
   assert(gammaNode.NumInputPorts() == 5);
   assert(gammaNode.NumOutputPorts() == 2);
   assert(gammaNode.NumSubgraphs() == 2);
@@ -66,6 +68,12 @@ TestWriteGraphs()
   auto & stateConnections = fctBody.GetArgumentNode(5).GetConnections();
   assert(stateConnections.size() == 1);
   assert(stateConnections.front()->GetAttributeString("color") == "#FF0000");
+
+  // Check that the output of the lambda leads to a graph export
+  auto & lambdaConnections = lambdaNode.GetOutputPort(0).GetConnections();
+  assert(lambdaConnections.size() == 1);
+  auto & graphExport = lambdaConnections.front()->GetTo().GetNode();
+  assert(graphExport.GetLabel() == "export[f]");
 
   return 0;
 }
@@ -85,7 +93,7 @@ TestTypeGraph()
 
   // Act
   GraphWriter writer;
-  dot::WriteGraphs(writer, *gammaTest.graph().root(), true);
+  dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
   writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);

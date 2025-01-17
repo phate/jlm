@@ -18,16 +18,32 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   auto loop = hls::loop_node::create(theta.region());
   std::vector<jlm::rvsdg::input *> branches;
 
-  // add loopvars and populate the smap
+  // Add loop variables, insert loop constant buffers for invariant variables, and populate the
+  // smap.
   for (size_t i = 0; i < theta.ninputs(); i++)
   {
-    jlm::rvsdg::output * buffer;
-    loop->add_loopvar(theta.input(i)->origin(), &buffer);
-    smap.insert(theta.input(i)->argument(), buffer);
-    // buffer out is only used by branch
-    branches.push_back(*buffer->begin());
-    // divert theta outputs
-    theta.output(i)->divert_users(loop->output(i));
+    auto loopvar = theta.MapInputLoopVar(*theta.input(i));
+    // Check if the input is a loop invariant such that a loop constant buffer should be created.
+    // Memory state inputs are not loop variables containting a value, so we ignor these.
+    if (ThetaLoopVarIsInvariant(loopvar)
+        && !jlm::rvsdg::is<jlm::llvm::MemoryStateType>(loopvar.input->Type()))
+    {
+      smap.insert(loopvar.pre, loop->add_loopconst(loopvar.input->origin()));
+      branches.push_back(nullptr);
+      // The HLS loop has no output for this input. The users of the theta output is
+      // therefore redirected to the input origin, as the value is loop invariant.
+      loopvar.output->divert_users(loopvar.input->origin());
+    }
+    else
+    {
+      jlm::rvsdg::output * buffer;
+      loop->AddLoopVar(loopvar.input->origin(), &buffer);
+      smap.insert(loopvar.pre, buffer);
+      // buffer out is only used by branch
+      branches.push_back(*buffer->begin());
+      // divert theta outputs
+      loopvar.output->divert_users(loop->output(loop->noutputs() - 1));
+    }
   }
 
   // copy contents of theta
@@ -37,7 +53,10 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   loop->set_predicate(smap.lookup(theta.predicate()->origin()));
   for (size_t i = 0; i < theta.ninputs(); i++)
   {
-    branches[i]->divert_to(smap.lookup(theta.input(i)->result()->origin()));
+    if (branches[i])
+    {
+      branches[i]->divert_to(smap.lookup(theta.MapInputLoopVar(*theta.input(i)).post->origin()));
+    }
   }
 
   remove(&theta);
@@ -75,7 +94,7 @@ ConvertThetaNodesInRegion(rvsdg::Region & region)
 void
 ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule)
 {
-  ConvertThetaNodesInRegion(*rvsdgModule.Rvsdg().root());
+  ConvertThetaNodesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 }
