@@ -124,7 +124,7 @@ public:
 
   static rvsdg::Node *
   create(
-      rvsdg::Region * region,
+      rvsdg::Region *,
       std::shared_ptr<const rvsdg::Type> srctype,
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)

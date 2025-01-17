@@ -208,7 +208,7 @@ public:
   copy() const override;
 
   static rvsdg::output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
+  Create(rvsdg::Region &, const std::vector<rvsdg::output *> & operands)
   {
     return *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size())
                 .output(0);

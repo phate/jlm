@@ -1316,7 +1316,7 @@ public:
       const std::vector<jlm::rvsdg::output *> & load_operands,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & loadTypes,
       const std::vector<jlm::rvsdg::output *> & store_operands,
-      rvsdg::Region * region)
+      rvsdg::Region *)
   {
     // Stores have both addr and data operand
     // But we are only interested in the data operand type

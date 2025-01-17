@@ -1604,7 +1604,7 @@ public:
 
   static rvsdg::output &
   Create(
-      rvsdg::Region & region,
+      rvsdg::Region &,
       const std::vector<rvsdg::output *> & operands,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
