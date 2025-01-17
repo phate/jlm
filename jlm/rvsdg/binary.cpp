@@ -169,7 +169,7 @@ reduce_parallel(const BinaryOperation & op, const std::vector<jlm::rvsdg::output
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::Create(region, op, { op1, op2 })->output(0);
     worklist.push_back(output);
   }
 
@@ -191,7 +191,7 @@ reduce_linear(const BinaryOperation & op, const std::vector<jlm::rvsdg::output *
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::Create(region, op, { op1, op2 })->output(0);
     worklist.push_front(output);
   }
 
