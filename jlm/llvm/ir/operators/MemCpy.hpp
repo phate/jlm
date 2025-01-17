@@ -111,11 +111,13 @@ public:
       rvsdg::output * length,
       const std::vector<rvsdg::output *> & memoryStates)
   {
-    std::vector<rvsdg::output *> operands = { destination, source, length };
+    std::vector operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
-    return rvsdg::SimpleNode::create_normalized(destination->region(), operation, operands);
+    return outputs(&rvsdg::CreateOpNode<MemCpyNonVolatileOperation>(
+        operands,
+        length->Type(),
+        memoryStates.size()));
   }
 
 private:

@@ -1593,14 +1593,14 @@ public:
       const std::vector<jlm::rvsdg::output *> & states,
       jlm::rvsdg::output & load_result)
   {
-    auto region = index.region();
-    auto valuetype = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(load_result.Type());
-    local_load_op op(valuetype, states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&index);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
-    return jlm::rvsdg::SimpleNode::create_normalized(region, op, inputs);
+    return outputs(&rvsdg::CreateOpNode<local_load_op>(
+        inputs,
+        std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(load_result.Type()),
+        states.size()));
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::ValueType>
@@ -1670,14 +1670,14 @@ public:
       jlm::rvsdg::output & value,
       const std::vector<jlm::rvsdg::output *> & states)
   {
-    auto region = index.region();
-    auto valuetype = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value.Type());
-    local_store_op op(valuetype, states.size());
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&index);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return jlm::rvsdg::SimpleNode::create_normalized(region, op, inputs);
+    return outputs(&rvsdg::CreateOpNode<local_store_op>(
+        inputs,
+        std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value.Type()),
+        states.size()));
   }
 
   [[nodiscard]] const jlm::rvsdg::ValueType &
@@ -1748,14 +1748,15 @@ public:
       const std::vector<jlm::rvsdg::output *> & load_operands,
       const std::vector<jlm::rvsdg::output *> & store_operands)
   {
-    auto region = mem.region();
-    auto at = std::dynamic_pointer_cast<const jlm::llvm::arraytype>(mem.Type());
     JLM_ASSERT(store_operands.size() % 2 == 0);
-    local_mem_req_op op(at, load_operands.size(), store_operands.size() / 2);
-    std::vector<jlm::rvsdg::output *> operands(1, &mem);
+    std::vector operands(1, &mem);
     operands.insert(operands.end(), load_operands.begin(), load_operands.end());
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return jlm::rvsdg::SimpleNode::create_normalized(region, op, operands);
+    return outputs(&rvsdg::CreateOpNode<local_mem_req_op>(
+        operands,
+        std::dynamic_pointer_cast<const jlm::llvm::arraytype>(mem.Type()),
+        load_operands.size(),
+        store_operands.size() / 2));
   }
 };
 
