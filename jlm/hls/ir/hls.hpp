@@ -61,10 +61,11 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
-    return outputs(&rvsdg::SimpleNode::Create(
-        *predicate.region(),
-        std::make_unique<branch_op>(ctl->nalternatives(), value.Type(), loop),
-        { &predicate, &value }));
+    return outputs(&rvsdg::CreateOpNode<branch_op>(
+        { &predicate, &value },
+        ctl->nalternatives(),
+        value.Type(),
+        loop));
   }
 
   bool loop; // only used for dot output
