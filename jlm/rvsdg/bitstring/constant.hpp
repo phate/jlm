@@ -59,7 +59,7 @@ extern template class domain_const_op<bittype, bitvalue_repr, format_value, type
 static inline jlm::rvsdg::output *
 create_bitconstant(rvsdg::Region * region, const bitvalue_repr & vr)
 {
-  return SimpleNode::create_normalized(region, bitconstant_op(vr), {})[0];
+  return CreateOpNode<bitconstant_op>(*region, vr).output(0);
 }
 
 static inline jlm::rvsdg::output *
