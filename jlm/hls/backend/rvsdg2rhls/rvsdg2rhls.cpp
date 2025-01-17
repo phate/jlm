@@ -209,8 +209,7 @@ convert_alloca(rvsdg::Region * region)
       }
       else
       {
-        llvm::ConstantAggregateZero cop(po->ValueType());
-        cout = jlm::rvsdg::SimpleNode::create_normalized(db->subregion(), cop, {})[0];
+        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);

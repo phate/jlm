@@ -75,11 +75,11 @@ NormalizeUnaryOperation_Success()
   const auto valueType = jlm::tests::valuetype::Create();
 
   const jlm::tests::NullaryOperation nullaryOperation(valueType);
-  const auto nullaryNode = SimpleNode::create(&graph.GetRootRegion(), nullaryOperation, {});
+  const auto nullaryNode = SimpleNode::Create(&graph.GetRootRegion(), nullaryOperation, {});
 
   const UnaryOperation unaryOperation(valueType, valueType);
   const auto unaryNode =
-      SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { nullaryNode->output(0) });
+      SimpleNode::Create(&graph.GetRootRegion(), unaryOperation, { nullaryNode->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*unaryNode->output(0), "o2");
 
@@ -117,7 +117,7 @@ NormalizeUnaryOperation_Failure()
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
 
   const UnaryOperation unaryOperation(valueType, valueType);
-  const auto unaryNode = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { i0 });
+  const auto unaryNode = SimpleNode::Create(&graph.GetRootRegion(), unaryOperation, { i0 });
 
   auto & ex = jlm::tests::GraphExport::Create(*unaryNode->output(0), "o2");
 

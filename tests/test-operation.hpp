@@ -129,7 +129,7 @@ public:
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return rvsdg::SimpleNode::create(
+    return rvsdg::SimpleNode::Create(
         region,
         unary_op(std::move(srctype), std::move(dsttype)),
         { operand });
@@ -201,7 +201,7 @@ public:
       rvsdg::output * op2)
   {
     binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
-    return rvsdg::SimpleNode::create(op1->region(), op, { op1, op2 });
+    return rvsdg::SimpleNode::Create(op1->region(), op, { op1, op2 });
   }
 
   static inline rvsdg::output *
@@ -424,7 +424,7 @@ public:
       operand_types.push_back(operand->Type());
 
     test_op op(std::move(operand_types), std::move(result_types));
-    return rvsdg::SimpleNode::create(region, op, { operands });
+    return rvsdg::SimpleNode::Create(region, op, { operands });
   }
 
   static rvsdg::SimpleNode *
@@ -435,7 +435,7 @@ public:
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     test_op op(std::move(operandTypes), std::move(resultTypes));
-    return rvsdg::SimpleNode::create(region, op, { operands });
+    return rvsdg::SimpleNode::Create(region, op, { operands });
   }
 };
 

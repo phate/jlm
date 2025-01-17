@@ -122,8 +122,11 @@ convert_prints(
       {
         auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
         JLM_ASSERT(bt);
-        auto op = llvm::zext_op(bt->nbits(), 64);
-        val = jlm::rvsdg::SimpleNode::create_normalized(region, op, { val })[0];
+        val = rvsdg::SimpleNode::Create(
+                  *region,
+                  std::make_unique<llvm::zext_op>(bt->nbits(), 64),
+                  { val })
+                  .output(0);
       }
       llvm::CallNode::Create(printf_local, functionType, { bc, val });
       node->output(0)->divert_users(node->input(0)->origin());

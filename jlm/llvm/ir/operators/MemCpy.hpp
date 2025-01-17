@@ -196,7 +196,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
-    return *rvsdg::SimpleNode::create(destination.region(), operation, operands);
+    return *rvsdg::SimpleNode::Create(destination.region(), operation, operands);
   }
 
 private:

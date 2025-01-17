@@ -22,16 +22,15 @@ namespace jlm::hls
 
 class branch_op final : public rvsdg::SimpleOperation
 {
-private:
+public:
+  virtual ~branch_op()
+  {}
+
   branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
       : SimpleOperation(
             { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
         loop(loop)
-  {}
-
-public:
-  virtual ~branch_op()
   {}
 
   bool
@@ -62,9 +61,10 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
-    auto region = predicate.region();
-    branch_op op(ctl->nalternatives(), value.Type(), loop);
-    return jlm::rvsdg::SimpleNode::create_normalized(region, op, { &predicate, &value });
+    return outputs(&rvsdg::SimpleNode::Create(
+        *predicate.region(),
+        std::make_unique<branch_op>(ctl->nalternatives(), value.Type(), loop),
+        { &predicate, &value }));
   }
 
   bool loop; // only used for dot output

@@ -193,8 +193,8 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
-  auto o1 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
-  auto o2 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
+  auto o1 = SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
+  auto o2 = SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
 
@@ -234,10 +234,10 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto u1 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { i0 });
-  auto u2 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { i1 });
+  auto u1 = SimpleNode::Create(&graph.GetRootRegion(), unaryOperation, { i0 });
+  auto u2 = SimpleNode::Create(&graph.GetRootRegion(), unaryOperation, { i1 });
   auto b2 =
-      SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
+      SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*b2->output(0), "o2");
 
@@ -277,8 +277,8 @@ FlattenAssociativeBinaryOperation_Success()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o1 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
-  auto o2 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
+  auto o1 = SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
+  auto o2 = SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
 
@@ -319,7 +319,7 @@ NormalizeBinaryOperation_NoNewOperands()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o1 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
+  auto o1 = SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "o2");
 
@@ -356,11 +356,11 @@ NormalizeBinaryOperation_SingleOperand()
   auto s0 = &jlm::tests::GraphImport::Create(graph, valueType, "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, valueType, "s1");
 
-  auto u1 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { s0 });
-  auto u2 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { s1 });
+  auto u1 = SimpleNode::Create(&graph.GetRootRegion(), unaryOperation, { s0 });
+  auto u2 = SimpleNode::Create(&graph.GetRootRegion(), unaryOperation, { s1 });
 
   auto o1 =
-      SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
+      SimpleNode::Create(&graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "ex");
 
