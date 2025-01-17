@@ -201,7 +201,7 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
   const auto fileName =
       strfmt(Settings_.GetModuleName(), '-', Settings_.GetUniqueString(), '-', fileNameSuffix);
 
-  auto fullPath = directory.join(fileName);
+  auto fullPath = directory.Join(fileName);
   if (fullPath.Exists())
     throw error("The generated output file name already exists: " + fullPath.to_str());
 

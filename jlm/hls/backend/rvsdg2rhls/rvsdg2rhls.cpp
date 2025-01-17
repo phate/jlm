@@ -410,7 +410,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2ref(llvm::RvsdgModule & rhls, std::string path)
+rvsdg2ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 {
   dump_ref(rhls, path);
 }
@@ -448,7 +448,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls, std::string & path)
+dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 {
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
@@ -468,7 +468,7 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
   auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
   std::error_code EC;
-  ::llvm::raw_fd_ostream os(path, EC);
+  ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);
 }
 

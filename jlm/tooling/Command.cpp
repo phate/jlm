@@ -684,7 +684,8 @@ LlvmOptCommand::ToString() const
   }
 
   return util::strfmt(
-      clangpath.path() + "opt ",
+      clangpath.Dirname().Join("opt").to_str(),
+      " ",
       optimizationArguments,
       WriteLlvmAssembly_ ? "-S " : "",
       "-o ",
@@ -721,8 +722,8 @@ LlvmLinkCommand::ToString() const
     inputFilesArgument += inputFile.to_str() + " ";
 
   return util::strfmt(
-      clangpath.path(),
-      "llvm-link ",
+      clangpath.Dirname().Join("llvm-link").to_str(),
+      " ",
       WriteLlvmAssembly_ ? "-S " : "",
       Verbose_ ? "-v " : "",
       "-o ",
