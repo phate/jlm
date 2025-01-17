@@ -12,7 +12,7 @@
 
 #include <fstream>
 
-static void
+static int
 TestStatistics()
 {
   using namespace jlm::llvm;
@@ -20,7 +20,7 @@ TestStatistics()
   using namespace jlm::util;
 
   // Arrange
-  std::string expectedStatisticsDir = "/myStatisticsDir/";
+  filepath expectedStatisticsDir("/myStatisticsDir/");
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::SteensgaardAnalysis },
@@ -47,23 +47,17 @@ TestStatistics()
       "jlm-opt ",
       "--llvm ",
       "--DeadNodeElimination --LoopUnrolling ",
-      "-s " + expectedStatisticsDir + " ",
+      "-s " + expectedStatisticsDir.to_str() + " ",
       "--print-steensgaard-analysis ",
       "-o outputFile.ll ",
       "inputFile.ll");
 
   assert(receivedCommandLine == expectedCommandLine);
-}
-
-static int
-TestJlmOptCommand()
-{
-  TestStatistics();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand", TestJlmOptCommand)
+JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand-TestStatistics", TestStatistics)
 
 static int
 OptimizationIdToOptimizationTranslation()

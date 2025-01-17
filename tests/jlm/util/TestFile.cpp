@@ -21,7 +21,7 @@ TestFilePathMethods()
   assert(f.base() == "archive");
   assert(f.suffix() == "gz");
   assert(f.complete_suffix() == "tar.gz");
-  assert(f.path() == "/tmp/");
+  assert(f.Dirname() == "/tmp/");
 
   std::vector<std::pair<std::string, std::string>> pathPairs = { { "/tmp/jlm/", "/tmp/" },
                                                                  { "/tmp/", "/" },
@@ -33,7 +33,7 @@ TestFilePathMethods()
                                                                  { "", "" } };
   for (const auto & [fullPath, path] : pathPairs)
   {
-    assert(jlm::util::filepath(fullPath).path() == path);
+    assert(jlm::util::filepath(fullPath).Dirname() == path);
   }
 
   return 0;
@@ -44,22 +44,21 @@ JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilePathMethods", TestFilePathMeth
 static int
 TestCreateDirectory()
 {
-  const auto path = std::filesystem::temp_directory_path() / "jlm-test-create-dir";
-  const jlm::util::filepath filepath(path);
+  const auto filePath = jlm::util::filepath::TempDirectoryPath().Join("jlm-test-create-dir");
 
   // Remove the directory if it survived from a previous test
-  if (filepath.Exists())
-    std::filesystem::remove(path);
-  assert(!filepath.Exists());
+  if (filePath.Exists())
+    std::filesystem::remove(filePath.to_str());
+  assert(!filePath.Exists());
 
   // Act
-  filepath.CreateDirectory();
+  filePath.CreateDirectory();
 
   // Assert that the directory now exists
-  assert(filepath.Exists() && filepath.IsDirectory());
+  assert(filePath.Exists() && filePath.IsDirectory());
 
   // Try creating a directory that already exists, should be no issue
-  filepath.CreateDirectory();
+  filePath.CreateDirectory();
 
   // Try creating a directory in a location that does not exist
   try
@@ -72,7 +71,7 @@ TestCreateDirectory()
   {}
 
   // Cleanup
-  std::filesystem::remove(path);
+  std::filesystem::remove(filePath.to_str());
 
   return 0;
 }
@@ -86,11 +85,11 @@ TestFilepathJoin()
   const jlm::util::filepath path2("a/b/");
   const jlm::util::filepath path3("/c/d");
 
-  assert(path1.join(path2).to_str() == "tmp/a/b/");
-  assert(path2.join(path1).to_str() == "a/b/tmp");
+  assert(path1.Join(path2).to_str() == "tmp/a/b/");
+  assert(path2.Join(path1).to_str() == "a/b/tmp");
 
-  assert(path1.join(path3).to_str() == "/c/d");
-  assert(path3.join(path1).to_str() == "/c/d/tmp");
+  assert(path1.Join(path3).to_str() == "/c/d");
+  assert(path3.Join(path1).to_str() == "/c/d/tmp");
 
   return 0;
 }
@@ -102,13 +101,13 @@ TestCreateUniqueFileName()
 {
   // Arrange
   auto randomString = jlm::util::CreateRandomAlphanumericString(6);
-  auto tmpDirectory = std::filesystem::temp_directory_path().string() + "/" + randomString;
+  auto tmpDirectory = jlm::util::filepath::TempDirectoryPath().Join(randomString);
 
   // Act
   auto filePath = jlm::util::filepath::CreateUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
 
   // Assert
-  assert(filePath.path() == (tmpDirectory + "/"));
+  assert(filePath.Dirname() == (tmpDirectory.to_str() + "/"));
 
   return 0;
 }
