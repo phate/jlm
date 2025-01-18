@@ -11,6 +11,7 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Region;
 }
 
 namespace jlm::llvm

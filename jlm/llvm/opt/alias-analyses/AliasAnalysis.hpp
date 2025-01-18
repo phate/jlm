@@ -8,6 +8,11 @@
 
 #include <memory>
 
+namespace jlm::rvsdg
+{
+class RvsdgModule;
+}
+
 namespace jlm::util
 {
 class StatisticsCollector;
@@ -15,8 +20,6 @@ class StatisticsCollector;
 
 namespace jlm::llvm
 {
-
-class RvsdgModule;
 
 namespace aa
 {

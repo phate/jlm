@@ -14,6 +14,7 @@ namespace rvsdg
 class GammaNode;
 class output;
 class Region;
+class RvsdgModule;
 class SimpleNode;
 class StructuralNode;
 class ThetaNode;

@@ -11,7 +11,11 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Graph;
+class output;
+class StructuralNode;
 class ThetaNode;
+class Region;
 }
 
 namespace jlm::llvm
