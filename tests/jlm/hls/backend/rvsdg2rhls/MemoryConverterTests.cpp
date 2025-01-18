@@ -22,12 +22,10 @@ TestTraceArgument()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(32),
@@ -82,12 +80,10 @@ TestLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
@@ -164,12 +160,10 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(32),
         MemoryStateType::Create() },
@@ -251,12 +245,10 @@ TestThetaLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32),
         jlm::rvsdg::bittype::Create(32),
         jlm::rvsdg::bittype::Create(32),

@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
@@ -24,7 +25,7 @@ namespace jlm::llvm::aa
 static bool
 HasOrContainsPointerType(const rvsdg::output & output)
 {
-  return IsOrContains<PointerType>(output.type());
+  return IsOrContains<PointerType>(output.type()) || is<rvsdg::FunctionType>(output.type());
 }
 
 /**
@@ -492,7 +493,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<rvsdg::FunctionType>(graphImport.type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
@@ -543,7 +544,7 @@ class Steensgaard::Context final
 {
 public:
   using DisjointLocationSetConstRange =
-      util::iterator_range<const DisjointLocationSet::set_iterator>;
+      util::IteratorRange<const DisjointLocationSet::set_iterator>;
 
   ~Context() = default;
 
@@ -1060,6 +1061,14 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeVaList(node);
   }
+  else if (is<PointerToFunctionOperation>(&node))
+  {
+    AnalyzePointerToFunction(node);
+  }
+  else if (is<FunctionToPointerOperation>(&node))
+  {
+    AnalyzeFunctionToPointer(node);
+  }
   else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
   {
     // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
@@ -1475,6 +1484,22 @@ Steensgaard::AnalyzeVaList(const rvsdg::SimpleNode & node)
 }
 
 void
+Steensgaard::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
+{
+  auto & outputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
+  auto & originLocation = Context_->GetOrInsertRegisterLocation(*node.input(0)->origin());
+  Context_->Join(outputLocation, originLocation);
+}
+
+void
+Steensgaard::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
+{
+  auto & outputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
+  auto & originLocation = Context_->GetOrInsertRegisterLocation(*node.input(0)->origin());
+  Context_->Join(outputLocation, originLocation);
+}
+
+void
 Steensgaard::AnalyzeLambda(const lambda::node & lambda)
 {
   // Handle context variables
@@ -1491,8 +1516,8 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   }
 
   // Handle function arguments
-  auto callSummary = lambda.ComputeCallSummary();
-  if (callSummary->HasOnlyDirectCalls())
+  auto callSummary = ComputeCallSummary(lambda);
+  if (callSummary.HasOnlyDirectCalls())
   {
     for (auto & argument : lambda.GetFunctionArguments())
     {
@@ -1520,7 +1545,7 @@ Steensgaard::AnalyzeLambda(const lambda::node & lambda)
   AnalyzeRegion(*lambda.subregion());
 
   // Handle function results
-  if (lambda::node::IsExported(lambda))
+  if (callSummary.IsExported())
   {
     for (auto result : lambda.GetFunctionResults())
     {

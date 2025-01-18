@@ -11,6 +11,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <typeindex>
+
 namespace jlm::llvm
 {
 

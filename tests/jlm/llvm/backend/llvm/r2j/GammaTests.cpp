@@ -25,12 +25,11 @@ GammaWithMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType, valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(1), valueType, valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -79,13 +78,11 @@ GammaWithoutMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -134,13 +131,11 @@ EmptyGammaWithThreeSubregions()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto lambdaNode = lambda::node::create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -191,8 +186,9 @@ PartialEmptyGamma()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(1), valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
 

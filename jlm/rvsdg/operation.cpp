@@ -5,18 +5,11 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 namespace jlm::rvsdg
 {
 
 Operation::~Operation() noexcept = default;
-
-jlm::rvsdg::node_normal_form *
-Operation::normal_form(Graph * graph) noexcept
-{
-  return graph->GetNodeNormalForm(typeid(Operation));
-}
 
 SimpleOperation::~SimpleOperation() noexcept = default;
 
@@ -44,12 +37,6 @@ SimpleOperation::result(size_t index) const noexcept
 {
   JLM_ASSERT(index < nresults());
   return results_[index];
-}
-
-jlm::rvsdg::simple_normal_form *
-SimpleOperation::normal_form(Graph * graph) noexcept
-{
-  return static_cast<simple_normal_form *>(graph->GetNodeNormalForm(typeid(SimpleOperation)));
 }
 
 bool

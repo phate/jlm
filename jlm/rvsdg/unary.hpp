@@ -9,7 +9,6 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 
@@ -17,38 +16,6 @@ namespace jlm::rvsdg
 {
 
 typedef size_t unop_reduction_path_t;
-
-class unary_normal_form final : public simple_normal_form
-{
-public:
-  virtual ~unary_normal_form() noexcept;
-
-  unary_normal_form(
-      const std::type_info & operator_class,
-      jlm::rvsdg::node_normal_form * parent,
-      Graph * graph);
-
-  virtual bool
-  normalize_node(Node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & arguments) const override;
-
-  virtual void
-  set_reducible(bool enable);
-
-  inline bool
-  get_reducible() const noexcept
-  {
-    return enable_reducible_;
-  }
-
-private:
-  bool enable_reducible_;
-};
 
 /**
   \brief Unary operator
@@ -71,12 +38,6 @@ public:
 
   virtual jlm::rvsdg::output *
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const = 0;
-
-  static jlm::rvsdg::unary_normal_form *
-  normal_form(Graph * graph) noexcept
-  {
-    return static_cast<jlm::rvsdg::unary_normal_form *>(graph->GetNodeNormalForm(typeid(unary_op)));
-  }
 };
 
 static const unop_reduction_path_t unop_reduction_none = 0;

@@ -254,7 +254,7 @@ TestLambda()
 
   auto lambda = lambda::node::create(
       &graph.GetRootRegion(),
-      FunctionType::Create({ vt }, { vt, vt }),
+      jlm::rvsdg::FunctionType::Create({ vt }, { vt, vt }),
       "f",
       linkage::external_linkage);
 
@@ -284,7 +284,7 @@ TestPhi()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create({ valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
 
   RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -348,10 +348,10 @@ TestPhi()
   phiBuilder.begin(&rvsdg.GetRootRegion());
   auto & phiSubregion = *phiBuilder.subregion();
 
-  auto rv1 = phiBuilder.add_recvar(PointerType::Create());
-  auto rv2 = phiBuilder.add_recvar(PointerType::Create());
-  auto rv3 = phiBuilder.add_recvar(PointerType::Create());
-  auto rv4 = phiBuilder.add_recvar(PointerType::Create());
+  auto rv1 = phiBuilder.add_recvar(functionType);
+  auto rv2 = phiBuilder.add_recvar(functionType);
+  auto rv3 = phiBuilder.add_recvar(functionType);
+  auto rv4 = phiBuilder.add_recvar(functionType);
   auto dx = phiBuilder.add_ctxvar(x);
   auto dy = phiBuilder.add_ctxvar(y);
   auto dz = phiBuilder.add_ctxvar(z);

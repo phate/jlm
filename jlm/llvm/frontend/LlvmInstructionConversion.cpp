@@ -16,8 +16,13 @@
 namespace jlm::llvm
 {
 
+// Converts a value into a variable either representing the llvm
+// value or representing a function object.
+// The distinction stems from the fact that llvm treats functions simply
+// as pointers to the function code while we distinguish between the two.
+// This function can return either and caller needs to check / adapt.
 const variable *
-ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
+ConvertValueOrFunction(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
   auto node = ctx.node();
   if (node && ctx.has_value(v))
@@ -36,6 +41,20 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
     return ConvertConstant(c, tacs, ctx);
 
   JLM_UNREACHABLE("This should not have happened!");
+}
+
+// Converts a value into a variable representing the llvm value.
+const variable *
+ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
+{
+  const variable * var = ConvertValueOrFunction(v, tacs, ctx);
+  if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(var->Type()))
+  {
+    std::unique_ptr<tac> ptr_cast = tac::create(FunctionToPointerOperation(fntype), { var });
+    var = ptr_cast->result(0);
+    tacs.push_back(std::move(ptr_cast));
+  }
+  return var;
 }
 
 /* constant */
@@ -886,6 +905,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     return convert_memcpy_call(i, tacs, ctx);
 
   auto ftype = i->getFunctionType();
+  auto convertedFType = ConvertFunctionType(ftype, ctx);
 
   auto arguments = create_arguments(i, tacs, ctx);
   if (ftype->isVarArg())
@@ -893,8 +913,42 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   arguments.push_back(ctx.iostate());
   arguments.push_back(ctx.memory_state());
 
-  auto fctvar = ConvertValue(i->getCalledOperand(), tacs, ctx);
-  auto call = CallOperation::create(fctvar, ConvertFunctionType(ftype, ctx), arguments);
+  const variable * callee = ConvertValueOrFunction(i->getCalledOperand(), tacs, ctx);
+  // Llvm does not distinguish between "function objects" and
+  // "pointers to functions" while we need to be precise in modelling.
+  // If the called object is a function object, then we can just
+  // feed it to the call operator directly, otherwise we have
+  // to cast it into a function object.
+  if (is<PointerType>(*callee->Type()))
+  {
+    std::unique_ptr<tac> callee_cast =
+        tac::create(PointerToFunctionOperation(convertedFType), { callee });
+    callee = callee_cast->result(0);
+    tacs.push_back(std::move(callee_cast));
+  }
+  else if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(callee->Type()))
+  {
+    // Llvm also allows argument type mismatches if the function
+    // features varargs. The code here could be made more precise by
+    // validating and accepting only vararg-related mismatches.
+    if (*convertedFType != *fntype)
+    {
+      // Since vararg passing is not modelled explicitly, simply hide the
+      // argument mismtach via pointer casts.
+      std::unique_ptr<tac> ptrCast = tac::create(FunctionToPointerOperation(fntype), { callee });
+      std::unique_ptr<tac> fnCast =
+          tac::create(PointerToFunctionOperation(convertedFType), { ptrCast->result(0) });
+      callee = fnCast->result(0);
+      tacs.push_back(std::move(ptrCast));
+      tacs.push_back(std::move(fnCast));
+    }
+  }
+  else
+  {
+    throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
+  }
+
+  auto call = CallOperation::create(callee, convertedFType, arguments);
 
   auto result = call->result(0);
   auto iostate = call->result(call->nresults() - 2);

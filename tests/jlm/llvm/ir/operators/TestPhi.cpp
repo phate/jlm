@@ -22,10 +22,10 @@ TestPhiCreation()
   auto vtype = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto f0type = FunctionType::Create(
+  auto f0type = jlm::rvsdg::FunctionType::Create(
       { vtype, iostatetype::Create(), MemoryStateType::Create() },
       { iostatetype::Create(), MemoryStateType::Create() });
-  auto f1type = FunctionType::Create(
+  auto f1type = jlm::rvsdg::FunctionType::Create(
       { vtype, iostatetype::Create(), MemoryStateType::Create() },
       { vtype, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -54,9 +54,9 @@ TestPhiCreation()
 
   phi::builder pb;
   pb.begin(&graph.GetRootRegion());
-  auto rv1 = pb.add_recvar(PointerType::Create());
-  auto rv2 = pb.add_recvar(PointerType::Create());
-  auto rv3 = pb.add_recvar(PointerType::Create());
+  auto rv1 = pb.add_recvar(f0type);
+  auto rv2 = pb.add_recvar(f0type);
+  auto rv3 = pb.add_recvar(f1type);
 
   auto lambdaOutput0 = SetupEmptyLambda(pb.subregion(), "f0");
   auto lambdaOutput1 = SetupEmptyLambda(pb.subregion(), "f1");
@@ -69,10 +69,9 @@ TestPhiCreation()
   auto phi = pb.end();
   GraphExport::Create(*phi->output(0), "dummy");
 
-  graph.Normalize();
   graph.PruneNodes();
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stderr);
+  view(&graph.GetRootRegion(), stderr);
 }
 
 static void

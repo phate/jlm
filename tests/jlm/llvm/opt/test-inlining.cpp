@@ -33,7 +33,7 @@ test1()
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { vt, iostatetype::Create(), MemoryStateType::Create() },
         { vt, iostatetype::Create(), MemoryStateType::Create() });
 
@@ -56,7 +56,7 @@ test1()
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto ct = jlm::rvsdg::ControlType::Create(2);
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { jlm::rvsdg::ControlType::Create(2),
           vt,
           iostatetype::Create(),
@@ -121,20 +121,20 @@ test2()
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
 
-  auto functionType1 = FunctionType::Create(
+  auto functionType1 = jlm::rvsdg::FunctionType::Create(
       { vt, iostatetype::Create(), MemoryStateType::Create() },
       { iostatetype::Create(), MemoryStateType::Create() });
   auto pt = PointerType::Create();
 
-  auto functionType2 = FunctionType::Create(
+  auto functionType2 = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
       { iostatetype::Create(), MemoryStateType::Create() });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto i = &jlm::tests::GraphImport::Create(graph, pt, "i");
+  auto i = &jlm::tests::GraphImport::Create(graph, functionType2, "i");
 
-  auto SetupF1 = [&](const std::shared_ptr<const FunctionType> & functionType)
+  auto SetupF1 = [&](const std::shared_ptr<const jlm::rvsdg::FunctionType> & functionType)
   {
     auto lambda =
         lambda::node::create(&graph.GetRootRegion(), functionType, "f1", linkage::external_linkage);
@@ -146,7 +146,7 @@ test2()
   {
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { iostatetype::Create(), MemoryStateType::Create() },
         { iostatetype::Create(), MemoryStateType::Create() });
 
@@ -164,7 +164,8 @@ test2()
   };
 
   auto f1 = SetupF1(functionType1);
-  auto f2 = SetupF2(f1);
+  auto f2 = SetupF2(
+      jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ f1 }, functionType1).output(0));
 
   GraphExport::Create(*f2, "f2");
 

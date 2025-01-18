@@ -62,6 +62,9 @@ public:
   RegionArgument &
   operator=(RegionArgument &&) = delete;
 
+  [[nodiscard]] std::string
+  debug_string() const override;
+
   [[nodiscard]] StructuralInput *
   input() const noexcept
   {
@@ -142,6 +145,9 @@ public:
   RegionResult &
   operator=(RegionResult &&) = delete;
 
+  [[nodiscard]] std::string
+  debug_string() const override;
+
   [[nodiscard]] StructuralOutput *
   output() const noexcept
   {
@@ -220,28 +226,28 @@ class Region
 
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
-  using RegionArgumentRange = util::iterator_range<RegionArgumentIterator>;
-  using RegionArgumentConstRange = util::iterator_range<RegionArgumentConstIterator>;
+  using RegionArgumentRange = util::IteratorRange<RegionArgumentIterator>;
+  using RegionArgumentConstRange = util::IteratorRange<RegionArgumentConstIterator>;
 
   using RegionResultIterator = std::vector<RegionResult *>::iterator;
   using RegionResultConstIterator = std::vector<RegionResult *>::const_iterator;
-  using RegionResultRange = util::iterator_range<RegionResultIterator>;
-  using RegionResultConstRange = util::iterator_range<RegionResultConstIterator>;
+  using RegionResultRange = util::IteratorRange<RegionResultIterator>;
+  using RegionResultConstRange = util::IteratorRange<RegionResultConstIterator>;
 
   using TopNodeIterator = region_top_node_list::iterator;
   using TopNodeConstIterator = region_top_node_list::const_iterator;
-  using TopNodeRange = util::iterator_range<TopNodeIterator>;
-  using TopNodeConstRange = util::iterator_range<TopNodeConstIterator>;
+  using TopNodeRange = util::IteratorRange<TopNodeIterator>;
+  using TopNodeConstRange = util::IteratorRange<TopNodeConstIterator>;
 
   using NodeIterator = region_nodes_list::iterator;
   using NodeConstIterator = region_nodes_list::const_iterator;
-  using NodeRange = util::iterator_range<NodeIterator>;
-  using NodeConstRange = util::iterator_range<NodeConstIterator>;
+  using NodeRange = util::IteratorRange<NodeIterator>;
+  using NodeConstRange = util::IteratorRange<NodeConstIterator>;
 
   using BottomNodeIterator = region_bottom_node_list::iterator;
   using BottomNodeConstIterator = region_bottom_node_list::const_iterator;
-  using BottomNodeRange = util::iterator_range<BottomNodeIterator>;
-  using BottomNodeConstRange = util::iterator_range<BottomNodeConstIterator>;
+  using BottomNodeRange = util::IteratorRange<BottomNodeIterator>;
+  using BottomNodeConstRange = util::IteratorRange<BottomNodeConstIterator>;
 
 public:
   ~Region() noexcept;
@@ -623,9 +629,6 @@ public:
 
   void
   prune(bool recursive);
-
-  void
-  normalize(bool recursive);
 
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,

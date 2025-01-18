@@ -28,7 +28,7 @@ namespace lambda
 
 /** \brief Lambda operation
  *
- * A lambda operation determines a lambda's name and \ref FunctionType "function type".
+ * A lambda operation determines a lambda's name and \ref rvsdg::FunctionType "function type".
  */
 class operation final : public rvsdg::StructuralOperation
 {
@@ -36,7 +36,7 @@ public:
   ~operation() override;
 
   operation(
-      std::shared_ptr<const jlm::llvm::FunctionType> type,
+      std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
       jlm::llvm::attributeset attributes)
@@ -56,13 +56,13 @@ public:
   operation &
   operator=(operation && other) noexcept = default;
 
-  [[nodiscard]] const jlm::llvm::FunctionType &
+  [[nodiscard]] const jlm::rvsdg::FunctionType &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::FunctionType> &
   Type() const noexcept
   {
     return type_;
@@ -96,7 +96,7 @@ public:
   copy() const override;
 
 private:
-  std::shared_ptr<const jlm::llvm::FunctionType> type_;
+  std::shared_ptr<const jlm::rvsdg::FunctionType> type_;
   std::string name_;
   jlm::llvm::linkage linkage_;
   jlm::llvm::attributeset attributes_;
@@ -127,12 +127,10 @@ private:
 class node final : public rvsdg::StructuralNode
 {
 public:
-  class CallSummary;
-
   ~node() override;
 
 private:
-  node(rvsdg::Region & parent, lambda::operation op);
+  node(rvsdg::Region & parent, std::unique_ptr<lambda::operation> op);
 
 public:
   /**
@@ -185,13 +183,13 @@ public:
   [[nodiscard]] const lambda::operation &
   GetOperation() const noexcept override;
 
-  [[nodiscard]] const jlm::llvm::FunctionType &
+  [[nodiscard]] const jlm::rvsdg::FunctionType &
   type() const noexcept
   {
     return GetOperation().type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const jlm::llvm::FunctionType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::FunctionType> &
   Type() const noexcept
   {
     return GetOperation().Type();
@@ -374,7 +372,7 @@ public:
   static node *
   create(
       rvsdg::Region * parent,
-      std::shared_ptr<const jlm::llvm::FunctionType> type,
+      std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage,
       const jlm::llvm::attributeset & attributes);
@@ -385,7 +383,7 @@ public:
   static node *
   create(
       rvsdg::Region * parent,
-      std::shared_ptr<const jlm::llvm::FunctionType> type,
+      std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       const std::string & name,
       const jlm::llvm::linkage & linkage)
   {
@@ -402,201 +400,9 @@ public:
   rvsdg::output *
   finalize(const std::vector<jlm::rvsdg::output *> & results);
 
-  /**
-   * Compute the \ref CallSummary of the lambda.
-   *
-   * @return A new CallSummary instance.
-   */
-  [[nodiscard]] std::unique_ptr<CallSummary>
-  ComputeCallSummary() const;
-
-  /**
-   * Determines whether \p lambdaNode is exported from the module.
-   *
-   * @param lambdaNode The lambda node to be checked.
-   * @return True if \p lambdaNode is exported, otherwise false.
-   *
-   * \note This method is equivalent to invoking CallSummary::IsExported().
-   */
-  [[nodiscard]] static bool
-  IsExported(const lambda::node & lambdaNode);
-
 private:
   std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
-};
-
-/**
- * The CallSummary of a lambda summarizes all call usages of the lambda. It distinguishes between
- * three call usages:
- *
- * 1. The export of the lambda, which is null if the lambda is not exported.
- * 2. All direct calls of the lambda.
- * 3. All other usages, e.g., indirect calls.
- */
-class node::CallSummary final
-{
-  using DirectCallsConstRange = util::iterator_range<std::vector<CallNode *>::const_iterator>;
-  using OtherUsersConstRange = util::iterator_range<std::vector<rvsdg::input *>::const_iterator>;
-
-public:
-  CallSummary(
-      GraphExport * rvsdgExport,
-      std::vector<CallNode *> directCalls,
-      std::vector<rvsdg::input *> otherUsers)
-      : RvsdgExport_(rvsdgExport),
-        DirectCalls_(std::move(directCalls)),
-        OtherUsers_(std::move(otherUsers))
-  {}
-
-  /**
-   * Determines whether the lambda is dead.
-   *
-   * @return True if the lambda is dead, otherwise false.
-   */
-  [[nodiscard]] bool
-  IsDead() const noexcept
-  {
-    return RvsdgExport_ == nullptr && DirectCalls_.empty() && OtherUsers_.empty();
-  }
-
-  /**
-   * Determines whether the lambda is exported from the RVSDG
-   *
-   * @return True if the lambda is exported, otherwise false.
-   */
-  [[nodiscard]] bool
-  IsExported() const noexcept
-  {
-    return RvsdgExport_ != nullptr;
-  }
-
-  /**
-   * Determines whether the lambda is only(!) exported from the RVSDG.
-   *
-   * @return True if the lambda is only exported, otherwise false.
-   */
-  [[nodiscard]] bool
-  IsOnlyExported() const noexcept
-  {
-    return RvsdgExport_ != nullptr && DirectCalls_.empty() && OtherUsers_.empty();
-  }
-
-  /**
-   * Determines whether the lambda has only direct calls.
-   *
-   * @return True if the lambda has only direct calls, otherwise false.
-   */
-  [[nodiscard]] bool
-  HasOnlyDirectCalls() const noexcept
-  {
-    return RvsdgExport_ == nullptr && OtherUsers_.empty() && !DirectCalls_.empty();
-  }
-
-  /**
-   * Determines whether the lambda has no other usages, i.e., it can only be exported and/or have
-   * direct calls.
-   *
-   * @return True if the lambda has no other usages, otherwise false.
-   */
-  [[nodiscard]] bool
-  HasNoOtherUsages() const noexcept
-  {
-    return OtherUsers_.empty();
-  }
-
-  /**
-   * Determines whether the lambda has only(!) other usages.
-   *
-   * @return True if the lambda has only other usages, otherwise false.
-   */
-  [[nodiscard]] bool
-  HasOnlyOtherUsages() const noexcept
-  {
-    return RvsdgExport_ == nullptr && DirectCalls_.empty() && !OtherUsers_.empty();
-  }
-
-  /**
-   * Returns the number of direct call sites invoking the lambda.
-   *
-   * @return The number of direct call sites.
-   */
-  [[nodiscard]] size_t
-  NumDirectCalls() const noexcept
-  {
-    return DirectCalls_.size();
-  }
-
-  /**
-   * Returns the number of all other users that are not direct calls.
-   *
-   * @return The number of usages that are not direct calls.
-   */
-  [[nodiscard]] size_t
-  NumOtherUsers() const noexcept
-  {
-    return OtherUsers_.size();
-  }
-
-  /**
-   * Returns the export of the lambda.
-   *
-   * @return The export of the lambda from the RVSDG root region.
-   */
-  [[nodiscard]] GraphExport *
-  GetRvsdgExport() const noexcept
-  {
-    return RvsdgExport_;
-  }
-
-  /**
-   * Returns an \ref util::iterator_range for iterating through all direct call sites.
-   *
-   * @return An \ref util::iterator_range of all direct call sites.
-   */
-  [[nodiscard]] DirectCallsConstRange
-  DirectCalls() const noexcept
-  {
-    return { DirectCalls_.begin(), DirectCalls_.end() };
-  }
-
-  /**
-   * Returns an \ref util::iterator_range for iterating through all other usages.
-   *
-   * @return An \ref util::iterator_range of all other usages.
-   */
-  [[nodiscard]] OtherUsersConstRange
-  OtherUsers() const noexcept
-  {
-    return { OtherUsers_.begin(), OtherUsers_.end() };
-  }
-
-  /**
-   * Creates a new CallSummary.
-   *
-   * @param rvsdgExport The lambda export.
-   * @param directCalls The direct call sites of a lambda.
-   * @param otherUsers All other usages of a lambda.
-   *
-   * @return A new CallSummary instance.
-   *
-   * @see ComputeCallSummary()
-   */
-  static std::unique_ptr<CallSummary>
-  Create(
-      GraphExport * rvsdgExport,
-      std::vector<CallNode *> directCalls,
-      std::vector<rvsdg::input *> otherUsers)
-  {
-    return std::make_unique<CallSummary>(
-        rvsdgExport,
-        std::move(directCalls),
-        std::move(otherUsers));
-  }
-
-private:
-  GraphExport * RvsdgExport_;
-  std::vector<CallNode *> DirectCalls_;
-  std::vector<rvsdg::input *> OtherUsers_;
+  std::unique_ptr<lambda::operation> Operation_;
 };
 
 template<typename F>

@@ -92,8 +92,6 @@ test_unrollinfo()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-    nf->set_mutable(false);
 
     auto init0 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
     auto init1 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
@@ -146,8 +144,6 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-    nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
     auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
@@ -166,8 +162,6 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-    nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
     auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
@@ -186,8 +180,6 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-    nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
     auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);
@@ -207,8 +199,6 @@ test_known_boundaries()
 
   {
     jlm::rvsdg::Graph graph;
-    auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-    nf->set_mutable(false);
 
     auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 100);
     auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, -1);
@@ -290,9 +280,6 @@ test_nested_theta()
 {
   jlm::llvm::RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);
   auto step = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 1);

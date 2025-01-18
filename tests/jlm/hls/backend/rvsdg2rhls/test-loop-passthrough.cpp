@@ -34,13 +34,11 @@ test()
 {
   using namespace jlm;
 
-  auto ft = jlm::llvm::FunctionType::Create(
+  auto ft = jlm::rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
       { rvsdg::bittype::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
 
   /* setup graph */
 

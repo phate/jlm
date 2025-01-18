@@ -28,6 +28,7 @@
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
@@ -351,6 +352,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           auto & newGraphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
               oldGraphImport->ValueType(),
+              oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
               oldGraphImport->Linkage());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
@@ -373,6 +375,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           auto & graphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
               odn->Type(),
+              llvm::PointerType::Create(),
               odn->name(),
               llvm::linkage::external_linkage);
           smap.insert(ln->input(i)->origin(), &graphImport);
@@ -388,11 +391,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       // copy function into rhls
       auto new_ln = ln->copy(&rhls->Rvsdg().GetRootRegion(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
-      auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+      auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
       jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
+          ln->Type(),
           ln->Type(),
           ln->name(),
           llvm::linkage::external_linkage); // TODO: change linkage?
@@ -406,19 +410,19 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2ref(llvm::RvsdgModule & rhls, std::string path)
+rvsdg2ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 {
   dump_ref(rhls, path);
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rhls)
+rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
   merge_gamma(rhls);
-  util::StatisticsCollector statisticsCollector;
+
   llvm::DeadNodeElimination llvmDne;
-  llvmDne.run(rhls, statisticsCollector);
+  llvmDne.run(rhls, collector);
 
   mem_sep_argument(rhls);
   remove_unused_state(rhls);
@@ -427,7 +431,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
-  hlsCne.run(rhls, statisticsCollector);
+  hlsCne.run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
@@ -444,7 +448,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls, std::string & path)
+dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 {
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
@@ -464,7 +468,7 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
   auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
   std::error_code EC;
-  ::llvm::raw_fd_ostream os(path, EC);
+  ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);
 }
 

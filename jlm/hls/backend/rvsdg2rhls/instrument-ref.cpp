@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+#include <cmath>
+
 namespace jlm::hls
 {
 
@@ -83,7 +85,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
-  auto loadFunctionType = jlm::llvm::FunctionType::Create(
+  auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         llvm::iostatetype::Create(),
@@ -92,10 +94,11 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto & reference_load = llvm::GraphImport::Create(
       graph,
       loadFunctionType,
+      loadFunctionType,
       "reference_load",
       llvm::linkage::external_linkage);
   // addr, data, width, memstate
-  auto storeFunctionType = jlm::llvm::FunctionType::Create(
+  auto storeFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         jlm::rvsdg::bittype::Create(64),
@@ -105,10 +108,11 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto & reference_store = llvm::GraphImport::Create(
       graph,
       storeFunctionType,
+      storeFunctionType,
       "reference_store",
       llvm::linkage::external_linkage);
   // addr, size, memstate
-  auto allocaFunctionType = jlm::llvm::FunctionType::Create(
+  auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         llvm::iostatetype::Create(),
@@ -116,6 +120,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
   auto & reference_alloca = llvm::GraphImport::Create(
       graph,
+      allocaFunctionType,
       allocaFunctionType,
       "reference_alloca",
       llvm::linkage::external_linkage);
@@ -136,11 +141,11 @@ instrument_ref(
     rvsdg::Region * region,
     jlm::rvsdg::output * ioState,
     jlm::rvsdg::output * load_func,
-    const std::shared_ptr<const jlm::llvm::FunctionType> & loadFunctionType,
+    const std::shared_ptr<const jlm::rvsdg::FunctionType> & loadFunctionType,
     jlm::rvsdg::output * store_func,
-    const std::shared_ptr<const jlm::llvm::FunctionType> & storeFunctionType,
+    const std::shared_ptr<const jlm::rvsdg::FunctionType> & storeFunctionType,
     jlm::rvsdg::output * alloca_func,
-    const std::shared_ptr<const jlm::llvm::FunctionType> & allocaFunctionType)
+    const std::shared_ptr<const jlm::rvsdg::FunctionType> & allocaFunctionType)
 {
   load_func = route_to_region(load_func, region);
   store_func = route_to_region(store_func, region);

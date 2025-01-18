@@ -4,8 +4,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
+
+#include <algorithm>
 
 namespace jlm::rvsdg
 {
@@ -26,8 +29,17 @@ ThetaOperation::copy() const
 
 ThetaNode::~ThetaNode() noexcept = default;
 
+[[nodiscard]] const ThetaOperation &
+ThetaNode::GetOperation() const noexcept
+{
+  // Theta presently has no parametrization, so we can indeed
+  // just return a singleton here.
+  static const ThetaOperation singleton;
+  return singleton;
+}
+
 ThetaNode::ThetaNode(rvsdg::Region & parent)
-    : StructuralNode(ThetaOperation(), &parent, 1)
+    : StructuralNode(&parent, 1)
 {
   auto predicate = control_false(subregion());
   RegionResult::Create(*subregion(), *predicate, nullptr, ControlType::Create(2));
@@ -75,10 +87,7 @@ ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopvars)
 ThetaNode *
 ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
-  rvsdg::SubstitutionMap rmap;
+  SubstitutionMap rmap;
   auto theta = create(region);
 
   /* add loop variables */
@@ -102,7 +111,6 @@ ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
     smap.insert(oldLoopVars[i].output, newLoopVars[i].output);
   }
 
-  nf->set_mutable(true);
   return theta;
 }
 

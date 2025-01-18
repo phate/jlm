@@ -19,7 +19,7 @@ namespace jlm::llvm::aa
 bool
 IsOrContainsPointerType(const rvsdg::Type & type)
 {
-  return IsOrContains<PointerType>(type);
+  return IsOrContains<PointerType>(type) || is<rvsdg::FunctionType>(type);
 }
 
 std::string
@@ -646,6 +646,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeExtractValue(node);
   else if (is<valist_op>(op))
     AnalyzeValist(node);
+  else if (is<PointerToFunctionOperation>(op))
+    AnalyzePointerToFunction(node);
+  else if (is<FunctionToPointerOperation>(op))
+    AnalyzeFunctionToPointer(node);
   else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
@@ -947,6 +951,36 @@ Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Constraints_->AddRegisterContentEscapedConstraint(inputRegisterPO);
   }
+}
+
+void
+Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<PointerToFunctionOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<FunctionToPointerOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
 }
 
 void

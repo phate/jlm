@@ -446,7 +446,7 @@ TestIndirectCall1()
 
   assert(ptg->NumLambdaNodes() == 4);
   assert(ptg->NumImportNodes() == 0);
-  assert(ptg->NumMappedRegisters() == 8);
+  assert(ptg->NumMappedRegisters() == 11);
 
   auto & lambda_three = ptg->GetLambdaNode(test.GetLambdaThree());
   auto & lambda_three_out = ptg->GetRegisterNode(*test.GetLambdaThree().output());
@@ -494,7 +494,7 @@ TestIndirectCall2()
   assert(ptg->NumAllocaNodes() == 3);
   assert(ptg->NumLambdaNodes() == 7);
   assert(ptg->NumDeltaNodes() == 2);
-  assert(ptg->NumMappedRegisters() == 24);
+  assert(ptg->NumMappedRegisters() == 27);
 
   auto & lambdaThree = ptg->GetLambdaNode(test.GetLambdaThree());
   auto & lambdaThreeOutput = ptg->GetRegisterNode(*test.GetLambdaThree().output());
@@ -975,7 +975,6 @@ TestStatistics()
   // Arrange
   jlm::tests::LoadTest1 test;
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      jlm::util::filepath("/tmp/stats.txt"),
       { jlm::util::Statistics::Id::AndersenAnalysis });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 

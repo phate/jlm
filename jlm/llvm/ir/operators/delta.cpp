@@ -45,7 +45,7 @@ node::~node()
 const delta::operation &
 node::GetOperation() const noexcept
 {
-  return *util::AssertedCast<const delta::operation>(&StructuralNode::GetOperation());
+  return *Operation_;
 }
 
 delta::node *

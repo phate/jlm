@@ -486,15 +486,10 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (!ui)
     return;
 
-  auto nf = otheta->graph()->GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
-
   if (ui->is_known() && ui->niterations())
     unroll_known_theta(*ui, factor);
   else
     unroll_unknown_theta(*ui, factor);
-
-  nf->set_mutable(true);
 }
 
 static bool

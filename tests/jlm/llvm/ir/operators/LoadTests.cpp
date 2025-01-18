@@ -392,9 +392,8 @@ TestLoadStoreReduction_Success()
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStore, loadNode);
-  graph.Normalize();
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);

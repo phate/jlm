@@ -60,7 +60,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
     auto & elementTypeNode = GetOrCreateTypeGraphNode(vectorType->type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
   }
-  else if (auto functionType = dynamic_cast<const FunctionType *>(&type))
+  else if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(&type))
   {
     for (size_t n = 0; n < functionType->NumArguments(); n++)
     {
@@ -144,15 +144,18 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     auto & argument = *region.argument(n);
     AttachNodeOutput(node, argument, typeGraph);
 
-    // Give the argument a label using its local index, not the global argument index
-    node.SetLabel(util::strfmt("a", n));
+    // Include the index among the region's attributes
+    node.SetAttribute("index", std::to_string(n));
+
+    // Use the debug string as the label
+    node.SetLabel(argument.debug_string());
 
     // If this argument corresponds to one of the structural node's inputs, reference it
     if (argument.input())
     {
       node.SetAttributeObject("input", *argument.input());
       // Include the local index of the node's input in the label
-      node.AppendToLabel(util::strfmt("<- i", argument.input()->index()), " ");
+      node.AppendToLabel(util::strfmt("<- ", argument.input()->debug_string()), " ");
     }
   }
 
@@ -189,15 +192,18 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     auto & result = *region.result(n);
     AttachNodeInput(node, result);
 
-    // Use the result's local index as the label
-    node.SetLabel(util::strfmt("r", n));
+    // Include the index among the region's results
+    node.SetAttribute("index", std::to_string(n));
+
+    // Use the debug string as the label
+    node.SetLabel(result.debug_string());
 
     // If this result corresponds to one of the structural node's outputs, reference it
     if (result.output())
     {
       node.SetAttributeObject("output", *result.output());
       // Include the local index of the node's output in the label
-      node.AppendToLabel(util::strfmt("-> o", result.output()->index()), " ");
+      node.AppendToLabel(util::strfmt("-> ", result.output()->debug_string()), " ");
     }
   }
 }

@@ -39,8 +39,9 @@ operation::copy() const
 
 node::~node() = default;
 
-node::node(rvsdg::Region & parent, lambda::operation op)
-    : StructuralNode(std::move(op), &parent, 1)
+node::node(rvsdg::Region & parent, std::unique_ptr<lambda::operation> op)
+    : StructuralNode(&parent, 1),
+      Operation_(std::move(op))
 {
   ArgumentAttributes_.resize(GetOperation().Type()->NumArguments());
 }
@@ -48,7 +49,7 @@ node::node(rvsdg::Region & parent, lambda::operation op)
 const lambda::operation &
 node::GetOperation() const noexcept
 {
-  return *jlm::util::AssertedCast<const lambda::operation>(&StructuralNode::GetOperation());
+  return *Operation_;
 }
 
 [[nodiscard]] std::vector<rvsdg::output *>
@@ -162,12 +163,12 @@ node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
 lambda::node *
 node::create(
     rvsdg::Region * parent,
-    std::shared_ptr<const jlm::llvm::FunctionType> type,
+    std::shared_ptr<const jlm::rvsdg::FunctionType> type,
     const std::string & name,
     const llvm::linkage & linkage,
     const attributeset & attributes)
 {
-  lambda::operation op(type, name, linkage, attributes);
+  auto op = std::make_unique<lambda::operation>(type, name, linkage, attributes);
   auto node = new lambda::node(*parent, std::move(op));
 
   for (auto & argumentType : type->Arguments())
@@ -203,7 +204,7 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   for (const auto & origin : results)
     rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, PointerType::Create()));
+  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, Type()));
 }
 
 rvsdg::output *
@@ -256,127 +257,6 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   lambda->ArgumentAttributes_ = ArgumentAttributes_;
 
   return lambda;
-}
-
-std::unique_ptr<node::CallSummary>
-node::ComputeCallSummary() const
-{
-  std::deque<rvsdg::input *> worklist;
-  worklist.insert(worklist.end(), output()->begin(), output()->end());
-
-  std::vector<CallNode *> directCalls;
-  GraphExport * rvsdgExport = nullptr;
-  std::vector<rvsdg::input *> otherUsers;
-
-  while (!worklist.empty())
-  {
-    auto input = worklist.front();
-    worklist.pop_front();
-
-    auto inputNode = rvsdg::input::GetNode(*input);
-
-    if (auto lambdaNode = rvsdg::TryGetOwnerNode<lambda::node>(*input))
-    {
-      auto & argument = *lambdaNode->MapInputContextVar(*input).inner;
-      worklist.insert(worklist.end(), argument.begin(), argument.end());
-      continue;
-    }
-
-    if (rvsdg::TryGetRegionParentNode<lambda::node>(*input))
-    {
-      otherUsers.emplace_back(input);
-      continue;
-    }
-
-    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(inputNode))
-    {
-      for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
-      {
-        worklist.insert(worklist.end(), argument->begin(), argument->end());
-      }
-      continue;
-    }
-
-    if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*input))
-    {
-      auto output = gamma->MapBranchResultExitVar(*input).output;
-      worklist.insert(worklist.end(), output->begin(), output->end());
-      continue;
-    }
-
-    if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input))
-    {
-      auto loopvar = theta->MapInputLoopVar(*input);
-      worklist.insert(worklist.end(), loopvar.pre->begin(), loopvar.pre->end());
-      continue;
-    }
-
-    if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input))
-    {
-      auto loopvar = theta->MapPostLoopVar(*input);
-      worklist.insert(worklist.end(), loopvar.output->begin(), loopvar.output->end());
-      continue;
-    }
-
-    if (auto cvinput = dynamic_cast<phi::cvinput *>(input))
-    {
-      auto argument = cvinput->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
-      continue;
-    }
-
-    if (auto rvresult = dynamic_cast<phi::rvresult *>(input))
-    {
-      auto argument = rvresult->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
-
-      auto output = rvresult->output();
-      worklist.insert(worklist.end(), output->begin(), output->end());
-      continue;
-    }
-
-    if (auto cvinput = dynamic_cast<delta::cvinput *>(input))
-    {
-      auto argument = cvinput->arguments.first();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
-      continue;
-    }
-
-    if (auto deltaResult = dynamic_cast<delta::result *>(input))
-    {
-      otherUsers.emplace_back(deltaResult);
-      continue;
-    }
-
-    if (is<CallOperation>(inputNode) && input == inputNode->input(0))
-    {
-      directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
-      continue;
-    }
-
-    if (auto graphExport = dynamic_cast<GraphExport *>(input))
-    {
-      rvsdgExport = graphExport;
-      continue;
-    }
-
-    if (auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input))
-    {
-      otherUsers.emplace_back(simpleInput);
-      continue;
-    }
-
-    JLM_UNREACHABLE("This should have never happened!");
-  }
-
-  return CallSummary::Create(rvsdgExport, std::move(directCalls), std::move(otherUsers));
-}
-
-bool
-node::IsExported(const lambda::node & lambdaNode)
-{
-  auto callSummary = lambdaNode.ComputeCallSummary();
-  return callSummary->IsExported();
 }
 
 [[nodiscard]] const jlm::llvm::attributeset &

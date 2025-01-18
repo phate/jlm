@@ -132,15 +132,16 @@ class node final : public rvsdg::StructuralNode
   class cviterator;
   class cvconstiterator;
 
-  using ctxvar_range = jlm::util::iterator_range<cviterator>;
-  using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
+  using ctxvar_range = util::IteratorRange<cviterator>;
+  using ctxvar_constrange = util::IteratorRange<cvconstiterator>;
 
 public:
   ~node() override;
 
 private:
-  node(rvsdg::Region * parent, delta::operation && op)
-      : StructuralNode(op, parent, 1)
+  node(rvsdg::Region * parent, std::unique_ptr<delta::operation> op)
+      : StructuralNode(parent, 1),
+        Operation_(std::move(op))
   {}
 
 public:
@@ -285,7 +286,12 @@ public:
       std::string section,
       bool constant)
   {
-    delta::operation op(std::move(type), name, linkage, std::move(section), constant);
+    auto op = std::make_unique<delta::operation>(
+        std::move(type),
+        name,
+        linkage,
+        std::move(section),
+        constant);
     return new delta::node(parent, std::move(op));
   }
 
@@ -298,6 +304,9 @@ public:
    */
   delta::output *
   finalize(rvsdg::output * result);
+
+private:
+  std::unique_ptr<delta::operation> Operation_;
 };
 
 /** \brief Delta context variable input

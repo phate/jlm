@@ -4,6 +4,7 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -62,7 +63,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     }
   }
 
-  auto newFunctionType = llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
+  auto newFunctionType = rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
   auto newLambda = llvm::lambda::node::create(
       lambdaNode.region(),
       newFunctionType,
@@ -109,7 +110,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
   lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
-  auto oldExport = lambdaNode.ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(lambdaNode).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*newLambdaOutput, oldExport ? oldExport->Name() : "");
   remove(&lambdaNode);
 }

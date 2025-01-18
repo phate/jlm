@@ -78,8 +78,8 @@ public:
       AllocaNode,
       AllocaNodeMap::const_iterator,
       IteratorToPointerFunctor<AllocaNode, AllocaNodeMap::const_iterator>>;
-  using AllocaNodeRange = jlm::util::iterator_range<AllocaNodeIterator>;
-  using AllocaNodeConstRange = jlm::util::iterator_range<AllocaNodeConstIterator>;
+  using AllocaNodeRange = util::IteratorRange<AllocaNodeIterator>;
+  using AllocaNodeConstRange = util::IteratorRange<AllocaNodeConstIterator>;
 
   using DeltaNodeIterator = NodeIterator<
       DeltaNode,
@@ -89,8 +89,8 @@ public:
       DeltaNode,
       DeltaNodeMap::const_iterator,
       IteratorToPointerFunctor<DeltaNode, DeltaNodeMap::const_iterator>>;
-  using DeltaNodeRange = jlm::util::iterator_range<DeltaNodeIterator>;
-  using DeltaNodeConstRange = jlm::util::iterator_range<DeltaNodeConstIterator>;
+  using DeltaNodeRange = util::IteratorRange<DeltaNodeIterator>;
+  using DeltaNodeConstRange = util::IteratorRange<DeltaNodeConstIterator>;
 
   using ImportNodeIterator = NodeIterator<
       ImportNode,
@@ -100,8 +100,8 @@ public:
       ImportNode,
       ImportNodeMap::const_iterator,
       IteratorToPointerFunctor<ImportNode, ImportNodeMap::const_iterator>>;
-  using ImportNodeRange = jlm::util::iterator_range<ImportNodeIterator>;
-  using ImportNodeConstRange = jlm::util::iterator_range<ImportNodeConstIterator>;
+  using ImportNodeRange = jlm::util::IteratorRange<ImportNodeIterator>;
+  using ImportNodeConstRange = jlm::util::IteratorRange<ImportNodeConstIterator>;
 
   using LambdaNodeIterator = NodeIterator<
       LambdaNode,
@@ -111,8 +111,8 @@ public:
       LambdaNode,
       LambdaNodeMap::const_iterator,
       IteratorToPointerFunctor<LambdaNode, LambdaNodeMap::const_iterator>>;
-  using LambdaNodeRange = jlm::util::iterator_range<LambdaNodeIterator>;
-  using LambdaNodeConstRange = jlm::util::iterator_range<LambdaNodeConstIterator>;
+  using LambdaNodeRange = util::IteratorRange<LambdaNodeIterator>;
+  using LambdaNodeConstRange = util::IteratorRange<LambdaNodeConstIterator>;
 
   using MallocNodeIterator = NodeIterator<
       MallocNode,
@@ -122,8 +122,8 @@ public:
       MallocNode,
       MallocNodeMap::const_iterator,
       IteratorToPointerFunctor<MallocNode, MallocNodeMap::const_iterator>>;
-  using MallocNodeRange = jlm::util::iterator_range<MallocNodeIterator>;
-  using MallocNodeConstRange = jlm::util::iterator_range<MallocNodeConstIterator>;
+  using MallocNodeRange = util::IteratorRange<MallocNodeIterator>;
+  using MallocNodeConstRange = util::IteratorRange<MallocNodeConstIterator>;
 
   template<class IteratorType>
   struct RegisterNodeIteratorToPointerFunctor
@@ -143,8 +143,8 @@ public:
       RegisterNode,
       RegisterNodeVector::const_iterator,
       RegisterNodeIteratorToPointerFunctor<RegisterNodeVector::const_iterator>>;
-  using RegisterNodeRange = util::iterator_range<RegisterNodeIterator>;
-  using RegisterNodeConstRange = util::iterator_range<RegisterNodeConstIterator>;
+  using RegisterNodeRange = util::IteratorRange<RegisterNodeIterator>;
+  using RegisterNodeConstRange = util::IteratorRange<RegisterNodeConstIterator>;
 
 private:
   PointsToGraph();
@@ -449,11 +449,11 @@ class PointsToGraph::Node
   using TargetIterator = Iterator<PointsToGraph::MemoryNode>;
   using TargetConstIterator = ConstIterator<PointsToGraph::MemoryNode>;
 
-  using SourceRange = jlm::util::iterator_range<SourceIterator>;
-  using SourceConstRange = jlm::util::iterator_range<SourceConstIterator>;
+  using SourceRange = util::IteratorRange<SourceIterator>;
+  using SourceConstRange = util::IteratorRange<SourceConstIterator>;
 
-  using TargetRange = jlm::util::iterator_range<TargetIterator>;
-  using TargetConstRange = jlm::util::iterator_range<TargetConstIterator>;
+  using TargetRange = util::IteratorRange<TargetIterator>;
+  using TargetConstRange = util::IteratorRange<TargetConstIterator>;
 
 public:
   virtual ~Node() noexcept;
