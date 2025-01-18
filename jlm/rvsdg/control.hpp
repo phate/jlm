@@ -214,9 +214,13 @@ public:
       size_t numAlternatives)
   {
     auto bitType = CheckAndExtractBitType(predicate.type());
-
-    match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
-    return rvsdg::SimpleNode::create_normalized(predicate.region(), operation, { &predicate })[0];
+    return CreateOpNode<match_op>(
+               { &predicate },
+               bitType.nbits(),
+               mapping,
+               defaultAlternative,
+               numAlternatives)
+        .output(0);
   }
 
 private:

@@ -107,11 +107,14 @@ public:
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
     CheckPointerType(*resultType);
 
-    GetElementPtrOperation operation(offsetTypes, std::move(pointeeType));
-    std::vector<rvsdg::output *> operands(1, baseAddress);
+    std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-    return rvsdg::SimpleNode::create_normalized(baseAddress->region(), operation, operands)[0];
+    return rvsdg::CreateOpNode<GetElementPtrOperation>(
+               operands,
+               offsetTypes,
+               std::move(pointeeType))
+        .output(0);
   }
 
 private:

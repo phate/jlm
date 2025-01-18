@@ -93,10 +93,13 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)
-      throw jlm::util::error("expected bits type.");
+      throw util::error("expected bits type.");
 
-    sext_op op(std::move(ot), rvsdg::bittype::Create(ndstbits));
-    return rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
+    return rvsdg::CreateOpNode<sext_op>(
+               { operand },
+               std::move(ot),
+               rvsdg::bittype::Create(ndstbits))
+        .output(0);
   }
 };
 
