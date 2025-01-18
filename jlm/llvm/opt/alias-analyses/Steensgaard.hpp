@@ -76,7 +76,7 @@ public:
   operator=(Steensgaard &&) = delete;
 
   std::unique_ptr<PointsToGraph>
-  Analyze(const RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+  Analyze(const rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
       override;
 
   /**

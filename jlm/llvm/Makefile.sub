@@ -59,8 +59,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/inversion.cpp \
-    jlm/llvm/opt/optimization.cpp \
-    jlm/llvm/opt/OptimizationSequence.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
@@ -91,11 +89,9 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
 	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/pull.hpp \
-	jlm/llvm/opt/optimization.hpp \
 	jlm/llvm/opt/reduction.hpp \
 	jlm/llvm/opt/InvariantValueRedirection.hpp \
 	jlm/llvm/opt/inversion.hpp \
-	jlm/llvm/opt/OptimizationSequence.hpp \
 	jlm/llvm/opt/RvsdgTreePrinter.hpp \
 	jlm/llvm/frontend/LlvmModuleConversion.hpp \
 	jlm/llvm/frontend/LlvmTypeConversion.hpp \

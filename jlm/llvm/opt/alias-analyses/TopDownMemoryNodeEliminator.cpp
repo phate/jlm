@@ -422,12 +422,12 @@ TopDownMemoryNodeEliminator::TopDownMemoryNodeEliminator() = default;
 
 std::unique_ptr<MemoryNodeProvisioning>
 TopDownMemoryNodeEliminator::EliminateMemoryNodes(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & seedProvisioning,
     util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create(seedProvisioning);
-  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->Start(rvsdgModule.Rvsdg());
   EliminateTopDown(rvsdgModule);
@@ -445,7 +445,7 @@ TopDownMemoryNodeEliminator::EliminateMemoryNodes(
 
 std::unique_ptr<MemoryNodeProvisioning>
 TopDownMemoryNodeEliminator::CreateAndEliminate(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & seedProvisioning,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -455,7 +455,7 @@ TopDownMemoryNodeEliminator::CreateAndEliminate(
 
 std::unique_ptr<MemoryNodeProvisioning>
 TopDownMemoryNodeEliminator::CreateAndEliminate(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & seedProvisioning)
 {
   util::StatisticsCollector statisticsCollector;
@@ -463,7 +463,7 @@ TopDownMemoryNodeEliminator::CreateAndEliminate(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDown(const RvsdgModule & rvsdgModule)
+TopDownMemoryNodeEliminator::EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule)
 {
   // Initialize the memory nodes that are alive at beginning of every tail-lambda
   InitializeLiveNodesOfTailLambdas(rvsdgModule);
@@ -873,7 +873,8 @@ TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(const RvsdgModule & rvsdgModule)
+TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(
+    const rvsdg::RvsdgModule & rvsdgModule)
 {
   auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
@@ -924,7 +925,7 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(const lambda::node 
 
 bool
 TopDownMemoryNodeEliminator::CheckInvariants(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & seedProvisioning,
     const Provisioning & provisioning)
 {

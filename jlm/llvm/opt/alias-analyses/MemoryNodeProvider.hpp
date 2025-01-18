@@ -34,7 +34,7 @@ public:
    */
   virtual std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };

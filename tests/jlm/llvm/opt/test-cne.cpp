@@ -53,7 +53,7 @@ test_simple()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(graph.GetRootRegion().result(0)->origin() == graph.GetRootRegion().result(1)->origin());
@@ -106,7 +106,7 @@ test_gamma()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto subregion0 = gamma->subregion(0);
@@ -163,7 +163,7 @@ test_theta()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto un1 = jlm::rvsdg::output::GetNode(*u1);
@@ -211,7 +211,7 @@ test_theta2()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(lv2.post->origin() == u1);
@@ -264,7 +264,7 @@ test_theta3()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(r1->result(2)->origin() == r1->result(4)->origin());
@@ -318,7 +318,7 @@ test_theta4()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(ex1.origin() != ex2.origin());
@@ -362,7 +362,7 @@ test_theta5()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(ex1.origin() == ex2.origin());
@@ -397,7 +397,7 @@ test_lambda()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto bn1 = jlm::rvsdg::output::GetNode(*b1);
@@ -445,7 +445,7 @@ test_phi()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(

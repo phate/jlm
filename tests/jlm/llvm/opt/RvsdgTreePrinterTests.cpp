@@ -35,7 +35,7 @@ RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter &
   StatisticsCollectorSettings settings({}, tmpDir, "TestTreePrinter");
   StatisticsCollector collector(settings);
 
-  printer.run(module, collector);
+  printer.Run(module, collector);
 
   auto fileName = tmpDir.Join("TestTreePrinter-" + settings.GetUniqueString() + "-rvsdgTree-0.txt");
   auto result = ReadFile(fileName);

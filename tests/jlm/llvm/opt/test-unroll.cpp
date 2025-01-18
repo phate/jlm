@@ -248,7 +248,7 @@ test_unknown_boundaries()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(2);
-  loopunroll.run(rm, statisticsCollector);
+  loopunroll.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   auto node = jlm::rvsdg::output::GetNode(*ex1.origin());
@@ -258,7 +258,7 @@ test_unknown_boundaries()
 
   /* Create cleaner output */
   DeadNodeElimination dne;
-  dne.run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 }
 
@@ -344,7 +344,7 @@ test_nested_theta()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(4);
-  loopunroll.run(rm, statisticsCollector);
+  loopunroll.Run(rm, statisticsCollector);
   /*
     The outher theta should contain two inner thetas
   */

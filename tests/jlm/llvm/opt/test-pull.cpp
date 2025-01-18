@@ -117,7 +117,7 @@ test_pull()
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::pullin pullin;
-  pullin.run(rm, statisticsCollector);
+  pullin.Run(rm, statisticsCollector);
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 

@@ -315,7 +315,8 @@ public:
    * @see SetConfiguration to configure settings for the analysis
    */
   std::unique_ptr<PointsToGraph>
-  Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  Analyze(const rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+      override;
 
   /**
    * @brief Shorthand for Analyze, ignoring collecting any statistics.
@@ -435,7 +436,7 @@ private:
    * @param statistics the Statistics instance used to track info about the analysis
    */
   void
-  AnalyzeModule(const RvsdgModule & module, Statistics & statistics);
+  AnalyzeModule(const rvsdg::RvsdgModule & module, Statistics & statistics);
 
   /**
    * Solves the constraint problem using the techniques and solver specified in the given config.

@@ -1818,14 +1818,14 @@ Steensgaard::Analyze(const RvsdgModule & rvsdgModule)
 
 std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
-    const RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector)
+    const rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   // std::unordered_map<const rvsdg::output *, std::string> outputMap;
   // std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
 
   Context_ = Context::Create();
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());

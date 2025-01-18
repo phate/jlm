@@ -104,7 +104,7 @@ test1()
 
   // Act
   jlm::llvm::fctinline fctinline;
-  fctinline.run(rm, statisticsCollector);
+  fctinline.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
@@ -173,7 +173,7 @@ test2()
 
   // Act
   jlm::llvm::fctinline fctinline;
-  fctinline.run(rm, statisticsCollector);
+  fctinline.Run(rm, statisticsCollector);
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert

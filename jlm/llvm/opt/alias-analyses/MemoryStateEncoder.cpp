@@ -463,12 +463,12 @@ MemoryStateEncoder::MemoryStateEncoder() = default;
 
 void
 MemoryStateEncoder::Encode(
-    RvsdgModule & rvsdgModule,
+    rvsdg::RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & provisioning,
     util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create(provisioning);
-  auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
+  auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->Start(rvsdgModule.Rvsdg());
   EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion());
@@ -481,7 +481,7 @@ MemoryStateEncoder::Encode(
 
   // Remove all nodes that became dead throughout the encoding.
   DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.run(rvsdgModule, statisticsCollector);
+  deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
 void
