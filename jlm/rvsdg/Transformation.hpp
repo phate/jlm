@@ -59,7 +59,6 @@ class TransformationSequence final : public Transformation
   class Statistics;
 
 public:
-
   ~TransformationSequence() noexcept override;
 
   explicit TransformationSequence(std::vector<Transformation *> transformations)
