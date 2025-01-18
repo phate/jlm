@@ -52,7 +52,7 @@ TransformationSequence::Run(
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->StartMeasuring(rvsdgModule.Rvsdg());
 
-  for (const auto & optimization : Optimizations_)
+  for (const auto & optimization : Transformations_)
   {
     optimization->Run(rvsdgModule, statisticsCollector);
   }

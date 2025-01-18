@@ -305,13 +305,13 @@ pull(rvsdg::Region * region)
 }
 
 static void
-pull(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+pull(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pullstat::Create(rm.SourceFileName());
+  auto statistics = pullstat::Create(module.SourceFilePath().value());
 
-  statistics->start(rm.Rvsdg());
-  pull(&rm.Rvsdg().GetRootRegion());
-  statistics->end(rm.Rvsdg());
+  statistics->start(module.Rvsdg());
+  pull(&module.Rvsdg().GetRootRegion());
+  statistics->end(module.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -324,8 +324,7 @@ pullin::~pullin()
 void
 pullin::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
-  pull(rvsdgModule, statisticsCollector);
+  pull(module, statisticsCollector);
 }
 
 }

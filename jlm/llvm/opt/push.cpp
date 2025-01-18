@@ -413,13 +413,13 @@ push(rvsdg::Region * region)
 }
 
 static void
-push(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+push(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pushstat::Create(rm.SourceFileName());
+  auto statistics = pushstat::Create(rvsdgModule.SourceFilePath().value());
 
-  statistics->start(rm.Rvsdg());
-  push(&rm.Rvsdg().GetRootRegion());
-  statistics->end(rm.Rvsdg());
+  statistics->start(rvsdgModule.Rvsdg());
+  push(&rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->end(rvsdgModule.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -432,8 +432,7 @@ pushout::~pushout()
 void
 pushout::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
-  push(rvsdgModule, statisticsCollector);
+  push(module, statisticsCollector);
 }
 
 }

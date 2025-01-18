@@ -301,13 +301,13 @@ invert(rvsdg::Region * region)
 }
 
 static void
-invert(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+invert(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = ivtstat::Create(rm.SourceFileName());
+  auto statistics = ivtstat::Create(rvsdgModule.SourceFilePath().value());
 
-  statistics->start(rm.Rvsdg());
-  invert(&rm.Rvsdg().GetRootRegion());
-  statistics->end(rm.Rvsdg());
+  statistics->start(rvsdgModule.Rvsdg());
+  invert(&rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->end(rvsdgModule.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -320,8 +320,7 @@ tginversion::~tginversion()
 void
 tginversion::Run(rvsdg::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
 {
-  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&module);
-  invert(rvsdgModule, statisticsCollector);
+  invert(module, statisticsCollector);
 }
 
 }

@@ -22,26 +22,26 @@ public:
   virtual ~Transformation() noexcept;
 
   /**
-   * \brief Perform transformation
+   * \brief Perform RVSDG transformation
    *
    * \note This method is expected to be called multiple times. An
    * implementation is required to reset the objects' internal state
    * to ensure correct behavior after every invocation.
    *
-   * \param module RVSDG module the optimization is performed on.
-   * \param statisticsCollector Statistics collector for collecting optimization statistics.
+   * \param module RVSDG module the transformation is performed on.
+   * \param statisticsCollector Statistics collector for collecting transformation statistics.
    */
   virtual void
   Run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) = 0;
 
   /**
-   * \brief Perform transformation
+   * \brief Perform RVSDG transformation
    *
    * \note This method is expected to be called multiple times. An
    * implementation is required to reset the objects' internal state
    * to ensure correct behavior after every invocation.
    *
-   * @param module RVSDG module the optimization is performed on.
+   * @param module RVSDG module the transformation is performed on.
    */
   void
   Run(RvsdgModule & module)
@@ -52,34 +52,48 @@ public:
 };
 
 /**
- * Sequentially applies a list of optimizations to an Rvsdg.
+ * Sequentially applies a list of RVSDG transformations.
  */
 class TransformationSequence final : public Transformation
 {
-public:
   class Statistics;
+
+public:
 
   ~TransformationSequence() noexcept override;
 
-  explicit TransformationSequence(std::vector<Transformation *> optimizations)
-      : Optimizations_(std::move(optimizations))
+  explicit TransformationSequence(std::vector<Transformation *> transformations)
+      : Transformations_(std::move(transformations))
   {}
 
+  /**
+   * \brief Perform RVSDG transformations
+   *
+   * @param rvsdgModule RVSDG module the transformation is performed on.
+   * @param statisticsCollector Statistics collector for collecting transformation statistics.
+   */
   void
   Run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
+  /**
+   * \brief Creates a transformation sequence and invokes its Run() method.
+   *
+   * @param rvsdgModule RVSDG module the transformation is performed on.
+   * @param statisticsCollector Statistics collector for collecting transformation statistics.
+   * @param transformations The transformations that are sequentially applied to \p rvsdgModule.
+   */
   static void
   CreateAndRun(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector,
-      std::vector<Transformation *> optimizations)
+      std::vector<Transformation *> transformations)
   {
-    TransformationSequence sequentialApplication(std::move(optimizations));
+    TransformationSequence sequentialApplication(std::move(transformations));
     sequentialApplication.Run(rvsdgModule, statisticsCollector);
   }
 
 private:
-  std::vector<Transformation *> Optimizations_;
+  std::vector<Transformation *> Transformations_;
 };
 
 }
