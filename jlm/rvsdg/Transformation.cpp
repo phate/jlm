@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "RvsdgModule.hpp"
+#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
@@ -16,13 +18,13 @@ public:
   ~Statistics() noexcept override = default;
 
   explicit Statistics(const util::filepath & sourceFile)
-      : util::Statistics(Statistics::Id::RvsdgOptimization, sourceFile)
+      : util::Statistics(Id::RvsdgOptimization, sourceFile)
   {}
 
   void
-  StartMeasuring(const rvsdg::Graph & graph) noexcept
+  StartMeasuring(const Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
@@ -30,7 +32,7 @@ public:
   EndMeasuring(const rvsdg::Graph & graph) noexcept
   {
     GetTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, nnodes(&graph.GetRootRegion()));
   }
 
   static std::unique_ptr<Statistics>
@@ -40,19 +42,19 @@ public:
   }
 };
 
-TransformationSequence::~OptimizationSequence() noexcept = default;
+TransformationSequence::~TransformationSequence() noexcept = default;
 
 void
 TransformationSequence::Run(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->StartMeasuring(rvsdgModule.Rvsdg());
 
   for (const auto & optimization : Optimizations_)
   {
-    optimization->run(rvsdgModule, statisticsCollector);
+    optimization->Run(rvsdgModule, statisticsCollector);
   }
 
   statistics->EndMeasuring(rvsdgModule.Rvsdg());

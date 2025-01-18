@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
 {
@@ -20,7 +21,7 @@ namespace jlm::llvm
 /**
  * \brief Node Pull-In Optimization
  */
-class pullin final : public optimization
+class pullin final : public rvsdg::Transformation
 {
 public:
   virtual ~pullin();

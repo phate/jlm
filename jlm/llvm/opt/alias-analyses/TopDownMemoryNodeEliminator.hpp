@@ -77,7 +77,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       util::StatisticsCollector & statisticsCollector) override;
 
@@ -92,7 +92,7 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       util::StatisticsCollector & statisticsCollector);
 
@@ -106,12 +106,12 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning);
 
 private:
   void
-  EliminateTopDown(const RvsdgModule & rvsdgModule);
+  EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * Processes the inter-procedural RVSDG nodes (lambda, phi, and delta nodes) in the root region
@@ -193,7 +193,7 @@ private:
    * @see graph::ExtractTailNodes()
    */
   void
-  InitializeLiveNodesOfTailLambdas(const RvsdgModule & rvsdgModule);
+  InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * Initializes the memory nodes that are alive at the beginning of every tail-lambda.
@@ -220,7 +220,7 @@ private:
    */
   static bool
   CheckInvariants(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       const Provisioning & provisioning);
 

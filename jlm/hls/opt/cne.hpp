@@ -7,6 +7,7 @@
 #define JLM_HLS_OPT_CNE_HPP
 
 #include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::llvm
 {
@@ -25,13 +26,13 @@ namespace jlm::hls
  * This is mainly a copy of the CNE optimization in the LLVM backend with the addition of support
  * for the hls::loop_op.
  */
-class cne final : public llvm::optimization
+class cne final : public rvsdg::Transformation
 {
 public:
   virtual ~cne();
 
-  virtual void
-  run(llvm::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

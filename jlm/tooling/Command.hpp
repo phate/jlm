@@ -418,15 +418,17 @@ private:
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
-  [[nodiscard]] std::vector<llvm::optimization *>
-  GetOptimizations() const;
+  [[nodiscard]] std::vector<rvsdg::Transformation *>
+  GetTransformations() const;
 
-  [[nodiscard]] std::unique_ptr<llvm::optimization>
-  CreateOptimization(enum JlmOptCommandLineOptions::OptimizationId optimizationId) const;
+  [[nodiscard]] std::unique_ptr<rvsdg::Transformation>
+  CreateTransformation(JlmOptCommandLineOptions::OptimizationId optimizationId) const;
 
   std::string ProgramName_;
   JlmOptCommandLineOptions CommandLineOptions_;
-  std::unordered_map<JlmOptCommandLineOptions::OptimizationId, std::unique_ptr<llvm::optimization>>
+  std::unordered_map<
+      JlmOptCommandLineOptions::OptimizationId,
+      std::unique_ptr<rvsdg::Transformation>>
       Optimizations_ = {};
 };
 

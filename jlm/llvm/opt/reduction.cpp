@@ -53,12 +53,13 @@ NodeReduction::~NodeReduction() noexcept = default;
 NodeReduction::NodeReduction() = default;
 
 void
-NodeReduction::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+NodeReduction::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto & rvsdgModule = *util::AssertedCast<RvsdgModule>(&rvsdgModule);
   const auto & graph = rvsdgModule.Rvsdg();
 
-  Statistics_ = Statistics::Create(rvsdgModule.SourceFileName());
+  Statistics_ = Statistics::Create(rvsdgModule.SourceFilePath().value());
   Statistics_->Start(graph);
 
   ReduceNodesInRegion(graph.GetRootRegion());

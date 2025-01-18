@@ -89,7 +89,7 @@ public:
 
   void
   Encode(
-      RvsdgModule & rvsdgModule,
+      rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & provisioning,
       util::StatisticsCollector & statisticsCollector);
 

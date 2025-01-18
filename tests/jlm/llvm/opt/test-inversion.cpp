@@ -67,7 +67,7 @@ test1()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::tginversion tginversion;
-  tginversion.run(rm, statisticsCollector);
+  tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex1.origin())));
@@ -114,7 +114,7 @@ test2()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::tginversion tginversion;
-  tginversion.run(rm, statisticsCollector);
+  tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex.origin())));

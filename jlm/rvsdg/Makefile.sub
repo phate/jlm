@@ -13,6 +13,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/structural-node.cpp \
 	jlm/rvsdg/theta.cpp \
 	jlm/rvsdg/tracker.cpp \
+	jlm/rvsdg/Transformation.cpp \
 	jlm/rvsdg/traverser.cpp \
 	jlm/rvsdg/type.cpp \
 	jlm/rvsdg/unary.cpp \

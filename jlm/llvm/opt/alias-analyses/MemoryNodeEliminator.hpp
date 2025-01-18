@@ -39,7 +39,7 @@ public:
    */
   virtual std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };

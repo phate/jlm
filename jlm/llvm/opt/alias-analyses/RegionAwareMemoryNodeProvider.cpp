@@ -35,11 +35,11 @@ public:
 
   explicit Statistics(
       const util::StatisticsCollector & statisticsCollector,
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
       : util::Statistics(
             Statistics::Id::RegionAwareMemoryNodeProvisioning,
-            rvsdgModule.SourceFileName()),
+            rvsdgModule.SourceFilePath().value()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())
@@ -127,7 +127,7 @@ public:
   static std::unique_ptr<Statistics>
   Create(
       const util::StatisticsCollector & statisticsCollector,
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
   {
     return std::make_unique<Statistics>(statisticsCollector, rvsdgModule, pointsToGraph);
@@ -627,7 +627,7 @@ RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider() = default;
 
 std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -657,7 +657,7 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
 
 std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::Create(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -667,7 +667,7 @@ RegionAwareMemoryNodeProvider::Create(
 
 std::unique_ptr<MemoryNodeProvisioning>
 RegionAwareMemoryNodeProvider::Create(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
 {
   util::StatisticsCollector statisticsCollector;
@@ -857,7 +857,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::StructuralNod
 }
 
 void
-RegionAwareMemoryNodeProvider::Propagate(const RvsdgModule & rvsdgModule)
+RegionAwareMemoryNodeProvider::Propagate(const rvsdg::RvsdgModule & rvsdgModule)
 {
   rvsdg::topdown_traverser traverser(&rvsdgModule.Rvsdg().GetRootRegion());
   for (auto & node : traverser)
@@ -971,7 +971,8 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::Region & region)
 }
 
 void
-RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule)
+RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(
+    const rvsdg::RvsdgModule & rvsdgModule)
 {
   auto ResolveLambda = [&](const lambda::node & lambda)
   {

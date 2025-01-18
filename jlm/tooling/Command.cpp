@@ -295,7 +295,7 @@ JlmOptCommand::JlmOptCommand(
   for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
   {
     if (auto it = Optimizations_.find(optimizationId); it == Optimizations_.end())
-      Optimizations_[optimizationId] = CreateOptimization(optimizationId);
+      Optimizations_[optimizationId] = CreateTransformation(optimizationId);
   }
 }
 
@@ -351,7 +351,10 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
-  llvm::OptimizationSequence::CreateAndRun(*rvsdgModule, statisticsCollector, GetOptimizations());
+  rvsdg::TransformationSequence::CreateAndRun(
+      *rvsdgModule,
+      statisticsCollector,
+      GetTransformations());
 
   PrintRvsdgModule(
       *rvsdgModule,
@@ -362,10 +365,10 @@ JlmOptCommand::Run() const
   statisticsCollector.PrintStatistics();
 }
 
-std::vector<llvm::optimization *>
-JlmOptCommand::GetOptimizations() const
+std::vector<rvsdg::Transformation *>
+JlmOptCommand::GetTransformations() const
 {
-  std::vector<llvm::optimization *> optimizations;
+  std::vector<rvsdg::Transformation *> optimizations;
   for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
   {
     auto it = Optimizations_.find(optimizationId);
@@ -376,8 +379,8 @@ JlmOptCommand::GetOptimizations() const
   return optimizations;
 }
 
-std::unique_ptr<llvm::optimization>
-JlmOptCommand::CreateOptimization(
+std::unique_ptr<rvsdg::Transformation>
+JlmOptCommand::CreateTransformation(
     enum JlmOptCommandLineOptions::OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;

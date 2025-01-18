@@ -62,12 +62,12 @@ split_opt(llvm::RvsdgModule & rm)
   jlm::llvm::tginversion tgi;
   jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
-  tgi.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
-  cne.run(rm, statisticsCollector);
-  ivr.run(rm, statisticsCollector);
-  red.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
+  tgi.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
+  ivr.Run(rm, statisticsCollector);
+  red.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
 }
 
 void
@@ -79,13 +79,13 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
   jlm::util::StatisticsCollector statisticsCollector;
-  tgi.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
-  cne.run(rm, statisticsCollector);
-  ivr.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
-  cne.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
+  tgi.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
+  ivr.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
 }
 
 void
@@ -422,7 +422,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   merge_gamma(rhls);
 
   llvm::DeadNodeElimination llvmDne;
-  llvmDne.run(rhls, collector);
+  llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
   remove_unused_state(rhls);
@@ -431,7 +431,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
-  hlsCne.run(rhls, collector);
+  hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);

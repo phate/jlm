@@ -51,7 +51,7 @@ public:
   operator=(NodeReduction &&) = delete;
 
   void
-  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void
