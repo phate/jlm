@@ -45,7 +45,9 @@ public:
 RvsdgTreePrinter::~RvsdgTreePrinter() noexcept = default;
 
 void
-RvsdgTreePrinter::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+RvsdgTreePrinter::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
