@@ -45,13 +45,13 @@ public:
 RvsdgTreePrinter::~RvsdgTreePrinter() noexcept = default;
 
 void
-RvsdgTreePrinter::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+RvsdgTreePrinter::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(module.SourceFilePath().value());
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
 
-  auto annotationMap = ComputeAnnotationMap(module.Rvsdg());
-  auto tree = rvsdg::Region::ToTree(module.Rvsdg().GetRootRegion(), annotationMap);
+  auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
+  auto tree = rvsdg::Region::ToTree(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
 
   auto file = statisticsCollector.CreateOutputFile("rvsdgTree.txt", true);
   file.open("w");

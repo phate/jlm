@@ -98,7 +98,7 @@ public:
   operator=(RvsdgTreePrinter &&) = delete;
 
   void
-  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   /**
