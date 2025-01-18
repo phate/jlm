@@ -10,10 +10,13 @@
 #include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
 
-#include <llvm/IR/Module.h>
-
 #include <memory>
 #include <string>
+
+namespace jlm::llvm
+{
+class RvsdgModule;
+}
 
 namespace jlm::tooling
 {

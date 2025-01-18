@@ -6,13 +6,7 @@
 #ifndef JLM_HLS_OPT_CNE_HPP
 #define JLM_HLS_OPT_CNE_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
-
-namespace jlm::llvm
-{
-class RvsdgModule;
-}
 
 namespace jlm::hls
 {

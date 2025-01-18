@@ -6,7 +6,6 @@
 #ifndef JLM_TOOLING_COMMANDLINE_HPP
 #define JLM_TOOLING_COMMANDLINE_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/file.hpp>

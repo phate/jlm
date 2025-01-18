@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_OPT_PUSH_HPP
 #define JLM_LLVM_OPT_PUSH_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg

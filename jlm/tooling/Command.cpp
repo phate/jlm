@@ -22,7 +22,6 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/llvm/opt/OptimizationSequence.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -31,6 +30,8 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
+
+#include <llvm/IR/Module.h>
 
 #ifdef ENABLE_MLIR
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
