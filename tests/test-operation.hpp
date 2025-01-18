@@ -124,15 +124,12 @@ public:
 
   static rvsdg::Node *
   create(
-      rvsdg::Region * region,
+      rvsdg::Region *,
       std::shared_ptr<const rvsdg::Type> srctype,
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return rvsdg::SimpleNode::create(
-        region,
-        unary_op(std::move(srctype), std::move(dsttype)),
-        { operand });
+    return &rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype));
   }
 
   static inline rvsdg::output *
@@ -141,8 +138,8 @@ public:
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    unary_op op(std::move(srctype), std::move(dsttype));
-    return rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
+    return rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype))
+        .output(0);
   }
 };
 
@@ -201,7 +198,7 @@ public:
       rvsdg::output * op2)
   {
     binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
-    return rvsdg::SimpleNode::create(op1->region(), op, { op1, op2 });
+    return &rvsdg::SimpleNode::Create(*op1->region(), op, { op1, op2 });
   }
 
   static inline rvsdg::output *
@@ -211,8 +208,8 @@ public:
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
-    binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
-    return rvsdg::SimpleNode::create_normalized(op1->region(), op, { op1, op2 })[0];
+    return rvsdg::CreateOpNode<binary_op>({ op1, op2 }, srctype, std::move(dsttype), flags::none)
+        .output(0);
   }
 
 private:
@@ -424,7 +421,7 @@ public:
       operand_types.push_back(operand->Type());
 
     test_op op(std::move(operand_types), std::move(result_types));
-    return rvsdg::SimpleNode::create(region, op, { operands });
+    return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 
   static rvsdg::SimpleNode *
@@ -435,7 +432,7 @@ public:
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     test_op op(std::move(operandTypes), std::move(resultTypes));
-    return rvsdg::SimpleNode::create(region, op, { operands });
+    return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 };
 
@@ -505,8 +502,14 @@ create_testop(
   for (const auto & operand : operands)
     operand_types.push_back(operand->Type());
 
-  test_op op(std::move(operand_types), std::move(result_types));
-  return rvsdg::SimpleNode::create_normalized(region, op, { operands });
+  return operands.empty() ? outputs(&rvsdg::CreateOpNode<test_op>(
+                                *region,
+                                std::move(operand_types),
+                                std::move(result_types)))
+                          : outputs(&rvsdg::CreateOpNode<test_op>(
+                                operands,
+                                std::move(operand_types),
+                                std::move(result_types)));
 }
 
 class TestGraphArgument final : public jlm::rvsdg::RegionArgument

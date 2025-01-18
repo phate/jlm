@@ -26,11 +26,7 @@ TestFork()
   auto lambda =
       lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
 
-  rvsdg::bitult_op ult(32);
-  rvsdg::bitadd_op add(32);
-
   auto loop = hls::loop_node::create(lambda->subregion());
-  auto subregion = loop->subregion();
   rvsdg::output * idvBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   rvsdg::output * lvsBuffer;
@@ -38,8 +34,8 @@ TestFork()
   rvsdg::output * lveBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
-  auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, lvsBuffer })[0];
-  auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lveBuffer })[0];
+  auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, lvsBuffer }, 32).output(0);
+  auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, lveBuffer }, 32).output(0);
   auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   loop->set_predicate(match);
@@ -94,17 +90,14 @@ TestConstantFork()
       lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
   auto lambdaRegion = lambda->subregion();
 
-  rvsdg::bitult_op ult(32);
-  rvsdg::bitadd_op add(32);
-
   auto loop = hls::loop_node::create(lambdaRegion);
   auto subregion = loop->subregion();
   rvsdg::output * idvBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 
-  auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, bitConstant1 })[0];
-  auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, bitConstant1 })[0];
+  auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, bitConstant1 }, 32).output(0);
+  auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, bitConstant1 }, 32).output(0);
   auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   loop->set_predicate(match);

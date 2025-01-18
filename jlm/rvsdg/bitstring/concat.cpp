@@ -19,12 +19,7 @@ bitconcat(const std::vector<jlm::rvsdg::output *> & operands)
   for (const auto operand : operands)
     types.push_back(std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type()));
 
-  auto region = operands[0]->region();
-  jlm::rvsdg::bitconcat_op op(std::move(types));
-  return jlm::rvsdg::SimpleNode::create_normalized(
-      region,
-      op,
-      { operands.begin(), operands.end() })[0];
+  return CreateOpNode<bitconcat_op>(operands, std::move(types)).output(0);
 }
 
 std::shared_ptr<const bittype>

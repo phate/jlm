@@ -131,10 +131,7 @@ TestCallTypeClassifierIndirectCall()
         8);
 
     auto load = LoadNonVolatileNode::Create(alloca[0], store, PointerType::Create(), 8);
-    auto fn = jlm::rvsdg::SimpleNode::create_normalized(
-        lambda->subregion(),
-        PointerToFunctionOperation(fcttype1),
-        { load[0] })[0];
+    auto fn = jlm::rvsdg::CreateOpNode<PointerToFunctionOperation>({ load[0] }, fcttype1).output(0);
 
     auto callResults = CallNode::Create(fn, fcttype1, { iOStateArgument, memoryStateArgument });
 
