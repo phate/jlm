@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_BACKEND_JLM2LLVM_CONTEXT_HPP
 #define JLM_LLVM_BACKEND_JLM2LLVM_CONTEXT_HPP
 
+#include <jlm/llvm/ir/TypeConverter.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/util/common.hpp>
 
@@ -108,6 +109,13 @@ public:
     return it->second;
   }
 
+  TypeConverter &
+  GetTypeConverter()
+  {
+    return TypeConverter_;
+  }
+
+#if 0
   inline ::llvm::StructType *
   structtype(const StructType::Declaration * dcl)
   {
@@ -121,13 +129,14 @@ public:
     JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
     structtypes_[dcl] = type;
   }
-
+#endif
 private:
   ::llvm::Module & lm_;
   ipgraph_module & im_;
   std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
-  std::unordered_map<const StructType::Declaration *, ::llvm::StructType *> structtypes_;
+  TypeConverter TypeConverter_;
+  // std::unordered_map<const StructType::Declaration *, ::llvm::StructType *> structtypes_;
 };
 
 }

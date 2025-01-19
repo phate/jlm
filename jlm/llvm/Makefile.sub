@@ -25,6 +25,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/domtree.cpp \
     jlm/llvm/ir/ipgraph.cpp \
     jlm/llvm/ir/ipgraph-module.cpp \
+    jlm/llvm/ir/TypeConverter.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/delta.cpp \
@@ -112,6 +113,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/ipgraph.hpp \
 	jlm/llvm/ir/cfg.hpp \
 	jlm/llvm/ir/ssa.hpp \
+	jlm/llvm/ir/TypeConverter.hpp \
 	jlm/llvm/ir/variable.hpp \
 	jlm/llvm/ir/basic-block.hpp \
 	jlm/llvm/ir/print.hpp \
@@ -193,6 +195,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestAnnotation \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
+    tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \

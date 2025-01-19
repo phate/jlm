@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
+#include <jlm/llvm/ir/TypeConverter.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 
@@ -220,6 +221,12 @@ public:
     return node_;
   }
 
+  TypeConverter &
+  GetTypeConverter() noexcept
+  {
+    return TypeConverter_;
+  }
+
 private:
   ipgraph_module & module_;
   basic_block_map bbmap_;
@@ -228,7 +235,7 @@ private:
   llvm::variable * iostate_;
   llvm::variable * memory_state_;
   std::unordered_map<const ::llvm::Value *, const llvm::variable *> vmap_;
-  std::unordered_map<const ::llvm::StructType *, const StructType::Declaration *> declarations_;
+  TypeConverter TypeConverter_;
 };
 
 }

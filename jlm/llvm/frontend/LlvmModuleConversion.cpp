@@ -8,6 +8,7 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/TypeConverter.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>
