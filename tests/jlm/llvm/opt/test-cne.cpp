@@ -12,9 +12,9 @@
 #include <jlm/rvsdg/theta.hpp>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/cne.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::util::StatisticsCollector statisticsCollector;
@@ -417,32 +417,32 @@ test_phi()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto & x = jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  phi::builder pb;
+  jlm::rvsdg::PhiBuilder pb;
   pb.begin(&graph.GetRootRegion());
   auto region = pb.subregion();
 
-  auto d1 = pb.add_ctxvar(x);
-  auto d2 = pb.add_ctxvar(x);
+  auto d1 = pb.AddContextVar(x);
+  auto d2 = pb.AddContextVar(x);
 
-  auto r1 = pb.add_recvar(ft);
-  auto r2 = pb.add_recvar(ft);
+  auto r1 = pb.AddFixVar(ft);
+  auto r2 = pb.AddFixVar(ft);
 
   auto lambda1 = jlm::rvsdg::LambdaNode::Create(
       *region,
       LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
-  auto cv1 = lambda1->AddContextVar(*d1).inner;
+  auto cv1 = lambda1->AddContextVar(*d1.inner).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
   auto lambda2 = jlm::rvsdg::LambdaNode::Create(
       *region,
       LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
-  auto cv2 = lambda2->AddContextVar(*d2).inner;
+  auto cv2 = lambda2->AddContextVar(*d2.inner).inner;
   auto f2 = lambda2->finalize({ cv2 });
 
-  r1->set_rvorigin(f1);
-  r2->set_rvorigin(f2);
+  r1.result->divert_to(f1);
+  r2.result->divert_to(f2);
 
   auto phi = pb.end();
 

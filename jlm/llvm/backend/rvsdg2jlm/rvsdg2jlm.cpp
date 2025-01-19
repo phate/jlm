@@ -427,17 +427,16 @@ convert_lambda_node(const rvsdg::Node & node, context & ctx)
 static inline void
 convert_phi_node(const rvsdg::Node & node, context & ctx)
 {
-  JLM_ASSERT(rvsdg::is<phi::operation>(&node));
-  auto phi = static_cast<const rvsdg::StructuralNode *>(&node);
-  auto subregion = phi->subregion(0);
+  auto & phi = dynamic_cast<const rvsdg::PhiNode &>(node);
+  auto subregion = phi.subregion();
   auto & module = ctx.module();
   auto & ipg = module.ipgraph();
 
   /* add dependencies to context */
-  for (size_t n = 0; n < phi->ninputs(); n++)
+  for (const auto & ctxvar : phi.GetContextVars())
   {
-    auto v = ctx.variable(phi->input(n)->origin());
-    ctx.insert(phi->input(n)->arguments.first(), v);
+    auto v = ctx.variable(ctxvar.input->origin());
+    ctx.insert(ctxvar.inner, v);
   }
 
   /* forward declare all functions and globals */
@@ -519,7 +518,7 @@ convert_node(const rvsdg::Node & node, context & ctx)
           map({ { typeid(rvsdg::LambdaNode), convert_lambda_node },
                 { std::type_index(typeid(rvsdg::GammaNode)), convert_gamma_node },
                 { std::type_index(typeid(rvsdg::ThetaNode)), convert_theta_node },
-                { typeid(phi::node), convert_phi_node },
+                { typeid(rvsdg::PhiNode), convert_phi_node },
                 { typeid(delta::node), convert_delta_node } });
 
   if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
