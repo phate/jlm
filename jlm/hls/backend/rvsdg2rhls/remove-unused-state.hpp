@@ -23,18 +23,6 @@ is_passthrough(const rvsdg::input * res);
 llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln);
 
-void
-remove_region_passthrough(const rvsdg::RegionArgument * arg);
-
-void
-remove_gamma_passthrough(rvsdg::GammaNode * gn);
-
-void
-remove_unused_state(llvm::RvsdgModule & rm);
-
-void
-remove_unused_state(rvsdg::Region * region, bool can_remove_arguments = true);
-
 } // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP

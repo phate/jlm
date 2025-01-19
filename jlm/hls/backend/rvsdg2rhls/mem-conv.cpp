@@ -720,16 +720,10 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
   //
   // TODO
-  // Remove unused state also creates a new lambda, which we have already done above.
+  // Remove lambda passthrough also creates a new lambda, which we have already done above.
   // It would be better to apply this functionality above such that we only create a new lambda
   // once.
-  //
-  remove_unused_state(root);
-  // TODO
-  // remove_unused_state() should be replaced with the following code
-  //  jlm::util::StatisticsCollector statisticsCollector;
-  //  llvm::InvariantValueRedirection llvmIvr;
-  //  llvmIvr.run(rm, statisticsCollector);
+  newLambda = remove_lambda_passthrough(newLambda);
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);

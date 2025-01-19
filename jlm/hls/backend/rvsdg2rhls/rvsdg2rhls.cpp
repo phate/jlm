@@ -442,7 +442,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   dne(rhls);
   alloca_conv(rhls);
   mem_queue(rhls);
+  llvmIvr.Run(rhls, collector);
   MemoryConverter(rhls);
+  llvmIvr.Run(rhls, collector);
   // TODO
   // Move llvmRed.run() earlier in the pipeline.
   llvmRed.Run(rhls, collector);
