@@ -52,12 +52,6 @@ Additional information about supported build options is available via
 `--target debug` to switch to a debug build target instead of the (default)
 release target.
 
-## Bootstrap for complete build with default configuration
-Default build with all backends and frontends enabled.
-```
-./scripts/build-all.sh
-```
-
 ## Documentation
 Invoke the following command to generate the doxygen documentation:
 ```
