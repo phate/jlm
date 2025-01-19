@@ -871,8 +871,8 @@ TestPhi1()
     auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
     auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
 
-    auto & phi_rv = ptg.GetRegisterNode(*test.phi->begin_rv().output());
-    auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->begin_rv().output()->argument());
+    auto & phi_rv = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].output);
+    auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].recref);
 
     auto & gamma_result = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(1));
     auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(2));

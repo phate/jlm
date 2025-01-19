@@ -182,6 +182,21 @@ Region::append_argument(RegionArgument * argument)
 }
 
 void
+Region::insert_argument(size_t index, RegionArgument * argument)
+{
+  if (argument->region() != this)
+    throw jlm::util::error("Inserting argument to wrong region.");
+
+  JLM_ASSERT(argument->index() == 0);
+
+  argument->index_ = index;
+  arguments_.insert(arguments_.begin() + index, argument);
+  for (size_t n = index + 1; n < arguments_.size(); ++n)
+    arguments_[n]->index_ = n;
+  on_output_create(argument);
+}
+
+void
 Region::RemoveArgument(size_t index)
 {
   JLM_ASSERT(index < narguments());
