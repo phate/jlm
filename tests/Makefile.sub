@@ -54,6 +54,7 @@ JLC_COMPILE_TESTS = \
 # Add macOS specific include and library paths
 ifeq ($(shell uname -s),Darwin)
 	CPPFLAGS += -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+	LDFLAGS += -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib
 endif
 
 
