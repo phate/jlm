@@ -85,9 +85,9 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   {
     output = lambda->AddContextVar(*output).inner;
   }
-  else if (auto phi = dynamic_cast<phi::node *>(region->node()))
+  else if (auto phi = dynamic_cast<rvsdg::PhiNode *>(region->node()))
   {
-    output = phi->add_ctxvar(output);
+    output = phi->AddContextVar(*output).inner;
   }
   else
   {

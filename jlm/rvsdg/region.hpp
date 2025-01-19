@@ -380,6 +380,13 @@ public:
   void
   append_argument(RegionArgument * argument);
 
+  /* \brief Insert \p argument into argument list of the region
+   *
+   * Multiple invocations of append_argument for the same argument are undefined.
+   */
+  void
+  insert_argument(size_t index, RegionArgument * argument);
+
   /**
    * Removes an argument from the region given an arguments' index.
    *
