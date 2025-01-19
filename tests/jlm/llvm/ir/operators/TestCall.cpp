@@ -392,9 +392,9 @@ TestCallTypeClassifierRecursiveDirectCall()
         { IOStateType::Create(), MemoryStateType::Create() });
     auto pt = PointerType::Create();
 
-    jlm::llvm::phi::builder pb;
+    jlm::rvsdg::PhiBuilder pb;
     pb.begin(&graph->GetRootRegion());
-    auto fibrv = pb.add_recvar(functionType);
+    auto fibrv = pb.AddFixVar(functionType);
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         *pb.subregion(),
@@ -403,7 +403,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto pointerArgument = lambda->GetFunctionArguments()[1];
     auto iOStateArgument = lambda->GetFunctionArguments()[2];
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
-    auto ctxVarFib = lambda->AddContextVar(*fibrv->argument()).inner;
+    auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
@@ -471,10 +471,10 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });
 
-    fibrv->result()->divert_to(lambdaOutput);
+    fibrv.result->divert_to(lambdaOutput);
     pb.end();
 
-    GraphExport::Create(*fibrv, "fib");
+    GraphExport::Create(*fibrv.output, "fib");
 
     return std::make_tuple(
         lambdaOutput,

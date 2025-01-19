@@ -353,19 +353,19 @@ RecursiveData()
 
   auto imp = &GraphImport::Create(rm.Rvsdg(), vt, pt, "", linkage::external_linkage);
 
-  phi::builder pb;
+  jlm::rvsdg::PhiBuilder pb;
   pb.begin(&rm.Rvsdg().GetRootRegion());
   auto region = pb.subregion();
-  auto r1 = pb.add_recvar(pt);
-  auto r2 = pb.add_recvar(pt);
-  auto dep = pb.add_ctxvar(imp);
+  auto r1 = pb.AddFixVar(pt);
+  auto r2 = pb.AddFixVar(pt);
+  auto dep = pb.AddContextVar(*imp);
 
   jlm::rvsdg::output *delta1, *delta2;
   {
     auto delta =
         delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
-    auto dep1 = delta->add_ctxvar(r2->argument());
-    auto dep2 = delta->add_ctxvar(dep);
+    auto dep1 = delta->add_ctxvar(r2.recref);
+    auto dep2 = delta->add_ctxvar(dep.inner);
     delta1 =
         delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
@@ -373,14 +373,14 @@ RecursiveData()
   {
     auto delta =
         delta::node::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
-    auto dep1 = delta->add_ctxvar(r1->argument());
-    auto dep2 = delta->add_ctxvar(dep);
+    auto dep1 = delta->add_ctxvar(r1.recref);
+    auto dep2 = delta->add_ctxvar(dep.inner);
     delta2 =
         delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
-  r1->set_rvorigin(delta1);
-  r2->set_rvorigin(delta2);
+  r1.result->divert_to(delta1);
+  r2.result->divert_to(delta2);
 
   auto phi = pb.end();
   GraphExport::Create(*phi->output(0), "");
