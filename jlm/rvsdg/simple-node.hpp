@@ -8,8 +8,6 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 
@@ -47,38 +45,21 @@ public:
   Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
-  static inline jlm::rvsdg::SimpleNode *
-  create(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands)
+  static SimpleNode &
+  Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::output *> & operands)
   {
     std::unique_ptr<SimpleOperation> newOp(
         util::AssertedCast<SimpleOperation>(op.copy().release()));
-    return new SimpleNode(*region, std::move(newOp), operands);
+    return *(new SimpleNode(region, std::move(newOp), operands));
   }
 
-  static inline jlm::rvsdg::SimpleNode &
+  static SimpleNode &
   Create(
-      rvsdg::Region & region,
+      Region & region,
       std::unique_ptr<SimpleOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands)
+      const std::vector<rvsdg::output *> & operands)
   {
     return *new SimpleNode(region, std::move(operation), operands);
-  }
-
-  /**
-   * @deprecated Please use SimpleNode::Create()
-   */
-  static inline std::vector<jlm::rvsdg::output *>
-  create_normalized(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands)
-  {
-    std::unique_ptr<SimpleOperation> operation(
-        util::AssertedCast<SimpleOperation>(op.copy().release()));
-    return outputs(&Create(*region, std::move(operation), operands));
   }
 
 private:

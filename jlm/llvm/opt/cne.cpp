@@ -12,6 +12,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <typeindex>
+
 namespace jlm::llvm
 {
 
@@ -562,12 +564,12 @@ divert(rvsdg::Region * region, cnectx & ctx)
 }
 
 static void
-cne(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = rm.Rvsdg();
+  auto & graph = rvsdgModule.Rvsdg();
 
   cnectx ctx;
-  auto statistics = cnestat::Create(rm.SourceFileName());
+  auto statistics = cnestat::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start_mark_stat(graph);
   mark(&graph.GetRootRegion(), ctx);
@@ -586,7 +588,7 @@ cne::~cne()
 {}
 
 void
-cne::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   llvm::cne(module, statisticsCollector);
 }

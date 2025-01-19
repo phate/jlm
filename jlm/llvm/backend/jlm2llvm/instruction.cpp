@@ -19,6 +19,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
+#include <typeindex>
+
 namespace jlm::llvm
 {
 

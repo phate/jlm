@@ -7,10 +7,8 @@
 #ifndef JLM_RVSDG_NULLARY_HPP
 #define JLM_RVSDG_NULLARY_HPP
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/util/common.hpp>
 
 namespace jlm::rvsdg
 {
@@ -97,8 +95,7 @@ public:
   static inline jlm::rvsdg::output *
   create(rvsdg::Region * region, const value_repr & vr)
   {
-    domain_const_op op(vr);
-    return SimpleNode::create_normalized(region, op, {})[0];
+    return CreateOpNode<domain_const_op>(*region, vr).output(0);
   }
 
 private:

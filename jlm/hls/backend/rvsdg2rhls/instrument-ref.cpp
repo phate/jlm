@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+#include <cmath>
+
 namespace jlm::hls
 {
 
@@ -247,8 +249,7 @@ instrument_ref(
       auto dbt = dynamic_cast<const jlm::rvsdg::bittype *>(&data->type());
       if (*dbt != *jlm::rvsdg::bittype::Create(64))
       {
-        jlm::llvm::zext_op op(dbt->nbits(), 64);
-        data = jlm::rvsdg::SimpleNode::create_normalized(data->region(), op, { data })[0];
+        data = &llvm::zext_op::Create(*data, rvsdg::bittype::Create(64));
       }
       auto memstate = node->input(2)->origin();
       auto callOp = jlm::llvm::CallNode::Create(

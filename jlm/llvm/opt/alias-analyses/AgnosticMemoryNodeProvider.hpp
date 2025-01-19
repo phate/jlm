@@ -47,7 +47,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override;
 
@@ -62,7 +62,7 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   Create(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector);
 
@@ -75,7 +75,7 @@ public:
    * @return A new instance of MemoryNodeProvisioning.
    */
   static std::unique_ptr<MemoryNodeProvisioning>
-  Create(const RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
+  Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
 };
 
 /** \brief Agnostic memory node provider statistics

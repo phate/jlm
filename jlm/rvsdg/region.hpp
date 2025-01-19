@@ -630,9 +630,6 @@ public:
   void
   prune(bool recursive);
 
-  void
-  normalize(bool recursive);
-
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,
    * then the subregions of all contained structural nodes are recursively checked as well.

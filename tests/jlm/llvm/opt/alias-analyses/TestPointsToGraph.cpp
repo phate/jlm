@@ -17,7 +17,7 @@ class TestAnalysis final : public jlm::llvm::aa::AliasAnalysis
 {
 public:
   std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-  Analyze(const jlm::llvm::RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector &) override
+  Analyze(const jlm::rvsdg::RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector &) override
   {
     PointsToGraph_ = jlm::llvm::aa::PointsToGraph::Create();
 

@@ -22,8 +22,6 @@ TestTraceArgument()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -82,8 +80,6 @@ TestLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -164,8 +160,6 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -251,8 +245,6 @@ TestThetaLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -272,7 +264,6 @@ TestThetaLoad()
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
-  auto thetaRegion = theta->subregion();
   // Predicate
   auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   auto lvs = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
@@ -281,8 +272,8 @@ TestThetaLoad()
   jlm::rvsdg::bitsgt_op sgt(32);
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
-  auto arm = jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, add, { idv.pre, lvs.pre })[0];
-  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, ult, { arm, lve.pre })[0];
+  auto arm = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitadd_op>({ idv.pre, lvs.pre }, 32).output(0);
+  auto cmp = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitult_op>({ arm, lve.pre }, 32).output(0);
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
   idv.post->divert_to(arm);
   theta->set_predicate(match);

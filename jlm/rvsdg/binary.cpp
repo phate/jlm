@@ -96,7 +96,7 @@ FlattenAssociativeBinaryOperation(
   JLM_ASSERT(newOperands.size() > 2);
   auto flattenedBinaryOperation =
       std::make_unique<flattened_binary_op>(operation, newOperands.size());
-  return outputs(SimpleNode::create(region, *flattenedBinaryOperation, newOperands));
+  return outputs(&SimpleNode::Create(*region, *flattenedBinaryOperation, newOperands));
 }
 
 std::optional<std::vector<rvsdg::output *>>
@@ -122,7 +122,7 @@ NormalizeBinaryOperation(
   }
 
   JLM_ASSERT(newOperands.size() == 2);
-  return outputs(SimpleNode::create(region, operation, newOperands));
+  return outputs(&SimpleNode::Create(*region, operation, newOperands));
 }
 
 /* flattened binary operator */
@@ -169,7 +169,7 @@ reduce_parallel(const BinaryOperation & op, const std::vector<jlm::rvsdg::output
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::Create(*region, op, { op1, op2 }).output(0);
     worklist.push_back(output);
   }
 
@@ -191,7 +191,7 @@ reduce_linear(const BinaryOperation & op, const std::vector<jlm::rvsdg::output *
     auto op2 = worklist.front();
     worklist.pop_front();
 
-    auto output = SimpleNode::create_normalized(region, op, { op1, op2 })[0];
+    auto output = SimpleNode::Create(*region, op, { op1, op2 }).output(0);
     worklist.push_front(output);
   }
 

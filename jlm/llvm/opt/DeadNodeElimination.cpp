@@ -11,6 +11,8 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
+#include <typeindex>
+
 namespace jlm::llvm
 {
 
@@ -154,12 +156,14 @@ DeadNodeElimination::run(rvsdg::Region & region)
 }
 
 void
-DeadNodeElimination::run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+DeadNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create();
 
   auto & rvsdg = module.Rvsdg();
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
   statistics->StartMarkStatistics(rvsdg);
   MarkRegion(rvsdg.GetRootRegion());
   statistics->StopMarkStatistics();

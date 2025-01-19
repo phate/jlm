@@ -14,6 +14,7 @@ namespace rvsdg
 class GammaNode;
 class output;
 class Region;
+class RvsdgModule;
 class SimpleNode;
 class StructuralNode;
 class ThetaNode;
@@ -89,7 +90,7 @@ public:
 
   void
   Encode(
-      RvsdgModule & rvsdgModule,
+      rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & provisioning,
       util::StatisticsCollector & statisticsCollector);
 

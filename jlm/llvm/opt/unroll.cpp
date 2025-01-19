@@ -343,10 +343,9 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
 
   auto uf = jlm::rvsdg::create_bitconstant(region, nbits, factor);
   auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
-  auto arm =
-      jlm::rvsdg::SimpleNode::create_normalized(region, ui.armoperation(), { ui.init(), mul })[0];
+  auto arm = rvsdg::SimpleNode::Create(*region, ui.armoperation(), { ui.init(), mul }).output(0);
   /* FIXME: order of operands */
-  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(region, ui.cmpoperation(), { arm, end })[0];
+  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation(), { arm, end }).output(0);
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -374,9 +373,9 @@ create_unrolled_theta_predicate(
 
   auto uf = create_bitconstant(region, nbits, factor);
   auto mul = bitmul_op::create(nbits, step, uf);
-  auto arm = SimpleNode::create_normalized(region, ui.armoperation(), { idv->origin(), mul })[0];
+  auto arm = SimpleNode::Create(*region, ui.armoperation(), { idv->origin(), mul }).output(0);
   /* FIXME: order of operands */
-  auto cmp = SimpleNode::create_normalized(region, ui.cmpoperation(), { arm, iend->origin() })[0];
+  auto cmp = SimpleNode::Create(*region, ui.cmpoperation(), { arm, iend->origin() }).output(0);
   auto pred = match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -390,7 +389,7 @@ create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const unrol
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
 
   /* FIXME: order of operands */
-  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(region, ui.cmpoperation(), { idv, end })[0];
+  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation(), { idv, end }).output(0);
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -486,15 +485,10 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (!ui)
     return;
 
-  auto nf = otheta->graph()->GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
-
   if (ui->is_known() && ui->niterations())
     unroll_known_theta(*ui, factor);
   else
     unroll_unknown_theta(*ui, factor);
-
-  nf->set_mutable(true);
 }
 
 static bool
@@ -528,13 +522,13 @@ loopunroll::~loopunroll()
 {}
 
 void
-loopunroll::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+loopunroll::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   if (factor_ < 2)
     return;
 
   auto & graph = module.Rvsdg();
-  auto statistics = unrollstat::Create(module.SourceFileName());
+  auto statistics = unrollstat::Create(module.SourceFilePath().value());
 
   statistics->start(module.Rvsdg());
   unroll(&graph.GetRootRegion(), factor_);

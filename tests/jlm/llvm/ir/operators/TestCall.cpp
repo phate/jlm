@@ -113,9 +113,6 @@ TestCallTypeClassifierIndirectCall()
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   auto SetupFunction = [&]()
   {
     auto lambda =
@@ -134,10 +131,7 @@ TestCallTypeClassifierIndirectCall()
         8);
 
     auto load = LoadNonVolatileNode::Create(alloca[0], store, PointerType::Create(), 8);
-    auto fn = jlm::rvsdg::SimpleNode::create_normalized(
-        lambda->subregion(),
-        PointerToFunctionOperation(fcttype1),
-        { load[0] })[0];
+    auto fn = jlm::rvsdg::CreateOpNode<PointerToFunctionOperation>({ load[0] }, fcttype1).output(0);
 
     auto callResults = CallNode::Create(fn, fcttype1, { iOStateArgument, memoryStateArgument });
 
@@ -168,9 +162,6 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
-
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
@@ -268,9 +259,6 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   // Arrange
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
-
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto vt = jlm::tests::valuetype::Create();
   auto iOStateType = iostatetype::Create();
@@ -386,9 +374,6 @@ TestCallTypeClassifierRecursiveDirectCall()
 
   auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &module->Rvsdg();
-
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto SetupFib = [&]()
   {

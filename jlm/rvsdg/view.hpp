@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/graph.hpp>
 
 #include <string>
+#include <unordered_map>
 
 namespace jlm::rvsdg
 {

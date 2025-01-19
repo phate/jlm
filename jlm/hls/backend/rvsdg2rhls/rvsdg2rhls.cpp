@@ -60,12 +60,12 @@ split_opt(llvm::RvsdgModule & rm)
   jlm::llvm::tginversion tgi;
   jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
-  tgi.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
-  cne.run(rm, statisticsCollector);
-  ivr.run(rm, statisticsCollector);
-  red.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
+  tgi.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
+  ivr.Run(rm, statisticsCollector);
+  red.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
 }
 
 void
@@ -77,13 +77,13 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
   jlm::util::StatisticsCollector statisticsCollector;
-  tgi.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
-  cne.run(rm, statisticsCollector);
-  ivr.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
-  cne.run(rm, statisticsCollector);
-  dne.run(rm, statisticsCollector);
+  tgi.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
+  ivr.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
 }
 
 void
@@ -207,8 +207,7 @@ convert_alloca(rvsdg::Region * region)
       }
       else
       {
-        llvm::ConstantAggregateZero cop(po->ValueType());
-        cout = jlm::rvsdg::SimpleNode::create_normalized(db->subregion(), cop, {})[0];
+        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
@@ -408,13 +407,13 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2ref(llvm::RvsdgModule & rhls, std::string path)
+rvsdg2ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 {
   dump_ref(rhls, path);
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rhls)
+rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
   // TODO
@@ -422,13 +421,13 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   // Thus, it should be possible to either replace these with other passes or move
   // them to the llvm backend.
   merge_gamma(rhls);
-  util::StatisticsCollector statisticsCollector;
+
   llvm::DeadNodeElimination llvmDne;
-  llvmDne.run(rhls, statisticsCollector);
+  llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
   llvm::InvariantValueRedirection llvmIvr;
-  llvmIvr.run(rhls, statisticsCollector);
+  llvmIvr.Run(rhls, collector);
   llvm::NodeReduction llvmRed;
   // TODO
   // Would probably want to perform the NodeReduction pass here but it breaks assumptions
@@ -438,7 +437,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
-  hlsCne.run(rhls, statisticsCollector);
+  hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
@@ -446,7 +445,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
   MemoryConverter(rhls);
   // TODO
   // Move llvmRed.run() earlier in the pipeline.
-  llvmRed.run(rhls, statisticsCollector);
+  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
@@ -458,7 +457,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls)
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls, std::string & path)
+dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
 {
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());
@@ -478,7 +477,7 @@ dump_ref(llvm::RvsdgModule & rhls, std::string & path)
   auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
   auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
   std::error_code EC;
-  ::llvm::raw_fd_ostream os(path, EC);
+  ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);
 }
 

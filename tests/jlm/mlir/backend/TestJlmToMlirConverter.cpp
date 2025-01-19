@@ -21,9 +21,6 @@ TestLambda()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
@@ -143,9 +140,6 @@ TestAddOperation()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
@@ -247,9 +241,6 @@ TestComZeroExt()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
@@ -272,9 +263,7 @@ TestComZeroExt()
     jlm::rvsdg::create_bitconstant(lambda->subregion(), 16, 6); // Unused constant
 
     // zero extension of constant1
-    auto zeroExtOp = jlm::llvm::zext_op(8, 16);
-    auto zeroExt =
-        jlm::rvsdg::SimpleNode::create_normalized(lambda->subregion(), zeroExtOp, { constant1 })[0];
+    auto zeroExt = jlm::rvsdg::CreateOpNode<zext_op>({ constant1 }, 8, 16).output(0);
 
     auto mul = jlm::rvsdg::bitmul_op::create(16, zeroExt, zeroExt);
 
@@ -394,9 +383,6 @@ TestMatch()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
@@ -503,9 +489,6 @@ TestGamma()
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
-
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   {
 
@@ -623,8 +606,6 @@ TestTheta()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
   {
     // Create a theta operation
     std::cout << "Theta Operation" << std::endl;

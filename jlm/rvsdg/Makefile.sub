@@ -4,17 +4,16 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/FunctionType.cpp \
 	jlm/rvsdg/gamma.cpp \
 	jlm/rvsdg/graph.cpp \
-	jlm/rvsdg/node-normal-form.cpp \
 	jlm/rvsdg/node.cpp \
 	jlm/rvsdg/notifiers.cpp \
 	jlm/rvsdg/nullary.cpp \
 	jlm/rvsdg/operation.cpp \
 	jlm/rvsdg/region.cpp \
-	jlm/rvsdg/simple-normal-form.cpp \
 	jlm/rvsdg/simple-node.cpp \
 	jlm/rvsdg/structural-node.cpp \
 	jlm/rvsdg/theta.cpp \
 	jlm/rvsdg/tracker.cpp \
+	jlm/rvsdg/Transformation.cpp \
 	jlm/rvsdg/traverser.cpp \
 	jlm/rvsdg/type.cpp \
 	jlm/rvsdg/unary.cpp \
@@ -56,14 +55,13 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/theta.hpp \
 	jlm/rvsdg/reduction-helpers.hpp \
 	jlm/rvsdg/RvsdgModule.hpp \
+	jlm/rvsdg/Transformation.hpp \
 	jlm/rvsdg/bitstring.hpp \
 	jlm/rvsdg/node.hpp \
-	jlm/rvsdg/node-normal-form.hpp \
 	jlm/rvsdg/NodeNormalization.hpp \
 	jlm/rvsdg/nullary.hpp \
 	jlm/rvsdg/structural-node.hpp \
 	jlm/rvsdg/control.hpp \
-	jlm/rvsdg/simple-normal-form.hpp \
 	jlm/rvsdg/region.hpp \
 
 librvsdg_TESTS = \

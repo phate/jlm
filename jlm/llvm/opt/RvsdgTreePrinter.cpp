@@ -45,24 +45,23 @@ public:
 RvsdgTreePrinter::~RvsdgTreePrinter() noexcept = default;
 
 void
-RvsdgTreePrinter::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+RvsdgTreePrinter::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
 
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
   auto tree = rvsdg::Region::ToTree(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
-  WriteTreeToFile(rvsdgModule, tree);
+
+  auto file = statisticsCollector.CreateOutputFile("rvsdgTree.txt", true);
+  file.open("w");
+  fprintf(file.fd(), "%s\n", tree.c_str());
+  file.close();
 
   statistics->Stop();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
-
-void
-RvsdgTreePrinter::run(RvsdgModule & rvsdgModule)
-{
-  util::StatisticsCollector collector;
-  run(rvsdgModule, collector);
 }
 
 util::AnnotationMap
@@ -178,36 +177,6 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
   };
 
   annotateRegion(rvsdg.GetRootRegion());
-}
-
-void
-RvsdgTreePrinter::WriteTreeToFile(const RvsdgModule & rvsdgModule, const std::string & tree) const
-{
-  auto outputFile = CreateOutputFile(rvsdgModule);
-
-  outputFile.open("w");
-  fprintf(outputFile.fd(), "%s\n", tree.c_str());
-  outputFile.close();
-}
-
-util::file
-RvsdgTreePrinter::CreateOutputFile(const RvsdgModule & rvsdgModule) const
-{
-  auto fileName = util::strfmt(
-      Configuration_.OutputDirectory().to_str(),
-      "/",
-      rvsdgModule.SourceFileName().base().c_str(),
-      "-rvsdgTree-",
-      GetOutputFileNameCounter(rvsdgModule));
-  return util::filepath(fileName);
-}
-
-uint64_t
-RvsdgTreePrinter::GetOutputFileNameCounter(const RvsdgModule & rvsdgModule)
-{
-  static std::unordered_map<std::string_view, uint64_t> RvsdgModuleCounterMap_;
-
-  return RvsdgModuleCounterMap_[rvsdgModule.SourceFileName().to_str()]++;
 }
 
 bool
