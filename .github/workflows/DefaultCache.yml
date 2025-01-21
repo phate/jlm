@@ -1,0 +1,20 @@
+name: DefaultCache
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  DefaultCache:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install dependencies"
+        uses: ./.github/actions/InstallPackages
+        with:
+          install-llvm: true
+          install-clang: true
+      - name: "Build CIRCT to generate cache"
+        uses: ./.github/actions/BuildCirct
+      - name: "Build MLIR to generate cache"
+        uses: ./.github/actions/BuildMlirDialect
