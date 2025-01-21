@@ -707,6 +707,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
     originalResults.push_back(smap.lookup(result->origin()));
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
+
   auto newOut = newLambda->finalize(originalResults);
   auto oldExport = jlm::llvm::ComputeCallSummary(*lambda).GetRvsdgExport();
   llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
@@ -724,10 +725,6 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // It would be better to apply this functionality above such that we only create a new lambda
   // once.
   newLambda = remove_lambda_passthrough(newLambda);
-
-  // Need to get the lambda from the root since remote_unused_state replaces the lambda
-  JLM_ASSERT(root->nnodes() == 1);
-  newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->Nodes().begin().ptr());
 
   // Go through in reverse since we are removing things
   auto ctxvars = newLambda->GetContextVars();

@@ -10,6 +10,32 @@
 namespace jlm::hls
 {
 
+bool
+is_passthrough(const rvsdg::input * res)
+{
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
+  if (arg)
+  {
+    return true;
+  }
+  return false;
+}
+
+bool
+is_passthrough(const rvsdg::output * arg)
+{
+  if (arg->nusers() == 1)
+  {
+    auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
+    // used only by a result
+    if (res)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 jlm::llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln)
 {
@@ -87,46 +113,6 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
   return new_lambda;
-}
-
-void
-remove_region_passthrough(const rvsdg::RegionArgument * arg)
-{
-  auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
-  auto origin = arg->input()->origin();
-  // divert users of output to origin of input
-  arg->region()->node()->output(res->output()->index())->divert_users(origin);
-  // remove result first so argument has no users
-  arg->region()->RemoveResult(res->index());
-  arg->region()->RemoveArgument(arg->index());
-  arg->region()->node()->RemoveInput(arg->input()->index());
-  arg->region()->node()->RemoveOutput(res->output()->index());
-}
-
-bool
-is_passthrough(const rvsdg::input * res)
-{
-  auto arg = dynamic_cast<rvsdg::RegionArgument *>(res->origin());
-  if (arg)
-  {
-    return true;
-  }
-  return false;
-}
-
-bool
-is_passthrough(const rvsdg::output * arg)
-{
-  if (arg->nusers() == 1)
-  {
-    auto res = dynamic_cast<rvsdg::RegionResult *>(*arg->begin());
-    // used only by a result
-    if (res)
-    {
-      return true;
-    }
-  }
-  return false;
 }
 
 } // namespace jlm::hls
