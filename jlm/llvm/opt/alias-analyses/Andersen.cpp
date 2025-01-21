@@ -137,6 +137,8 @@ Andersen::Configuration::GetAllConfigurations()
     PickWorklistPolicy(config);
     config.SetSolver(Solver::Naive);
     PickOfflineNormalization(config);
+    config.SetSolver(Solver::WavePropagation);
+    configs.push_back(config);
   };
   auto PickOfflineVariableSubstitution = [&](Configuration config)
   {

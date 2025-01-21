@@ -448,8 +448,8 @@ public:
   MarkAsLoadingAsScalar(PointerObjectIndex index);
 
   /**
-   * @return true if the PointerObject with the given \p index is the target of a scalar load, false otherwise.
-   * If it is, any pointee of \p index will be marked as making its pointees escape.
+   * @return true if the PointerObject with the given \p index is the target of a scalar load, false
+   * otherwise. If it is, any pointee of \p index will be marked as making its pointees escape.
    */
   [[nodiscard]] bool
   IsLoadedAsScalar(PointerObjectIndex index) const noexcept;
@@ -1149,6 +1149,19 @@ public:
    */
   size_t
   SolveNaively();
+
+  /**
+   * Solves the constraint set using the Wave propagation technique described in
+   * Pereira and Berlin, 2009, "Wave Propagation and Deep Propagation for Pointer Analysis".
+   * The algorithm is an evolution on Pearce's topological worklist policy + difference propagation.
+   * It has three phases that loop until a fixed point is reached:
+   *  - collapse cycles (by finding SCCs)
+   *  - Propagate in topological order
+   *  - Add new edges
+   * @return the number of iterations before the fixed point was reached
+   */
+  size_t
+  SolveUsingWavePropagation();
 
   /**
    * Creates a clone of this constraint set, and the underlying PointerObjectSet.

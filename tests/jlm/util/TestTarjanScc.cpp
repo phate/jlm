@@ -17,12 +17,19 @@
 
 #include <iostream>
 
+// Used to represent graphs with no node unification
+static size_t
+Identity(size_t i)
+{
+  return i;
+}
+
 /**
  * Validation function checking that the found SCCs correspond to the \p successors:
  *  - All sccIndex are between 0 and numSccs-1
  *  - All SCCs contain at least one node
  *  - All edges in the graph point to an \p sccIndex which is equal or lower
- *  - The topologicalOrder contains all nodes, sorted by descending sccIndex
+ *  - The reverseTopologicalOrder contains all nodes, sorted by descending sccIndex
  */
 template<typename SuccessorFunctor>
 static void
@@ -31,7 +38,7 @@ ValidateTopologicalOrderAndSccIndices(
     SuccessorFunctor & successors,
     size_t numSccs,
     const std::vector<size_t> & sccIndex,
-    const std::vector<size_t> & topologicalOrder)
+    const std::vector<size_t> & reverseTopologicalOrder)
 {
   assert(numNodes == sccIndex.size());
 
@@ -61,18 +68,18 @@ ValidateTopologicalOrderAndSccIndices(
 
   // Check that all nodes appear once in the topological order
   std::unordered_set<size_t> nodeInTopologicalOrder;
-  assert(numNodes == topologicalOrder.size());
+  assert(numNodes == reverseTopologicalOrder.size());
   for (size_t i = 0; i < numNodes; i++)
   {
-    assert(topologicalOrder[i] < numNodes);
-    nodeInTopologicalOrder.insert(topologicalOrder[i]);
+    assert(reverseTopologicalOrder[i] < numNodes);
+    nodeInTopologicalOrder.insert(reverseTopologicalOrder[i]);
   }
   assert(numNodes == nodeInTopologicalOrder.size());
 
-  // Check that the topological order contains nodes sorted by descending sccIndex
+  // Check that the topological order contains nodes sorted by ascending sccIndex
   for (size_t i = 1; i < numNodes; i++)
   {
-    assert(sccIndex[topologicalOrder[i - 1]] >= sccIndex[topologicalOrder[i]]);
+    assert(sccIndex[reverseTopologicalOrder[i - 1]] <= sccIndex[reverseTopologicalOrder[i]]);
   }
 }
 
@@ -98,18 +105,19 @@ TestDag()
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
+      Identity,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   assert(numSccs == numNodes);
   return 0;
@@ -138,26 +146,27 @@ TestCycles()
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
+      Identity,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   assert(numSccs == 3);
   // 5 has to be at the end
   assert(sccIndex[5] == 0);
-  assert(topologicalOrder[numNodes - 1] == 5);
+  assert(reverseTopologicalOrder[0] == 5);
   // 6 has to be at the beginning
   assert(sccIndex[6] == 2);
-  assert(topologicalOrder[0] == 6);
+  assert(reverseTopologicalOrder[numNodes - 1] == 6);
   // The rest belong to the middle SCC
   for (size_t i = 0; i < 5; i++)
     assert(sccIndex[i] == 1);
@@ -223,18 +232,19 @@ CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraE
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
+      Identity,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   std::vector<size_t> unshuffledNodeIndex(numNodes);
   for (size_t i = 0; i < numNodes; i++)
@@ -324,12 +334,13 @@ TestVisitEachNodeTwice()
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
+      Identity,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   JLM_ASSERT(numSccs == 4);
   for (size_t timesQueried : successorsQueried)
@@ -341,7 +352,7 @@ TestVisitEachNodeTwice()
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   return 0;
 }
