@@ -8,6 +8,7 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/TypeConverter.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>
@@ -218,13 +219,13 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
 
   if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
   {
-    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
     return { attribute::kind::ByVal, std::move(type) };
   }
 
   if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
   {
-    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
     return { attribute::kind::StructRet, std::move(type) };
   }
 
@@ -274,7 +275,7 @@ convert_argument(const ::llvm::Argument & argument, context & ctx)
 {
   auto function = argument.getParent();
   auto name = argument.getName().str();
-  auto type = ConvertType(argument.getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*argument.getType());
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
@@ -394,7 +395,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   const tacvariable * result = nullptr;
   if (!f.getReturnType()->isVoidTy())
   {
-    auto type = ConvertType(f.getReturnType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*f.getReturnType());
     entry_block->append_last(UndefValueOperation::Create(type, "_r_"));
     result = entry_block->last()->result(0);
 
@@ -459,7 +460,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
   {
     auto name = gv.getName().str();
     auto constant = gv.isConstant();
-    auto type = ConvertType(gv.getValueType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*gv.getValueType());
     auto linkage = convert_linkage(gv.getLinkage());
     auto section = gv.getSection().str();
 
@@ -476,7 +477,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
   {
     auto name = f.getName().str();
     auto linkage = convert_linkage(f.getLinkage());
-    auto type = ConvertFunctionType(f.getFunctionType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
 
     return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
@@ -538,6 +539,8 @@ ConvertLlvmModule(::llvm::Module & m)
   context ctx(*im);
   declare_globals(m, ctx);
   convert_globals(m, ctx);
+
+  im->SetStructTypeDeclarations(ctx.GetTypeConverter().ReleaseStructTypeDeclarations());
 
   return im;
 }

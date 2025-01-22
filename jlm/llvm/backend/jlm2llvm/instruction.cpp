@@ -14,7 +14,6 @@
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
 #include <jlm/llvm/backend/jlm2llvm/instruction.hpp>
-#include <jlm/llvm/backend/jlm2llvm/type.hpp>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
@@ -164,6 +163,8 @@ convert_undef(
     context & ctx)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
 
   auto & resultType = *op.result(0);
 
@@ -171,7 +172,8 @@ convert_undef(
   if (is<MemoryStateType>(resultType))
     return nullptr;
 
-  return ::llvm::UndefValue::get(convert_type(resultType, ctx));
+  auto type = typeConverter.ConvertJlmType(resultType, llvmContext);
+  return ::llvm::UndefValue::get(type);
 }
 
 static ::llvm::Value *
@@ -181,7 +183,11 @@ convert(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
-  return ::llvm::PoisonValue::get(convert_type(operation.GetType(), ctx));
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
+
+  auto type = typeConverter.ConvertJlmType(operation.GetType(), llvmContext);
+  return ::llvm::PoisonValue::get(type);
 }
 
 static ::llvm::Value *
@@ -192,6 +198,8 @@ convert(
     context & ctx)
 {
   auto function = ctx.value(args[0]);
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
 
   std::vector<::llvm::Value *> operands;
   for (size_t n = 1; n < args.size(); n++)
@@ -216,7 +224,7 @@ convert(
     operands.push_back(ctx.value(argument));
   }
 
-  auto ftype = convert_type(*op.GetFunctionType(), ctx);
+  auto ftype = typeConverter.ConvertFunctionType(*op.GetFunctionType(), llvmContext);
   return builder.CreateCall(ftype, function, operands);
 }
 
@@ -277,13 +285,15 @@ convert_phi(
 {
   JLM_ASSERT(is<phi_op>(op));
   auto & phi = *static_cast<const llvm::phi_op *>(&op);
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
 
   if (rvsdg::is<iostatetype>(phi.type()))
     return nullptr;
   if (rvsdg::is<MemoryStateType>(phi.type()))
     return nullptr;
 
-  auto t = convert_type(phi.type(), ctx);
+  auto t = typeConverter.ConvertJlmType(phi.type(), llvmContext);
   return builder.CreatePHI(t, op.narguments());
 }
 
@@ -296,7 +306,10 @@ CreateLoadInstruction(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  auto type = convert_type(loadedType, ctx);
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
+
+  auto type = typeConverter.ConvertJlmType(loadedType, llvmContext);
   auto loadInstruction = builder.CreateLoad(type, ctx.value(address), isVolatile);
   loadInstruction->setAlignment(::llvm::Align(alignment));
   return loadInstruction;
@@ -385,8 +398,10 @@ convert_alloca(
 {
   JLM_ASSERT(is<alloca_op>(op));
   auto & aop = *static_cast<const llvm::alloca_op *>(&op);
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
 
-  auto t = convert_type(aop.value_type(), ctx);
+  auto t = typeConverter.ConvertJlmType(aop.value_type(), llvmContext);
   auto i = builder.CreateAlloca(t, ctx.value(args[0]));
   i->setAlignment(::llvm::Align(aop.alignment()));
   return i;
@@ -401,9 +416,11 @@ convert_getelementptr(
 {
   JLM_ASSERT(is<GetElementPtrOperation>(op) && args.size() >= 2);
   auto & pop = *static_cast<const GetElementPtrOperation *>(&op);
+  auto & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
 
   std::vector<::llvm::Value *> indices;
-  auto t = convert_type(pop.GetPointeeType(), ctx);
+  auto t = typeConverter.ConvertJlmType(pop.GetPointeeType(), llvmContext);
   for (size_t n = 1; n < args.size(); n++)
     indices.push_back(ctx.value(args[n]));
 
@@ -506,6 +523,8 @@ convert(
     context & ctx)
 {
   JLM_ASSERT(is<ConstantArray>(op));
+  ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
 
   std::vector<::llvm::Constant *> data;
   for (size_t n = 0; n < operands.size(); n++)
@@ -516,7 +535,7 @@ convert(
   }
 
   auto at = std::dynamic_pointer_cast<const arraytype>(op.result(0));
-  auto type = convert_type(*at, ctx);
+  auto type = typeConverter.ConvertArrayType(*at, llvmContext);
   return ::llvm::ConstantArray::get(type, data);
 }
 
@@ -527,7 +546,10 @@ convert(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
-  auto type = convert_type(*op.result(0), ctx);
+  ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
+
+  auto type = typeConverter.ConvertJlmType(*op.result(0), llvmContext);
   return ::llvm::ConstantAggregateZero::get(type);
 }
 
@@ -642,11 +664,14 @@ convert(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
+  ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
+
   std::vector<::llvm::Constant *> operands;
   for (const auto & arg : args)
     operands.push_back(::llvm::cast<::llvm::Constant>(ctx.value(arg)));
 
-  auto t = convert_type(op.type(), ctx);
+  auto t = typeConverter.ConvertStructType(op.type(), llvmContext);
   return ::llvm::ConstantStruct::get(t, operands);
 }
 
@@ -657,7 +682,10 @@ convert(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
-  auto pointerType = convert_type(operation.GetPointerType(), ctx);
+  ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
+
+  auto pointerType = typeConverter.ConvertPointerType(operation.GetPointerType(), llvmContext);
   return ::llvm::ConstantPointerNull::get(pointerType);
 }
 
@@ -850,22 +878,24 @@ convert_cast(
     context & ctx)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
+  auto & typeConverter = ctx.GetTypeConverter();
+  ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
   auto dsttype = std::dynamic_pointer_cast<const rvsdg::ValueType>(op.result(0));
   auto operand = operands[0];
 
   if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))
   {
-    auto type = convert_type(fixedvectortype(dsttype, vt->size()), ctx);
+    auto type = typeConverter.ConvertJlmType(fixedvectortype(dsttype, vt->size()), llvmContext);
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
   if (auto vt = dynamic_cast<const scalablevectortype *>(&operand->type()))
   {
-    auto type = convert_type(scalablevectortype(dsttype, vt->size()), ctx);
+    auto type = typeConverter.ConvertJlmType(scalablevectortype(dsttype, vt->size()), llvmContext);
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
-  auto type = convert_type(*dsttype, ctx);
+  auto type = typeConverter.ConvertJlmType(*dsttype, llvmContext);
   return builder.CreateCast(OPCODE, ctx.value(operand), type);
 }
 
@@ -888,9 +918,10 @@ convert(
     context & ctx)
 {
   JLM_ASSERT(args.size() == 1);
+  auto & typeConverter = ctx.GetTypeConverter();
   auto & lm = ctx.llvm_module();
 
-  auto fcttype = convert_type(op.fcttype(), ctx);
+  auto fcttype = typeConverter.ConvertFunctionType(op.fcttype(), lm.getContext());
   auto function = lm.getOrInsertFunction("malloc", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, ctx.value(args[0]));
   return builder.CreateCall(function, operands);
@@ -903,9 +934,12 @@ convert(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
+  auto & typeConverter = ctx.GetTypeConverter();
   auto & llvmmod = ctx.llvm_module();
 
-  auto fcttype = convert_type(rvsdg::FunctionType({ op.argument(0) }, {}), ctx);
+  auto fcttype = typeConverter.ConvertFunctionType(
+      rvsdg::FunctionType({ op.argument(0) }, {}),
+      llvmmod.getContext());
   auto function = llvmmod.getOrInsertFunction("free", fcttype);
   auto operands = std::vector<::llvm::Value *>(1, ctx.value(args[0]));
   return builder.CreateCall(function, operands);
