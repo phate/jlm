@@ -115,28 +115,12 @@ public:
     return TypeConverter_;
   }
 
-#if 0
-  inline ::llvm::StructType *
-  structtype(const StructType::Declaration * dcl)
-  {
-    auto it = structtypes_.find(dcl);
-    return it != structtypes_.end() ? it->second : nullptr;
-  }
-
-  inline void
-  add_structtype(const StructType::Declaration * dcl, ::llvm::StructType * type)
-  {
-    JLM_ASSERT(structtypes_.find(dcl) == structtypes_.end());
-    structtypes_[dcl] = type;
-  }
-#endif
 private:
   ::llvm::Module & lm_;
   ipgraph_module & im_;
   std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
-  // std::unordered_map<const StructType::Declaration *, ::llvm::StructType *> structtypes_;
 };
 
 }
