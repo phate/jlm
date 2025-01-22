@@ -84,14 +84,14 @@ Andersen::Configuration::GetAllConfigurations()
     config.EnableDifferencePropagation(false);
     PickPreferImplicitPointees(config);
     config.EnableDifferencePropagation(true);
-    // TODO: PickPreferImplicitPointees(config);
+    PickPreferImplicitPointees(config);
   };
   auto PickLazyCycleDetection = [&](Configuration config)
   {
     config.EnableLazyCycleDetection(false);
     PickDifferencePropagation(config);
     config.EnableLazyCycleDetection(true);
-    // TODO: PickDifferencePropagation(config);
+    PickDifferencePropagation(config);
   };
   auto PickHybridCycleDetection = [&](Configuration config)
   {
