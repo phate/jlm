@@ -9,11 +9,10 @@
 #include <jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp>
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
+#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/util/Worklist.hpp>
 
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <limits>
-#include <oneapi/tbb/partitioner.h>
 #include <queue>
 #include <variant>
 
