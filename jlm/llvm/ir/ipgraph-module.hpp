@@ -173,16 +173,14 @@ public:
   }
 
   /**
-   * Adds a struct type declaration to the module. The module becomes the owner of the declaration.
+   * Adds struct type declarations to the module. The module becomes the ownwer of the declarations.
    *
-   * @param declaration A declaration that is added to the module.
-   * @return A reference to the added documentation.
+   * @param declarations The declarations added to the module
    */
-  const StructType::Declaration &
-  AddStructTypeDeclaration(std::unique_ptr<StructType::Declaration> declaration)
+  void
+  SetStructTypeDeclarations(std::vector<std::unique_ptr<StructType::Declaration>> && declarations)
   {
-    StructTypeDeclarations_.emplace_back(std::move(declaration));
-    return *StructTypeDeclarations_.back();
+    StructTypeDeclarations_ = std::move(declarations);
   }
 
   /**

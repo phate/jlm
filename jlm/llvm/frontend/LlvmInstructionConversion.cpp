@@ -104,7 +104,7 @@ convert_undefvalue(
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::UndefValueVal);
 
-  auto t = ConvertType(c->getType(), ctx);
+  auto t = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(UndefValueOperation::Create(t));
 
   return tacs.back()->result(0);
@@ -144,7 +144,7 @@ convert_constantFP(
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::ConstantFPVal);
   auto c = ::llvm::cast<::llvm::ConstantFP>(constant);
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(ConstantFP::create(c->getValueAPF(), type));
 
   return tacs.back()->result(0);
@@ -169,7 +169,7 @@ convert_constantPointerNull(
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::ConstantPointerNull>(constant));
   auto & c = *::llvm::cast<const ::llvm::ConstantPointerNull>(constant);
 
-  auto t = ConvertPointerType(c.getType(), ctx);
+  auto t = ctx.GetTypeConverter().ConvertPointerType(*c.getType());
   tacs.push_back(ConstantPointerNullOperation::Create(t));
 
   return tacs.back()->result(0);
@@ -194,7 +194,7 @@ convert_constantAggregateZero(
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantAggregateZeroVal);
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(ConstantAggregateZero::create(type));
 
   return tacs.back()->result(0);
@@ -270,7 +270,7 @@ ConvertConstantStruct(
   for (size_t n = 0; n < c->getNumOperands(); n++)
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(ConstantStruct::create(elements, type));
 
   return tacs.back()->result(0);
@@ -288,7 +288,7 @@ convert_constantVector(
   for (size_t n = 0; n < c->getNumOperands(); n++)
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(constantvector_op::create(elements, type));
 
   return tacs.back()->result(0);
@@ -318,7 +318,7 @@ ConvertConstant(
     tacsvector_t & threeAddressCodeVector,
     llvm::context & context)
 {
-  auto type = ConvertType(poisonValue->getType(), context);
+  auto type = context.GetTypeConverter().ConvertLlvmType(*poisonValue->getType());
   threeAddressCodeVector.push_back(PoisonValueOperation::Create(type));
 
   return threeAddressCodeVector.back()->result(0);
@@ -459,6 +459,7 @@ static inline const variable *
 convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::ICmp);
+  auto & typeConverter = ctx.GetTypeConverter();
   auto i = ::llvm::cast<const ::llvm::ICmpInst>(instruction);
   auto t = i->getOperand(0)->getType();
 
@@ -547,12 +548,12 @@ convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy()))
   {
     auto pt = ::llvm::cast<::llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
-    binop = std::make_unique<ptrcmp_op>(ConvertPointerType(pt, ctx), ptrmap[p]);
+    binop = std::make_unique<ptrcmp_op>(typeConverter.ConvertPointerType(*pt), ptrmap[p]);
   }
   else
     JLM_UNREACHABLE("This should have never happend.");
 
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = typeConverter.ConvertLlvmType(*i->getType());
 
   JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
   if (t->isVectorTy())
@@ -575,6 +576,7 @@ static const variable *
 convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::FCmp);
+  auto & typeConverter = ctx.GetTypeConverter();
   auto i = ::llvm::cast<const ::llvm::FCmpInst>(instruction);
   auto t = i->getOperand(0)->getType();
 
@@ -596,14 +598,14 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
         { ::llvm::CmpInst::FCMP_ULE, fpcmp::ule },
         { ::llvm::CmpInst::FCMP_UNE, fpcmp::une } });
 
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = typeConverter.ConvertLlvmType(*i->getType());
 
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
 
   JLM_ASSERT(map.find(i->getPredicate()) != map.end());
   auto fptype = t->isVectorTy() ? t->getScalarType() : t;
-  fpcmp_op operation(map[i->getPredicate()], ExtractFloatingPointSize(fptype));
+  fpcmp_op operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
     tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
@@ -621,7 +623,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   auto alignment = instruction->getAlign().value();
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
-  auto loadedType = ConvertType(instruction->getType(), ctx);
+  auto loadedType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
 
   const tacvariable * loadedValue;
   const tacvariable * memoryState;
@@ -743,7 +745,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // instructions that have not yet been converted.
   // For now, a phi_op with no operands is created.
   // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
   tacs.push_back(phi_op::create({}, type));
   return tacs.back()->result(0);
 }
@@ -752,6 +754,7 @@ static const variable *
 convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::GetElementPtrInst>(inst));
+  auto & typeConverter = ctx.GetTypeConverter();
   auto i = ::llvm::cast<::llvm::GetElementPtrInst>(inst);
 
   std::vector<const variable *> indices;
@@ -759,8 +762,8 @@ convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tac
   for (auto it = i->idx_begin(); it != i->idx_end(); it++)
     indices.push_back(ConvertValue(*it, tacs, ctx));
 
-  auto pointeeType = ConvertType(i->getSourceElementType(), ctx);
-  auto resultType = ConvertType(i->getType(), ctx);
+  auto pointeeType = typeConverter.ConvertLlvmType(*i->getSourceElementType());
+  auto resultType = typeConverter.ConvertLlvmType(*i->getType());
 
   tacs.push_back(GetElementPtrOperation::Create(base, indices, pointeeType, resultType));
 
@@ -905,7 +908,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     return convert_memcpy_call(i, tacs, ctx);
 
   auto ftype = i->getFunctionType();
-  auto convertedFType = ConvertFunctionType(ftype, ctx);
+  auto convertedFType = ctx.GetTypeConverter().ConvertFunctionType(*ftype);
 
   auto arguments = create_arguments(i, tacs, ctx);
   if (ftype->isVarArg())
@@ -1097,7 +1100,7 @@ convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, 
   else
     JLM_ASSERT(0);
 
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
 
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
@@ -1125,7 +1128,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
 
   auto memstate = ctx.memory_state();
   auto size = ConvertValue(i->getArraySize(), tacs, ctx);
-  auto vtype = ConvertType(i->getAllocatedType(), ctx);
+  auto vtype = ctx.GetTypeConverter().ConvertLlvmType(*i->getAllocatedType());
   auto alignment = i->getAlign().value();
 
   tacs.push_back(alloca_op::create(vtype, size, alignment));
@@ -1194,14 +1197,15 @@ static const variable *
 convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVector, context & ctx)
 {
   JLM_ASSERT(unaryOperator->getOpcode() == ::llvm::Instruction::FNeg);
+  auto & typeConverter = ctx.GetTypeConverter();
 
   auto type = unaryOperator->getType();
-  auto scalarType = ConvertType(type->getScalarType(), ctx);
+  auto scalarType = typeConverter.ConvertLlvmType(*type->getScalarType());
   auto operand = ConvertValue(unaryOperator->getOperand(0), threeAddressCodeVector, ctx);
 
   if (type->isVectorTy())
   {
-    auto vectorType = ConvertType(type, ctx);
+    auto vectorType = typeConverter.ConvertLlvmType(*type);
     threeAddressCodeVector.push_back(vectorunary_op::create(
         fpneg_op(std::static_pointer_cast<const fptype>(scalarType)),
         operand,
@@ -1226,6 +1230,7 @@ static const variable *
 convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<::llvm::CastInst>(i));
+  auto & typeConverter = ctx.GetTypeConverter();
   auto st = i->getOperand(0)->getType();
   auto dt = i->getType();
 
@@ -1247,11 +1252,11 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::FPExt, create_unop<fpext_op> },
             { ::llvm::Instruction::BitCast, create_unop<bitcast_op> } });
 
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
 
   auto op = ConvertValue(i->getOperand(0), tacs, ctx);
-  auto srctype = ConvertType(st->isVectorTy() ? st->getScalarType() : st, ctx);
-  auto dsttype = ConvertType(dt->isVectorTy() ? dt->getScalarType() : dt, ctx);
+  auto srctype = typeConverter.ConvertLlvmType(*(st->isVectorTy() ? st->getScalarType() : st));
+  auto dsttype = typeConverter.ConvertLlvmType(*(dt->isVectorTy() ? dt->getScalarType() : dt));
 
   JLM_ASSERT(map.find(i->getOpcode()) != map.end());
   auto unop = map[i->getOpcode()](std::move(srctype), std::move(dsttype));

@@ -4,7 +4,6 @@
 libllvm_SOURCES = \
     jlm/llvm/backend/jlm2llvm/instruction.cpp \
     jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
-    jlm/llvm/backend/jlm2llvm/type.cpp \
     jlm/llvm/backend/dot/DotWriter.cpp \
     jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
     \
@@ -12,7 +11,6 @@ libllvm_SOURCES = \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
     jlm/llvm/frontend/LlvmInstructionConversion.cpp \
     jlm/llvm/frontend/LlvmModuleConversion.cpp \
-    jlm/llvm/frontend/LlvmTypeConversion.cpp \
     \
     jlm/llvm/ir/aggregation.cpp \
     jlm/llvm/ir/Annotation.cpp \
@@ -95,7 +93,6 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/inversion.hpp \
 	jlm/llvm/opt/RvsdgTreePrinter.hpp \
 	jlm/llvm/frontend/LlvmModuleConversion.hpp \
-	jlm/llvm/frontend/LlvmTypeConversion.hpp \
 	jlm/llvm/frontend/ControlFlowRestructuring.hpp \
 	jlm/llvm/frontend/LlvmConversionContext.hpp \
 	jlm/llvm/frontend/LlvmInstructionConversion.hpp \
@@ -137,7 +134,6 @@ libllvm_HEADERS = \
 	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
 	jlm/llvm/backend/rvsdg2jlm/context.hpp \
 	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
-	jlm/llvm/backend/jlm2llvm/type.hpp \
 	jlm/llvm/backend/jlm2llvm/instruction.hpp \
 	jlm/llvm/backend/jlm2llvm/context.hpp \
 
@@ -153,8 +149,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
     tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
-    tests/jlm/llvm/frontend/llvm/LlvmTypeConversionTests  \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \

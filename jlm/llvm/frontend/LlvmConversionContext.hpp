@@ -6,7 +6,6 @@
 #ifndef JLM_LLVM_FRONTEND_LLVMCONVERSIONCONTEXT_HPP
 #define JLM_LLVM_FRONTEND_LLVMCONVERSIONCONTEXT_HPP
 
-#include <jlm/llvm/frontend/LlvmTypeConversion.hpp>
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
@@ -181,26 +180,6 @@ public:
   {
     JLM_ASSERT(!has_value(value));
     vmap_[value] = variable;
-  }
-
-  const StructType::Declaration *
-  lookup_declaration(const ::llvm::StructType * type)
-  {
-    // Return declaration if we already created one for this type instance
-    if (auto it = declarations_.find(type); it != declarations_.end())
-    {
-      return it->second;
-    }
-
-    // Otherwise create a new one and return it
-    auto declaration = StructType::Declaration::Create();
-    for (size_t n = 0; n < type->getNumElements(); n++)
-    {
-      declaration->Append(ConvertType(type->getElementType(n), *this));
-    }
-
-    declarations_[type] = declaration.get();
-    return &module().AddStructTypeDeclaration(std::move(declaration));
   }
 
   inline ipgraph_module &
