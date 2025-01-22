@@ -52,6 +52,10 @@ Andersen::Configuration::ToString() const
     if (EnablePreferImplicitPointees_)
       str << "PIP_";
   }
+  else if (Solver_ == Solver::WavePropagation)
+  {
+    str << "Solver=Wave_";
+  }
   else
   {
     JLM_UNREACHABLE("Unknown solver type");
@@ -80,14 +84,14 @@ Andersen::Configuration::GetAllConfigurations()
     config.EnableDifferencePropagation(false);
     PickPreferImplicitPointees(config);
     config.EnableDifferencePropagation(true);
-    PickPreferImplicitPointees(config);
+    // TODO: PickPreferImplicitPointees(config);
   };
   auto PickLazyCycleDetection = [&](Configuration config)
   {
     config.EnableLazyCycleDetection(false);
     PickDifferencePropagation(config);
     config.EnableLazyCycleDetection(true);
-    PickDifferencePropagation(config);
+    // TODO: PickDifferencePropagation(config);
   };
   auto PickHybridCycleDetection = [&](Configuration config)
   {
@@ -97,7 +101,7 @@ Andersen::Configuration::GetAllConfigurations()
     if (config.IsOfflineVariableSubstitutionEnabled())
     {
       config.EnableHybridCycleDetection(true);
-      PickLazyCycleDetection(config);
+      // TODO: PickLazyCycleDetection(config);
     }
   };
   auto PickOnlineCycleDetection = [&](Configuration config)
@@ -190,6 +194,9 @@ class Andersen::Statistics final : public util::Statistics
   // ====== Solver statistics ======
   static constexpr const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
 
+  static constexpr const char * NumWavePropagationIterations_ = "#WavePropagationIterations";
+  static constexpr const char * NumWavePropagationUnifications_ = "#WavePropagationUnifications";
+
   static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
   static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
       "#WorklistSolverWorkItemsPopped";
@@ -266,6 +273,8 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
   static constexpr const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
   static constexpr const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
+  static constexpr const char * ConstraintSolvingWavePropagationTimer_ =
+      "ConstraintSolvingWavePropagationTimer";
   static constexpr const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
   static constexpr const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
@@ -389,7 +398,7 @@ public:
 
   void
   StopConstraintSolvingWorklistStatistics(
-      PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
+      const PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
 
@@ -425,6 +434,21 @@ public:
 
     if (statistics.NumPipExplicitPointeesRemoved)
       AddMeasurement(NumPIPExplicitPointeesRemoved_, *statistics.NumPipExplicitPointeesRemoved);
+  }
+
+  void
+  StartConstraintSolvingWavePropagationStatistics() noexcept
+  {
+    AddTimer(ConstraintSolvingWavePropagationTimer_).start();
+  }
+
+  void
+  StopConstraintSolvingWavePropagationStatistics(
+      const PointerObjectConstraintSet::WavePropagationStatistics & statistics) noexcept
+  {
+    GetTimer(ConstraintSolvingWavePropagationTimer_).stop();
+    AddMeasurement(NumWavePropagationIterations_, statistics.NumIterations);
+    AddMeasurement(NumWavePropagationUnifications_, statistics.NumUnifications);
   }
 
   void
@@ -1388,6 +1412,12 @@ Andersen::SolveConstraints(
         config.IsDifferencePropagationEnabled(),
         config.IsPreferImplicitPointeesEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
+  }
+  else if (config.GetSolver() == Configuration::Solver::WavePropagation)
+  {
+    statistics.StartConstraintSolvingWavePropagationStatistics();
+    auto numIterations = constraints.SolveUsingWavePropagation();
+    statistics.StopConstraintSolvingWavePropagationStatistics(numIterations);
   }
   else
     JLM_UNREACHABLE("Unknown solver");

@@ -987,6 +987,16 @@ public:
     std::optional<size_t> NumPipExplicitPointeesRemoved;
   };
 
+  /**
+   * Struct holding statistics from solving using Wave Propagation
+   */
+  struct WavePropagationStatistics
+  {
+    size_t NumIterations{};
+
+    size_t NumUnifications{};
+  };
+
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set),
         Constraints_(),
@@ -1158,9 +1168,9 @@ public:
    *  - collapse cycles (by finding SCCs)
    *  - Propagate in topological order
    *  - Add new edges
-   * @return the number of iterations before the fixed point was reached
+   * @return statistics about the solving
    */
-  size_t
+  WavePropagationStatistics
   SolveUsingWavePropagation();
 
   /**

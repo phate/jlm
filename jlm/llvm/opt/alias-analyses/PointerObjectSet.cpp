@@ -13,6 +13,7 @@
 
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <limits>
+#include <oneapi/tbb/partitioner.h>
 #include <queue>
 #include <variant>
 
@@ -2263,28 +2264,29 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
           sccIndex,
           reverseTopologicalOrder);
 
-      // Helper for accessing reverseTopologicalOrder in topological order
-      const auto topologicalOrder = [&](const size_t i) -> PointerObjectIndex &
-      {
-        return reverseTopologicalOrder[reverseTopologicalOrder.size() - 1 - i];
-      };
-
       // Visit nodes in topological order, if they are in the workset.
-      // cycles will result in neighbouring nodes in the topologicalOrder sharing sccIndex
-      for (size_t i = 0; i < reverseTopologicalOrder.size(); i++)
+      // cycles will result in neighbouring nodes in the topological order sharing sccIndex
+      for (auto it = reverseTopologicalOrder.rbegin(); it != reverseTopologicalOrder.rend(); ++it)
       {
-        const auto node = topologicalOrder(i);
-        const auto nextNodeIndex = i + 1;
-        if (nextNodeIndex < reverseTopologicalOrder.size())
+        const auto node = *it;
+
+        // Check if node can be unified with the next node in the topological order
+        const auto nextIt = it + 1;
+        if (nextIt != reverseTopologicalOrder.rend())
         {
-          auto & nextNode = topologicalOrder(nextNodeIndex);
+          auto & nextNode = *nextIt;
           if (sccIndex[node] == sccIndex[nextNode])
           {
             // This node is in a cycle with the next node, unify them
-            nextNode = UnifyPointerObjects(node, nextNode);
+            auto unifiedNode = UnifyPointerObjects(node, nextNode);
+            auto oldNode = node + nextNode - unifiedNode;
+            // Make sure only unification roots are in the worklist
+            worklist.RemoveWorkItem(oldNode);
             // Make sure the new root is visited
-            worklist.RemoveWorkItem(node);
-            worklist.PushWorkItem(nextNode);
+            worklist.PushWorkItem(unifiedNode);
+
+            // Update the nextNode to the unification root, to make sure it is visited
+            nextNode = unifiedNode;
             continue;
           }
         }
@@ -2451,9 +2453,11 @@ PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy po
   }
 }
 
-size_t
+PointerObjectConstraintSet::WavePropagationStatistics
 PointerObjectConstraintSet::SolveUsingWavePropagation()
 {
+  WavePropagationStatistics statistics;
+
   // Outgoing edges from each node. The unification root must be used.
   std::vector<util::HashSet<PointerObjectIndex>> supersetEdges(Set_.NumPointerObjects());
 
@@ -2618,7 +2622,7 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
     AddSupersetEdge(Set_.GetExternalObject(), index);
   };
 
-  const auto MarkAsPointingToExternal = [&](PointerObjectIndex index)
+  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
   {
     AddSupersetEdge(index, Set_.GetExternalObject());
   };
@@ -2640,11 +2644,10 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
   EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
 #endif
 
-  size_t iterations = 0;
   while (changed)
   {
     changed = false;
-    iterations++;
+    statistics.NumIterations++;
 
     // Phase 1: Topologically sorting nodes
     auto numSccs = util::FindStronglyConnectedComponents<PointerObjectIndex>(
@@ -2664,7 +2667,10 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
       JLM_ASSERT(Set_.IsUnificationRoot(node));
 
       if (sccIndex[node] == lastSccIndex)
+      {
         sccRootsInOrder.back() = UnifyPointerObjects(sccRootsInOrder.back(), node);
+        statistics.NumUnifications++;
+      }
       else
       {
         lastSccIndex = sccIndex[node];
@@ -2689,10 +2695,12 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
       for (auto newPointee : newPointees)
         P_old[sccRoot].Insert(newPointee);
 
+#ifndef ANDERSEN_NO_FLAGS
       // If sccRoot is marked pointees escaping, every pointee in P_old should be marked escaped
       if (Set_.HasPointeesEscaping(sccRoot))
         for (auto newPointee : newPointees)
           MarkAsEscaped(newPointee);
+#endif
 
       // Propagate P_dif along all outgoing edges
       // Also normalize simple edges while we are at it
@@ -2712,12 +2720,18 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
         if (supersetRoot != *it)
         {
           it = supersetEdges[sccRoot].Erase(it);
+
           // If the normalized version is already present, we are done
           if (supersetEdges[sccRoot].Contains(supersetRoot))
             continue;
           // Add the normalized version to the edge to the queue. If it is already there, skip it.
           if (!newNormalizedSupersets.Insert(supersetRoot))
             continue;
+        }
+        else
+        {
+          // Increment it to make it ready for the next iteration
+          ++it;
         }
 
         // Propagate along the edge
@@ -2731,8 +2745,6 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
           Set_.MarkAsPointingToExternal(supersetRoot);
         }
 #endif
-
-        it++;
       }
 
       // Add all newly normalized edges to the proper supersetEdges list
@@ -2814,7 +2826,7 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
                 Set_,
                 call->GetCallNode(),
                 MarkAsPointeesEscaping,
-                MarkAsPointingToExternal);
+                MarkAsPointsToExternal);
 #endif
         }
 #ifndef ANDERSEN_NO_FLAGS
@@ -2831,7 +2843,7 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
     }
   }
 
-  return iterations;
+  return statistics;
 }
 
 size_t

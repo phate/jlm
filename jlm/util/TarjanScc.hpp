@@ -29,8 +29,8 @@ namespace jlm::util
  * Within a single SCC, the ordering of nodes is arbitrary.
  *
  * The given unificationRoot function is used to only visit nodes that are their own root.
- * If a node reports to have an outgoing edge -> a, and a's root is b, the edge is instead -> b.
- * Nodes that are not roots will not be given an sccIndex, and not be included in topologicalOrder.
+ * If a node reports to have an outgoing edge -> A, and A's root is B, the edge is instead -> B.
+ * Nodes that are not roots will not be given an sccIndex, and not be included in topological order.
  *
  * @tparam NodeType the integer type used to index nodes
  * @tparam UnificationRootFunctor a functor with the signature (NodeType) -> NodeType
@@ -41,8 +41,8 @@ namespace jlm::util
  * @param successors an instance of the SuccessorFunctor
  * @param sccIndex output vector to be filled with the index of the SCC each node ends up in.
  *        Only nodes that are roots will be given an sccIndex.
- * @param reverseTopologicalOrder output vector filled with root nodes in reverse topo order.
- *        Only root nodes are included.
+ * @param reverseTopologicalOrder output vector filled with root nodes in reverse topological order.
+ *        In other words, a list of root nodes sorted by ascending sccIndex.
  * @return the number of SCCs in the graph. One more than the largest SCC index
  */
 template<typename NodeType, typename UnificationRootFunctor, typename SuccessorFunctor>
