@@ -25,17 +25,17 @@ TestDumpDot()
   auto b32 = rvsdg::bittype::Create(32);
   auto ft = rvsdg::FunctionType::Create({}, { b32 });
 
-  RvsdgModule rm(util::filepath(""), "", "");
+  rvsdg::Graph graph;
 
   auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+      lambda::node::create(&graph.GetRootRegion(), ft, "f", linkage::external_linkage);
 
   auto bitConstant = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
 
   auto f = lambda->finalize({ bitConstant });
   GraphExport::Create(*f, "");
 
-  rvsdg::view(rm.Rvsdg(), stdout);
+  rvsdg::view(graph, stdout);
 
   // Act
   auto dotOutput = to_dot(lambda->region());
@@ -63,10 +63,10 @@ TestDumpDotTheta()
   auto b32 = rvsdg::bittype::Create(32);
   auto ft = rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
-  RvsdgModule rm(util::filepath(""), "", "");
+  rvsdg::Graph graph;
 
   auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+      lambda::node::create(&graph.GetRootRegion(), ft, "f", linkage::external_linkage);
 
   auto theta = rvsdg::ThetaNode::create(lambda->subregion());
   auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
@@ -83,7 +83,7 @@ TestDumpDotTheta()
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
   GraphExport::Create(*f, "");
 
-  rvsdg::view(rm.Rvsdg(), stdout);
+  rvsdg::view(graph, stdout);
 
   // Act
   auto dotOutput = to_dot(lambda->region());
