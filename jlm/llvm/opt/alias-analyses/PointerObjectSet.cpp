@@ -2278,7 +2278,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
           {
             // This node is in a cycle with the next node, unify them
             auto unifiedNode = UnifyPointerObjects(node, nextNode);
-            auto oldNode = node + nextNode - unifiedNode;
+            auto oldNode = unifiedNode == node ? nextNode : node;
             // Make sure only unification roots are in the worklist
             worklist.RemoveWorkItem(oldNode);
             // Make sure the new root is visited
@@ -2699,6 +2699,16 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
       if (Set_.HasPointeesEscaping(sccRoot))
         for (auto newPointee : newPointees)
           MarkAsEscaped(newPointee);
+#else
+      // Manually implement the Call constraint on the external node
+      if (sccRoot == Set_.GetUnificationRoot(Set_.GetExternalObject()))
+      {
+        for (auto pointee : newPointees)
+        {
+          if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
+            HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
+        }
+      }
 #endif
 
       // Propagate P_dif along all outgoing edges
