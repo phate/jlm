@@ -6,10 +6,10 @@
 #ifndef JLM_LLVM_FRONTEND_LLVMCONVERSIONCONTEXT_HPP
 #define JLM_LLVM_FRONTEND_LLVMCONVERSIONCONTEXT_HPP
 
-#include <jlm/llvm/frontend/LlvmTypeConversion.hpp>
 #include <jlm/llvm/ir/cfg-node.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/tac.hpp>
+#include <jlm/llvm/ir/TypeConverter.hpp>
 
 #include <llvm/IR/DerivedTypes.h>
 
@@ -182,26 +182,6 @@ public:
     vmap_[value] = variable;
   }
 
-  const StructType::Declaration *
-  lookup_declaration(const ::llvm::StructType * type)
-  {
-    // Return declaration if we already created one for this type instance
-    if (auto it = declarations_.find(type); it != declarations_.end())
-    {
-      return it->second;
-    }
-
-    // Otherwise create a new one and return it
-    auto declaration = StructType::Declaration::Create();
-    for (size_t n = 0; n < type->getNumElements(); n++)
-    {
-      declaration->Append(ConvertType(type->getElementType(n), *this));
-    }
-
-    declarations_[type] = declaration.get();
-    return &module().AddStructTypeDeclaration(std::move(declaration));
-  }
-
   inline ipgraph_module &
   module() const noexcept
   {
@@ -220,6 +200,12 @@ public:
     return node_;
   }
 
+  TypeConverter &
+  GetTypeConverter() noexcept
+  {
+    return TypeConverter_;
+  }
+
 private:
   ipgraph_module & module_;
   basic_block_map bbmap_;
@@ -228,7 +214,7 @@ private:
   llvm::variable * iostate_;
   llvm::variable * memory_state_;
   std::unordered_map<const ::llvm::Value *, const llvm::variable *> vmap_;
-  std::unordered_map<const ::llvm::StructType *, const StructType::Declaration *> declarations_;
+  TypeConverter TypeConverter_;
 };
 
 }
