@@ -1361,7 +1361,7 @@ Andersen::GetConfiguration() const
 }
 
 void
-Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
+Andersen::AnalyzeModule(const rvsdg::RvsdgModule & module, Statistics & statistics)
 {
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
@@ -1424,9 +1424,11 @@ Andersen::SolveConstraints(
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+Andersen::Analyze(
+    const rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
   statistics->StartAndersenStatistics(module.Rvsdg());
 
   // Check environment variables for debugging flags
@@ -1508,7 +1510,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
         // Create a clone of the unsolved pointer object set and constraint set
         auto workingCopy = copy.second->Clone();
         // These statistics will only contain solving data
-        auto solvingStats = Statistics::Create(module.SourceFileName());
+        auto solvingStats = Statistics::Create(module.SourceFilePath().value());
         SolveConstraints(*workingCopy.second, config, *solvingStats);
         solvingStats->AddStatisticsFromSolution(*workingCopy.first);
         statisticsCollector.CollectDemandedStatistics(std::move(solvingStats));

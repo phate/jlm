@@ -162,10 +162,10 @@ inlining(rvsdg::Graph & rvsdg)
 }
 
 static void
-inlining(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+inlining(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = rm.Rvsdg();
-  auto statistics = ilnstat::Create(rm.SourceFileName());
+  auto & graph = rvsdgModule.Rvsdg();
+  auto statistics = ilnstat::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start(graph);
   inlining(graph);
@@ -180,7 +180,7 @@ fctinline::~fctinline()
 {}
 
 void
-fctinline::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+fctinline::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   inlining(module, statisticsCollector);
 }

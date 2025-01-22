@@ -8,14 +8,14 @@
 
 #include <memory>
 
+namespace jlm::rvsdg
+{
+class RvsdgModule;
+}
+
 namespace jlm::util
 {
 class StatisticsCollector;
-}
-
-namespace jlm::llvm
-{
-class RvsdgModule;
 }
 
 namespace jlm::llvm::aa
@@ -39,7 +39,7 @@ public:
    */
   virtual std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       jlm::util::StatisticsCollector & statisticsCollector) = 0;
 };

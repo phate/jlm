@@ -23,7 +23,7 @@ RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
 {
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.run(rvsdgModule, statisticsCollector);
+  deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
 static void

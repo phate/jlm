@@ -51,8 +51,8 @@ create_theta(
   auto lvs = theta->AddLoopVar(step);
   auto lve = theta->AddLoopVar(end);
 
-  auto arm = SimpleNode::create_normalized(subregion, aop, { idv.pre, lvs.pre })[0];
-  auto cmp = SimpleNode::create_normalized(subregion, cop, { arm, lve.pre })[0];
+  auto arm = SimpleNode::Create(*subregion, aop, { idv.pre, lvs.pre }).output(0);
+  auto cmp = SimpleNode::Create(*subregion, cop, { arm, lve.pre }).output(0);
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   idv.post->divert_to(arm);
@@ -248,7 +248,7 @@ test_unknown_boundaries()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(2);
-  loopunroll.run(rm, statisticsCollector);
+  loopunroll.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   auto node = jlm::rvsdg::output::GetNode(*ex1.origin());
@@ -258,7 +258,7 @@ test_unknown_boundaries()
 
   /* Create cleaner output */
   DeadNodeElimination dne;
-  dne.run(rm, statisticsCollector);
+  dne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 }
 
@@ -344,7 +344,7 @@ test_nested_theta()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::loopunroll loopunroll(4);
-  loopunroll.run(rm, statisticsCollector);
+  loopunroll.Run(rm, statisticsCollector);
   /*
     The outher theta should contain two inner thetas
   */

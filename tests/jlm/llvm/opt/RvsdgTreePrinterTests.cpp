@@ -14,9 +14,9 @@
 #include <fstream>
 
 static std::string
-ReadFile(const std::string & outputFilePath)
+ReadFile(const jlm::util::filepath & outputFilePath)
 {
-  std::ifstream file(outputFilePath);
+  std::ifstream file(outputFilePath.to_str());
   std::stringstream buffer;
   buffer << file.rdbuf();
 
@@ -31,17 +31,17 @@ RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter &
 {
   using namespace jlm::util;
 
-  auto tmpDir = std::filesystem::temp_directory_path();
-  StatisticsCollectorSettings settings({}, filepath(tmpDir), "TestTreePrinter");
+  const auto tmpDir = filepath::TempDirectoryPath();
+  StatisticsCollectorSettings settings({}, tmpDir, "TestTreePrinter");
   StatisticsCollector collector(settings);
 
-  printer.run(module, collector);
+  printer.Run(module, collector);
 
-  auto fileName = tmpDir / ("TestTreePrinter-" + settings.GetUniqueString() + "-rvsdgTree-0.txt");
+  auto fileName = tmpDir.Join("TestTreePrinter-" + settings.GetUniqueString() + "-rvsdgTree-0.txt");
   auto result = ReadFile(fileName);
 
   // Cleanup
-  std::filesystem::remove(fileName);
+  std::filesystem::remove(fileName.to_str());
 
   return result;
 }
@@ -53,7 +53,7 @@ PrintRvsdgTree()
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create({ "" }, "", "");
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
 
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { MemoryStateType::Create() },
@@ -92,7 +92,7 @@ PrintNumRvsdgNodesAnnotation()
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create({ "" }, "", "");
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = jlm::tests::structural_node::create(rootRegion, 2);
@@ -134,7 +134,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto rvsdgModule = RvsdgModule::Create({ "" }, "", "");
+  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");

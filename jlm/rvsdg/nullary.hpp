@@ -95,8 +95,7 @@ public:
   static inline jlm::rvsdg::output *
   create(rvsdg::Region * region, const value_repr & vr)
   {
-    domain_const_op op(vr);
-    return SimpleNode::create_normalized(region, op, {})[0];
+    return CreateOpNode<domain_const_op>(*region, vr).output(0);
   }
 
 private:

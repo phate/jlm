@@ -47,14 +47,14 @@ public:
 InvariantValueRedirection::~InvariantValueRedirection() = default;
 
 void
-InvariantValueRedirection::run(
-    RvsdgModule & rvsdgModule,
+InvariantValueRedirection::Run(
+    rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   statistics->Start();
-  RedirectInRootRegion(rvsdgModule.Rvsdg());
+  RedirectInRootRegion(module.Rvsdg());
   statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));

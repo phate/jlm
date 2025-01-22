@@ -472,17 +472,13 @@ ConvertAssignment(
 }
 
 static void
-ConvertSelect(
-    const llvm::tac & threeAddressCode,
-    rvsdg::Region & region,
-    llvm::VariableMap & variableMap)
+ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
-  auto op = rvsdg::match_op(1, { { 1, 1 } }, 0, 2);
   auto p = variableMap.lookup(threeAddressCode.operand(0));
-  auto predicate = rvsdg::SimpleNode::create_normalized(&region, op, { p })[0];
+  auto predicate = rvsdg::match_op::Create(*p, { { 1, 1 } }, 0, 2);
 
   auto gamma = rvsdg::GammaNode::create(predicate, 2);
   auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));
@@ -569,7 +565,7 @@ ConvertThreeAddressCode(
 
     auto & simpleOperation =
         static_cast<const rvsdg::SimpleOperation &>(threeAddressCode.operation());
-    auto results = rvsdg::SimpleNode::create_normalized(&region, simpleOperation, operands);
+    auto results = outputs(&rvsdg::SimpleNode::Create(region, simpleOperation, operands));
 
     JLM_ASSERT(results.size() == threeAddressCode.nresults());
     for (size_t n = 0; n < threeAddressCode.nresults(); n++)
