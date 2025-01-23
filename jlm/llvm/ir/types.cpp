@@ -12,6 +12,61 @@
 namespace jlm::llvm
 {
 
+IntegerType::~IntegerType() noexcept = default;
+
+std::string
+IntegerType::debug_string() const
+{
+  return util::strfmt("i", NumBits());
+}
+
+bool
+IntegerType::operator==(const Type & other) const noexcept
+{
+  const auto type = dynamic_cast<const IntegerType *>(&other);
+  return type && type->NumBits() == NumBits();
+}
+
+std::size_t
+IntegerType::ComputeHash() const noexcept
+{
+  const auto typeHash = typeid(IntegerType).hash_code();
+  const auto numBitsHash = std::hash<size_t>()(NumBits());
+  return util::CombineHashes(typeHash, numBitsHash);
+}
+
+std::shared_ptr<const IntegerType>
+IntegerType::Create(std::size_t numBits)
+{
+  static const IntegerType static_instances[65] = {
+    IntegerType(0),  IntegerType(1),  IntegerType(2),  IntegerType(3),  IntegerType(4),
+    IntegerType(5),  IntegerType(6),  IntegerType(7),  IntegerType(8),  IntegerType(9),
+    IntegerType(10), IntegerType(11), IntegerType(12), IntegerType(13), IntegerType(14),
+    IntegerType(15), IntegerType(16), IntegerType(17), IntegerType(18), IntegerType(19),
+    IntegerType(20), IntegerType(21), IntegerType(22), IntegerType(23), IntegerType(24),
+    IntegerType(25), IntegerType(26), IntegerType(27), IntegerType(28), IntegerType(29),
+    IntegerType(30), IntegerType(31), IntegerType(32), IntegerType(33), IntegerType(34),
+    IntegerType(35), IntegerType(36), IntegerType(37), IntegerType(38), IntegerType(39),
+    IntegerType(40), IntegerType(41), IntegerType(42), IntegerType(43), IntegerType(44),
+    IntegerType(45), IntegerType(46), IntegerType(47), IntegerType(48), IntegerType(49),
+    IntegerType(50), IntegerType(51), IntegerType(52), IntegerType(53), IntegerType(54),
+    IntegerType(55), IntegerType(56), IntegerType(57), IntegerType(58), IntegerType(59),
+    IntegerType(60), IntegerType(61), IntegerType(62), IntegerType(63), IntegerType(64)
+  };
+
+  if (numBits <= 64)
+  {
+    if (numBits == 0)
+    {
+      throw util::error("IntegerType::Create: Number of bits must be greater than zero.");
+    }
+
+    return std::shared_ptr<const IntegerType>(std::shared_ptr<void>(), &static_instances[numBits]);
+  }
+
+  return std::make_shared<IntegerType>(numBits);
+}
+
 PointerType::~PointerType() noexcept = default;
 
 std::string

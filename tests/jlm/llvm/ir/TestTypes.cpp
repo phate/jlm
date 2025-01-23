@@ -13,6 +13,39 @@
 #include <cassert>
 
 static int
+IntegerTypeTests()
+{
+  using namespace jlm::llvm;
+
+  // Arrange & Act
+  const auto i1 = IntegerType::Create(1);
+  const auto i8 = IntegerType::Create(8);
+  const auto i32 = IntegerType::Create(32);
+
+  // Assert
+  assert(i1->NumBits() == 1);
+  assert(i8->NumBits() == 8);
+  assert(i32->NumBits() == 32);
+
+  assert(*i1 != *i8);
+  assert(*i8 != *i32);
+  const auto i1Tmp = IntegerType::Create(1);
+  assert(*i1 == *i1Tmp);
+
+  assert(i1->ComputeHash() == i1Tmp->ComputeHash());
+  assert(i1->ComputeHash() != i8->ComputeHash());
+  assert(i8->ComputeHash() != i32->ComputeHash());
+
+  assert(i1->debug_string() == "i1");
+  assert(i8->debug_string() == "i8");
+  assert(i32->debug_string() == "i32");
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestTypes-IntegerTypeTests", IntegerTypeTests);
+
+static int
 TestIsOrContains()
 {
   using namespace jlm::llvm;

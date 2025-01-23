@@ -17,6 +17,54 @@
 namespace jlm::llvm
 {
 
+/**
+ * Represents an integer type with a specified number of bits.
+ *
+ * This operator is the Jlm equivalent of LLVM's integer type class.
+ */
+class IntegerType final : public rvsdg::ValueType
+{
+public:
+  ~IntegerType() noexcept override;
+
+  constexpr explicit IntegerType(const std::size_t numBits)
+      : NumBits_(numBits)
+  {}
+
+  /**
+   * @return The bit width of the type.
+   */
+  [[nodiscard]] std::size_t
+  NumBits() const noexcept
+  {
+    return NumBits_;
+  }
+
+  std::string
+  debug_string() const override;
+
+  bool
+  operator==(const Type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
+  /**
+   * \brief Create an integer type of specified width.
+   *
+   * @param numBits Width of type in number of bits.
+   * @return Type representing an integer of specified width.
+   *
+   * Returns an instance of a bitstring type with specified width. Usually this returns a singleton
+   * object instance for the type.
+   */
+  static std::shared_ptr<const IntegerType>
+  Create(std::size_t numBits);
+
+private:
+  std::size_t NumBits_;
+};
+
 /** \brief PointerType class
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
