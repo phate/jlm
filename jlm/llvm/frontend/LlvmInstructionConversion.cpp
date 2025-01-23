@@ -1263,7 +1263,8 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   JLM_ASSERT(is<rvsdg::UnaryOperation>(*unop));
 
   if (dt->isVectorTy())
-    tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
+    tacs.push_back(
+        vectorunary_op::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else
     tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 

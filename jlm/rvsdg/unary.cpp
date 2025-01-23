@@ -14,7 +14,9 @@ UnaryOperation::~UnaryOperation() noexcept
 {}
 
 std::optional<std::vector<rvsdg::output *>>
-NormalizeUnaryOperation(const UnaryOperation & operation, const std::vector<rvsdg::output *> & operands)
+NormalizeUnaryOperation(
+    const UnaryOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];
