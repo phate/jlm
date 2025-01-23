@@ -65,7 +65,9 @@ static const unop_reduction_path_t unop_reduction_distribute = 6;
  * \see unary_op::reduce_operand()
  */
 std::optional<std::vector<rvsdg::output *>>
-NormalizeUnaryOperation(const UnaryOperation & operation, const std::vector<rvsdg::output *> & operands);
+NormalizeUnaryOperation(
+    const UnaryOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 
