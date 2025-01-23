@@ -17,7 +17,7 @@ namespace jlm::llvm
 /**
   \brief Get address of compiled function object.
   */
-class FunctionToPointerOperation final : public rvsdg::unary_op
+class FunctionToPointerOperation final : public rvsdg::UnaryOperation
 {
 public:
   ~FunctionToPointerOperation() noexcept override;
@@ -55,7 +55,7 @@ private:
 /**
   \brief Interpret pointer as callable function.
   */
-class PointerToFunctionOperation final : public rvsdg::unary_op
+class PointerToFunctionOperation final : public rvsdg::UnaryOperation
 {
 public:
   ~PointerToFunctionOperation() noexcept override;

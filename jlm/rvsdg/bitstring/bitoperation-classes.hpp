@@ -17,13 +17,13 @@ namespace jlm::rvsdg
 
 /* Represents a unary operation on a bitstring of a specific width,
  * produces another bitstring of the same width. */
-class bitunary_op : public jlm::rvsdg::unary_op
+class bitunary_op : public UnaryOperation
 {
 public:
   virtual ~bitunary_op() noexcept;
 
   inline bitunary_op(const std::shared_ptr<const bittype> & type) noexcept
-      : unary_op(type, type)
+      : UnaryOperation(type, type)
   {}
 
   inline const bittype &

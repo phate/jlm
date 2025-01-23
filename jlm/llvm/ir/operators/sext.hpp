@@ -15,7 +15,7 @@ namespace jlm::llvm
 
 /* sext operator */
 
-class sext_op final : public rvsdg::unary_op
+class sext_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~sext_op();
@@ -23,7 +23,7 @@ public:
   inline sext_op(
       std::shared_ptr<const rvsdg::bittype> otype,
       std::shared_ptr<const rvsdg::bittype> rtype)
-      : unary_op(otype, rtype)
+      : UnaryOperation(otype, rtype)
   {
     if (otype->nbits() >= rtype->nbits())
       throw jlm::util::error("expected operand's #bits to be smaller than results's #bits.");
@@ -32,7 +32,7 @@ public:
   inline sext_op(
       std::shared_ptr<const rvsdg::Type> srctype,
       std::shared_ptr<const rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(srctype);
     if (!ot)
