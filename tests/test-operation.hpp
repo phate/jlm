@@ -96,7 +96,7 @@ public:
 
 /* unary operation */
 
-class unary_op final : public rvsdg::unary_op
+class unary_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~unary_op() noexcept;
@@ -104,7 +104,7 @@ public:
   inline unary_op(
       std::shared_ptr<const rvsdg::Type> srctype,
       std::shared_ptr<const rvsdg::Type> dsttype) noexcept
-      : rvsdg::unary_op(std::move(srctype), std::move(dsttype))
+      : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
   virtual bool

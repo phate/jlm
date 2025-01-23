@@ -22,12 +22,12 @@ typedef size_t unop_reduction_path_t;
 
   Operator taking a single argument.
 */
-class unary_op : public SimpleOperation
+class UnaryOperation : public SimpleOperation
 {
 public:
-  virtual ~unary_op() noexcept;
+  ~UnaryOperation() noexcept override;
 
-  inline unary_op(
+  UnaryOperation(
       std::shared_ptr<const jlm::rvsdg::Type> operand,
       std::shared_ptr<const jlm::rvsdg::Type> result)
       : SimpleOperation({ std::move(operand) }, { std::move(result) })
@@ -65,7 +65,9 @@ static const unop_reduction_path_t unop_reduction_distribute = 6;
  * \see unary_op::reduce_operand()
  */
 std::optional<std::vector<rvsdg::output *>>
-NormalizeUnaryOperation(const unary_op & operation, const std::vector<rvsdg::output *> & operands);
+NormalizeUnaryOperation(
+    const UnaryOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 

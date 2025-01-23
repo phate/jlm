@@ -14,7 +14,7 @@ FunctionToPointerOperation::~FunctionToPointerOperation() noexcept
 
 FunctionToPointerOperation::FunctionToPointerOperation(
     std::shared_ptr<const rvsdg::FunctionType> fn)
-    : unary_op(fn, llvm::PointerType::Create()),
+    : UnaryOperation(fn, PointerType::Create()),
       FunctionType_(std::move(fn))
 {}
 
@@ -88,7 +88,7 @@ PointerToFunctionOperation::~PointerToFunctionOperation() noexcept
 
 PointerToFunctionOperation::PointerToFunctionOperation(
     std::shared_ptr<const rvsdg::FunctionType> fn)
-    : unary_op(llvm::PointerType::Create(), fn),
+    : UnaryOperation(PointerType::Create(), fn),
       FunctionType_(std::move(fn))
 {}
 

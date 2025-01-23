@@ -154,7 +154,7 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
   {
     return ReduceStoreNode(simpleNode);
   }
-  if (is<rvsdg::unary_op>(&simpleNode))
+  if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
     // FIXME: handle the unary node
     // See github issue #304

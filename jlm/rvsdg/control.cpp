@@ -92,7 +92,7 @@ match_op::match_op(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : jlm::rvsdg::unary_op(bittype::Create(nbits), ControlType::Create(nalternatives)),
+    : UnaryOperation(bittype::Create(nbits), ControlType::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}

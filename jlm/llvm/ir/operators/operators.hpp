@@ -238,25 +238,25 @@ private:
 
 /* fp2ui operator */
 
-class fp2ui_op final : public jlm::rvsdg::unary_op
+class fp2ui_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~fp2ui_op() noexcept;
 
   inline fp2ui_op(fpsize size, std::shared_ptr<const jlm::rvsdg::bittype> type)
-      : jlm::rvsdg::unary_op(fptype::Create(size), std::move(type))
+      : UnaryOperation(fptype::Create(size), std::move(type))
   {}
 
   inline fp2ui_op(
       std::shared_ptr<const fptype> fpt,
       std::shared_ptr<const jlm::rvsdg::bittype> type)
-      : jlm::rvsdg::unary_op(std::move(fpt), std::move(type))
+      : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
   inline fp2ui_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
     if (!st)
@@ -301,25 +301,25 @@ public:
 
 /* fp2si operator */
 
-class fp2si_op final : public jlm::rvsdg::unary_op
+class fp2si_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~fp2si_op() noexcept;
 
   inline fp2si_op(fpsize size, std::shared_ptr<const jlm::rvsdg::bittype> type)
-      : jlm::rvsdg::unary_op(fptype::Create(size), std::move(type))
+      : UnaryOperation(fptype::Create(size), std::move(type))
   {}
 
   inline fp2si_op(
       std::shared_ptr<const fptype> fpt,
       std::shared_ptr<const jlm::rvsdg::bittype> type)
-      : jlm::rvsdg::unary_op(std::move(fpt), std::move(type))
+      : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
   inline fp2si_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : jlm::rvsdg::unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
     if (!st)
@@ -489,7 +489,7 @@ private:
 
 /* bits2ptr operator */
 
-class bits2ptr_op final : public jlm::rvsdg::unary_op
+class bits2ptr_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~bits2ptr_op();
@@ -497,13 +497,13 @@ public:
   inline bits2ptr_op(
       std::shared_ptr<const jlm::rvsdg::bittype> btype,
       std::shared_ptr<const PointerType> ptype)
-      : unary_op(std::move(btype), std::move(ptype))
+      : UnaryOperation(std::move(btype), std::move(ptype))
   {}
 
   inline bits2ptr_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto at = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
     if (!at)
@@ -568,7 +568,7 @@ public:
 
 /* ptr2bits operator */
 
-class ptr2bits_op final : public jlm::rvsdg::unary_op
+class ptr2bits_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~ptr2bits_op();
@@ -576,13 +576,13 @@ public:
   inline ptr2bits_op(
       std::shared_ptr<const PointerType> ptype,
       std::shared_ptr<const jlm::rvsdg::bittype> btype)
-      : unary_op(std::move(ptype), std::move(btype))
+      : UnaryOperation(std::move(ptype), std::move(btype))
   {}
 
   inline ptr2bits_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto pt = dynamic_cast<const PointerType *>(srctype.get());
     if (!pt)
@@ -761,13 +761,13 @@ private:
 
 /* zext operator */
 
-class zext_op final : public jlm::rvsdg::unary_op
+class zext_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~zext_op();
 
   inline zext_op(size_t nsrcbits, size_t ndstbits)
-      : unary_op(jlm::rvsdg::bittype::Create(nsrcbits), jlm::rvsdg::bittype::Create(ndstbits))
+      : UnaryOperation(rvsdg::bittype::Create(nsrcbits), rvsdg::bittype::Create(ndstbits))
   {
     if (ndstbits < nsrcbits)
       throw jlm::util::error("# destination bits must be greater than # source bits.");
@@ -776,7 +776,7 @@ public:
   inline zext_op(
       const std::shared_ptr<const jlm::rvsdg::bittype> & srctype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     if (dsttype->nbits() < srctype->nbits())
       throw jlm::util::error("# destination bits must be greater than # source bits.");
@@ -785,7 +785,7 @@ public:
   inline zext_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
     if (!st)
@@ -1212,13 +1212,13 @@ private:
 
 /* fpext operator */
 
-class fpext_op final : public jlm::rvsdg::unary_op
+class fpext_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~fpext_op();
 
   inline fpext_op(const fpsize & srcsize, const fpsize & dstsize)
-      : unary_op(fptype::Create(srcsize), fptype::Create(dstsize))
+      : UnaryOperation(fptype::Create(srcsize), fptype::Create(dstsize))
   {
     if (srcsize == fpsize::flt && dstsize == fpsize::half)
       throw jlm::util::error("destination type size must be bigger than source type size.");
@@ -1227,7 +1227,7 @@ public:
   inline fpext_op(
       const std::shared_ptr<const fptype> & srctype,
       const std::shared_ptr<const fptype> & dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
       throw jlm::util::error("destination type size must be bigger than source type size.");
@@ -1236,7 +1236,7 @@ public:
   inline fpext_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
     if (!st)
@@ -1296,17 +1296,17 @@ public:
 
 /* fpneg operator */
 
-class fpneg_op final : public jlm::rvsdg::unary_op
+class fpneg_op final : public rvsdg::UnaryOperation
 {
 public:
   ~fpneg_op() override;
 
   explicit fpneg_op(const fpsize & size)
-      : unary_op(fptype::Create(size), fptype::Create(size))
+      : UnaryOperation(fptype::Create(size), fptype::Create(size))
   {}
 
   explicit fpneg_op(const std::shared_ptr<const fptype> & fpt)
-      : unary_op(fpt, fpt)
+      : UnaryOperation(fpt, fpt)
   {}
 
   virtual bool
@@ -1345,13 +1345,13 @@ public:
 
 /* fptrunc operator */
 
-class fptrunc_op final : public jlm::rvsdg::unary_op
+class fptrunc_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~fptrunc_op();
 
   inline fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
-      : unary_op(fptype::Create(srcsize), fptype::Create(dstsize))
+      : UnaryOperation(fptype::Create(srcsize), fptype::Create(dstsize))
   {
     if (srcsize == fpsize::half || (srcsize == fpsize::flt && dstsize != fpsize::half)
         || (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
@@ -1361,7 +1361,7 @@ public:
   inline fptrunc_op(
       const std::shared_ptr<const fptype> & srctype,
       const std::shared_ptr<const fptype> & dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
       throw jlm::util::error("destination type size must be bigger than source type size.");
@@ -1370,7 +1370,7 @@ public:
   inline fptrunc_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto st = dynamic_cast<const fptype *>(srctype.get());
     if (!st)
@@ -1484,7 +1484,7 @@ public:
 
 /* bitcast operator */
 
-class bitcast_op final : public jlm::rvsdg::unary_op
+class bitcast_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~bitcast_op();
@@ -1492,13 +1492,13 @@ public:
   inline bitcast_op(
       std::shared_ptr<const jlm::rvsdg::ValueType> srctype,
       std::shared_ptr<const jlm::rvsdg::ValueType> dsttype)
-      : unary_op(std::move(srctype), std::move(dsttype))
+      : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
   inline bitcast_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     check_types(srctype, dsttype);
   }
@@ -1637,7 +1637,7 @@ private:
 
 /* trunc operator */
 
-class trunc_op final : public jlm::rvsdg::unary_op
+class trunc_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~trunc_op();
@@ -1645,7 +1645,7 @@ public:
   inline trunc_op(
       const std::shared_ptr<const jlm::rvsdg::bittype> & otype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & rtype)
-      : unary_op(otype, rtype)
+      : UnaryOperation(otype, rtype)
   {
     if (otype->nbits() < rtype->nbits())
       throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
@@ -1654,7 +1654,7 @@ public:
   inline trunc_op(
       std::shared_ptr<const jlm::rvsdg::Type> optype,
       std::shared_ptr<const jlm::rvsdg::Type> restype)
-      : unary_op(optype, restype)
+      : UnaryOperation(optype, restype)
   {
     auto ot = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
     if (!ot)
@@ -1728,7 +1728,7 @@ public:
 
 /* uitofp operator */
 
-class uitofp_op final : public jlm::rvsdg::unary_op
+class uitofp_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~uitofp_op();
@@ -1736,13 +1736,13 @@ public:
   inline uitofp_op(
       std::shared_ptr<const jlm::rvsdg::bittype> srctype,
       std::shared_ptr<const fptype> dsttype)
-      : unary_op(std::move(srctype), std::move(dsttype))
+      : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
   inline uitofp_op(
       std::shared_ptr<const jlm::rvsdg::Type> optype,
       std::shared_ptr<const jlm::rvsdg::Type> restype)
-      : unary_op(optype, restype)
+      : UnaryOperation(optype, restype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
     if (!st)
@@ -1787,7 +1787,7 @@ public:
 
 /* sitofp operator */
 
-class sitofp_op final : public jlm::rvsdg::unary_op
+class sitofp_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~sitofp_op();
@@ -1795,13 +1795,13 @@ public:
   inline sitofp_op(
       std::shared_ptr<const jlm::rvsdg::bittype> srctype,
       std::shared_ptr<const fptype> dsttype)
-      : unary_op(std::move(srctype), std::move(dsttype))
+      : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
   inline sitofp_op(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
-      : unary_op(srctype, dsttype)
+      : UnaryOperation(srctype, dsttype)
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
     if (!st)
@@ -2138,7 +2138,7 @@ public:
   virtual ~vectorunary_op();
 
   inline vectorunary_op(
-      const jlm::rvsdg::unary_op & op,
+      const rvsdg::UnaryOperation & op,
       const std::shared_ptr<const vectortype> & operand,
       const std::shared_ptr<const vectortype> & result)
       : SimpleOperation({ operand }, { result }),
@@ -2187,10 +2187,10 @@ public:
     return *this;
   }
 
-  inline const jlm::rvsdg::unary_op &
+  const rvsdg::UnaryOperation &
   operation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::unary_op *>(op_.get());
+    return *static_cast<const rvsdg::UnaryOperation *>(op_.get());
   }
 
   virtual bool
@@ -2204,7 +2204,7 @@ public:
 
   static inline std::unique_ptr<llvm::tac>
   create(
-      const jlm::rvsdg::unary_op & unop,
+      const rvsdg::UnaryOperation & unop,
       const llvm::variable * operand,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
