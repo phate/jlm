@@ -10,11 +10,11 @@
 namespace jlm::rvsdg
 {
 
-unary_op::~unary_op() noexcept
+UnaryOperation::~UnaryOperation() noexcept
 {}
 
 std::optional<std::vector<rvsdg::output *>>
-NormalizeUnaryOperation(const unary_op & operation, const std::vector<rvsdg::output *> & operands)
+NormalizeUnaryOperation(const UnaryOperation & operation, const std::vector<rvsdg::output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];

@@ -138,7 +138,7 @@ to_ctlconstant_op(const Operation & op) noexcept
 
 /* match operator */
 
-class match_op final : public jlm::rvsdg::unary_op
+class match_op final : public UnaryOperation
 {
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;
 

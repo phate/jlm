@@ -28,7 +28,7 @@ public:
     auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand1);
     auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand2);
 
-    if (jlm::rvsdg::is<jlm::rvsdg::unary_op>(n1) && jlm::rvsdg::is<jlm::rvsdg::unary_op>(n2))
+    if (jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n1) && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n2))
     {
       return 1;
     }
