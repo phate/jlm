@@ -294,6 +294,14 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
     auto newcv = lambda->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newcv.inner);
   }
+  /* collect function arguments */
+  auto args = ln->GetFunctionArguments();
+  auto newArgs = lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() == newArgs.size());
+  for (std::size_t n = 0; n < args.size(); ++n)
+  {
+    subregionmap.insert(args[n], newArgs[n]);
+  }
 
   /* copy subregion */
   ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);

@@ -219,6 +219,10 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   auto args = GetFunctionArguments();
   auto newArgs = lambda->GetFunctionArguments();
   JLM_ASSERT(args.size() == newArgs.size());
+  for (std::size_t n = 0; n < args.size(); ++n)
+  {
+    subregionmap.insert(args[n], newArgs[n]);
+  }
 
   /* copy subregion */
   subregion()->copy(lambda->subregion(), subregionmap, false, false);
