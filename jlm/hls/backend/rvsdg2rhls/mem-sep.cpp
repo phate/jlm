@@ -69,7 +69,7 @@ GetMemoryStateResult(const llvm::lambda::node & lambda)
 void
 gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & mem_nodes)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

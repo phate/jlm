@@ -221,7 +221,7 @@ flattened_binary_op::reduce(
     rvsdg::Region * region,
     const flattened_binary_op::reduction & reduction)
 {
-  for (auto & node : topdown_traverser(region))
+  for (auto & node : TopDownTraverser(region))
   {
     if (is<flattened_binary_op>(node))
     {

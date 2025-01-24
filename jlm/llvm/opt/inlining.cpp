@@ -147,7 +147,7 @@ inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
 static void
 inlining(rvsdg::Graph & rvsdg)
 {
-  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
+  for (auto node : rvsdg::TopDownTraverser(&rvsdg.GetRootRegion()))
   {
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {

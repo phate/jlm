@@ -266,7 +266,7 @@ static std::vector<jlm::rvsdg::ThetaNode *>
 find_thetas(jlm::rvsdg::Region * region)
 {
   std::vector<jlm::rvsdg::ThetaNode *> thetas;
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : jlm::rvsdg::TopDownTraverser(region))
   {
     if (auto theta = dynamic_cast<jlm::rvsdg::ThetaNode *>(node))
       thetas.push_back(theta);

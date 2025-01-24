@@ -27,7 +27,7 @@ memstate_conv(llvm::RvsdgModule & rm)
 void
 memstate_conv(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

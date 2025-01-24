@@ -133,12 +133,12 @@ private:
  *
  * @see node::depth()
  */
-class topdown_traverser final
+class TopDownTraverser final
 {
 public:
-  ~topdown_traverser() noexcept;
+  ~TopDownTraverser() noexcept;
 
-  explicit topdown_traverser(rvsdg::Region * region);
+  explicit TopDownTraverser(Region * region);
 
   Node *
   next();
@@ -149,7 +149,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<topdown_traverser> iterator;
+  typedef detail::traverser_iterator<TopDownTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator

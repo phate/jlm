@@ -520,7 +520,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
   // Process the intra-procedural nodes top-down.
   // This ensures that we add the live memory nodes to the live sets when the respective RVSDG nodes
   // appear in the visitation.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))

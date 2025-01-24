@@ -396,7 +396,7 @@ push(rvsdg::ThetaNode * theta)
 static void
 push(rvsdg::Region * region)
 {
-  for (auto node : jlm::rvsdg::topdown_traverser(region))
+  for (auto node : rvsdg::TopDownTraverser(region))
   {
     if (auto strnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {

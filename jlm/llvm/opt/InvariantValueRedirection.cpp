@@ -66,7 +66,7 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
   // We require a topdown traversal in the root region to ensure that a lambda node is visited
   // before its call nodes. This ensures that all invariant values are redirected in the lambda
   // subregion before we try to detect invariant call outputs.
-  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
+  for (auto node : rvsdg::TopDownTraverser(&rvsdg.GetRootRegion()))
   {
     if (auto lambdaNode = dynamic_cast<lambda::node *>(node))
     {

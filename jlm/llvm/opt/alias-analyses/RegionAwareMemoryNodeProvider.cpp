@@ -859,7 +859,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(const rvsdg::StructuralNod
 void
 RegionAwareMemoryNodeProvider::Propagate(const rvsdg::RvsdgModule & rvsdgModule)
 {
-  rvsdg::topdown_traverser traverser(&rvsdgModule.Rvsdg().GetRootRegion());
+  rvsdg::TopDownTraverser traverser(&rvsdgModule.Rvsdg().GetRootRegion());
   for (auto & node : traverser)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))

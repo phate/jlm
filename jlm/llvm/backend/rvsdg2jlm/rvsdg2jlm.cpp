@@ -80,7 +80,7 @@ create_initialization(const delta::node * delta, context & ctx)
   }
 
   tacsvector_t tacs;
-  for (const auto & node : rvsdg::topdown_traverser(delta->subregion()))
+  for (const auto & node : rvsdg::TopDownTraverser(delta->subregion()))
   {
     JLM_ASSERT(node->noutputs() == 1);
     auto output = node->output(0);
@@ -109,7 +109,7 @@ convert_region(rvsdg::Region & region, context & ctx)
   ctx.lpbb()->add_outedge(entry);
   ctx.set_lpbb(entry);
 
-  for (const auto & node : rvsdg::topdown_traverser(&region))
+  for (const auto & node : rvsdg::TopDownTraverser(&region))
     convert_node(*node, ctx);
 
   auto exit = basic_block::create(*ctx.cfg());
@@ -541,7 +541,7 @@ convert_node(const rvsdg::Node & node, context & ctx)
 static void
 convert_nodes(const rvsdg::Graph & graph, context & ctx)
 {
-  for (const auto & node : rvsdg::topdown_traverser(&graph.GetRootRegion()))
+  for (const auto & node : rvsdg::TopDownTraverser(&graph.GetRootRegion()))
     convert_node(*node, ctx);
 }
 

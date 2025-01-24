@@ -15,7 +15,7 @@ namespace jlm::hls
 void
 check_rhls(rvsdg::Region * sr)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto & node : rvsdg::TopDownTraverser(sr))
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
