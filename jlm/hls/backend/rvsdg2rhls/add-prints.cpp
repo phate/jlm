@@ -16,7 +16,7 @@ namespace jlm::hls
 void
 add_prints(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -104,7 +104,7 @@ convert_prints(
     jlm::rvsdg::output * printf,
     const std::shared_ptr<const rvsdg::FunctionType> & functionType)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

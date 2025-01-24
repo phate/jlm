@@ -29,7 +29,7 @@ test_initialization()
   bool unary_visited = false;
   bool binary_visited = false;
   bool constant_visited = false;
-  for (const auto & node : jlm::rvsdg::topdown_traverser(&graph.GetRootRegion()))
+  for (const auto & node : jlm::rvsdg::TopDownTraverser(&graph.GetRootRegion()))
   {
     if (node == unary)
       unary_visited = true;
@@ -60,7 +60,7 @@ test_basic_traversal()
 
   {
     jlm::rvsdg::Node * tmp;
-    jlm::rvsdg::topdown_traverser trav(&graph.GetRootRegion());
+    jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
     assert(tmp == n1);
@@ -88,7 +88,7 @@ test_order_enforcement_traversal()
 
   {
     jlm::rvsdg::Node * tmp;
-    jlm::rvsdg::topdown_traverser trav(&graph.GetRootRegion());
+    jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
     assert(tmp == n1);
@@ -119,7 +119,7 @@ test_traversal_insertion()
 
   {
     jlm::rvsdg::Node * node;
-    jlm::rvsdg::topdown_traverser trav(&graph.GetRootRegion());
+    jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
 
     node = trav.next();
     assert(node == n1);
@@ -173,7 +173,7 @@ test_mutable_traverse()
     bool seen_n2 = false;
     bool seen_n3 = false;
 
-    for (const auto & tmp : jlm::rvsdg::topdown_traverser(&graph->GetRootRegion()))
+    for (const auto & tmp : jlm::rvsdg::TopDownTraverser(&graph->GetRootRegion()))
     {
       seen_n1 = seen_n1 || (tmp == n1);
       seen_n2 = seen_n2 || (tmp == n2);

@@ -137,7 +137,7 @@ trace_call(jlm::rvsdg::input * input)
 void
 inline_calls(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -179,7 +179,7 @@ size_t alloca_cnt = 0;
 void
 convert_alloca(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -329,7 +329,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
   auto rhls = llvm::RvsdgModule::Create(rm.SourceFileName(), rm.TargetTriple(), rm.DataLayout());
   std::cout << "processing " << rm.SourceFileName().name() << "\n";
   auto root = &rm.Rvsdg().GetRootRegion();
-  for (auto node : jlm::rvsdg::topdown_traverser(root))
+  for (auto node : rvsdg::TopDownTraverser(root))
   {
     if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
     {

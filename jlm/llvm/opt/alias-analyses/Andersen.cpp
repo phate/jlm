@@ -1210,7 +1210,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 
   // The use of the top-down traverser is vital, as it ensures all input origins
   // of pointer type are mapped to PointerObjects by the time a node is processed.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
 
   // While visiting the node we have the responsibility of creating
   // PointerObjects for any of the node's outputs of pointer type

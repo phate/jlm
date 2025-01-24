@@ -1754,7 +1754,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
 
   using namespace jlm::rvsdg;
 
-  topdown_traverser traverser(&region);
+  TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))

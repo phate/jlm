@@ -151,7 +151,7 @@ instrument_ref(
   store_func = route_to_region(store_func, region);
   alloca_func = route_to_region(alloca_func, region);
   auto void_ptr = jlm::llvm::PointerType::Create();
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

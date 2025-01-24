@@ -17,7 +17,7 @@ void
 remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
 {
   // process children first so that unnecessary users get removed
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
