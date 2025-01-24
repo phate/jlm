@@ -40,8 +40,7 @@ TopDownTraverser::TopDownTraverser(Region * region)
     }
   }
 
-  callbacks_.push_back(
-      on_node_create.connect(std::bind(&TopDownTraverser::node_create, this, _1)));
+  callbacks_.push_back(on_node_create.connect(std::bind(&TopDownTraverser::node_create, this, _1)));
   callbacks_.push_back(
       on_input_change.connect(std::bind(&TopDownTraverser::input_change, this, _1, _2, _3)));
 }
