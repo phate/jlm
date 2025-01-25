@@ -560,6 +560,336 @@ public:
   flags() const noexcept override;
 };
 
+// FIXME: add documentation
+class IntegerEqOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerEqOperation() noexcept override;
+
+  explicit IntegerEqOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerNeOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerNeOperation() noexcept override;
+
+  explicit IntegerNeOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerSgeOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerSgeOperation() noexcept override;
+
+  explicit IntegerSgeOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerSgtOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerSgtOperation() noexcept override;
+
+  explicit IntegerSgtOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerSleOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerSleOperation() noexcept override;
+
+  explicit IntegerSleOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerSltOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerSltOperation() noexcept override;
+
+  explicit IntegerSltOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerUgeOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerUgeOperation() noexcept override;
+
+  explicit IntegerUgeOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerUgtOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerUgtOperation() noexcept override;
+
+  explicit IntegerUgtOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerUleOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerUleOperation() noexcept override;
+
+  explicit IntegerUleOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
+// FIXME: add documentation
+class IntegerUltOperation final : public rvsdg::BinaryOperation
+{
+public:
+  ~IntegerUltOperation() noexcept override;
+
+  explicit IntegerUltOperation(const std::size_t numBits)
+      : BinaryOperation(
+            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
+            IntegerType::Create(numBits))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::binop_reduction_path_t
+  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+      const noexcept override;
+
+  rvsdg::output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+      const override;
+
+  enum flags
+  flags() const noexcept override;
+};
+
 }
 
 #endif // JLM_LLVM_IR_OPERATORS_INTEGEROPERATIONS_HPP

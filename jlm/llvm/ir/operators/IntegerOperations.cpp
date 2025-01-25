@@ -719,4 +719,434 @@ IntegerXorOperation::flags() const noexcept
   return flags::none;
 }
 
+IntegerEqOperation::~IntegerEqOperation() noexcept = default;
+
+bool
+IntegerEqOperation::operator==(const Operation & other) const noexcept
+{
+  const auto eqOperation = dynamic_cast<const IntegerEqOperation *>(&other);
+  return eqOperation && eqOperation->result(0) == result(0);
+}
+
+std::string
+IntegerEqOperation::debug_string() const
+{
+  return "IEq";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerEqOperation::copy() const
+{
+  return std::make_unique<IntegerEqOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerEqOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerEqOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerEqOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerNeOperation::~IntegerNeOperation() noexcept = default;
+
+bool
+IntegerNeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto neOperation = dynamic_cast<const IntegerNeOperation *>(&other);
+  return neOperation && neOperation->result(0) == result(0);
+}
+
+std::string
+IntegerNeOperation::debug_string() const
+{
+  return "INe";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerNeOperation::copy() const
+{
+  return std::make_unique<IntegerNeOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerNeOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerNeOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerNeOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerSgeOperation::~IntegerSgeOperation() noexcept = default;
+
+bool
+IntegerSgeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto sgeOperation = dynamic_cast<const IntegerSgeOperation *>(&other);
+  return sgeOperation && sgeOperation->result(0) == result(0);
+}
+
+std::string
+IntegerSgeOperation::debug_string() const
+{
+  return "ISge";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerSgeOperation::copy() const
+{
+  return std::make_unique<IntegerSgeOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerSgeOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerSgeOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerSgeOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerSgtOperation::~IntegerSgtOperation() noexcept = default;
+
+bool
+IntegerSgtOperation::operator==(const Operation & other) const noexcept
+{
+  const auto sgtOperation = dynamic_cast<const IntegerSgtOperation *>(&other);
+  return sgtOperation && sgtOperation->result(0) == result(0);
+}
+
+std::string
+IntegerSgtOperation::debug_string() const
+{
+  return "ISgt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerSgtOperation::copy() const
+{
+  return std::make_unique<IntegerSgtOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerSgtOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerSgtOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerSgtOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerSleOperation::~IntegerSleOperation() noexcept = default;
+
+bool
+IntegerSleOperation::operator==(const Operation & other) const noexcept
+{
+  const auto sleOperation = dynamic_cast<const IntegerSleOperation *>(&other);
+  return sleOperation && sleOperation->result(0) == result(0);
+}
+
+std::string
+IntegerSleOperation::debug_string() const
+{
+  return "ISle";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerSleOperation::copy() const
+{
+  return std::make_unique<IntegerSleOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerSleOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerSleOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerSleOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerSltOperation::~IntegerSltOperation() noexcept = default;
+
+bool
+IntegerSltOperation::operator==(const Operation & other) const noexcept
+{
+  const auto sltOperation = dynamic_cast<const IntegerSltOperation *>(&other);
+  return sltOperation && sltOperation->result(0) == result(0);
+}
+
+std::string
+IntegerSltOperation::debug_string() const
+{
+  return "ISlt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerSltOperation::copy() const
+{
+  return std::make_unique<IntegerSltOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerSltOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerSltOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerSltOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerUgeOperation::~IntegerUgeOperation() noexcept = default;
+
+bool
+IntegerUgeOperation::operator==(const Operation & other) const noexcept
+{
+  const auto ugeOperation = dynamic_cast<const IntegerUgeOperation *>(&other);
+  return ugeOperation && ugeOperation->result(0) == result(0);
+}
+
+std::string
+IntegerUgeOperation::debug_string() const
+{
+  return "IUge";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerUgeOperation::copy() const
+{
+  return std::make_unique<IntegerUgeOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerUgeOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerUgeOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerUgeOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerUgtOperation::~IntegerUgtOperation() noexcept = default;
+
+bool
+IntegerUgtOperation::operator==(const Operation & other) const noexcept
+{
+  const auto ugtOperation = dynamic_cast<const IntegerUgtOperation *>(&other);
+  return ugtOperation && ugtOperation->result(0) == result(0);
+}
+
+std::string
+IntegerUgtOperation::debug_string() const
+{
+  return "IUgt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerUgtOperation::copy() const
+{
+  return std::make_unique<IntegerUgtOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerUgtOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerUgtOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerUgtOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerUleOperation::~IntegerUleOperation() noexcept = default;
+
+bool
+IntegerUleOperation::operator==(const Operation & other) const noexcept
+{
+  const auto uleOperation = dynamic_cast<const IntegerUleOperation *>(&other);
+  return uleOperation && uleOperation->result(0) == result(0);
+}
+
+std::string
+IntegerUleOperation::debug_string() const
+{
+  return "IUle";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerUleOperation::copy() const
+{
+  return std::make_unique<IntegerUleOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerUleOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerUleOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerUleOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
+IntegerUltOperation::~IntegerUltOperation() noexcept = default;
+
+bool
+IntegerUltOperation::operator==(const Operation & other) const noexcept
+{
+  const auto ultOperation = dynamic_cast<const IntegerUltOperation *>(&other);
+  return ultOperation && ultOperation->result(0) == result(0);
+}
+
+std::string
+IntegerUltOperation::debug_string() const
+{
+  return "IUlt";
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerUltOperation::copy() const
+{
+  return std::make_unique<IntegerUltOperation>(*this);
+}
+
+rvsdg::binop_reduction_path_t
+IntegerUltOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+    const noexcept
+{
+  return rvsdg::binop_reduction_none;
+}
+
+rvsdg::output *
+IntegerUltOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::output *,
+    rvsdg::output *) const
+{
+  return nullptr;
+}
+
+enum rvsdg::BinaryOperation::flags
+IntegerUltOperation::flags() const noexcept
+{
+  return flags::none;
+}
+
 }
