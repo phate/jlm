@@ -455,118 +455,97 @@ convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t &, context
   return nullptr;
 }
 
-static inline const variable *
-convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+std::unique_ptr<rvsdg::BinaryOperation>
+ConvertIntegerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate, const std::size_t numBits)
 {
-  JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::ICmp);
-  auto & typeConverter = ctx.GetTypeConverter();
-  auto i = ::llvm::cast<const ::llvm::ICmpInst>(instruction);
-  auto t = i->getOperand(0)->getType();
-
-  static std::
-      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::Operation> (*)(size_t)>
-          map({ { ::llvm::CmpInst::ICMP_SLT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitslt_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_ULT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitult_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_SLE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitsle_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_ULE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitule_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_EQ,
-                  [](size_t nbits)
-                  {
-                    rvsdg::biteq_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_NE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitne_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_SGE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitsge_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_UGE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bituge_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_SGT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitsgt_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_UGT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitugt_op op(nbits);
-                    return op.copy();
-                  } } });
-
-  static std::unordered_map<const ::llvm::CmpInst::Predicate, llvm::cmp> ptrmap(
-      { { ::llvm::CmpInst::ICMP_ULT, cmp::lt },
-        { ::llvm::CmpInst::ICMP_ULE, cmp::le },
-        { ::llvm::CmpInst::ICMP_EQ, cmp::eq },
-        { ::llvm::CmpInst::ICMP_NE, cmp::ne },
-        { ::llvm::CmpInst::ICMP_UGE, cmp::ge },
-        { ::llvm::CmpInst::ICMP_UGT, cmp::gt } });
-
-  auto p = i->getPredicate();
-  auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
-  auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
-
-  std::unique_ptr<rvsdg::Operation> binop;
-
-  if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy()))
+  switch (predicate)
   {
-    auto it = t->isVectorTy() ? t->getScalarType() : t;
-    binop = map[p](it->getIntegerBitWidth());
+  case ::llvm::CmpInst::ICMP_SLT:
+    return std::make_unique<rvsdg::bitslt_op>(numBits);
+  case ::llvm::CmpInst::ICMP_ULT:
+    return std::make_unique<rvsdg::bitult_op>(numBits);
+  case ::llvm::CmpInst::ICMP_SLE:
+    return std::make_unique<rvsdg::bitsle_op>(numBits);
+  case ::llvm::CmpInst::ICMP_ULE:
+    return std::make_unique<rvsdg::bitule_op>(numBits);
+  case ::llvm::CmpInst::ICMP_EQ:
+    return std::make_unique<rvsdg::biteq_op>(numBits);
+  case ::llvm::CmpInst::ICMP_NE:
+    return std::make_unique<rvsdg::bitne_op>(numBits);
+  case ::llvm::CmpInst::ICMP_SGE:
+    return std::make_unique<rvsdg::bitsge_op>(numBits);
+  case ::llvm::CmpInst::ICMP_UGE:
+    return std::make_unique<rvsdg::bituge_op>(numBits);
+  case ::llvm::CmpInst::ICMP_SGT:
+    return std::make_unique<rvsdg::bitsgt_op>(numBits);
+  case ::llvm::CmpInst::ICMP_UGT:
+    return std::make_unique<rvsdg::bitugt_op>(numBits);
+  default:
+    JLM_UNREACHABLE("ConvertIntegerIcmpPredicate: Unsupported icmp predicate.");
   }
-  else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy()))
+}
+
+std::unique_ptr<rvsdg::BinaryOperation>
+ConvertPointerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate)
+{
+  switch (predicate)
   {
-    auto pt = ::llvm::cast<::llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
-    binop = std::make_unique<ptrcmp_op>(typeConverter.ConvertPointerType(*pt), ptrmap[p]);
+  case ::llvm::CmpInst::ICMP_ULT:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::lt);
+  case ::llvm::CmpInst::ICMP_ULE:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::le);
+  case ::llvm::CmpInst::ICMP_EQ:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::eq);
+  case ::llvm::CmpInst::ICMP_NE:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ne);
+  case ::llvm::CmpInst::ICMP_UGE:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ge);
+  case ::llvm::CmpInst::ICMP_UGT:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::gt);
+  default:
+    JLM_UNREACHABLE("ConvertPointerIcmpPredicate: Unsupported icmp predicate.");
   }
-  else
-    JLM_UNREACHABLE("This should have never happend.");
+}
 
-  auto type = typeConverter.ConvertLlvmType(*i->getType());
+static const variable *
+convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, context & ctx)
+{
+  const auto predicate = instruction->getPredicate();
+  const auto operandType = instruction->getOperand(0)->getType();
+  auto op1 = ConvertValue(instruction->getOperand(0), tacs, ctx);
+  auto op2 = ConvertValue(instruction->getOperand(1), tacs, ctx);
 
-  JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
-  if (t->isVectorTy())
+  std::unique_ptr<rvsdg::BinaryOperation> operation;
+  if (operandType->isVectorTy() && operandType->getScalarType()->isIntegerTy())
   {
-    tacs.push_back(vectorbinary_op::create(
-        *static_cast<rvsdg::BinaryOperation *>(binop.get()),
-        op1,
-        op2,
-        type));
+    operation =
+        ConvertIntegerIcmpPredicate(predicate, operandType->getScalarType()->getIntegerBitWidth());
+  }
+  else if (operandType->isVectorTy() && operandType->getScalarType()->isPointerTy())
+  {
+    operation = ConvertPointerIcmpPredicate(predicate);
+  }
+  else if (operandType->isIntegerTy())
+  {
+    operation = ConvertIntegerIcmpPredicate(predicate, operandType->getIntegerBitWidth());
+  }
+  else if (operandType->isPointerTy())
+  {
+    operation = ConvertPointerIcmpPredicate(predicate);
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(binop.get()), { op1, op2 }));
+    JLM_UNREACHABLE("convert_icmp_instruction: Unhandled icmp type.");
+  }
+
+  if (operandType->isVectorTy())
+  {
+    const auto instructionType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
+    tacs.push_back(vectorbinary_op::create(*operation, op1, op2, instructionType));
+  }
+  else
+  {
+    tacs.push_back(tac::create(*operation, { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -1316,7 +1295,7 @@ ConvertInstruction(
             { ::llvm::Instruction::FDiv, convert_binary_operator },
             { ::llvm::Instruction::FRem, convert_binary_operator },
             { ::llvm::Instruction::FNeg, convert<::llvm::UnaryOperator> },
-            { ::llvm::Instruction::ICmp, convert_icmp_instruction },
+            { ::llvm::Instruction::ICmp, convert<::llvm::ICmpInst> },
             { ::llvm::Instruction::FCmp, convert_fcmp_instruction },
             { ::llvm::Instruction::Load, convert_load_instruction },
             { ::llvm::Instruction::Store, convert_store_instruction },
