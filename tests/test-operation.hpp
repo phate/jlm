@@ -67,11 +67,11 @@ public:
   }
 };
 
-class NullaryOperation final : public rvsdg::nullary_op
+class NullaryOperation final : public rvsdg::NullaryOperation
 {
 public:
   explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
-      : nullary_op(resultType)
+      : rvsdg::NullaryOperation(resultType)
   {}
 
   bool
