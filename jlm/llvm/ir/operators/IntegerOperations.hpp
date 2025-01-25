@@ -8,10 +8,58 @@
 
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/binary.hpp>
+#include <jlm/rvsdg/bitstring/value-representation.hpp>
+#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
 namespace jlm::llvm
 {
+
+// FIXME: Implement our own value representation instead of re-using the bitstring value
+// representation
+using IntegerValueRepresentation = rvsdg::bitvalue_repr;
+
+// FIXME: add documentation
+class IntegerConstantOperation final : public rvsdg::NullaryOperation
+{
+public:
+  ~IntegerConstantOperation() override;
+
+  explicit IntegerConstantOperation(IntegerValueRepresentation representation)
+      : NullaryOperation(IntegerType::Create(representation.nbits())),
+        Representation_(std::move(representation))
+  {}
+
+  std::unique_ptr<Operation>
+  copy() const override;
+
+  std::string
+  debug_string() const override;
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] const IntegerValueRepresentation &
+  Representation() const noexcept
+  {
+    return Representation_;
+  }
+
+  static rvsdg::Node &
+  Create(rvsdg::Region & region, IntegerValueRepresentation representation)
+  {
+    return rvsdg::CreateOpNode<IntegerConstantOperation>(region, std::move(representation));
+  }
+
+  static rvsdg::Node &
+  Create(rvsdg::Region & region, std::size_t numBits, std::int64_t value)
+  {
+    return Create(region, { numBits, value });
+  }
+
+private:
+  IntegerValueRepresentation Representation_;
+};
 
 // FIXME: add documentation
 class IntegerNegOperation final : public rvsdg::UnaryOperation

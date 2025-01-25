@@ -8,6 +8,30 @@
 namespace jlm::llvm
 {
 
+IntegerConstantOperation::~IntegerConstantOperation() = default;
+
+std::unique_ptr<rvsdg::Operation>
+IntegerConstantOperation::copy() const
+{
+  return std::make_unique<IntegerConstantOperation>(*this);
+}
+
+std::string
+IntegerConstantOperation::debug_string() const
+{
+  if (Representation().is_known() && Representation().nbits() <= 64)
+    return util::strfmt("I", Representation().nbits(), "(", Representation().to_uint(), ")");
+
+  return Representation().str();
+}
+
+bool
+IntegerConstantOperation::operator==(const Operation & other) const noexcept
+{
+  const auto constant = dynamic_cast<const IntegerConstantOperation *>(&other);
+  return constant && constant->Representation() == Representation();
+}
+
 IntegerNegOperation::~IntegerNegOperation() noexcept = default;
 
 bool
