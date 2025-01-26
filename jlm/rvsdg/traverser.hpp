@@ -179,12 +179,12 @@ private:
   std::vector<jlm::util::callback> callbacks_;
 };
 
-class bottomup_traverser final
+class BottomUpTraverser final
 {
 public:
-  ~bottomup_traverser() noexcept;
+  ~BottomUpTraverser() noexcept;
 
-  explicit bottomup_traverser(rvsdg::Region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region, bool revisit = false);
 
   Node *
   next();
@@ -195,7 +195,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<bottomup_traverser> iterator;
+  typedef detail::traverser_iterator<BottomUpTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator

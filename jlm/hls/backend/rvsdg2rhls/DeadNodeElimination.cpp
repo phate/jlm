@@ -89,7 +89,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
   do
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::bottomup_traverser(&region))
+    for (auto & node : rvsdg::BottomUpTraverser(&region))
     {
       if (!node->has_users())
       {

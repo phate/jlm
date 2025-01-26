@@ -118,10 +118,9 @@ TopDownTraverser::input_change(input * in, output *, output *)
 
 /* bottom up traverser */
 
-bottomup_traverser::~bottomup_traverser() noexcept
-{}
+BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
-bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
+BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
     : region_(region),
       tracker_(region->graph()),
       new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
@@ -139,15 +138,15 @@ bottomup_traverser::bottomup_traverser(rvsdg::Region * region, bool revisit)
   }
 
   callbacks_.push_back(
-      on_node_create.connect(std::bind(&bottomup_traverser::node_create, this, _1)));
+      on_node_create.connect(std::bind(&BottomUpTraverser::node_create, this, _1)));
   callbacks_.push_back(
-      on_node_destroy.connect(std::bind(&bottomup_traverser::node_destroy, this, _1)));
+      on_node_destroy.connect(std::bind(&BottomUpTraverser::node_destroy, this, _1)));
   callbacks_.push_back(
-      on_input_change.connect(std::bind(&bottomup_traverser::input_change, this, _1, _2, _3)));
+      on_input_change.connect(std::bind(&BottomUpTraverser::input_change, this, _1, _2, _3)));
 }
 
 Node *
-bottomup_traverser::next()
+BottomUpTraverser::next()
 {
   auto node = tracker_.peek_bottom();
   if (!node)
@@ -164,7 +163,7 @@ bottomup_traverser::next()
 }
 
 void
-bottomup_traverser::node_create(Node * node)
+BottomUpTraverser::node_create(Node * node)
 {
   if (node->region() != region())
     return;
@@ -173,7 +172,7 @@ bottomup_traverser::node_create(Node * node)
 }
 
 void
-bottomup_traverser::node_destroy(Node * node)
+BottomUpTraverser::node_destroy(Node * node)
 {
   if (node->region() != region())
     return;
@@ -187,7 +186,7 @@ bottomup_traverser::node_destroy(Node * node)
 }
 
 void
-bottomup_traverser::input_change(input * in, output * old_origin, output *)
+BottomUpTraverser::input_change(input * in, output * old_origin, output *)
 {
   if (in->region() != region() || !is<node_input>(*in) || !is<node_output>(old_origin))
     return;

@@ -481,7 +481,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
   // This ensures that we visit all the call nodes before we visit the respective lambda nodes.
   // The tail-lambdas (lambda nodes without calls in the RVSDG module) have already been visited and
   // initialized by InitializeLiveNodesOfTailLambdas().
-  rvsdg::bottomup_traverser traverser(&region);
+  rvsdg::BottomUpTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))

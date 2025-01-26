@@ -275,7 +275,7 @@ dne(rvsdg::Region * sr)
   do
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::bottomup_traverser(sr))
+    for (auto & node : rvsdg::BottomUpTraverser(sr))
     {
       if (!node->has_users())
       {
