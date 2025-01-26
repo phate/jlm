@@ -424,8 +424,26 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
 
+  dump_dot(rhls, "1-before-mem-sep.dot");
   mem_sep_argument(rhls);
-  remove_unused_state(rhls);
+  /*
+    dump_dot(rhls, "2-before-remove-unused-state.dot");
+    remove_unused_state(rhls);
+  */
+  dump_dot(rhls, "2a-before-InvariantValueRedirection.dot");
+  llvm::InvariantValueRedirection llvmIvr;
+  llvmIvr.Run(rhls, collector);
+  dump_dot(rhls, "2b-before-dne.dot");
+  llvmDne.Run(rhls, collector);
+  dump_dot(rhls, "2c-before-remove-lambda-passthrough.dot");
+
+  // TODO
+  // Add function that checks invariant edges between LambdaMemoryStateSplit/Merge
+  RemoveLambdaInvariantMemoryStateEdges(rhls);
+  //  auto & rootRegion = rhls.Rvsdg().GetRootRegion();
+  //  JLM_ASSERT(rootRegion.nnodes() == 1);
+  RemoveLambdaInvariantStateEdges(rhls);
+  dump_dot(rhls, "3-before-distribute-constants.dot");
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);

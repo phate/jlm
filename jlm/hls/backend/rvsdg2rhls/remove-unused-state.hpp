@@ -35,6 +35,15 @@ remove_unused_state(llvm::RvsdgModule & rm);
 void
 remove_unused_state(rvsdg::Region * region, bool can_remove_arguments = true);
 
+void
+RemoveInvariantMemoryStateEdges(jlm::rvsdg::RegionResult * memoryState);
+
+void
+RemoveLambdaInvariantMemoryStateEdges(llvm::RvsdgModule & rvsdgModule);
+
+void
+RemoveLambdaInvariantStateEdges(llvm::RvsdgModule & rvsdgModule);
+
 } // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP

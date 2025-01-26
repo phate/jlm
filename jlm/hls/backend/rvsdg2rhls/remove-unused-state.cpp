@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/common.hpp>
 
 namespace jlm::hls
 {
@@ -291,6 +292,111 @@ is_passthrough(const rvsdg::output * arg)
     }
   }
   return false;
+}
+
+void
+RemoveInvariantMemoryStateEdges(jlm::rvsdg::RegionResult * memoryState)
+{
+  // We only apply this for memory state edges that is invariant between
+  // LambdaEntryMemoryStateSplit and LambdaExitMemoryStateMerge nodes.
+  // So we first check if we have a LambdaExitMemoryStateMerge node.
+  if (memoryState->origin()->nusers() == 1)
+  {
+    auto exitNode = jlm::rvsdg::output::GetNode(*memoryState->origin());
+    // Change to is<>
+    if (dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(
+            &exitNode->GetOperation()))
+    {
+      // Check if we have any invariant edge(s) between the two nodes
+      std::vector<jlm::rvsdg::input *> inputs;
+      std::vector<jlm::rvsdg::output *> outputs;
+      jlm::rvsdg::Node * entryNode = nullptr;
+      for (size_t i = 0; i < exitNode->ninputs(); i++)
+      {
+        // Check if the output has only one user and if it is a LambdaEntryMemoryStateMerge
+        if (exitNode->input(i)->origin()->nusers() == 1)
+        {
+          auto node = jlm::rvsdg::output::GetNode(*exitNode->input(i)->origin());
+          // TODO change to is<>
+          if (dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
+                  &node->GetOperation()))
+          {
+            // Found an invariant memory state edge, so going to replace the exitNode
+            entryNode = node;
+          }
+          else
+          {
+            // Keep track of edges that is to be kept since they are not invariant
+            inputs.push_back(node->input(i));
+            outputs.push_back(node->input(i)->origin());
+          }
+        }
+      }
+
+      // If the exitNode is set, then we have found at least one invariant edge
+      if (entryNode != nullptr)
+      {
+        // Replace LambdaEntryMemoryStateMerge and LambdaExitMemoryStateMergeOperation
+        if (outputs.size() <= 1)
+        {
+          // Single or no edge that is not invariant
+          // So we can elmintate the two MemoryState nodes
+          memoryState->divert_to(exitNode->input(0)->origin());
+          entryNode->output(0)->divert_users(entryNode->input(0)->origin());
+        }
+        else
+        {
+          // Replace the entry and exit node with new ones without the invariant edge(s)
+          auto newEntryNodeOutputs = jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+              *entryNode->input(0)->origin(),
+              1 + inputs.size());
+          auto newExitNodeOutput = &jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(
+              *exitNode->region(),
+              outputs);
+          exitNode->output(0)->divert_users(newExitNodeOutput);
+//          exitNode->output(0)->divert_users(&jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(
+//              *exitNode->region(),
+//              outputs));
+          int i = 0;
+          for (auto input : inputs)
+          {
+            entryNode->output(input->index())->divert_users(newEntryNodeOutputs.at(i));
+          }
+        }
+        JLM_ASSERT(exitNode->IsDead());
+        jlm::rvsdg::remove(exitNode);
+        JLM_ASSERT(entryNode->IsDead());
+        jlm::rvsdg::remove(entryNode);
+      }
+    }
+  }
+}
+
+void
+RemoveLambdaInvariantMemoryStateEdges(llvm::RvsdgModule & rvsdgModule)
+{
+  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
+  // R-HLS only has one function in the root region
+  JLM_ASSERT(root.nnodes() == 1);
+  auto lambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root.Nodes().begin().ptr());
+
+  for (auto result : lambda->subregion()->Results())
+  {
+    if (dynamic_cast<const jlm::llvm::MemoryStateType *>(&*result->Type()))
+    {
+      RemoveInvariantMemoryStateEdges(result);
+    }
+  }
+}
+
+void
+RemoveLambdaInvariantStateEdges(llvm::RvsdgModule & rvsdgModule)
+{
+  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
+  // R-HLS only has one function in the root region
+  JLM_ASSERT(root.nnodes() == 1);
+  auto lambdaNode = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root.Nodes().begin().ptr());
+  remove_lambda_passthrough(lambdaNode);
 }
 
 } // namespace jlm::hls
