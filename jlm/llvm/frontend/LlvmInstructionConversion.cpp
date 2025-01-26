@@ -1034,7 +1034,7 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
     const auto numBits = llvmType->getScalarType()->getIntegerBitWidth();
     operation = ConvertIntegerBinaryOperation(opcode, numBits);
   }
-  else if (llvmType->isVectorTy() && llvmType->getScalarType()->isFloatTy())
+  else if (llvmType->isVectorTy() && llvmType->getScalarType()->isFloatingPointTy())
   {
     const auto size = typeConverter.ExtractFloatingPointSize(*llvmType->getScalarType());
     operation = ConvertFloatingPointBinaryOperation(opcode, size);
