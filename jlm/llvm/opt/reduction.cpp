@@ -78,7 +78,7 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
     numIterations++;
     reductionPerformed = false;
 
-    for (const auto node : rvsdg::topdown_traverser(&region))
+    for (const auto node : rvsdg::TopDownTraverser(&region))
     {
       if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {

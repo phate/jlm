@@ -2746,7 +2746,7 @@ RhlsToFirrtlConverter::createInstances(
   auto clock = body->getArgument(0);
   auto reset = body->getArgument(1);
   std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp> instances;
-  for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
+  for (const auto node : rvsdg::TopDownTraverser(subRegion))
   {
     if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {

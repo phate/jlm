@@ -118,7 +118,7 @@ gep_to_index(jlm::rvsdg::output * o)
 void
 alloca_conv(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

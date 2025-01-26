@@ -21,7 +21,7 @@ add_sinks(rvsdg::Region * region)
       hls::sink_op::create(*arg);
     }
   }
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

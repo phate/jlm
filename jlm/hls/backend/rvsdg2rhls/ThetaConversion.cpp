@@ -82,7 +82,7 @@ ConvertThetaNodesInStructuralNode(rvsdg::StructuralNode & structuralNode)
 static void
 ConvertThetaNodesInRegion(rvsdg::Region & region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(&region))
+  for (auto & node : rvsdg::TopDownTraverser(&region))
   {
     if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

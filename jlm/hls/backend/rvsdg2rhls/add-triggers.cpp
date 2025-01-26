@@ -90,7 +90,7 @@ void
 add_triggers(rvsdg::Region * region)
 {
   auto trigger = get_trigger(region);
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {

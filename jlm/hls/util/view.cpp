@@ -339,7 +339,7 @@ region_to_dot(rvsdg::Region * region)
   }
 
   // nodes
-  for (auto node : jlm::rvsdg::topdown_traverser(region))
+  for (auto node : rvsdg::TopDownTraverser(region))
   {
     if (auto simpleNode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {

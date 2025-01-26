@@ -495,7 +495,7 @@ static bool
 unroll(rvsdg::Region * region, size_t factor)
 {
   bool unrolled = false;
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

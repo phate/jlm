@@ -133,12 +133,12 @@ private:
  *
  * @see node::depth()
  */
-class topdown_traverser final
+class TopDownTraverser final
 {
 public:
-  ~topdown_traverser() noexcept;
+  ~TopDownTraverser() noexcept;
 
-  explicit topdown_traverser(rvsdg::Region * region);
+  explicit TopDownTraverser(Region * region);
 
   Node *
   next();
@@ -149,7 +149,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<topdown_traverser> iterator;
+  typedef detail::traverser_iterator<TopDownTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator
@@ -179,12 +179,12 @@ private:
   std::vector<jlm::util::callback> callbacks_;
 };
 
-class bottomup_traverser final
+class BottomUpTraverser final
 {
 public:
-  ~bottomup_traverser() noexcept;
+  ~BottomUpTraverser() noexcept;
 
-  explicit bottomup_traverser(rvsdg::Region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region, bool revisit = false);
 
   Node *
   next();
@@ -195,7 +195,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<bottomup_traverser> iterator;
+  typedef detail::traverser_iterator<BottomUpTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator

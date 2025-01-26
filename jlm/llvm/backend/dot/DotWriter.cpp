@@ -161,7 +161,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
 
   // Create a node for each node in the region in topological order.
   // Inputs expect the node representing their origin to exist before being visited.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());

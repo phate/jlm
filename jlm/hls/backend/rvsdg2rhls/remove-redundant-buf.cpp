@@ -49,7 +49,7 @@ eliminate_buf(jlm::rvsdg::output * o)
 void
 remove_redundant_buf(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

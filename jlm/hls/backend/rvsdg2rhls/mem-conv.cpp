@@ -331,7 +331,7 @@ gather_mem_nodes(
     std::vector<jlm::rvsdg::SimpleNode *> & decoupleNodes,
     std::unordered_set<jlm::rvsdg::SimpleNode *> exclude)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : jlm::rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::StructuralNode *>(node))
     {

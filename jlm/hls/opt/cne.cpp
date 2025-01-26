@@ -482,7 +482,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
 static void
 mark(rvsdg::Region * region, cnectx & ctx)
 {
-  for (const auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (const auto & node : TopDownTraverser(region))
   {
     if (auto simple = dynamic_cast<const jlm::rvsdg::SimpleNode *>(node))
       mark(simple, ctx);
@@ -605,7 +605,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert(rvsdg::Region * region, cnectx & ctx)
 {
-  for (const auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (const auto & node : TopDownTraverser(region))
   {
     if (auto simple = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
       divert_outputs(simple, ctx);

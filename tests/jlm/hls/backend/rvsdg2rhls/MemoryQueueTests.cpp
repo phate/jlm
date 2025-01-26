@@ -244,11 +244,11 @@ TestAddrQueue()
   assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
 
-  for (auto & node : jlm::rvsdg::topdown_traverser(lambdaRegion))
+  for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
     if (auto loopNode = dynamic_cast<jlm::hls::loop_node *>(node))
     {
-      for (auto & node : jlm::rvsdg::topdown_traverser(loopNode->subregion()))
+      for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {
         if (auto storeNode = dynamic_cast<const jlm::llvm::StoreNode *>(node))
         {

@@ -21,7 +21,7 @@ test_initialization()
 
   bool n1_visited = false;
   bool n2_visited = false;
-  for (const auto & node : jlm::rvsdg::bottomup_traverser(&graph.GetRootRegion()))
+  for (const auto & node : jlm::rvsdg::BottomUpTraverser(&graph.GetRootRegion()))
   {
     if (node == n1)
       n1_visited = true;
@@ -48,7 +48,7 @@ test_basic_traversal()
 
   {
     jlm::rvsdg::Node * tmp;
-    jlm::rvsdg::bottomup_traverser trav(&graph.GetRootRegion());
+    jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
     tmp = trav.next();
     assert(tmp == n2);
     tmp = trav.next();
@@ -74,7 +74,7 @@ test_order_enforcement_traversal()
 
   jlm::rvsdg::Node * tmp;
   {
-    jlm::rvsdg::bottomup_traverser trav(&graph.GetRootRegion());
+    jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
     assert(tmp == n3);
