@@ -14,8 +14,12 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
 BENCHMARK_RUN_TARGET=run
 
+PARALLEL_THREADS=1
+
 # Include global shell configuration
+if [ -f ${JLM_ROOT_DIR}/shell.config ]; then
 source ${JLM_ROOT_DIR}/shell.config
+fi
 
 function commit()
 {

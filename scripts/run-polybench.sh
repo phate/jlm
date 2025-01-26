@@ -14,8 +14,12 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/polybench
 BENCHMARK_RUN_TARGET=check
 
+PARALLEL_THREADS=1
+
 # Include global shell configuration
+if [ -f ${JLM_ROOT_DIR}/shell.config ]; then
 source ${JLM_ROOT_DIR}/shell.config
+fi
 
 function commit()
 {
