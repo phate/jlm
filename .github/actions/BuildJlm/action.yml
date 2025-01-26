@@ -42,16 +42,16 @@ runs:
         exit 1
       shell: bash
 
-    - name: "Configure jlm"
-      run: ./configure.sh ${{steps.collect.outputs.jlm_configure_arguments}}
-      shell: bash
-
     - name: "Install dependencies"
       uses: ./.github/actions/InstallPackages
       with:
         install-llvm: true
         install-clang: true
         install-valgrind: true  # Required for make target valgrind-check
+
+    - name: "Configure jlm"
+      run: ./configure.sh ${{steps.collect.outputs.jlm_configure_arguments}}
+      shell: bash
 
     - name: "Install HLS dialect dependencies"
       if: ${{inputs.enable-hls == 'true'}}
