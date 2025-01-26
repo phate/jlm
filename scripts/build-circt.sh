@@ -11,20 +11,7 @@ CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
 CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
 LLVM_LIT_PATH=`command -v lit || true`
 
-LLVM_VERSION=18
-
-# Set operating system specific configurations
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  LLVM_CONFIG_BIN="llvm-config-"${LLVM_VERSION}
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  LLVM_CONFIG_BIN="/usr/local/Cellar/llvm@"${LLVM_VERSION}"/"${LLVM_VERSION}"*/bin/llvm-config"
-  # Use the same MACOSX_DEPLOYMENT_TARGET as used for the LLVM and MLIR libraries
-  # to avoid warnings during linking
-  export MACOSX_DEPLOYMENT_TARGET="$(otool -l ${LLVM_CONFIG_BIN} | grep minos | awk '{print $2}')"
-else
-  echo "warning: Operating system not recognized." >&2
-  LLVM_CONFIG_BIN=""
-fi
+source ${JLM_ROOT_DIR}/shell.config
 
 function commit()
 {

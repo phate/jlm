@@ -14,15 +14,8 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/polybench
 BENCHMARK_RUN_TARGET=check
 
-# Set operating system specific configurations
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  MAKE_OPT="-j $(nproc) -O"
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  MAKE_OPT="-j $(sysctl -n hw.ncpu) -O"
-else
-  echo "warning: Operating system not recognized." >&2
-  MAKE_OPT=""
-fi
+# Include global shell configuration
+source ${JLM_ROOT_DIR}/shell.config
 
 function commit()
 {
@@ -68,4 +61,5 @@ export PATH=${JLM_BIN_DIR}:${PATH}
 cd ${BENCHMARK_DIR}
 git checkout ${GIT_COMMIT}
 make clean
-make ${MAKE_OPT} ${BENCHMARK_RUN_TARGET}
+echo "make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}"
+make -j ${PARALLEL_THREADS} -O ${BENCHMARK_RUN_TARGET}
