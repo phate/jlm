@@ -10,11 +10,13 @@ JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 CIRCT_BUILD=${JLM_ROOT_DIR}/build-circt
 CIRCT_INSTALL=${JLM_ROOT_DIR}/usr
 LLVM_LIT_PATH=`command -v lit || true`
-LLVM_CONFIG_BIN="llvm-config-18"
 
 # Include global shell configuration
 if [ -f ${JLM_ROOT_DIR}/shell.config ]; then
-source ${JLM_ROOT_DIR}/shell.config
+	source ${JLM_ROOT_DIR}/shell.config
+else
+	echo "Please use configure.sh to configure jlm."
+	exit
 fi
 
 function commit()

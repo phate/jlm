@@ -42,6 +42,10 @@ runs:
         exit 1
       shell: bash
 
+    - name: "Configure jlm"
+      run: ./configure.sh ${{steps.collect.outputs.jlm_configure_arguments}}
+      shell: bash
+
     - name: "Install dependencies"
       uses: ./.github/actions/InstallPackages
       with:
@@ -72,10 +76,6 @@ runs:
         fi
         JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS CXX=${{inputs.cxx}}"
         echo "jlm_configure_arguments=$JLM_CONFIGURE_ARGUMENTS" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: "Configure jlm"
-      run: ./configure.sh ${{steps.collect.outputs.jlm_configure_arguments}}
       shell: bash
 
     - name: "Compile jlm"
