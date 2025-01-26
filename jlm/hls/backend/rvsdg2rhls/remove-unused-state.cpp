@@ -43,7 +43,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
     }
   }
   // exit will come before entry
-  for (auto & node : jlm::rvsdg::bottomup_traverser(region))
+  for (auto & node : rvsdg::BottomUpTraverser(region))
   {
     if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
