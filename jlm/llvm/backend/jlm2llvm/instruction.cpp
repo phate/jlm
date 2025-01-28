@@ -490,7 +490,7 @@ convert(
     }
   }
 
-  if (auto ft = dynamic_cast<const fptype *>(&op.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()))
   {
     if (ft->size() == fpsize::half)
     {
@@ -769,7 +769,7 @@ convert_constantdatavector(
     }
   }
 
-  if (auto ft = dynamic_cast<const fptype *>(&cop.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&cop.type()))
   {
     if (ft->size() == fpsize::half)
     {

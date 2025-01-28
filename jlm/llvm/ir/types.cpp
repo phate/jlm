@@ -62,13 +62,10 @@ ArrayType::ComputeHash() const noexcept
   return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
 }
 
-/* floating point type */
-
-fptype::~fptype()
-{}
+FloatingPointType::~FloatingPointType() noexcept = default;
 
 std::string
-fptype::debug_string() const
+FloatingPointType::debug_string() const
 {
   static std::unordered_map<fpsize, std::string> map({ { fpsize::half, "half" },
                                                        { fpsize::flt, "float" },
@@ -81,50 +78,49 @@ fptype::debug_string() const
 }
 
 bool
-fptype::operator==(const jlm::rvsdg::Type & other) const noexcept
+FloatingPointType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const fptype *>(&other);
+  const auto type = dynamic_cast<const FloatingPointType *>(&other);
   return type && type->size() == size();
 }
 
 std::size_t
-fptype::ComputeHash() const noexcept
+FloatingPointType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(fptype).hash_code();
-  auto sizeHash = std::hash<fpsize>()(size_);
-
+  const auto typeHash = typeid(FloatingPointType).hash_code();
+  const auto sizeHash = std::hash<fpsize>()(size_);
   return util::CombineHashes(typeHash, sizeHash);
 }
 
-std::shared_ptr<const fptype>
-fptype::Create(fpsize size)
+std::shared_ptr<const FloatingPointType>
+FloatingPointType::Create(fpsize size)
 {
   switch (size)
   {
   case fpsize::half:
   {
-    static const fptype instance(fpsize::half);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::half);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::flt:
   {
-    static const fptype instance(fpsize::flt);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::flt);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::dbl:
   {
-    static const fptype instance(fpsize::dbl);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::dbl);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::x86fp80:
   {
-    static const fptype instance(fpsize::x86fp80);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::x86fp80);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::fp128:
   {
-    static const fptype instance(fpsize::fp128);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::fp128);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   default:
   {
@@ -186,12 +182,10 @@ StructType::debug_string() const
   return "struct";
 }
 
-/* vectortype */
-
 bool
-vectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+VectorType::operator==(const rvsdg::Type & other) const noexcept
 {
-  auto type = dynamic_cast<const vectortype *>(&other);
+  const auto type = dynamic_cast<const VectorType *>(&other);
   return type && type->size_ == size_ && *type->type_ == *type_;
 }
 
@@ -203,7 +197,7 @@ fixedvectortype::~fixedvectortype()
 bool
 fixedvectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
-  return vectortype::operator==(other);
+  return VectorType::operator==(other);
 }
 
 std::size_t
@@ -228,7 +222,7 @@ scalablevectortype::~scalablevectortype()
 bool
 scalablevectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
-  return vectortype::operator==(other);
+  return VectorType::operator==(other);
 }
 
 std::size_t

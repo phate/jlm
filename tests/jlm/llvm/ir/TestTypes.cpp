@@ -64,7 +64,7 @@ TestIsOrContains()
   // but they still contain other types
   auto vectorType = fixedvectortype::Create(structType, 20);
   assert(!IsAggregateType(*vectorType));
-  assert(IsOrContains<vectortype>(*vectorType));
+  assert(IsOrContains<VectorType>(*vectorType));
   assert(IsOrContains<StructType>(*vectorType));
   assert(IsOrContains<PointerType>(*vectorType));
   assert(!IsOrContains<jlm::rvsdg::StateType>(*vectorType));
