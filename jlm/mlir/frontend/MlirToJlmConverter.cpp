@@ -437,6 +437,12 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*jlmUndefOutput);
   }
 
+  else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
+  {
+    return rvsdg::output::GetNode(
+        *llvm::ConstantDataArray::Create(std::vector(inputs.begin(), inputs.end())));
+  }
+
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
     auto type = ZeroOp.getType();
