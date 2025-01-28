@@ -639,7 +639,7 @@ public:
   virtual ~ConstantDataArray();
 
   ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
-      : SimpleOperation({ size, type }, { arraytype::Create(type, size) })
+      : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.");
@@ -657,13 +657,13 @@ public:
   size_t
   size() const noexcept
   {
-    return std::static_pointer_cast<const arraytype>(result(0))->nelements();
+    return std::static_pointer_cast<const ArrayType>(result(0))->nelements();
   }
 
   const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return std::static_pointer_cast<const arraytype>(result(0))->element_type();
+    return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1437,7 +1437,7 @@ public:
   virtual ~valist_op();
 
   explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
-      : SimpleOperation(std::move(types), { varargtype::Create() })
+      : SimpleOperation(std::move(types), { VariableArgumentType::Create() })
   {}
 
   valist_op(const valist_op &) = default;
@@ -1852,7 +1852,7 @@ public:
   virtual ~ConstantArray();
 
   ConstantArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
-      : SimpleOperation({ size, type }, { arraytype::Create(type, size) })
+      : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
       throw jlm::util::error("size equals zero.\n");
@@ -1870,13 +1870,13 @@ public:
   size_t
   size() const noexcept
   {
-    return std::static_pointer_cast<const arraytype>(result(0))->nelements();
+    return std::static_pointer_cast<const ArrayType>(result(0))->nelements();
   }
 
   const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return std::static_pointer_cast<const arraytype>(result(0))->element_type();
+    return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1920,7 +1920,7 @@ public:
       : SimpleOperation({}, { type })
   {
     auto st = dynamic_cast<const StructType *>(type.get());
-    auto at = dynamic_cast<const arraytype *>(type.get());
+    auto at = dynamic_cast<const ArrayType *>(type.get());
     auto vt = dynamic_cast<const vectortype *>(type.get());
     if (!st && !at && !vt)
       throw jlm::util::error("expected array, struct, or vector type.\n");
@@ -2436,7 +2436,7 @@ private:
 
         type = st->GetDeclaration().GetElementType(index);
       }
-      else if (auto at = std::dynamic_pointer_cast<const arraytype>(type))
+      else if (auto at = std::dynamic_pointer_cast<const ArrayType>(type))
       {
         if (index >= at->nelements())
           throw jlm::util::error("extractvalue index out of bound.");

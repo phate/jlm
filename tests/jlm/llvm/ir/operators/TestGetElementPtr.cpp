@@ -12,7 +12,7 @@ TestOperationEquality()
 {
   using namespace jlm::llvm;
 
-  auto arrayType = arraytype::Create(jlm::rvsdg::bittype::Create(8), 11);
+  auto arrayType = ArrayType::Create(jlm::rvsdg::bittype::Create(8), 11);
 
   auto declaration1 = StructType::Declaration::Create(
       { jlm::rvsdg::bittype::Create(64), jlm::rvsdg::bittype::Create(64) });
