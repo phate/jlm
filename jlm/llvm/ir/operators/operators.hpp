@@ -214,8 +214,8 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const variable * p, const variable * t, const variable * f)
   {
-    if (is<fixedvectortype>(p->type()) && is<fixedvectortype>(t->type()))
-      return createVectorSelectTac<fixedvectortype>(p, t, f);
+    if (is<FixedVectorType>(p->type()) && is<FixedVectorType>(t->type()))
+      return createVectorSelectTac<FixedVectorType>(p, t, f);
 
     if (is<scalablevectortype>(p->type()) && is<scalablevectortype>(t->type()))
       return createVectorSelectTac<scalablevectortype>(p, t, f);
@@ -1996,7 +1996,7 @@ class shufflevector_op final : public rvsdg::SimpleOperation
 public:
   ~shufflevector_op() override;
 
-  shufflevector_op(const std::shared_ptr<const fixedvectortype> & v, const std::vector<int> & mask)
+  shufflevector_op(const std::shared_ptr<const FixedVectorType> & v, const std::vector<int> & mask)
       : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
@@ -2026,8 +2026,8 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const variable * v1, const variable * v2, const std::vector<int> & mask)
   {
-    if (is<fixedvectortype>(v1->type()) && is<fixedvectortype>(v2->type()))
-      return CreateShuffleVectorTac<fixedvectortype>(v1, v2, mask);
+    if (is<FixedVectorType>(v1->type()) && is<FixedVectorType>(v2->type()))
+      return CreateShuffleVectorTac<FixedVectorType>(v1, v2, mask);
 
     if (is<scalablevectortype>(v1->type()) && is<scalablevectortype>(v2->type()))
       return CreateShuffleVectorTac<scalablevectortype>(v1, v2, mask);
@@ -2364,7 +2364,7 @@ public:
     if (!vt)
       throw jlm::util::error("Expected value type.");
 
-    constant_data_vector_op op(fixedvectortype::Create(vt, elements.size()));
+    constant_data_vector_op op(FixedVectorType::Create(vt, elements.size()));
     return tac::create(op, elements);
   }
 };
