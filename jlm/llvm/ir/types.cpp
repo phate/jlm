@@ -182,12 +182,10 @@ StructType::debug_string() const
   return "struct";
 }
 
-/* vectortype */
-
 bool
-vectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+VectorType::operator==(const rvsdg::Type & other) const noexcept
 {
-  auto type = dynamic_cast<const vectortype *>(&other);
+  const auto type = dynamic_cast<const VectorType *>(&other);
   return type && type->size_ == size_ && *type->type_ == *type_;
 }
 
@@ -199,7 +197,7 @@ fixedvectortype::~fixedvectortype()
 bool
 fixedvectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
-  return vectortype::operator==(other);
+  return VectorType::operator==(other);
 }
 
 std::size_t
@@ -224,7 +222,7 @@ scalablevectortype::~scalablevectortype()
 bool
 scalablevectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
-  return vectortype::operator==(other);
+  return VectorType::operator==(other);
 }
 
 std::size_t

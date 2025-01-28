@@ -178,8 +178,8 @@ public:
 
 private:
   vectorselect_op(
-      const std::shared_ptr<const vectortype> & pt,
-      const std::shared_ptr<const vectortype> & vt)
+      const std::shared_ptr<const VectorType> & pt,
+      const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ pt, vt, vt }, { vt })
   {}
 
@@ -208,7 +208,7 @@ public:
   size_t
   size() const noexcept
   {
-    return dynamic_cast<const vectortype *>(&type())->size();
+    return dynamic_cast<const VectorType *>(&type())->size();
   }
 
   static std::unique_ptr<llvm::tac>
@@ -1923,7 +1923,7 @@ public:
   {
     auto st = dynamic_cast<const StructType *>(type.get());
     auto at = dynamic_cast<const ArrayType *>(type.get());
-    auto vt = dynamic_cast<const vectortype *>(type.get());
+    auto vt = dynamic_cast<const VectorType *>(type.get());
     if (!st && !at && !vt)
       throw jlm::util::error("expected array, struct, or vector type.\n");
   }
@@ -1959,7 +1959,7 @@ public:
   virtual ~extractelement_op();
 
   inline extractelement_op(
-      const std::shared_ptr<const vectortype> & vtype,
+      const std::shared_ptr<const VectorType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
       : SimpleOperation({ vtype, btype }, { vtype->Type() })
   {}
@@ -1976,7 +1976,7 @@ public:
   static inline std::unique_ptr<llvm::tac>
   create(const llvm::variable * vector, const llvm::variable * index)
   {
-    auto vt = std::dynamic_pointer_cast<const vectortype>(vector->Type());
+    auto vt = std::dynamic_pointer_cast<const VectorType>(vector->Type());
     if (!vt)
       throw jlm::util::error("expected vector type.");
 
@@ -2055,7 +2055,7 @@ class constantvector_op final : public rvsdg::SimpleOperation
 public:
   virtual ~constantvector_op();
 
-  explicit inline constantvector_op(const std::shared_ptr<const vectortype> & vt)
+  explicit inline constantvector_op(const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
@@ -2073,7 +2073,7 @@ public:
       const std::vector<const variable *> & operands,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto vt = std::dynamic_pointer_cast<const vectortype>(type);
+    auto vt = std::dynamic_pointer_cast<const VectorType>(type);
     if (!vt)
       throw jlm::util::error("expected vector type.");
 
@@ -2090,7 +2090,7 @@ public:
   virtual ~insertelement_op();
 
   inline insertelement_op(
-      const std::shared_ptr<const vectortype> & vectype,
+      const std::shared_ptr<const VectorType> & vectype,
       const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
       : SimpleOperation({ vectype, vtype, btype }, { vectype })
@@ -2115,7 +2115,7 @@ public:
   static inline std::unique_ptr<llvm::tac>
   create(const llvm::variable * vector, const llvm::variable * value, const llvm::variable * index)
   {
-    auto vct = std::dynamic_pointer_cast<const vectortype>(vector->Type());
+    auto vct = std::dynamic_pointer_cast<const VectorType>(vector->Type());
     if (!vct)
       throw jlm::util::error("expected vector type.");
 
@@ -2141,8 +2141,8 @@ public:
 
   inline vectorunary_op(
       const rvsdg::UnaryOperation & op,
-      const std::shared_ptr<const vectortype> & operand,
-      const std::shared_ptr<const vectortype> & result)
+      const std::shared_ptr<const VectorType> & operand,
+      const std::shared_ptr<const VectorType> & result)
       : SimpleOperation({ operand }, { result }),
         op_(op.copy())
   {
@@ -2210,8 +2210,8 @@ public:
       const llvm::variable * operand,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto vct1 = std::dynamic_pointer_cast<const vectortype>(operand->Type());
-    auto vct2 = std::dynamic_pointer_cast<const vectortype>(type);
+    auto vct1 = std::dynamic_pointer_cast<const VectorType>(operand->Type());
+    auto vct2 = std::dynamic_pointer_cast<const VectorType>(type);
     if (!vct1 || !vct2)
       throw jlm::util::error("expected vector type.");
 
@@ -2232,9 +2232,9 @@ public:
 
   inline vectorbinary_op(
       const rvsdg::BinaryOperation & binop,
-      const std::shared_ptr<const vectortype> & op1,
-      const std::shared_ptr<const vectortype> & op2,
-      const std::shared_ptr<const vectortype> & result)
+      const std::shared_ptr<const VectorType> & op1,
+      const std::shared_ptr<const VectorType> & op2,
+      const std::shared_ptr<const VectorType> & result)
       : SimpleOperation({ op1, op2 }, { result }),
         op_(binop.copy())
   {
@@ -2306,9 +2306,9 @@ public:
       const llvm::variable * op2,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto vct1 = std::dynamic_pointer_cast<const vectortype>(op1->Type());
-    auto vct2 = std::dynamic_pointer_cast<const vectortype>(op2->Type());
-    auto vct3 = std::dynamic_pointer_cast<const vectortype>(type);
+    auto vct1 = std::dynamic_pointer_cast<const VectorType>(op1->Type());
+    auto vct2 = std::dynamic_pointer_cast<const VectorType>(op2->Type());
+    auto vct3 = std::dynamic_pointer_cast<const VectorType>(type);
     if (!vct1 || !vct2 || !vct3)
       throw jlm::util::error("expected vector type.");
 
@@ -2328,7 +2328,7 @@ public:
   ~constant_data_vector_op() override;
 
 private:
-  explicit constant_data_vector_op(const std::shared_ptr<const vectortype> & vt)
+  explicit constant_data_vector_op(const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
@@ -2345,13 +2345,13 @@ public:
   size_t
   size() const noexcept
   {
-    return std::static_pointer_cast<const vectortype>(result(0))->size();
+    return std::static_pointer_cast<const VectorType>(result(0))->size();
   }
 
   const jlm::rvsdg::ValueType &
   type() const noexcept
   {
-    return std::static_pointer_cast<const vectortype>(result(0))->type();
+    return std::static_pointer_cast<const VectorType>(result(0))->type();
   }
 
   static std::unique_ptr<tac>
