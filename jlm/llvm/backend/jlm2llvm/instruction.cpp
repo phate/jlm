@@ -883,9 +883,10 @@ convert_cast(
   auto dsttype = std::dynamic_pointer_cast<const rvsdg::ValueType>(op.result(0));
   auto operand = operands[0];
 
-  if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))
+  if (const auto vt = dynamic_cast<const FixedVectorType *>(&operand->type()))
   {
-    auto type = typeConverter.ConvertJlmType(fixedvectortype(dsttype, vt->size()), llvmContext);
+    const auto type =
+        typeConverter.ConvertJlmType(FixedVectorType(dsttype, vt->size()), llvmContext);
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 

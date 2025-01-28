@@ -362,12 +362,12 @@ private:
   std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
-class fixedvectortype final : public VectorType
+class FixedVectorType final : public VectorType
 {
 public:
-  ~fixedvectortype() override;
+  ~FixedVectorType() noexcept override;
 
-  fixedvectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
+  FixedVectorType(std::shared_ptr<const ValueType> type, size_t size)
       : VectorType(std::move(type), size)
   {}
 
@@ -380,10 +380,10 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static std::shared_ptr<const fixedvectortype>
+  static std::shared_ptr<const FixedVectorType>
   Create(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
   {
-    return std::make_shared<fixedvectortype>(std::move(type), size);
+    return std::make_shared<FixedVectorType>(std::move(type), size);
   }
 };
 
