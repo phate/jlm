@@ -318,7 +318,7 @@ LlvmVectorTypeConversion()
   // Act
   const auto vectorType1Jlm = std::dynamic_pointer_cast<const FixedVectorType>(
       typeConverter.ConvertLlvmType(*vectorType1Llvm));
-  const auto vectorType2Jlm = std::dynamic_pointer_cast<const scalablevectortype>(
+  const auto vectorType2Jlm = std::dynamic_pointer_cast<const ScalableVectorType>(
       typeConverter.ConvertLlvmType(*vectorType2Llvm));
 
   // Assert
@@ -688,8 +688,8 @@ JlmScalableVectorTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = bittype::Create(32);
-  const auto scalableVectorType1 = scalablevectortype::Create(bit32Type, 2);
-  const auto scalableVectorType2 = scalablevectortype::Create(bit32Type, 4);
+  const auto scalableVectorType1 = ScalableVectorType::Create(bit32Type, 2);
+  const auto scalableVectorType2 = ScalableVectorType::Create(bit32Type, 4);
 
   // Act
   const auto vectorType1 =

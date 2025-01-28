@@ -211,27 +211,24 @@ FixedVectorType::debug_string() const
   return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }
 
-/* scalablevectortype */
-
-scalablevectortype::~scalablevectortype()
-{}
+ScalableVectorType::~ScalableVectorType() noexcept = default;
 
 bool
-scalablevectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+ScalableVectorType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return VectorType::operator==(other);
 }
 
 std::size_t
-scalablevectortype::ComputeHash() const noexcept
+ScalableVectorType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(scalablevectortype).hash_code();
-  auto sizeHash = std::hash<size_t>()(size());
+  const auto typeHash = typeid(ScalableVectorType).hash_code();
+  const auto sizeHash = std::hash<size_t>()(size());
   return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
 }
 
 std::string
-scalablevectortype::debug_string() const
+ScalableVectorType::debug_string() const
 {
   return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
 }
