@@ -7,6 +7,7 @@
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/util/strfmt.hpp>
+#include <jlm/rvsdg/pattern_match.hpp>
 
 #include <llvm/ADT/SmallPtrSet.h>
 
@@ -45,318 +46,288 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   // Get the data signal from the bundle
   auto outData = GetSubfield(body, outBundle, "data");
 
-  if (dynamic_cast<const jlm::rvsdg::bitadd_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddAddOp(body, input0, input1);
-    // Connect the op to the output data
-    // We drop the carry bit
-    Connect(body, outData, DropMSBs(body, op, 1));
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitsub_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddSubOp(body, input0, input1);
-    // Connect the op to the output data
-    // We drop the carry bit
-    Connect(body, outData, DropMSBs(body, op, 1));
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitand_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddAndOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitxor_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddXorOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitor_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddOrOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (auto bitmulOp = dynamic_cast<const jlm::rvsdg::bitmul_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddMulOp(body, input0, input1);
-    // Connect the op to the output data
-    // Multiplication results are double the input width, so we drop the upper half of the result
-    Connect(body, outData, DropMSBs(body, op, bitmulOp->type().nbits()));
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitsdiv_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sIntOp0 = AddAsSIntOp(body, input0);
-    auto sIntOp1 = AddAsSIntOp(body, input1);
-    auto divOp = AddDivOp(body, sIntOp0, sIntOp1);
-    auto uIntOp = AddAsUIntOp(body, divOp);
-    // Connect the op to the output data
-    Connect(body, outData, DropMSBs(body, uIntOp, 1));
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitshr_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddDShrOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitashr_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sIntOp0 = AddAsSIntOp(body, input0);
-    auto shrOp = AddDShrOp(body, sIntOp0, input1);
-    auto uIntOp = AddAsUIntOp(body, shrOp);
-    // Connect the op to the output data
-    Connect(body, outData, uIntOp);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitshl_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto bitsOp = AddBitsOp(body, input1, 7, 0);
-    auto op = AddDShlOp(body, input0, bitsOp);
-    int outSize = JlmSize(&node->output(0)->type());
-    auto slice = AddBitsOp(body, op, outSize - 1, 0);
-    // Connect the op to the output data
-    Connect(body, outData, slice);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitsmod_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sIntOp0 = AddAsSIntOp(body, input0);
-    auto sIntOp1 = AddAsSIntOp(body, input1);
-    auto remOp = AddRemOp(body, sIntOp0, sIntOp1);
-    auto uIntOp = AddAsUIntOp(body, remOp);
-    Connect(body, outData, uIntOp);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::biteq_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddEqOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitne_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddNeqOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitsgt_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sIntOp0 = AddAsSIntOp(body, input0);
-    auto sIntOp1 = AddAsSIntOp(body, input1);
-    auto op = AddGtOp(body, sIntOp0, sIntOp1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitult_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddLtOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitule_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddLeqOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto op = AddGtOp(body, input0, input1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitsge_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sIntOp0 = AddAsSIntOp(body, input0);
-    auto sIntOp1 = AddAsSIntOp(body, input1);
-    auto op = AddGeqOp(body, sIntOp0, sIntOp1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitsle_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sIntOp0 = AddAsSIntOp(body, input0);
-    auto sIntOp1 = AddAsSIntOp(body, input1);
-    auto op = AddLeqOp(body, sIntOp0, sIntOp1);
-    // Connect the op to the output data
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const llvm::zext_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    Connect(body, outData, input0);
-  }
-  else if (dynamic_cast<const llvm::trunc_op *>(&(node->GetOperation())))
-  {
-    auto inData = GetSubfield(body, inBundles[0], "data");
-    int outSize = JlmSize(&node->output(0)->type());
-    Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
-  }
-  else if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&(node->GetOperation())))
-  {
-    auto inData = GetSubfield(body, inBundles[0], "data");
-    Connect(body, outData, inData);
-  }
-  else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&(node->GetOperation())))
-  {
-    auto inData = GetSubfield(body, inBundles[0], "data");
-    Connect(body, outData, inData);
-  }
-  else if (auto op = dynamic_cast<const llvm::sext_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto sintOp = AddAsSIntOp(body, input0);
-    auto padOp = AddPadOp(body, sintOp, op->ndstbits());
-    auto uintOp = AddAsUIntOp(body, padOp);
-    Connect(body, outData, uintOp);
-  }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&(node->GetOperation())))
-  {
-    auto value = op->value();
-    auto size = value.nbits();
-    // Create a constant of UInt<size>(value) and connect to output data
-    auto constant = GetConstant(body, size, value.to_uint());
-    Connect(body, outData, constant);
-  }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&(node->GetOperation())))
-  {
-    auto value = op->value().alternative();
-    auto size = ceil(log2(op->value().nalternatives()));
-    auto constant = GetConstant(body, size, value);
-    Connect(body, outData, constant);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitslt_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sInt0 = AddAsSIntOp(body, input0);
-    auto sInt1 = AddAsSIntOp(body, input1);
-    auto op = AddLtOp(body, sInt0, sInt1);
-    Connect(body, outData, op);
-  }
-  else if (dynamic_cast<const llvm::bitcast_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    Connect(body, outData, input0);
-  }
-  else if (dynamic_cast<const llvm::bits2ptr_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    Connect(body, outData, input0);
-  }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::match_op *>(&(node->GetOperation())))
-  {
-    auto inData = GetSubfield(body, inBundles[0], "data");
-    auto outData = GetSubfield(body, outBundle, "data");
-    int inSize = JlmSize(&node->input(0)->type());
-    int outSize = JlmSize(&node->output(0)->type());
-    if (IsIdentityMapping(*op))
-    {
-      if (inSize == outSize)
+  pattern_match(
+    node->GetOperation(),
+    [&](const jlm::rvsdg::bitadd_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddAddOp(body, input0, input1);
+      // Connect the op to the output data
+      // We drop the carry bit
+      Connect(body, outData, DropMSBs(body, op, 1));
+    },
+    [&](const jlm::rvsdg::bitsub_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddSubOp(body, input0, input1);
+      // Connect the op to the output data
+      // We drop the carry bit
+      Connect(body, outData, DropMSBs(body, op, 1));
+    },
+    [&](const jlm::rvsdg::bitand_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddAndOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitxor_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddXorOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitor_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddOrOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitmul_op & mulop) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddMulOp(body, input0, input1);
+      // Connect the op to the output data
+      // Multiplication results are double the input width, so we drop the upper half of the result
+      Connect(body, outData, DropMSBs(body, op, mulop.type().nbits()));
+    },
+    [&](const jlm::rvsdg::bitsdiv_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sIntOp0 = AddAsSIntOp(body, input0);
+      auto sIntOp1 = AddAsSIntOp(body, input1);
+      auto divOp = AddDivOp(body, sIntOp0, sIntOp1);
+      auto uIntOp = AddAsUIntOp(body, divOp);
+      // Connect the op to the output data
+      Connect(body, outData, DropMSBs(body, uIntOp, 1));
+    },
+    [&](const jlm::rvsdg::bitshr_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddDShrOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitashr_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sIntOp0 = AddAsSIntOp(body, input0);
+      auto shrOp = AddDShrOp(body, sIntOp0, input1);
+      auto uIntOp = AddAsUIntOp(body, shrOp);
+      // Connect the op to the output data
+      Connect(body, outData, uIntOp);
+    },
+    [&](const jlm::rvsdg::bitshl_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto bitsOp = AddBitsOp(body, input1, 7, 0);
+      auto op = AddDShlOp(body, input0, bitsOp);
+      int outSize = JlmSize(&node->output(0)->type());
+      auto slice = AddBitsOp(body, op, outSize - 1, 0);
+      // Connect the op to the output data
+      Connect(body, outData, slice);
+    },
+    [&](const jlm::rvsdg::bitsmod_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sIntOp0 = AddAsSIntOp(body, input0);
+      auto sIntOp1 = AddAsSIntOp(body, input1);
+      auto remOp = AddRemOp(body, sIntOp0, sIntOp1);
+      auto uIntOp = AddAsUIntOp(body, remOp);
+      Connect(body, outData, uIntOp);
+    },
+    [&](const jlm::rvsdg::biteq_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddEqOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitne_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddNeqOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitsgt_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sIntOp0 = AddAsSIntOp(body, input0);
+      auto sIntOp1 = AddAsSIntOp(body, input1);
+      auto op = AddGtOp(body, sIntOp0, sIntOp1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitult_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddLtOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitule_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddLeqOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitugt_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto op = AddGtOp(body, input0, input1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitsge_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sIntOp0 = AddAsSIntOp(body, input0);
+      auto sIntOp1 = AddAsSIntOp(body, input1);
+      auto op = AddGeqOp(body, sIntOp0, sIntOp1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const jlm::rvsdg::bitsge_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sIntOp0 = AddAsSIntOp(body, input0);
+      auto sIntOp1 = AddAsSIntOp(body, input1);
+      auto op = AddLeqOp(body, sIntOp0, sIntOp1);
+      // Connect the op to the output data
+      Connect(body, outData, op);
+    },
+    [&](const llvm::zext_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      Connect(body, outData, input0);
+    },
+    [&](const llvm::trunc_op &) {
+      auto inData = GetSubfield(body, inBundles[0], "data");
+      int outSize = JlmSize(&node->output(0)->type());
+      Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
+    },
+    [&](const llvm::LambdaExitMemoryStateMergeOperation &) {
+      auto inData = GetSubfield(body, inBundles[0], "data");
+      Connect(body, outData, inData);
+    },
+    [&](const llvm::MemoryStateMergeOperation &) {
+      auto inData = GetSubfield(body, inBundles[0], "data");
+      Connect(body, outData, inData);
+    },
+    [&](const llvm::sext_op & op) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto sintOp = AddAsSIntOp(body, input0);
+      auto padOp = AddPadOp(body, sintOp, op.ndstbits());
+      auto uintOp = AddAsUIntOp(body, padOp);
+      Connect(body, outData, uintOp);
+    },
+    [&](const jlm::rvsdg::bitconstant_op & op) {
+      auto value = op.value();
+      auto size = value.nbits();
+      // Create a constant of UInt<size>(value) and connect to output data
+      auto constant = GetConstant(body, size, value.to_uint());
+      Connect(body, outData, constant);
+    },
+    [&](const jlm::rvsdg::ctlconstant_op & op) {
+      auto value = op.value().alternative();
+      auto size = ceil(log2(op.value().nalternatives()));
+      auto constant = GetConstant(body, size, value);
+      Connect(body, outData, constant);
+    },
+    [&](const jlm::rvsdg::bitslt_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      auto input1 = GetSubfield(body, inBundles[1], "data");
+      auto sInt0 = AddAsSIntOp(body, input0);
+      auto sInt1 = AddAsSIntOp(body, input1);
+      auto op = AddLtOp(body, sInt0, sInt1);
+      Connect(body, outData, op);
+    },
+    [&](const llvm::bitcast_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      Connect(body, outData, input0);
+    },
+    [&](const llvm::bits2ptr_op &) {
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      Connect(body, outData, input0);
+    },
+    [&](const jlm::rvsdg::match_op & op) {
+      auto inData = GetSubfield(body, inBundles[0], "data");
+      auto outData = GetSubfield(body, outBundle, "data");
+      int inSize = JlmSize(&node->input(0)->type());
+      int outSize = JlmSize(&node->output(0)->type());
+      if (IsIdentityMapping(op))
       {
-        Connect(body, outData, inData);
+        if (inSize == outSize)
+        {
+          Connect(body, outData, inData);
+        }
+        else
+        {
+          Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
+        }
       }
       else
       {
-        Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
+        auto size = op.nbits();
+        mlir::Value result = GetConstant(body, size, op.default_alternative());
+        for (auto it = op.begin(); it != op.end(); it++)
+        {
+          auto comparison = AddEqOp(body, inData, GetConstant(body, size, it->first));
+          auto value = GetConstant(body, size, it->second);
+          result = AddMuxOp(body, comparison, value, result);
+        }
+        if ((unsigned long)outSize != size)
+        {
+          result = AddBitsOp(body, result, outSize - 1, 0);
+        }
+        Connect(body, outData, result);
       }
-    }
-    else
-    {
-      auto size = op->nbits();
-      mlir::Value result = GetConstant(body, size, op->default_alternative());
-      for (auto it = op->begin(); it != op->end(); it++)
-      {
-        auto comparison = AddEqOp(body, inData, GetConstant(body, size, it->first));
-        auto value = GetConstant(body, size, it->second);
-        result = AddMuxOp(body, comparison, value, result);
-      }
-      if ((unsigned long)outSize != size)
-      {
-        result = AddBitsOp(body, result, outSize - 1, 0);
-      }
-      Connect(body, outData, result);
-    }
-  }
-  else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&(node->GetOperation())))
-  {
-    // Start of with base pointer
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    mlir::Value result = AddCvtOp(body, input0);
+    },
+    [&](const llvm::GetElementPtrOperation & op) {
+      // Start of with base pointer
+      auto input0 = GetSubfield(body, inBundles[0], "data");
+      mlir::Value result = AddCvtOp(body, input0);
 
-    // TODO: support structs
-    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
-    for (size_t i = 1; i < node->ninputs(); i++)
-    {
-      int bits = JlmSize(pointeeType);
-      if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
+      // TODO: support structs
+      const jlm::rvsdg::Type * pointeeType = &op.GetPointeeType();
+      for (size_t i = 1; i < node->ninputs(); i++)
       {
-        pointeeType = nullptr;
+        int bits = JlmSize(pointeeType);
+        if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
+        {
+          pointeeType = nullptr;
+        }
+        else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+        {
+          pointeeType = &arrayType->element_type();
+        }
+        else
+        {
+          throw std::logic_error(pointeeType->debug_string() + " pointer not implemented!");
+        }
+        // GEP inputs are signed
+        auto input = GetSubfield(body, inBundles[i], "data");
+        auto asSInt = AddAsSIntOp(body, input);
+        int bytes = bits / 8;
+        auto constantOp = GetConstant(body, GetPointerSizeInBits(), bytes);
+        auto cvtOp = AddCvtOp(body, constantOp);
+        auto offset = AddMulOp(body, asSInt, cvtOp);
+        result = AddAddOp(body, result, offset);
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
-      {
-        pointeeType = &arrayType->element_type();
-      }
-      else
-      {
-        throw std::logic_error(pointeeType->debug_string() + " pointer not implemented!");
-      }
-      // GEP inputs are signed
-      auto input = GetSubfield(body, inBundles[i], "data");
-      auto asSInt = AddAsSIntOp(body, input);
-      int bytes = bits / 8;
-      auto constantOp = GetConstant(body, GetPointerSizeInBits(), bytes);
-      auto cvtOp = AddCvtOp(body, constantOp);
-      auto offset = AddMulOp(body, asSInt, cvtOp);
-      result = AddAddOp(body, result, offset);
+      auto asUInt = AddAsUIntOp(body, result);
+      Connect(body, outData, AddBitsOp(body, asUInt, GetPointerSizeInBits() - 1, 0));
+    },
+    [&](const llvm::UndefValueOperation &) {
+      Connect(body, outData, GetConstant(body, 1, 0));
+    },
+    [&](const rvsdg::Operation & op) {
+      throw std::logic_error(
+          "Simple node " + op.debug_string() + " not implemented!");
     }
-    auto asUInt = AddAsUIntOp(body, result);
-    Connect(body, outData, AddBitsOp(body, asUInt, GetPointerSizeInBits() - 1, 0));
-  }
-  else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->GetOperation())))
-  {
-    Connect(body, outData, GetConstant(body, 1, 0));
-  }
-  else
-  {
-    throw std::logic_error(
-        "Simple node " + node->GetOperation().debug_string() + " not implemented!");
-  }
+  );
 
   // Generate the output valid signal
   auto oneBitValue = GetConstant(body, 1, 1);
