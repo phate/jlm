@@ -131,8 +131,10 @@ create_cfg(const lambda::node & lambda, context & ctx)
   for (auto fctarg : lambda.GetFunctionArguments())
   {
     auto name = util::strfmt("_a", fctarg->index(), "_");
-    auto argument =
-        llvm::argument::create(name, fctarg->Type(), lambda.GetArgumentAttributes(*fctarg));
+    auto argument = llvm::argument::create(
+        name,
+        fctarg->Type(),
+        lambda.GetOperation().GetArgumentAttributes(fctarg->index()));
     auto v = cfg->entry()->append_argument(std::move(argument));
     ctx.insert(fctarg, v);
   }
@@ -413,12 +415,8 @@ convert_lambda_node(const rvsdg::Node & node, context & ctx)
   auto & module = ctx.module();
   auto & clg = module.ipgraph();
 
-  auto f = function_node::create(
-      clg,
-      lambda->name(),
-      lambda->Type(),
-      lambda->linkage(),
-      lambda->attributes());
+  const auto & op = lambda->GetOperation();
+  auto f = function_node::create(clg, op.name(), op.Type(), op.linkage(), op.attributes());
   auto v = module.create_variable(f);
 
   f->add_cfg(create_cfg(*lambda, ctx));
@@ -449,12 +447,8 @@ convert_phi_node(const rvsdg::Node & node, context & ctx)
 
     if (auto lambda = dynamic_cast<const lambda::node *>(node))
     {
-      auto f = function_node::create(
-          ipg,
-          lambda->name(),
-          lambda->Type(),
-          lambda->linkage(),
-          lambda->attributes());
+      const auto & op = lambda->GetOperation();
+      auto f = function_node::create(ipg, op.name(), op.Type(), op.linkage(), op.attributes());
       ctx.insert(subregion->argument(n), module.create_variable(f));
     }
     else

@@ -1156,7 +1156,7 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
   {
     auto vectorType = typeConverter.ConvertLlvmType(*type);
     threeAddressCodeVector.push_back(vectorunary_op::create(
-        fpneg_op(std::static_pointer_cast<const fptype>(scalarType)),
+        fpneg_op(std::static_pointer_cast<const FloatingPointType>(scalarType)),
         operand,
         vectorType));
   }

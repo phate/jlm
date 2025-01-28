@@ -8,12 +8,23 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <deque>
-
 namespace jlm::llvm::lambda
 {
 
 operation::~operation() = default;
+
+operation::operation(
+    std::shared_ptr<const jlm::rvsdg::FunctionType> type,
+    std::string name,
+    const jlm::llvm::linkage & linkage,
+    jlm::llvm::attributeset attributes)
+    : type_(std::move(type)),
+      name_(std::move(name)),
+      linkage_(linkage),
+      attributes_(std::move(attributes))
+{
+  ArgumentAttributes_.resize(Type()->NumArguments());
+}
 
 std::string
 operation::debug_string() const
@@ -35,6 +46,20 @@ operation::copy() const
   return std::make_unique<lambda::operation>(*this);
 }
 
+[[nodiscard]] const jlm::llvm::attributeset &
+operation::GetArgumentAttributes(std::size_t index) const noexcept
+{
+  JLM_ASSERT(index < ArgumentAttributes_.size());
+  return ArgumentAttributes_[index];
+}
+
+void
+operation::SetArgumentAttributes(std::size_t index, const jlm::llvm::attributeset & attributes)
+{
+  JLM_ASSERT(index < ArgumentAttributes_.size());
+  ArgumentAttributes_[index] = attributes;
+}
+
 /* lambda node class */
 
 node::~node() = default;
@@ -42,11 +67,9 @@ node::~node() = default;
 node::node(rvsdg::Region & parent, std::unique_ptr<lambda::operation> op)
     : StructuralNode(&parent, 1),
       Operation_(std::move(op))
-{
-  ArgumentAttributes_.resize(GetOperation().Type()->NumArguments());
-}
+{}
 
-const lambda::operation &
+lambda::operation &
 node::GetOperation() const noexcept
 {
   return *Operation_;
@@ -119,47 +142,6 @@ node::AddContextVar(jlm::rvsdg::output & origin)
   return ContextVar{ input, argument };
 }
 
-rvsdg::output &
-node::GetMemoryStateRegionArgument() const noexcept
-{
-  auto argument = GetFunctionArguments().back();
-  JLM_ASSERT(is<MemoryStateType>(argument->type()));
-  return *argument;
-}
-
-rvsdg::input &
-node::GetMemoryStateRegionResult() const noexcept
-{
-  auto result = GetFunctionResults().back();
-  JLM_ASSERT(is<MemoryStateType>(result->type()));
-  return *result;
-}
-
-rvsdg::SimpleNode *
-node::GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept
-{
-  auto & result = lambdaNode.GetMemoryStateRegionResult();
-
-  auto node = rvsdg::output::GetNode(*result.origin());
-  return is<LambdaExitMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                       : nullptr;
-}
-
-rvsdg::SimpleNode *
-node::GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept
-{
-  auto & argument = lambdaNode.GetMemoryStateRegionArgument();
-
-  // If a memory state entry split node is present, then we would expect the node to be the only
-  // user of the memory state argument.
-  if (argument.nusers() != 1)
-    return nullptr;
-
-  auto node = rvsdg::node_input::GetNode(**argument.begin());
-  return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
-}
-
 lambda::node *
 node::create(
     rvsdg::Region * parent,
@@ -187,14 +169,14 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
     return output();
   }
 
-  if (type().NumResults() != results.size())
+  if (GetOperation().type().NumResults() != results.size())
     throw util::error("Incorrect number of results.");
 
   for (size_t n = 0; n < results.size(); n++)
   {
-    auto & expected = type().ResultType(n);
+    auto & expected = GetOperation().type().ResultType(n);
     auto & received = results[n]->type();
-    if (results[n]->type() != type().ResultType(n))
+    if (results[n]->type() != GetOperation().type().ResultType(n))
       throw util::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
     if (results[n]->region() != subregion())
@@ -204,7 +186,7 @@ node::finalize(const std::vector<jlm::rvsdg::output *> & results)
   for (const auto & origin : results)
     rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, Type()));
+  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, GetOperation().Type()));
 }
 
 rvsdg::output *
@@ -222,7 +204,8 @@ node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 lambda::node *
 node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto lambda = create(region, Type(), name(), linkage(), attributes());
+  const auto & op = GetOperation();
+  auto lambda = create(region, op.Type(), op.name(), op.linkage(), op.attributes());
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -236,9 +219,8 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   auto args = GetFunctionArguments();
   auto newArgs = lambda->GetFunctionArguments();
   JLM_ASSERT(args.size() == newArgs.size());
-  for (size_t n = 0; n < args.size(); n++)
+  for (std::size_t n = 0; n < args.size(); ++n)
   {
-    lambda->SetArgumentAttributes(*newArgs[n], GetArgumentAttributes(*args[n]));
     subregionmap.insert(args[n], newArgs[n]);
   }
 
@@ -254,22 +236,7 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   auto o = lambda->finalize(results);
   smap.insert(output(), o);
 
-  lambda->ArgumentAttributes_ = ArgumentAttributes_;
-
   return lambda;
-}
-
-[[nodiscard]] const jlm::llvm::attributeset &
-node::GetArgumentAttributes(const rvsdg::output & argument) const noexcept
-{
-  JLM_ASSERT(argument.index() < ArgumentAttributes_.size());
-  return ArgumentAttributes_[argument.index()];
-}
-
-void
-node::SetArgumentAttributes(rvsdg::output & argument, const jlm::llvm::attributeset & attributes)
-{
-  ArgumentAttributes_[argument.index()] = attributes;
 }
 
 }

@@ -392,7 +392,7 @@ private:
   CreateOperandTypes(std::shared_ptr<const rvsdg::ValueType> storedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { PointerType::Create(), std::move(storedType), iostatetype::Create() });
+        { PointerType::Create(), std::move(storedType), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -403,7 +403,7 @@ private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ iostatetype::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> memoryStates(
         numMemoryStates,
         MemoryStateType::Create());
@@ -441,7 +441,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto ioStateInput = input(2);
-    JLM_ASSERT(is<iostatetype>(ioStateInput->type()));
+    JLM_ASSERT(is<IOStateType>(ioStateInput->type()));
     return *ioStateInput;
   }
 
@@ -449,7 +449,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto ioStateOutput = output(0);
-    JLM_ASSERT(is<iostatetype>(ioStateOutput->type()));
+    JLM_ASSERT(is<IOStateType>(ioStateOutput->type()));
     return *ioStateOutput;
   }
 

@@ -76,15 +76,15 @@ test_free()
   {
     using namespace jlm::llvm;
 
-    auto iot = iostatetype::Create();
+    auto iot = IOStateType::Create();
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
 
     auto ipgmod = ipgraph_module::create(jlm::util::filepath(""), "", "");
 
     auto ft = jlm::rvsdg::FunctionType::Create(
-        { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() },
-        { MemoryStateType::Create(), iostatetype::Create() });
+        { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },
+        { MemoryStateType::Create(), IOStateType::Create() });
     auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
     auto cfg = cfg::create(*ipgmod);

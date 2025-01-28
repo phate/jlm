@@ -93,7 +93,7 @@ public:
 
 private:
   static ::llvm::Type *
-  ConvertFloatingPointType(const fptype & type, ::llvm::LLVMContext & context);
+  ConvertFloatingPointType(const FloatingPointType & type, ::llvm::LLVMContext & context);
 
   const StructType::Declaration &
   GetOrCreateStructDeclaration(::llvm::StructType & structType);
