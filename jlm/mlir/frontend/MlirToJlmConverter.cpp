@@ -10,6 +10,7 @@
 #include <mlir/Parser/Parser.h>
 #include <mlir/Transforms/TopologicalSortUtils.h>
 
+#include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -333,6 +334,14 @@ MlirToJlmConverter::ConvertOperation(
       JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
     return rvsdg::output::GetNode(*&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
+  }
+  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtSIOp>(&mlirOperation))
+  {
+    auto outputType = castedOp.getOut().getType();
+    auto convertedOutputType = ConvertType(outputType);
+    return rvsdg::output::GetNode(*llvm::sext_op::create(
+        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+        inputs[0]));
   }
   else if (auto sitofpOp = ::mlir::dyn_cast<::mlir::arith::SIToFPOp>(&mlirOperation))
   {
