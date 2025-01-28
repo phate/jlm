@@ -345,11 +345,14 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto sitofpOp = ::mlir::dyn_cast<::mlir::arith::SIToFPOp>(&mlirOperation))
   {
-    auto & inputType = inputs[0]->type();
-    std::shared_ptr<const rvsdg::Type> inputTypePtr(&inputType);
+    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
+    if (!st)
+      throw jlm::util::error("expected bits type.");
+
     auto mlirOutputType = sitofpOp.getType();
-    std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
-    auto op = llvm::sitofp_op(inputTypePtr, outputType);
+    std::shared_ptr<rvsdg::Type> rt = ConvertType(mlirOutputType);
+
+    llvm::sitofp_op op(std::move(st), std::move(rt));
     return rvsdg::simple_node::create(
         &rvsdgRegion,
         op,
