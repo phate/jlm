@@ -55,7 +55,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
       typeGraph.CreateDirectedEdge(elementTypeNode, node);
     }
   }
-  else if (auto vectorType = dynamic_cast<const vectortype *>(&type))
+  else if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(vectorType->type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);

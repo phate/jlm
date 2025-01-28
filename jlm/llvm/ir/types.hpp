@@ -324,25 +324,23 @@ private:
   std::vector<std::shared_ptr<const rvsdg::Type>> Types_;
 };
 
-/* vector type */
-
-class vectortype : public rvsdg::ValueType
+class VectorType : public rvsdg::ValueType
 {
 public:
-  vectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
+  VectorType(std::shared_ptr<const ValueType> type, size_t size)
       : size_(size),
         type_(std::move(type))
   {}
 
-  vectortype(const vectortype & other) = default;
+  VectorType(const VectorType & other) = default;
 
-  vectortype(vectortype && other) = default;
+  VectorType(VectorType && other) = default;
 
-  vectortype &
-  operator=(const vectortype & other) = default;
+  VectorType &
+  operator=(const VectorType & other) = default;
 
-  vectortype &
-  operator=(vectortype && other) = default;
+  VectorType &
+  operator=(VectorType && other) = default;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
@@ -370,13 +368,13 @@ private:
   std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
-class fixedvectortype final : public vectortype
+class fixedvectortype final : public VectorType
 {
 public:
   ~fixedvectortype() override;
 
   fixedvectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
-      : vectortype(std::move(type), size)
+      : VectorType(std::move(type), size)
   {}
 
   virtual bool
@@ -395,13 +393,13 @@ public:
   }
 };
 
-class scalablevectortype final : public vectortype
+class scalablevectortype final : public VectorType
 {
 public:
   ~scalablevectortype() override;
 
   scalablevectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
-      : vectortype(std::move(type), size)
+      : VectorType(std::move(type), size)
   {}
 
   virtual bool
@@ -489,7 +487,7 @@ IsOrContains(const jlm::rvsdg::Type & type)
     return false;
   }
 
-  if (auto vectorType = dynamic_cast<const vectortype *>(&type))
+  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
     return IsOrContains<ELEMENTYPE>(vectorType->type());
 
   return false;
