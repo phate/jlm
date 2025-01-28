@@ -111,7 +111,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
   {
     return bt->nbits();
   }
-  else if (auto at = dynamic_cast<const llvm::arraytype *>(type))
+  else if (auto at = dynamic_cast<const llvm::ArrayType *>(type))
   {
     return JlmSize(&at->element_type()) * at->nelements();
   }

@@ -39,29 +39,26 @@ PointerType::Create()
   return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
 }
 
-/* array type */
-
-arraytype::~arraytype()
-{}
+ArrayType::~ArrayType() noexcept = default;
 
 std::string
-arraytype::debug_string() const
+ArrayType::debug_string() const
 {
   return util::strfmt("[ ", nelements(), " x ", type_->debug_string(), " ]");
 }
 
 bool
-arraytype::operator==(const jlm::rvsdg::Type & other) const noexcept
+ArrayType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const arraytype *>(&other);
+  const auto type = dynamic_cast<const ArrayType *>(&other);
   return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
 std::size_t
-arraytype::ComputeHash() const noexcept
+ArrayType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(arraytype).hash_code();
-  auto numElementsHash = std::hash<std::size_t>()(nelements_);
+  const auto typeHash = typeid(ArrayType).hash_code();
+  const auto numElementsHash = std::hash<std::size_t>()(nelements_);
   return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
 }
 
