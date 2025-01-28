@@ -53,9 +53,9 @@ TestIsOrContains()
   assert(!IsOrContains<jlm::rvsdg::StateType>(*structType));
 
   // Create an array containing the atruct type
-  auto arrayType = arraytype::Create(structType, 20);
+  auto arrayType = ArrayType::Create(structType, 20);
   assert(IsAggregateType(*arrayType));
-  assert(IsOrContains<arraytype>(*arrayType));
+  assert(IsOrContains<ArrayType>(*arrayType));
   assert(IsOrContains<StructType>(*arrayType));
   assert(IsOrContains<PointerType>(*arrayType));
   assert(!IsOrContains<jlm::rvsdg::StateType>(*arrayType));

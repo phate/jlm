@@ -67,7 +67,7 @@ public:
   ConvertStructType(const StructType & type, ::llvm::LLVMContext & context);
 
   ::llvm::ArrayType *
-  ConvertArrayType(const arraytype & type, ::llvm::LLVMContext & context);
+  ConvertArrayType(const ArrayType & type, ::llvm::LLVMContext & context);
 
   ::llvm::Type *
   ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & context);

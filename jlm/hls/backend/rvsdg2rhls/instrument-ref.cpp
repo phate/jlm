@@ -207,7 +207,7 @@ instrument_ref(
       // ensure that the alloca is an array type
       auto pt = dynamic_cast<const jlm::llvm::PointerType *>(&addr->type());
       JLM_ASSERT(pt);
-      auto at = dynamic_cast<const jlm::llvm::arraytype *>(&ao->value_type());
+      auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
       JLM_ASSERT(at);
       auto size = jlm::rvsdg::create_bitconstant(region, 64, BaseHLS::JlmSize(at) / 8);
 

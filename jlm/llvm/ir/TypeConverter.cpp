@@ -50,7 +50,7 @@ TypeConverter::ConvertFunctionType(
   std::vector<::llvm::Type *> argumentTypes;
   for (auto & argumentType : functionType.Arguments())
   {
-    if (rvsdg::is<varargtype>(argumentType))
+    if (rvsdg::is<VariableArgumentType>(argumentType))
     {
       isVariableArgument = true;
       continue;
@@ -110,7 +110,7 @@ TypeConverter::ConvertPointerType(const ::llvm::PointerType & pointerType)
 }
 
 ::llvm::ArrayType *
-TypeConverter::ConvertArrayType(const arraytype & type, ::llvm::LLVMContext & context)
+TypeConverter::ConvertArrayType(const ArrayType & type, ::llvm::LLVMContext & context)
 {
   return ::llvm::ArrayType::get(ConvertJlmType(type.element_type(), context), type.nelements());
 }
@@ -175,7 +175,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
     return ConvertPointerType(*pointerType, context);
   }
 
-  if (const auto arrayType = dynamic_cast<const arraytype *>(&type))
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
     return ConvertArrayType(*arrayType, context);
   }
@@ -252,7 +252,7 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::ArrayTyID:
   {
     auto elementType = ConvertLlvmType(*type.getArrayElementType());
-    return arraytype::Create(std::move(elementType), type.getArrayNumElements());
+    return ArrayType::Create(std::move(elementType), type.getArrayNumElements());
   }
   case ::llvm::Type::FixedVectorTyID:
   {

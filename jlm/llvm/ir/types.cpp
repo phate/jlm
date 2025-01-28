@@ -39,29 +39,26 @@ PointerType::Create()
   return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
 }
 
-/* array type */
-
-arraytype::~arraytype()
-{}
+ArrayType::~ArrayType() noexcept = default;
 
 std::string
-arraytype::debug_string() const
+ArrayType::debug_string() const
 {
   return util::strfmt("[ ", nelements(), " x ", type_->debug_string(), " ]");
 }
 
 bool
-arraytype::operator==(const jlm::rvsdg::Type & other) const noexcept
+ArrayType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const arraytype *>(&other);
+  const auto type = dynamic_cast<const ArrayType *>(&other);
   return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
 std::size_t
-arraytype::ComputeHash() const noexcept
+ArrayType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(arraytype).hash_code();
-  auto numElementsHash = std::hash<std::size_t>()(nelements_);
+  const auto typeHash = typeid(ArrayType).hash_code();
+  const auto numElementsHash = std::hash<std::size_t>()(nelements_);
   return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
 }
 
@@ -136,34 +133,31 @@ fptype::Create(fpsize size)
   }
 }
 
-/* vararg type */
-
-varargtype::~varargtype()
-{}
+VariableArgumentType::~VariableArgumentType() noexcept = default;
 
 bool
-varargtype::operator==(const jlm::rvsdg::Type & other) const noexcept
+VariableArgumentType::operator==(const Type & other) const noexcept
 {
-  return dynamic_cast<const varargtype *>(&other) != nullptr;
+  return dynamic_cast<const VariableArgumentType *>(&other) != nullptr;
 }
 
 std::size_t
-varargtype::ComputeHash() const noexcept
+VariableArgumentType::ComputeHash() const noexcept
 {
-  return typeid(varargtype).hash_code();
+  return typeid(VariableArgumentType).hash_code();
 }
 
 std::string
-varargtype::debug_string() const
+VariableArgumentType::debug_string() const
 {
   return "vararg";
 }
 
-std::shared_ptr<const varargtype>
-varargtype::Create()
+std::shared_ptr<const VariableArgumentType>
+VariableArgumentType::Create()
 {
-  static const varargtype instance;
-  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), &instance);
+  static const VariableArgumentType instance;
+  return std::shared_ptr<const VariableArgumentType>(std::shared_ptr<void>(), &instance);
 }
 
 StructType::~StructType() = default;
