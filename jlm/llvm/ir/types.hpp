@@ -113,14 +113,13 @@ enum class fpsize
   fp128
 };
 
-class fptype final : public rvsdg::ValueType
+class FloatingPointType final : public rvsdg::ValueType
 {
 public:
-  virtual ~fptype();
+  ~FloatingPointType() noexcept override;
 
-  inline fptype(const fpsize & size)
-      : rvsdg::ValueType(),
-        size_(size)
+  explicit FloatingPointType(const fpsize & size)
+      : size_(size)
   {}
 
   virtual std::string
@@ -138,7 +137,7 @@ public:
     return size_;
   }
 
-  static std::shared_ptr<const fptype>
+  static std::shared_ptr<const FloatingPointType>
   Create(fpsize size);
 
 private:

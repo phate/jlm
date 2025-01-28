@@ -173,15 +173,15 @@ LlvmFloatingPointTypeConversion()
 
   // Act
   const auto halfTypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*halfTypeLlvm));
+      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*halfTypeLlvm));
   const auto floatTypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*floatTypeLlvm));
+      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*floatTypeLlvm));
   const auto doubleTypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*doubleTypeLlvm));
+      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*doubleTypeLlvm));
   const auto x86fp80TypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*x86fp80TypeLlvm));
+      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*x86fp80TypeLlvm));
   const auto fp128TypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*fp128TypeLlvm));
+      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*fp128TypeLlvm));
 
   // Assert
   assert(halfTypeJlm && halfTypeJlm->size() == fpsize::half);
@@ -290,7 +290,7 @@ LlvmArrayTypeConversion()
   assert(arrayType1Jlm->nelements() == 4);
 
   assert(arrayType2Jlm);
-  assert(is<fptype>(arrayType2Jlm->element_type()));
+  assert(is<FloatingPointType>(arrayType2Jlm->element_type()));
   assert(arrayType2Jlm->nelements() == 9);
 
   return 0;
@@ -327,7 +327,7 @@ LlvmVectorTypeConversion()
   assert(vectorType1Jlm->size() == 4);
 
   assert(vectorType2Jlm);
-  assert(is<fptype>(vectorType2Jlm->type()));
+  assert(is<FloatingPointType>(vectorType2Jlm->type()));
   assert(vectorType2Jlm->size() == 9);
 
   return 0;
@@ -486,7 +486,7 @@ JlmArrayTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = bittype::Create(32);
-  const auto halfType = fptype::Create(fpsize::half);
+  const auto halfType = FloatingPointType::Create(fpsize::half);
   const auto arrayType1Jlm = arraytype::Create(bit32Type, 4);
   const auto arrayType2Jlm = arraytype::Create(halfType, 9);
 
@@ -549,11 +549,11 @@ JlmFloatingPointTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto halfTypeJlm = fptype::Create(fpsize::half);
-  const auto floatTypeJlm = fptype::Create(fpsize::flt);
-  const auto doubleTypeJlm = fptype::Create(fpsize::dbl);
-  const auto x86fp80TypeJlm = fptype::Create(fpsize::x86fp80);
-  const auto fp128TypeJlm = fptype::Create(fpsize::fp128);
+  const auto halfTypeJlm = FloatingPointType::Create(fpsize::half);
+  const auto floatTypeJlm = FloatingPointType::Create(fpsize::flt);
+  const auto doubleTypeJlm = FloatingPointType::Create(fpsize::dbl);
+  const auto x86fp80TypeJlm = FloatingPointType::Create(fpsize::x86fp80);
+  const auto fp128TypeJlm = FloatingPointType::Create(fpsize::fp128);
 
   // Act
   const auto halfTypeLlvm = typeConverter.ConvertJlmType(*halfTypeJlm, context);
@@ -586,7 +586,7 @@ JlmStructTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = jlm::rvsdg::bittype::Create(32);
-  const auto halfType = fptype::Create(fpsize::half);
+  const auto halfType = FloatingPointType::Create(fpsize::half);
 
   const auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
   const auto declaration2 = StructType::Declaration::Create({ bit32Type, bit32Type, bit32Type });

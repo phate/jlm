@@ -116,7 +116,7 @@ TypeConverter::ConvertArrayType(const arraytype & type, ::llvm::LLVMContext & co
 }
 
 ::llvm::Type *
-TypeConverter::ConvertFloatingPointType(const fptype & type, ::llvm::LLVMContext & context)
+TypeConverter::ConvertFloatingPointType(const FloatingPointType & type, ::llvm::LLVMContext & context)
 {
   switch (type.size())
   {
@@ -186,7 +186,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
                                              : ::llvm::Type::getInt32Ty(context);
   }
 
-  if (const auto floatingPointType = dynamic_cast<const fptype *>(&type))
+  if (const auto floatingPointType = dynamic_cast<const FloatingPointType *>(&type))
   {
     return ConvertFloatingPointType(*floatingPointType, context);
   }
@@ -230,15 +230,15 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::FunctionTyID:
     return ConvertFunctionType(*::llvm::cast<::llvm::FunctionType>(&type));
   case ::llvm::Type::HalfTyID:
-    return fptype::Create(fpsize::half);
+    return FloatingPointType::Create(fpsize::half);
   case ::llvm::Type::FloatTyID:
-    return fptype::Create(fpsize::flt);
+    return FloatingPointType::Create(fpsize::flt);
   case ::llvm::Type::DoubleTyID:
-    return fptype::Create(fpsize::dbl);
+    return FloatingPointType::Create(fpsize::dbl);
   case ::llvm::Type::X86_FP80TyID:
-    return fptype::Create(fpsize::x86fp80);
+    return FloatingPointType::Create(fpsize::x86fp80);
   case ::llvm::Type::FP128TyID:
-    return fptype::Create(fpsize::fp128);
+    return FloatingPointType::Create(fpsize::fp128);
   case ::llvm::Type::StructTyID:
   {
     const auto structType = ::llvm::cast<::llvm::StructType>(&type);
