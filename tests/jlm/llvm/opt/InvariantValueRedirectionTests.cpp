@@ -87,7 +87,7 @@ TestTheta()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -142,7 +142,7 @@ TestCall()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
@@ -237,7 +237,7 @@ TestCallWithMemoryStateNodes()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);

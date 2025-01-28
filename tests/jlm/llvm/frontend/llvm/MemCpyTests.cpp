@@ -70,7 +70,7 @@ MemCpyConversion()
         auto memoryStateAssignment = *std::next(it, 2);
 
         assert(is<assignment_op>(ioStateAssignment->operation()));
-        assert(is<iostatetype>(ioStateAssignment->operand(0)->type()));
+        assert(is<IOStateType>(ioStateAssignment->operand(0)->type()));
 
         assert(is<assignment_op>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));

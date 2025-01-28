@@ -89,8 +89,8 @@ TestCallSummaryComputationDirectCalls()
   // Arrange
   auto vt = tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() },
-      { vt, jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+      { jlm::llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() },
+      { vt, jlm::llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();

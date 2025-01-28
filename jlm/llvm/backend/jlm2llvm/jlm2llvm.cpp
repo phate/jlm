@@ -436,7 +436,7 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
       if (!is<phi_op>(tac->operation()))
         continue;
 
-      if (rvsdg::is<iostatetype>(tac->result(0)->type()))
+      if (rvsdg::is<IOStateType>(tac->result(0)->type()))
         continue;
       if (rvsdg::is<MemoryStateType>(tac->result(0)->type()))
         continue;
