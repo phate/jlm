@@ -37,7 +37,8 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
 
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
-      || rvsdg::is<PointerType>(type) || rvsdg::is<fptype>(type) || rvsdg::is<VariableArgumentType>(type))
+      || rvsdg::is<PointerType>(type) || rvsdg::is<fptype>(type)
+      || rvsdg::is<VariableArgumentType>(type))
   {
     // No need to provide any information beyond the debug string
   }
