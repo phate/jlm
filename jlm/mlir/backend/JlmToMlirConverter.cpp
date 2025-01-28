@@ -372,8 +372,10 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (auto arrOp = dynamic_cast<const llvm::ConstantDataArray *>(&operation))
   {
     auto arrayType = ConvertType(*arrOp->result(0));
-    MlirOp =
-        Builder_->create<::mlir::jlm::ConstantDataArray>(Builder_->getUnknownLoc(), arrayType, inputs);
+    MlirOp = Builder_->create<::mlir::jlm::ConstantDataArray>(
+        Builder_->getUnknownLoc(),
+        arrayType,
+        inputs);
   }
   else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZero *>(&operation))
   {
