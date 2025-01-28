@@ -100,7 +100,7 @@ bool
 function_match(llvm::lambda::node * ln, const std::string & function_name)
 {
   const std::regex fn_regex(function_name);
-  if (std::regex_match(ln->name(), fn_regex))
+  if (std::regex_match(ln->GetOperation().name(), fn_regex))
   { // TODO: handle C++ name mangling
     return true;
   }
@@ -282,8 +282,9 @@ rename_delta(llvm::delta::node * odn)
 llvm::lambda::node *
 change_linkage(llvm::lambda::node * ln, llvm::linkage link)
 {
+  const auto & op = ln->GetOperation();
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->Type(), ln->name(), link, ln->attributes());
+      llvm::lambda::node::create(ln->region(), op.Type(), op.name(), link, op.attributes());
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -293,14 +294,12 @@ change_linkage(llvm::lambda::node * ln, llvm::linkage link)
     auto newcv = lambda->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newcv.inner);
   }
-
   /* collect function arguments */
   auto args = ln->GetFunctionArguments();
   auto newArgs = lambda->GetFunctionArguments();
   JLM_ASSERT(args.size() == newArgs.size());
-  for (size_t n = 0; n < args.size(); n++)
+  for (std::size_t n = 0; n < args.size(); ++n)
   {
-    lambda->SetArgumentAttributes(*newArgs[n], ln->GetArgumentAttributes(*args[n]));
     subregionmap.insert(args[n], newArgs[n]);
   }
 
@@ -360,7 +359,8 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         auto orig_node = orig_node_output->node();
         if (auto oln = dynamic_cast<llvm::lambda::node *>(orig_node))
         {
-          throw jlm::util::error("Inlining of function " + oln->name() + " not supported");
+          throw jlm::util::error(
+              "Inlining of function " + oln->GetOperation().name() + " not supported");
         }
         else if (auto odn = dynamic_cast<llvm::delta::node *>(orig_node))
         {
@@ -393,15 +393,16 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
       jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
+      const auto & op = ln->GetOperation();
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
-          ln->Type(),
-          ln->Type(),
-          ln->name(),
+          op.Type(),
+          op.Type(),
+          op.name(),
           llvm::linkage::external_linkage); // TODO: change linkage?
       ln->output()->divert_users(&graphImport);
       remove(ln);
-      std::cout << "function " << new_ln->name() << " extracted for HLS\n";
+      std::cout << "function " << new_ln->GetOperation().name() << " extracted for HLS\n";
       return rhls;
     }
   }

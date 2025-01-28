@@ -23,6 +23,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/domtree.cpp \
     jlm/llvm/ir/ipgraph.cpp \
     jlm/llvm/ir/ipgraph-module.cpp \
+    jlm/llvm/ir/LambdaMemoryState.cpp \
     jlm/llvm/ir/TypeConverter.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
@@ -104,6 +105,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/Annotation.hpp \
 	jlm/llvm/ir/attribute.hpp \
 	jlm/llvm/ir/CallSummary.hpp \
+	jlm/llvm/ir/LambdaMemoryState.hpp \
 	jlm/llvm/ir/tac.hpp \
 	jlm/llvm/ir/domtree.hpp \
 	jlm/llvm/ir/cfg-node.hpp \

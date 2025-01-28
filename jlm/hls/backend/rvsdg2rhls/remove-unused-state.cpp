@@ -176,7 +176,8 @@ remove_gamma_passthrough(rvsdg::GammaNode * gn)
 jlm::llvm::lambda::node *
 remove_lambda_passthrough(llvm::lambda::node * ln)
 {
-  auto old_fcttype = ln->type();
+  const auto & op = ln->GetOperation();
+  auto old_fcttype = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
@@ -203,9 +204,9 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   auto new_lambda = llvm::lambda::node::create(
       ln->region(),
       new_fcttype,
-      ln->name(),
-      ln->linkage(),
-      ln->attributes());
+      op.name(),
+      op.linkage(),
+      op.attributes());
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : ln->GetContextVars())

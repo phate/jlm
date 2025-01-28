@@ -79,7 +79,7 @@ test1()
 
     auto callResults = CallNode::Create(
         gammaInputF1.branchArgument[0],
-        jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).Type(),
+        jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).GetOperation().Type(),
         { gammaInputValue.branchArgument[0],
           gammaInputIoState.branchArgument[0],
           gammaInputMemoryState.branchArgument[0] });

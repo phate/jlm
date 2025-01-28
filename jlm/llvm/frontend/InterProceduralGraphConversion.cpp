@@ -616,7 +616,7 @@ Convert(
     auto lambdaNodeArgument = lambdaArgs[n];
 
     topVariableMap.insert(functionNodeArgument, lambdaNodeArgument);
-    lambdaNode.SetArgumentAttributes(*lambdaNodeArgument, functionNodeArgument->attributes());
+    lambdaNode.GetOperation().SetArgumentAttributes(n, functionNodeArgument->attributes());
   }
 
   /*

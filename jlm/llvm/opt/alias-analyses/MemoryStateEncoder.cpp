@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
@@ -766,7 +767,7 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambdaNode)
 void
 MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 {
-  auto & memoryStateArgument = lambdaNode.GetMemoryStateRegionArgument();
+  auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
   JLM_ASSERT(memoryStateArgument.nusers() == 1);
   auto memoryStateArgumentUser = *memoryStateArgument.begin();
 
@@ -809,7 +810,7 @@ MemoryStateEncoder::EncodeLambdaExit(const lambda::node & lambdaNode)
   auto subregion = lambdaNode.subregion();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaExitNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryStateResult = lambdaNode.GetMemoryStateRegionResult();
+  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
   auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
