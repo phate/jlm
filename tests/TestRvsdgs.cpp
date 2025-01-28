@@ -1235,7 +1235,7 @@ ExternalCallTest2::SetupRvsdg()
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  varargtype varArgType;
+  VariableArgumentType varArgType;
   auto lambdaLlvmLifetimeStartType = rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(64),
         PointerType::Create(),
@@ -2162,7 +2162,7 @@ PhiTest1::SetupRvsdg()
 
   auto SetupTestFunction = [&](phi::node * phiNode)
   {
-    auto at = arraytype::Create(jlm::rvsdg::bittype::Create(64), 10);
+    auto at = ArrayType::Create(jlm::rvsdg::bittype::Create(64), 10);
     auto pbit64 = PointerType::Create();
     auto iOStateType = iostatetype::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -2586,7 +2586,7 @@ PhiWithDeltaTest::SetupRvsdg()
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
       StructType::Declaration::Create({ PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
-  auto arrayType = arraytype::Create(structType, 2);
+  auto arrayType = ArrayType::Create(structType, 2);
 
   jlm::llvm::phi::builder pb;
   pb.begin(&rvsdg.GetRootRegion());
@@ -3071,7 +3071,7 @@ MemcpyTest::SetupRvsdg()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto arrayType = arraytype::Create(jlm::rvsdg::bittype::Create(32), 5);
+  auto arrayType = ArrayType::Create(jlm::rvsdg::bittype::Create(32), 5);
 
   auto SetupLocalArray = [&]()
   {
@@ -3222,7 +3222,7 @@ MemcpyTest2::SetupRvsdg()
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto arrayType = arraytype::Create(PointerType::Create(), 32);
+  auto arrayType = ArrayType::Create(PointerType::Create(), 32);
   auto & structBDeclaration =
       rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create({ arrayType }));
   auto structTypeB = StructType::Create("structTypeB", false, structBDeclaration);
@@ -3710,7 +3710,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
   auto functionType = rvsdg::FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
-  auto variableArgumentType = varargtype::Create();
+  auto variableArgumentType = VariableArgumentType::Create();
   auto functionTypeCall = rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(32),
         variableArgumentType,
@@ -3806,7 +3806,7 @@ VariadicFunctionTest1::SetupRvsdg()
   auto pointerType = PointerType::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   auto lambdaHType = rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32),
         varArgType,
@@ -3895,10 +3895,10 @@ VariadicFunctionTest2::SetupRvsdg()
                                         PointerType::Create(),
                                         PointerType::Create() }));
   auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
-  auto arrayType = arraytype::Create(structType, 1);
+  auto arrayType = ArrayType::Create(structType, 1);
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   auto lambdaLlvmLifetimeStartType = rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(64),
         PointerType::Create(),

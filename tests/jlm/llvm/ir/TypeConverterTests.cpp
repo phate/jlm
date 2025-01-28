@@ -141,7 +141,7 @@ LlvmFunctionTypeConversion()
   arguments = functionType3Jlm->Arguments();
   assert(is<bittype>(arguments[0]));
   assert(is<bittype>(arguments[1]));
-  assert(is<varargtype>(arguments[2]));
+  assert(is<VariableArgumentType>(arguments[2]));
   assert(is<iostatetype>(arguments[3]));
   assert(is<MemoryStateType>(arguments[4]));
   results = functionType3Jlm->Results();
@@ -280,9 +280,9 @@ LlvmArrayTypeConversion()
 
   // Act
   const auto arrayType1Jlm =
-      std::dynamic_pointer_cast<const arraytype>(typeConverter.ConvertLlvmType(*arrayType1Llvm));
+      std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType1Llvm));
   const auto arrayType2Jlm =
-      std::dynamic_pointer_cast<const arraytype>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
+      std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
 
   // Assert
   assert(arrayType1Jlm);
@@ -403,7 +403,7 @@ JlmFunctionTypeConversion()
   auto bit32Type = bittype::Create(32);
   auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   const auto functionType1Jlm = FunctionType::Create(
       { bit32Type, bit32Type, ioStateType, memoryStateType },
       { memoryStateType, ioStateType });
@@ -487,8 +487,8 @@ JlmArrayTypeConversion()
 
   const auto bit32Type = bittype::Create(32);
   const auto halfType = fptype::Create(fpsize::half);
-  const auto arrayType1Jlm = arraytype::Create(bit32Type, 4);
-  const auto arrayType2Jlm = arraytype::Create(halfType, 9);
+  const auto arrayType1Jlm = ArrayType::Create(bit32Type, 4);
+  const auto arrayType2Jlm = ArrayType::Create(halfType, 9);
 
   // Act
   const auto arrayType1Llvm = typeConverter.ConvertJlmType(*arrayType1Jlm, context);
