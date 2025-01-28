@@ -201,27 +201,24 @@ vectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
   return type && type->size_ == size_ && *type->type_ == *type_;
 }
 
-/* fixedvectortype */
-
-fixedvectortype::~fixedvectortype()
-{}
+FixedVectorType::~FixedVectorType() noexcept = default;
 
 bool
-fixedvectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+FixedVectorType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
   return vectortype::operator==(other);
 }
 
 std::size_t
-fixedvectortype::ComputeHash() const noexcept
+FixedVectorType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(fixedvectortype).hash_code();
+  auto typeHash = typeid(FixedVectorType).hash_code();
   auto sizeHash = std::hash<size_t>()(size());
   return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
 }
 
 std::string
-fixedvectortype::debug_string() const
+FixedVectorType::debug_string() const
 {
   return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }

@@ -196,7 +196,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
     return ConvertStructType(*structType, context);
   }
 
-  if (const auto fixedVectorType = dynamic_cast<const fixedvectortype *>(&type))
+  if (const auto fixedVectorType = dynamic_cast<const FixedVectorType *>(&type))
   {
     return ::llvm::VectorType::get(
         ConvertJlmType(fixedVectorType->type(), context),
@@ -257,7 +257,7 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::FixedVectorTyID:
   {
     auto scalarType = ConvertLlvmType(*type.getScalarType());
-    return fixedvectortype::Create(
+    return FixedVectorType::Create(
         std::move(scalarType),
         ::llvm::cast<::llvm::FixedVectorType>(&type)->getNumElements());
   }
