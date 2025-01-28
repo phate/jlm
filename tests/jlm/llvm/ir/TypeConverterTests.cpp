@@ -141,7 +141,7 @@ LlvmFunctionTypeConversion()
   arguments = functionType3Jlm->Arguments();
   assert(is<bittype>(arguments[0]));
   assert(is<bittype>(arguments[1]));
-  assert(is<varargtype>(arguments[2]));
+  assert(is<VariableArgumentType>(arguments[2]));
   assert(is<iostatetype>(arguments[3]));
   assert(is<MemoryStateType>(arguments[4]));
   results = functionType3Jlm->Results();
@@ -403,7 +403,7 @@ JlmFunctionTypeConversion()
   auto bit32Type = bittype::Create(32);
   auto ioStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   const auto functionType1Jlm = FunctionType::Create(
       { bit32Type, bit32Type, ioStateType, memoryStateType },
       { memoryStateType, ioStateType });

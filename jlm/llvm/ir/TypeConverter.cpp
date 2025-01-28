@@ -50,7 +50,7 @@ TypeConverter::ConvertFunctionType(
   std::vector<::llvm::Type *> argumentTypes;
   for (auto & argumentType : functionType.Arguments())
   {
-    if (rvsdg::is<varargtype>(argumentType))
+    if (rvsdg::is<VariableArgumentType>(argumentType))
     {
       isVariableArgument = true;
       continue;

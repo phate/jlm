@@ -138,32 +138,31 @@ fptype::Create(fpsize size)
 
 /* vararg type */
 
-varargtype::~varargtype()
-{}
+VariableArgumentType::~VariableArgumentType() = default;
 
 bool
-varargtype::operator==(const jlm::rvsdg::Type & other) const noexcept
+VariableArgumentType::operator==(const Type & other) const noexcept
 {
-  return dynamic_cast<const varargtype *>(&other) != nullptr;
+  return dynamic_cast<const VariableArgumentType *>(&other) != nullptr;
 }
 
 std::size_t
-varargtype::ComputeHash() const noexcept
+VariableArgumentType::ComputeHash() const noexcept
 {
-  return typeid(varargtype).hash_code();
+  return typeid(VariableArgumentType).hash_code();
 }
 
 std::string
-varargtype::debug_string() const
+VariableArgumentType::debug_string() const
 {
   return "vararg";
 }
 
-std::shared_ptr<const varargtype>
-varargtype::Create()
+std::shared_ptr<const VariableArgumentType>
+VariableArgumentType::Create()
 {
-  static const varargtype instance;
-  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), &instance);
+  static const VariableArgumentType instance;
+  return std::shared_ptr<const VariableArgumentType>(std::shared_ptr<void>(), &instance);
 }
 
 StructType::~StructType() = default;
