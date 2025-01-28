@@ -14,6 +14,8 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <jlm/llvm/ir/operators/operators.hpp>
+
 #include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
 #include <RVSDG/RVSDGDialect.h>
@@ -177,11 +179,11 @@ private:
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
-   * \param mlirOmega The MLIR omega opeation to the converted
-   * \param rvsdgRegion The RVSDG region that the omega node will reside in.
+   * \param omegaNode The MLIR omega opeation to the converted
+   * \return The converted RVSDG graph.
    */
-  void
-  ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & rvsdgRegion);
+  std::unique_ptr<llvm::RvsdgModule>
+  ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode);
 
   /**
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.

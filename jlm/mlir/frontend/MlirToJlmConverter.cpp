@@ -37,14 +37,46 @@ MlirToJlmConverter::ReadAndConvertMlir(const util::filepath & filePath)
   {
     JLM_ASSERT("Parsing MLIR input file failed.");
   }
-  return ConvertMlir(block);
+  auto & topNode = block->front();
+  auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(topNode);
+  return ConvertOmega(omegaNode);
 }
 
 std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 {
+  auto & topNode = block->front();
+  auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(topNode);
+  return ConvertOmega(omegaNode);
+}
+
+std::unique_ptr<llvm::RvsdgModule>
+MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
+{
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
-  ConvertBlock(*block, rvsdgModule->Rvsdg().GetRootRegion());
+  auto & graph = rvsdgModule->Rvsdg();
+  auto & root = graph.GetRootRegion();
+  for (auto & operation : omegaNode.getRegion().front().getOperations())
+  {
+
+    if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(operation))
+    {
+      auto valueType = argument.getValueType();
+      std::shared_ptr<rvsdg::Type> jlmValueType = ConvertType(valueType);
+
+      jlm::llvm::GraphImport::Create(
+          graph,
+          std::dynamic_pointer_cast<rvsdg::ValueType>(jlmValueType),
+          std::dynamic_pointer_cast<rvsdg::ValueType>(jlmValueType),
+          argument.getNameAttr().cast<::mlir::StringAttr>().str(),
+          llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+    }
+    else
+    {
+      break; // OmegaArguments should be a prefix of the omega block
+    }
+  }
+  ConvertRegion(omegaNode.getRegion(), root);
 
   return rvsdgModule;
 }
@@ -365,7 +397,6 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
   {
-    ConvertOmega(mlirOperation, rvsdgRegion);
     // Omega doesn't have a corresponding RVSDG node so we return nullptr
     return nullptr;
   }
@@ -685,9 +716,10 @@ MlirToJlmConverter::ConvertOperation(
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation))
+      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation)
+      // This is a terminating operation that doesn't have a corresponding RVSDG node
+      || ::mlir::isa<::mlir::rvsdg::OmegaArgument>(&mlirOperation)) // Handled at the top level
   {
-    // This is a terminating operation that doesn't have a corresponding RVSDG node
     return nullptr;
   }
   else
@@ -720,13 +752,6 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
     JLM_UNREACHABLE(message.c_str());
     break;
   }
-}
-
-void
-MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & rvsdgRegion)
-{
-  JLM_ASSERT(mlirOmega.getRegions().size() == 1);
-  ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
 jlm::rvsdg::Node *
