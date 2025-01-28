@@ -211,7 +211,7 @@ convert(
     if (rvsdg::is<MemoryStateType>(argument->type()))
       continue;
 
-    if (rvsdg::is<varargtype>(argument->type()))
+    if (rvsdg::is<VariableArgumentType>(argument->type()))
     {
       JLM_ASSERT(is<tacvariable>(argument));
       auto valist = dynamic_cast<const llvm::tacvariable *>(argument)->tac();

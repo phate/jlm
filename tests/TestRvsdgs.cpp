@@ -1235,7 +1235,7 @@ ExternalCallTest2::SetupRvsdg()
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  varargtype varArgType;
+  VariableArgumentType varArgType;
   auto lambdaLlvmLifetimeStartType = rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(64),
         PointerType::Create(),
@@ -3710,7 +3710,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
   auto functionType = rvsdg::FunctionType::Create(
       { iostatetype::Create(), MemoryStateType::Create() },
       { rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
-  auto variableArgumentType = varargtype::Create();
+  auto variableArgumentType = VariableArgumentType::Create();
   auto functionTypeCall = rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(32),
         variableArgumentType,
@@ -3806,7 +3806,7 @@ VariadicFunctionTest1::SetupRvsdg()
   auto pointerType = PointerType::Create();
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   auto lambdaHType = rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32),
         varArgType,
@@ -3898,7 +3898,7 @@ VariadicFunctionTest2::SetupRvsdg()
   auto arrayType = ArrayType::Create(structType, 1);
   auto iOStateType = iostatetype::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   auto lambdaLlvmLifetimeStartType = rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(64),
         PointerType::Create(),
