@@ -328,7 +328,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
       {
         pointeeType = nullptr;
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+      else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
       }
@@ -1235,7 +1235,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // memory
-  auto arraytype = std::dynamic_pointer_cast<const llvm::arraytype>(lmem_op->result(0));
+  auto arraytype = std::dynamic_pointer_cast<const llvm::ArrayType>(lmem_op->result(0));
   size_t depth = arraytype->nelements();
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
@@ -3977,7 +3977,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       {
         pointeeType = nullptr;
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+      else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
       }
@@ -4017,7 +4017,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   {
     append.append("_S");
     append.append(std::to_string(
-        std::dynamic_pointer_cast<const llvm::arraytype>(op->result(0))->nelements()));
+        std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));
