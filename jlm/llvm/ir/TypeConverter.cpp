@@ -206,7 +206,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
         false);
   }
 
-  if (const auto scalableVectorType = dynamic_cast<const scalablevectortype *>(&type))
+  if (const auto scalableVectorType = dynamic_cast<const ScalableVectorType *>(&type))
   {
     return ::llvm::VectorType::get(
         ConvertJlmType(scalableVectorType->type(), context),
@@ -266,7 +266,7 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::ScalableVectorTyID:
   {
     auto scalarType = ConvertLlvmType(*type.getScalarType());
-    return scalablevectortype::Create(
+    return ScalableVectorType::Create(
         std::move(scalarType),
         ::llvm::cast<::llvm::ScalableVectorType>(&type)->getMinNumElements());
   }

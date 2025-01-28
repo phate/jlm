@@ -217,8 +217,8 @@ public:
     if (is<FixedVectorType>(p->type()) && is<FixedVectorType>(t->type()))
       return createVectorSelectTac<FixedVectorType>(p, t, f);
 
-    if (is<scalablevectortype>(p->type()) && is<scalablevectortype>(t->type()))
-      return createVectorSelectTac<scalablevectortype>(p, t, f);
+    if (is<ScalableVectorType>(p->type()) && is<ScalableVectorType>(t->type()))
+      return createVectorSelectTac<ScalableVectorType>(p, t, f);
 
     throw jlm::util::error("Expected vector types as operands.");
   }
@@ -2002,7 +2002,7 @@ public:
   {}
 
   shufflevector_op(
-      const std::shared_ptr<const scalablevectortype> & v,
+      const std::shared_ptr<const ScalableVectorType> & v,
       const std::vector<int> & mask)
       : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
@@ -2029,8 +2029,8 @@ public:
     if (is<FixedVectorType>(v1->type()) && is<FixedVectorType>(v2->type()))
       return CreateShuffleVectorTac<FixedVectorType>(v1, v2, mask);
 
-    if (is<scalablevectortype>(v1->type()) && is<scalablevectortype>(v2->type()))
-      return CreateShuffleVectorTac<scalablevectortype>(v1, v2, mask);
+    if (is<ScalableVectorType>(v1->type()) && is<ScalableVectorType>(v2->type()))
+      return CreateShuffleVectorTac<ScalableVectorType>(v1, v2, mask);
 
     throw jlm::util::error("Expected vector types as operands.");
   }
