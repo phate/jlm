@@ -41,7 +41,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
   {
     // No need to provide any information beyond the debug string
   }
-  else if (auto arrayType = dynamic_cast<const arraytype *>(&type))
+  else if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(arrayType->element_type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);

@@ -41,28 +41,25 @@ public:
   Create();
 };
 
-/* array type */
-
-class arraytype final : public rvsdg::ValueType
+class ArrayType final : public rvsdg::ValueType
 {
 public:
-  virtual ~arraytype();
+  ~ArrayType() noexcept override;
 
-  inline arraytype(std::shared_ptr<const rvsdg::ValueType> type, size_t nelements)
-      : jlm::rvsdg::ValueType(),
-        nelements_(nelements),
+  ArrayType(std::shared_ptr<const ValueType> type, size_t nelements)
+      : nelements_(nelements),
         type_(std::move(type))
   {}
 
-  inline arraytype(const arraytype & other) = default;
+  ArrayType(const ArrayType & other) = default;
 
-  inline arraytype(arraytype && other) = default;
+  ArrayType(ArrayType && other) = default;
 
-  inline arraytype &
-  operator=(const arraytype &) = delete;
+  ArrayType &
+  operator=(const ArrayType &) = delete;
 
-  inline arraytype &
-  operator=(arraytype &&) = delete;
+  ArrayType &
+  operator=(ArrayType &&) = delete;
 
   virtual std::string
   debug_string() const override;
@@ -91,10 +88,10 @@ public:
     return type_;
   }
 
-  static std::shared_ptr<const arraytype>
-  Create(std::shared_ptr<const rvsdg::ValueType> type, size_t nelements)
+  static std::shared_ptr<const ArrayType>
+  Create(std::shared_ptr<const ValueType> type, size_t nelements)
   {
-    return std::make_shared<arraytype>(std::move(type), nelements);
+    return std::make_shared<ArrayType>(std::move(type), nelements);
   }
 
 private:
@@ -476,7 +473,7 @@ IsOrContains(const jlm::rvsdg::Type & type)
   if (jlm::rvsdg::is<ELEMENTYPE>(type))
     return true;
 
-  if (auto arrayType = dynamic_cast<const arraytype *>(&type))
+  if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
     return IsOrContains<ELEMENTYPE>(arrayType->element_type());
 
   if (auto structType = dynamic_cast<const StructType *>(&type))
@@ -504,7 +501,7 @@ IsOrContains(const jlm::rvsdg::Type & type)
 inline bool
 IsAggregateType(const jlm::rvsdg::Type & type)
 {
-  return jlm::rvsdg::is<arraytype>(type) || jlm::rvsdg::is<StructType>(type);
+  return jlm::rvsdg::is<ArrayType>(type) || jlm::rvsdg::is<StructType>(type);
 }
 
 }
