@@ -432,6 +432,19 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*output);
   }
 
+  else if (auto extOp = ::mlir::dyn_cast<::mlir::arith::ExtFOp>(&mlirOperation))
+  {
+    auto type = extOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    auto output = rvsdg::simple_node::create_normalized(
+        &rvsdgRegion,
+        jlm::llvm::fpext_op(inputs[0]->Type(), llvm::fptype::Create(size)),
+        {inputs[0]})[0];
+    return rvsdg::output::GetNode(*output);
+  }
+
   // Binary Integer Comparision operations
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {

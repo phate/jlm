@@ -394,6 +394,13 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::arith::NegFOp>(Builder_->getUnknownLoc(), inputs[0]);
   }
+  else if (auto fpextOp = dynamic_cast<const jlm::llvm::fpext_op *>(&(node.operation())))
+  {
+    MlirOp = Builder_->create<::mlir::arith::ExtFOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*fpextOp->result(0)),
+        inputs[0]);
+  }
 
   else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
   {
