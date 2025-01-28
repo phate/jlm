@@ -395,12 +395,12 @@ public:
   }
 };
 
-class scalablevectortype final : public vectortype
+class ScalableVectorType final : public vectortype
 {
 public:
-  ~scalablevectortype() override;
+  ~ScalableVectorType() noexcept override;
 
-  scalablevectortype(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
+  ScalableVectorType(std::shared_ptr<const ValueType> type, size_t size)
       : vectortype(std::move(type), size)
   {}
 
@@ -413,10 +413,10 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static std::shared_ptr<const scalablevectortype>
+  static std::shared_ptr<const ScalableVectorType>
   Create(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
   {
-    return std::make_shared<scalablevectortype>(std::move(type), size);
+    return std::make_shared<ScalableVectorType>(std::move(type), size);
   }
 };
 

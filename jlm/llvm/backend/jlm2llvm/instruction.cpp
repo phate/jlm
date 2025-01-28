@@ -889,9 +889,10 @@ convert_cast(
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
-  if (auto vt = dynamic_cast<const scalablevectortype *>(&operand->type()))
+  if (const auto vt = dynamic_cast<const ScalableVectorType *>(&operand->type()))
   {
-    auto type = typeConverter.ConvertJlmType(scalablevectortype(dsttype, vt->size()), llvmContext);
+    const auto type =
+        typeConverter.ConvertJlmType(ScalableVectorType(dsttype, vt->size()), llvmContext);
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
