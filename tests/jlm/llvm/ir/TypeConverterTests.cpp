@@ -172,16 +172,16 @@ LlvmFloatingPointTypeConversion()
   const auto fp128TypeLlvm = ::llvm::Type::getFP128Ty(context);
 
   // Act
-  const auto halfTypeJlm =
-      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*halfTypeLlvm));
-  const auto floatTypeJlm =
-      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*floatTypeLlvm));
-  const auto doubleTypeJlm =
-      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*doubleTypeLlvm));
-  const auto x86fp80TypeJlm =
-      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*x86fp80TypeLlvm));
-  const auto fp128TypeJlm =
-      std::dynamic_pointer_cast<const FloatingPointType>(typeConverter.ConvertLlvmType(*fp128TypeLlvm));
+  const auto halfTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*halfTypeLlvm));
+  const auto floatTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*floatTypeLlvm));
+  const auto doubleTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*doubleTypeLlvm));
+  const auto x86fp80TypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*x86fp80TypeLlvm));
+  const auto fp128TypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*fp128TypeLlvm));
 
   // Assert
   assert(halfTypeJlm && halfTypeJlm->size() == fpsize::half);

@@ -116,7 +116,9 @@ TypeConverter::ConvertArrayType(const arraytype & type, ::llvm::LLVMContext & co
 }
 
 ::llvm::Type *
-TypeConverter::ConvertFloatingPointType(const FloatingPointType & type, ::llvm::LLVMContext & context)
+TypeConverter::ConvertFloatingPointType(
+    const FloatingPointType & type,
+    ::llvm::LLVMContext & context)
 {
   switch (type.size())
   {
