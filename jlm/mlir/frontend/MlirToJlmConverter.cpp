@@ -445,6 +445,13 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*output);
   }
 
+  else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&mlirOperation))
+  {
+    auto type = truncOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::output::GetNode(*jlm::llvm::trunc_op::create(intType.getIntOrFloatBitWidth(), inputs[0]));
+  }
+
   // Binary Integer Comparision operations
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
