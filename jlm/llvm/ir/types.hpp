@@ -416,12 +416,12 @@ public:
  *
  * This type is used for state edges that sequentialize input/output operations.
  */
-class iostatetype final : public rvsdg::StateType
+class IOStateType final : public rvsdg::StateType
 {
 public:
-  ~iostatetype() override;
+  ~IOStateType() noexcept override;
 
-  constexpr iostatetype() noexcept = default;
+  constexpr IOStateType() noexcept = default;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
@@ -432,7 +432,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static std::shared_ptr<const iostatetype>
+  static std::shared_ptr<const IOStateType>
   Create();
 };
 

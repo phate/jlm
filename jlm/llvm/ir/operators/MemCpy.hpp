@@ -211,7 +211,7 @@ private:
     std::vector<std::shared_ptr<const rvsdg::Type>> types = { pointerType,
                                                               pointerType,
                                                               std::move(lengthType),
-                                                              iostatetype::Create() };
+                                                              IOStateType::Create() };
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
   }
@@ -219,7 +219,7 @@ private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, iostatetype::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, IOStateType::Create());
     types.insert(types.end(), numMemoryStates, MemoryStateType::Create());
     return types;
   }

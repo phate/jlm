@@ -77,12 +77,12 @@ LoadVolatileConversion()
 
   // Arrange
   auto pointerType = PointerType::Create();
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto bit64Type = jlm::rvsdg::bittype::Create(64);
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { PointerType::Create(), iostatetype::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(64), iostatetype::Create(), MemoryStateType::Create() });
+      { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
+      { jlm::rvsdg::bittype::Create(64), IOStateType::Create(), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 

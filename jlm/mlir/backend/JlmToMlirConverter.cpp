@@ -516,7 +516,7 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   {
     return Builder_->getIntegerType(bt->nbits());
   }
-  else if (rvsdg::is<llvm::iostatetype>(type))
+  else if (rvsdg::is<llvm::IOStateType>(type))
   {
     return Builder_->getType<::mlir::rvsdg::IOStateEdgeType>();
   }

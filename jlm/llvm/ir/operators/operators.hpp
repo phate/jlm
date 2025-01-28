@@ -2572,7 +2572,7 @@ private:
 
     std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     types.insert(types.end(), memoryStates.begin(), memoryStates.end());
-    types.emplace_back(iostatetype::Create());
+    types.emplace_back(IOStateType::Create());
 
     return types;
   }
@@ -2583,7 +2583,7 @@ private:
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
         numMemoryStates,
         MemoryStateType::Create());
-    types.emplace_back(iostatetype::Create());
+    types.emplace_back(IOStateType::Create());
 
     return types;
   }

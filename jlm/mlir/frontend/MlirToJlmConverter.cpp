@@ -489,7 +489,7 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   }
   else if (::mlir::isa<::mlir::rvsdg::IOStateEdgeType>(type))
   {
-    return std::make_unique<llvm::iostatetype>();
+    return std::make_unique<llvm::IOStateType>();
   }
   else
   {

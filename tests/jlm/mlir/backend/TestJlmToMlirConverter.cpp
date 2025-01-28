@@ -25,8 +25,8 @@ TestLambda()
     // Setup the function
     std::cout << "Function Setup" << std::endl;
     auto functionType = jlm::rvsdg::FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(
         &graph->GetRootRegion(),
@@ -144,8 +144,8 @@ TestAddOperation()
     // Setup the function
     std::cout << "Function Setup" << std::endl;
     auto functionType = jlm::rvsdg::FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(
         &graph->GetRootRegion(),
@@ -245,8 +245,8 @@ TestComZeroExt()
     // Setup the function
     std::cout << "Function Setup" << std::endl;
     auto functionType = jlm::rvsdg::FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(1), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(
         &graph->GetRootRegion(),
@@ -387,8 +387,8 @@ TestMatch()
     // Setup the function
     std::cout << "Function Setup" << std::endl;
     auto functionType = jlm::rvsdg::FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::ControlType::Create(2), iostatetype::Create(), MemoryStateType::Create() });
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::ControlType::Create(2), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = lambda::node::create(
         &graph->GetRootRegion(),

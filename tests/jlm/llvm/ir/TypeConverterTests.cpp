@@ -118,21 +118,21 @@ LlvmFunctionTypeConversion()
   auto arguments = functionType1Jlm->Arguments();
   assert(is<bittype>(arguments[0]));
   assert(is<bittype>(arguments[1]));
-  assert(is<iostatetype>(arguments[2]));
+  assert(is<IOStateType>(arguments[2]));
   assert(is<MemoryStateType>(arguments[3]));
   auto results = functionType1Jlm->Results();
-  assert(is<iostatetype>(results[0]));
+  assert(is<IOStateType>(results[0]));
   assert(is<MemoryStateType>(results[1]));
 
   assert(functionType2Jlm != nullptr);
   assert(functionType2Jlm->NumArguments() == 2);
   assert(functionType2Jlm->NumResults() == 3);
   arguments = functionType2Jlm->Arguments();
-  assert(is<iostatetype>(arguments[0]));
+  assert(is<IOStateType>(arguments[0]));
   assert(is<MemoryStateType>(arguments[1]));
   results = functionType2Jlm->Results();
   assert(is<bittype>(results[0]));
-  assert(is<iostatetype>(results[1]));
+  assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
 
   assert(functionType3Jlm != nullptr);
@@ -142,11 +142,11 @@ LlvmFunctionTypeConversion()
   assert(is<bittype>(arguments[0]));
   assert(is<bittype>(arguments[1]));
   assert(is<VariableArgumentType>(arguments[2]));
-  assert(is<iostatetype>(arguments[3]));
+  assert(is<IOStateType>(arguments[3]));
   assert(is<MemoryStateType>(arguments[4]));
   results = functionType3Jlm->Results();
   assert(is<bittype>(results[0]));
-  assert(is<iostatetype>(results[1]));
+  assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
 
   return 0;
@@ -401,7 +401,7 @@ JlmFunctionTypeConversion()
   TypeConverter typeConverter;
 
   auto bit32Type = bittype::Create(32);
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto varArgType = VariableArgumentType::Create();
   const auto functionType1Jlm = FunctionType::Create(
