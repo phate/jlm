@@ -437,6 +437,12 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*jlmUndefOutput);
   }
 
+  else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))
+  {
+    return rvsdg::output::GetNode(
+        *llvm::valist_op::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end())));
+  }
+
   // Memory operations
 
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
@@ -764,6 +770,10 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   else if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
   {
     return std::make_unique<llvm::PointerType>();
+  }
+  else if (::mlir::isa<::mlir::jlm::VarargListType>(type))
+  {
+    return std::make_unique<llvm::VariableArgumentType>();
   }
   else if (auto arrayType = ::mlir::dyn_cast<::mlir::LLVM::LLVMArrayType>(type))
   {
