@@ -280,9 +280,9 @@ LlvmArrayTypeConversion()
 
   // Act
   const auto arrayType1Jlm =
-      std::dynamic_pointer_cast<const arraytype>(typeConverter.ConvertLlvmType(*arrayType1Llvm));
+      std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType1Llvm));
   const auto arrayType2Jlm =
-      std::dynamic_pointer_cast<const arraytype>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
+      std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
 
   // Assert
   assert(arrayType1Jlm);
@@ -487,8 +487,8 @@ JlmArrayTypeConversion()
 
   const auto bit32Type = bittype::Create(32);
   const auto halfType = FloatingPointType::Create(fpsize::half);
-  const auto arrayType1Jlm = arraytype::Create(bit32Type, 4);
-  const auto arrayType2Jlm = arraytype::Create(halfType, 9);
+  const auto arrayType1Jlm = ArrayType::Create(bit32Type, 4);
+  const auto arrayType2Jlm = ArrayType::Create(halfType, 9);
 
   // Act
   const auto arrayType1Llvm = typeConverter.ConvertJlmType(*arrayType1Jlm, context);

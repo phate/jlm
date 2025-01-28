@@ -534,7 +534,7 @@ convert(
     data.push_back(c);
   }
 
-  auto at = std::dynamic_pointer_cast<const arraytype>(op.result(0));
+  auto at = std::dynamic_pointer_cast<const ArrayType>(op.result(0));
   auto type = typeConverter.ConvertArrayType(*at, llvmContext);
   return ::llvm::ConstantArray::get(type, data);
 }
