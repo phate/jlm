@@ -26,7 +26,7 @@ ConvertToCType(const rvsdg::Type * type)
   {
     return "void*";
   }
-  if (auto t = dynamic_cast<const llvm::arraytype *>(type))
+  if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {
     return ConvertToCType(&t->element_type()) + "*";
   }
