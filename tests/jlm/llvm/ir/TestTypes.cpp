@@ -62,7 +62,7 @@ TestIsOrContains()
 
   // Vector types are weird, as LLVM does not consider them to be aggregate types,
   // but they still contain other types
-  auto vectorType = fixedvectortype::Create(structType, 20);
+  const auto vectorType = FixedVectorType::Create(structType, 20);
   assert(!IsAggregateType(*vectorType));
   assert(IsOrContains<VectorType>(*vectorType));
   assert(IsOrContains<StructType>(*vectorType));
