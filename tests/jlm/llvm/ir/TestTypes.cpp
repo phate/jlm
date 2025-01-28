@@ -20,7 +20,7 @@ TestIsOrContains()
   auto valueType = jlm::tests::valuetype::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
 
   // Direct checks
   assert(IsOrContains<PointerType>(*pointerType));
@@ -37,8 +37,8 @@ TestIsOrContains()
 
   // Function types are not aggregate types
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() },
-      { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() });
+      { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },
+      { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() });
   assert(!IsAggregateType(*functionType));
   assert(IsOrContains<jlm::rvsdg::FunctionType>(*functionType));
   assert(!IsOrContains<PointerType>(*functionType));

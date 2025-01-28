@@ -103,7 +103,7 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Red);
-    if (rvsdg::is<iostatetype>(rvsdgInput.type()))
+    if (rvsdg::is<IOStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Green);
   }
 }

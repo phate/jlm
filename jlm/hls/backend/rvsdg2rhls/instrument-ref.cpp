@@ -81,16 +81,16 @@ instrument_ref(llvm::RvsdgModule & rm)
   }
   // The function should always have an IO state if it has a memory state
   auto ioStateArgumentIndex = numArguments - 2;
-  JLM_ASSERT(rvsdg::is<llvm::iostatetype>(functionType.ArgumentType(ioStateArgumentIndex)));
+  JLM_ASSERT(rvsdg::is<llvm::IOStateType>(functionType.ArgumentType(ioStateArgumentIndex)));
 
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
   auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create(),
+        llvm::IOStateType::Create(),
         llvm::MemoryStateType::Create() },
-      { llvm::iostatetype::Create(), llvm::MemoryStateType::Create() });
+      { llvm::IOStateType::Create(), llvm::MemoryStateType::Create() });
   auto & reference_load = llvm::GraphImport::Create(
       graph,
       loadFunctionType,
@@ -102,9 +102,9 @@ instrument_ref(llvm::RvsdgModule & rm)
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create(),
+        llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
-      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+      { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
   auto & reference_store = llvm::GraphImport::Create(
       graph,
       storeFunctionType,
@@ -115,9 +115,9 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create(),
+        llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
-      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+      { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
   auto & reference_alloca = llvm::GraphImport::Create(
       graph,
       allocaFunctionType,

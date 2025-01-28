@@ -245,34 +245,31 @@ scalablevectortype::debug_string() const
   return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
 }
 
-/* I/O state type */
-
-iostatetype::~iostatetype()
-{}
+IOStateType::~IOStateType() noexcept = default;
 
 bool
-iostatetype::operator==(const jlm::rvsdg::Type & other) const noexcept
+IOStateType::operator==(const Type & other) const noexcept
 {
-  return jlm::rvsdg::is<iostatetype>(other);
+  return jlm::rvsdg::is<IOStateType>(other);
 }
 
 std::size_t
-iostatetype::ComputeHash() const noexcept
+IOStateType::ComputeHash() const noexcept
 {
-  return typeid(iostatetype).hash_code();
+  return typeid(IOStateType).hash_code();
 }
 
 std::string
-iostatetype::debug_string() const
+IOStateType::debug_string() const
 {
   return "iostate";
 }
 
-std::shared_ptr<const iostatetype>
-iostatetype::Create()
+std::shared_ptr<const IOStateType>
+IOStateType::Create()
 {
-  static const iostatetype instance;
-  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), &instance);
+  static const IOStateType instance;
+  return std::shared_ptr<const IOStateType>(std::shared_ptr<void>(), &instance);
 }
 
 /**

@@ -56,7 +56,7 @@ TypeConverter::ConvertFunctionType(
       continue;
     }
 
-    if (rvsdg::is<iostatetype>(argumentType))
+    if (rvsdg::is<IOStateType>(argumentType))
       continue;
     if (rvsdg::is<MemoryStateType>(argumentType))
       continue;
@@ -82,14 +82,14 @@ TypeConverter::ConvertFunctionType(const ::llvm::FunctionType & functionType)
     argumentTypes.push_back(ConvertLlvmType(*functionType.getParamType(n)));
   if (functionType.isVarArg())
     argumentTypes.push_back(create_varargtype());
-  argumentTypes.push_back(iostatetype::Create());
+  argumentTypes.push_back(IOStateType::Create());
   argumentTypes.push_back(MemoryStateType::Create());
 
   // Results
   std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
   if (functionType.getReturnType()->getTypeID() != ::llvm::Type::VoidTyID)
     resultTypes.push_back(ConvertLlvmType(*functionType.getReturnType()));
-  resultTypes.push_back(iostatetype::Create());
+  resultTypes.push_back(IOStateType::Create());
   resultTypes.push_back(MemoryStateType::Create());
 
   return rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
