@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
-#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp>
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>

@@ -18,8 +18,9 @@ namespace jlm::hls
 llvm::lambda::node *
 change_function_name(llvm::lambda::node * ln, const std::string & name)
 {
+  const auto & op = ln->GetOperation();
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->Type(), name, ln->linkage(), ln->attributes());
+      llvm::lambda::node::create(ln->region(), op.Type(), name, op.linkage(), op.attributes());
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -29,14 +30,13 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
     auto newcv = lambda->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newcv.inner);
   }
-
   /* collect function arguments */
   auto args = ln->GetFunctionArguments();
-  auto new_args = lambda->GetFunctionArguments();
-  for (size_t n = 0; n < args.size(); n++)
+  auto newArgs = lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() == newArgs.size());
+  for (std::size_t n = 0; n < args.size(); ++n)
   {
-    lambda->SetArgumentAttributes(*new_args[n], ln->GetArgumentAttributes(*args[n]));
-    subregionmap.insert(args[n], new_args[n]);
+    subregionmap.insert(args[n], newArgs[n]);
   }
 
   /* copy subregion */
@@ -65,7 +65,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   auto newLambda = change_function_name(lambda, "instrumented_ref");
 
-  auto functionType = newLambda->type();
+  auto functionType = newLambda->GetOperation().type();
   auto numArguments = functionType.NumArguments();
   if (numArguments == 0)
   {
@@ -81,16 +81,16 @@ instrument_ref(llvm::RvsdgModule & rm)
   }
   // The function should always have an IO state if it has a memory state
   auto ioStateArgumentIndex = numArguments - 2;
-  JLM_ASSERT(rvsdg::is<llvm::iostatetype>(functionType.ArgumentType(ioStateArgumentIndex)));
+  JLM_ASSERT(rvsdg::is<llvm::IOStateType>(functionType.ArgumentType(ioStateArgumentIndex)));
 
   // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
   auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create(),
+        llvm::IOStateType::Create(),
         llvm::MemoryStateType::Create() },
-      { llvm::iostatetype::Create(), llvm::MemoryStateType::Create() });
+      { llvm::IOStateType::Create(), llvm::MemoryStateType::Create() });
   auto & reference_load = llvm::GraphImport::Create(
       graph,
       loadFunctionType,
@@ -102,9 +102,9 @@ instrument_ref(llvm::RvsdgModule & rm)
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
         jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create(),
+        llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
-      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+      { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
   auto & reference_store = llvm::GraphImport::Create(
       graph,
       storeFunctionType,
@@ -115,9 +115,9 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
-        llvm::iostatetype::Create(),
+        llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
-      { llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+      { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
   auto & reference_alloca = llvm::GraphImport::Create(
       graph,
       allocaFunctionType,

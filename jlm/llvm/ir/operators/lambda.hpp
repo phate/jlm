@@ -21,8 +21,6 @@
 namespace jlm::llvm
 {
 
-class CallNode;
-
 namespace lambda
 {
 
@@ -39,12 +37,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
-      jlm::llvm::attributeset attributes)
-      : type_(std::move(type)),
-        name_(std::move(name)),
-        linkage_(linkage),
-        attributes_(std::move(attributes))
-  {}
+      jlm::llvm::attributeset attributes);
 
   operation(const operation & other) = default;
 
@@ -95,11 +88,18 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] const jlm::llvm::attributeset &
+  GetArgumentAttributes(std::size_t index) const noexcept;
+
+  void
+  SetArgumentAttributes(std::size_t index, const jlm::llvm::attributeset & attributes);
+
 private:
   std::shared_ptr<const jlm::rvsdg::FunctionType> type_;
   std::string name_;
   jlm::llvm::linkage linkage_;
   jlm::llvm::attributeset attributes_;
+  std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
 };
 
 /** \brief Lambda node
@@ -168,50 +168,14 @@ public:
   [[nodiscard]] std::vector<rvsdg::input *>
   GetFunctionResults() const;
 
-  [[nodiscard]] const jlm::llvm::attributeset &
-  GetArgumentAttributes(const rvsdg::output & argument) const noexcept;
-
-  void
-  SetArgumentAttributes(rvsdg::output & argument, const jlm::llvm::attributeset & attributes);
-
   [[nodiscard]] rvsdg::Region *
   subregion() const noexcept
   {
     return StructuralNode::subregion(0);
   }
 
-  [[nodiscard]] const lambda::operation &
+  [[nodiscard]] lambda::operation &
   GetOperation() const noexcept override;
-
-  [[nodiscard]] const jlm::rvsdg::FunctionType &
-  type() const noexcept
-  {
-    return GetOperation().type();
-  }
-
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::FunctionType> &
-  Type() const noexcept
-  {
-    return GetOperation().Type();
-  }
-
-  [[nodiscard]] const std::string &
-  name() const noexcept
-  {
-    return GetOperation().name();
-  }
-
-  [[nodiscard]] const jlm::llvm::linkage &
-  linkage() const noexcept
-  {
-    return GetOperation().linkage();
-  }
-
-  [[nodiscard]] const jlm::llvm::attributeset &
-  attributes() const noexcept
-  {
-    return GetOperation().attributes();
-  }
 
   /**
    * \brief Adds a context/free variable to the lambda node.
@@ -320,42 +284,6 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
-   * @return The memory state argument of the lambda subregion.
-   */
-  [[nodiscard]] rvsdg::output &
-  GetMemoryStateRegionArgument() const noexcept;
-
-  /**
-   * @return The memory state result of the lambda subregion.
-   */
-  [[nodiscard]] rvsdg::input &
-  GetMemoryStateRegionResult() const noexcept;
-
-  /**
-   *
-   * @param lambdaNode The lambda node for which to retrieve the
-   * LambdaEntryMemoryStateSplitOperation node.
-   * @return The LambdaEntryMemoryStateSplitOperation node connected to the memory state input if
-   * present, otherwise nullptr.
-   *
-   * @see GetMemoryStateExitMerge()
-   */
-  static rvsdg::SimpleNode *
-  GetMemoryStateEntrySplit(const lambda::node & lambdaNode) noexcept;
-
-  /**
-   *
-   * @param lambdaNode The lambda node for which to retrieve the
-   * LambdaExitMemoryStateMergeOperation node.
-   * @return The LambdaExitMemoryStateMergeOperation node connected to the memory state output if
-   * present, otherwise nullptr.
-   *
-   * @see GetMemoryStateEntrySplit()
-   */
-  [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateExitMerge(const lambda::node & lambdaNode) noexcept;
-
-  /**
    * Creates a lambda node in the region \p parent with the function type \p type and name \p name.
    * After the invocation of \ref create(), the lambda node only features the function arguments.
    * Free variables can be added to the function node using \ref AddContextVar(). The generation of
@@ -401,7 +329,6 @@ public:
   finalize(const std::vector<jlm::rvsdg::output *> & results);
 
 private:
-  std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
   std::unique_ptr<lambda::operation> Operation_;
 };
 

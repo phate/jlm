@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
@@ -163,7 +164,7 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<iostatetype>(loopVar.input->type()))
+    if (rvsdg::is<IOStateType>(loopVar.input->type()))
       continue;
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
@@ -207,8 +208,8 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
 
     if (shouldHandleMemoryStateOperations)
     {
-      auto lambdaEntrySplit = lambda::node::GetMemoryStateEntrySplit(lambdaNode);
-      auto lambdaExitMerge = lambda::node::GetMemoryStateExitMerge(lambdaNode);
+      auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
+      auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
       auto callEntryMerge = CallNode::GetMemoryStateEntryMerge(callNode);
 
       // The callExitSplit is present. We therefore expect the other nodes to be present as well.

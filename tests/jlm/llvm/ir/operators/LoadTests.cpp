@@ -611,7 +611,7 @@ NodeCopy()
 
   // Arrange
   auto pointerType = PointerType::Create();
-  auto iOStateType = iostatetype::Create();
+  auto iOStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 

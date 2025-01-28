@@ -415,11 +415,11 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
       Builder_->getStringAttr("sym_name"),
-      Builder_->getStringAttr(lambdaNode.name()));
+      Builder_->getStringAttr(lambdaNode.GetOperation().name()));
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(lambdaNode.linkage())));
+      Builder_->getStringAttr(llvm::ToString(lambdaNode.GetOperation().linkage())));
   attributes.push_back(linkage);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
@@ -516,7 +516,7 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   {
     return Builder_->getIntegerType(bt->nbits());
   }
-  else if (rvsdg::is<llvm::iostatetype>(type))
+  else if (rvsdg::is<llvm::IOStateType>(type))
   {
     return Builder_->getType<::mlir::rvsdg::IOStateEdgeType>();
   }

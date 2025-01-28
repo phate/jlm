@@ -12,6 +12,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
@@ -87,7 +88,7 @@ TestTheta()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
   auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -142,7 +143,7 @@ TestCall()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
@@ -237,7 +238,7 @@ TestCallWithMemoryStateNodes()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
@@ -332,8 +333,8 @@ TestCallWithMemoryStateNodes()
   assert(lambdaNode.GetFunctionResults()[0]->origin() == lambdaNode.GetFunctionArguments()[0]);
   assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[1]);
 
-  auto lambdaEntrySplit = lambda::node::GetMemoryStateEntrySplit(lambdaNode);
-  auto lambdaExitMerge = lambda::node::GetMemoryStateExitMerge(lambdaNode);
+  auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
+  auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
 
   assert(lambdaEntrySplit->noutputs() == 2);
   assert(lambdaExitMerge->ninputs() == 2);

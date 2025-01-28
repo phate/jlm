@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTEROBJECTSET_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTEROBJECTSET_HPP
 
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>

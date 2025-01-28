@@ -9,6 +9,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
@@ -2160,7 +2161,7 @@ ValidateFreeNullTestSteensgaardAgnostic(const jlm::tests::FreeNullTest & test)
   using namespace jlm::rvsdg;
 
   auto lambdaExitMerge =
-      jlm::rvsdg::output::GetNode(*test.LambdaMain().GetMemoryStateRegionResult().origin());
+      jlm::rvsdg::output::GetNode(*GetMemoryStateRegionResult(test.LambdaMain()).origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto free = jlm::rvsdg::output::GetNode(*test.LambdaMain().GetFunctionResults()[0]->origin());

@@ -37,7 +37,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
 
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
-      || rvsdg::is<PointerType>(type) || rvsdg::is<fptype>(type)
+      || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
       || rvsdg::is<VariableArgumentType>(type))
   {
     // No need to provide any information beyond the debug string
@@ -56,7 +56,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
       typeGraph.CreateDirectedEdge(elementTypeNode, node);
     }
   }
-  else if (auto vectorType = dynamic_cast<const vectortype *>(&type))
+  else if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(vectorType->type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
@@ -103,7 +103,7 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Red);
-    if (rvsdg::is<iostatetype>(rvsdgInput.type()))
+    if (rvsdg::is<IOStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Green);
   }
 }

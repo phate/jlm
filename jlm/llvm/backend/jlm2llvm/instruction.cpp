@@ -206,7 +206,7 @@ convert(
   {
     auto argument = args[n];
 
-    if (rvsdg::is<iostatetype>(argument->type()))
+    if (rvsdg::is<IOStateType>(argument->type()))
       continue;
     if (rvsdg::is<MemoryStateType>(argument->type()))
       continue;
@@ -288,7 +288,7 @@ convert_phi(
   auto & llvmContext = ctx.llvm_module().getContext();
   auto & typeConverter = ctx.GetTypeConverter();
 
-  if (rvsdg::is<iostatetype>(phi.type()))
+  if (rvsdg::is<IOStateType>(phi.type()))
     return nullptr;
   if (rvsdg::is<MemoryStateType>(phi.type()))
     return nullptr;
@@ -490,7 +490,7 @@ convert(
     }
   }
 
-  if (auto ft = dynamic_cast<const fptype *>(&op.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()))
   {
     if (ft->size() == fpsize::half)
     {
@@ -769,7 +769,7 @@ convert_constantdatavector(
     }
   }
 
-  if (auto ft = dynamic_cast<const fptype *>(&cop.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&cop.type()))
   {
     if (ft->size() == fpsize::half)
     {
