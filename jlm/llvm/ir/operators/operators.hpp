@@ -1439,7 +1439,7 @@ public:
   virtual ~valist_op();
 
   explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
-      : SimpleOperation(std::move(types), { varargtype::Create() })
+      : SimpleOperation(std::move(types), { VariableArgumentType::Create() })
   {}
 
   valist_op(const valist_op &) = default;

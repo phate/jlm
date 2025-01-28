@@ -141,14 +141,12 @@ private:
   fpsize size_;
 };
 
-/* vararg type */
-
-class varargtype final : public rvsdg::StateType
+class VariableArgumentType final : public rvsdg::StateType
 {
 public:
-  virtual ~varargtype();
+  ~VariableArgumentType() noexcept override;
 
-  constexpr varargtype() = default;
+  constexpr VariableArgumentType() = default;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
@@ -159,20 +157,20 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static std::shared_ptr<const varargtype>
+  static std::shared_ptr<const VariableArgumentType>
   Create();
 };
 
 static inline bool
 is_varargtype(const jlm::rvsdg::Type & type)
 {
-  return dynamic_cast<const varargtype *>(&type) != nullptr;
+  return dynamic_cast<const VariableArgumentType *>(&type) != nullptr;
 }
 
 static inline std::unique_ptr<jlm::rvsdg::Type>
 create_varargtype()
 {
-  return std::unique_ptr<jlm::rvsdg::Type>(new varargtype());
+  return std::unique_ptr<rvsdg::Type>(new VariableArgumentType());
 }
 
 /** \brief StructType class
