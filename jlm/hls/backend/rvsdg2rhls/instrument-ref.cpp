@@ -18,8 +18,9 @@ namespace jlm::hls
 llvm::lambda::node *
 change_function_name(llvm::lambda::node * ln, const std::string & name)
 {
+  const auto & op = ln->GetOperation();
   auto lambda =
-      llvm::lambda::node::create(ln->region(), ln->Type(), name, ln->linkage(), ln->attributes());
+      llvm::lambda::node::create(ln->region(), op.Type(), name, op.linkage(), op.attributes());
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -29,14 +30,13 @@ change_function_name(llvm::lambda::node * ln, const std::string & name)
     auto newcv = lambda->AddContextVar(*origin);
     subregionmap.insert(cv.inner, newcv.inner);
   }
-
   /* collect function arguments */
   auto args = ln->GetFunctionArguments();
-  auto new_args = lambda->GetFunctionArguments();
-  for (size_t n = 0; n < args.size(); n++)
+  auto newArgs = lambda->GetFunctionArguments();
+  JLM_ASSERT(args.size() == newArgs.size());
+  for (std::size_t n = 0; n < args.size(); ++n)
   {
-    lambda->SetArgumentAttributes(*new_args[n], ln->GetArgumentAttributes(*args[n]));
-    subregionmap.insert(args[n], new_args[n]);
+    subregionmap.insert(args[n], newArgs[n]);
   }
 
   /* copy subregion */
@@ -65,7 +65,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 
   auto newLambda = change_function_name(lambda, "instrumented_ref");
 
-  auto functionType = newLambda->type();
+  auto functionType = newLambda->GetOperation().type();
   auto numArguments = functionType.NumArguments();
   if (numArguments == 0)
   {

@@ -393,7 +393,7 @@ Bits2PtrTest::SetupRvsdg()
 
     auto & call = CallNode::CreateNode(
         cvbits2ptr,
-        rvsdg::AssertGetOwnerNode<lambda::node>(*b2p).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(*b2p).GetOperation().Type(),
         { valueArgument, iOStateArgument, memoryStateArgument });
 
     lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
@@ -570,10 +570,13 @@ CallTest1::SetupRvsdg()
     auto sty = StoreNonVolatileNode::Create(y[0], six, { stx[0] }, 4);
     auto stz = StoreNonVolatileNode::Create(z[0], seven, { sty[0] }, 4);
 
-    auto & callF = CallNode::CreateNode(cvf, f->Type(), { x[0], y[0], iOStateArgument, stz[0] });
+    auto & callF = CallNode::CreateNode(
+        cvf,
+        f->GetOperation().Type(),
+        { x[0], y[0], iOStateArgument, stz[0] });
     auto & callG = CallNode::CreateNode(
         cvg,
-        g->Type(),
+        g->GetOperation().Type(),
         { z[0], z[0], callF.GetIoStateOutput(), callF.GetMemoryStateOutput() });
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callF.Result(0), callG.Result(0));
@@ -700,20 +703,20 @@ CallTest2::SetupRvsdg()
 
     auto & create1 = CallNode::CreateNode(
         create_cv,
-        lambdaCreate->Type(),
+        lambdaCreate->GetOperation().Type(),
         { six, iOStateArgument, memoryStateArgument });
     auto & create2 = CallNode::CreateNode(
         create_cv,
-        lambdaCreate->Type(),
+        lambdaCreate->GetOperation().Type(),
         { seven, create1.GetIoStateOutput(), create1.GetMemoryStateOutput() });
 
     auto & destroy1 = CallNode::CreateNode(
         destroy_cv,
-        lambdaDestroy->Type(),
+        lambdaDestroy->GetOperation().Type(),
         { create1.Result(0), create2.GetIoStateOutput(), create2.GetMemoryStateOutput() });
     auto & destroy2 = CallNode::CreateNode(
         destroy_cv,
-        lambdaDestroy->Type(),
+        lambdaDestroy->GetOperation().Type(),
         { create2.Result(0), destroy1.GetIoStateOutput(), destroy1.GetMemoryStateOutput() });
 
     lambda->finalize({ destroy2.GetIoStateOutput(), destroy2.GetMemoryStateOutput() });
@@ -827,11 +830,11 @@ IndirectCallTest1::SetupRvsdg()
 
     auto & call_four = CallNode::CreateNode(
         fctindcall_cv,
-        rvsdg::AssertGetOwnerNode<lambda::node>(*fctindcall).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(*fctindcall).GetOperation().Type(),
         { fctfour_cv, iOStateArgument, memoryStateArgument });
     auto & call_three = CallNode::CreateNode(
         fctindcall_cv,
-        rvsdg::AssertGetOwnerNode<lambda::node>(*fctindcall).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(*fctindcall).GetOperation().Type(),
         { fctthree_cv, call_four.GetIoStateOutput(), call_four.GetMemoryStateOutput() });
 
     auto add = jlm::rvsdg::bitadd_op::create(32, call_four.Result(0), call_three.Result(0));
@@ -1030,12 +1033,12 @@ IndirectCallTest2::SetupRvsdg()
 
     auto & callX = CallNode::CreateNode(
         functionXCv,
-        rvsdg::AssertGetOwnerNode<lambda::node>(functionX).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(functionX).GetOperation().Type(),
         { pxAlloca[0], iOStateArgument, pyMerge });
 
     auto & callY = CallNode::CreateNode(
         functionYCv,
-        rvsdg::AssertGetOwnerNode<lambda::node>(functionY).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(functionY).GetOperation().Type(),
         { pyAlloca[0], callX.GetIoStateOutput(), callX.GetMemoryStateOutput() });
 
     auto loadG1 = LoadNonVolatileNode::Create(
@@ -1086,7 +1089,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto & callX = CallNode::CreateNode(
         functionXCv,
-        rvsdg::AssertGetOwnerNode<lambda::node>(functionX).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(functionX).GetOperation().Type(),
         { pzAlloca[0], iOStateArgument, pzMerge });
 
     auto lambdaOutput = lambda->finalize(callX.Results());
@@ -1540,7 +1543,7 @@ GammaTest2::SetupRvsdg()
 
     auto & call = CallNode::CreateNode(
         lambdaFArgument,
-        rvsdg::AssertGetOwnerNode<lambda::node>(lambdaF).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(lambdaF).GetOperation().Type(),
         { predicate, allocaXResults[0], allocaYResults[0], iOStateArgument, storeYResults[0] });
 
     lambda->finalize(call.Results());
@@ -1701,7 +1704,7 @@ DeltaTest1::SetupRvsdg()
     auto st = StoreNonVolatileNode::Create(cvf, five, { memoryStateArgument }, 4);
     auto & callG = CallNode::CreateNode(
         cvg,
-        rvsdg::AssertGetOwnerNode<lambda::node>(*g).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(*g).GetOperation().Type(),
         { cvf, iOStateArgument, st[0] });
 
     auto lambdaOutput = lambda->finalize(callG.Results());
@@ -1814,7 +1817,7 @@ DeltaTest2::SetupRvsdg()
     auto st = StoreNonVolatileNode::Create(cvd1, b5, { memoryStateArgument }, 4);
     auto & call = CallNode::CreateNode(
         cvf1,
-        rvsdg::AssertGetOwnerNode<lambda::node>(*f1).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(*f1).GetOperation().Type(),
         { iOStateArgument, st[0] });
     st = StoreNonVolatileNode::Create(cvd2, b42, { call.GetMemoryStateOutput() }, 4);
 
@@ -1928,7 +1931,7 @@ DeltaTest3::SetupRvsdg()
 
     auto & call = CallNode::CreateNode(
         lambdaFArgument,
-        rvsdg::AssertGetOwnerNode<lambda::node>(lambdaF).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(lambdaF).GetOperation().Type(),
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
@@ -2012,7 +2015,7 @@ ImportTest::SetupRvsdg()
     auto st = StoreNonVolatileNode::Create(cvd1, b2, { memoryStateArgument }, 4);
     auto & call = CallNode::CreateNode(
         cvf1,
-        rvsdg::AssertGetOwnerNode<lambda::node>(*f1).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(*f1).GetOperation().Type(),
         { iOStateArgument, st[0] });
     st = StoreNonVolatileNode::Create(cvd2, b21, { call.GetMemoryStateOutput() }, 4);
 
@@ -3185,7 +3188,7 @@ MemcpyTest::SetupRvsdg()
 
     auto & call = CallNode::CreateNode(
         functionFArgument,
-        rvsdg::AssertGetOwnerNode<lambda::node>(lambdaF).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(lambdaF).GetOperation().Type(),
         { iOStateArgument, memcpyResults[0] });
 
     auto lambdaOutput = lambda->finalize(call.Results());
@@ -3293,7 +3296,7 @@ MemcpyTest2::SetupRvsdg()
 
     auto & call = CallNode::CreateNode(
         functionFArgument,
-        rvsdg::AssertGetOwnerNode<lambda::node>(functionF).Type(),
+        rvsdg::AssertGetOwnerNode<lambda::node>(functionF).GetOperation().Type(),
         { ldS1[0], ldS2[0], iOStateArgument, ldS2[1] });
 
     auto lambdaOutput = lambda->finalize(call.Results());
