@@ -136,9 +136,7 @@ fptype::Create(fpsize size)
   }
 }
 
-/* vararg type */
-
-VariableArgumentType::~VariableArgumentType() = default;
+VariableArgumentType::~VariableArgumentType() noexcept = default;
 
 bool
 VariableArgumentType::operator==(const Type & other) const noexcept
