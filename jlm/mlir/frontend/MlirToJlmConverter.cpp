@@ -437,6 +437,13 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*jlmUndefOutput);
   }
 
+  else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
+  {
+    auto type = ZeroOp.getType();
+    return rvsdg::output::GetNode(
+        *llvm::ConstantAggregateZero::Create(rvsdgRegion, ConvertType(type)));
+  }
+
   else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))
   {
     return rvsdg::output::GetNode(
