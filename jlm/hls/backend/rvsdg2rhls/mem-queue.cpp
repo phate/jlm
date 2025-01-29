@@ -544,11 +544,9 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   // Check if there exists a memory state splitter
   if (state_arg->nusers() == 1)
   {
-    auto state_user = *state_arg->begin();
-    auto entry_input = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(state_user);
-    auto entry_node = entry_input->node();
+    auto entry_node = jlm::rvsdg::input::GetNode(**state_arg->begin());
     if (dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
-        &entry_node->GetOperation()))
+            &jlm::rvsdg::input::GetNode(**state_arg->begin())->GetOperation()))
     {
       for (size_t i = 0; i < entry_node->noutputs(); ++i)
       {
@@ -561,18 +559,18 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   }
   // There is no memory state splitter, so process the single state edge in the graph
   process_loops(state_arg);
-/*
-  JLM_ASSERT(state_arg->nusers() == 1);
-  auto state_user = *state_arg->begin();
-  auto entry_input = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(state_user);
-  auto entry_node = entry_input->node();
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
-      &entry_node->GetOperation()));
+  /*
+    JLM_ASSERT(state_arg->nusers() == 1);
+    auto state_user = *state_arg->begin();
+    auto entry_input = jlm::util::AssertedCast<jlm::rvsdg::simple_input>(state_user);
+    auto entry_node = entry_input->node();
+    JLM_ASSERT(dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
+        &entry_node->GetOperation()));
 
-  for (size_t i = 0; i < entry_node->noutputs(); ++i)
-  {
-    jlm::rvsdg::output * state_edge = entry_node->output(i);
-    process_loops(state_edge);
-  }
-*/
+    for (size_t i = 0; i < entry_node->noutputs(); ++i)
+    {
+      jlm::rvsdg::output * state_edge = entry_node->output(i);
+      process_loops(state_edge);
+    }
+  */
 }
