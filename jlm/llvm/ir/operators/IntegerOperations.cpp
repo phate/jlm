@@ -32,6 +32,55 @@ IntegerConstantOperation::operator==(const Operation & other) const noexcept
   return constant && constant->Representation() == Representation();
 }
 
+IntegerToControlOperation::~IntegerToControlOperation() noexcept = default;
+
+IntegerToControlOperation::IntegerToControlOperation(
+    const size_t numBits,
+    const std::unordered_map<uint64_t, uint64_t> & mapping,
+    const uint64_t defaultAlternative,
+    const size_t numAlternatives)
+    : UnaryOperation(IntegerType::Create(numBits), rvsdg::ControlType::Create(numAlternatives)),
+      DefaultAlternative_(defaultAlternative),
+      Mapping_(mapping)
+{}
+
+bool
+IntegerToControlOperation::operator==(const Operation & other) const noexcept
+{
+  const auto op = dynamic_cast<const IntegerToControlOperation *>(&other);
+  return op && op->GetDefaultAlternative() == GetDefaultAlternative() && op->Mapping_ == Mapping_
+      && op->NumBits() == NumBits() && op->NumAlternatives() == NumAlternatives();
+}
+
+rvsdg::unop_reduction_path_t
+IntegerToControlOperation::can_reduce_operand(const rvsdg::output *) const noexcept
+{
+  return rvsdg::unop_reduction_none;
+}
+
+rvsdg::output *
+IntegerToControlOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+{
+  return nullptr;
+}
+
+std::string
+IntegerToControlOperation::debug_string() const
+{
+  std::string str("[");
+  for (const auto & [bitInput, controlOutput] : Mapping_)
+    str += util::strfmt(bitInput, " -> ", controlOutput, ", ");
+  str += util::strfmt(GetDefaultAlternative(), "]");
+
+  return "MATCH" + str;
+}
+
+std::unique_ptr<rvsdg::Operation>
+IntegerToControlOperation::copy() const
+{
+  return std::make_unique<IntegerToControlOperation>(*this);
+}
+
 IntegerNegOperation::~IntegerNegOperation() noexcept = default;
 
 bool

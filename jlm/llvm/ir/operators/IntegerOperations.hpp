@@ -9,8 +9,12 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
+#include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/nullary.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/unary.hpp>
+
+#include <unordered_map>
 
 namespace jlm::llvm
 {
@@ -59,6 +63,101 @@ public:
 
 private:
   IntegerValueRepresentation Representation_;
+};
+
+// FIXME: add documentation
+class IntegerToControlOperation final : public rvsdg::UnaryOperation
+{
+  using ConstIterator = std::unordered_map<uint64_t, uint64_t>::const_iterator;
+  using IteratorConstRange = util::IteratorRange<ConstIterator>;
+
+public:
+  ~IntegerToControlOperation() noexcept override;
+
+  IntegerToControlOperation(
+      size_t numBits,
+      const std::unordered_map<uint64_t, uint64_t> & mapping,
+      uint64_t defaultAlternative,
+      size_t numAlternatives);
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  rvsdg::unop_reduction_path_t
+  can_reduce_operand(const rvsdg::output * arg) const noexcept override;
+
+  rvsdg::output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * arg) const override;
+
+  [[nodiscard]] uint64_t
+  NumAlternatives() const noexcept
+  {
+    return std::static_pointer_cast<const rvsdg::ControlType>(result(0))->nalternatives();
+  }
+
+  uint64_t
+  GetAlternative(uint64_t value) const noexcept
+  {
+    if (const auto it = Mapping_.find(value); it != Mapping_.end())
+      return it->second;
+
+    return DefaultAlternative_;
+  }
+
+  uint64_t
+  GetDefaultAlternative() const noexcept
+  {
+    return DefaultAlternative_;
+  }
+
+  [[nodiscard]] size_t
+  NumBits() const noexcept
+  {
+    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
+  }
+
+  [[nodiscard]] IteratorConstRange
+  Mappings()
+  {
+    return { Mapping_.begin(), Mapping_.end() };
+  }
+
+  static rvsdg::Node &
+  Create(
+      rvsdg::output & predicate,
+      const std::unordered_map<uint64_t, uint64_t> & mapping,
+      const uint64_t defaultAlternative,
+      const size_t numAlternatives)
+  {
+    const auto bitType = CheckAndExtractIntegerType(predicate.type());
+    return rvsdg::CreateOpNode<IntegerToControlOperation>(
+        { &predicate },
+        bitType.NumBits(),
+        mapping,
+        defaultAlternative,
+        numAlternatives);
+  }
+
+private:
+  static const IntegerType &
+  CheckAndExtractIntegerType(const rvsdg::Type & type)
+  {
+    if (const auto integerType = dynamic_cast<const IntegerType *>(&type))
+    {
+      return *integerType;
+    }
+
+    throw util::type_error("bittype", type.debug_string());
+  }
+
+  uint64_t DefaultAlternative_;
+  std::unordered_map<uint64_t, uint64_t> Mapping_;
 };
 
 // FIXME: add documentation
