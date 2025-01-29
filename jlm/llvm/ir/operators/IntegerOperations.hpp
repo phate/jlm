@@ -30,7 +30,7 @@ public:
   ~IntegerConstantOperation() override;
 
   explicit IntegerConstantOperation(IntegerValueRepresentation representation)
-      : NullaryOperation(IntegerType::Create(representation.nbits())),
+      : NullaryOperation(rvsdg::bittype::Create(representation.nbits())),
         Representation_(std::move(representation))
   {}
 
@@ -167,7 +167,7 @@ public:
   ~IntegerNegOperation() noexcept override;
 
   explicit IntegerNegOperation(const std::size_t numBits)
-      : UnaryOperation(IntegerType::Create(numBits), IntegerType ::Create(numBits))
+      : UnaryOperation(rvsdg::bittype::Create(numBits), IntegerType ::Create(numBits))
   {}
 
   bool
@@ -193,7 +193,7 @@ public:
   ~IntegerNotOperation() noexcept override;
 
   explicit IntegerNotOperation(const std::size_t numBits)
-      : UnaryOperation(IntegerType::Create(numBits), IntegerType ::Create(numBits))
+      : UnaryOperation(rvsdg::bittype::Create(numBits), IntegerType ::Create(numBits))
   {}
 
   bool
@@ -220,8 +220,8 @@ public:
 
   explicit IntegerAddOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -253,8 +253,8 @@ public:
 
   explicit IntegerSubOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -286,8 +286,8 @@ public:
 
   explicit IntegerMulOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -319,8 +319,8 @@ public:
 
   explicit IntegerSMulHOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -352,8 +352,8 @@ public:
 
   explicit IntegerUMulHOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -385,8 +385,8 @@ public:
 
   explicit IntegerSDivOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -418,8 +418,8 @@ public:
 
   explicit IntegerUDivOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -451,8 +451,8 @@ public:
 
   explicit IntegerSModOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -484,8 +484,8 @@ public:
 
   explicit IntegerUModOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -517,8 +517,8 @@ public:
 
   explicit IntegerAShrOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -550,8 +550,8 @@ public:
 
   explicit IntegerShlOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -583,8 +583,8 @@ public:
 
   explicit IntegerShrOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -616,8 +616,8 @@ public:
 
   explicit IntegerAndOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -649,8 +649,8 @@ public:
 
   explicit IntegerOrOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -682,8 +682,8 @@ public:
 
   explicit IntegerXorOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(numBits))
   {}
 
   bool
@@ -715,8 +715,8 @@ public:
 
   explicit IntegerEqOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -748,8 +748,8 @@ public:
 
   explicit IntegerNeOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -781,8 +781,8 @@ public:
 
   explicit IntegerSgeOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -814,8 +814,8 @@ public:
 
   explicit IntegerSgtOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -847,8 +847,8 @@ public:
 
   explicit IntegerSleOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -880,8 +880,8 @@ public:
 
   explicit IntegerSltOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -913,8 +913,8 @@ public:
 
   explicit IntegerUgeOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -946,8 +946,8 @@ public:
 
   explicit IntegerUgtOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -979,8 +979,8 @@ public:
 
   explicit IntegerUleOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -1012,8 +1012,8 @@ public:
 
   explicit IntegerUltOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
