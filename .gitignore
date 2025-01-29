@@ -1,6 +1,5 @@
 Makefile.config
 Makefile.custom
-shell.config
 .idea
 docs/html
 build

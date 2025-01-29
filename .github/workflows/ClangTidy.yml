@@ -17,17 +17,16 @@ jobs:
       - name: "Install clang tidy"
         uses: ./.github/actions/InstallPackages
         with:
-          install-llvm: true
           install-clang-tidy: true
-
-      - name: "Configure jlm with HLS and MLIR enabled"
-        run: ./configure.sh --enable-mlir=${{ github.workspace }}/lib/mlir-rvsdg --enable-hls=${{ github.workspace }}/build-circt/circt
 
       - name: "Install HLS dialect dependencies"
         uses: ./.github/actions/BuildCirct
 
       - name: "Install MLIR dialect dependencies"
         uses: ./.github/actions/BuildMlirDialect
+
+      - name: "Configure jlm with HLS and MLIR enabled"
+        run: ./configure.sh --enable-mlir=${{ github.workspace }}/lib/mlir-rvsdg --enable-hls=${{ github.workspace }}/build-circt/circt
 
       - name: "Run clang tidy"
         run: make tidy

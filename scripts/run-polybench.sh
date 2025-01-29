@@ -14,12 +14,11 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/polybench
 BENCHMARK_RUN_TARGET=check
 
-# Include global shell configuration
-if [ -f ${JLM_ROOT_DIR}/shell.config ]; then
-	source ${JLM_ROOT_DIR}/shell.config
+# Execute benchmarks in parallel by default
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  PARALLEL_THREADS=`sysctl -n hw.ncpu`
 else
-	echo "Please use configure.sh to configure jlm."
-	exit
+  PARALLEL_THREADS=`nproc`
 fi
 
 function commit()
@@ -33,6 +32,8 @@ function usage()
 	echo ""
 	echo "  --benchmark-path PATH The path where to place the polybench suite."
 	echo "                        [${BENCHMARK_DIR}]"
+	echo "  --parallel #THREADS   The number of threads to run in parallel."
+	echo "                        Default=[${PARALLEL_THREADS}]"
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
 }
@@ -42,6 +43,11 @@ while [[ "$#" -ge 1 ]] ; do
 		--benchmark-path)
 			shift
 			BENCHMARK_DIR=$(readlink -m "$1")
+			shift
+			;;
+		--parallel)
+			shift
+			PARALLEL_THREADS=$1
 			shift
 			;;
 		--get-commit-hash)

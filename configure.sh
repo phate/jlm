@@ -172,7 +172,6 @@ fi
 mkdir -p build-"${TARGET}"
 rm -rf build ; ln -sf build-"${TARGET}" build
 
-# Configure file for make
 (
 	cat <<EOF
 CXXFLAGS=${CXXFLAGS-} ${CXXFLAGS_COMMON} ${CXXFLAGS_TARGET} ${CXXFLAGS_NO_COMMENT}
@@ -192,30 +191,3 @@ EOF
 		echo "CXX=${CXX}"
 	fi
 ) > Makefile.config
-
-# Configure file for shell scripts
-(
-	cat <<EOF
-LLVM_CONFIG_BIN=${LLVM_CONFIG_BIN}
-export LD_LIBRARY_PATH=$(${LLVM_CONFIG_BIN} --libdir)
-EOF
-	if [ ! -z "${CXX-}" ] ; then
-		echo "CXX=${CXX}"
-	fi
-) > shell.config
-
-# Add OS specific configurations to make and shell configurations
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # Use the same MACOSX_DEPLOYMENT_TARGET as used for the LLVM and MLIR libraries
-  # to avoid warnings during linking
-  echo "export MACOSX_DEPLOYMENT_TARGET=`otool -l ${LLVM_CONFIG_BIN} | grep minos | awk '{print $2}'`" >> Makefile.config
-  echo "export C_INCLUDE_PATH=`xcrun --show-sdk-path`/usr/include/" >> Makefile.config
-  echo "CPPFLAGS += -I`xcrun --show-sdk-path`/usr/include/" >> Makefile.config
-  echo "LDFLAGS += -L`xcrun --show-sdk-path`/usr/lib" >> Makefile.config
-
-  echo "export MACOSX_DEPLOYMENT_TARGET=`otool -l ${LLVM_CONFIG_BIN} | grep minos | awk '{print $2}'`" >> shell.config
-  PARALLEL_THREADS=`sysctl -n hw.ncpu`
-else
-  PARALLEL_THREADS=`nproc`
-fi
-echo "PARALLEL_THREADS=$PARALLEL_THREADS" >> shell.config

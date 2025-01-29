@@ -9,13 +9,8 @@ JLM_ROOT_DIR="$(realpath "${SCRIPT_DIR}/..")"
 MLIR_BUILD=${JLM_ROOT_DIR}/build-mlir
 MLIR_INSTALL=${JLM_ROOT_DIR}/usr
 
-# Include global shell configuration
-if [ -f ${JLM_ROOT_DIR}/shell.config ]; then
-	source ${JLM_ROOT_DIR}/shell.config
-else
-	echo "Please use configure.sh to configure jlm."
-	exit
-fi
+LLVM_VERSION=18
+LLVM_CONFIG_BIN=llvm-config-${LLVM_VERSION}
 
 function commit()
 {

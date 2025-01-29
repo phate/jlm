@@ -14,12 +14,11 @@ JLM_BIN_DIR=${JLM_ROOT_DIR}/build
 BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
 BENCHMARK_RUN_TARGET=run
 
-# Include global shell configuration
-if [ -f ${JLM_ROOT_DIR}/shell.config ]; then
-	source ${JLM_ROOT_DIR}/shell.config
+# Execute benchmarks in parallel by default
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  PARALLEL_THREADS=`sysctl -n hw.ncpu`
 else
-	echo "Please use configure.sh to configure jlm."
-	exit
+  PARALLEL_THREADS=`nproc`
 fi
 
 function commit()
