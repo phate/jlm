@@ -12,6 +12,7 @@
 namespace rvsdg
 {
 class GammaNode;
+class LambdaNode;
 class output;
 class Region;
 class RvsdgModule;

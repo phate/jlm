@@ -28,6 +28,7 @@ class node;
 namespace jlm::rvsdg
 {
 class GammaNode;
+class LambdaNode;
 class Node;
 class Region;
 class SimpleNode;
