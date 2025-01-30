@@ -242,6 +242,25 @@ public:
   }
 
   /**
+   * Modifies this HashSet object to contain all elements in either itself, \p other, or both.
+   * Consumes \p other, making it empty.
+   *
+   * @param other the HashSet to be consumed
+   * @return true if elements were added to this HashSet, otherwise false
+   */
+  bool
+  UnionWithAndClear(HashSet<ItemType> & other)
+  {
+    // Make *this the largest of the two sets, to make the union cheaper
+    if (Size() < other.Size())
+      std::swap(*this, other);
+
+    bool result = UnionWith(other);
+    other.Clear();
+    return result;
+  }
+
+  /**
    * Modifies this HashSet object to contain only elements that are present in itself and \p other.
    *
    * @param other A HashSet to intersect with.
@@ -255,6 +274,23 @@ public:
     };
 
     RemoveWhere(isContained);
+  }
+
+  /**
+   * Modifies this HashSet object to contain only elements both in itself and \p other.
+   * Consumes \p other, making it empty.
+   *
+   * @param other the HashSet to be consumed
+   */
+  void
+  IntersectWithAndClear(HashSet<ItemType> & other)
+  {
+    // Make *this the smallest of the two sets, to make the intersection cheaper
+    if (Size() > other.Size())
+      std::swap(*this, other);
+
+    IntersectWith(other);
+    other.Clear();
   }
 
   /**
