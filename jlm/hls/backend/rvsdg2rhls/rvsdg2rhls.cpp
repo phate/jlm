@@ -14,6 +14,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
@@ -436,8 +437,8 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   dump_dot(rhls, "2b-before-dne.dot");
   llvmDne.Run(rhls, collector);
   dump_dot(rhls, "2c-before-remove-lambda-passthrough.dot");
-  RemoveLambdaInvariantMemoryStateEdges(rhls);
-  RemoveLambdaInvariantStateEdges(rhls);
+  RemoveInvariantLambdaMemoryStateEdges(rhls);
+  RemoveInvariantLambdaStateEdges(rhls);
   dump_dot(rhls, "3-before-distribute-constants.dot");
   // main conversion steps
   //  distribute_constants(rhls);
