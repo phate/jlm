@@ -14,6 +14,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
@@ -432,7 +433,11 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
-  remove_unused_state(rhls);
+  llvm::InvariantValueRedirection llvmIvr;
+  llvmIvr.Run(rhls, collector);
+  llvmDne.Run(rhls, collector);
+  RemoveInvariantLambdaMemoryStateEdges(rhls);
+  RemoveInvariantLambdaStateEdges(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
@@ -444,6 +449,8 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
+  llvm::NodeReduction llvmRed;
+  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship

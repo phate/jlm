@@ -22,6 +22,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
+    jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-sep.cpp \
@@ -61,6 +62,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
 	jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp \
+	jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-sep.hpp \
@@ -81,6 +83,7 @@ libhls_HEADERS = \
 
 libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
+	tests/jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemovalTests \
 	tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests \
 	tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests \
 	tests/jlm/hls/backend/rvsdg2rhls/TestFork \
