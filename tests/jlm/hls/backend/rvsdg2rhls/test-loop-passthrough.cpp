@@ -42,11 +42,9 @@ test()
 
   /* setup graph */
 
-  auto lambda = jlm::llvm::lambda::node::create(
-      &rm.Rvsdg().GetRootRegion(),
-      ft,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(ft, "f", jlm::llvm::linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
 

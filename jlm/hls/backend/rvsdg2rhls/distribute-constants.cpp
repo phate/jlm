@@ -75,7 +75,7 @@ hls::distribute_constants(rvsdg::Region * region)
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
-      if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         distribute_constants(ln->subregion());
       }

@@ -24,10 +24,10 @@ void
 mem_sep_argument(llvm::RvsdgModule & rm);
 
 rvsdg::RegionArgument *
-GetMemoryStateArgument(const llvm::lambda::node & lambda);
+GetMemoryStateArgument(const rvsdg::LambdaNode & lambda);
 
 rvsdg::RegionResult *
-GetMemoryStateResult(const llvm::lambda::node & lambda);
+GetMemoryStateResult(const rvsdg::LambdaNode & lambda);
 
 } // namespace jlm::hls
 

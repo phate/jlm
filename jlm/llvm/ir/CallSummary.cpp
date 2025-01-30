@@ -18,7 +18,7 @@ namespace jlm::llvm
 {
 
 CallSummary
-ComputeCallSummary(const lambda::node & lambdaNode)
+ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
 {
   std::deque<rvsdg::input *> worklist;
   worklist.insert(worklist.end(), lambdaNode.output()->begin(), lambdaNode.output()->end());
@@ -34,14 +34,14 @@ ComputeCallSummary(const lambda::node & lambdaNode)
 
     auto inputNode = rvsdg::input::GetNode(*input);
 
-    if (auto lambdaNode = rvsdg::TryGetOwnerNode<lambda::node>(*input))
+    if (auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*input))
     {
       auto & argument = *lambdaNode->MapInputContextVar(*input).inner;
       worklist.insert(worklist.end(), argument.begin(), argument.end());
       continue;
     }
 
-    if (rvsdg::TryGetRegionParentNode<lambda::node>(*input))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*input))
     {
       otherUsers.emplace_back(input);
       continue;

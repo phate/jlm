@@ -103,7 +103,7 @@ private:
   AnalyzeRegion(rvsdg::Region & region);
 
   void
-  AnalyzeLambda(const lambda::node & node);
+  AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
   AnalyzeDelta(const delta::node & node);
@@ -139,7 +139,7 @@ private:
   AnalyzeCall(const CallNode & callNode);
 
   void
-  AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode);
+  AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode);
 
   void
   AnalyzeExternalCall(const CallNode & callNode);

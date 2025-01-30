@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_DEADNODEELIMINATION_HPP
 #define JLM_LLVM_OPT_DEADNODEELIMINATION_HPP
 
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
@@ -26,10 +27,7 @@ namespace delta
 class node;
 }
 
-namespace lambda
-{
-class node;
-}
+class LambdaNode;
 
 namespace phi
 {
@@ -100,7 +98,7 @@ private:
   SweepTheta(rvsdg::ThetaNode & thetaNode) const;
 
   void
-  SweepLambda(lambda::node & lambdaNode) const;
+  SweepLambda(rvsdg::LambdaNode & lambdaNode) const;
 
   void
   SweepPhi(phi::node & phiNode) const;

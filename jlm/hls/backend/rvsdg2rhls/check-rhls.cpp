@@ -51,7 +51,7 @@ check_rhls(llvm::RvsdgModule & rm)
   {
     throw jlm::util::error("Root should have only one node now");
   }
-  auto ln = dynamic_cast<const llvm::lambda::node *>(root->Nodes().begin().ptr());
+  auto ln = dynamic_cast<const rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   if (!ln)
   {
     throw jlm::util::error("Node needs to be a lambda");

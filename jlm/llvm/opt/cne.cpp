@@ -340,7 +340,7 @@ mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<lambda::operation>(node));
+  JLM_ASSERT(jlm::rvsdg::is<rvsdg::LambdaOperation>(node));
 
   /* mark dependencies */
   for (size_t i1 = 0; i1 < node->ninputs(); i1++)
@@ -387,15 +387,14 @@ static void
 mark(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
   static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map(
-      { { std::type_index(typeid(rvsdg::GammaOperation)), mark_gamma },
-        { std::type_index(typeid(rvsdg::ThetaOperation)), mark_theta },
-        { typeid(lambda::operation), mark_lambda },
-        { typeid(phi::operation), mark_phi },
-        { typeid(delta::operation), mark_delta } });
+      { { std::type_index(typeid(rvsdg::GammaNode)), mark_gamma },
+        { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
+        { typeid(rvsdg::LambdaNode), mark_lambda },
+        { typeid(phi::node), mark_phi },
+        { typeid(delta::node), mark_delta } });
 
-  auto & op = node->GetOperation();
-  JLM_ASSERT(map.find(typeid(op)) != map.end());
-  map[typeid(op)](node, ctx);
+  JLM_ASSERT(map.find(typeid(*node)) != map.end());
+  map[typeid(*node)](node, ctx);
 }
 
 static void
@@ -515,7 +514,7 @@ divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<lambda::operation>(node));
+  JLM_ASSERT(jlm::rvsdg::is<rvsdg::LambdaOperation>(node));
 
   divert_arguments(node->subregion(0), ctx);
   divert(node->subregion(0), ctx);
@@ -540,15 +539,14 @@ static void
 divert(rvsdg::StructuralNode * node, cnectx & ctx)
 {
   static std::unordered_map<std::type_index, void (*)(rvsdg::StructuralNode *, cnectx &)> map(
-      { { std::type_index(typeid(rvsdg::GammaOperation)), divert_gamma },
-        { std::type_index(typeid(rvsdg::ThetaOperation)), divert_theta },
-        { typeid(lambda::operation), divert_lambda },
-        { typeid(phi::operation), divert_phi },
-        { typeid(delta::operation), divert_delta } });
+      { { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
+        { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
+        { typeid(rvsdg::LambdaNode), divert_lambda },
+        { typeid(phi::node), divert_phi },
+        { typeid(delta::node), divert_delta } });
 
-  auto & op = node->GetOperation();
-  JLM_ASSERT(map.find(typeid(op)) != map.end());
-  map[typeid(op)](node, ctx);
+  JLM_ASSERT(map.find(typeid(*node)) != map.end());
+  map[typeid(*node)](node, ctx);
 }
 
 static void

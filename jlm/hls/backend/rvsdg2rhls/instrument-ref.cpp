@@ -15,12 +15,13 @@
 namespace jlm::hls
 {
 
-llvm::lambda::node *
-change_function_name(llvm::lambda::node * ln, const std::string & name)
+rvsdg::LambdaNode *
+change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
 {
-  const auto & op = ln->GetOperation();
-  auto lambda =
-      llvm::lambda::node::create(ln->region(), op.Type(), name, op.linkage(), op.attributes());
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
+  auto lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(op.Type(), name, op.linkage(), op.attributes()));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -61,7 +62,7 @@ instrument_ref(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
-  auto lambda = dynamic_cast<llvm::lambda::node *>(root->Nodes().begin().ptr());
+  auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
 
   auto newLambda = change_function_name(lambda, "instrumented_ref");
 

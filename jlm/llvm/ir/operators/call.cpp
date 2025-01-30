@@ -168,7 +168,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 
   while (true)
   {
-    if (rvsdg::TryGetOwnerNode<lambda::node>(*origin))
+    if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*origin))
       return origin;
 
     if (is<rvsdg::GraphImport>(origin))
@@ -182,7 +182,7 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(*origin))
+    if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin))
     {
       if (auto ctxvar = lambda->MapBinderContextVar(*origin))
       {
@@ -255,7 +255,7 @@ CallNode::ClassifyCall(const CallNode & callNode)
 {
   auto output = CallNode::TraceFunctionInput(callNode);
 
-  if (rvsdg::TryGetOwnerNode<lambda::node>(*output))
+  if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*output))
   {
     return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*output);
   }

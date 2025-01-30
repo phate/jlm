@@ -67,7 +67,7 @@ public:
   operator=(RhlsToFirrtlConverter &&) = delete;
 
   circt::firrtl::CircuitOp
-  MlirGen(const llvm::lambda::node * lamdaNode);
+  MlirGen(const rvsdg::LambdaNode * lamdaNode);
 
   void
   WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const rvsdg::Node * node);

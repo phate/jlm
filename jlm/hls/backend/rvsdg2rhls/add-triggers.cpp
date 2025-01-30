@@ -28,10 +28,10 @@ get_trigger(rvsdg::Region * region)
   return nullptr;
 }
 
-jlm::llvm::lambda::node *
-add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::Type> type)
+jlm::rvsdg::LambdaNode *
+add_lambda_argument(rvsdg::LambdaNode * ln, std::shared_ptr<const jlm::rvsdg::Type> type)
 {
-  const auto & op = ln->GetOperation();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
   auto old_fcttype = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
@@ -45,12 +45,9 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
     new_result_types.push_back(old_fcttype.Results()[i]);
   }
   auto new_fcttype = rvsdg::FunctionType::Create(new_argument_types, new_result_types);
-  auto new_lambda = llvm::lambda::node::create(
-      ln->region(),
-      new_fcttype,
-      op.name(),
-      op.linkage(),
-      op.attributes());
+  auto new_lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(new_fcttype, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : ln->GetContextVars())
@@ -95,7 +92,7 @@ add_triggers(rvsdg::Region * region)
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
-      if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         // check here in order not to process removed and re-added node twice
         if (!get_trigger(ln->subregion()))

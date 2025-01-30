@@ -511,7 +511,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 void
 MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
-  if (auto lambdaNode = dynamic_cast<const lambda::node *>(&structuralNode))
+  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&structuralNode))
   {
     EncodeLambda(*lambdaNode);
   }
@@ -757,7 +757,7 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode)
 }
 
 void
-MemoryStateEncoder::EncodeLambda(const lambda::node & lambdaNode)
+MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   EncodeLambdaEntry(lambdaNode);
   EncodeRegion(*lambdaNode.subregion());
@@ -765,7 +765,7 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambdaNode)
 }
 
 void
-MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
+MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
   JLM_ASSERT(memoryStateArgument.nusers() == 1);
@@ -805,7 +805,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 }
 
 void
-MemoryStateEncoder::EncodeLambdaExit(const lambda::node & lambdaNode)
+MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
   auto subregion = lambdaNode.subregion();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaExitNodes(lambdaNode);
