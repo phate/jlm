@@ -132,7 +132,7 @@ private:
    * \param inputs The inputs for the RVSDG node.
    * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertFPBinaryNode(
       const ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,

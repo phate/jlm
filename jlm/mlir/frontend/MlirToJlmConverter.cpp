@@ -353,8 +353,8 @@ MlirToJlmConverter::ConvertOperation(
     std::shared_ptr<rvsdg::Type> rt = ConvertType(mlirOutputType);
 
     llvm::sitofp_op op(std::move(st), std::move(rt));
-    return rvsdg::simple_node::create(
-        &rvsdgRegion,
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
         op,
         std::vector<jlm::rvsdg::output *>(inputs.begin(), inputs.end()));
   }
@@ -384,10 +384,8 @@ MlirToJlmConverter::ConvertOperation(
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     auto size = ConvertFPSize(floatType.getWidth());
-    auto& output = rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        llvm::ConstantFP(size, constant.value()),
-        {});
+    auto & output =
+        rvsdg::SimpleNode::Create(rvsdgRegion, llvm::ConstantFP(size, constant.value()), {});
     return &output;
   }
 
