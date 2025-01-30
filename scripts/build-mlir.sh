@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=51889684abf9f64dac8d051ee6a71a0a78827860
+GIT_COMMIT=e8cf79403b9a24ae71b3d286cc87f547e107f811
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
