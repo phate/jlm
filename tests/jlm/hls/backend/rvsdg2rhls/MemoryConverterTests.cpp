@@ -32,11 +32,9 @@ TestTraceArgument()
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -87,11 +85,9 @@ TestLoad()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Single load
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -113,7 +109,7 @@ TestLoad()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+  lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -169,11 +165,9 @@ TestLoadStore()
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -197,7 +191,7 @@ TestLoadStore()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+  lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -256,11 +250,9 @@ TestThetaLoad()
         MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -330,7 +322,7 @@ TestThetaLoad()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+  lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
   assert(jlm::rvsdg::Region::Contains<mem_resp_op>(*lambdaRegion, true));

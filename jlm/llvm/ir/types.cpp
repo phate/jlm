@@ -39,39 +39,33 @@ PointerType::Create()
   return std::shared_ptr<const PointerType>(std::shared_ptr<void>(), &instance);
 }
 
-/* array type */
-
-arraytype::~arraytype()
-{}
+ArrayType::~ArrayType() noexcept = default;
 
 std::string
-arraytype::debug_string() const
+ArrayType::debug_string() const
 {
   return util::strfmt("[ ", nelements(), " x ", type_->debug_string(), " ]");
 }
 
 bool
-arraytype::operator==(const jlm::rvsdg::Type & other) const noexcept
+ArrayType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const arraytype *>(&other);
+  const auto type = dynamic_cast<const ArrayType *>(&other);
   return type && type->element_type() == element_type() && type->nelements() == nelements();
 }
 
 std::size_t
-arraytype::ComputeHash() const noexcept
+ArrayType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(arraytype).hash_code();
-  auto numElementsHash = std::hash<std::size_t>()(nelements_);
+  const auto typeHash = typeid(ArrayType).hash_code();
+  const auto numElementsHash = std::hash<std::size_t>()(nelements_);
   return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
 }
 
-/* floating point type */
-
-fptype::~fptype()
-{}
+FloatingPointType::~FloatingPointType() noexcept = default;
 
 std::string
-fptype::debug_string() const
+FloatingPointType::debug_string() const
 {
   static std::unordered_map<fpsize, std::string> map({ { fpsize::half, "half" },
                                                        { fpsize::flt, "float" },
@@ -84,50 +78,49 @@ fptype::debug_string() const
 }
 
 bool
-fptype::operator==(const jlm::rvsdg::Type & other) const noexcept
+FloatingPointType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const fptype *>(&other);
+  const auto type = dynamic_cast<const FloatingPointType *>(&other);
   return type && type->size() == size();
 }
 
 std::size_t
-fptype::ComputeHash() const noexcept
+FloatingPointType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(fptype).hash_code();
-  auto sizeHash = std::hash<fpsize>()(size_);
-
+  const auto typeHash = typeid(FloatingPointType).hash_code();
+  const auto sizeHash = std::hash<fpsize>()(size_);
   return util::CombineHashes(typeHash, sizeHash);
 }
 
-std::shared_ptr<const fptype>
-fptype::Create(fpsize size)
+std::shared_ptr<const FloatingPointType>
+FloatingPointType::Create(fpsize size)
 {
   switch (size)
   {
   case fpsize::half:
   {
-    static const fptype instance(fpsize::half);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::half);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::flt:
   {
-    static const fptype instance(fpsize::flt);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::flt);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::dbl:
   {
-    static const fptype instance(fpsize::dbl);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::dbl);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::x86fp80:
   {
-    static const fptype instance(fpsize::x86fp80);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::x86fp80);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   case fpsize::fp128:
   {
-    static const fptype instance(fpsize::fp128);
-    return std::shared_ptr<const fptype>(std::shared_ptr<void>(), &instance);
+    static const FloatingPointType instance(fpsize::fp128);
+    return std::shared_ptr<const FloatingPointType>(std::shared_ptr<void>(), &instance);
   }
   default:
   {
@@ -136,34 +129,31 @@ fptype::Create(fpsize size)
   }
 }
 
-/* vararg type */
-
-varargtype::~varargtype()
-{}
+VariableArgumentType::~VariableArgumentType() noexcept = default;
 
 bool
-varargtype::operator==(const jlm::rvsdg::Type & other) const noexcept
+VariableArgumentType::operator==(const Type & other) const noexcept
 {
-  return dynamic_cast<const varargtype *>(&other) != nullptr;
+  return dynamic_cast<const VariableArgumentType *>(&other) != nullptr;
 }
 
 std::size_t
-varargtype::ComputeHash() const noexcept
+VariableArgumentType::ComputeHash() const noexcept
 {
-  return typeid(varargtype).hash_code();
+  return typeid(VariableArgumentType).hash_code();
 }
 
 std::string
-varargtype::debug_string() const
+VariableArgumentType::debug_string() const
 {
   return "vararg";
 }
 
-std::shared_ptr<const varargtype>
-varargtype::Create()
+std::shared_ptr<const VariableArgumentType>
+VariableArgumentType::Create()
 {
-  static const varargtype instance;
-  return std::shared_ptr<const varargtype>(std::shared_ptr<void>(), &instance);
+  static const VariableArgumentType instance;
+  return std::shared_ptr<const VariableArgumentType>(std::shared_ptr<void>(), &instance);
 }
 
 StructType::~StructType() = default;
@@ -192,93 +182,82 @@ StructType::debug_string() const
   return "struct";
 }
 
-/* vectortype */
-
 bool
-vectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+VectorType::operator==(const rvsdg::Type & other) const noexcept
 {
-  auto type = dynamic_cast<const vectortype *>(&other);
+  const auto type = dynamic_cast<const VectorType *>(&other);
   return type && type->size_ == size_ && *type->type_ == *type_;
 }
 
-/* fixedvectortype */
-
-fixedvectortype::~fixedvectortype()
-{}
+FixedVectorType::~FixedVectorType() noexcept = default;
 
 bool
-fixedvectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+FixedVectorType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
-  return vectortype::operator==(other);
+  return VectorType::operator==(other);
 }
 
 std::size_t
-fixedvectortype::ComputeHash() const noexcept
+FixedVectorType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(fixedvectortype).hash_code();
+  auto typeHash = typeid(FixedVectorType).hash_code();
   auto sizeHash = std::hash<size_t>()(size());
   return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
 }
 
 std::string
-fixedvectortype::debug_string() const
+FixedVectorType::debug_string() const
 {
   return util::strfmt("fixedvector[", type().debug_string(), ":", size(), "]");
 }
 
-/* scalablevectortype */
-
-scalablevectortype::~scalablevectortype()
-{}
+ScalableVectorType::~ScalableVectorType() noexcept = default;
 
 bool
-scalablevectortype::operator==(const jlm::rvsdg::Type & other) const noexcept
+ScalableVectorType::operator==(const jlm::rvsdg::Type & other) const noexcept
 {
-  return vectortype::operator==(other);
+  return VectorType::operator==(other);
 }
 
 std::size_t
-scalablevectortype::ComputeHash() const noexcept
+ScalableVectorType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(scalablevectortype).hash_code();
-  auto sizeHash = std::hash<size_t>()(size());
+  const auto typeHash = typeid(ScalableVectorType).hash_code();
+  const auto sizeHash = std::hash<size_t>()(size());
   return util::CombineHashes(typeHash, sizeHash, Type()->ComputeHash());
 }
 
 std::string
-scalablevectortype::debug_string() const
+ScalableVectorType::debug_string() const
 {
   return util::strfmt("scalablevector[", type().debug_string(), ":", size(), "]");
 }
 
-/* I/O state type */
-
-iostatetype::~iostatetype()
-{}
+IOStateType::~IOStateType() noexcept = default;
 
 bool
-iostatetype::operator==(const jlm::rvsdg::Type & other) const noexcept
+IOStateType::operator==(const Type & other) const noexcept
 {
-  return jlm::rvsdg::is<iostatetype>(other);
+  return jlm::rvsdg::is<IOStateType>(other);
 }
 
 std::size_t
-iostatetype::ComputeHash() const noexcept
+IOStateType::ComputeHash() const noexcept
 {
-  return typeid(iostatetype).hash_code();
+  return typeid(IOStateType).hash_code();
 }
 
 std::string
-iostatetype::debug_string() const
+IOStateType::debug_string() const
 {
   return "iostate";
 }
 
-std::shared_ptr<const iostatetype>
-iostatetype::Create()
+std::shared_ptr<const IOStateType>
+IOStateType::Create()
 {
-  static const iostatetype instance;
-  return std::shared_ptr<const iostatetype>(std::shared_ptr<void>(), &instance);
+  static const IOStateType instance;
+  return std::shared_ptr<const IOStateType>(std::shared_ptr<void>(), &instance);
 }
 
 /**

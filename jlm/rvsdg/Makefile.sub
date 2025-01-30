@@ -4,6 +4,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/FunctionType.cpp \
 	jlm/rvsdg/gamma.cpp \
 	jlm/rvsdg/graph.cpp \
+	jlm/rvsdg/lambda.cpp \
 	jlm/rvsdg/node.cpp \
 	jlm/rvsdg/notifiers.cpp \
 	jlm/rvsdg/nullary.cpp \
@@ -46,6 +47,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/view.hpp \
 	jlm/rvsdg/traverser.hpp \
 	jlm/rvsdg/graph.hpp \
+	jlm/rvsdg/lambda.hpp \
 	jlm/rvsdg/substitution.hpp \
 	jlm/rvsdg/unary.hpp \
 	jlm/rvsdg/tracker.hpp \

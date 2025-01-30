@@ -50,13 +50,13 @@ TypeConverter::ConvertFunctionType(
   std::vector<::llvm::Type *> argumentTypes;
   for (auto & argumentType : functionType.Arguments())
   {
-    if (rvsdg::is<varargtype>(argumentType))
+    if (rvsdg::is<VariableArgumentType>(argumentType))
     {
       isVariableArgument = true;
       continue;
     }
 
-    if (rvsdg::is<iostatetype>(argumentType))
+    if (rvsdg::is<IOStateType>(argumentType))
       continue;
     if (rvsdg::is<MemoryStateType>(argumentType))
       continue;
@@ -82,14 +82,14 @@ TypeConverter::ConvertFunctionType(const ::llvm::FunctionType & functionType)
     argumentTypes.push_back(ConvertLlvmType(*functionType.getParamType(n)));
   if (functionType.isVarArg())
     argumentTypes.push_back(create_varargtype());
-  argumentTypes.push_back(iostatetype::Create());
+  argumentTypes.push_back(IOStateType::Create());
   argumentTypes.push_back(MemoryStateType::Create());
 
   // Results
   std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
   if (functionType.getReturnType()->getTypeID() != ::llvm::Type::VoidTyID)
     resultTypes.push_back(ConvertLlvmType(*functionType.getReturnType()));
-  resultTypes.push_back(iostatetype::Create());
+  resultTypes.push_back(IOStateType::Create());
   resultTypes.push_back(MemoryStateType::Create());
 
   return rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
@@ -110,13 +110,15 @@ TypeConverter::ConvertPointerType(const ::llvm::PointerType & pointerType)
 }
 
 ::llvm::ArrayType *
-TypeConverter::ConvertArrayType(const arraytype & type, ::llvm::LLVMContext & context)
+TypeConverter::ConvertArrayType(const ArrayType & type, ::llvm::LLVMContext & context)
 {
   return ::llvm::ArrayType::get(ConvertJlmType(type.element_type(), context), type.nelements());
 }
 
 ::llvm::Type *
-TypeConverter::ConvertFloatingPointType(const fptype & type, ::llvm::LLVMContext & context)
+TypeConverter::ConvertFloatingPointType(
+    const FloatingPointType & type,
+    ::llvm::LLVMContext & context)
 {
   switch (type.size())
   {
@@ -175,7 +177,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
     return ConvertPointerType(*pointerType, context);
   }
 
-  if (const auto arrayType = dynamic_cast<const arraytype *>(&type))
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
     return ConvertArrayType(*arrayType, context);
   }
@@ -186,7 +188,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
                                              : ::llvm::Type::getInt32Ty(context);
   }
 
-  if (const auto floatingPointType = dynamic_cast<const fptype *>(&type))
+  if (const auto floatingPointType = dynamic_cast<const FloatingPointType *>(&type))
   {
     return ConvertFloatingPointType(*floatingPointType, context);
   }
@@ -196,7 +198,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
     return ConvertStructType(*structType, context);
   }
 
-  if (const auto fixedVectorType = dynamic_cast<const fixedvectortype *>(&type))
+  if (const auto fixedVectorType = dynamic_cast<const FixedVectorType *>(&type))
   {
     return ::llvm::VectorType::get(
         ConvertJlmType(fixedVectorType->type(), context),
@@ -204,7 +206,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
         false);
   }
 
-  if (const auto scalableVectorType = dynamic_cast<const scalablevectortype *>(&type))
+  if (const auto scalableVectorType = dynamic_cast<const ScalableVectorType *>(&type))
   {
     return ::llvm::VectorType::get(
         ConvertJlmType(scalableVectorType->type(), context),
@@ -230,15 +232,15 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::FunctionTyID:
     return ConvertFunctionType(*::llvm::cast<::llvm::FunctionType>(&type));
   case ::llvm::Type::HalfTyID:
-    return fptype::Create(fpsize::half);
+    return FloatingPointType::Create(fpsize::half);
   case ::llvm::Type::FloatTyID:
-    return fptype::Create(fpsize::flt);
+    return FloatingPointType::Create(fpsize::flt);
   case ::llvm::Type::DoubleTyID:
-    return fptype::Create(fpsize::dbl);
+    return FloatingPointType::Create(fpsize::dbl);
   case ::llvm::Type::X86_FP80TyID:
-    return fptype::Create(fpsize::x86fp80);
+    return FloatingPointType::Create(fpsize::x86fp80);
   case ::llvm::Type::FP128TyID:
-    return fptype::Create(fpsize::fp128);
+    return FloatingPointType::Create(fpsize::fp128);
   case ::llvm::Type::StructTyID:
   {
     const auto structType = ::llvm::cast<::llvm::StructType>(&type);
@@ -252,19 +254,19 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::ArrayTyID:
   {
     auto elementType = ConvertLlvmType(*type.getArrayElementType());
-    return arraytype::Create(std::move(elementType), type.getArrayNumElements());
+    return ArrayType::Create(std::move(elementType), type.getArrayNumElements());
   }
   case ::llvm::Type::FixedVectorTyID:
   {
     auto scalarType = ConvertLlvmType(*type.getScalarType());
-    return fixedvectortype::Create(
+    return FixedVectorType::Create(
         std::move(scalarType),
         ::llvm::cast<::llvm::FixedVectorType>(&type)->getNumElements());
   }
   case ::llvm::Type::ScalableVectorTyID:
   {
     auto scalarType = ConvertLlvmType(*type.getScalarType());
-    return scalablevectortype::Create(
+    return ScalableVectorType::Create(
         std::move(scalarType),
         ::llvm::cast<::llvm::ScalableVectorType>(&type)->getMinNumElements());
   }

@@ -37,11 +37,12 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
 
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
-      || rvsdg::is<PointerType>(type) || rvsdg::is<fptype>(type) || rvsdg::is<varargtype>(type))
+      || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
+      || rvsdg::is<VariableArgumentType>(type))
   {
     // No need to provide any information beyond the debug string
   }
-  else if (auto arrayType = dynamic_cast<const arraytype *>(&type))
+  else if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(arrayType->element_type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
@@ -55,7 +56,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
       typeGraph.CreateDirectedEdge(elementTypeNode, node);
     }
   }
-  else if (auto vectorType = dynamic_cast<const vectortype *>(&type))
+  else if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(vectorType->type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
@@ -102,7 +103,7 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Red);
-    if (rvsdg::is<iostatetype>(rvsdgInput.type()))
+    if (rvsdg::is<IOStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Green);
   }
 }
@@ -161,7 +162,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
 
   // Create a node for each node in the region in topological order.
   // Inputs expect the node representing their origin to exist before being visited.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());

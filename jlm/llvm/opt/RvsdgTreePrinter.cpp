@@ -106,12 +106,14 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
           numSubregionNodes += annotateRegion(*subregion);
         }
 
-        annotationMap.AddAnnotation(structuralNode, { label, numSubregionNodes });
+        annotationMap.AddAnnotation(
+            structuralNode,
+            { label, static_cast<uint64_t>(numSubregionNodes) });
       }
     }
 
     auto numNodes = region.nnodes();
-    annotationMap.AddAnnotation(&region, { label, numNodes });
+    annotationMap.AddAnnotation(&region, { label, static_cast<uint64_t>(numNodes) });
 
     return numNodes;
   };
@@ -134,12 +136,16 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
     auto argumentRange = region.Arguments();
     auto numMemoryStateArguments =
         std::count_if(argumentRange.begin(), argumentRange.end(), IsMemoryStateOutput);
-    annotationMap.AddAnnotation(&region, { argumentLabel, numMemoryStateArguments });
+    annotationMap.AddAnnotation(
+        &region,
+        { argumentLabel, static_cast<uint64_t>(numMemoryStateArguments) });
 
     auto resultRange = region.Results();
     auto numMemoryStateResults =
         std::count_if(resultRange.begin(), resultRange.end(), IsMemoryStateInput);
-    annotationMap.AddAnnotation(&region, { resultLabel, numMemoryStateResults });
+    annotationMap.AddAnnotation(
+        &region,
+        { resultLabel, static_cast<uint64_t>(numMemoryStateResults) });
 
     for (auto & node : region.Nodes())
     {
@@ -154,7 +160,9 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
             numMemoryStateInputs++;
           }
         }
-        annotationMap.AddAnnotation(structuralNode, { inputLabel, numMemoryStateInputs });
+        annotationMap.AddAnnotation(
+            structuralNode,
+            { inputLabel, static_cast<uint64_t>(numMemoryStateInputs) });
 
         size_t numMemoryStateOutputs = 0;
         for (size_t n = 0; n < structuralNode->noutputs(); n++)
@@ -165,7 +173,9 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
             numMemoryStateOutputs++;
           }
         }
-        annotationMap.AddAnnotation(structuralNode, { outputLabel, numMemoryStateOutputs });
+        annotationMap.AddAnnotation(
+            structuralNode,
+            { outputLabel, static_cast<uint64_t>(numMemoryStateOutputs) });
 
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
         {

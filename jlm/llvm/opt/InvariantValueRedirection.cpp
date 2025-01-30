@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
@@ -66,9 +67,9 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
   // We require a topdown traversal in the root region to ensure that a lambda node is visited
   // before its call nodes. This ensures that all invariant values are redirected in the lambda
   // subregion before we try to detect invariant call outputs.
-  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
+  for (auto node : rvsdg::TopDownTraverser(&rvsdg.GetRootRegion()))
   {
-    if (auto lambdaNode = dynamic_cast<lambda::node *>(node))
+    if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(node))
     {
       RedirectInRegion(*lambdaNode->subregion());
     }
@@ -103,7 +104,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
   auto isGammaNode = is<rvsdg::GammaOperation>(region.node());
   auto isThetaNode = is<rvsdg::ThetaOperation>(region.node());
-  auto isLambdaNode = is<lambda::operation>(region.node());
+  auto isLambdaNode = is<rvsdg::LambdaOperation>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
@@ -163,7 +164,7 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<iostatetype>(loopVar.input->type()))
+    if (rvsdg::is<IOStateType>(loopVar.input->type()))
       continue;
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
@@ -184,7 +185,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     return;
 
   auto & lambdaNode =
-      rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
+      rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput());
 
   // LLVM permits code where it can happen that the number and type of arguments handed in to the
   // call node do not agree with the number and type of lambda parameters, even though it is a
@@ -207,8 +208,8 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
 
     if (shouldHandleMemoryStateOperations)
     {
-      auto lambdaEntrySplit = lambda::node::GetMemoryStateEntrySplit(lambdaNode);
-      auto lambdaExitMerge = lambda::node::GetMemoryStateExitMerge(lambdaNode);
+      auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
+      auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
       auto callEntryMerge = CallNode::GetMemoryStateEntryMerge(callNode);
 
       // The callExitSplit is present. We therefore expect the other nodes to be present as well.
@@ -236,7 +237,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     {
       auto & lambdaResult = *results[n];
       auto origin = lambdaResult.origin();
-      if (rvsdg::TryGetRegionParentNode<lambda::node>(*origin) == &lambdaNode)
+      if (rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin) == &lambdaNode)
       {
         if (auto ctxvar = lambdaNode.MapBinderContextVar(*origin))
         {

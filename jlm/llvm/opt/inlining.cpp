@@ -81,7 +81,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   {
     output = theta->AddLoopVar(output).pre;
   }
-  else if (auto lambda = dynamic_cast<lambda::node *>(region->node()))
+  else if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(region->node()))
   {
     output = lambda->AddContextVar(*output).inner;
   }
@@ -98,7 +98,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 }
 
 static std::vector<jlm::rvsdg::output *>
-route_dependencies(const lambda::node * lambda, const jlm::rvsdg::SimpleNode * apply)
+route_dependencies(const rvsdg::LambdaNode * lambda, const jlm::rvsdg::SimpleNode * apply)
 {
   JLM_ASSERT(is<CallOperation>(apply));
 
@@ -115,7 +115,7 @@ route_dependencies(const lambda::node * lambda, const jlm::rvsdg::SimpleNode * a
 }
 
 void
-inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
+inlineCall(jlm::rvsdg::SimpleNode * call, const rvsdg::LambdaNode * lambda)
 {
   JLM_ASSERT(is<CallOperation>(call));
 
@@ -147,9 +147,9 @@ inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
 static void
 inlining(rvsdg::Graph & rvsdg)
 {
-  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
+  for (auto node : rvsdg::TopDownTraverser(&rvsdg.GetRootRegion()))
   {
-    if (auto lambda = dynamic_cast<const lambda::node *>(node))
+    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       auto callSummary = jlm::llvm::ComputeCallSummary(*lambda);
 

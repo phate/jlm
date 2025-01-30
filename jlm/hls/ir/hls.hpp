@@ -1446,7 +1446,7 @@ public:
   virtual ~local_mem_op()
   {}
 
-  explicit local_mem_op(std::shared_ptr<const llvm::arraytype> at)
+  explicit local_mem_op(std::shared_ptr<const llvm::ArrayType> at)
       : SimpleOperation({}, CreateOutTypes(std::move(at)))
   {}
 
@@ -1460,7 +1460,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(std::shared_ptr<const llvm::arraytype> at)
+  CreateOutTypes(std::shared_ptr<const llvm::ArrayType> at)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(2, std::move(at));
     return types;
@@ -1479,7 +1479,7 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(std::shared_ptr<const jlm::llvm::arraytype> at, rvsdg::Region * region)
+  create(std::shared_ptr<const llvm::ArrayType> at, rvsdg::Region * region)
   {
     return outputs(&rvsdg::CreateOpNode<local_mem_op>(*region, std::move(at)));
   }
@@ -1491,7 +1491,7 @@ public:
   virtual ~local_mem_resp_op()
   {}
 
-  local_mem_resp_op(const std::shared_ptr<const jlm::llvm::arraytype> & at, size_t resp_count)
+  local_mem_resp_op(const std::shared_ptr<const llvm::ArrayType> & at, size_t resp_count)
       : SimpleOperation({ at }, CreateOutTypes(at, resp_count))
   {}
 
@@ -1505,7 +1505,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::shared_ptr<const jlm::llvm::arraytype> & at, size_t resp_count)
+  CreateOutTypes(const std::shared_ptr<const jlm::llvm::ArrayType> & at, size_t resp_count)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(resp_count, at->GetElementType());
     return types;
@@ -1528,7 +1528,7 @@ public:
   {
     return outputs(&rvsdg::CreateOpNode<local_mem_resp_op>(
         { &mem },
-        std::dynamic_pointer_cast<const llvm::arraytype>(mem.Type()),
+        std::dynamic_pointer_cast<const llvm::ArrayType>(mem.Type()),
         resp_count));
   }
 };
@@ -1695,7 +1695,7 @@ public:
   {}
 
   local_mem_req_op(
-      const std::shared_ptr<const jlm::llvm::arraytype> & at,
+      const std::shared_ptr<const llvm::ArrayType> & at,
       size_t load_cnt,
       size_t store_cnt)
       : SimpleOperation(CreateInTypes(at, load_cnt, store_cnt), {})
@@ -1714,7 +1714,7 @@ public:
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateInTypes(
-      const std::shared_ptr<const jlm::llvm::arraytype> & at,
+      const std::shared_ptr<const llvm::ArrayType> & at,
       size_t load_cnt,
       size_t store_cnt)
   {
@@ -1755,7 +1755,7 @@ public:
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
     return outputs(&rvsdg::CreateOpNode<local_mem_req_op>(
         operands,
-        std::dynamic_pointer_cast<const jlm::llvm::arraytype>(mem.Type()),
+        std::dynamic_pointer_cast<const llvm::ArrayType>(mem.Type()),
         load_operands.size(),
         store_operands.size() / 2));
   }

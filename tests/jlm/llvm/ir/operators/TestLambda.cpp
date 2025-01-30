@@ -22,11 +22,9 @@ TestArgumentIterators()
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
 
-    auto lambda = lambda::node::create(
-        &rvsdgModule.Rvsdg().GetRootRegion(),
-        functionType,
-        "f",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        rvsdgModule.Rvsdg().GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
     lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
     std::vector<const jlm::rvsdg::output *> functionArguments;
@@ -40,11 +38,9 @@ TestArgumentIterators()
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
-    auto lambda = lambda::node::create(
-        &rvsdgModule.Rvsdg().GetRootRegion(),
-        functionType,
-        "f",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        rvsdgModule.Rvsdg().GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
     auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, { vt });
 
@@ -58,11 +54,9 @@ TestArgumentIterators()
 
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt, vt, vt }, { vt, vt });
 
-    auto lambda = lambda::node::create(
-        &rvsdgModule.Rvsdg().GetRootRegion(),
-        functionType,
-        "f",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        rvsdgModule.Rvsdg().GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
     auto cv = lambda->AddContextVar(*rvsdgImport).inner;
 
@@ -90,8 +84,9 @@ TestInvalidOperandRegion()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg->GetRootRegion(), functionType, "f", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg->GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   auto result = jlm::tests::create_testop(&rvsdg->GetRootRegion(), {}, { vt })[0];
 
   bool invalidRegionErrorCaught = false;
@@ -108,7 +103,7 @@ TestInvalidOperandRegion()
 }
 
 /**
- * Test lambda::node::RemoveLambdaInputsWhere()
+ * Test LambdaNode::RemoveLambdaInputsWhere()
  */
 static void
 TestRemoveLambdaInputsWhere()
@@ -124,8 +119,9 @@ TestRemoveLambdaInputsWhere()
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionType, "f", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
   auto lambdaBinder0 = lambdaNode->AddContextVar(*x);
   auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
@@ -177,7 +173,7 @@ TestRemoveLambdaInputsWhere()
 }
 
 /**
- * Test lambda::node::PruneLambdaInputs()
+ * Test LambdaNode::PruneLambdaInputs()
  */
 static void
 TestPruneLambdaInputs()
@@ -193,8 +189,9 @@ TestPruneLambdaInputs()
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionType, "f", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
   lambdaNode->AddContextVar(*x);
   auto lambdaInput1 = lambdaNode->AddContextVar(*x);

@@ -18,13 +18,13 @@ class output;
 /**
   \brief Nullary operator (operator taking no formal arguments)
 */
-class nullary_op : public SimpleOperation
+class NullaryOperation : public SimpleOperation
 {
 public:
-  virtual ~nullary_op() noexcept;
+  ~NullaryOperation() noexcept override;
 
-  inline explicit nullary_op(std::shared_ptr<const jlm::rvsdg::Type> result)
-      : SimpleOperation({}, { std::move(result) })
+  explicit NullaryOperation(std::shared_ptr<const Type> resultType)
+      : SimpleOperation({}, { std::move(resultType) })
   {}
 };
 
@@ -50,7 +50,7 @@ struct default_type_of_value
  *   the Type instances corresponding to this value (in case the type
  *   class is polymorphic) */
 template<typename Type, typename ValueRepr, typename FormatValue, typename TypeOfValue>
-class domain_const_op final : public nullary_op
+class domain_const_op final : public NullaryOperation
 {
 public:
   typedef ValueRepr value_repr;
@@ -59,7 +59,7 @@ public:
   {}
 
   inline domain_const_op(const value_repr & value)
-      : nullary_op(TypeOfValue()(value)),
+      : NullaryOperation(TypeOfValue()(value)),
         value_(value)
   {}
 

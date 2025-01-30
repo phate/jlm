@@ -111,7 +111,7 @@ BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
   {
     return bt->nbits();
   }
-  else if (auto at = dynamic_cast<const llvm::arraytype *>(type))
+  else if (auto at = dynamic_cast<const llvm::ArrayType *>(type))
   {
     return JlmSize(&at->element_type()) * at->nelements();
   }
@@ -159,11 +159,11 @@ BaseHLS::create_node_names(rvsdg::Region * r)
   }
 }
 
-const jlm::llvm::lambda::node *
+const jlm::rvsdg::LambdaNode *
 BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 {
   auto region = &rm.Rvsdg().GetRootRegion();
-  auto ln = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
+  auto ln = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   if (region->nnodes() == 1 && ln)
   {
     return ln;

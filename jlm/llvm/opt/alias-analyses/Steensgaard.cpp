@@ -210,7 +210,7 @@ public:
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
-    if (auto node = rvsdg::TryGetRegionParentNode<lambda::node>(*Output_))
+    if (auto node = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*Output_))
     {
       auto dbgstr = node->GetOperation().debug_string();
       if (auto ctxvar = node->MapBinderContextVar(*Output_))
@@ -393,13 +393,13 @@ class LambdaLocation final : public MemoryLocation
 {
   ~LambdaLocation() override = default;
 
-  constexpr explicit LambdaLocation(const lambda::node & lambda)
+  constexpr explicit LambdaLocation(const rvsdg::LambdaNode & lambda)
       : MemoryLocation(),
         Lambda_(lambda)
   {}
 
 public:
-  [[nodiscard]] const lambda::node &
+  [[nodiscard]] const rvsdg::LambdaNode &
   GetNode() const noexcept
   {
     return Lambda_;
@@ -412,13 +412,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const lambda::node & node)
+  Create(const rvsdg::LambdaNode & node)
   {
     return std::unique_ptr<Location>(new LambdaLocation(node));
   }
 
 private:
-  const lambda::node & Lambda_;
+  const rvsdg::LambdaNode & Lambda_;
 };
 
 /** \brief DeltaLocation class
@@ -587,7 +587,7 @@ public:
   }
 
   Location &
-  InsertLambdaLocation(const lambda::node & lambda)
+  InsertLambdaLocation(const rvsdg::LambdaNode & lambda)
   {
     Locations_.push_back(LambdaLocation::Create(lambda));
     auto location = Locations_.back().get();
@@ -1156,7 +1156,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
   case CallTypeClassifier::CallType::RecursiveDirectCall:
     AnalyzeDirectCall(
         callNode,
-        rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()));
+        rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput()));
     break;
   case CallTypeClassifier::CallType::ExternalCall:
     AnalyzeExternalCall(callNode);
@@ -1170,7 +1170,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
+Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
   auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
@@ -1500,7 +1500,7 @@ Steensgaard::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeLambda(const lambda::node & lambda)
+Steensgaard::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())
@@ -1713,7 +1713,7 @@ Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 void
 Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
     AnalyzeLambda(*lambdaNode);
   }
@@ -1754,7 +1754,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
 
   using namespace jlm::rvsdg;
 
-  topdown_traverser traverser(&region);
+  TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))

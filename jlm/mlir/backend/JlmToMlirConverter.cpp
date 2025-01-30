@@ -73,7 +73,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
   std::unordered_map<rvsdg::Node *, ::mlir::Operation *> operationsMap;
-  for (rvsdg::Node * rvsdgNode : rvsdg::topdown_traverser(&region))
+  for (rvsdg::Node * rvsdgNode : rvsdg::TopDownTraverser(&region))
   {
     ::llvm::SmallVector<::mlir::Value> inputs =
         GetConvertedInputs(*rvsdgNode, operationsMap, block);
@@ -157,7 +157,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertSimpleNode(*simpleNode, block, inputs);
   }
-  else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
+  else if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
     return ConvertLambda(*lambda, block);
   }
@@ -387,7 +387,7 @@ JlmToMlirConverter::ConvertSimpleNode(
 }
 
 ::mlir::Operation *
-JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir::Block & block)
+JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Type> arguments;
   for (auto arg : lambdaNode.GetFunctionArguments())
@@ -415,11 +415,13 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
       Builder_->getStringAttr("sym_name"),
-      Builder_->getStringAttr(lambdaNode.name()));
+      Builder_->getStringAttr(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).name()));
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(lambdaNode.linkage())));
+      Builder_->getStringAttr(llvm::ToString(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
   attributes.push_back(linkage);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
@@ -516,7 +518,7 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   {
     return Builder_->getIntegerType(bt->nbits());
   }
-  else if (rvsdg::is<llvm::iostatetype>(type))
+  else if (rvsdg::is<llvm::IOStateType>(type))
   {
     return Builder_->getType<::mlir::rvsdg::IOStateEdgeType>();
   }

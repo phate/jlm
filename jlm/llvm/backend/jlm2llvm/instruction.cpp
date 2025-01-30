@@ -206,12 +206,12 @@ convert(
   {
     auto argument = args[n];
 
-    if (rvsdg::is<iostatetype>(argument->type()))
+    if (rvsdg::is<IOStateType>(argument->type()))
       continue;
     if (rvsdg::is<MemoryStateType>(argument->type()))
       continue;
 
-    if (rvsdg::is<varargtype>(argument->type()))
+    if (rvsdg::is<VariableArgumentType>(argument->type()))
     {
       JLM_ASSERT(is<tacvariable>(argument));
       auto valist = dynamic_cast<const llvm::tacvariable *>(argument)->tac();
@@ -288,7 +288,7 @@ convert_phi(
   auto & llvmContext = ctx.llvm_module().getContext();
   auto & typeConverter = ctx.GetTypeConverter();
 
-  if (rvsdg::is<iostatetype>(phi.type()))
+  if (rvsdg::is<IOStateType>(phi.type()))
     return nullptr;
   if (rvsdg::is<MemoryStateType>(phi.type()))
     return nullptr;
@@ -490,7 +490,7 @@ convert(
     }
   }
 
-  if (auto ft = dynamic_cast<const fptype *>(&op.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&op.type()))
   {
     if (ft->size() == fpsize::half)
     {
@@ -534,7 +534,7 @@ convert(
     data.push_back(c);
   }
 
-  auto at = std::dynamic_pointer_cast<const arraytype>(op.result(0));
+  auto at = std::dynamic_pointer_cast<const ArrayType>(op.result(0));
   auto type = typeConverter.ConvertArrayType(*at, llvmContext);
   return ::llvm::ConstantArray::get(type, data);
 }
@@ -769,7 +769,7 @@ convert_constantdatavector(
     }
   }
 
-  if (auto ft = dynamic_cast<const fptype *>(&cop.type()))
+  if (auto ft = dynamic_cast<const FloatingPointType *>(&cop.type()))
   {
     if (ft->size() == fpsize::half)
     {
@@ -883,15 +883,17 @@ convert_cast(
   auto dsttype = std::dynamic_pointer_cast<const rvsdg::ValueType>(op.result(0));
   auto operand = operands[0];
 
-  if (auto vt = dynamic_cast<const fixedvectortype *>(&operand->type()))
+  if (const auto vt = dynamic_cast<const FixedVectorType *>(&operand->type()))
   {
-    auto type = typeConverter.ConvertJlmType(fixedvectortype(dsttype, vt->size()), llvmContext);
+    const auto type =
+        typeConverter.ConvertJlmType(FixedVectorType(dsttype, vt->size()), llvmContext);
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 
-  if (auto vt = dynamic_cast<const scalablevectortype *>(&operand->type()))
+  if (const auto vt = dynamic_cast<const ScalableVectorType *>(&operand->type()))
   {
-    auto type = typeConverter.ConvertJlmType(scalablevectortype(dsttype, vt->size()), llvmContext);
+    const auto type =
+        typeConverter.ConvertJlmType(ScalableVectorType(dsttype, vt->size()), llvmContext);
     return builder.CreateCast(OPCODE, ctx.value(operand), type);
   }
 

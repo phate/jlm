@@ -97,7 +97,7 @@ public:
         || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode =
-          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
+          rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaEntryNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -121,7 +121,7 @@ public:
         || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode =
-          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
+          rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaExitNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -364,7 +364,7 @@ public:
    * @return True if \p lambdaNode has annotated live nodes, otherwise false.
    */
   bool
-  HasAnnotatedLiveNodes(const lambda::node & lambdaNode) const noexcept
+  HasAnnotatedLiveNodes(const rvsdg::LambdaNode & lambdaNode) const noexcept
   {
     return LiveNodesAnnotatedLambdaNodes_.Contains(&lambdaNode);
   }
@@ -375,7 +375,7 @@ public:
    * @param lambdaNode The lambda node which is marked.
    */
   void
-  AddLiveNodesAnnotatedLambda(const lambda::node & lambdaNode)
+  AddLiveNodesAnnotatedLambda(const rvsdg::LambdaNode & lambdaNode)
   {
     LiveNodesAnnotatedLambdaNodes_.Insert(&lambdaNode);
   }
@@ -413,7 +413,7 @@ private:
 
   // Keeps track of all lambda nodes where we annotated live nodes BEFORE traversing the lambda
   // subregion.
-  util::HashSet<const lambda::node *> LiveNodesAnnotatedLambdaNodes_;
+  util::HashSet<const rvsdg::LambdaNode *> LiveNodesAnnotatedLambdaNodes_;
 };
 
 TopDownMemoryNodeEliminator::~TopDownMemoryNodeEliminator() noexcept = default;
@@ -481,10 +481,10 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
   // This ensures that we visit all the call nodes before we visit the respective lambda nodes.
   // The tail-lambdas (lambda nodes without calls in the RVSDG module) have already been visited and
   // initialized by InitializeLiveNodesOfTailLambdas().
-  rvsdg::bottomup_traverser traverser(&region);
+  rvsdg::BottomUpTraverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
+    if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       EliminateTopDownLambda(*lambdaNode);
     }
@@ -512,7 +512,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 void
 TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
 {
-  auto isLambdaSubregion = rvsdg::is<lambda::operation>(region.node());
+  auto isLambdaSubregion = rvsdg::is<rvsdg::LambdaOperation>(region.node());
   auto isThetaSubregion = rvsdg::is<rvsdg::ThetaOperation>(region.node());
   auto isGammaSubregion = rvsdg::is<rvsdg::GammaOperation>(region.node());
   JLM_ASSERT(isLambdaSubregion || isThetaSubregion || isGammaSubregion);
@@ -520,7 +520,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
   // Process the intra-procedural nodes top-down.
   // This ensures that we add the live memory nodes to the live sets when the respective RVSDG nodes
   // appear in the visitation.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
@@ -557,7 +557,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownStructuralNode(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownLambda(const lambda::node & lambdaNode)
+TopDownMemoryNodeEliminator::EliminateTopDownLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   EliminateTopDownLambdaEntry(lambdaNode);
   EliminateTopDownRegion(*lambdaNode.subregion());
@@ -565,7 +565,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambda(const lambda::node & lambdaN
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const lambda::node & lambdaNode)
+TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaSubregion = *lambdaNode.subregion();
   auto & provisioning = Context_->GetProvisioning();
@@ -595,7 +595,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const lambda::node & la
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const lambda::node & lambdaNode)
+TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaSubregion = *lambdaNode.subregion();
   auto & provisioning = Context_->GetProvisioning();
@@ -628,11 +628,11 @@ TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
 {
   auto unifyLiveNodes = [&](const rvsdg::Region & phiSubregion)
   {
-    std::vector<const lambda::node *> lambdaNodes;
+    std::vector<const rvsdg::LambdaNode *> lambdaNodes;
     util::HashSet<const PointsToGraph::MemoryNode *> liveNodes;
     for (auto & node : phiSubregion.Nodes())
     {
-      if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+      if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
       {
         lambdaNodes.emplace_back(lambdaNode);
 
@@ -816,7 +816,8 @@ TopDownMemoryNodeEliminator::EliminateTopDownNonRecursiveDirectCall(
   JLM_ASSERT(callTypeClassifier.IsNonRecursiveDirectCall());
 
   auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
-  auto & lambdaNode = rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier.GetLambdaOutput());
+  auto & lambdaNode =
+      rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier.GetLambdaOutput());
 
   Context_->AddLiveNodes(*lambdaNode.subregion(), liveNodes);
   Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
@@ -830,7 +831,8 @@ TopDownMemoryNodeEliminator::EliminateTopDownRecursiveDirectCall(
   JLM_ASSERT(callTypeClassifier.IsRecursiveDirectCall());
 
   auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
-  auto & lambdaNode = rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier.GetLambdaOutput());
+  auto & lambdaNode =
+      rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier.GetLambdaOutput());
 
   Context_->AddLiveNodes(*lambdaNode.subregion(), liveNodes);
   Context_->AddLiveNodesAnnotatedLambda(lambdaNode);
@@ -879,7 +881,7 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(
   auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
-    if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
+    if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       InitializeLiveNodesOfTailLambda(*lambdaNode);
     }
@@ -903,7 +905,8 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(const lambda::node & tailLambdaNode)
+TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(
+    const rvsdg::LambdaNode & tailLambdaNode)
 {
   auto IsUnescapedAllocaNode = [&](const PointsToGraph::MemoryNode * memoryNode)
   {
@@ -939,7 +942,7 @@ TopDownMemoryNodeEliminator::CheckInvariants(
   {
     for (auto & node : rootRegion.Nodes())
     {
-      if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+      if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
       {
         auto lambdaSubregion = lambdaNode->subregion();
         regions.push_back(lambdaSubregion);

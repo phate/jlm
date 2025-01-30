@@ -339,7 +339,7 @@ region_to_dot(rvsdg::Region * region)
   }
 
   // nodes
-  for (auto node : jlm::rvsdg::topdown_traverser(region))
+  for (auto node : rvsdg::TopDownTraverser(region))
   {
     if (auto simpleNode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -367,7 +367,7 @@ region_to_dot(rvsdg::Region * region)
     {
       dot << edge(be->argument(), be, true);
     }
-    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)->output()))
+    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)))
     {
       auto loopvar = theta->MapOutputLoopVar(*region->result(i)->output());
       dot << edge(loopvar.pre, loopvar.post, true);

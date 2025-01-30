@@ -328,7 +328,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
       {
         pointeeType = nullptr;
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+      else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
       }
@@ -1235,7 +1235,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // memory
-  auto arraytype = std::dynamic_pointer_cast<const llvm::arraytype>(lmem_op->result(0));
+  auto arraytype = std::dynamic_pointer_cast<const llvm::ArrayType>(lmem_op->result(0));
   size_t depth = arraytype->nelements();
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
@@ -2746,7 +2746,7 @@ RhlsToFirrtlConverter::createInstances(
   auto clock = body->getArgument(0);
   auto reset = body->getArgument(1);
   std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp> instances;
-  for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
+  for (const auto node : rvsdg::TopDownTraverser(subRegion))
   {
     if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -2813,13 +2813,14 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 
 // Emit a circuit
 circt::firrtl::CircuitOp
-RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
+RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
 {
 
   // Ensure consistent naming across runs
   create_node_names(lambdaNode->subregion());
   // The same name is used for the circuit and main module
-  auto moduleName = Builder_->getStringAttr(lambdaNode->name() + "_lambda_mod");
+  auto moduleName = Builder_->getStringAttr(
+      dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode->GetOperation()).name() + "_lambda_mod");
   // Create the top level FIRRTL circuit
   auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
   // The body will be populated with a list of modules
@@ -3977,7 +3978,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       {
         pointeeType = nullptr;
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+      else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
       }
@@ -4017,7 +4018,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   {
     append.append("_S");
     append.append(std::to_string(
-        std::dynamic_pointer_cast<const llvm::arraytype>(op->result(0))->nelements()));
+        std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));

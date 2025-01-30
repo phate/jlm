@@ -195,7 +195,7 @@ merge_gamma(rvsdg::Region * region)
   while (changed)
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::topdown_traverser(region))
+    for (auto & node : rvsdg::TopDownTraverser(region))
     {
       if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {

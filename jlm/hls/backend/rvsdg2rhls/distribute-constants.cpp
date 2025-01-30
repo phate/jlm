@@ -71,11 +71,11 @@ hls::distribute_constants(rvsdg::Region * region)
 {
   // push constants down as far as possible, since this is cheaper than having forks and potentially
   // buffers for them
-  for (auto & node : rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
-      if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         distribute_constants(ln->subregion());
       }

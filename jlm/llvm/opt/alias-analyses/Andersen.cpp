@@ -1062,7 +1062,7 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
@@ -1077,7 +1077,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 }
 
 void
-Andersen::AnalyzeLambda(const lambda::node & lambda)
+Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())
@@ -1286,7 +1286,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 
   // The use of the top-down traverser is vital, as it ensures all input origins
   // of pointer type are mapped to PointerObjects by the time a node is processed.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
 
   // While visiting the node we have the responsibility of creating
   // PointerObjects for any of the node's outputs of pointer type

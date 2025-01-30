@@ -10,7 +10,7 @@
 namespace jlm::rvsdg
 {
 
-nullary_op::~nullary_op() noexcept
+NullaryOperation::~NullaryOperation() noexcept
 {}
 
 }

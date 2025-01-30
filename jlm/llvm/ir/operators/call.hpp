@@ -229,7 +229,7 @@ public:
   static std::unique_ptr<CallTypeClassifier>
   CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
   {
-    rvsdg::AssertGetOwnerNode<lambda::node>(output);
+    rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(output);
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
   }
 
@@ -371,7 +371,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto iOState = input(ninputs() - 2);
-    JLM_ASSERT(is<iostatetype>(iOState->type()));
+    JLM_ASSERT(is<IOStateType>(iOState->type()));
     return iOState;
   }
 
@@ -393,7 +393,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto iOState = output(noutputs() - 2);
-    JLM_ASSERT(is<iostatetype>(iOState->type()));
+    JLM_ASSERT(is<IOStateType>(iOState->type()));
     return iOState;
   }
 
@@ -541,7 +541,7 @@ private:
       if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
         throw jlm::util::error("Expected memory state type.");
 
-      if (!is<iostatetype>(functionType.ArgumentType(iOStateArgumentIndex)))
+      if (!is<IOStateType>(functionType.ArgumentType(iOStateArgumentIndex)))
         throw jlm::util::error("Expected IO state type.");
     };
 
@@ -556,7 +556,7 @@ private:
       if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
         throw jlm::util::error("Expected memory state type.");
 
-      if (!is<iostatetype>(functionType.ResultType(iOStateResultIndex)))
+      if (!is<IOStateType>(functionType.ResultType(iOStateResultIndex)))
         throw jlm::util::error("Expected IO state type.");
     };
 

@@ -155,7 +155,7 @@ ConvertGammaNodesInStructuralNode(rvsdg::StructuralNode & structuralNode)
 static void
 ConvertGammaNodesInRegion(rvsdg::Region & region)
 {
-  for (auto & node : rvsdg::topdown_traverser(&region))
+  for (auto & node : rvsdg::TopDownTraverser(&region))
   {
     if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

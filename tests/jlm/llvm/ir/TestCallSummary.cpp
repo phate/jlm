@@ -24,11 +24,12 @@ TestCallSummaryComputationDead()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto lambdaNode = jlm::llvm::lambda::node::create(
-      &rvsdg.GetRootRegion(),
-      functionType,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(
+          functionType,
+          "f",
+          jlm::llvm::linkage::external_linkage));
 
   auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
@@ -58,11 +59,12 @@ TestCallSummaryComputationExport()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto lambdaNode = jlm::llvm::lambda::node::create(
-      &rvsdg.GetRootRegion(),
-      functionType,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(
+          functionType,
+          "f",
+          jlm::llvm::linkage::external_linkage));
 
   auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
 
@@ -89,19 +91,20 @@ TestCallSummaryComputationDirectCalls()
   // Arrange
   auto vt = tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() },
-      { vt, jlm::llvm::iostatetype::Create(), jlm::llvm::MemoryStateType::Create() });
+      { jlm::llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() },
+      { vt, jlm::llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto SetupLambdaX = [&]()
   {
-    auto lambdaNode = jlm::llvm::lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionType,
-        "x",
-        jlm::llvm::linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        jlm::llvm::LlvmLambdaOperation::Create(
+            functionType,
+            "x",
+            jlm::llvm::linkage::external_linkage));
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
 
@@ -112,11 +115,12 @@ TestCallSummaryComputationDirectCalls()
 
   auto SetupLambdaY = [&](rvsdg::output & lambdaX)
   {
-    auto lambdaNode = jlm::llvm::lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionType,
-        "y",
-        jlm::llvm::linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        jlm::llvm::LlvmLambdaOperation::Create(
+            functionType,
+            "y",
+            jlm::llvm::linkage::external_linkage));
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
@@ -134,11 +138,12 @@ TestCallSummaryComputationDirectCalls()
 
   auto SetupLambdaZ = [&](rvsdg::output & lambdaX, rvsdg::output & lambdaY)
   {
-    auto lambdaNode = jlm::llvm::lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionType,
-        "y",
-        jlm::llvm::linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        jlm::llvm::LlvmLambdaOperation::Create(
+            functionType,
+            "y",
+            jlm::llvm::linkage::external_linkage));
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
@@ -168,11 +173,11 @@ TestCallSummaryComputationDirectCalls()
 
   // Act
   auto lambdaXCallSummary =
-      jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::llvm::lambda::node>(*lambdaX));
+      jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaX));
   auto lambdaYCallSummary =
-      jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::llvm::lambda::node>(*lambdaY));
+      jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaY));
   auto lambdaZCallSummary =
-      jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::llvm::lambda::node>(*lambdaZ));
+      jlm::llvm::ComputeCallSummary(rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaZ));
 
   // Assert
   assert(lambdaXCallSummary.HasOnlyDirectCalls());
@@ -249,8 +254,9 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg->GetRootRegion(), functionType, "f", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg->GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[0] });
 
   auto deltaNode = delta::node::Create(
@@ -286,12 +292,14 @@ TestCallSummaryComputationLambdaResult()
   auto functionTypeG = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
   auto functionTypeF = jlm::rvsdg::FunctionType::Create({ valueType }, { PointerType::Create() });
 
-  auto lambdaNodeG =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionTypeG, "g", linkage::external_linkage);
+  auto lambdaNodeG = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(functionTypeG, "g", linkage::external_linkage));
   auto lambdaOutputG = lambdaNodeG->finalize({ lambdaNodeG->GetFunctionArguments()[0] });
 
-  auto lambdaNodeF =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionTypeF, "f", linkage::external_linkage);
+  auto lambdaNodeF = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(functionTypeF, "f", linkage::external_linkage));
   auto lambdaGArgument = lambdaNodeF->AddContextVar(*lambdaOutputG).inner;
   auto ptr =
       jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ lambdaGArgument }, functionTypeG)

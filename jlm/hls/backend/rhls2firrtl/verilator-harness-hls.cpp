@@ -26,7 +26,7 @@ ConvertToCType(const rvsdg::Type * type)
   {
     return "void*";
   }
-  if (auto t = dynamic_cast<const llvm::arraytype *>(type))
+  if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {
     return ConvertToCType(&t->element_type()) + "*";
   }
@@ -41,9 +41,9 @@ ConvertToCType(const rvsdg::Type * type)
  * @return the return type of the kernel as written in C, or nullopt if it has no return value.
  */
 std::optional<std::string>
-GetReturnTypeAsC(const llvm::lambda::node & kernel)
+GetReturnTypeAsC(const rvsdg::LambdaNode & kernel)
 {
-  const auto & results = kernel.type().Results();
+  const auto & results = kernel.GetOperation().type().Results();
 
   if (results.empty())
     return std::nullopt;
@@ -65,13 +65,13 @@ GetReturnTypeAsC(const llvm::lambda::node & kernel)
  * @return a tuple (number of parameters, string of parameters, string of call arguments)
  */
 std::tuple<size_t, std::string, std::string>
-GetParameterListAsC(const llvm::lambda::node & kernel)
+GetParameterListAsC(const rvsdg::LambdaNode & kernel)
 {
   size_t argument_index = 0;
   std::ostringstream parameters;
   std::ostringstream arguments;
 
-  for (auto & argType : kernel.type().Arguments())
+  for (auto & argType : kernel.GetOperation().type().Arguments())
   {
     if (rvsdg::is<rvsdg::StateType>(argType))
       continue;
@@ -97,7 +97,8 @@ VerilatorHarnessHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream cpp;
   const auto & kernel = *get_hls_lambda(rm);
-  const auto & function_name = kernel.name();
+  const auto & function_name =
+      dynamic_cast<llvm::LlvmLambdaOperation &>(kernel.GetOperation()).name();
 
   // The request and response parts of memory queues
   const auto mem_reqs = get_mem_reqs(kernel);

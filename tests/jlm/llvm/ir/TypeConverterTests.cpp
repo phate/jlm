@@ -118,21 +118,21 @@ LlvmFunctionTypeConversion()
   auto arguments = functionType1Jlm->Arguments();
   assert(is<bittype>(arguments[0]));
   assert(is<bittype>(arguments[1]));
-  assert(is<iostatetype>(arguments[2]));
+  assert(is<IOStateType>(arguments[2]));
   assert(is<MemoryStateType>(arguments[3]));
   auto results = functionType1Jlm->Results();
-  assert(is<iostatetype>(results[0]));
+  assert(is<IOStateType>(results[0]));
   assert(is<MemoryStateType>(results[1]));
 
   assert(functionType2Jlm != nullptr);
   assert(functionType2Jlm->NumArguments() == 2);
   assert(functionType2Jlm->NumResults() == 3);
   arguments = functionType2Jlm->Arguments();
-  assert(is<iostatetype>(arguments[0]));
+  assert(is<IOStateType>(arguments[0]));
   assert(is<MemoryStateType>(arguments[1]));
   results = functionType2Jlm->Results();
   assert(is<bittype>(results[0]));
-  assert(is<iostatetype>(results[1]));
+  assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
 
   assert(functionType3Jlm != nullptr);
@@ -141,12 +141,12 @@ LlvmFunctionTypeConversion()
   arguments = functionType3Jlm->Arguments();
   assert(is<bittype>(arguments[0]));
   assert(is<bittype>(arguments[1]));
-  assert(is<varargtype>(arguments[2]));
-  assert(is<iostatetype>(arguments[3]));
+  assert(is<VariableArgumentType>(arguments[2]));
+  assert(is<IOStateType>(arguments[3]));
   assert(is<MemoryStateType>(arguments[4]));
   results = functionType3Jlm->Results();
   assert(is<bittype>(results[0]));
-  assert(is<iostatetype>(results[1]));
+  assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
 
   return 0;
@@ -172,16 +172,16 @@ LlvmFloatingPointTypeConversion()
   const auto fp128TypeLlvm = ::llvm::Type::getFP128Ty(context);
 
   // Act
-  const auto halfTypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*halfTypeLlvm));
-  const auto floatTypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*floatTypeLlvm));
-  const auto doubleTypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*doubleTypeLlvm));
-  const auto x86fp80TypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*x86fp80TypeLlvm));
-  const auto fp128TypeJlm =
-      std::dynamic_pointer_cast<const fptype>(typeConverter.ConvertLlvmType(*fp128TypeLlvm));
+  const auto halfTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*halfTypeLlvm));
+  const auto floatTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*floatTypeLlvm));
+  const auto doubleTypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*doubleTypeLlvm));
+  const auto x86fp80TypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*x86fp80TypeLlvm));
+  const auto fp128TypeJlm = std::dynamic_pointer_cast<const FloatingPointType>(
+      typeConverter.ConvertLlvmType(*fp128TypeLlvm));
 
   // Assert
   assert(halfTypeJlm && halfTypeJlm->size() == fpsize::half);
@@ -280,9 +280,9 @@ LlvmArrayTypeConversion()
 
   // Act
   const auto arrayType1Jlm =
-      std::dynamic_pointer_cast<const arraytype>(typeConverter.ConvertLlvmType(*arrayType1Llvm));
+      std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType1Llvm));
   const auto arrayType2Jlm =
-      std::dynamic_pointer_cast<const arraytype>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
+      std::dynamic_pointer_cast<const ArrayType>(typeConverter.ConvertLlvmType(*arrayType2Llvm));
 
   // Assert
   assert(arrayType1Jlm);
@@ -290,7 +290,7 @@ LlvmArrayTypeConversion()
   assert(arrayType1Jlm->nelements() == 4);
 
   assert(arrayType2Jlm);
-  assert(is<fptype>(arrayType2Jlm->element_type()));
+  assert(is<FloatingPointType>(arrayType2Jlm->element_type()));
   assert(arrayType2Jlm->nelements() == 9);
 
   return 0;
@@ -316,9 +316,9 @@ LlvmVectorTypeConversion()
   const auto vectorType2Llvm = ::llvm::VectorType::get(halfType, 9, true);
 
   // Act
-  const auto vectorType1Jlm = std::dynamic_pointer_cast<const fixedvectortype>(
+  const auto vectorType1Jlm = std::dynamic_pointer_cast<const FixedVectorType>(
       typeConverter.ConvertLlvmType(*vectorType1Llvm));
-  const auto vectorType2Jlm = std::dynamic_pointer_cast<const scalablevectortype>(
+  const auto vectorType2Jlm = std::dynamic_pointer_cast<const ScalableVectorType>(
       typeConverter.ConvertLlvmType(*vectorType2Llvm));
 
   // Assert
@@ -327,7 +327,7 @@ LlvmVectorTypeConversion()
   assert(vectorType1Jlm->size() == 4);
 
   assert(vectorType2Jlm);
-  assert(is<fptype>(vectorType2Jlm->type()));
+  assert(is<FloatingPointType>(vectorType2Jlm->type()));
   assert(vectorType2Jlm->size() == 9);
 
   return 0;
@@ -401,9 +401,9 @@ JlmFunctionTypeConversion()
   TypeConverter typeConverter;
 
   auto bit32Type = bittype::Create(32);
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto varArgType = varargtype::Create();
+  auto varArgType = VariableArgumentType::Create();
   const auto functionType1Jlm = FunctionType::Create(
       { bit32Type, bit32Type, ioStateType, memoryStateType },
       { memoryStateType, ioStateType });
@@ -486,9 +486,9 @@ JlmArrayTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = bittype::Create(32);
-  const auto halfType = fptype::Create(fpsize::half);
-  const auto arrayType1Jlm = arraytype::Create(bit32Type, 4);
-  const auto arrayType2Jlm = arraytype::Create(halfType, 9);
+  const auto halfType = FloatingPointType::Create(fpsize::half);
+  const auto arrayType1Jlm = ArrayType::Create(bit32Type, 4);
+  const auto arrayType2Jlm = ArrayType::Create(halfType, 9);
 
   // Act
   const auto arrayType1Llvm = typeConverter.ConvertJlmType(*arrayType1Jlm, context);
@@ -549,11 +549,11 @@ JlmFloatingPointTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto halfTypeJlm = fptype::Create(fpsize::half);
-  const auto floatTypeJlm = fptype::Create(fpsize::flt);
-  const auto doubleTypeJlm = fptype::Create(fpsize::dbl);
-  const auto x86fp80TypeJlm = fptype::Create(fpsize::x86fp80);
-  const auto fp128TypeJlm = fptype::Create(fpsize::fp128);
+  const auto halfTypeJlm = FloatingPointType::Create(fpsize::half);
+  const auto floatTypeJlm = FloatingPointType::Create(fpsize::flt);
+  const auto doubleTypeJlm = FloatingPointType::Create(fpsize::dbl);
+  const auto x86fp80TypeJlm = FloatingPointType::Create(fpsize::x86fp80);
+  const auto fp128TypeJlm = FloatingPointType::Create(fpsize::fp128);
 
   // Act
   const auto halfTypeLlvm = typeConverter.ConvertJlmType(*halfTypeJlm, context);
@@ -586,7 +586,7 @@ JlmStructTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = jlm::rvsdg::bittype::Create(32);
-  const auto halfType = fptype::Create(fpsize::half);
+  const auto halfType = FloatingPointType::Create(fpsize::half);
 
   const auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
   const auto declaration2 = StructType::Declaration::Create({ bit32Type, bit32Type, bit32Type });
@@ -652,8 +652,8 @@ JlmFixedVectorTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = bittype::Create(32);
-  const auto fixedVectorType1 = fixedvectortype::Create(bit32Type, 2);
-  const auto fixedVectorType2 = fixedvectortype::Create(bit32Type, 4);
+  const auto fixedVectorType1 = FixedVectorType::Create(bit32Type, 2);
+  const auto fixedVectorType2 = FixedVectorType::Create(bit32Type, 4);
 
   // Act
   const auto vectorType1 =
@@ -688,8 +688,8 @@ JlmScalableVectorTypeConversion()
   TypeConverter typeConverter;
 
   const auto bit32Type = bittype::Create(32);
-  const auto scalableVectorType1 = scalablevectortype::Create(bit32Type, 2);
-  const auto scalableVectorType2 = scalablevectortype::Create(bit32Type, 4);
+  const auto scalableVectorType1 = ScalableVectorType::Create(bit32Type, 2);
+  const auto scalableVectorType2 = ScalableVectorType::Create(bit32Type, 4);
 
   // Act
   const auto vectorType1 =
