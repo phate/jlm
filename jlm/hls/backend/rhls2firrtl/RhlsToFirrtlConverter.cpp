@@ -2813,13 +2813,14 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 
 // Emit a circuit
 circt::firrtl::CircuitOp
-RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
+RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
 {
 
   // Ensure consistent naming across runs
   create_node_names(lambdaNode->subregion());
   // The same name is used for the circuit and main module
-  auto moduleName = Builder_->getStringAttr(lambdaNode->GetOperation().name() + "_lambda_mod");
+  auto moduleName = Builder_->getStringAttr(
+      dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode->GetOperation()).name() + "_lambda_mod");
   // Create the top level FIRRTL circuit
   auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
   // The body will be populated with a list of modules

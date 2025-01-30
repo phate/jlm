@@ -28,11 +28,9 @@ TestLambda()
         { IOStateType::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -53,7 +51,7 @@ TestLambda()
     // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
     auto & mlirLambda = omegaBlock.front();
-    assert(mlirLambda.getName().getStringRef().equals(LambdaNode::getOperationName()));
+    assert(mlirLambda.getName().getStringRef().equals(mlir::rvsdg::LambdaNode::getOperationName()));
 
     // Verify function name
     std::cout << "Verify function name" << std::endl;
@@ -147,11 +145,9 @@ TestAddOperation()
         { IOStateType::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -248,11 +244,9 @@ TestComZeroExt()
         { IOStateType::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::bittype::Create(1), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -390,11 +384,9 @@ TestMatch()
         { IOStateType::Create(), MemoryStateType::Create() },
         { jlm::rvsdg::ControlType::Create(2), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 

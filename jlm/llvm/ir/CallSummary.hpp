@@ -191,7 +191,7 @@ private:
 };
 
 CallSummary
-ComputeCallSummary(const lambda::node & lambdaNode);
+ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode);
 
 }
 

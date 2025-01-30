@@ -986,7 +986,7 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
@@ -1001,7 +1001,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 }
 
 void
-Andersen::AnalyzeLambda(const lambda::node & lambda)
+Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())

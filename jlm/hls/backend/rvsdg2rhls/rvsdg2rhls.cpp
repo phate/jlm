@@ -97,10 +97,12 @@ dump_xml(llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
 }
 
 bool
-function_match(llvm::lambda::node * ln, const std::string & function_name)
+function_match(rvsdg::LambdaNode * ln, const std::string & function_name)
 {
   const std::regex fn_regex(function_name);
-  if (std::regex_match(ln->GetOperation().name(), fn_regex))
+  if (std::regex_match(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation()).name(),
+          fn_regex))
   { // TODO: handle C++ name mangling
     return true;
   }
@@ -162,11 +164,11 @@ inline_calls(rvsdg::Region * region)
           throw jlm::util::error("can not inline external function " + graphImport->Name());
         }
       }
-      JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
+      JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
       auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
       llvm::inlineCall(
           dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
-          dynamic_cast<const llvm::lambda::node *>(ln));
+          dynamic_cast<const rvsdg::LambdaNode *>(ln));
       // restart for this region
       inline_calls(region);
       return;
@@ -279,12 +281,13 @@ rename_delta(llvm::delta::node * odn)
   return static_cast<llvm::delta::node *>(jlm::rvsdg::output::GetNode(*data));
 }
 
-llvm::lambda::node *
-change_linkage(llvm::lambda::node * ln, llvm::linkage link)
+rvsdg::LambdaNode *
+change_linkage(rvsdg::LambdaNode * ln, llvm::linkage link)
 {
-  const auto & op = ln->GetOperation();
-  auto lambda =
-      llvm::lambda::node::create(ln->region(), op.Type(), op.name(), link, op.attributes());
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
+  auto lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(op.Type(), op.name(), link, op.attributes()));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -330,7 +333,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
   auto root = &rm.Rvsdg().GetRootRegion();
   for (auto node : rvsdg::TopDownTraverser(root))
   {
-    if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+    if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
     {
       if (!function_match(ln, function_name))
       {
@@ -357,10 +360,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           continue;
         }
         auto orig_node = orig_node_output->node();
-        if (auto oln = dynamic_cast<llvm::lambda::node *>(orig_node))
+        if (auto oln = dynamic_cast<rvsdg::LambdaNode *>(orig_node))
         {
           throw jlm::util::error(
-              "Inlining of function " + oln->GetOperation().name() + " not supported");
+              "Inlining of function "
+              + dynamic_cast<llvm::LlvmLambdaOperation &>(oln->GetOperation()).name()
+              + " not supported");
         }
         else if (auto odn = dynamic_cast<llvm::delta::node *>(orig_node))
         {
@@ -393,7 +398,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
       jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
-      const auto & op = ln->GetOperation();
+      const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
           op.Type(),
@@ -402,7 +407,9 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           llvm::linkage::external_linkage); // TODO: change linkage?
       ln->output()->divert_users(&graphImport);
       remove(ln);
-      std::cout << "function " << new_ln->GetOperation().name() << " extracted for HLS\n";
+      std::cout << "function "
+                << dynamic_cast<llvm::LlvmLambdaOperation &>(new_ln->GetOperation()).name()
+                << " extracted for HLS\n";
       return rhls;
     }
   }

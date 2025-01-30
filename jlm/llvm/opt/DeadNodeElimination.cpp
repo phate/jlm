@@ -235,7 +235,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(output))
+  if (auto lambda = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(output))
   {
     for (auto & result : lambda->GetFunctionResults())
     {
@@ -244,7 +244,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto lambda = rvsdg::TryGetRegionParentNode<lambda::node>(output))
+  if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
   {
     if (auto ctxvar = lambda->MapBinderContextVar(output))
     {
@@ -361,7 +361,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
   };
   auto sweepLambda = [](auto & d, auto & n)
   {
-    d.SweepLambda(*util::AssertedCast<lambda::node>(&n));
+    d.SweepLambda(*util::AssertedCast<rvsdg::LambdaNode>(&n));
   };
   auto sweepPhi = [](auto & d, auto & n)
   {
@@ -377,7 +377,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
       std::function<void(const DeadNodeElimination &, rvsdg::StructuralNode &)>>
       map({ { typeid(rvsdg::GammaOperation), sweepGamma },
             { typeid(rvsdg::ThetaOperation), sweepTheta },
-            { typeid(lambda::operation), sweepLambda },
+            { typeid(llvm::LlvmLambdaOperation), sweepLambda },
             { typeid(phi::operation), sweepPhi },
             { typeid(delta::operation), sweepDelta } });
 
@@ -463,7 +463,7 @@ DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 }
 
 void
-DeadNodeElimination::SweepLambda(lambda::node & lambdaNode) const
+DeadNodeElimination::SweepLambda(rvsdg::LambdaNode & lambdaNode) const
 {
   SweepRegion(*lambdaNode.subregion());
   lambdaNode.PruneLambdaInputs();

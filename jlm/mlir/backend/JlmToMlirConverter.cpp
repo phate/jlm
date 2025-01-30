@@ -157,7 +157,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertSimpleNode(*simpleNode, block, inputs);
   }
-  else if (auto lambda = dynamic_cast<const llvm::lambda::node *>(&node))
+  else if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
     return ConvertLambda(*lambda, block);
   }
@@ -387,7 +387,7 @@ JlmToMlirConverter::ConvertSimpleNode(
 }
 
 ::mlir::Operation *
-JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir::Block & block)
+JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Type> arguments;
   for (auto arg : lambdaNode.GetFunctionArguments())
@@ -415,11 +415,13 @@ JlmToMlirConverter::ConvertLambda(const llvm::lambda::node & lambdaNode, ::mlir:
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
       Builder_->getStringAttr("sym_name"),
-      Builder_->getStringAttr(lambdaNode.GetOperation().name()));
+      Builder_->getStringAttr(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).name()));
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(lambdaNode.GetOperation().linkage())));
+      Builder_->getStringAttr(llvm::ToString(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
   attributes.push_back(linkage);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(

@@ -115,8 +115,8 @@ TestLambda()
 
       assert(region->nnodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<bitconstant_op>(convertedLambda->subregion()->Nodes().begin().ptr()));
@@ -268,8 +268,8 @@ TestDivOperation()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
       assert(convertedLambda->subregion()->nnodes() == 3);
@@ -446,8 +446,8 @@ TestCompZeroExt()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
       assert(convertedLambda->subregion()->nnodes() == 5);
@@ -659,8 +659,8 @@ TestMatchOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
 
@@ -832,8 +832,8 @@ TestGammaOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
 
@@ -981,8 +981,8 @@ TestThetaOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::lambda::operation>(convertedLambda));
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
 

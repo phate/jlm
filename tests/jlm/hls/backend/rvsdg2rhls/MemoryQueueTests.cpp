@@ -28,11 +28,9 @@ TestSingleLoad()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -104,11 +102,9 @@ TestLoadStore()
         MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -185,11 +181,9 @@ TestAddrQueue()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());

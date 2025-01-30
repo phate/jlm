@@ -412,7 +412,7 @@ private:
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
-  AnalyzeLambda(const lambda::node & node);
+  AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
   AnalyzeDelta(const delta::node & node);

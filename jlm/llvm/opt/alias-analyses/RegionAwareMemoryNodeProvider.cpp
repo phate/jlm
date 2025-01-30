@@ -381,7 +381,7 @@ public:
         || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode =
-          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
+          rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaEntryNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -406,7 +406,7 @@ public:
         || callTypeClassifier->IsRecursiveDirectCall())
     {
       auto & lambdaNode =
-          rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput());
+          rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput());
       return GetLambdaExitNodes(lambdaNode);
     }
     else if (callTypeClassifier->IsExternalCall())
@@ -568,7 +568,7 @@ public:
 
       auto callTypeClassifier = CallNode::ClassifyCall(callNode);
       auto & lambdaRegion =
-          *rvsdg::AssertGetOwnerNode<llvm::lambda::node>(callTypeClassifier->GetLambdaOutput())
+          *rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput())
                .subregion();
       auto & lambdaRegionSummary = provisioning.GetRegionSummary(lambdaRegion);
       auto & lambdaRegionMemoryNodes = lambdaRegionSummary.GetMemoryNodes();
@@ -862,7 +862,7 @@ RegionAwareMemoryNodeProvider::Propagate(const rvsdg::RvsdgModule & rvsdgModule)
   rvsdg::TopDownTraverser traverser(&rvsdgModule.Rvsdg().GetRootRegion());
   for (auto & node : traverser)
   {
-    if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
+    if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       PropagateRegion(*lambdaNode->subregion());
     }
@@ -963,7 +963,8 @@ RegionAwareMemoryNodeProvider::PropagateRegion(const rvsdg::Region & region)
   {
     auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
     auto & lambdaRegion =
-        *rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()).subregion();
+        *rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput())
+             .subregion();
     auto & lambdaRegionSummary = Provisioning_->GetRegionSummary(lambdaRegion);
 
     RegionSummary::Propagate(regionSummary, lambdaRegionSummary);
@@ -974,7 +975,7 @@ void
 RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(
     const rvsdg::RvsdgModule & rvsdgModule)
 {
-  auto ResolveLambda = [&](const lambda::node & lambda)
+  auto ResolveLambda = [&](const rvsdg::LambdaNode & lambda)
   {
     auto & lambdaRegionSummary = Provisioning_->GetRegionSummary(*lambda.subregion());
 
@@ -989,7 +990,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(
   auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
   {
-    if (auto lambdaNode = dynamic_cast<const lambda::node *>(node))
+    if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       ResolveLambda(*lambdaNode);
     }

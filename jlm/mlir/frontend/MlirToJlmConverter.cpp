@@ -458,11 +458,12 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region 
 
   // FIXME
   // The linkage should be part of the MLIR attributes so it can be extracted here
-  auto rvsdgLambda = llvm::lambda::node::create(
-      &rvsdgRegion,
-      functionType,
-      functionName.getValue().str(),
-      llvm::linkage::external_linkage);
+  auto rvsdgLambda = rvsdg::LambdaNode::Create(
+      rvsdgRegion,
+      llvm::LlvmLambdaOperation::Create(
+          functionType,
+          functionName.getValue().str(),
+          llvm::linkage::external_linkage));
 
   auto lambdaRegion = rvsdgLambda->subregion();
   auto regionResults = ConvertRegion(mlirLambda.getRegion(0), *lambdaRegion);

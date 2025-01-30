@@ -72,7 +72,7 @@ private:
 
         AnalyzeRegion(*deltaNode->subregion());
       }
-      else if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+      else if (auto lambdaNode = dynamic_cast<const jlm::rvsdg::LambdaNode *>(&node))
       {
         auto & lambdaPtgNode = aa::PointsToGraph::LambdaNode::Create(*PointsToGraph_, *lambdaNode);
         auto & registerNode =
