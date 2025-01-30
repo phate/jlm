@@ -21,24 +21,14 @@ namespace jlm::rvsdg
 
 /** \brief Lambda operation
  *
- * A lambda operation determines a lambda's name and \ref FunctionType "function type".
+ * A lambda operation determines a lambda's \ref FunctionType "function type".
  */
 class LambdaOperation : public rvsdg::StructuralOperation
 {
 public:
   ~LambdaOperation() override;
 
-  LambdaOperation(std::shared_ptr<const FunctionType> type);
-
-  LambdaOperation(const LambdaOperation & other) = default;
-
-  LambdaOperation(LambdaOperation && other) noexcept = default;
-
-  LambdaOperation &
-  operator=(const LambdaOperation & other) = default;
-
-  LambdaOperation &
-  operator=(LambdaOperation && other) noexcept = default;
+  explicit LambdaOperation(std::shared_ptr<const FunctionType> type);
 
   [[nodiscard]] const FunctionType &
   type() const noexcept

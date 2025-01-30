@@ -18,7 +18,7 @@ LambdaOperation::LambdaOperation(std::shared_ptr<const FunctionType> type)
 std::string
 LambdaOperation::debug_string() const
 {
-  return util::strfmt("LAMBDA[", Type()->debug_string(), "]");
+  return util::strfmt("Lambda[", Type()->debug_string(), "]");
 }
 
 bool
@@ -33,8 +33,6 @@ LambdaOperation::copy() const
 {
   return std::make_unique<LambdaOperation>(*this);
 }
-
-/* lambda node class */
 
 LambdaNode::~LambdaNode() = default;
 
