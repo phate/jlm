@@ -11,8 +11,8 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
+#include <jlm/rvsdg/nullary.hpp>
 
 static int
 TestUndef()
@@ -182,8 +182,11 @@ TestLoad()
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "test", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -191,7 +194,7 @@ TestLoad()
     // Create load operation
     auto loadType = jlm::rvsdg::bittype::Create(32);
     auto loadOp = jlm::llvm::LoadNonVolatileOperation(loadType, 1, 4);
-    auto& subregion = *(lambda->subregion());
+    auto & subregion = *(lambda->subregion());
     jlm::llvm::LoadNonVolatileNode::Create(
         subregion,
         std::make_unique<LoadNonVolatileOperation>(loadOp),
@@ -242,9 +245,10 @@ TestLoad()
       assert(is<lambda::operation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<LoadNonVolatileOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedLoad =
-          dynamic_cast<const LoadNonVolatileNode *>(convertedLambda->subregion()->Nodes().begin().ptr());
+      assert(is<LoadNonVolatileOperation>(
+          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedLoad = dynamic_cast<const LoadNonVolatileNode *>(
+          convertedLambda->subregion()->Nodes().begin().ptr());
 
       assert(convertedLoad->GetAlignment() == 4);
       assert(convertedLoad->NumMemoryStates() == 1);
@@ -277,8 +281,11 @@ TestStore()
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create(), bitsType },
         { IOStateType::Create(), MemoryStateType::Create() });
-    auto lambda =
-        lambda::node::create(&graph->GetRootRegion(), functionType, "test", linkage::external_linkage);
+    auto lambda = lambda::node::create(
+        &graph->GetRootRegion(),
+        functionType,
+        "test",
+        linkage::external_linkage);
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -335,9 +342,10 @@ TestStore()
       assert(is<lambda::operation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<StoreNonVolatileOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedStore =
-          dynamic_cast<const StoreNonVolatileNode *>(convertedLambda->subregion()->Nodes().begin().ptr());
+      assert(is<StoreNonVolatileOperation>(
+          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedStore = dynamic_cast<const StoreNonVolatileNode *>(
+          convertedLambda->subregion()->Nodes().begin().ptr());
 
       assert(convertedStore->GetAlignment() == 4);
       assert(convertedStore->NumMemoryStates() == 1);
