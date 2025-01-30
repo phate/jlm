@@ -13,16 +13,6 @@ namespace jlm::llvm
 {
 class CallNode;
 class CallTypeClassifier;
-
-namespace lambda
-{
-class node;
-}
-
-namespace phi
-{
-class node;
-}
 }
 
 namespace jlm::rvsdg
@@ -30,6 +20,7 @@ namespace jlm::rvsdg
 class GammaNode;
 class LambdaNode;
 class Node;
+class PhiNode;
 class Region;
 class SimpleNode;
 class StructuralNode;
@@ -147,7 +138,7 @@ private:
   EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownPhi(const phi::node & phiNode);
+  EliminateTopDownPhi(const rvsdg::PhiNode & phiNode);
 
   void
   EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode);
