@@ -16,6 +16,15 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/IR/Verifier.h>
 
+#include <mlir/IR/Builders.h>
+
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <mlir/Dialect/Arith/IR/Arith.h>
+
 namespace jlm::mlir
 {
 
@@ -178,6 +187,28 @@ JlmToMlirConverter::ConvertNode(
 }
 
 ::mlir::Operation *
+JlmToMlirConverter::ConvertFpBinaryNode(
+    const jlm::llvm::fpbin_op & op,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  switch (op.fpop())
+  {
+  case jlm::llvm::fpop::add:
+    return Builder_->create<::mlir::arith::AddFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::sub:
+    return Builder_->create<::mlir::arith::SubFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::mul:
+    return Builder_->create<::mlir::arith::MulFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::div:
+    return Builder_->create<::mlir::arith::DivFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::mod:
+    return Builder_->create<::mlir::arith::RemFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  default:
+    JLM_UNREACHABLE("Unknown binary bitop");
+  }
+}
+
+::mlir::Operation *
 JlmToMlirConverter::ConvertBitBinaryNode(
     const rvsdg::SimpleOperation & bitOp,
     ::llvm::SmallVector<::mlir::Value> inputs)
@@ -317,10 +348,22 @@ JlmToMlirConverter::ConvertSimpleNode(
         value.to_uint(),
         value.nbits());
   }
+  else if (auto fpOp = dynamic_cast<const llvm::ConstantFP *>(&operation))
+  {
+    auto size = ConvertFPType(fpOp->size());
+    auto value = fpOp->constant();
+    MlirOp =
+        Builder_->create<::mlir::arith::ConstantFloatOp>(Builder_->getUnknownLoc(), value, size);
+  }
   else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
   }
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  {
+    MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+
   else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
   {
     MlirOp = BitCompareNode(operation, inputs);
@@ -330,6 +373,20 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
         Builder_->getUnknownLoc(),
         Builder_->getIntegerType(bitOp->ndstbits()),
+        inputs[0]);
+  }
+  else if (auto sextOp = dynamic_cast<const jlm::llvm::sext_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::ExtSIOp>(
+        Builder_->getUnknownLoc(),
+        Builder_->getIntegerType(sextOp->ndstbits()),
+        inputs[0]);
+  }
+  else if (auto sitofpOp = dynamic_cast<const jlm::llvm::sitofp_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::SIToFPOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*sitofpOp->result(0)),
         inputs[0]);
   }
   // ** region structural nodes **
@@ -345,6 +402,46 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Undef>(
         Builder_->getUnknownLoc(),
         ConvertType(undefOp->GetType()));
+  }
+  else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Alloca>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*alloca_op->result(0)),                               // ptr
+        ConvertType(*alloca_op->result(1)),                               // memstate
+        ConvertType(alloca_op->value_type()),                             // value type
+        inputs[0],                                                        // size
+        alloca_op->alignment(),                                           // alignment
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
+  }
+  else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Load>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*load_op->result(0)),                               // ptr
+        ConvertType(*load_op->result(1)),                               // memstate
+        inputs[0],                                                      // pointer
+        Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
+    );
+  }
+  else if (auto store_op = dynamic_cast<const jlm::llvm::StoreOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Store>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*store_op->result(0)),                                         // memstate
+        inputs[0],                                                                 // ptr
+        inputs[1],                                                                 // value
+        Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
+        ::mlir::ValueRange({ std::next(std::next(inputs.begin())), inputs.end() }) // inputMemStates
+    );
+  }
+  else if (rvsdg::is<jlm::llvm::MemoryStateMergeOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::rvsdg::MemStateMerge>(
+        Builder_->getUnknownLoc(),
+        ConvertType(node.output(0)->type()),
+        inputs);
   }
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
@@ -511,12 +608,39 @@ JlmToMlirConverter::ConvertTheta(
   return theta;
 }
 
+::mlir::FloatType
+JlmToMlirConverter::ConvertFPType(const llvm::fpsize size)
+{
+  switch (size)
+  {
+  case jlm::llvm::fpsize::half:
+    return Builder_->getF16Type();
+  case jlm::llvm::fpsize::flt:
+    return Builder_->getF32Type();
+  case jlm::llvm::fpsize::dbl:
+    return Builder_->getF64Type();
+  case jlm::llvm::fpsize::x86fp80:
+    return Builder_->getF80Type();
+  case jlm::llvm::fpsize::fp128:
+    return Builder_->getF128Type();
+  default:
+    auto message = util::strfmt(
+        "Floating point type conversion not implemented: ",
+        llvm::FloatingPointType(size).debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
+}
+
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&type))
   {
     return Builder_->getIntegerType(bt->nbits());
+  }
+  else if (auto fpt = dynamic_cast<const jlm::llvm::FloatingPointType *>(&type))
+  {
+    return ConvertFPType(fpt->size());
   }
   else if (rvsdg::is<llvm::IOStateType>(type))
   {
@@ -529,6 +653,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else if (auto clt = dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
+  }
+  else if (rvsdg::is<llvm::PointerType>(type))
+  {
+    return Builder_->getType<::mlir::rvsdg::RVSDGPointerType>(::mlir::Type());
   }
   else
   {
