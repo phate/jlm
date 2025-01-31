@@ -375,11 +375,9 @@ TestSext()
 
     auto bitsType = jlm::rvsdg::bittype::Create(32);
     auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sext operation
@@ -425,8 +423,9 @@ TestSext()
       using namespace jlm::llvm;
 
       assert(region->nnodes() == 1);
-      auto convertedLambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
-      assert(is<lambda::operation>(convertedLambda));
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<sext_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
@@ -454,11 +453,9 @@ TestSitofp()
     auto bitsType = jlm::rvsdg::bittype::Create(32);
     auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
     auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sitofp operation
@@ -502,7 +499,8 @@ TestSitofp()
       using namespace jlm::llvm;
 
       assert(region->nnodes() == 1);
-      auto convertedLambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<sitofp_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedSitofp = dynamic_cast<const sitofp_op *>(
@@ -525,11 +523,9 @@ TestConstantFP()
   auto graph = &rvsdgModule->Rvsdg();
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({}, {});
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
     // Create sitofp operation
     auto constOp = ConstantFP(fpsize::dbl, ::llvm::APFloat(2.0));
@@ -563,7 +559,8 @@ TestConstantFP()
       using namespace jlm::llvm;
 
       assert(region->nnodes() == 1);
-      auto convertedLambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<ConstantFP>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedConst = dynamic_cast<const ConstantFP *>(
@@ -587,11 +584,9 @@ TestFpBinary()
   {
     auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
     auto functionType = jlm::rvsdg::FunctionType::Create({ floatType, floatType }, {});
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
     auto floatArgument1 = lambda->GetFunctionArguments().at(0);
     auto floatArgument2 = lambda->GetFunctionArguments().at(1);
@@ -642,7 +637,8 @@ TestFpBinary()
       using namespace jlm::llvm;
 
       assert(region->nnodes() == 1);
-      auto convertedLambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 5);
 
       auto op = convertedLambda->subregion()->Nodes().begin();
