@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -297,6 +298,14 @@ RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
     if (rvsdg::is<llvm::LlvmLambdaOperation>(node))
     {
       remove_lambda_passthrough(static_cast<rvsdg::LambdaNode *>(node));
+    }
+    else if (auto phiNode = dynamic_cast<llvm::phi::node *>(node))
+    {
+      auto phiLambdaNodes = llvm::phi::node::ExtractLambdaNodes(*phiNode);
+      for (auto phiLambdaNode : phiLambdaNodes)
+      {
+        remove_lambda_passthrough(static_cast<rvsdg::LambdaNode *>(phiLambdaNode));
+      }
     }
   }
 }

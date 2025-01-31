@@ -28,9 +28,9 @@ RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState);
 /**
  * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
  *
- * The pass checks all lambdas in the module for invariant memory state edges between a
- * LambdaEntreyMemoryStateSplit and LambdaExitMemoryStateMerge node and removes them. The memory
- * state split and merge nodes are removed if there is only a single none-invariant edge.
+ * The pass applies RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState) to all memory
+ * states of all lambdas in the module.
+ * @see RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
  *
  * @param rvsdgModule The RVSDG moduled for which invariant memory state edges in all lambda nodes
  * are to be removed.
