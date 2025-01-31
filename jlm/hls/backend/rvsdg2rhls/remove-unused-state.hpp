@@ -35,17 +35,6 @@ remove_unused_state(llvm::RvsdgModule & rm);
 void
 remove_unused_state(rvsdg::Region * region, bool can_remove_arguments = true);
 
-/**
- * @brief Removes invariant state edges from the lambdas in the RVSDG module.
- *
- * The pass replaces the lambda with a new function signature if a state edge is found to be
- * invariant.
- *
- * @param rvsdgModule The RVSDG module for which to remove invariant state edges.
- */
-void
-RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule);
-
 } // namespace jlm::hls
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_REMOVE_UNUSED_STATE_HPP

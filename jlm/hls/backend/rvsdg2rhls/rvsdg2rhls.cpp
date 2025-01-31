@@ -433,11 +433,8 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
-  llvm::InvariantValueRedirection llvmIvr;
-  llvmIvr.Run(rhls, collector);
-  llvmDne.Run(rhls, collector);
   RemoveInvariantLambdaMemoryStateEdges(rhls);
-  RemoveInvariantLambdaStateEdges(rhls);
+  remove_unused_state(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
@@ -449,8 +446,6 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
-  llvm::NodeReduction llvmRed;
-  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship

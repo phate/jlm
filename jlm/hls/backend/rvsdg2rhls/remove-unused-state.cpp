@@ -4,10 +4,11 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
+#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 namespace jlm::hls
 {
@@ -287,27 +288,6 @@ is_passthrough(const rvsdg::output * arg)
     }
   }
   return false;
-}
-
-void
-RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
-{
-  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
-  for (auto & node : rvsdg::TopDownTraverser(&root))
-  {
-    if (rvsdg::is<llvm::LlvmLambdaOperation>(node))
-    {
-      remove_lambda_passthrough(static_cast<rvsdg::LambdaNode *>(node));
-    }
-    else if (auto phiNode = dynamic_cast<llvm::phi::node *>(node))
-    {
-      auto phiLambdaNodes = llvm::phi::node::ExtractLambdaNodes(*phiNode);
-      for (auto phiLambdaNode : phiLambdaNodes)
-      {
-        remove_lambda_passthrough(static_cast<rvsdg::LambdaNode *>(phiLambdaNode));
-      }
-    }
-  }
 }
 
 } // namespace jlm::hls
