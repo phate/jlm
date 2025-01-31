@@ -182,11 +182,9 @@ TestLoad()
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -241,8 +239,9 @@ TestLoad()
       using namespace jlm::llvm;
 
       assert(region->nnodes() == 1);
-      auto convertedLambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
-      assert(is<lambda::operation>(convertedLambda));
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<LoadNonVolatileOperation>(
@@ -281,11 +280,9 @@ TestStore()
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create(), bitsType },
         { IOStateType::Create(), MemoryStateType::Create() });
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -338,8 +335,9 @@ TestStore()
       using namespace jlm::llvm;
 
       assert(region->nnodes() == 1);
-      auto convertedLambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
-      assert(is<lambda::operation>(convertedLambda));
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<StoreNonVolatileOperation>(
