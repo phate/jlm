@@ -544,15 +544,15 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   // Check if there exists a memory state splitter
   if (state_arg->nusers() == 1)
   {
-    auto entry_node = jlm::rvsdg::input::GetNode(**state_arg->begin());
+    auto entryNode = jlm::rvsdg::input::GetNode(**state_arg->begin());
     if (jlm::rvsdg::is<const jlm::llvm::LambdaEntryMemoryStateSplitOperation>(
-            jlm::rvsdg::input::GetNode(**state_arg->begin())->GetOperation()))
+            entryNode->GetOperation()))
     {
-      for (size_t i = 0; i < entry_node->noutputs(); ++i)
+      for (size_t i = 0; i < entryNode->noutputs(); ++i)
       {
         // Process each state edge separately
-        jlm::rvsdg::output * state_edge = entry_node->output(i);
-        process_loops(state_edge);
+        jlm::rvsdg::output * stateEdge = entryNode->output(i);
+        process_loops(stateEdge);
       }
       return;
     }
