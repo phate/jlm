@@ -88,6 +88,13 @@ loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
   return output;
 }
 
+[[nodiscard]] const rvsdg::Operation &
+loop_node::GetOperation() const noexcept
+{
+  static const loop_op singleton;
+  return singleton;
+}
+
 jlm::rvsdg::output *
 loop_node::add_loopconst(jlm::rvsdg::output * origin)
 {
@@ -101,9 +108,6 @@ loop_node::add_loopconst(jlm::rvsdg::output * origin)
 loop_node *
 loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
-
   auto loop = create(region, false);
 
   for (size_t i = 0; i < ninputs(); ++i)
@@ -150,7 +154,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
     auto origin = smap.lookup(res->origin());
     ExitResult::Create(*origin, *loop->output(i));
   }
-  nf->set_mutable(true);
+
   return loop;
 }
 

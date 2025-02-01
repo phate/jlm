@@ -77,7 +77,7 @@ TestTheta()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
@@ -127,7 +127,7 @@ TestLambda()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
 
@@ -136,8 +136,9 @@ TestLambda()
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionType, "f", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   auto argument0 = lambdaNode->GetFunctionArguments()[0];
   auto argument1 = lambdaNode->GetFunctionArguments()[1];
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
@@ -159,7 +160,8 @@ TestLambda()
 
   // Assert
   assert(rvsdg.GetRootRegion().nnodes() == 1);
-  auto & newLambdaNode = dynamic_cast<const lambda::node &>(*rvsdg.GetRootRegion().Nodes().begin());
+  auto & newLambdaNode =
+      dynamic_cast<const jlm::rvsdg::LambdaNode &>(*rvsdg.GetRootRegion().Nodes().begin());
   assert(newLambdaNode.ninputs() == 2);
   assert(newLambdaNode.subregion()->narguments() == 3);
   assert(newLambdaNode.subregion()->nresults() == 2);

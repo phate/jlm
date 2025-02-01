@@ -28,6 +28,7 @@ class node;
 namespace jlm::rvsdg
 {
 class GammaNode;
+class LambdaNode;
 class Node;
 class Region;
 class SimpleNode;
@@ -77,7 +78,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       util::StatisticsCollector & statisticsCollector) override;
 
@@ -92,7 +93,7 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       util::StatisticsCollector & statisticsCollector);
 
@@ -106,12 +107,12 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning);
 
 private:
   void
-  EliminateTopDown(const RvsdgModule & rvsdgModule);
+  EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * Processes the inter-procedural RVSDG nodes (lambda, phi, and delta nodes) in the root region
@@ -137,13 +138,13 @@ private:
   EliminateTopDownStructuralNode(const rvsdg::StructuralNode & structuralNode);
 
   void
-  EliminateTopDownLambda(const lambda::node & lambdaNode);
+  EliminateTopDownLambda(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownLambdaEntry(const lambda::node & lambdaNode);
+  EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownLambdaExit(const lambda::node & lambdaNode);
+  EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
   EliminateTopDownPhi(const phi::node & phiNode);
@@ -193,7 +194,7 @@ private:
    * @see graph::ExtractTailNodes()
    */
   void
-  InitializeLiveNodesOfTailLambdas(const RvsdgModule & rvsdgModule);
+  InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * Initializes the memory nodes that are alive at the beginning of every tail-lambda.
@@ -203,7 +204,7 @@ private:
    * @see InitializeLiveNodesOfTailLambdas()
    */
   void
-  InitializeLiveNodesOfTailLambda(const lambda::node & tailLambdaNode);
+  InitializeLiveNodesOfTailLambda(const rvsdg::LambdaNode & tailLambdaNode);
 
   /**
    * The function checks the following invariants:
@@ -220,7 +221,7 @@ private:
    */
   static bool
   CheckInvariants(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       const Provisioning & provisioning);
 

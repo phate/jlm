@@ -118,7 +118,7 @@ gep_to_index(jlm::rvsdg::output * o)
 void
 alloca_conv(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -138,7 +138,7 @@ alloca_conv(rvsdg::Region * region)
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->value().to_uint() == 1);
       // ensure that the alloca is an array type
-      auto at = std::dynamic_pointer_cast<const jlm::llvm::arraytype>(po->ValueType());
+      auto at = std::dynamic_pointer_cast<const llvm::ArrayType>(po->ValueType());
       JLM_ASSERT(at);
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));

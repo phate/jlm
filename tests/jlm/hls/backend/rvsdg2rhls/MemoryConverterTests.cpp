@@ -22,23 +22,19 @@ TestTraceArgument()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -82,20 +78,16 @@ TestLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Single load
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -117,7 +109,7 @@ TestLoad()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+  lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -164,22 +156,18 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::rvsdg::bittype::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -203,7 +191,7 @@ TestLoadStore()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+  lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
@@ -251,12 +239,10 @@ TestThetaLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32),
         jlm::rvsdg::bittype::Create(32),
         jlm::rvsdg::bittype::Create(32),
@@ -264,15 +250,12 @@ TestThetaLoad()
         MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
-  auto thetaRegion = theta->subregion();
   // Predicate
   auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   auto lvs = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
@@ -281,8 +264,8 @@ TestThetaLoad()
   jlm::rvsdg::bitsgt_op sgt(32);
   jlm::rvsdg::bitadd_op add(32);
   jlm::rvsdg::bitsub_op sub(32);
-  auto arm = jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, add, { idv.pre, lvs.pre })[0];
-  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(thetaRegion, ult, { arm, lve.pre })[0];
+  auto arm = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitadd_op>({ idv.pre, lvs.pre }, 32).output(0);
+  auto cmp = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitult_op>({ arm, lve.pre }, 32).output(0);
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
   idv.post->divert_to(arm);
   theta->set_predicate(match);
@@ -339,7 +322,7 @@ TestThetaLoad()
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
   assert(region->nnodes() == 1);
-  lambda = jlm::util::AssertedCast<lambda::node>(region->Nodes().begin().ptr());
+  lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
   assert(jlm::rvsdg::Region::Contains<mem_resp_op>(*lambdaRegion, true));

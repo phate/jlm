@@ -25,18 +25,15 @@ GammaWithMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType, valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(1), valueType, valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
-  auto lambdaNode = lambda::node::create(
-      &rvsdgModule.Rvsdg().GetRootRegion(),
-      functionType,
-      "lambdaOutput",
-      linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
@@ -79,19 +76,15 @@ GammaWithoutMatch()
 
   // Arrange
   auto valueType = valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
-  auto lambdaNode = lambda::node::create(
-      &rvsdgModule.Rvsdg().GetRootRegion(),
-      functionType,
-      "lambdaOutput",
-      linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->GetFunctionArguments()[0], 2);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
@@ -134,19 +127,15 @@ EmptyGammaWithThreeSubregions()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
-  auto nf = rvsdgModule.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
-  auto lambdaNode = lambda::node::create(
-      &rvsdgModule.Rvsdg().GetRootRegion(),
-      functionType,
-      "lambdaOutput",
-      linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
 
   auto match =
       jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->GetFunctionArguments()[0]);
@@ -191,16 +180,15 @@ PartialEmptyGamma()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType =
-      FunctionType::Create({ jlm::rvsdg::bittype::Create(1), valueType }, { valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(1), valueType },
+      { valueType });
 
   RvsdgModule rvsdgModule(filepath(""), "", "");
 
-  auto lambdaNode = lambda::node::create(
-      &rvsdgModule.Rvsdg().GetRootRegion(),
-      functionType,
-      "lambdaOutput",
-      linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);

@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_INVARIANTVALUEREDIRECTION_HPP
 #define JLM_LLVM_OPT_INVARIANTVALUEREDIRECTION_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
 {
@@ -21,7 +21,6 @@ namespace jlm::llvm
 {
 
 class CallNode;
-class RvsdgModule;
 
 /** \brief Invariant Value Redirection Optimization
  *
@@ -50,7 +49,7 @@ class RvsdgModule;
  * for call nodes works only on non-recursive direct calls as IVR needs to inspect the lambda body
  * in order to determine whether a value is simply routed through the lambda.
  */
-class InvariantValueRedirection final : public optimization
+class InvariantValueRedirection final : public rvsdg::Transformation
 {
   class Statistics;
 
@@ -58,7 +57,7 @@ public:
   ~InvariantValueRedirection() override;
 
   void
-  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   static void

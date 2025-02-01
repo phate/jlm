@@ -275,7 +275,7 @@ dne(rvsdg::Region * sr)
   do
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::bottomup_traverser(sr))
+    for (auto & node : rvsdg::BottomUpTraverser(sr))
     {
       if (!node->has_users())
       {
@@ -330,7 +330,7 @@ dne(llvm::RvsdgModule & rm)
   {
     throw util::error("Root should have only one node now");
   }
-  auto ln = dynamic_cast<const llvm::lambda::node *>(root->Nodes().begin().ptr());
+  auto ln = dynamic_cast<const rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   if (!ln)
   {
     throw util::error("Node needs to be a lambda");

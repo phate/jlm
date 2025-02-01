@@ -45,13 +45,13 @@ public:
   GetOutputNodes(const jlm::rvsdg::output & output) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaEntryNodes(const lambda::node & lambdaNode) const
+  GetLambdaEntryNodes(const rvsdg::LambdaNode & lambdaNode) const
   {
     return GetRegionEntryNodes(*lambdaNode.subregion());
   }
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaExitNodes(const lambda::node & lambdaNode) const
+  GetLambdaExitNodes(const rvsdg::LambdaNode & lambdaNode) const
   {
     return GetRegionExitNodes(*lambdaNode.subregion());
   }

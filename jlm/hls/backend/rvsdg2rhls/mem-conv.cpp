@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -232,7 +233,7 @@ trace_function_calls(
 
 jlm::rvsdg::SimpleNode *
 find_decouple_response(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     const jlm::rvsdg::bitconstant_op * request_constant)
 {
   jlm::rvsdg::output * response_function = nullptr;
@@ -263,7 +264,7 @@ find_decouple_response(
 
 jlm::rvsdg::SimpleNode *
 replace_decouple(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     jlm::rvsdg::SimpleNode * decouple_request,
     jlm::rvsdg::output * resp)
 {
@@ -330,7 +331,7 @@ gather_mem_nodes(
     std::vector<jlm::rvsdg::SimpleNode *> & decoupleNodes,
     std::unordered_set<jlm::rvsdg::SimpleNode *> exclude)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : jlm::rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<jlm::rvsdg::StructuralNode *>(node))
     {
@@ -526,7 +527,7 @@ IsDecoupledFunctionPointer(
 
 void
 jlm::hls::TracePointerArguments(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     port_load_store_decouple & portNodes)
 {
   for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
@@ -567,13 +568,14 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
 
   auto root = &rm.Rvsdg().GetRootRegion();
-  auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->Nodes().begin().ptr());
+  auto lambda = dynamic_cast<jlm::rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
 
   //
   // Converting loads and stores to explicitly use memory ports
   // This modifies the function signature so we create a new lambda node to replace the old one
   //
-  auto oldFunctionType = lambda->type();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
+  auto oldFunctionType = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
   {
@@ -638,13 +640,10 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
   // Create new lambda and copy the region from the old lambda
   //
-  auto newFunctionType = jlm::llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
-  auto newLambda = jlm::llvm::lambda::node::create(
-      lambda->region(),
-      newFunctionType,
-      lambda->name(),
-      lambda->linkage(),
-      lambda->attributes());
+  auto newFunctionType = jlm::rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
+  auto newLambda = jlm::rvsdg::LambdaNode::Create(
+      *lambda->region(),
+      llvm::LlvmLambdaOperation::Create(newFunctionType, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : lambda->GetContextVars())
@@ -705,7 +704,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   }
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
-  auto oldExport = lambda->ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(*lambda).GetRvsdgExport();
   llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
@@ -725,7 +724,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);
-  newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->Nodes().begin().ptr());
+  newLambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(root->Nodes().begin().ptr());
 
   // Go through in reverse since we are removing things
   auto ctxvars = newLambda->GetContextVars();
@@ -753,7 +752,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
 jlm::rvsdg::output *
 jlm::hls::ConnectRequestResponseMemPorts(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
     const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
@@ -924,7 +923,7 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNo
 jlm::rvsdg::SimpleNode *
 ReplaceDecouple(
     jlm::rvsdg::SubstitutionMap & smap,
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     jlm::rvsdg::SimpleNode * originalDecoupleRequest,
     jlm::rvsdg::output * response)
 {

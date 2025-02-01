@@ -392,9 +392,8 @@ TestLoadStoreReduction_Success()
 
   // Act
   auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadStore, loadNode);
-  graph.Normalize();
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
@@ -612,7 +611,7 @@ NodeCopy()
 
   // Arrange
   auto pointerType = PointerType::Create();
-  auto iOStateType = iostatetype::Create();
+  auto iOStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 

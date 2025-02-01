@@ -9,6 +9,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
@@ -782,7 +783,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
 
   /* validate indcall function */
   {
-    assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
+    assert(test.GetLambdaIndcall().subregion()->nnodes() == 6);
 
     auto lambda_exit_mux =
         jlm::rvsdg::output::GetNode(*test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -839,7 +840,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   /* validate indcall function */
   {
-    assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
+    assert(test.GetLambdaIndcall().subregion()->nnodes() == 6);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -896,7 +897,7 @@ ValidateIndirectCallTest1SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
 
   // validate indcall function
   {
-    assert(test.GetLambdaIndcall().subregion()->nnodes() == 5);
+    assert(test.GetLambdaIndcall().subregion()->nnodes() == 6);
 
     auto lambda_exit_mux =
         jlm::rvsdg::output::GetNode(*test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -979,7 +980,7 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->nnodes() == 5);
+    assert(test.GetLambdaI().subregion()->nnodes() == 6);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -1021,7 +1022,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->nnodes() == 5);
+    assert(test.GetLambdaI().subregion()->nnodes() == 6);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -1039,7 +1040,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function x()
   {
-    assert(test.GetLambdaX().subregion()->nnodes() == 7);
+    assert(test.GetLambdaX().subregion()->nnodes() == 8);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaX().GetFunctionResults()[2]->origin());
@@ -1076,7 +1077,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function y()
   {
-    assert(test.GetLambdaY().subregion()->nnodes() == 7);
+    assert(test.GetLambdaY().subregion()->nnodes() == 8);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaY().GetFunctionResults()[2]->origin());
@@ -1179,7 +1180,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->nnodes() == 5);
+    assert(test.GetLambdaI().subregion()->nnodes() == 6);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -1197,7 +1198,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
 
   // validate function x()
   {
-    assert(test.GetLambdaX().subregion()->nnodes() == 7);
+    assert(test.GetLambdaX().subregion()->nnodes() == 8);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaX().GetFunctionResults()[2]->origin());
@@ -1234,7 +1235,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
 
   // validate function y()
   {
-    assert(test.GetLambdaY().subregion()->nnodes() == 8);
+    assert(test.GetLambdaY().subregion()->nnodes() == 9);
 
     auto lambdaExitMerge =
         jlm::rvsdg::output::GetNode(*test.GetLambdaY().GetFunctionResults()[2]->origin());
@@ -2160,7 +2161,7 @@ ValidateFreeNullTestSteensgaardAgnostic(const jlm::tests::FreeNullTest & test)
   using namespace jlm::rvsdg;
 
   auto lambdaExitMerge =
-      jlm::rvsdg::output::GetNode(*test.LambdaMain().GetMemoryStateRegionResult().origin());
+      jlm::rvsdg::output::GetNode(*GetMemoryStateRegionResult(test.LambdaMain()).origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
   auto free = jlm::rvsdg::output::GetNode(*test.LambdaMain().GetFunctionResults()[0]->origin());

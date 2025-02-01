@@ -55,7 +55,7 @@ public:
   using ImportNodeMap =
       std::unordered_map<const rvsdg::RegionArgument *, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap =
-      std::unordered_map<const lambda::node *, std::unique_ptr<PointsToGraph::LambdaNode>>;
+      std::unordered_map<const rvsdg::LambdaNode *, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<MallocNode>>;
   using RegisterNodeMap = std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterNode *>;
   using RegisterNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterNode>>;
@@ -297,7 +297,7 @@ public:
   }
 
   const PointsToGraph::LambdaNode &
-  GetLambdaNode(const lambda::node & node) const
+  GetLambdaNode(const rvsdg::LambdaNode & node) const
   {
     auto it = LambdaNodes_.find(&node);
     if (it == LambdaNodes_.end())
@@ -726,15 +726,15 @@ public:
   ~LambdaNode() noexcept override;
 
 private:
-  LambdaNode(PointsToGraph & pointsToGraph, const lambda::node & lambdaNode)
+  LambdaNode(PointsToGraph & pointsToGraph, const rvsdg::LambdaNode & lambdaNode)
       : MemoryNode(pointsToGraph),
         LambdaNode_(&lambdaNode)
   {
-    JLM_ASSERT(is<lambda::operation>(&lambdaNode));
+    JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
   }
 
 public:
-  const lambda::node &
+  const rvsdg::LambdaNode &
   GetLambdaNode() const noexcept
   {
     return *LambdaNode_;
@@ -744,14 +744,14 @@ public:
   DebugString() const override;
 
   static PointsToGraph::LambdaNode &
-  Create(PointsToGraph & pointsToGraph, const lambda::node & lambdaNode)
+  Create(PointsToGraph & pointsToGraph, const rvsdg::LambdaNode & lambdaNode)
   {
     auto n = std::unique_ptr<PointsToGraph::LambdaNode>(new LambdaNode(pointsToGraph, lambdaNode));
     return pointsToGraph.AddLambdaNode(std::move(n));
   }
 
 private:
-  const lambda::node * LambdaNode_;
+  const rvsdg::LambdaNode * LambdaNode_;
 };
 
 /** \brief PointsTo graph import node

@@ -19,7 +19,7 @@ namespace jlm::llvm::aa
 bool
 IsOrContainsPointerType(const rvsdg::Type & type)
 {
-  return IsOrContains<PointerType>(type);
+  return IsOrContains<PointerType>(type) || is<rvsdg::FunctionType>(type);
 }
 
 std::string
@@ -646,6 +646,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeExtractValue(node);
   else if (is<valist_op>(op))
     AnalyzeValist(node);
+  else if (is<PointerToFunctionOperation>(op))
+    AnalyzePointerToFunction(node);
+  else if (is<FunctionToPointerOperation>(op))
+    AnalyzeFunctionToPointer(node);
   else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
@@ -950,9 +954,39 @@ Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 }
 
 void
+Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<PointerToFunctionOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<FunctionToPointerOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
 Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
@@ -967,7 +1001,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 }
 
 void
-Andersen::AnalyzeLambda(const lambda::node & lambda)
+Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())
@@ -1176,7 +1210,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
 
   // The use of the top-down traverser is vital, as it ensures all input origins
   // of pointer type are mapped to PointerObjects by the time a node is processed.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
 
   // While visiting the node we have the responsibility of creating
   // PointerObjects for any of the node's outputs of pointer type
@@ -1251,7 +1285,7 @@ Andersen::GetConfiguration() const
 }
 
 void
-Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
+Andersen::AnalyzeModule(const rvsdg::RvsdgModule & module, Statistics & statistics)
 {
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
@@ -1308,9 +1342,11 @@ Andersen::SolveConstraints(
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+Andersen::Analyze(
+    const rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
   statistics->StartAndersenStatistics(module.Rvsdg());
 
   // Check environment variables for debugging flags
@@ -1382,7 +1418,7 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
         // Create a clone of the unsolved pointer object set and constraint set
         auto workingCopy = copy.second->Clone();
         // These statistics will only contain solving data
-        auto solvingStats = Statistics::Create(module.SourceFileName());
+        auto solvingStats = Statistics::Create(module.SourceFilePath().value());
         SolveConstraints(*workingCopy.second, config, *solvingStats);
         solvingStats->AddStatisticsFromSolution(*workingCopy.first);
         statisticsCollector.CollectDemandedStatistics(std::move(solvingStats));

@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
@@ -463,12 +464,12 @@ MemoryStateEncoder::MemoryStateEncoder() = default;
 
 void
 MemoryStateEncoder::Encode(
-    RvsdgModule & rvsdgModule,
+    rvsdg::RvsdgModule & rvsdgModule,
     const MemoryNodeProvisioning & provisioning,
     util::StatisticsCollector & statisticsCollector)
 {
   Context_ = Context::Create(provisioning);
-  auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFileName());
+  auto statistics = EncodingStatistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->Start(rvsdgModule.Rvsdg());
   EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion());
@@ -481,7 +482,7 @@ MemoryStateEncoder::Encode(
 
   // Remove all nodes that became dead throughout the encoding.
   DeadNodeElimination deadNodeElimination;
-  deadNodeElimination.run(rvsdgModule, statisticsCollector);
+  deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
 void
@@ -489,7 +490,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 {
   using namespace jlm::rvsdg;
 
-  topdown_traverser traverser(&region);
+  TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
@@ -510,7 +511,7 @@ MemoryStateEncoder::EncodeRegion(rvsdg::Region & region)
 void
 MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
 {
-  if (auto lambdaNode = dynamic_cast<const lambda::node *>(&structuralNode))
+  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&structuralNode))
   {
     EncodeLambda(*lambdaNode);
   }
@@ -756,7 +757,7 @@ MemoryStateEncoder::EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode)
 }
 
 void
-MemoryStateEncoder::EncodeLambda(const lambda::node & lambdaNode)
+MemoryStateEncoder::EncodeLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   EncodeLambdaEntry(lambdaNode);
   EncodeRegion(*lambdaNode.subregion());
@@ -764,9 +765,9 @@ MemoryStateEncoder::EncodeLambda(const lambda::node & lambdaNode)
 }
 
 void
-MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
+MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
-  auto & memoryStateArgument = lambdaNode.GetMemoryStateRegionArgument();
+  auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
   JLM_ASSERT(memoryStateArgument.nusers() == 1);
   auto memoryStateArgumentUser = *memoryStateArgument.begin();
 
@@ -804,12 +805,12 @@ MemoryStateEncoder::EncodeLambdaEntry(const lambda::node & lambdaNode)
 }
 
 void
-MemoryStateEncoder::EncodeLambdaExit(const lambda::node & lambdaNode)
+MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
   auto subregion = lambdaNode.subregion();
   auto & memoryNodes = Context_->GetMemoryNodeProvisioning().GetLambdaExitNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryStateResult = lambdaNode.GetMemoryStateRegionResult();
+  auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
   auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);

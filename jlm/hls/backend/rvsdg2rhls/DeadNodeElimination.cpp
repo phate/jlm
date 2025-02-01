@@ -89,7 +89,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
   do
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::bottomup_traverser(&region))
+    for (auto & node : rvsdg::BottomUpTraverser(&region))
     {
       if (!node->has_users())
       {
@@ -120,7 +120,7 @@ EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
     throw util::error("Root should have only one node now");
   }
 
-  auto lambdaNode = dynamic_cast<const llvm::lambda::node *>(rootRegion.Nodes().begin().ptr());
+  auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(rootRegion.Nodes().begin().ptr());
   if (!lambdaNode)
   {
     throw util::error("Node needs to be a lambda");

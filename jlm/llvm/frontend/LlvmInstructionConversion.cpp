@@ -16,8 +16,13 @@
 namespace jlm::llvm
 {
 
+// Converts a value into a variable either representing the llvm
+// value or representing a function object.
+// The distinction stems from the fact that llvm treats functions simply
+// as pointers to the function code while we distinguish between the two.
+// This function can return either and caller needs to check / adapt.
 const variable *
-ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
+ConvertValueOrFunction(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
 {
   auto node = ctx.node();
   if (node && ctx.has_value(v))
@@ -36,6 +41,20 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
     return ConvertConstant(c, tacs, ctx);
 
   JLM_UNREACHABLE("This should not have happened!");
+}
+
+// Converts a value into a variable representing the llvm value.
+const variable *
+ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
+{
+  const variable * var = ConvertValueOrFunction(v, tacs, ctx);
+  if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(var->Type()))
+  {
+    std::unique_ptr<tac> ptr_cast = tac::create(FunctionToPointerOperation(fntype), { var });
+    var = ptr_cast->result(0);
+    tacs.push_back(std::move(ptr_cast));
+  }
+  return var;
 }
 
 /* constant */
@@ -85,7 +104,7 @@ convert_undefvalue(
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::UndefValueVal);
 
-  auto t = ConvertType(c->getType(), ctx);
+  auto t = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(UndefValueOperation::Create(t));
 
   return tacs.back()->result(0);
@@ -125,7 +144,7 @@ convert_constantFP(
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::ConstantFPVal);
   auto c = ::llvm::cast<::llvm::ConstantFP>(constant);
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(ConstantFP::create(c->getValueAPF(), type));
 
   return tacs.back()->result(0);
@@ -150,7 +169,7 @@ convert_constantPointerNull(
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::ConstantPointerNull>(constant));
   auto & c = *::llvm::cast<const ::llvm::ConstantPointerNull>(constant);
 
-  auto t = ConvertPointerType(c.getType(), ctx);
+  auto t = ctx.GetTypeConverter().ConvertPointerType(*c.getType());
   tacs.push_back(ConstantPointerNullOperation::Create(t));
 
   return tacs.back()->result(0);
@@ -175,7 +194,7 @@ convert_constantAggregateZero(
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantAggregateZeroVal);
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(ConstantAggregateZero::create(type));
 
   return tacs.back()->result(0);
@@ -251,7 +270,7 @@ ConvertConstantStruct(
   for (size_t n = 0; n < c->getNumOperands(); n++)
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(ConstantStruct::create(elements, type));
 
   return tacs.back()->result(0);
@@ -269,7 +288,7 @@ convert_constantVector(
   for (size_t n = 0; n < c->getNumOperands(); n++)
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
-  auto type = ConvertType(c->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
   tacs.push_back(constantvector_op::create(elements, type));
 
   return tacs.back()->result(0);
@@ -299,7 +318,7 @@ ConvertConstant(
     tacsvector_t & threeAddressCodeVector,
     llvm::context & context)
 {
-  auto type = ConvertType(poisonValue->getType(), context);
+  auto type = context.GetTypeConverter().ConvertLlvmType(*poisonValue->getType());
   threeAddressCodeVector.push_back(PoisonValueOperation::Create(type));
 
   return threeAddressCodeVector.back()->result(0);
@@ -436,117 +455,97 @@ convert_unreachable_instruction(::llvm::Instruction * i, tacsvector_t &, context
   return nullptr;
 }
 
-static inline const variable *
-convert_icmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+static std::unique_ptr<rvsdg::BinaryOperation>
+ConvertIntegerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate, const std::size_t numBits)
 {
-  JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::ICmp);
-  auto i = ::llvm::cast<const ::llvm::ICmpInst>(instruction);
-  auto t = i->getOperand(0)->getType();
-
-  static std::
-      unordered_map<const ::llvm::CmpInst::Predicate, std::unique_ptr<rvsdg::Operation> (*)(size_t)>
-          map({ { ::llvm::CmpInst::ICMP_SLT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitslt_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_ULT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitult_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_SLE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitsle_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_ULE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitule_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_EQ,
-                  [](size_t nbits)
-                  {
-                    rvsdg::biteq_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_NE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitne_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_SGE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitsge_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_UGE,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bituge_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_SGT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitsgt_op op(nbits);
-                    return op.copy();
-                  } },
-                { ::llvm::CmpInst::ICMP_UGT,
-                  [](size_t nbits)
-                  {
-                    rvsdg::bitugt_op op(nbits);
-                    return op.copy();
-                  } } });
-
-  static std::unordered_map<const ::llvm::CmpInst::Predicate, llvm::cmp> ptrmap(
-      { { ::llvm::CmpInst::ICMP_ULT, cmp::lt },
-        { ::llvm::CmpInst::ICMP_ULE, cmp::le },
-        { ::llvm::CmpInst::ICMP_EQ, cmp::eq },
-        { ::llvm::CmpInst::ICMP_NE, cmp::ne },
-        { ::llvm::CmpInst::ICMP_UGE, cmp::ge },
-        { ::llvm::CmpInst::ICMP_UGT, cmp::gt } });
-
-  auto p = i->getPredicate();
-  auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
-  auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
-
-  std::unique_ptr<rvsdg::Operation> binop;
-
-  if (t->isIntegerTy() || (t->isVectorTy() && t->getScalarType()->isIntegerTy()))
+  switch (predicate)
   {
-    auto it = t->isVectorTy() ? t->getScalarType() : t;
-    binop = map[p](it->getIntegerBitWidth());
+  case ::llvm::CmpInst::ICMP_SLT:
+    return std::make_unique<rvsdg::bitslt_op>(numBits);
+  case ::llvm::CmpInst::ICMP_ULT:
+    return std::make_unique<rvsdg::bitult_op>(numBits);
+  case ::llvm::CmpInst::ICMP_SLE:
+    return std::make_unique<rvsdg::bitsle_op>(numBits);
+  case ::llvm::CmpInst::ICMP_ULE:
+    return std::make_unique<rvsdg::bitule_op>(numBits);
+  case ::llvm::CmpInst::ICMP_EQ:
+    return std::make_unique<rvsdg::biteq_op>(numBits);
+  case ::llvm::CmpInst::ICMP_NE:
+    return std::make_unique<rvsdg::bitne_op>(numBits);
+  case ::llvm::CmpInst::ICMP_SGE:
+    return std::make_unique<rvsdg::bitsge_op>(numBits);
+  case ::llvm::CmpInst::ICMP_UGE:
+    return std::make_unique<rvsdg::bituge_op>(numBits);
+  case ::llvm::CmpInst::ICMP_SGT:
+    return std::make_unique<rvsdg::bitsgt_op>(numBits);
+  case ::llvm::CmpInst::ICMP_UGT:
+    return std::make_unique<rvsdg::bitugt_op>(numBits);
+  default:
+    JLM_UNREACHABLE("ConvertIntegerIcmpPredicate: Unsupported icmp predicate.");
   }
-  else if (t->isPointerTy() || (t->isVectorTy() && t->getScalarType()->isPointerTy()))
+}
+
+static std::unique_ptr<rvsdg::BinaryOperation>
+ConvertPointerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate)
+{
+  switch (predicate)
   {
-    auto pt = ::llvm::cast<::llvm::PointerType>(t->isVectorTy() ? t->getScalarType() : t);
-    binop = std::make_unique<ptrcmp_op>(ConvertPointerType(pt, ctx), ptrmap[p]);
+  case ::llvm::CmpInst::ICMP_ULT:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::lt);
+  case ::llvm::CmpInst::ICMP_ULE:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::le);
+  case ::llvm::CmpInst::ICMP_EQ:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::eq);
+  case ::llvm::CmpInst::ICMP_NE:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ne);
+  case ::llvm::CmpInst::ICMP_UGE:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ge);
+  case ::llvm::CmpInst::ICMP_UGT:
+    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::gt);
+  default:
+    JLM_UNREACHABLE("ConvertPointerIcmpPredicate: Unsupported icmp predicate.");
   }
-  else
-    JLM_UNREACHABLE("This should have never happend.");
+}
 
-  auto type = ConvertType(i->getType(), ctx);
+static const variable *
+convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, context & ctx)
+{
+  const auto predicate = instruction->getPredicate();
+  const auto operandType = instruction->getOperand(0)->getType();
+  auto op1 = ConvertValue(instruction->getOperand(0), tacs, ctx);
+  auto op2 = ConvertValue(instruction->getOperand(1), tacs, ctx);
 
-  JLM_ASSERT(is<rvsdg::BinaryOperation>(*binop));
-  if (t->isVectorTy())
+  std::unique_ptr<rvsdg::BinaryOperation> operation;
+  if (operandType->isVectorTy() && operandType->getScalarType()->isIntegerTy())
   {
-    tacs.push_back(vectorbinary_op::create(
-        *static_cast<rvsdg::BinaryOperation *>(binop.get()),
-        op1,
-        op2,
-        type));
+    operation =
+        ConvertIntegerIcmpPredicate(predicate, operandType->getScalarType()->getIntegerBitWidth());
+  }
+  else if (operandType->isVectorTy() && operandType->getScalarType()->isPointerTy())
+  {
+    operation = ConvertPointerIcmpPredicate(predicate);
+  }
+  else if (operandType->isIntegerTy())
+  {
+    operation = ConvertIntegerIcmpPredicate(predicate, operandType->getIntegerBitWidth());
+  }
+  else if (operandType->isPointerTy())
+  {
+    operation = ConvertPointerIcmpPredicate(predicate);
   }
   else
   {
-    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(binop.get()), { op1, op2 }));
+    JLM_UNREACHABLE("convert: Unhandled icmp type.");
+  }
+
+  if (operandType->isVectorTy())
+  {
+    const auto instructionType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
+    tacs.push_back(vectorbinary_op::create(*operation, op1, op2, instructionType));
+  }
+  else
+  {
+    tacs.push_back(tac::create(*operation, { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -556,6 +555,7 @@ static const variable *
 convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::FCmp);
+  auto & typeConverter = ctx.GetTypeConverter();
   auto i = ::llvm::cast<const ::llvm::FCmpInst>(instruction);
   auto t = i->getOperand(0)->getType();
 
@@ -577,14 +577,14 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
         { ::llvm::CmpInst::FCMP_ULE, fpcmp::ule },
         { ::llvm::CmpInst::FCMP_UNE, fpcmp::une } });
 
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = typeConverter.ConvertLlvmType(*i->getType());
 
   auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
   auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
 
   JLM_ASSERT(map.find(i->getPredicate()) != map.end());
   auto fptype = t->isVectorTy() ? t->getScalarType() : t;
-  fpcmp_op operation(map[i->getPredicate()], ExtractFloatingPointSize(fptype));
+  fpcmp_op operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
     tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
@@ -602,7 +602,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   auto alignment = instruction->getAlign().value();
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
-  auto loadedType = ConvertType(instruction->getType(), ctx);
+  auto loadedType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
 
   const tacvariable * loadedValue;
   const tacvariable * memoryState;
@@ -724,7 +724,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // instructions that have not yet been converted.
   // For now, a phi_op with no operands is created.
   // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
   tacs.push_back(phi_op::create({}, type));
   return tacs.back()->result(0);
 }
@@ -733,6 +733,7 @@ static const variable *
 convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::GetElementPtrInst>(inst));
+  auto & typeConverter = ctx.GetTypeConverter();
   auto i = ::llvm::cast<::llvm::GetElementPtrInst>(inst);
 
   std::vector<const variable *> indices;
@@ -740,8 +741,8 @@ convert_getelementptr_instruction(::llvm::Instruction * inst, tacsvector_t & tac
   for (auto it = i->idx_begin(); it != i->idx_end(); it++)
     indices.push_back(ConvertValue(*it, tacs, ctx));
 
-  auto pointeeType = ConvertType(i->getSourceElementType(), ctx);
-  auto resultType = ConvertType(i->getType(), ctx);
+  auto pointeeType = typeConverter.ConvertLlvmType(*i->getSourceElementType());
+  auto resultType = typeConverter.ConvertLlvmType(*i->getType());
 
   tacs.push_back(GetElementPtrOperation::Create(base, indices, pointeeType, resultType));
 
@@ -886,6 +887,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     return convert_memcpy_call(i, tacs, ctx);
 
   auto ftype = i->getFunctionType();
+  auto convertedFType = ctx.GetTypeConverter().ConvertFunctionType(*ftype);
 
   auto arguments = create_arguments(i, tacs, ctx);
   if (ftype->isVarArg())
@@ -893,8 +895,42 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   arguments.push_back(ctx.iostate());
   arguments.push_back(ctx.memory_state());
 
-  auto fctvar = ConvertValue(i->getCalledOperand(), tacs, ctx);
-  auto call = CallOperation::create(fctvar, ConvertFunctionType(ftype, ctx), arguments);
+  const variable * callee = ConvertValueOrFunction(i->getCalledOperand(), tacs, ctx);
+  // Llvm does not distinguish between "function objects" and
+  // "pointers to functions" while we need to be precise in modelling.
+  // If the called object is a function object, then we can just
+  // feed it to the call operator directly, otherwise we have
+  // to cast it into a function object.
+  if (is<PointerType>(*callee->Type()))
+  {
+    std::unique_ptr<tac> callee_cast =
+        tac::create(PointerToFunctionOperation(convertedFType), { callee });
+    callee = callee_cast->result(0);
+    tacs.push_back(std::move(callee_cast));
+  }
+  else if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(callee->Type()))
+  {
+    // Llvm also allows argument type mismatches if the function
+    // features varargs. The code here could be made more precise by
+    // validating and accepting only vararg-related mismatches.
+    if (*convertedFType != *fntype)
+    {
+      // Since vararg passing is not modelled explicitly, simply hide the
+      // argument mismtach via pointer casts.
+      std::unique_ptr<tac> ptrCast = tac::create(FunctionToPointerOperation(fntype), { callee });
+      std::unique_ptr<tac> fnCast =
+          tac::create(PointerToFunctionOperation(convertedFType), { ptrCast->result(0) });
+      callee = fnCast->result(0);
+      tacs.push_back(std::move(ptrCast));
+      tacs.push_back(std::move(fnCast));
+    }
+  }
+  else
+  {
+    throw std::runtime_error("Unexpected callee type: " + callee->Type()->debug_string());
+  }
+
+  auto call = CallOperation::create(callee, convertedFType, arguments);
 
   auto result = call->result(0);
   auto iostate = call->result(call->nresults() - 2);
@@ -925,139 +961,109 @@ convert_select_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context
   return tacs.back()->result(0);
 }
 
-static inline const variable *
-convert_binary_operator(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+static std::unique_ptr<rvsdg::BinaryOperation>
+ConvertIntegerBinaryOperation(
+    const ::llvm::Instruction::BinaryOps binaryOperation,
+    std::size_t numBits)
 {
-  JLM_ASSERT(::llvm::dyn_cast<const ::llvm::BinaryOperator>(instruction));
-  auto i = ::llvm::cast<const ::llvm::BinaryOperator>(instruction);
-
-  static std::unordered_map<
-      const ::llvm::Instruction::BinaryOps,
-      std::unique_ptr<rvsdg::Operation> (*)(size_t)>
-      bitmap({ { ::llvm::Instruction::Add,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitadd_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::And,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitand_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::AShr,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitashr_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::Sub,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitsub_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::UDiv,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitudiv_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::SDiv,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitsdiv_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::URem,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitumod_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::SRem,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitsmod_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::Shl,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitshl_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::LShr,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitshr_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::Or,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitor_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::Xor,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitxor_op o(nbits);
-                   return o.copy();
-                 } },
-               { ::llvm::Instruction::Mul,
-                 [](size_t nbits)
-                 {
-                   rvsdg::bitmul_op o(nbits);
-                   return o.copy();
-                 } } });
-
-  static std::unordered_map<const ::llvm::Instruction::BinaryOps, llvm::fpop> fpmap(
-      { { ::llvm::Instruction::FAdd, fpop::add },
-        { ::llvm::Instruction::FSub, fpop::sub },
-        { ::llvm::Instruction::FMul, fpop::mul },
-        { ::llvm::Instruction::FDiv, fpop::div },
-        { ::llvm::Instruction::FRem, fpop::mod } });
-
-  static std::unordered_map<const ::llvm::Type::TypeID, llvm::fpsize> fpsizemap(
-      { { ::llvm::Type::HalfTyID, fpsize::half },
-        { ::llvm::Type::FloatTyID, fpsize::flt },
-        { ::llvm::Type::DoubleTyID, fpsize::dbl },
-        { ::llvm::Type::X86_FP80TyID, fpsize::x86fp80 },
-        { ::llvm::Type::FP128TyID, fpsize::fp128 } });
-
-  std::unique_ptr<rvsdg::Operation> operation;
-  auto t = i->getType()->isVectorTy() ? i->getType()->getScalarType() : i->getType();
-  if (t->isIntegerTy())
+  switch (binaryOperation)
   {
-    JLM_ASSERT(bitmap.find(i->getOpcode()) != bitmap.end());
-    operation = bitmap[i->getOpcode()](t->getIntegerBitWidth());
+  case ::llvm::Instruction::Add:
+    return std::make_unique<rvsdg::bitadd_op>(numBits);
+  case ::llvm::Instruction::And:
+    return std::make_unique<rvsdg::bitand_op>(numBits);
+  case ::llvm::Instruction::AShr:
+    return std::make_unique<rvsdg::bitashr_op>(numBits);
+  case ::llvm::Instruction::LShr:
+    return std::make_unique<rvsdg::bitshr_op>(numBits);
+  case ::llvm::Instruction::Mul:
+    return std::make_unique<rvsdg::bitmul_op>(numBits);
+  case ::llvm::Instruction::Or:
+    return std::make_unique<rvsdg::bitor_op>(numBits);
+  case ::llvm::Instruction::SDiv:
+    return std::make_unique<rvsdg::bitsdiv_op>(numBits);
+  case ::llvm::Instruction::Shl:
+    return std::make_unique<rvsdg::bitshl_op>(numBits);
+  case ::llvm::Instruction::SRem:
+    return std::make_unique<rvsdg::bitsmod_op>(numBits);
+  case ::llvm::Instruction::Sub:
+    return std::make_unique<rvsdg::bitsub_op>(numBits);
+  case ::llvm::Instruction::UDiv:
+    return std::make_unique<rvsdg::bitudiv_op>(numBits);
+  case ::llvm::Instruction::URem:
+    return std::make_unique<rvsdg::bitumod_op>(numBits);
+  case ::llvm::Instruction::Xor:
+    return std::make_unique<rvsdg::bitxor_op>(numBits);
+  default:
+    JLM_UNREACHABLE("ConvertIntegerBinaryOperation: Unsupported integer binary operation");
   }
-  else if (t->isFloatingPointTy())
+}
+
+static std::unique_ptr<rvsdg::BinaryOperation>
+ConvertFloatingPointBinaryOperation(
+    const ::llvm::Instruction::BinaryOps binaryOperation,
+    fpsize floatingPointSize)
+{
+  switch (binaryOperation)
   {
-    JLM_ASSERT(fpmap.find(i->getOpcode()) != fpmap.end());
-    JLM_ASSERT(fpsizemap.find(t->getTypeID()) != fpsizemap.end());
-    operation = std::make_unique<fpbin_op>(fpmap[i->getOpcode()], fpsizemap[t->getTypeID()]);
+  case ::llvm::Instruction::FAdd:
+    return std::make_unique<fpbin_op>(fpop::add, floatingPointSize);
+  case ::llvm::Instruction::FSub:
+    return std::make_unique<fpbin_op>(fpop::sub, floatingPointSize);
+  case ::llvm::Instruction::FMul:
+    return std::make_unique<fpbin_op>(fpop::mul, floatingPointSize);
+  case ::llvm::Instruction::FDiv:
+    return std::make_unique<fpbin_op>(fpop::div, floatingPointSize);
+  case ::llvm::Instruction::FRem:
+    return std::make_unique<fpbin_op>(fpop::mod, floatingPointSize);
+  default:
+    JLM_UNREACHABLE("ConvertFloatingPointBinaryOperation: Unsupported binary operation");
   }
-  else
-    JLM_ASSERT(0);
+}
 
-  auto type = ConvertType(i->getType(), ctx);
+static const variable *
+convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context & ctx)
+{
+  const auto llvmType = instruction->getType();
+  auto & typeConverter = ctx.GetTypeConverter();
+  const auto opcode = instruction->getOpcode();
 
-  auto op1 = ConvertValue(i->getOperand(0), tacs, ctx);
-  auto op2 = ConvertValue(i->getOperand(1), tacs, ctx);
-  JLM_ASSERT(is<rvsdg::BinaryOperation>(*operation));
-
-  if (i->getType()->isVectorTy())
+  std::unique_ptr<rvsdg::BinaryOperation> operation;
+  if (llvmType->isVectorTy() && llvmType->getScalarType()->isIntegerTy())
   {
-    auto & binop = *static_cast<rvsdg::BinaryOperation *>(operation.get());
-    tacs.push_back(vectorbinary_op::create(binop, op1, op2, type));
+    const auto numBits = llvmType->getScalarType()->getIntegerBitWidth();
+    operation = ConvertIntegerBinaryOperation(opcode, numBits);
+  }
+  else if (llvmType->isVectorTy() && llvmType->getScalarType()->isFloatingPointTy())
+  {
+    const auto size = typeConverter.ExtractFloatingPointSize(*llvmType->getScalarType());
+    operation = ConvertFloatingPointBinaryOperation(opcode, size);
+  }
+  else if (llvmType->isIntegerTy())
+  {
+    operation = ConvertIntegerBinaryOperation(opcode, llvmType->getIntegerBitWidth());
+  }
+  else if (llvmType->isFloatingPointTy())
+  {
+    const auto size = typeConverter.ExtractFloatingPointSize(*llvmType);
+    operation = ConvertFloatingPointBinaryOperation(opcode, size);
   }
   else
   {
-    tacs.push_back(
-        tac::create(*static_cast<rvsdg::SimpleOperation *>(operation.get()), { op1, op2 }));
+    JLM_ASSERT("convert: Unhandled binary operation type.");
+  }
+
+  const auto jlmType = typeConverter.ConvertLlvmType(*llvmType);
+  auto operand1 = ConvertValue(instruction->getOperand(0), tacs, ctx);
+  auto operand2 = ConvertValue(instruction->getOperand(1), tacs, ctx);
+
+  if (llvmType->isVectorTy())
+  {
+    tacs.push_back(vectorbinary_op::create(*operation, operand1, operand2, jlmType));
+  }
+  else
+  {
+    tacs.push_back(tac::create(*operation, { operand1, operand2 }));
   }
 
   return tacs.back()->result(0);
@@ -1071,7 +1077,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
 
   auto memstate = ctx.memory_state();
   auto size = ConvertValue(i->getArraySize(), tacs, ctx);
-  auto vtype = ConvertType(i->getAllocatedType(), ctx);
+  auto vtype = ctx.GetTypeConverter().ConvertLlvmType(*i->getAllocatedType());
   auto alignment = i->getAlign().value();
 
   tacs.push_back(alloca_op::create(vtype, size, alignment));
@@ -1140,16 +1146,17 @@ static const variable *
 convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVector, context & ctx)
 {
   JLM_ASSERT(unaryOperator->getOpcode() == ::llvm::Instruction::FNeg);
+  auto & typeConverter = ctx.GetTypeConverter();
 
   auto type = unaryOperator->getType();
-  auto scalarType = ConvertType(type->getScalarType(), ctx);
+  auto scalarType = typeConverter.ConvertLlvmType(*type->getScalarType());
   auto operand = ConvertValue(unaryOperator->getOperand(0), threeAddressCodeVector, ctx);
 
   if (type->isVectorTy())
   {
-    auto vectorType = ConvertType(type, ctx);
+    auto vectorType = typeConverter.ConvertLlvmType(*type);
     threeAddressCodeVector.push_back(vectorunary_op::create(
-        fpneg_op(std::static_pointer_cast<const fptype>(scalarType)),
+        fpneg_op(std::static_pointer_cast<const FloatingPointType>(scalarType)),
         operand,
         vectorType));
   }
@@ -1172,6 +1179,7 @@ static const variable *
 convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<::llvm::CastInst>(i));
+  auto & typeConverter = ctx.GetTypeConverter();
   auto st = i->getOperand(0)->getType();
   auto dt = i->getType();
 
@@ -1193,18 +1201,19 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::FPExt, create_unop<fpext_op> },
             { ::llvm::Instruction::BitCast, create_unop<bitcast_op> } });
 
-  auto type = ConvertType(i->getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
 
   auto op = ConvertValue(i->getOperand(0), tacs, ctx);
-  auto srctype = ConvertType(st->isVectorTy() ? st->getScalarType() : st, ctx);
-  auto dsttype = ConvertType(dt->isVectorTy() ? dt->getScalarType() : dt, ctx);
+  auto srctype = typeConverter.ConvertLlvmType(*(st->isVectorTy() ? st->getScalarType() : st));
+  auto dsttype = typeConverter.ConvertLlvmType(*(dt->isVectorTy() ? dt->getScalarType() : dt));
 
   JLM_ASSERT(map.find(i->getOpcode()) != map.end());
   auto unop = map[i->getOpcode()](std::move(srctype), std::move(dsttype));
-  JLM_ASSERT(is<rvsdg::unary_op>(*unop));
+  JLM_ASSERT(is<rvsdg::UnaryOperation>(*unop));
 
   if (dt->isVectorTy())
-    tacs.push_back(vectorunary_op::create(*static_cast<rvsdg::unary_op *>(unop.get()), op, type));
+    tacs.push_back(
+        vectorunary_op::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else
     tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 
@@ -1237,26 +1246,26 @@ ConvertInstruction(
             { ::llvm::Instruction::Br, convert_branch_instruction },
             { ::llvm::Instruction::Switch, convert_switch_instruction },
             { ::llvm::Instruction::Unreachable, convert_unreachable_instruction },
-            { ::llvm::Instruction::Add, convert_binary_operator },
-            { ::llvm::Instruction::And, convert_binary_operator },
-            { ::llvm::Instruction::AShr, convert_binary_operator },
-            { ::llvm::Instruction::Sub, convert_binary_operator },
-            { ::llvm::Instruction::UDiv, convert_binary_operator },
-            { ::llvm::Instruction::SDiv, convert_binary_operator },
-            { ::llvm::Instruction::URem, convert_binary_operator },
-            { ::llvm::Instruction::SRem, convert_binary_operator },
-            { ::llvm::Instruction::Shl, convert_binary_operator },
-            { ::llvm::Instruction::LShr, convert_binary_operator },
-            { ::llvm::Instruction::Or, convert_binary_operator },
-            { ::llvm::Instruction::Xor, convert_binary_operator },
-            { ::llvm::Instruction::Mul, convert_binary_operator },
-            { ::llvm::Instruction::FAdd, convert_binary_operator },
-            { ::llvm::Instruction::FSub, convert_binary_operator },
-            { ::llvm::Instruction::FMul, convert_binary_operator },
-            { ::llvm::Instruction::FDiv, convert_binary_operator },
-            { ::llvm::Instruction::FRem, convert_binary_operator },
+            { ::llvm::Instruction::Add, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::And, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::AShr, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::Sub, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::UDiv, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::SDiv, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::URem, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::SRem, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::Shl, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::LShr, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::Or, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::Xor, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::Mul, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::FAdd, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::FSub, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::FMul, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::FDiv, convert<::llvm::BinaryOperator> },
+            { ::llvm::Instruction::FRem, convert<::llvm::BinaryOperator> },
             { ::llvm::Instruction::FNeg, convert<::llvm::UnaryOperator> },
-            { ::llvm::Instruction::ICmp, convert_icmp_instruction },
+            { ::llvm::Instruction::ICmp, convert<::llvm::ICmpInst> },
             { ::llvm::Instruction::FCmp, convert_fcmp_instruction },
             { ::llvm::Instruction::Load, convert_load_instruction },
             { ::llvm::Instruction::Store, convert_store_instruction },

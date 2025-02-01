@@ -138,7 +138,7 @@ to_ctlconstant_op(const Operation & op) noexcept
 
 /* match operator */
 
-class match_op final : public jlm::rvsdg::unary_op
+class match_op final : public UnaryOperation
 {
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;
 
@@ -214,9 +214,13 @@ public:
       size_t numAlternatives)
   {
     auto bitType = CheckAndExtractBitType(predicate.type());
-
-    match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
-    return rvsdg::SimpleNode::create_normalized(predicate.region(), operation, { &predicate })[0];
+    return CreateOpNode<match_op>(
+               { &predicate },
+               bitType.nbits(),
+               mapping,
+               defaultAlternative,
+               numAlternatives)
+        .output(0);
   }
 
 private:

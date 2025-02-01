@@ -8,6 +8,7 @@
 #define JLM_LLVM_IR_OPERATORS_PHI_HPP
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -15,11 +16,6 @@
 
 namespace jlm::llvm
 {
-
-namespace lambda
-{
-class node;
-}
 
 namespace phi
 {
@@ -304,17 +300,20 @@ public:
   ~node() override;
 
 private:
-  node(rvsdg::Region * parent, const phi::operation & op)
-      : StructuralNode(op, parent, 1)
+  explicit node(rvsdg::Region * parent)
+      : StructuralNode(parent, 1)
   {}
 
   static phi::node *
-  create(rvsdg::Region * parent, const phi::operation & op)
+  create(rvsdg::Region * parent)
   {
-    return new phi::node(parent, op);
+    return new phi::node(parent);
   }
 
 public:
+  [[nodiscard]] const phi::operation &
+  GetOperation() const noexcept override;
+
   cvconstiterator
   begin_cv() const
   {
@@ -380,9 +379,6 @@ public:
   {
     return StructuralNode::subregion(0);
   }
-
-  [[nodiscard]] const phi::operation &
-  GetOperation() const noexcept override;
 
   cvargument *
   add_ctxvar(jlm::rvsdg::output * origin);
@@ -493,7 +489,7 @@ public:
    * @param phiNode The phi node from which the lambda nodes should be extracted.
    * @return A vector of lambda nodes.
    */
-  static std::vector<lambda::node *>
+  static std::vector<rvsdg::LambdaNode *>
   ExtractLambdaNodes(const phi::node & phiNode);
 };
 
@@ -520,7 +516,7 @@ public:
     if (node_)
       return;
 
-    node_ = phi::node::create(parent, phi::operation());
+    node_ = phi::node::create(parent);
   }
 
   phi::cvargument *

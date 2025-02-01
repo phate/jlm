@@ -109,15 +109,11 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
       if (match->nalternatives() == 2)
       {
         uint64_t default_alternative = match->default_alternative() ? 0 : 1;
-        rvsdg::match_op op(
-            match->nbits(),
+        auto new_match = rvsdg::match_op::Create(
+            *no->node()->input(0)->origin(),
             { { 0, match->alternative(1) }, { 1, match->alternative(0) } },
             default_alternative,
             match->nalternatives());
-        auto new_match = rvsdg::SimpleNode::create_normalized(
-            no->region(),
-            op,
-            { no->node()->input(0)->origin() })[0];
         auto new_gamma = rvsdg::GammaNode::create(new_match, match->nalternatives());
         rvsdg::SubstitutionMap rmap0; // subregion 0 of the new gamma - 1 of the old
         rvsdg::SubstitutionMap rmap1;
@@ -199,7 +195,7 @@ merge_gamma(rvsdg::Region * region)
   while (changed)
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::topdown_traverser(region))
+    for (auto & node : rvsdg::TopDownTraverser(region))
     {
       if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {

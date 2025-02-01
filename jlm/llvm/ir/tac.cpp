@@ -36,7 +36,9 @@ check_operands(
   for (size_t n = 0; n < operands.size(); n++)
   {
     if (operands[n]->type() != *operation.argument(n))
-      throw util::error("invalid type.");
+      throw util::type_error(
+          operands[n]->type().debug_string(),
+          operation.argument(n)->debug_string());
   }
 }
 

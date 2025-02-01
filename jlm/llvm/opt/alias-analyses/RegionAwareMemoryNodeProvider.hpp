@@ -60,7 +60,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       jlm::util::StatisticsCollector & statisticsCollector) override;
 
@@ -75,7 +75,7 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   Create(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       jlm::util::StatisticsCollector & statisticsCollector);
 
@@ -88,7 +88,7 @@ public:
    * @return A new instance of MemoryNodeProvisioning.
    */
   static std::unique_ptr<MemoryNodeProvisioning>
-  Create(const RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
+  Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
 
 private:
   /**
@@ -155,7 +155,7 @@ private:
    * @see ExtractLambdaNodes()
    */
   void
-  Propagate(const RvsdgModule & rvsdgModule);
+  Propagate(const rvsdg::RvsdgModule & rvsdgModule);
 
   void
   PropagateRegion(const rvsdg::Region & region);
@@ -193,7 +193,7 @@ private:
    * @see ExtractRvsdgTailNodes()
    */
   void
-  ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
+  ResolveUnknownMemoryNodeReferences(const rvsdg::RvsdgModule & rvsdgModule);
 
   static bool
   ShouldCreateRegionSummary(const rvsdg::Region & region);

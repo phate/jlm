@@ -38,7 +38,7 @@ test_malloc()
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));
 
-    auto ft = FunctionType::Create(
+    auto ft = jlm::rvsdg::FunctionType::Create(
         { jlm::rvsdg::bittype::Create(64) },
         { PointerType::Create(), MemoryStateType::Create() });
     auto f = function_node::create(im->ipgraph(), "f", ft, linkage::external_linkage);
@@ -76,15 +76,15 @@ test_free()
   {
     using namespace jlm::llvm;
 
-    auto iot = iostatetype::Create();
+    auto iot = IOStateType::Create();
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
 
     auto ipgmod = ipgraph_module::create(jlm::util::filepath(""), "", "");
 
-    auto ft = FunctionType::Create(
-        { PointerType::Create(), MemoryStateType::Create(), iostatetype::Create() },
-        { MemoryStateType::Create(), iostatetype::Create() });
+    auto ft = jlm::rvsdg::FunctionType::Create(
+        { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },
+        { MemoryStateType::Create(), IOStateType::Create() });
     auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
     auto cfg = cfg::create(*ipgmod);

@@ -53,11 +53,8 @@ StructuralNode::~StructuralNode() noexcept
   subregions_.clear();
 }
 
-StructuralNode::StructuralNode(
-    const StructuralOperation & op,
-    rvsdg::Region * region,
-    size_t nsubregions)
-    : Node(op.copy(), region)
+StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
+    : Node(region)
 {
   if (nsubregions == 0)
     throw jlm::util::error("Number of subregions must be greater than zero.");

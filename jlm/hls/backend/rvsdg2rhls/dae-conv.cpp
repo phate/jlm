@@ -368,7 +368,7 @@ decouple_load(
 bool
 process_loopnode(loop_node * loopNode)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(loopNode->subregion()))
+  for (auto & node : rvsdg::TopDownTraverser(loopNode->subregion()))
   {
     if (auto ln = dynamic_cast<loop_node *>(node))
     {
@@ -465,12 +465,12 @@ process_loopnode(loop_node * loopNode)
 void
 dae_conv(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const jlm::llvm::lambda::node *>(region->Nodes().begin().ptr());
+  auto lambda = dynamic_cast<const jlm::rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   bool changed;
   do
   {
     changed = false;
-    for (auto & node : jlm::rvsdg::topdown_traverser(lambda->subregion()))
+    for (auto & node : rvsdg::TopDownTraverser(lambda->subregion()))
     {
       if (auto loopnode = dynamic_cast<loop_node *>(node))
       {

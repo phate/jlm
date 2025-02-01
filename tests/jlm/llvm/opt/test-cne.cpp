@@ -28,8 +28,6 @@ test_simple()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
@@ -55,7 +53,7 @@ test_simple()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(graph.GetRootRegion().result(0)->origin() == graph.GetRootRegion().result(1)->origin());
@@ -73,8 +71,6 @@ test_gamma()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -110,7 +106,7 @@ test_gamma()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto subregion0 = gamma->subregion(0);
@@ -139,8 +135,6 @@ test_theta()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -169,7 +163,7 @@ test_theta()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto un1 = jlm::rvsdg::output::GetNode(*u1);
@@ -192,8 +186,6 @@ test_theta2()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -219,7 +211,7 @@ test_theta2()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(lv2.post->origin() == u1);
@@ -236,8 +228,6 @@ test_theta3()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -274,7 +264,7 @@ test_theta3()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(r1->result(2)->origin() == r1->result(4)->origin());
@@ -295,8 +285,6 @@ test_theta4()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -330,7 +318,7 @@ test_theta4()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(ex1.origin() != ex2.origin());
@@ -348,8 +336,6 @@ test_theta5()
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -376,7 +362,7 @@ test_theta5()
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(ex1.origin() == ex2.origin());
@@ -391,16 +377,16 @@ test_lambda()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ft = FunctionType::Create({ vt, vt }, { vt });
+  auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto lambda = lambda::node::create(&graph.GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      graph.GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto d1 = lambda->AddContextVar(*x).inner;
   auto d2 = lambda->AddContextVar(*x).inner;
@@ -413,7 +399,7 @@ test_lambda()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   auto bn1 = jlm::rvsdg::output::GetNode(*b1);
@@ -426,12 +412,10 @@ test_phi()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ft = FunctionType::Create({ vt, vt }, { vt });
+  auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto nf = graph.GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
@@ -442,14 +426,18 @@ test_phi()
   auto d1 = pb.add_ctxvar(x);
   auto d2 = pb.add_ctxvar(x);
 
-  auto r1 = pb.add_recvar(PointerType::Create());
-  auto r2 = pb.add_recvar(PointerType::Create());
+  auto r1 = pb.add_recvar(ft);
+  auto r2 = pb.add_recvar(ft);
 
-  auto lambda1 = lambda::node::create(region, ft, "f", linkage::external_linkage);
+  auto lambda1 = jlm::rvsdg::LambdaNode::Create(
+      *region,
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
   auto cv1 = lambda1->AddContextVar(*d1).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
-  auto lambda2 = lambda::node::create(region, ft, "f", linkage::external_linkage);
+  auto lambda2 = jlm::rvsdg::LambdaNode::Create(
+      *region,
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
   auto cv2 = lambda2->AddContextVar(*d2).inner;
   auto f2 = lambda2->finalize({ cv2 });
 
@@ -463,12 +451,12 @@ test_phi()
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::cne cne;
-  cne.run(rm, statisticsCollector);
+  cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(
-      jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f1).input(0)->origin()
-      == jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*f2).input(0)->origin());
+      jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).input(0)->origin()
+      == jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
 }
 
 static int

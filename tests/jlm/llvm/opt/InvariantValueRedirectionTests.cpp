@@ -12,6 +12,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
@@ -24,7 +25,7 @@ RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
 
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::InvariantValueRedirection invariantValueRedirection;
-  invariantValueRedirection.run(rvsdgModule, statisticsCollector);
+  invariantValueRedirection.Run(rvsdgModule, statisticsCollector);
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 }
@@ -37,14 +38,16 @@ TestGamma()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionType =
-      FunctionType::Create({ controlType, valueType, valueType }, { valueType, valueType });
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { controlType, valueType, valueType },
+      { valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionType, "test", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   auto c = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
@@ -86,18 +89,19 @@ TestTheta()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType },
       { controlType, valueType, ioStateType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto lambdaNode =
-      lambda::node::create(&rvsdg.GetRootRegion(), functionType, "test", linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   auto c = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
@@ -141,11 +145,11 @@ TestCall()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionTypeTest1 = FunctionType::Create(
+  auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, valueType, ioStateType, memoryStateType },
       { valueType, valueType, ioStateType, memoryStateType });
 
@@ -154,11 +158,9 @@ TestCall()
 
   jlm::rvsdg::output * lambdaOutputTest1;
   {
-    auto lambdaNode = lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionTypeTest1,
-        "test1",
-        linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionTypeTest1, "test1", linkage::external_linkage));
 
     auto controlArgument = lambdaNode->GetFunctionArguments()[0];
     auto xArgument = lambdaNode->GetFunctionArguments()[1];
@@ -188,15 +190,13 @@ TestCall()
 
   jlm::rvsdg::output * lambdaOutputTest2;
   {
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, valueType, ioStateType, memoryStateType },
         { valueType, valueType, ioStateType, memoryStateType });
 
-    auto lambdaNode = lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionType,
-        "test2",
-        linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto yArgument = lambdaNode->GetFunctionArguments()[1];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
@@ -218,7 +218,7 @@ TestCall()
   RunInvariantValueRedirection(*rvsdgModule);
 
   // Assert
-  auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*lambdaOutputTest2);
+  auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutputTest2);
   assert(lambdaNode.GetFunctionResults().size() == 4);
   assert(lambdaNode.GetFunctionResults()[0]->origin() == lambdaNode.GetFunctionArguments()[1]);
   assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[0]);
@@ -236,11 +236,11 @@ TestCallWithMemoryStateNodes()
   // Arrange
   using namespace jlm::llvm;
 
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
-  auto functionTypeTest1 = FunctionType::Create(
+  auto functionTypeTest1 = jlm::rvsdg::FunctionType::Create(
       { controlType, valueType, ioStateType, memoryStateType },
       { valueType, ioStateType, memoryStateType });
 
@@ -249,11 +249,9 @@ TestCallWithMemoryStateNodes()
 
   jlm::rvsdg::output * lambdaOutputTest1;
   {
-    auto lambdaNode = lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionTypeTest1,
-        "test1",
-        linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionTypeTest1, "test1", linkage::external_linkage));
 
     auto controlArgument = lambdaNode->GetFunctionArguments()[0];
     auto xArgument = lambdaNode->GetFunctionArguments()[1];
@@ -283,15 +281,13 @@ TestCallWithMemoryStateNodes()
 
   jlm::rvsdg::output * lambdaOutputTest2;
   {
-    auto functionType = FunctionType::Create(
+    auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, ioStateType, memoryStateType },
         { valueType, ioStateType, memoryStateType });
 
-    auto lambdaNode = lambda::node::create(
-        &rvsdg.GetRootRegion(),
-        functionType,
-        "test2",
-        linkage::external_linkage);
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
@@ -326,13 +322,13 @@ TestCallWithMemoryStateNodes()
   RunInvariantValueRedirection(*rvsdgModule);
 
   // Assert
-  auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<lambda::node>(*lambdaOutputTest2);
+  auto & lambdaNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*lambdaOutputTest2);
   assert(lambdaNode.GetFunctionResults().size() == 3);
   assert(lambdaNode.GetFunctionResults()[0]->origin() == lambdaNode.GetFunctionArguments()[0]);
   assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[1]);
 
-  auto lambdaEntrySplit = lambda::node::GetMemoryStateEntrySplit(lambdaNode);
-  auto lambdaExitMerge = lambda::node::GetMemoryStateExitMerge(lambdaNode);
+  auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
+  auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
 
   assert(lambdaEntrySplit->noutputs() == 2);
   assert(lambdaExitMerge->ninputs() == 2);

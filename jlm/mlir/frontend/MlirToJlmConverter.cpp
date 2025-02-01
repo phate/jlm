@@ -454,15 +454,16 @@ MlirToJlmConverter::ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region 
   {
     resultTypes.push_back(ConvertType(returnType));
   }
-  auto functionType = llvm::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
+  auto functionType = rvsdg::FunctionType::Create(std::move(argumentTypes), std::move(resultTypes));
 
   // FIXME
   // The linkage should be part of the MLIR attributes so it can be extracted here
-  auto rvsdgLambda = llvm::lambda::node::create(
-      &rvsdgRegion,
-      functionType,
-      functionName.getValue().str(),
-      llvm::linkage::external_linkage);
+  auto rvsdgLambda = rvsdg::LambdaNode::Create(
+      rvsdgRegion,
+      llvm::LlvmLambdaOperation::Create(
+          functionType,
+          functionName.getValue().str(),
+          llvm::linkage::external_linkage));
 
   auto lambdaRegion = rvsdgLambda->subregion();
   auto regionResults = ConvertRegion(mlirLambda.getRegion(0), *lambdaRegion);
@@ -489,7 +490,7 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   }
   else if (::mlir::isa<::mlir::rvsdg::IOStateEdgeType>(type))
   {
-    return std::make_unique<llvm::iostatetype>();
+    return std::make_unique<llvm::IOStateType>();
   }
   else
   {

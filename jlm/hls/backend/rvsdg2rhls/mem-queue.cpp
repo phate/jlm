@@ -140,7 +140,7 @@ get_parent_regions(jlm::rvsdg::Region * region)
   std::deque<jlm::rvsdg::Region *> regions;
   jlm::rvsdg::Region * target_region = region;
   while (
-      !dynamic_cast<const jlm::llvm::lambda::operation *>(&target_region->node()->GetOperation()))
+      !dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&target_region->node()->GetOperation()))
   {
     regions.push_front(target_region);
     target_region = target_region->node()->region();
@@ -521,7 +521,7 @@ void
 jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
-      jlm::util::AssertedCast<const jlm::llvm::lambda::node>(region->Nodes().begin().ptr());
+      jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
   {

@@ -14,7 +14,7 @@
 namespace jlm::rvsdg
 {
 
-class bitslice_op : public jlm::rvsdg::unary_op
+class bitslice_op : public UnaryOperation
 {
 public:
   virtual ~bitslice_op() noexcept;
@@ -23,7 +23,7 @@ public:
       const std::shared_ptr<const bittype> & argument,
       size_t low,
       size_t high) noexcept
-      : unary_op(argument, bittype::Create(high - low)),
+      : UnaryOperation(argument, bittype::Create(high - low)),
         low_(low)
   {}
 

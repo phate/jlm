@@ -18,28 +18,21 @@ TestUnknownBoundaries()
 
   // Arrange
   auto b32 = jlm::rvsdg::bittype::Create(32);
-  auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
+  auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
-  auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
-
-  jlm::rvsdg::bitult_op ult(32);
-  jlm::rvsdg::bitsgt_op sgt(32);
-  jlm::rvsdg::bitadd_op add(32);
-  jlm::rvsdg::bitsub_op sub(32);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
-  auto subregion = theta->subregion();
   auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);
   auto lvs = theta->AddLoopVar(lambda->GetFunctionArguments()[1]);
   auto lve = theta->AddLoopVar(lambda->GetFunctionArguments()[2]);
 
-  auto arm = jlm::rvsdg::SimpleNode::create_normalized(subregion, add, { idv.pre, lvs.pre })[0];
-  auto cmp = jlm::rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lve.pre })[0];
+  auto arm = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitadd_op>({ idv.pre, lvs.pre }, 32).output(0);
+  auto cmp = jlm::rvsdg::CreateOpNode<jlm::rvsdg::bitult_op>({ arm, lve.pre }, 32).output(0);
   auto match = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   idv.post->divert_to(arm);

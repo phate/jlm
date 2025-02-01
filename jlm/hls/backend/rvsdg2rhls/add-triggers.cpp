@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -27,10 +28,11 @@ get_trigger(rvsdg::Region * region)
   return nullptr;
 }
 
-jlm::llvm::lambda::node *
-add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::Type> type)
+jlm::rvsdg::LambdaNode *
+add_lambda_argument(rvsdg::LambdaNode * ln, std::shared_ptr<const jlm::rvsdg::Type> type)
 {
-  auto old_fcttype = ln->type();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
+  auto old_fcttype = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
@@ -42,13 +44,10 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
   {
     new_result_types.push_back(old_fcttype.Results()[i]);
   }
-  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
-  auto new_lambda = llvm::lambda::node::create(
-      ln->region(),
-      new_fcttype,
-      ln->name(),
-      ln->linkage(),
-      ln->attributes());
+  auto new_fcttype = rvsdg::FunctionType::Create(new_argument_types, new_result_types);
+  auto new_lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(new_fcttype, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : ln->GetContextVars())
@@ -79,7 +78,7 @@ add_lambda_argument(llvm::lambda::node * ln, std::shared_ptr<const jlm::rvsdg::T
 
   //            ln->output()->divert_users(new_out);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
-  auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
   return new_lambda;
@@ -89,11 +88,11 @@ void
 add_triggers(rvsdg::Region * region)
 {
   auto trigger = get_trigger(region);
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
-      if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         // check here in order not to process removed and re-added node twice
         if (!get_trigger(ln->subregion()))

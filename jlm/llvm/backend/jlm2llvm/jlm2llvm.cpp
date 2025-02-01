@@ -13,7 +13,6 @@
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
 #include <jlm/llvm/backend/jlm2llvm/instruction.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/jlm2llvm/type.hpp>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/IRBuilder.h>
@@ -102,6 +101,8 @@ static void
 create_switch(const cfg_node * node, context & ctx)
 {
   JLM_ASSERT(node->noutedges() >= 2);
+  ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
+  auto & typeConverter = ctx.GetTypeConverter();
   auto bb = static_cast<const basic_block *>(node);
   ::llvm::IRBuilder<> builder(ctx.basic_block(node));
 
@@ -120,7 +121,8 @@ create_switch(const cfg_node * node, context & ctx)
     for (const auto & alt : *mop)
     {
       auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
-      auto value = ::llvm::ConstantInt::get(convert_type(type, ctx), alt.first);
+      auto value =
+          ::llvm::ConstantInt::get(typeConverter.ConvertBitType(type, llvmContext), alt.first);
       sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
     }
   }
@@ -294,9 +296,11 @@ ConvertIntAttribute(const llvm::int_attribute & attribute, context & ctx)
 static ::llvm::Attribute
 ConvertTypeAttribute(const llvm::type_attribute & attribute, context & ctx)
 {
+  auto & typeConverter = ctx.GetTypeConverter();
   auto & llvmContext = ctx.llvm_module().getContext();
+
   auto kind = convert_attribute_kind(attribute.kind());
-  auto type = convert_type(attribute.type(), ctx);
+  auto type = typeConverter.ConvertJlmType(attribute.type(), llvmContext);
   return ::llvm::Attribute::get(llvmContext, kind, type);
 }
 
@@ -432,7 +436,7 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
       if (!is<phi_op>(tac->operation()))
         continue;
 
-      if (rvsdg::is<iostatetype>(tac->result(0)->type()))
+      if (rvsdg::is<IOStateType>(tac->result(0)->type()))
         continue;
       if (rvsdg::is<MemoryStateType>(tac->result(0)->type()))
         continue;
@@ -499,6 +503,7 @@ convert_linkage(const llvm::linkage & linkage)
 static void
 convert_ipgraph(context & ctx)
 {
+  auto & typeConverter = ctx.GetTypeConverter();
   auto & jm = ctx.module();
   auto & lm = ctx.llvm_module();
 
@@ -509,7 +514,7 @@ convert_ipgraph(context & ctx)
 
     if (auto dataNode = dynamic_cast<const data_node *>(&node))
     {
-      auto type = convert_type(*dataNode->GetValueType(), ctx);
+      auto type = typeConverter.ConvertJlmType(*dataNode->GetValueType(), lm.getContext());
       auto linkage = convert_linkage(dataNode->linkage());
 
       auto gv = new ::llvm::GlobalVariable(
@@ -524,7 +529,7 @@ convert_ipgraph(context & ctx)
     }
     else if (auto n = dynamic_cast<const function_node *>(&node))
     {
-      auto type = convert_type(n->fcttype(), ctx);
+      auto type = typeConverter.ConvertFunctionType(n->fcttype(), lm.getContext());
       auto linkage = convert_linkage(n->linkage());
       auto f = ::llvm::Function::Create(type, linkage, n->name(), &lm);
       ctx.insert(v, f);

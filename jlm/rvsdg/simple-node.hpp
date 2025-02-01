@@ -8,8 +8,8 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
+
+#include <optional>
 
 namespace jlm::rvsdg
 {
@@ -24,11 +24,6 @@ public:
   ~SimpleNode() override;
 
 protected:
-  SimpleNode(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands);
-
   SimpleNode(
       rvsdg::Region & region,
       std::unique_ptr<SimpleOperation> operation,
@@ -50,34 +45,41 @@ public:
   Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
-  static inline jlm::rvsdg::SimpleNode *
-  create(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands)
+  static SimpleNode &
+  Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::output *> & operands)
   {
-    return new SimpleNode(region, op, operands);
+    std::unique_ptr<SimpleOperation> newOp(
+        util::AssertedCast<SimpleOperation>(op.copy().release()));
+    return *(new SimpleNode(region, std::move(newOp), operands));
   }
 
-  static inline jlm::rvsdg::SimpleNode &
+  static SimpleNode &
   Create(
-      rvsdg::Region & region,
+      Region & region,
       std::unique_ptr<SimpleOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands)
+      const std::vector<rvsdg::output *> & operands)
   {
     return *new SimpleNode(region, std::move(operation), operands);
   }
 
-  static inline std::vector<jlm::rvsdg::output *>
-  create_normalized(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & operands)
-  {
-    auto nf = static_cast<simple_normal_form *>(region->graph()->GetNodeNormalForm(typeid(op)));
-    return nf->normalized_create(region, op, operands);
-  }
+private:
+  std::unique_ptr<SimpleOperation> Operation_;
 };
+
+/**
+ * \brief Performs common node elimination for a given operation and operands in a region.
+ *
+ * @param region The region in which common node elimination is performed.
+ * @param operation The simple operation on which the transformation is performed.
+ * @param operands The operands of the simple node.
+ * @return If the normalization could be applied, then the results of the binary operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSimpleOperationCommonNodeElimination(
+    Region & region,
+    const SimpleOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 /* inputs */
 

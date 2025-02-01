@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
-#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp>
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
@@ -144,7 +143,7 @@ PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode, bool c
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
+PointerObjectSet::CreateFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode)
 {
   JLM_ASSERT(!FunctionMap_.HasKey(&lambdaNode));
   const auto pointerObject = AddPointerObject(PointerObjectKind::FunctionMemoryObject, false);
@@ -153,13 +152,13 @@ PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 }
 
 PointerObjectIndex
-PointerObjectSet::GetFunctionMemoryObject(const lambda::node & lambdaNode) const
+PointerObjectSet::GetFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode) const
 {
   JLM_ASSERT(FunctionMap_.HasKey(&lambdaNode));
   return FunctionMap_.LookupKey(&lambdaNode);
 }
 
-const lambda::node &
+const rvsdg::LambdaNode &
 PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const
 {
   JLM_ASSERT(FunctionMap_.HasValue(index));
@@ -205,7 +204,7 @@ PointerObjectSet::GetGlobalMap() const noexcept
   return GlobalMap_;
 }
 
-const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
+const util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> &
 PointerObjectSet::GetFunctionMap() const noexcept
 {
   return FunctionMap_;
@@ -669,7 +668,7 @@ static void
 HandleLambdaCallParameters(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    const lambda::node & lambdaNode,
+    const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
   auto lambdaArgs = lambdaNode.GetFunctionArguments();
@@ -696,7 +695,7 @@ static void
 HandleLambdaCallReturnValues(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    const lambda::node & lambdaNode,
+    const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
   auto lambdaResults = lambdaNode.GetFunctionResults();
@@ -920,7 +919,7 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
     modified |= set.MarkAsPointingToExternal(index);
   };
 
-  for (const auto [lambda, lambdaPO] : set.GetFunctionMap())
+  for (const auto & [lambda, lambdaPO] : set.GetFunctionMap())
   {
     if (set.HasEscaped(lambdaPO))
       HandleEscapedFunction(set, lambdaPO, markAsPointeesEscaping, markAsPointsToExternal);

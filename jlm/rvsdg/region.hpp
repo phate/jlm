@@ -62,6 +62,9 @@ public:
   RegionArgument &
   operator=(RegionArgument &&) = delete;
 
+  [[nodiscard]] std::string
+  debug_string() const override;
+
   [[nodiscard]] StructuralInput *
   input() const noexcept
   {
@@ -141,6 +144,9 @@ public:
 
   RegionResult &
   operator=(RegionResult &&) = delete;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
 
   [[nodiscard]] StructuralOutput *
   output() const noexcept
@@ -623,9 +629,6 @@ public:
 
   void
   prune(bool recursive);
-
-  void
-  normalize(bool recursive);
 
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,

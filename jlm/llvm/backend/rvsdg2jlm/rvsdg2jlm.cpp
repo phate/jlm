@@ -17,6 +17,7 @@
 #include <jlm/util/time.hpp>
 
 #include <deque>
+#include <typeindex>
 
 namespace jlm::llvm
 {
@@ -54,10 +55,10 @@ public:
 namespace rvsdg2jlm
 {
 
-static std::shared_ptr<const FunctionType>
+static std::shared_ptr<const rvsdg::FunctionType>
 is_function_import(const llvm::GraphImport * graphImport)
 {
-  return std::dynamic_pointer_cast<const FunctionType>(graphImport->ValueType());
+  return std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType());
 }
 
 static std::unique_ptr<data_node_init>
@@ -79,7 +80,7 @@ create_initialization(const delta::node * delta, context & ctx)
   }
 
   tacsvector_t tacs;
-  for (const auto & node : rvsdg::topdown_traverser(delta->subregion()))
+  for (const auto & node : rvsdg::TopDownTraverser(delta->subregion()))
   {
     JLM_ASSERT(node->noutputs() == 1);
     auto output = node->output(0);
@@ -108,7 +109,7 @@ convert_region(rvsdg::Region & region, context & ctx)
   ctx.lpbb()->add_outedge(entry);
   ctx.set_lpbb(entry);
 
-  for (const auto & node : rvsdg::topdown_traverser(&region))
+  for (const auto & node : rvsdg::TopDownTraverser(&region))
     convert_node(*node, ctx);
 
   auto exit = basic_block::create(*ctx.cfg());
@@ -117,7 +118,7 @@ convert_region(rvsdg::Region & region, context & ctx)
 }
 
 static inline std::unique_ptr<llvm::cfg>
-create_cfg(const lambda::node & lambda, context & ctx)
+create_cfg(const rvsdg::LambdaNode & lambda, context & ctx)
 {
   JLM_ASSERT(ctx.lpbb() == nullptr);
   std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(ctx.module()));
@@ -130,8 +131,11 @@ create_cfg(const lambda::node & lambda, context & ctx)
   for (auto fctarg : lambda.GetFunctionArguments())
   {
     auto name = util::strfmt("_a", fctarg->index(), "_");
-    auto argument =
-        llvm::argument::create(name, fctarg->Type(), lambda.GetArgumentAttributes(*fctarg));
+    auto argument = llvm::argument::create(
+        name,
+        fctarg->Type(),
+        dynamic_cast<llvm::LlvmLambdaOperation &>(lambda.GetOperation())
+            .GetArgumentAttributes(fctarg->index()));
     auto v = cfg->entry()->append_argument(std::move(argument));
     ctx.insert(fctarg, v);
   }
@@ -407,17 +411,13 @@ convert_theta_node(const rvsdg::Node & node, context & ctx)
 static inline void
 convert_lambda_node(const rvsdg::Node & node, context & ctx)
 {
-  JLM_ASSERT(is<lambda::operation>(&node));
-  auto lambda = static_cast<const lambda::node *>(&node);
+  JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&node));
+  auto lambda = static_cast<const rvsdg::LambdaNode *>(&node);
   auto & module = ctx.module();
   auto & clg = module.ipgraph();
 
-  auto f = function_node::create(
-      clg,
-      lambda->name(),
-      lambda->Type(),
-      lambda->linkage(),
-      lambda->attributes());
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
+  auto f = function_node::create(clg, op.name(), op.Type(), op.linkage(), op.attributes());
   auto v = module.create_variable(f);
 
   f->add_cfg(create_cfg(*lambda, ctx));
@@ -446,14 +446,10 @@ convert_phi_node(const rvsdg::Node & node, context & ctx)
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
     auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
 
-    if (auto lambda = dynamic_cast<const lambda::node *>(node))
+    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      auto f = function_node::create(
-          ipg,
-          lambda->name(),
-          lambda->Type(),
-          lambda->linkage(),
-          lambda->attributes());
+      const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
+      auto f = function_node::create(ipg, op.name(), op.Type(), op.linkage(), op.attributes());
       ctx.insert(subregion->argument(n), module.create_variable(f));
     }
     else
@@ -473,7 +469,7 @@ convert_phi_node(const rvsdg::Node & node, context & ctx)
     auto result = subregion->result(n);
     auto node = rvsdg::output::GetNode(*result->origin());
 
-    if (auto lambda = dynamic_cast<const lambda::node *>(node))
+    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       auto v = static_cast<const fctvariable *>(ctx.variable(subregion->argument(n)));
       v->function()->add_cfg(create_cfg(*lambda, ctx));
@@ -520,27 +516,26 @@ convert_node(const rvsdg::Node & node, context & ctx)
 {
   static std::
       unordered_map<std::type_index, std::function<void(const rvsdg::Node & node, context & ctx)>>
-          map({ { typeid(lambda::operation), convert_lambda_node },
-                { std::type_index(typeid(rvsdg::GammaOperation)), convert_gamma_node },
-                { std::type_index(typeid(rvsdg::ThetaOperation)), convert_theta_node },
-                { typeid(phi::operation), convert_phi_node },
-                { typeid(delta::operation), convert_delta_node } });
+          map({ { typeid(rvsdg::LambdaNode), convert_lambda_node },
+                { std::type_index(typeid(rvsdg::GammaNode)), convert_gamma_node },
+                { std::type_index(typeid(rvsdg::ThetaNode)), convert_theta_node },
+                { typeid(phi::node), convert_phi_node },
+                { typeid(delta::node), convert_delta_node } });
 
-  if (dynamic_cast<const rvsdg::SimpleOperation *>(&node.GetOperation()))
+  if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
   {
     convert_simple_node(node, ctx);
     return;
   }
 
-  auto & op = node.GetOperation();
-  JLM_ASSERT(map.find(typeid(op)) != map.end());
-  map[typeid(op)](node, ctx);
+  JLM_ASSERT(map.find(typeid(node)) != map.end());
+  map[typeid(node)](node, ctx);
 }
 
 static void
 convert_nodes(const rvsdg::Graph & graph, context & ctx)
 {
-  for (const auto & node : rvsdg::topdown_traverser(&graph.GetRootRegion()))
+  for (const auto & node : rvsdg::TopDownTraverser(&graph.GetRootRegion()))
     convert_node(*node, ctx);
 }
 

@@ -6,9 +6,9 @@
 #ifndef JLM_LLVM_OPT_UNROLL_HPP
 #define JLM_LLVM_OPT_UNROLL_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/common.hpp>
 
 namespace jlm::llvm
@@ -19,7 +19,7 @@ class RvsdgModule;
 /**
  * \brief Optimization that attempts to unroll loops (thetas).
  */
-class loopunroll final : public optimization
+class loopunroll final : public rvsdg::Transformation
 {
 public:
   virtual ~loopunroll();
@@ -36,8 +36,8 @@ public:
    * \param module Module where the innermost loops are unrolled
    * \param statisticsCollector Statistics collector for collecting loop unrolling statistics.
    */
-  virtual void
-  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   size_t factor_;

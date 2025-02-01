@@ -5,6 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -16,7 +17,7 @@ void
 remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
 {
   // process children first so that unnecessary users get removed
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -29,7 +30,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
         }
         remove_gamma_passthrough(gn);
       }
-      else if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      else if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         remove_unused_state(structnode->subregion(0), false);
         remove_lambda_passthrough(ln);
@@ -42,7 +43,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
     }
   }
   // exit will come before entry
-  for (auto & node : jlm::rvsdg::bottomup_traverser(region))
+  for (auto & node : rvsdg::BottomUpTraverser(region))
   {
     if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -172,10 +173,11 @@ remove_gamma_passthrough(rvsdg::GammaNode * gn)
   }
 }
 
-jlm::llvm::lambda::node *
-remove_lambda_passthrough(llvm::lambda::node * ln)
+jlm::rvsdg::LambdaNode *
+remove_lambda_passthrough(rvsdg::LambdaNode * ln)
 {
-  auto old_fcttype = ln->type();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
+  auto old_fcttype = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
   {
@@ -198,13 +200,10 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
       new_result_types.push_back(old_fcttype.Results()[i]);
     }
   }
-  auto new_fcttype = llvm::FunctionType::Create(new_argument_types, new_result_types);
-  auto new_lambda = llvm::lambda::node::create(
-      ln->region(),
-      new_fcttype,
-      ln->name(),
-      ln->linkage(),
-      ln->attributes());
+  auto new_fcttype = rvsdg::FunctionType::Create(new_argument_types, new_result_types);
+  auto new_lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(new_fcttype, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : ln->GetContextVars())
@@ -245,7 +244,7 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
   //	ln->output()->divert_users(new_out); // can't divert since the type changed
   JLM_ASSERT(ln->output()->nusers() == 1);
   ln->region()->RemoveResult((*ln->output()->begin())->index());
-  auto oldExport = ln->ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
   return new_lambda;

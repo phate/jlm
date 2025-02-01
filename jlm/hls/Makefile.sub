@@ -88,6 +88,7 @@ libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
 	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
+	tests/jlm/hls/util/ViewTests \
 
 libhls_TEST_LIBS += \
 	libjlmtest \
