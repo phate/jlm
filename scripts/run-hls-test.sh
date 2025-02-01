@@ -3,7 +3,7 @@ set -eu
 
 # URL to the benchmark git repository and the commit to be used
 GIT_REPOSITORY=https://github.com/phate/hls-test-suite.git
-GIT_COMMIT=1365c30074f921733dec6c5fc949bd1cb64ae001
+GIT_COMMIT=52adc8e870025d1c8d99e547d598b8cd6f9a1414
 
 # Get the absolute path to this script and set default JLM paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -15,7 +15,11 @@ BENCHMARK_DIR=${JLM_ROOT_DIR}/usr/hls-test-suite
 BENCHMARK_RUN_TARGET=run
 
 # Execute benchmarks in parallel by default
-PARALLEL_THREADS=`nproc`
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  PARALLEL_THREADS=`sysctl -n hw.ncpu`
+else
+  PARALLEL_THREADS=`nproc`
+fi
 
 function commit()
 {
