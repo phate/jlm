@@ -44,34 +44,16 @@ convert_assignment(
   return ctx.value(args[0]);
 }
 
-static inline ::llvm::Value *
-convert_bitsbinary(
-    const rvsdg::SimpleOperation & op,
+static ::llvm::Value *
+ConvertToLlvmBinOp(
+    const ::llvm::Instruction::BinaryOps opcode,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    const context & ctx)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::bitbinary_op *>(&op));
-
-  static std::unordered_map<std::type_index, ::llvm::Instruction::BinaryOps> map(
-      { { typeid(rvsdg::bitadd_op), ::llvm::Instruction::Add },
-        { typeid(rvsdg::bitand_op), ::llvm::Instruction::And },
-        { typeid(rvsdg::bitashr_op), ::llvm::Instruction::AShr },
-        { typeid(rvsdg::bitsub_op), ::llvm::Instruction::Sub },
-        { typeid(rvsdg::bitudiv_op), ::llvm::Instruction::UDiv },
-        { typeid(rvsdg::bitsdiv_op), ::llvm::Instruction::SDiv },
-        { typeid(rvsdg::bitumod_op), ::llvm::Instruction::URem },
-        { typeid(rvsdg::bitsmod_op), ::llvm::Instruction::SRem },
-        { typeid(rvsdg::bitshl_op), ::llvm::Instruction::Shl },
-        { typeid(rvsdg::bitshr_op), ::llvm::Instruction::LShr },
-        { typeid(rvsdg::bitor_op), ::llvm::Instruction::Or },
-        { typeid(rvsdg::bitxor_op), ::llvm::Instruction::Xor },
-        { typeid(rvsdg::bitmul_op), ::llvm::Instruction::Mul } });
-
   auto op1 = ctx.value(args[0]);
   auto op2 = ctx.value(args[1]);
-  JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
-  return builder.CreateBinOp(map[std::type_index(typeid(op))], op1, op2);
+  return builder.CreateBinOp(opcode, op1, op2);
 }
 
 static inline ::llvm::Value *
@@ -1086,8 +1068,58 @@ convert_operation(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  if (dynamic_cast<const rvsdg::bitbinary_op *>(&op))
-    return convert_bitsbinary(op, arguments, builder, ctx);
+  if (is<rvsdg::bitadd_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::Add, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitand_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::And, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitashr_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::AShr, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitsub_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::Sub, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitudiv_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::UDiv, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitsdiv_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::SDiv, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitumod_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::URem, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitsmod_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::SRem, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitshl_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::Shl, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitshr_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::LShr, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitor_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::Or, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitxor_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::Xor, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitmul_op>(op))
+  {
+    return ConvertToLlvmBinOp(::llvm::Instruction::Mul, arguments, builder, ctx);
+  }
 
   if (dynamic_cast<const rvsdg::bitcompare_op *>(&op))
     return convert_bitscompare(op, arguments, builder, ctx);
