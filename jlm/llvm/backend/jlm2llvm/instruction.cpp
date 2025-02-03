@@ -45,42 +45,27 @@ convert_assignment(
 }
 
 static ::llvm::Value *
-ConvertToLlvmBinOp(
+CreateBinOpInstruction(
     const ::llvm::Instruction::BinaryOps opcode,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
     const context & ctx)
 {
-  auto op1 = ctx.value(args[0]);
-  auto op2 = ctx.value(args[1]);
-  return builder.CreateBinOp(opcode, op1, op2);
+  const auto operand1 = ctx.value(args[0]);
+  const auto operand2 = ctx.value(args[1]);
+  return builder.CreateBinOp(opcode, operand1, operand2);
 }
 
-static inline ::llvm::Value *
-convert_bitscompare(
-    const rvsdg::SimpleOperation & op,
+static ::llvm::Value *
+CreateICmpInstruction(
+    const ::llvm::CmpInst::Predicate predicate,
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder,
-    context & ctx)
+    const context & ctx)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::bitcompare_op *>(&op));
-
-  static std::unordered_map<std::type_index, ::llvm::CmpInst::Predicate> map(
-      { { typeid(rvsdg::biteq_op), ::llvm::CmpInst::ICMP_EQ },
-        { typeid(rvsdg::bitne_op), ::llvm::CmpInst::ICMP_NE },
-        { typeid(rvsdg::bitugt_op), ::llvm::CmpInst::ICMP_UGT },
-        { typeid(rvsdg::bituge_op), ::llvm::CmpInst::ICMP_UGE },
-        { typeid(rvsdg::bitult_op), ::llvm::CmpInst::ICMP_ULT },
-        { typeid(rvsdg::bitule_op), ::llvm::CmpInst::ICMP_ULE },
-        { typeid(rvsdg::bitsgt_op), ::llvm::CmpInst::ICMP_SGT },
-        { typeid(rvsdg::bitsge_op), ::llvm::CmpInst::ICMP_SGE },
-        { typeid(rvsdg::bitslt_op), ::llvm::CmpInst::ICMP_SLT },
-        { typeid(rvsdg::bitsle_op), ::llvm::CmpInst::ICMP_SLE } });
-
-  auto op1 = ctx.value(args[0]);
-  auto op2 = ctx.value(args[1]);
-  JLM_ASSERT(map.find(std::type_index(typeid(op))) != map.end());
-  return builder.CreateICmp(map[std::type_index(typeid(op))], op1, op2);
+  const auto operand1 = ctx.value(args[0]);
+  const auto operand2 = ctx.value(args[1]);
+  return builder.CreateICmp(predicate, operand1, operand2);
 }
 
 static ::llvm::APInt
@@ -1070,59 +1055,96 @@ convert_operation(
 {
   if (is<rvsdg::bitadd_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::Add, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::Add, arguments, builder, ctx);
   }
   if (is<rvsdg::bitand_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::And, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::And, arguments, builder, ctx);
   }
   if (is<rvsdg::bitashr_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::AShr, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::AShr, arguments, builder, ctx);
   }
   if (is<rvsdg::bitsub_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::Sub, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::Sub, arguments, builder, ctx);
   }
   if (is<rvsdg::bitudiv_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::UDiv, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::UDiv, arguments, builder, ctx);
   }
   if (is<rvsdg::bitsdiv_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::SDiv, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::SDiv, arguments, builder, ctx);
   }
   if (is<rvsdg::bitumod_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::URem, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::URem, arguments, builder, ctx);
   }
   if (is<rvsdg::bitsmod_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::SRem, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::SRem, arguments, builder, ctx);
   }
   if (is<rvsdg::bitshl_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::Shl, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::Shl, arguments, builder, ctx);
   }
   if (is<rvsdg::bitshr_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::LShr, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::LShr, arguments, builder, ctx);
   }
   if (is<rvsdg::bitor_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::Or, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::Or, arguments, builder, ctx);
   }
   if (is<rvsdg::bitxor_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::Xor, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::Xor, arguments, builder, ctx);
   }
   if (is<rvsdg::bitmul_op>(op))
   {
-    return ConvertToLlvmBinOp(::llvm::Instruction::Mul, arguments, builder, ctx);
+    return CreateBinOpInstruction(::llvm::Instruction::Mul, arguments, builder, ctx);
   }
-
-  if (dynamic_cast<const rvsdg::bitcompare_op *>(&op))
-    return convert_bitscompare(op, arguments, builder, ctx);
+  if (is<rvsdg::biteq_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_EQ, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitne_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_NE, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitugt_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_UGT, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bituge_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_UGE, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitult_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_ULT, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitule_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_ULE, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitsgt_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_SGT, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitsge_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_SGE, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitslt_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLT, arguments, builder, ctx);
+  }
+  if (is<rvsdg::bitsle_op>(op))
+  {
+    return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLE, arguments, builder, ctx);
+  }
 
   static std::unordered_map<
       std::type_index,
