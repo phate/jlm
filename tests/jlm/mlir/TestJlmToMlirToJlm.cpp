@@ -414,7 +414,6 @@ TestSext()
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
     auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-
     {
       using namespace jlm::llvm;
 
@@ -490,7 +489,6 @@ TestSitofp()
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
     auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-
     {
       using namespace jlm::llvm;
 
@@ -550,7 +548,6 @@ TestConstantFP()
     rootBlock->push_back(omega);
     auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
     auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-
     {
       using namespace jlm::llvm;
 
@@ -632,7 +629,6 @@ TestFpBinary()
       rootBlock->push_back(omega);
       auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
       auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-
       {
         using namespace jlm::llvm;
 
@@ -649,7 +645,6 @@ TestFpBinary()
       }
     }
   }
-
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)

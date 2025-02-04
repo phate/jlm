@@ -339,7 +339,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto outputType = castedOp.getOut().getType();
     auto convertedOutputType = ConvertType(outputType);
-    if(!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
+    if (!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
       JLM_UNREACHABLE("Expected IntegerType for ExtSIOp operation output.");
     return rvsdg::output::GetNode(*llvm::sext_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
@@ -383,7 +383,7 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
     auto type = constant.getType();
-    if(!::mlir::isa<::mlir::FloatType>(type))
+    if (!::mlir::isa<::mlir::FloatType>(type))
       JLM_UNREACHABLE("Expected FloatType for ConstantFloatOp operation.");
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
@@ -416,14 +416,17 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
   {
     auto outputType = AllocaOp.getValueType();
+
     std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
+    if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
+      JLM_UNREACHABLE("Expected ValueType for AllocaOp operation.");
+
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
+    if (!rvsdg::is<const rvsdg::bittype>(inputs[0]->Type()))
+      JLM_UNREACHABLE("Expected bittype for AllocaOp operation.");
 
-    auto jlmBitType = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
-    auto bitTypePrt = std::make_shared<const jlm::rvsdg::bittype>(jlmBitType->nbits());
-
-    auto allocaOp = jlm::llvm::alloca_op(jlmValueType, bitTypePrt, AllocaOp.getAlignment());
-
+    auto jlmBitType = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
+    auto allocaOp = jlm::llvm::alloca_op(jlmValueType, jlmBitType, AllocaOp.getAlignment());
     auto operands = std::vector(inputs.begin(), inputs.end());
 
     return &rvsdg::SimpleNode::Create(rvsdgRegion, allocaOp, operands);
@@ -438,7 +441,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto address = inputs[0];
     auto value = inputs[1];
-    auto memoryStateInputs = std::vector(std::next(std::next(inputs.begin())), inputs.end());
+    auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
     auto & storeNode = jlm::llvm::StoreNonVolatileNode::CreateNode(
         *address,
         *value,
@@ -452,6 +455,8 @@ MlirToJlmConverter::ConvertOperation(
     auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
     auto outputType = LoadOp.getOutput().getType();
     std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
+    if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
+      JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
     auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
         *address,

@@ -394,10 +394,9 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
   auto & oldRootPointees = PointsToSets_[oldRoot];
 
   NumSetInsertionAttempts_ += oldRootPointees.Size();
-  PointsToSets_[newRoot].UnionWith(oldRootPointees);
-
   NumExplicitPointeesRemoved_ += oldRootPointees.Size();
-  oldRootPointees.Clear();
+
+  PointsToSets_[newRoot].UnionWithAndClear(oldRootPointees);
 
   return newRoot;
 }
@@ -1649,19 +1648,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     const auto nonRoot = root == aRoot ? bRoot : aRoot;
 
     // Move constraints owned by the non-root to the root
-    supersetEdges[root].UnionWith(supersetEdges[nonRoot]);
-    supersetEdges[nonRoot].Clear();
+    supersetEdges[root].UnionWithAndClear(supersetEdges[nonRoot]);
+
     // Try to avoid self-edges, but indirect self-edges can still exist
     supersetEdges[root].Remove(root);
+    supersetEdges[root].Remove(nonRoot);
 
-    storeConstraints[root].UnionWith(storeConstraints[nonRoot]);
-    storeConstraints[nonRoot].Clear();
+    storeConstraints[root].UnionWithAndClear(storeConstraints[nonRoot]);
 
-    loadConstraints[root].UnionWith(loadConstraints[nonRoot]);
-    loadConstraints[nonRoot].Clear();
+    loadConstraints[root].UnionWithAndClear(loadConstraints[nonRoot]);
 
-    callConstraints[root].UnionWith(callConstraints[nonRoot]);
-    callConstraints[nonRoot].Clear();
+    callConstraints[root].UnionWithAndClear(callConstraints[nonRoot]);
 
     if constexpr (EnableDifferencePropagation)
       differencePropagation.OnPointerObjectsUnified(root, nonRoot);

@@ -127,16 +127,26 @@ TestUnionWith()
   HashSet<int> set123({ 1, 2, 3 });
   HashSet<int> set45({ 4, 5 });
 
-  assert(!set123.UnionWith(set12));
+  // Unioning with a subset should not change anything
+  bool result = set123.UnionWith(set12);
+  assert(!result);
+  assert(set123.Size() == 3);
 
-  assert(set12.UnionWith(set123));
-  assert(!set12.UnionWith(set123));
-
+  // Putting {1, 2, 3} into {1, 2} should make it grow
+  result = set12.UnionWith(set123);
+  assert(result);
   assert(set12.Size() == 3);
   assert(set12 == set123);
 
-  assert(set45.UnionWith(set123));
+  // Unioning again does nothing
+  result = set12.UnionWith(set123);
+  assert(!result);
+
+  // Test union and clear
+  result = set45.UnionWithAndClear(set123);
+  assert(result);
   assert(set45.Size() == 5);
+  assert(set123.IsEmpty());
 
   return 0;
 }
@@ -157,6 +167,15 @@ TestIntersectWith()
 
   set123.IntersectWith(set45);
   assert(set123.Size() == 0);
+
+  set123.Insert(1);
+  set123.Insert(2);
+  set123.Insert(3);
+  set123.IntersectWithAndClear(set12);
+
+  assert(set123.Size() == 2);
+  assert(set12.Size() == 0);
+
   return 0;
 }
 
