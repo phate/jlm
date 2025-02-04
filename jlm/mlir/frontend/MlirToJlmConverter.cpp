@@ -331,7 +331,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
     if (!st)
-      JLM_ASSERT("frontend : expected bitstring type for ExtUIOp operation.");
+      JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
     return rvsdg::output::GetNode(*&llvm::zext_op::Create(*(inputs[0]), ConvertType(type)));
   }
@@ -339,6 +339,8 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto outputType = castedOp.getOut().getType();
     auto convertedOutputType = ConvertType(outputType);
+    if(!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
+      JLM_UNREACHABLE("Expected IntegerType for ExtSIOp operation output.");
     return rvsdg::output::GetNode(*llvm::sext_op::create(
         static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
         inputs[0]));
@@ -347,7 +349,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
     if (!st)
-      throw jlm::util::error("expected bits type.");
+      JLM_UNREACHABLE("Expected bits type for SIToFPOp operation.");
 
     auto mlirOutputType = sitofpOp.getType();
     std::shared_ptr<rvsdg::Type> rt = ConvertType(mlirOutputType);
@@ -381,6 +383,8 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
     auto type = constant.getType();
+    if(!::mlir::isa<::mlir::FloatType>(type))
+      JLM_UNREACHABLE("Expected FloatType for ConstantFloatOp operation.");
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     auto size = ConvertFPSize(floatType.getWidth());
