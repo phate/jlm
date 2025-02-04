@@ -326,15 +326,17 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
   {
     auto outputType = AllocaOp.getValueType();
+
     std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
-    assert(rvsdg::is<const rvsdg::ValueType>(jlmType));
+    if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
+      JLM_UNREACHABLE("Expected ValueType for AllocaOp operation.");
+
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
+    if (!rvsdg::is<const rvsdg::bittype>(inputs[0]->Type()))
+      JLM_UNREACHABLE("Expected bittype for AllocaOp operation.");
 
-    assert(rvsdg::is<const rvsdg::bittype>(inputs[0]->Type()));
     auto jlmBitType = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
-
     auto allocaOp = jlm::llvm::alloca_op(jlmValueType, jlmBitType, AllocaOp.getAlignment());
-
     auto operands = std::vector(inputs.begin(), inputs.end());
 
     return &rvsdg::SimpleNode::Create(rvsdgRegion, allocaOp, operands);
@@ -347,7 +349,6 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
-    assert(inputs.size() >= 3);
     auto address = inputs[0];
     auto value = inputs[1];
     auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
@@ -360,12 +361,12 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto LoadOp = ::mlir::dyn_cast<::mlir::jlm::Load>(&mlirOperation))
   {
-    assert(inputs.size() >= 2);
     auto address = inputs[0];
     auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
     auto outputType = LoadOp.getOutput().getType();
     std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
-    assert(rvsdg::is<const rvsdg::ValueType>(jlmType));
+    if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
+      JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
     auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
         *address,
