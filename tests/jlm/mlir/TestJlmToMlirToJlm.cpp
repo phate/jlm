@@ -68,6 +68,7 @@ TestUndef()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirUndefGen", TestUndef)
 
 static int
 TestAlloca()
@@ -116,10 +117,7 @@ TestAlloca()
         foundAlloca = true;
       }
     }
-    if (!foundAlloca)
-    {
-      return 1;
-    }
+    assert(foundAlloca);
 
     // // Convert the MLIR to RVSDG and check the result
     std::cout << "Converting MLIR to RVSDG" << std::endl;
@@ -160,14 +158,12 @@ TestAlloca()
           foundAlloca = true;
         }
       }
-      if (!foundAlloca)
-      {
-        return 1;
-      }
+      assert(foundAlloca);
     }
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirAllocaGen", TestAlloca)
 
 static int
 TestLoad()
@@ -214,8 +210,7 @@ TestLoad()
     auto & mlirLambdaBlock = mlirLambdaRegion.front();
     auto & mlirOp = mlirLambdaBlock.front();
 
-    if (!mlir::isa<mlir::jlm::Load>(mlirOp))
-      return 1;
+    assert(mlir::isa<mlir::jlm::Load>(mlirOp));
 
     auto mlirLoad = mlir::cast<mlir::jlm::Load>(mlirOp);
     assert(mlirLoad.getAlignment() == 4);
@@ -265,6 +260,7 @@ TestLoad()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirLoadGen", TestLoad)
 
 static int
 TestStore()
@@ -311,8 +307,7 @@ TestStore()
     auto & mlirLambdaBlock = mlirLambdaRegion.front();
     auto & mlirOp = mlirLambdaBlock.front();
 
-    if (!mlir::isa<mlir::jlm::Store>(mlirOp))
-      return 1;
+    assert(mlir::isa<mlir::jlm::Store>(mlirOp));
 
     auto mlirStore = mlir::cast<mlir::jlm::Store>(mlirOp);
     assert(mlirStore.getAlignment() == 4);
@@ -361,8 +356,4 @@ TestStore()
   }
   return 0;
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirUndefGen", TestUndef)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirAllocaGen", TestAlloca)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirLoadGen", TestLoad)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirStoreGen", TestStore)
