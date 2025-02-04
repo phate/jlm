@@ -21,11 +21,11 @@ namespace jlm::util
 template<typename K, typename V>
 class BijectiveMap
 {
-  using ForwardMapType = std::unordered_map<K, const V>;
-  using ReverseMapType = std::unordered_map<V, const K>;
+  using ForwardMapType = std::unordered_map<K, V>;
+  using ReverseMapType = std::unordered_map<V, K>;
 
 public:
-  using ItemType = std::pair<const K, const V>;
+  using ItemType = std::pair<const K, V>;
 
   class ConstIterator final
   {
@@ -177,7 +177,6 @@ public:
   {
     static_assert(
         std::is_base_of_v<std::forward_iterator_tag, typename IteratorType::iterator_category>);
-    static_assert(std::is_base_of_v<ItemType, typename IteratorType::value_type>);
 
     size_t inserted = 0;
     while (begin != end)
@@ -212,7 +211,7 @@ public:
   [[nodiscard]] bool
   HasKey(const K & key) const noexcept
   {
-    return ForwardMap_.find(key) != ForwardMap_.end();
+    return ForwardMap_.count(key);
   }
 
   /**
@@ -223,7 +222,7 @@ public:
   [[nodiscard]] bool
   HasValue(const V & value) const noexcept
   {
-    return ReverseMap_.find(value) != ReverseMap_.end();
+    return ReverseMap_.count(value);
   }
 
   /**
