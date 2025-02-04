@@ -70,6 +70,7 @@ TestUndef()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirUndefGen", TestUndef)
 
 static int
 TestAlloca()
@@ -164,6 +165,7 @@ TestAlloca()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirAllocaGen", TestAlloca)
 
 static int
 TestLoad()
@@ -260,6 +262,7 @@ TestLoad()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirLoadGen", TestLoad)
 
 static int
 TestStore()
@@ -355,6 +358,7 @@ TestStore()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirStoreGen", TestStore)
 
 static int
 TestSext()
@@ -431,6 +435,7 @@ TestSext()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSextGen", TestSext)
 
 static int
 TestSitofp()
@@ -503,6 +508,7 @@ TestSitofp()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSitofpGen", TestSitofp)
 
 static int
 TestConstantFP()
@@ -562,6 +568,7 @@ TestConstantFP()
   }
   return 0;
 }
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantFPGen", TestConstantFP)
 
 static int
 TestFpBinary()
@@ -645,12 +652,4 @@ TestFpBinary()
 
   return 0;
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirUndefGen", TestUndef)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirAllocaGen", TestAlloca)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirLoadGen", TestLoad)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirStoreGen", TestStore)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSextGen", TestSext)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSitofpGen", TestSitofp)
-JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantFPGen", TestConstantFP)
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)
