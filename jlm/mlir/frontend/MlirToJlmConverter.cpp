@@ -472,7 +472,7 @@ MlirToJlmConverter::ConvertOperation(
     std::shared_ptr<jlm::rvsdg::Type> pointeeType = ConvertType(elemType);
     if (!rvsdg::is<const rvsdg::ValueType>(pointeeType))
       JLM_UNREACHABLE("Expected ValueType for GepOp operation pointee.");
-    
+
     auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
 
     auto jlmGepOp = jlm::llvm::GetElementPtrOperation::Create(
