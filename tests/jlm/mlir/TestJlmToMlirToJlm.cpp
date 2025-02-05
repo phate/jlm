@@ -648,3 +648,94 @@ TestFpBinary()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)
+
+static int
+TestGetElementPtr()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+    auto pointerType = PointerType::Create();
+    auto bitType = jlm::rvsdg::bittype::Create(32);
+
+    auto functionType = jlm::rvsdg::FunctionType::Create({ pointerType, bitType }, {});
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+
+    auto pointerArgument = lambda->GetFunctionArguments().at(0);
+    auto bitArgument = lambda->GetFunctionArguments().at(1);
+
+    auto arrayType = ArrayType::Create(bitType, 2);
+
+    GetElementPtrOperation::Create(
+        pointerArgument,
+        { bitArgument, bitArgument },
+        arrayType,
+        pointerType);
+
+    lambda->finalize({});
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & op = omega.getRegion().front().front().getRegion(0).front().front();
+
+    assert(mlir::isa<mlir::LLVM::GEPOp>(op));
+
+    auto mlirGep = mlir::cast<mlir::LLVM::GEPOp>(op);
+    assert(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirGep.getBase().getType()));
+    assert(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirGep.getType()));
+
+    assert(mlir::isa<mlir::LLVM::LLVMArrayType>(mlirGep.getElemType()));
+    auto mlirArrayType = mlir::cast<mlir::LLVM::LLVMArrayType>(mlirGep.getElemType());
+
+    assert(mlir::isa<mlir::IntegerType>(mlirArrayType.getElementType()));
+    assert(mlirArrayType.getNumElements() == 2);
+
+    auto indices = mlirGep.getIndices();
+    assert(indices.size() == 2);
+    auto index0 = indices[0].dyn_cast<mlir::Value>();
+    auto index1 = indices[1].dyn_cast<mlir::Value>();
+    assert(index0);
+    assert(index1);
+    assert(index0.getType().isa<mlir::IntegerType>());
+    assert(index1.getType().isa<mlir::IntegerType>());
+    assert(index0.getType().getIntOrFloatBitWidth() == 32);
+    assert(index1.getType().getIntOrFloatBitWidth() == 32);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 1);
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(convertedLambda->subregion()->nnodes() == 1);
+
+      auto op = convertedLambda->subregion()->Nodes().begin();
+      assert(is<GetElementPtrOperation>(op->GetOperation()));
+      auto convertedGep = dynamic_cast<const GetElementPtrOperation *>(&op->GetOperation());
+
+      assert(is<ArrayType>(convertedGep->GetPointeeType()));
+      assert(is<PointerType>(convertedGep->result(0)));
+      assert(is<jlm::rvsdg::bittype>(convertedGep->argument(1)));
+      assert(is<jlm::rvsdg::bittype>(convertedGep->argument(2)));
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirGetElementPtrGen", TestGetElementPtr)
