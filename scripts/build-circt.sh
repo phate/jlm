@@ -87,8 +87,6 @@ git -C ${CIRCT_GIT_DIR} checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${CIRCT_GIT_DIR} \
 	-B ${CIRCT_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=${LLVM_BINDIR}/clang \
-	-DCMAKE_CXX_COMPILER=${LLVM_BINDIR}/clang++ \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	-DLLVM_DIR=${LLVM_CMAKEDIR} \
 	-DMLIR_DIR=${LLVM_CMAKEDIR}/../mlir \
