@@ -12,6 +12,9 @@
 namespace jlm::llvm
 {
 
+/**
+ * Represents an LLVM integer binary operation
+ */
 class IntegerBinaryOperation : public rvsdg::BinaryOperation
 {
 public:
@@ -29,7 +32,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'add' instruction.
+ * This operation is equivalent to LLVM's 'add' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#add-instruction) for more
+ * details.
  */
 class IntegerAddOperation final : public IntegerBinaryOperation
 {
@@ -62,7 +67,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'sub' instruction.
+ * This operation is equivalent to LLVM's 'sub' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#sub-instruction) for more
+ * details.
  */
 class IntegerSubOperation final : public IntegerBinaryOperation
 {
@@ -95,7 +102,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'mul' instruction.
+ * This operation is equivalent to LLVM's 'mul' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#mul-instruction) for more
+ * details.
  */
 class IntegerMulOperation final : public IntegerBinaryOperation
 {
@@ -128,7 +137,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'sdiv' instruction.
+ * This operation is equivalent to LLVM's 'sdiv' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#sdiv-instruction) for
+ * more details.
  */
 class IntegerSDivOperation final : public IntegerBinaryOperation
 {
@@ -161,7 +172,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'udiv' instruction.
+ * This operation is equivalent to LLVM's 'udiv' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#udiv-instruction) for
+ * more details.
  */
 class IntegerUDivOperation final : public IntegerBinaryOperation
 {
@@ -194,7 +207,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'srem' instruction.
+ * This operation is equivalent to LLVM's 'srem' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#srem-instruction) for
+ * more details.
  */
 class IntegerSRemOperation final : public IntegerBinaryOperation
 {
@@ -227,7 +242,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'urem' instruction.
+ * This operation is equivalent to LLVM's 'urem' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#urem-instruction) for
+ * more details.
  */
 class IntegerURemOperation final : public IntegerBinaryOperation
 {
@@ -260,7 +277,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'ashr' instruction.
+ * This operation is equivalent to LLVM's 'ashr' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#ashr-instruction) for
+ * more details.
  */
 class IntegerAShrOperation final : public IntegerBinaryOperation
 {
@@ -293,7 +312,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'shl' instruction.
+ * This operation is equivalent to LLVM's 'shl' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#shl-instruction) for more
+ * details.
  */
 class IntegerShlOperation final : public IntegerBinaryOperation
 {
@@ -326,7 +347,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'lshr' instruction.
+ * This operation is equivalent to LLVM's 'lshr' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#lshr-instruction) for
+ * more details.
  */
 class IntegerLShrOperation final : public IntegerBinaryOperation
 {
@@ -359,7 +382,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'and' instruction.
+ * This operation is equivalent to LLVM's 'and' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#and-instruction) for more
+ * details.
  */
 class IntegerAndOperation final : public IntegerBinaryOperation
 {
@@ -392,7 +417,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'or' instruction.
+ * This operation is equivalent to LLVM's 'or' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#or-instruction) for more
+ * details.
  */
 class IntegerOrOperation final : public IntegerBinaryOperation
 {
@@ -425,7 +452,9 @@ public:
 };
 
 /**
- * This operation is equivalent to LLVM's 'xor' instruction.
+ * This operation is equivalent to LLVM's 'xor' instruction for integer operands.
+ * See [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#xor-instruction) for more
+ * details.
  */
 class IntegerXorOperation final : public IntegerBinaryOperation
 {
