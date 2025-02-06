@@ -16,7 +16,7 @@ bool
 IntegerAddOperation::operator==(const Operation & other) const noexcept
 {
   const auto addOperation = dynamic_cast<const IntegerAddOperation *>(&other);
-  return addOperation && addOperation->result(0) == result(0);
+  return addOperation && addOperation->Type() == Type();
 }
 
 std::string
@@ -59,7 +59,7 @@ bool
 IntegerSubOperation::operator==(const Operation & other) const noexcept
 {
   const auto subOperation = dynamic_cast<const IntegerSubOperation *>(&other);
-  return subOperation && subOperation->result(0) == result(0);
+  return subOperation && subOperation->Type() == Type();
 }
 
 std::string
@@ -102,7 +102,7 @@ bool
 IntegerMulOperation::operator==(const Operation & other) const noexcept
 {
   const auto mulOperation = dynamic_cast<const IntegerMulOperation *>(&other);
-  return mulOperation && mulOperation->result(0) == result(0);
+  return mulOperation && mulOperation->Type() == Type();
 }
 
 std::string
@@ -145,7 +145,7 @@ bool
 IntegerSDivOperation::operator==(const Operation & other) const noexcept
 {
   const auto sdivOperation = dynamic_cast<const IntegerSDivOperation *>(&other);
-  return sdivOperation && sdivOperation->result(0) == result(0);
+  return sdivOperation && sdivOperation->Type() == Type();
 }
 
 std::string
@@ -188,7 +188,7 @@ bool
 IntegerUDivOperation::operator==(const Operation & other) const noexcept
 {
   const auto udivOperation = dynamic_cast<const IntegerUDivOperation *>(&other);
-  return udivOperation && udivOperation->result(0) == result(0);
+  return udivOperation && udivOperation->Type() == Type();
 }
 
 std::string
@@ -231,7 +231,7 @@ bool
 IntegerSRemOperation::operator==(const Operation & other) const noexcept
 {
   const auto smodOperation = dynamic_cast<const IntegerSRemOperation *>(&other);
-  return smodOperation && smodOperation->result(0) == result(0);
+  return smodOperation && smodOperation->Type() == Type();
 }
 
 std::string
@@ -274,7 +274,7 @@ bool
 IntegerURemOperation::operator==(const Operation & other) const noexcept
 {
   const auto umodOperation = dynamic_cast<const IntegerURemOperation *>(&other);
-  return umodOperation && umodOperation->result(0) == result(0);
+  return umodOperation && umodOperation->Type() == Type();
 }
 
 std::string
@@ -317,7 +317,7 @@ bool
 IntegerAShrOperation::operator==(const Operation & other) const noexcept
 {
   const auto ashrOperation = dynamic_cast<const IntegerAShrOperation *>(&other);
-  return ashrOperation && ashrOperation->result(0) == result(0);
+  return ashrOperation && ashrOperation->Type() == Type();
 }
 
 std::string
@@ -360,7 +360,7 @@ bool
 IntegerShlOperation::operator==(const Operation & other) const noexcept
 {
   const auto shlOperation = dynamic_cast<const IntegerShlOperation *>(&other);
-  return shlOperation && shlOperation->result(0) == result(0);
+  return shlOperation && shlOperation->Type() == Type();
 }
 
 std::string
@@ -403,7 +403,7 @@ bool
 IntegerLShrOperation::operator==(const Operation & other) const noexcept
 {
   const auto shrOperation = dynamic_cast<const IntegerLShrOperation *>(&other);
-  return shrOperation && shrOperation->result(0) == result(0);
+  return shrOperation && shrOperation->Type() == Type();
 }
 
 std::string
@@ -446,7 +446,7 @@ bool
 IntegerAndOperation::operator==(const Operation & other) const noexcept
 {
   const auto andOperation = dynamic_cast<const IntegerAndOperation *>(&other);
-  return andOperation && andOperation->result(0) == result(0);
+  return andOperation && andOperation->Type() == Type();
 }
 
 std::string
@@ -489,7 +489,7 @@ bool
 IntegerOrOperation::operator==(const Operation & other) const noexcept
 {
   const auto orOperation = dynamic_cast<const IntegerOrOperation *>(&other);
-  return orOperation && orOperation->result(0) == result(0);
+  return orOperation && orOperation->Type() == Type();
 }
 
 std::string
@@ -532,7 +532,7 @@ bool
 IntegerXorOperation::operator==(const Operation & other) const noexcept
 {
   const auto xorOperation = dynamic_cast<const IntegerXorOperation *>(&other);
-  return xorOperation && xorOperation->result(0) == result(0);
+  return xorOperation && xorOperation->Type() == Type();
 }
 
 std::string
