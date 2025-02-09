@@ -6,7 +6,7 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_INVARIANTLAMBDAMEMORYSTATEREMOVAL_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_INVARIANTLAMBDAMEMORYSTATEREMOVAL_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
@@ -14,29 +14,20 @@ namespace jlm::hls
 /**
  * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
  *
- * The pass checks for a LambdaExitMemoryStateMerge and if found checks if there is any invariant
- * edges to its corresponding LambdaEntryMemoryStateSplit node. Any found invariant memory state
- * edge(s) are removed. The memory state split and merge nodes are removed if there is only a single
- * none-invariant edge.
- *
- * @param memoryState The lambda region result for which invariant memory state edges are to be
- * removed.
+ * The transformation goes through all lambdas in the RVSDG module and checks if the lambda is only
+ * exported. If the lambda is only exported then a check is made for a LambdaExitMemoryStateMerge.
+ * If one is found, a check for any invariant edges to its corresponding LambdaEntryMemoryStateSplit
+ * node is performed. Any found invariant memory state edges are removed. The memory state split and
+ * merge nodes are removed if there is only a single none-invariant edge that remains.
  */
-void
-RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState);
+class InvariantLambdaMemoryStateRemoval final : public rvsdg::Transformation
+{
+public:
+  virtual ~InvariantLambdaMemoryStateRemoval();
 
-/**
- * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
- *
- * The pass applies RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState) to all memory
- * states of all lambdas in the module.
- * @see RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
- *
- * @param rvsdgModule The RVSDG moduled for which invariant memory state edges in all lambda nodes
- * are to be removed.
- */
-void
-RemoveInvariantLambdaMemoryStateEdges(llvm::RvsdgModule & rvsdgModule);
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+};
 
 } // namespace jlm::hls
 

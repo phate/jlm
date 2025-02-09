@@ -433,7 +433,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
-  RemoveInvariantLambdaMemoryStateEdges(rhls);
+  hls::InvariantLambdaMemoryStateRemoval memStateRemoval;
+  memStateRemoval.Run(rhls, collector);
+  //  RemoveInvariantLambdaMemoryStateEdges(rhls);
   remove_unused_state(rhls);
   // main conversion steps
   distribute_constants(rhls);

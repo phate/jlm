@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
@@ -11,6 +12,17 @@
 namespace jlm::hls
 {
 
+/**
+ * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
+ *
+ * The pass checks for a LambdaExitMemoryStateMerge and if found checks if there are any invariant
+ * edges to its corresponding LambdaEntryMemoryStateSplit node. Any found invariant memory state
+ * edges are removed. The memory state split and merge nodes are removed if there is only a single
+ * none-invariant edge.
+ *
+ * @param memoryState The lambda region result for which invariant memory state edges are to be
+ * removed.
+ */
 void
 RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
 {
@@ -86,14 +98,29 @@ RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
   rvsdg::remove(entryNode);
 }
 
+/**
+ * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
+ *
+ * The pass applies RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState) to all memory
+ * states of all lambdas in the module.
+ * @see RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
+ *
+ * @param rvsdgModule The RVSDG moduled for which invariant memory state edges in all lambda nodes
+ * are to be removed.
+ */
 void
-RemoveInvariantLambdaMemoryStateEdges(llvm::RvsdgModule & rvsdgModule)
+RemoveInvariantLambdaMemoryStateEdges(rvsdg::RvsdgModule & rvsdgModule)
 {
   auto & root = rvsdgModule.Rvsdg().GetRootRegion();
   for (auto & node : rvsdg::TopDownTraverser(&root))
   {
     if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
+      if (lambda->output()->nusers() != 1
+          || !dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
+      {
+        continue;
+      }
       for (auto result : lambda->subregion()->Results())
       {
         if (jlm::rvsdg::is<const llvm::MemoryStateType>(*result->Type()))
@@ -107,6 +134,11 @@ RemoveInvariantLambdaMemoryStateEdges(llvm::RvsdgModule & rvsdgModule)
       auto phiLambdaNodes = llvm::phi::node::ExtractLambdaNodes(*phiNode);
       for (auto phiLambdaNode : phiLambdaNodes)
       {
+        if (phiLambdaNode->output()->nusers() != 1
+            || !dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
+        {
+          continue;
+        }
         for (auto result : phiLambdaNode->subregion()->Results())
         {
           if (jlm::rvsdg::is<const llvm::MemoryStateType>(*result->Type()))
@@ -117,6 +149,19 @@ RemoveInvariantLambdaMemoryStateEdges(llvm::RvsdgModule & rvsdgModule)
       }
     }
   }
+}
+
+/* InvariantLambdaMemoryStateRemoval class */
+
+InvariantLambdaMemoryStateRemoval::~InvariantLambdaMemoryStateRemoval()
+{}
+
+void
+InvariantLambdaMemoryStateRemoval::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  RemoveInvariantLambdaMemoryStateEdges(rvsdgModule);
 }
 
 } // namespace jlm::hls
