@@ -8,23 +8,14 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::hls
 {
 
-/**
- * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
- *
- * The pass checks for a LambdaExitMemoryStateMerge and if found checks if there are any invariant
- * edges to its corresponding LambdaEntryMemoryStateSplit node. Any found invariant memory state
- * edges are removed. The memory state split and merge nodes are removed if there is only a single
- * none-invariant edge.
- *
- * @param memoryState The lambda region result for which invariant memory state edges are to be
- * removed.
- */
 void
-RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
+InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
+    rvsdg::RegionResult * memoryState)
 {
   // We only apply this for memory state edges that is invariant between LambdaEntryMemoryStateSplit
   // and LambdaExitMemoryStateMerge nodes.
@@ -98,18 +89,9 @@ RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
   rvsdg::remove(entryNode);
 }
 
-/**
- * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
- *
- * The pass applies RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState) to all memory
- * states of all lambdas in the module.
- * @see RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
- *
- * @param rvsdgModule The RVSDG moduled for which invariant memory state edges in all lambda nodes
- * are to be removed.
- */
 void
-RemoveInvariantLambdaMemoryStateEdges(rvsdg::RvsdgModule & rvsdgModule)
+InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
+    rvsdg::RvsdgModule & rvsdgModule)
 {
   auto & root = rvsdgModule.Rvsdg().GetRootRegion();
   for (auto & node : rvsdg::TopDownTraverser(&root))
@@ -151,6 +133,34 @@ RemoveInvariantLambdaMemoryStateEdges(rvsdg::RvsdgModule & rvsdgModule)
   }
 }
 
+class InvariantLambdaMemoryStateRemoval::Statistics final : public util::Statistics
+{
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(const util::filepath & sourceFile)
+      : util::Statistics(Statistics::Id::InvariantValueRedirection, sourceFile)
+  {}
+
+  void
+  Start() noexcept
+  {
+    AddTimer(Label::Timer).start();
+  }
+
+  void
+  Stop() noexcept
+  {
+    GetTimer(Label::Timer).stop();
+  }
+
+  static std::unique_ptr<Statistics>
+  Create(const util::filepath & sourceFile)
+  {
+    return std::make_unique<Statistics>(sourceFile);
+  }
+};
+
 /* InvariantLambdaMemoryStateRemoval class */
 
 InvariantLambdaMemoryStateRemoval::~InvariantLambdaMemoryStateRemoval()
@@ -161,7 +171,13 @@ InvariantLambdaMemoryStateRemoval::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
+
+  statistics->Start();
   RemoveInvariantLambdaMemoryStateEdges(rvsdgModule);
+  statistics->Stop();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 } // namespace jlm::hls
