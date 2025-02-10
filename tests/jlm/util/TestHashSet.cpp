@@ -190,12 +190,14 @@ TestDifferenceWith()
   HashSet<int> set123({ 1, 2, 3 });
   HashSet<int> set45({ 4, 5 });
 
+  const auto set12Copy = set12;
+
   set123.DifferenceWith(set12); // {1, 2, 3} - {1, 2}
   assert(set123.Size() == 1);
   assert(set123.Contains(3));
 
   // set12 was not touched
-  assert(set12.Size() == 2);
+  assert(set12 == set12Copy);
 
   // Create the set {0, 1, 3}
   set123.Insert(0);

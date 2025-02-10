@@ -308,12 +308,12 @@ public:
     {
       // This branch also handles the unlikely case where this and other are the same set.
 
-      auto inOther = [&](const ItemType & item)
+      auto isInOther = [&](const ItemType & item)
       {
         return other.Contains(item);
       };
 
-      RemoveWhere(inOther);
+      RemoveWhere(isInOther);
     }
     else
     {
