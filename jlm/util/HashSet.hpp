@@ -268,7 +268,7 @@ public:
   void
   IntersectWith(const HashSet<ItemType> & other)
   {
-    auto isContained = [&](const ItemType item)
+    auto isContained = [&](const ItemType & item)
     {
       return !other.Contains(item);
     };
@@ -308,7 +308,7 @@ public:
     {
       // This branch also handles the unlikely case where this and other are the same set.
 
-      auto inOther = [&](const ItemType item)
+      auto inOther = [&](const ItemType & item)
       {
         return other.Contains(item);
       };
