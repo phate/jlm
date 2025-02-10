@@ -4,9 +4,10 @@
  */
 
 #include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
