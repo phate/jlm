@@ -117,7 +117,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
       for (auto phiLambdaNode : phiLambdaNodes)
       {
         if (phiLambdaNode->output()->nusers() != 1
-            || !dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
+            || !dynamic_cast<const jlm::rvsdg::GraphExport *>(*phiLambdaNode->output()->begin()))
         {
           continue;
         }
