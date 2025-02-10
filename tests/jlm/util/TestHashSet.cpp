@@ -180,3 +180,41 @@ TestIntersectWith()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestIntersectWith", TestIntersectWith)
+
+static int
+TestDifferenceWith()
+{
+  using namespace jlm::util;
+
+  HashSet<int> set12({ 1, 2 });
+  HashSet<int> set123({ 1, 2, 3 });
+  HashSet<int> set45({ 4, 5 });
+
+  set123.DifferenceWith(set12); // {1, 2, 3} - {1, 2}
+  assert(set123.Size() == 1);
+  assert(set123.Contains(3));
+
+  // set12 was not touched
+  assert(set12.Size() == 2);
+
+  // Create the set {0, 1, 3}
+  set123.Insert(0);
+  set123.Insert(1);
+
+  set12.DifferenceWith(set123); // {1, 2} - {0, 1, 3}
+  assert(set12.Size() == 1);
+  assert(set12.Contains(2));
+
+  // Difference with other sets becomes empty
+  set45.DifferenceWith(set123);
+  set45.DifferenceWith(set12);
+  assert(set45.Size() == 2);
+
+  // We handle the case where both sets are the same set without crashing
+  set45.DifferenceWith(set45);
+  assert(set45.IsEmpty());
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestDifferenceWith", TestDifferenceWith)

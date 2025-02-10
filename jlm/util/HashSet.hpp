@@ -294,6 +294,35 @@ public:
   }
 
   /**
+   * Modifies this HashSet object by removing any elements that are present in \p other.
+   *
+   * @param other the HashSet used as the negative side of the set difference.
+   */
+  void
+  DifferenceWith(const HashSet<ItemType> & other)
+  {
+    // If this HashSet is smaller, loop over it and remove elements in other.
+    // If other is smaller, loop over it and remove elements from this.
+
+    if (Size() <= other.Size())
+    {
+      // This branch also handles the unlikely case where this and other are the same set.
+
+      auto inOther = [&](const ItemType item)
+      {
+        return other.Contains(item);
+      };
+
+      RemoveWhere(inOther);
+    }
+    else
+    {
+      for (auto & item : other.Set_)
+        Remove(item);
+    }
+  }
+
+  /**
    * Removes the specified item from a HashSet object.
    *
    * @param item The item to remove.
