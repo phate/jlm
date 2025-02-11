@@ -5,14 +5,16 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
+#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp>
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
-#include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/util/Worklist.hpp>
 
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <limits>
 #include <queue>
+#include <set>
 #include <variant>
 
 namespace jlm::llvm::aa
@@ -2379,15 +2381,15 @@ PointerObjectConstraintSet::SolveUsingWorklist(
       policyVariant;
 
   if (policy == WorklistSolverPolicy::LeastRecentlyFired)
-    policyVariant = (util::LrfWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::LrfWorklist<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
-    policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::TwoPhaseLrfWorklist<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::TopologicalSort)
-    policyVariant = (util::Workset<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::Workset<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
-    policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::LifoWorklist<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)
-    policyVariant = (util::FifoWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::FifoWorklist<PointerObjectIndex> *>(nullptr);
   else
     JLM_UNREACHABLE("Unknown worklist policy");
 
@@ -2487,7 +2489,7 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
     }
   }
 
-  // Use a cache for the complex constraints
+  // A cache of handled pointees for the complex constraints
   std::vector<util::HashSet<PointerObjectIndex>> P_cache(complexConstraints.size());
 
   // Used for normalizing simple edges during Phase 2 (make the edges target roots)
@@ -2642,6 +2644,9 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
   EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
 #endif
 
+  // A list pointees that are new since the last time a complex constraint was visited
+  util::HashSet<PointerObjectIndex> P_new;
+
   while (changed)
   {
     changed = false;
@@ -2783,41 +2788,59 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
       const auto & complexConstraint = complexConstraints[i];
       if (auto store = std::get_if<StoreConstraint>(&complexConstraint))
       {
-        for (auto pointee : Set_.GetPointsToSet(store->GetPointer()).Items())
-        {
-          pointee = Set_.GetUnificationRoot(pointee);
-          // Skip pointees that were present the last time we handled this constraint
-          if (!P_cache[i].Insert(pointee))
-            continue;
-          AddSupersetEdge(pointee, store->GetValue());
-        }
 #ifndef ANDERSEN_NO_FLAGS
         if (Set_.IsPointingToExternal(store->GetPointer()))
           MarkAsPointeesEscaping(store->GetValue());
 #endif
+
+        const auto & pointees = Set_.GetPointsToSet(store->GetPointer());
+
+        P_new = pointees;
+        P_new.DifferenceWith(P_cache[i]);
+        for (auto pointee : P_new.Items())
+        {
+          P_cache[i].Insert(pointee);
+          pointee = Set_.GetUnificationRoot(pointee);
+          AddSupersetEdge(pointee, store->GetValue());
+        }
       }
       else if (auto load = std::get_if<LoadConstraint>(&complexConstraint))
       {
-        for (auto pointee : Set_.GetPointsToSet(load->GetPointer()).Items())
-        {
-          pointee = Set_.GetUnificationRoot(pointee);
-          // Skip pointees that were present the last time we handled this constraint
-          if (!P_cache[i].Insert(pointee))
-            continue;
-          AddSupersetEdge(load->GetValue(), pointee);
-        }
 #ifndef ANDERSEN_NO_FLAGS
         if (Set_.IsPointingToExternal(load->GetPointer()))
           MarkAsPointsToExternal(load->GetValue());
 #endif
+
+        const auto & pointees = Set_.GetPointsToSet(load->GetPointer());
+
+        P_new = pointees;
+        P_new.DifferenceWith(P_cache[i]);
+        for (auto pointee : P_new.Items())
+        {
+          P_cache[i].Insert(pointee);
+          pointee = Set_.GetUnificationRoot(pointee);
+          AddSupersetEdge(load->GetValue(), pointee);
+        }
       }
       else if (auto call = std::get_if<FunctionCallConstraint>(&complexConstraint))
       {
-        for (auto pointee : Set_.GetPointsToSet(call->GetPointer()).Items())
+#ifndef ANDERSEN_NO_FLAGS
+        if (Set_.IsPointingToExternal(call->GetPointer()))
+          HandleCallingExternalFunction(
+              Set_,
+              call->GetCallNode(),
+              MarkAsPointeesEscaping,
+              MarkAsPointsToExternal);
+#endif
+
+        const auto & pointees = Set_.GetPointsToSet(call->GetPointer());
+
+        P_new = pointees;
+        P_new.DifferenceWith(P_cache[i]);
+        for (auto pointee : P_new.Items())
         {
-          // Skip pointees that were present the last time we handled this constraint
-          if (!P_cache[i].Insert(pointee))
-            continue;
+          P_cache[i].Insert(pointee);
+
           const auto kind = Set_.GetPointerObjectKind(pointee);
           if (kind == PointerObjectKind::ImportMemoryObject)
             HandleCallingImportedFunction(
@@ -2837,6 +2860,564 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
                 MarkAsPointsToExternal);
 #endif
         }
+      }
+      else
+        JLM_UNREACHABLE("Unknown complex constraint type");
+    }
+  }
+
+  return statistics;
+}
+
+PointerObjectConstraintSet::DeepPropagationStatistics
+PointerObjectConstraintSet::SolveUsingDeepPropagation()
+{
+  DeepPropagationStatistics statistics;
+
+  // Outgoing edges from each node. The unification root must be used.
+  std::vector<util::HashSet<PointerObjectIndex>> supersetEdges(Set_.NumPointerObjects());
+
+  // What the paper calls "P_cur" is stored in the PointerObjectSet itself
+
+  // Create a separate list of complex constraints
+  std::vector<ConstraintVariant> complexConstraints;
+
+  // Turn all constraints into simple edges, or add them to the complexConstraint list
+  for (const auto & constraint : Constraints_)
+  {
+    if (const auto * ssConstraint = std::get_if<SupersetConstraint>(&constraint))
+    {
+      // Superset constraints become edges in the subset graph
+      // When initializing the set of superset edges, normalize them as well
+      auto superset = Set_.GetUnificationRoot(ssConstraint->GetSuperset());
+      auto subset = Set_.GetUnificationRoot(ssConstraint->GetSubset());
+
+      if (superset != subset) // Ignore self-edges
+        supersetEdges[subset].Insert(superset);
+    }
+    else
+    {
+      complexConstraints.push_back(constraint);
+    }
+  }
+
+  // A cache of handled pointees for the complex constraints, only used for call constraints
+  // For the other complex constraints, we just check if the simple edge already exists
+  std::vector<util::HashSet<PointerObjectIndex>> P_cache(complexConstraints.size());
+
+#ifdef ANDERSEN_NO_FLAGS
+  // With the explicit pointer representation, we have one additional complex constraint that
+  // marks all escaping functions as being possibly called from external modules.
+  // Give it a P_cache as well
+  P_cache.push_back({});
+#endif
+
+  // Performs unification safely while the algorithm is running.
+  // If a and b already belong to the same unification root, this is a no-op.
+  // Returns the root of the new unification, or the existing root if a and b were already unified.
+  const auto UnifyPointerObjects = [&](PointerObjectIndex a,
+                                       PointerObjectIndex b) -> PointerObjectIndex
+  {
+    const auto aRoot = Set_.GetUnificationRoot(a);
+    const auto bRoot = Set_.GetUnificationRoot(b);
+
+    if (aRoot == bRoot)
+      return aRoot;
+
+    const auto root = Set_.UnifyPointerObjects(aRoot, bRoot);
+    // The root among the two original roots that did NOT end up as the new root
+    const auto nonRoot = root == aRoot ? bRoot : aRoot;
+
+    // Move constraints owned by the non-root to the root
+    supersetEdges[root].UnionWithAndClear(supersetEdges[nonRoot]);
+
+    // Try to avoid self-edges, but indirect self-edges can still exist
+    supersetEdges[root].Remove(root);
+    supersetEdges[root].Remove(nonRoot);
+
+    statistics.NumUnifications++;
+
+    return root;
+  };
+
+  const auto GetUnificationRoot = [&](PointerObjectIndex node)
+  {
+    return Set_.GetUnificationRoot(node);
+  };
+
+  const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(node));
+    return supersetEdges[Set_.GetUnificationRoot(node)].Items();
+  };
+
+  // A change is when:
+  // - A node has gained new pointees, or the PointsToExternal-flag
+  // (These are the changes that can cause a complex constraint to infer more)
+  // During solving, the following invariants are maintained:
+  // - If there is a simple edge a -> b, then P(b) is a superset of P(a)
+  // - If there is a simple edge a -> b, and a is marked PointsToExternal, b is too
+  // Adding edges can break the above invariants until deep propagation is done.
+  // The following invariants are always maintained, as soon as P(a) grows
+  // - If a is marked PointeesEscaping, every member of P(a) are Escaping
+  // - If a has one of the complex scalar constraints, they are always applied
+  // The first step, which is a single "wave", makes all these invariants hold.
+  // Complex constraints can then add new simple edges and flags, which trigger deep propagation.
+  // Deep propagation may collapse cycles, but is not guaranteed to do so.
+  // When ANDERSEN_NO_FLAGS is defined, a final complex constraint handles calling escaped functions
+  bool changed = true;
+
+#ifndef ANDERSEN_NO_FLAGS
+
+  // Marks a PointerObject as pointing to external, which is immediately propagated
+  // Not used during deep propagation, but used for adding one-off flags
+  const auto MarkAsPointsToExternalRec = [&](PointerObjectIndex index,
+                                             auto MarkAsPointsToExternalRec) -> void
+  {
+    auto root = Set_.GetUnificationRoot(index);
+    if (!Set_.MarkAsPointingToExternal(root))
+      return;
+
+    changed = true;
+    for (auto superset : supersetEdges[root].Items())
+      MarkAsPointsToExternalRec(superset, MarkAsPointsToExternalRec);
+  };
+
+  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
+  {
+    MarkAsPointsToExternalRec(index, MarkAsPointsToExternalRec);
+  };
+
+  // MarkAsEscaped needs to be recursive, to enable propagation of escaping along pointees
+  const auto MarkAsEscapedRec =
+      [&](PointerObjectIndex node, auto MarkAsEscapedRec, auto MarkAsPointeesEscapingRec) -> void
+  {
+    auto root = Set_.GetUnificationRoot(node);
+
+    // Mark as PointeesEscaping and PointsToExternal first, since these flags are implied
+    MarkAsPointeesEscapingRec(root, MarkAsEscapedRec, MarkAsPointeesEscapingRec);
+    MarkAsPointsToExternal(root);
+
+    Set_.MarkAsEscaped(node);
+
+    const auto MarkAsPointeesEscaping = [&](PointerObjectIndex node)
+    {
+      MarkAsPointeesEscapingRec(node, MarkAsEscapedRec, MarkAsPointeesEscapingRec);
+    };
+    if (Set_.GetPointerObjectKind(node) == PointerObjectKind::FunctionMemoryObject)
+      HandleEscapedFunction(Set_, node, MarkAsPointeesEscaping, MarkAsPointsToExternal);
+  };
+
+  // MarkAsPointeesEscaping is recursive, but only following pointees in P_old
+  const auto MarkAsPointeesEscapingRec =
+      [&](PointerObjectIndex node, auto MarkAsEscapedRec, auto MarkAsPointeesEscapingRec) -> void
+  {
+    node = Set_.GetUnificationRoot(node);
+    if (!Set_.MarkAsPointeesEscaping(node))
+      return; // Node was already marked PointeesEscaping
+
+    // Maintain invariant:
+    // Any node marked PointeesEscaping has all pointees marked as escaped
+    for (auto pointee : Set_.GetPointsToSet(node).Items())
+      MarkAsEscapedRec(pointee, MarkAsEscapedRec, MarkAsPointeesEscapingRec);
+  };
+
+  const auto MarkAsEscaped = [&](PointerObjectIndex node)
+  {
+    MarkAsEscapedRec(node, MarkAsEscapedRec, MarkAsPointeesEscapingRec);
+  };
+
+  const auto MarkAsPointeesEscaping = [&](PointerObjectIndex node)
+  {
+    MarkAsPointeesEscapingRec(node, MarkAsEscapedRec, MarkAsPointeesEscapingRec);
+  };
+
+  // Ensure that all functions that have already escaped have informed their arguments and results
+  EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(Set_);
+#endif
+
+  // Start with one pass of Wave Propagation using Tarjan
+  std::vector<PointerObjectIndex> sccIndex;
+  std::vector<PointerObjectIndex> reverseTopologicalOrder;
+  std::vector<PointerObjectIndex> sccRootsInOrder;
+
+  auto numSccs = util::FindStronglyConnectedComponents<PointerObjectIndex>(
+      Set_.NumPointerObjects(),
+      GetUnificationRoot,
+      GetSupersetEdgeSuccessors,
+      sccIndex,
+      reverseTopologicalOrder);
+
+  sccRootsInOrder.resize(0);
+  PointerObjectIndex lastSccIndex = numSccs;
+
+  // Go through reverseTopologicalOrder and unify SCCs
+  for (auto it = reverseTopologicalOrder.rbegin(); it != reverseTopologicalOrder.rend(); ++it)
+  {
+    const auto node = *it;
+    JLM_ASSERT(Set_.IsUnificationRoot(node));
+
+    if (sccIndex[node] == lastSccIndex)
+    {
+      sccRootsInOrder.back() = UnifyPointerObjects(sccRootsInOrder.back(), node);
+      statistics.NumWaveUnifications++;
+    }
+    else
+    {
+      lastSccIndex = sccIndex[node];
+      sccRootsInOrder.push_back(node);
+    }
+  }
+
+  // Used to perform normalization of simple edges during propagation
+  util::HashSet<PointerObjectIndex> newNormalizedSupersets;
+
+  // Do one "wave" of wave propagation along all simple edges, in topological order
+  for (auto sccRoot : sccRootsInOrder)
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(sccRoot));
+
+    const auto & pointees = Set_.GetPointsToSet(sccRoot).Items();
+
+#ifndef ANDERSEN_NO_FLAGS
+    // If sccRoot is marked pointees escaping, every pointee should be marked as escaped
+    if (Set_.HasPointeesEscaping(sccRoot))
+      for (auto pointee : pointees)
+        MarkAsEscaped(pointee);
+
+    if (Set_.IsLoadedAsScalar(sccRoot))
+      for (auto pointee : pointees)
+        MarkAsPointeesEscaping(pointee);
+
+    if (Set_.IsStoredAsScalar(sccRoot))
+      for (auto pointee : pointees)
+        MarkAsPointsToExternal(pointee);
+#endif
+
+    // Propagate P along all outgoing edges
+    // Also normalize simple edges while we are at it
+    JLM_ASSERT(newNormalizedSupersets.IsEmpty());
+    for (auto it = supersetEdges[sccRoot].Items().begin();
+         it != supersetEdges[sccRoot].Items().end();)
+    {
+      const auto supersetRoot = Set_.GetUnificationRoot(*it);
+      // Remove self-edges
+      if (supersetRoot == sccRoot)
+      {
+        it = supersetEdges[sccRoot].Erase(it);
+        continue;
+      }
+
+      // Replace non-normalized edges
+      if (supersetRoot != *it)
+      {
+        it = supersetEdges[sccRoot].Erase(it);
+
+        // If the normalized version is already present, we are done
+        if (supersetEdges[sccRoot].Contains(supersetRoot))
+          continue;
+        // Add the normalized version to the edge to the queue. If it is already there, skip it.
+        if (!newNormalizedSupersets.Insert(supersetRoot))
+          continue;
+      }
+      else
+      {
+        // Increment it to make it ready for the next iteration
+        ++it;
+      }
+
+      // Propagate along the edge
+      for (auto pointee : pointees)
+        Set_.AddToPointsToSet(supersetRoot, pointee);
+
+#ifndef ANDERSEN_NO_FLAGS
+      if (Set_.IsPointingToExternal(sccRoot))
+      {
+        // Use the Set_ version on purpose, as we do not want to trigger recursion
+        Set_.MarkAsPointingToExternal(supersetRoot);
+      }
+#endif
+    }
+
+    // Add all newly normalized edges to the proper supersetEdges list
+    supersetEdges[sccRoot].UnionWithAndClear(newNormalizedSupersets);
+  }
+
+  // Now do deep propagation
+
+  // Used when adding simple edges to track what needs to be deep propagated
+  util::HashSet<PointerObjectIndex> startingNodeNewPointees;
+  bool startingNodeNewPointsToExternal = false;
+
+  // Adds a simple edge subset -> superset if it does not already exist.
+  // Propagates pointees from subset to superset, and adds the new ones to startingNewPointees.
+  // Also propagates the PointsToExternal flag
+  // Returns false if the edge already existed
+  const auto AddSupersetEdge = [&](PointerObjectIndex superset, PointerObjectIndex subset)
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(superset));
+    JLM_ASSERT(Set_.IsUnificationRoot(subset));
+
+    if (superset == subset)
+      return false;
+
+    if (!supersetEdges[subset].Insert(superset))
+      return false;
+
+    for (auto pointee : Set_.GetPointsToSet(subset).Items())
+    {
+      if (Set_.AddToPointsToSet(superset, pointee))
+      {
+        startingNodeNewPointees.Insert(pointee);
+      }
+    }
+
+#ifndef ANDERSEN_NO_FLAGS
+    if (Set_.IsPointingToExternal(subset))
+      startingNodeNewPointsToExternal |= Set_.MarkAsPointingToExternal(superset);
+#endif
+
+    changed = true;
+    return true;
+  };
+
+  // Maintain visited nodes, and nodes that can reach the stopNode
+  util::HashSet<PointerObjectIndex> visited;
+  util::HashSet<PointerObjectIndex> nodesReachingStop;
+
+  // Ensures all pointees in newPointees, and the flag newPointsToExternal,
+  // are all deep propagated through all outgoing simple edges.
+  // Also maintains other invariants that should hold on the members of P(node)
+  // Returns true if it is possible to reach the stopNode from startNode.
+  // All nodes that return true are also added to the grayNode list
+  const auto DeepPropagateRec = [&](PointerObjectIndex node,
+                                    const util::HashSet<PointerObjectIndex> & newPointees,
+                                    bool newPointsToExternal,
+                                    PointerObjectIndex stopNode,
+                                    auto DeepPropagateRec) -> bool
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(node));
+    JLM_ASSERT(Set_.IsUnificationRoot(stopNode));
+
+    JLM_ASSERT(!visited.Contains(node));
+    visited.Insert(node);
+
+#ifndef ANDERSEN_NO_FLAGS
+    // Handle flag constraints. These are handled recursively so they do not need deep propagation
+    if (Set_.HasPointeesEscaping(node))
+      for (auto pointee : newPointees.Items())
+        MarkAsEscaped(pointee);
+
+    if (Set_.IsLoadedAsScalar(node))
+      for (auto pointee : newPointees.Items())
+        MarkAsPointeesEscaping(pointee);
+
+    if (Set_.IsStoredAsScalar(node))
+      for (auto pointee : newPointees.Items())
+        MarkAsPointsToExternal(pointee);
+#endif
+
+    // If we can reach the stop node from here
+    bool reachesStopNode = false;
+
+    // Used to keep track of which pointees are new to each superset target
+    util::HashSet<PointerObjectIndex> newNewPointees;
+
+    // Do normalization of simple edges while we're at it
+    util::HashSet<PointerObjectIndex> normalizedSupersetEdges;
+    for (auto it = supersetEdges[node].Items().begin(); it != supersetEdges[node].Items().end();)
+    {
+      const auto supersetRoot = Set_.GetUnificationRoot(*it);
+      // Remove self-edges
+      if (supersetRoot == node)
+      {
+        it = supersetEdges[node].Erase(it);
+        continue;
+      }
+
+      // Replace non-normalized edges
+      if (supersetRoot != *it)
+      {
+        it = supersetEdges[node].Erase(it);
+
+        // If the normalized version is already present, we are done
+        if (supersetEdges[node].Contains(supersetRoot))
+          continue;
+        // Add the normalized version to the edge to the queue. If it is already there, skip it.
+        if (!normalizedSupersetEdges.Insert(supersetRoot))
+          continue;
+      }
+      else
+      {
+        // Increment it to make it ready for the next iteration
+        ++it;
+      }
+
+      // Do not propagate to the stop node
+      if (supersetRoot == stopNode)
+      {
+        // We do not need to propagate to the stop node
+        reachesStopNode = true;
+        continue;
+      }
+
+      // Do not propagate to a node that has already been visited either
+      if (visited.Contains(supersetRoot))
+      {
+        if (!reachesStopNode)
+          reachesStopNode |= nodesReachingStop.Contains(supersetRoot);
+        continue;
+      }
+
+      newNewPointees.Clear();
+      bool newNewPointsToExternal = false;
+
+      // Propagate along the edge
+      for (auto pointee : newPointees.Items())
+      {
+        if (Set_.AddToPointsToSet(supersetRoot, pointee))
+          newNewPointees.Insert(pointee);
+      }
+
+#ifndef ANDERSEN_NO_FLAGS
+      if (newPointsToExternal)
+      {
+        // Use the Set_ version on purpose, as we do not want to trigger recursion
+        newNewPointsToExternal = Set_.MarkAsPointingToExternal(supersetRoot);
+      }
+#endif
+
+      // If any changes were made to the superset, keep deep propagating
+      if (!newNewPointees.IsEmpty() || newNewPointsToExternal)
+        DeepPropagateRec(
+            supersetRoot,
+            newNewPointees,
+            newNewPointsToExternal,
+            stopNode,
+            DeepPropagateRec);
+    }
+
+    // Add the replacement normalized simple edges
+    supersetEdges[node].UnionWithAndClear(normalizedSupersetEdges);
+
+    if (reachesStopNode)
+      nodesReachingStop.Insert(node);
+    return reachesStopNode;
+  };
+
+  const auto DeepPropagate = [&](PointerObjectIndex node, PointerObjectIndex stopNode)
+  {
+    JLM_ASSERT(Set_.IsUnificationRoot(node));
+    JLM_ASSERT(Set_.IsUnificationRoot(stopNode));
+    JLM_ASSERT(visited.IsEmpty());
+    JLM_ASSERT(nodesReachingStop.IsEmpty());
+
+    DeepPropagateRec(
+        node,
+        startingNodeNewPointees,
+        startingNodeNewPointsToExternal,
+        stopNode,
+        DeepPropagateRec);
+
+    // If nodes are reaching the stop node, unify them all
+    for (const auto nodeReachingStop : nodesReachingStop.Items())
+      stopNode = UnifyPointerObjects(nodeReachingStop, stopNode);
+
+    visited.Clear();
+    nodesReachingStop.Clear();
+    startingNodeNewPointees.Clear();
+    startingNodeNewPointsToExternal = false;
+  };
+
+  const auto AddSupersetEdgeAndDeepPropagate =
+      [&](PointerObjectIndex superset, PointerObjectIndex subset)
+  {
+    JLM_ASSERT(startingNodeNewPointees.IsEmpty());
+    JLM_ASSERT(!startingNodeNewPointsToExternal);
+
+    superset = Set_.GetUnificationRoot(superset);
+    subset = Set_.GetUnificationRoot(subset);
+
+    if (AddSupersetEdge(superset, subset))
+      DeepPropagate(superset, subset);
+  };
+
+#ifdef ANDERSEN_NO_FLAGS
+  const auto MarkAsPointeesEscaping = [&](PointerObjectIndex index)
+  {
+    AddSupersetEdgeAndDeepPropagate(Set_.GetExternalObject(), index);
+  };
+
+  const auto MarkAsPointsToExternal = [&](PointerObjectIndex index)
+  {
+    AddSupersetEdgeAndDeepPropagate(index, Set_.GetExternalObject());
+  };
+
+#endif
+
+  // A list of pointees that are new since the last time a complex constraint was visited
+  util::HashSet<PointerObjectIndex> P_new;
+
+  // Perform deep propagation
+  while (changed)
+  {
+    statistics.NumIterations++;
+    changed = false;
+
+    for (size_t i = 0; i < complexConstraints.size(); i++)
+    {
+      const auto & complexConstraint = complexConstraints[i];
+      if (auto store = std::get_if<StoreConstraint>(&complexConstraint))
+      {
+        auto storeValue = Set_.GetUnificationRoot(store->GetValue());
+
+#ifndef ANDERSEN_NO_FLAGS
+        if (Set_.IsPointingToExternal(store->GetPointer()))
+          MarkAsPointeesEscaping(storeValue);
+#endif
+
+        const auto & pointees = Set_.GetPointsToSet(store->GetPointer());
+
+        P_new = pointees;
+        P_new.DifferenceWith(P_cache[i]);
+        for (auto pointee : P_new.Items())
+        {
+          P_cache[i].Insert(pointee);
+          pointee = Set_.GetUnificationRoot(pointee);
+          // Due to unification, the root may have changed since last iteration
+          storeValue = Set_.GetUnificationRoot(storeValue);
+
+          if (AddSupersetEdge(pointee, storeValue))
+            DeepPropagate(pointee, storeValue);
+        }
+      }
+      else if (auto load = std::get_if<LoadConstraint>(&complexConstraint))
+      {
+        const auto loadValue = Set_.GetUnificationRoot(load->GetValue());
+
+#ifndef ANDERSEN_NO_FLAGS
+        if (Set_.IsPointingToExternal(load->GetPointer()))
+          MarkAsPointsToExternal(load->GetValue());
+#endif
+
+        const auto & pointees = Set_.GetPointsToSet(load->GetPointer());
+
+        P_new = pointees;
+        P_new.DifferenceWith(P_cache[i]);
+
+        bool anyAdded = false;
+        for (auto pointee : P_new.Items())
+        {
+          P_cache[i].Insert(pointee);
+          pointee = Set_.GetUnificationRoot(pointee);
+          anyAdded |= AddSupersetEdge(loadValue, pointee);
+        }
+
+        if (anyAdded)
+          DeepPropagate(loadValue, loadValue);
+      }
+      else if (auto call = std::get_if<FunctionCallConstraint>(&complexConstraint))
+      {
 #ifndef ANDERSEN_NO_FLAGS
         if (Set_.IsPointingToExternal(call->GetPointer()))
           HandleCallingExternalFunction(
@@ -2845,10 +3426,57 @@ PointerObjectConstraintSet::SolveUsingWavePropagation()
               MarkAsPointeesEscaping,
               MarkAsPointsToExternal);
 #endif
+
+        const auto & pointees = Set_.GetPointsToSet(call->GetPointer());
+
+        P_new = pointees;
+        P_new.DifferenceWith(P_cache[i]);
+        for (auto pointee : P_new.Items())
+        {
+          P_cache[i].Insert(pointee);
+
+          const auto kind = Set_.GetPointerObjectKind(pointee);
+          if (kind == PointerObjectKind::ImportMemoryObject)
+            HandleCallingImportedFunction(
+                Set_,
+                call->GetCallNode(),
+                pointee,
+                MarkAsPointeesEscaping,
+                MarkAsPointsToExternal);
+          else if (kind == PointerObjectKind::FunctionMemoryObject)
+            HandleCallingLambdaFunction(
+                Set_,
+                call->GetCallNode(),
+                pointee,
+                AddSupersetEdgeAndDeepPropagate);
+#ifdef ANDERSEN_NO_FLAGS
+          else if (kind == PointerObjectKind::ExternalObject)
+            HandleCallingExternalFunction(
+                Set_,
+                call->GetCallNode(),
+                MarkAsPointeesEscaping,
+                MarkAsPointsToExternal);
+#endif
+        }
       }
       else
         JLM_UNREACHABLE("Unknown complex constraint type");
     }
+
+#ifdef ANDERSEN_NO_FLAGS
+
+    const auto & pointees = Set_.GetPointsToSet(Set_.GetExternalObject());
+
+    P_new = pointees;
+    P_new.DifferenceWith(P_cache.back());
+    for (auto pointee : P_new.Items())
+    {
+      P_cache.back().Insert(pointee);
+      if (Set_.GetPointerObjectKind(pointee) == PointerObjectKind::FunctionMemoryObject)
+        HandleEscapedFunction(Set_, pointee, MarkAsPointeesEscaping, MarkAsPointsToExternal);
+    }
+
+#endif
   }
 
   return statistics;

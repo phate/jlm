@@ -56,6 +56,10 @@ Andersen::Configuration::ToString() const
   {
     str << "Solver=Wave_";
   }
+  else if (Solver_ == Solver::DeepPropagation)
+  {
+    str << "Solver=Deep_";
+  }
   else
   {
     JLM_UNREACHABLE("Unknown solver type");
@@ -70,6 +74,7 @@ std::vector<Andersen::Configuration>
 Andersen::Configuration::GetAllConfigurations()
 {
   std::vector<Configuration> configs;
+
   auto PickPreferImplicitPointees = [&](Configuration config)
   {
     config.EnablePreferImplicitPointees(false);
@@ -130,10 +135,8 @@ Andersen::Configuration::GetAllConfigurations()
   {
     config.EnableOfflineConstraintNormalization(false);
     configs.push_back(config);
-    /*
-    config.EnableOfflineConstraintNormalization(true);
-    configs.push_back(config);
-    */
+    // config.EnableOfflineConstraintNormalization(true);
+    // configs.push_back(config);
   };
   auto PickSolver = [&](Configuration config)
   {
@@ -142,6 +145,8 @@ Andersen::Configuration::GetAllConfigurations()
     config.SetSolver(Solver::Naive);
     PickOfflineNormalization(config);
     config.SetSolver(Solver::WavePropagation);
+    configs.push_back(config);
+    config.SetSolver(Solver::DeepPropagation);
     configs.push_back(config);
   };
   auto PickOfflineVariableSubstitution = [&](Configuration config)
@@ -196,6 +201,11 @@ class Andersen::Statistics final : public util::Statistics
 
   static constexpr const char * NumWavePropagationIterations_ = "#WavePropagationIterations";
   static constexpr const char * NumWavePropagationUnifications_ = "#WavePropagationUnifications";
+
+  static constexpr const char * NumDeepPropagationIterations_ = "#DeepPropagationIterations";
+  static constexpr const char * NumDeepPropagationUnifications_ = "#DeepPropagationUnifications";
+  static constexpr const char * NumDeepPropagationWaveUnifications_ =
+      "#DeepPropagationWaveUnifications";
 
   static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
   static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
@@ -275,6 +285,8 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
   static constexpr const char * ConstraintSolvingWavePropagationTimer_ =
       "ConstraintSolvingWavePropagationTimer";
+  static constexpr const char * ConstraintSolvingDeepPropagationTimer_ =
+      "ConstraintSolvingDeepPropagationTimer";
   static constexpr const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
   static constexpr const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
@@ -449,6 +461,22 @@ public:
     GetTimer(ConstraintSolvingWavePropagationTimer_).stop();
     AddMeasurement(NumWavePropagationIterations_, statistics.NumIterations);
     AddMeasurement(NumWavePropagationUnifications_, statistics.NumUnifications);
+  }
+
+  void
+  StartConstraintSolvingDeepPropagationStatistics() noexcept
+  {
+    AddTimer(ConstraintSolvingDeepPropagationTimer_).start();
+  }
+
+  void
+  StopConstraintSolvingDeepPropagationStatistics(
+      const PointerObjectConstraintSet::DeepPropagationStatistics & statistics) noexcept
+  {
+    GetTimer(ConstraintSolvingDeepPropagationTimer_).stop();
+    AddMeasurement(NumDeepPropagationIterations_, statistics.NumIterations);
+    AddMeasurement(NumDeepPropagationUnifications_, statistics.NumUnifications);
+    AddMeasurement(NumDeepPropagationWaveUnifications_, statistics.NumWaveUnifications);
   }
 
   void
@@ -1416,8 +1444,14 @@ Andersen::SolveConstraints(
   else if (config.GetSolver() == Configuration::Solver::WavePropagation)
   {
     statistics.StartConstraintSolvingWavePropagationStatistics();
-    auto numIterations = constraints.SolveUsingWavePropagation();
-    statistics.StopConstraintSolvingWavePropagationStatistics(numIterations);
+    auto waveStatistics = constraints.SolveUsingWavePropagation();
+    statistics.StopConstraintSolvingWavePropagationStatistics(waveStatistics);
+  }
+  else if (config.GetSolver() == Configuration::Solver::DeepPropagation)
+  {
+    statistics.StartConstraintSolvingDeepPropagationStatistics();
+    auto deepStatistics = constraints.SolveUsingDeepPropagation();
+    statistics.StopConstraintSolvingDeepPropagationStatistics(deepStatistics);
   }
   else
     JLM_UNREACHABLE("Unknown solver");
@@ -1468,7 +1502,6 @@ Andersen::Analyze(
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving with " + config.ToString());
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
   // TODO: Do not skip constructing the PointsToGraph
@@ -1520,6 +1553,14 @@ Andersen::Analyze(
         {
           if (workingCopy.first->HasIdenticalSolAs(*Set_))
             continue;
+
+          if (dumpGraphs)
+          {
+            auto & graph = workingCopy.second->DrawSubsetGraph(writer);
+            graph.AppendToLabel("After Solving with " + config.ToString());
+            writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+          }
+
           std::cerr << "Solving with original config: " << Config_.ToString()
                     << " did not produce the same solution as the config " << config.ToString()
                     << std::endl;

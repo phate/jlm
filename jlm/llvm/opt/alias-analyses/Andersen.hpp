@@ -66,7 +66,8 @@ public:
     {
       Naive,
       Worklist,
-      WavePropagation
+      WavePropagation,
+      DeepPropagation
     };
 
     /**

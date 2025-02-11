@@ -998,6 +998,21 @@ public:
     size_t NumUnifications{};
   };
 
+  /**
+   * Struct holding statistics from solving using Deep Propagation
+   */
+  struct DeepPropagationStatistics
+  {
+    // How many times all complex constraints are visited
+    size_t NumIterations{};
+
+    // The number of unifications performed during the initial pass of wave propagation
+    size_t NumWaveUnifications{};
+
+    // The total number of unifications
+    size_t NumUnifications{};
+  };
+
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set),
         Constraints_(),
@@ -1173,6 +1188,15 @@ public:
    */
   WavePropagationStatistics
   SolveUsingWavePropagation();
+
+  /**
+   * Solves the constraint set using the Deep propagation technique described in
+   * Pereira and Berlin, 2009, "Wave Propagation and Deep Propagation for Pointer Analysis".
+   * The algorithm maintains that P(a) is a superset of P(b) for all edges b -> a.
+   * @return statistics about the solving
+   */
+  DeepPropagationStatistics
+  SolveUsingDeepPropagation();
 
   /**
    * Creates a clone of this constraint set, and the underlying PointerObjectSet.

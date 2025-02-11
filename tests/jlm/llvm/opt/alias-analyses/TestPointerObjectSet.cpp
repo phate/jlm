@@ -904,6 +904,10 @@ TestPointerObjectConstraintSetSolve(Args... args)
   {
     constraints.SolveUsingWavePropagation();
   }
+  else if constexpr (solver == Andersen::Configuration::Solver::DeepPropagation)
+  {
+    constraints.SolveUsingDeepPropagation();
+  }
 
   // alloca1 should point to alloca2, etc
   assert(set.GetPointsToSet(alloca1).Size() <= 1);
@@ -1038,6 +1042,8 @@ TestPointerObjectSet()
   }
 
   TestPointerObjectConstraintSetSolve<Configuration::Solver::WavePropagation>();
+
+  TestPointerObjectConstraintSetSolve<Configuration::Solver::DeepPropagation>();
 
   TestClonePointerObjectConstraintSet();
   return 0;
