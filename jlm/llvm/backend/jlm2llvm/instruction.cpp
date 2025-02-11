@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
@@ -1053,55 +1054,55 @@ convert_operation(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  if (is<rvsdg::bitadd_op>(op))
+  if (is<IntegerAddOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::Add, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitand_op>(op))
+  if (is<IntegerAndOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::And, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitashr_op>(op))
+  if (is<IntegerAShrOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::AShr, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsub_op>(op))
+  if (is<IntegerSubOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::Sub, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitudiv_op>(op))
+  if (is<IntegerUDivOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::UDiv, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsdiv_op>(op))
+  if (is<IntegerSDivOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::SDiv, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitumod_op>(op))
+  if (is<IntegerURemOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::URem, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsmod_op>(op))
+  if (is<IntegerSRemOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::SRem, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitshl_op>(op))
+  if (is<IntegerShlOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::Shl, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitshr_op>(op))
+  if (is<IntegerLShrOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::LShr, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitor_op>(op))
+  if (is<IntegerOrOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::Or, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitxor_op>(op))
+  if (is<IntegerXorOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::Xor, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitmul_op>(op))
+  if (is<IntegerMulOperation>(op))
   {
     return CreateBinOpInstruction(::llvm::Instruction::Mul, arguments, builder, ctx);
   }

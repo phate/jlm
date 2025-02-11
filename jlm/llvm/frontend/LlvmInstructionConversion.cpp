@@ -6,6 +6,7 @@
 #include <jlm/llvm/frontend/LlvmConversionContext.hpp>
 #include <jlm/llvm/frontend/LlvmInstructionConversion.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Constants.h>
@@ -969,31 +970,31 @@ ConvertIntegerBinaryOperation(
   switch (binaryOperation)
   {
   case ::llvm::Instruction::Add:
-    return std::make_unique<rvsdg::bitadd_op>(numBits);
+    return std::make_unique<IntegerAddOperation>(numBits);
   case ::llvm::Instruction::And:
-    return std::make_unique<rvsdg::bitand_op>(numBits);
+    return std::make_unique<IntegerAndOperation>(numBits);
   case ::llvm::Instruction::AShr:
-    return std::make_unique<rvsdg::bitashr_op>(numBits);
+    return std::make_unique<IntegerAShrOperation>(numBits);
   case ::llvm::Instruction::LShr:
-    return std::make_unique<rvsdg::bitshr_op>(numBits);
+    return std::make_unique<IntegerLShrOperation>(numBits);
   case ::llvm::Instruction::Mul:
-    return std::make_unique<rvsdg::bitmul_op>(numBits);
+    return std::make_unique<IntegerMulOperation>(numBits);
   case ::llvm::Instruction::Or:
-    return std::make_unique<rvsdg::bitor_op>(numBits);
+    return std::make_unique<IntegerOrOperation>(numBits);
   case ::llvm::Instruction::SDiv:
-    return std::make_unique<rvsdg::bitsdiv_op>(numBits);
+    return std::make_unique<IntegerSDivOperation>(numBits);
   case ::llvm::Instruction::Shl:
-    return std::make_unique<rvsdg::bitshl_op>(numBits);
+    return std::make_unique<IntegerShlOperation>(numBits);
   case ::llvm::Instruction::SRem:
-    return std::make_unique<rvsdg::bitsmod_op>(numBits);
+    return std::make_unique<IntegerSRemOperation>(numBits);
   case ::llvm::Instruction::Sub:
-    return std::make_unique<rvsdg::bitsub_op>(numBits);
+    return std::make_unique<IntegerSubOperation>(numBits);
   case ::llvm::Instruction::UDiv:
-    return std::make_unique<rvsdg::bitudiv_op>(numBits);
+    return std::make_unique<IntegerUDivOperation>(numBits);
   case ::llvm::Instruction::URem:
-    return std::make_unique<rvsdg::bitumod_op>(numBits);
+    return std::make_unique<IntegerURemOperation>(numBits);
   case ::llvm::Instruction::Xor:
-    return std::make_unique<rvsdg::bitxor_op>(numBits);
+    return std::make_unique<IntegerXorOperation>(numBits);
   default:
     JLM_UNREACHABLE("ConvertIntegerBinaryOperation: Unsupported integer binary operation");
   }
