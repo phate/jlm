@@ -165,14 +165,14 @@ protected:
   {}
 
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<rvsdg::simple_input>(input)
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
 
-    [[nodiscard]] rvsdg::simple_input *
+    [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
       auto index = value()->index();

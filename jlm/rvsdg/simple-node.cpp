@@ -11,14 +11,12 @@
 namespace jlm::rvsdg
 {
 
-/* inputs */
-
-simple_input::~simple_input() noexcept
+SimpleInput::~SimpleInput() noexcept
 {
   on_input_destroy(this);
 }
 
-simple_input::simple_input(
+SimpleInput::SimpleInput(
     jlm::rvsdg::SimpleNode * node,
     jlm::rvsdg::output * origin,
     std::shared_ptr<const rvsdg::Type> type)
@@ -59,7 +57,7 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
     add_input(
-        std::make_unique<simple_input>(this, operands[n], SimpleNode::GetOperation().argument(n)));
+        std::make_unique<SimpleInput>(this, operands[n], SimpleNode::GetOperation().argument(n)));
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
