@@ -83,7 +83,7 @@ enum class traversal_nodestate
 class TraversalTracker final
 {
 public:
-  explicit TraversalTracker(Graph * graph);
+  explicit inline TraversalTracker(Graph * graph);
 
   inline traversal_nodestate
   get_nodestate(Node * node);
