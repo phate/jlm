@@ -216,7 +216,7 @@ trace_edge(
       new_edge = lv.output;
       new_next->divert_to(new_edge);
     }
-    else if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    else if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
     {
       auto sn = si->node();
       auto op = &si->node()->GetOperation();
