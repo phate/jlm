@@ -2589,7 +2589,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       // The port of the instance is connected to another instance
 
       // Get the RVSDG node that's the origin of this input
-      jlm::rvsdg::simple_input * input = rvsdgNode->input(i);
+      rvsdg::SimpleInput * input = rvsdgNode->input(i);
       auto origin = input->origin();
       if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
@@ -2654,7 +2654,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       for (size_t i = 1; i < requestNode->ninputs(); i++)
       {
         // Get the RVSDG node that's the origin of this input
-        auto * input = dynamic_cast<jlm::rvsdg::simple_input *>(requestNode->input(i));
+        auto * input = dynamic_cast<rvsdg::SimpleInput *>(requestNode->input(i));
         auto origin = input->origin();
         if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
