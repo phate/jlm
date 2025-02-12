@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eu
 
+GIT_REPOSITORY=https://github.com/EECS-NTNU/mlir_rvsdg.git
 GIT_COMMIT=50fca6b034e909087c3bf24f4edb8ede59f8cd0b
 
 # Get the absolute path to this script and set default build and install paths
@@ -67,7 +68,7 @@ MLIR_BUILD_DIR=${MLIR_BUILD}/build
 
 if [ ! -d "$MLIR_GIT_DIR" ] ;
 then
-	git clone https://github.com/EECS-NTNU/mlir_rvsdg.git ${MLIR_GIT_DIR}
+	git clone ${GIT_REPOSITORY} ${MLIR_GIT_DIR}
 fi
 
 git -C ${MLIR_GIT_DIR} checkout ${GIT_COMMIT}
