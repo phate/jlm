@@ -29,7 +29,7 @@ runs:
       if: steps.restore-cache-mlir.outputs.cache-hit != 'true'
       run: |
         ./scripts/build-mlir.sh \
-          --build-path ${{ github.workspace }}/build-mlir
+          --build-path ${{ github.workspace }}/build-mlir \
           --install-path ${{ github.workspace }}/build-mlir/usr
       shell: bash
 
