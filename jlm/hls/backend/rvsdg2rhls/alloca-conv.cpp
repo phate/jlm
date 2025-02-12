@@ -48,7 +48,7 @@ private:
     visited.insert(op);
     for (auto user : *op)
     {
-      if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+      if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
       {
         auto simplenode = si->node();
         if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))

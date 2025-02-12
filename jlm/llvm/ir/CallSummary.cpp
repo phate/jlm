@@ -119,7 +119,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto simpleInput = dynamic_cast<rvsdg::simple_input *>(input))
+    if (auto simpleInput = dynamic_cast<rvsdg::SimpleInput *>(input))
     {
       otherUsers.emplace_back(simpleInput);
       continue;

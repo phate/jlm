@@ -190,7 +190,7 @@ trace_function_calls(
   visited.insert(output);
   for (auto user : *output)
   {
-    if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
       auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
@@ -392,7 +392,7 @@ TracePointer(
   visited.insert(output);
   for (auto user : *output)
   {
-    if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
       auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
@@ -475,7 +475,7 @@ IsDecoupledFunctionPointer(
   // Iterate through all users of the output
   for (auto user : *output)
   {
-    if (auto simpleInput = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    if (auto simpleInput = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
       auto simpleNode = simpleInput->node();
       if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->GetOperation()))
