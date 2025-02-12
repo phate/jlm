@@ -31,6 +31,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/IntegerOperations.cpp \
+    jlm/llvm/ir/operators/IOBarrier.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
     jlm/llvm/ir/operators/MemCpy.cpp \
@@ -127,6 +128,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/FunctionPointer.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/IntegerOperations.hpp \
+	jlm/llvm/ir/operators/IOBarrier.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
 	jlm/llvm/ir/operators/Store.hpp \
 	jlm/llvm/ir/operators/alloca.hpp \

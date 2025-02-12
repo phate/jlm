@@ -7,6 +7,7 @@
 #include <jlm/llvm/frontend/LlvmInstructionConversion.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Constants.h>
@@ -1057,6 +1058,16 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
   const auto jlmType = typeConverter.ConvertLlvmType(*llvmType);
   auto operand1 = ConvertValue(instruction->getOperand(0), tacs, ctx);
   auto operand2 = ConvertValue(instruction->getOperand(1), tacs, ctx);
+
+  if (instruction->getOpcode() == ::llvm::Instruction::SDiv
+      || instruction->getOpcode() == ::llvm::Instruction::UDiv
+      || instruction->getOpcode() == ::llvm::Instruction::SRem
+      || instruction->getOpcode() == ::llvm::Instruction::URem)
+  {
+    const auto ioBarrierOperation = std::make_unique<IOBarrierOperation>(operand1->Type());
+    tacs.push_back(tac::create(*ioBarrierOperation, { operand1, ctx.iostate() }));
+    operand1 = tacs.back()->result(0);
+  }
 
   if (llvmType->isVectorTy())
   {
