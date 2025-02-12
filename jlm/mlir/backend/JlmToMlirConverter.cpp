@@ -7,6 +7,11 @@
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -14,16 +19,10 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 #include <llvm/Support/raw_os_ostream.h>
-#include <mlir/IR/Verifier.h>
 
-#include <mlir/IR/Builders.h>
-
-#include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/operators/Store.hpp>
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/Verifier.h>
+#include <mlir/IR/Builders.h>
 
 namespace jlm::mlir
 {
