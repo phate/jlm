@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
@@ -19,7 +20,6 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <typeindex>
 
 namespace jlm::llvm
