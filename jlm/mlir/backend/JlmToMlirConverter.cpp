@@ -24,6 +24,17 @@
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Verifier.h>
 
+#include <mlir/IR/Builders.h>
+
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <mlir/Dialect/Arith/IR/Arith.h>
+
 namespace jlm::mlir
 {
 
@@ -167,7 +178,7 @@ JlmToMlirConverter::ConvertNode(
   }
   else if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
-    return ConvertLambda(*lambda, block);
+    return ConvertLambda(*lambda, block, inputs);
   }
   else if (auto gamma = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
@@ -442,6 +453,15 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(node.output(0)->type()),
         inputs);
   }
+  else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::GEPOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*op->result(0)),                                      // resultType
+        ConvertType(op->GetPointeeType()),                                // elementType
+        inputs[0],                                                        // basePtr
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
+  }
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
@@ -471,6 +491,29 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0],                           // input
         ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
+  else if (auto callOp = dynamic_cast<const jlm::llvm::CallOperation *>(&operation))
+  {
+    auto functionType = *callOp->GetFunctionType();
+    ::llvm::SmallVector<::mlir::Type> argumentTypes;
+    for (size_t i = 0; i < functionType.NumArguments(); i++)
+    {
+      argumentTypes.push_back(ConvertType(functionType.ArgumentType(i)));
+    }
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < functionType.NumResults(); i++)
+    {
+      resultTypes.push_back(ConvertType(functionType.ResultType(i)));
+    }
+    MlirOp = Builder_->create<::mlir::jlm::Call>(
+        Builder_->getUnknownLoc(),
+        resultTypes,
+        inputs[0], // func ptr
+        ::mlir::ValueRange(
+            { std::next(inputs.begin()), std::prev(std::prev(inputs.end())) }), // args
+        inputs[inputs.size() - 2],                                              // io
+        inputs[inputs.size() - 1]                                               // mem
+    );
+  }
   // ** endregion structural nodes **
   else
   {
@@ -483,30 +526,11 @@ JlmToMlirConverter::ConvertSimpleNode(
 }
 
 ::mlir::Operation *
-JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::Block & block)
+JlmToMlirConverter::ConvertLambda(
+    const rvsdg::LambdaNode & lambdaNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  ::llvm::SmallVector<::mlir::Type> arguments;
-  for (auto arg : lambdaNode.GetFunctionArguments())
-  {
-    arguments.push_back(ConvertType(arg->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::Type> results;
-  for (auto res : lambdaNode.GetFunctionResults())
-  {
-    results.push_back(ConvertType(res->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::Type> lambdaRef;
-  auto refType = Builder_->getType<::mlir::rvsdg::LambdaRefType>(
-      ::llvm::ArrayRef(arguments),
-      ::llvm::ArrayRef(results));
-  lambdaRef.push_back(refType);
-
-  ::llvm::SmallVector<::mlir::Value> inputs;
-  // TODO
-  // Populate the inputs
-
   // Add function attributes, e.g., the function name and linkage
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
@@ -522,7 +546,7 @@ JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
-      lambdaRef,
+      Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
       inputs,
       ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
   block.push_back(lambda);
@@ -630,6 +654,22 @@ JlmToMlirConverter::ConvertFPType(const llvm::fpsize size)
   }
 }
 
+::mlir::FunctionType
+JlmToMlirConverter::ConvertFunctionType(const jlm::rvsdg::FunctionType & functionType)
+{
+  ::llvm::SmallVector<::mlir::Type> argumentTypes;
+  for (size_t i = 0; i < functionType.NumArguments(); i++)
+  {
+    argumentTypes.push_back(ConvertType(functionType.ArgumentType(i)));
+  }
+  ::llvm::SmallVector<::mlir::Type> resultTypes;
+  for (size_t i = 0; i < functionType.NumResults(); i++)
+  {
+    resultTypes.push_back(ConvertType(functionType.ResultType(i)));
+  }
+  return Builder_->getFunctionType(argumentTypes, resultTypes);
+}
+
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
@@ -655,7 +695,13 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   }
   else if (rvsdg::is<llvm::PointerType>(type))
   {
-    return Builder_->getType<::mlir::rvsdg::RVSDGPointerType>(::mlir::Type());
+    return Builder_->getType<::mlir::LLVM::LLVMPointerType>();
+  }
+  else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(&type))
+  {
+    return Builder_->getType<::mlir::LLVM::LLVMArrayType>(
+        ConvertType(arrayType->element_type()),
+        arrayType->nelements());
   }
   else
   {

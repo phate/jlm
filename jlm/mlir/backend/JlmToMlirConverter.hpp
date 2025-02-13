@@ -24,6 +24,7 @@
 
 // MLIR generic dialects
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -37,6 +38,7 @@ public:
     Context_->getOrLoadDialect<::mlir::rvsdg::RVSDGDialect>();
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
+    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
   }
 
@@ -160,10 +162,14 @@ private:
    * Converts an RVSDG lambda node to an MLIR RVSDG LambdaNode.
    * \param node The RVSDG lambda node to be converted
    * \param block The MLIR RVSDG block to insert the lambda node.
+   * \param inputs The inputs to the lambda::node.
    * \return The converted MLIR RVSDG LambdaNode.
    */
   ::mlir::Operation *
-  ConvertLambda(const rvsdg::LambdaNode & node, ::mlir::Block & block);
+  ConvertLambda(
+      const rvsdg::LambdaNode & node,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
    * Converts an RVSDG gamma node to an MLIR RVSDG GammaNode.
@@ -191,6 +197,14 @@ private:
    */
   ::mlir::FloatType
   ConvertFPType(const llvm::fpsize size);
+
+  /**
+   * Converts an JLM function type to an MLIR LLVM function type.
+   * \param functionType The JLM function type to be converted.
+   * \result The corresponding MLIR LLVM function type.
+   */
+  ::mlir::FunctionType
+  ConvertFunctionType(const jlm::rvsdg::FunctionType & functionType);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
