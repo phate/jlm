@@ -19,6 +19,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <typeindex>
 
 namespace jlm::llvm
@@ -1145,6 +1146,10 @@ convert_operation(
   if (is<rvsdg::bitsle_op>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLE, arguments, builder, ctx);
+  }
+  if (is<IOBarrierOperation>(op))
+  {
+    return ctx.value(arguments[0]);
   }
 
   static std::unordered_map<
