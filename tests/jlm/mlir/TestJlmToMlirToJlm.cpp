@@ -13,6 +13,8 @@
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
 #include <jlm/rvsdg/nullary.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 static int
 TestUndef()
@@ -357,3 +359,292 @@ TestStore()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirStoreGen", TestStore)
+
+static int
+TestSext()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+
+    auto bitsType = jlm::rvsdg::bittype::Create(32);
+    auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+    auto bitsArgument = lambda->GetFunctionArguments().at(0);
+
+    // Create sext operation
+    auto sextOp = jlm::llvm::sext_op::create((size_t)64, bitsArgument);
+    auto node = jlm::rvsdg::output::GetNode(*sextOp);
+    assert(node);
+
+    lambda->finalize({});
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    auto & mlirLambda = omegaBlock.front();
+    auto & mlirLambdaRegion = mlirLambda.getRegion(0);
+    auto & mlirLambdaBlock = mlirLambdaRegion.front();
+    auto & mlirOp = mlirLambdaBlock.front();
+
+    assert(mlir::isa<mlir::arith::ExtSIOp>(mlirOp));
+
+    auto mlirSext = mlir::cast<mlir::arith::ExtSIOp>(mlirOp);
+    auto inputType = mlirSext.getOperand().getType();
+    auto outputType = mlirSext.getType();
+    assert(mlir::isa<mlir::IntegerType>(inputType));
+    assert(mlir::isa<mlir::IntegerType>(outputType));
+    assert(mlir::cast<mlir::IntegerType>(inputType).getWidth() == 32);
+    assert(mlir::cast<mlir::IntegerType>(outputType).getWidth() == 64);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 1);
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
+
+      assert(convertedLambda->subregion()->nnodes() == 1);
+      assert(is<sext_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedSext = dynamic_cast<const sext_op *>(
+          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+
+      assert(convertedSext->ndstbits() == 64);
+      assert(convertedSext->nsrcbits() == 32);
+      assert(convertedSext->nresults() == 1);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSextGen", TestSext)
+
+static int
+TestSitofp()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+
+    auto bitsType = jlm::rvsdg::bittype::Create(32);
+    auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
+    auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+    auto bitsArgument = lambda->GetFunctionArguments().at(0);
+
+    // Create sitofp operation
+    auto sitofpOp = jlm::llvm::sitofp_op(bitsType, floatType);
+    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), sitofpOp, { bitsArgument });
+
+    lambda->finalize({});
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    auto & mlirLambda = omegaBlock.front();
+    auto & mlirLambdaRegion = mlirLambda.getRegion(0);
+    auto & mlirLambdaBlock = mlirLambdaRegion.front();
+    auto & mlirOp = mlirLambdaBlock.front();
+
+    assert(mlir::isa<mlir::arith::SIToFPOp>(mlirOp));
+
+    auto mlirSitofp = mlir::cast<mlir::arith::SIToFPOp>(mlirOp);
+    auto inputType = mlirSitofp.getOperand().getType();
+    auto outputType = mlirSitofp.getType();
+    assert(mlir::isa<mlir::IntegerType>(inputType));
+    assert(mlir::cast<mlir::IntegerType>(inputType).getWidth() == 32);
+    assert(mlir::isa<mlir::Float64Type>(outputType));
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 1);
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(convertedLambda->subregion()->nnodes() == 1);
+      assert(is<sitofp_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedSitofp = dynamic_cast<const sitofp_op *>(
+          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+
+      assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(*convertedSitofp->argument(0).get()));
+      assert(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedSitofp->result(0).get()));
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSitofpGen", TestSitofp)
+
+static int
+TestConstantFP()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+    auto functionType = jlm::rvsdg::FunctionType::Create({}, {});
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+
+    // Create sitofp operation
+    auto constOp = ConstantFP(fpsize::dbl, ::llvm::APFloat(2.0));
+    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), constOp, {});
+
+    lambda->finalize({});
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
+
+    assert(mlir::isa<mlir::arith::ConstantFloatOp>(mlirOp));
+
+    auto mlirConst = mlir::cast<mlir::arith::ConstantFloatOp>(mlirOp);
+    assert(mlirConst.value().isExactlyValue(2.0));
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 1);
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(convertedLambda->subregion()->nnodes() == 1);
+      assert(is<ConstantFP>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedConst = dynamic_cast<const ConstantFP *>(
+          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+
+      assert(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedConst->result(0).get()));
+      assert(convertedConst->constant().isExactlyValue(2.0));
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantFPGen", TestConstantFP)
+
+static int
+TestFpBinary()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+  auto binOps = std::vector<fpop>{ fpop::add, fpop::sub, fpop::mul, fpop::div, fpop::mod };
+  for (auto binOp : binOps)
+  {
+    auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+    auto graph = &rvsdgModule->Rvsdg();
+    {
+      auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
+      auto functionType = jlm::rvsdg::FunctionType::Create({ floatType, floatType }, {});
+      auto lambda = jlm::rvsdg::LambdaNode::Create(
+          graph->GetRootRegion(),
+          LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+
+      auto floatArgument1 = lambda->GetFunctionArguments().at(0);
+      auto floatArgument2 = lambda->GetFunctionArguments().at(1);
+
+      jlm::rvsdg::SimpleNode::Create(
+          *lambda->subregion(),
+          fpbin_op(binOp, floatType),
+          { floatArgument1, floatArgument2 });
+
+      lambda->finalize({});
+
+      // Convert the RVSDG to MLIR
+      std::cout << "Convert to MLIR" << std::endl;
+      jlm::mlir::JlmToMlirConverter mlirgen;
+      auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+      // Validate the generated MLIR
+      std::cout << "Validate MLIR" << std::endl;
+      auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
+      switch (binOp)
+      {
+      case fpop::add:
+        assert(mlir::isa<mlir::arith::AddFOp>(mlirOp));
+        break;
+      case fpop::sub:
+        assert(mlir::isa<mlir::arith::SubFOp>(mlirOp));
+        break;
+      case fpop::mul:
+        assert(mlir::isa<mlir::arith::MulFOp>(mlirOp));
+        break;
+      case fpop::div:
+        assert(mlir::isa<mlir::arith::DivFOp>(mlirOp));
+        break;
+      case fpop::mod:
+        assert(mlir::isa<mlir::arith::RemFOp>(mlirOp));
+        break;
+      default:
+        assert(false);
+      }
+
+      // Convert the MLIR to RVSDG and check the result
+      std::cout << "Converting MLIR to RVSDG" << std::endl;
+      std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+      rootBlock->push_back(omega);
+      auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+      auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+      {
+        using namespace jlm::llvm;
+
+        assert(region->nnodes() == 1);
+        auto convertedLambda =
+            jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+        assert(convertedLambda->subregion()->nnodes() == 1);
+
+        auto node = convertedLambda->subregion()->Nodes().begin().ptr();
+        auto convertedFpbin = jlm::util::AssertedCast<const fpbin_op>(&node->GetOperation());
+        assert(convertedFpbin->fpop() == binOp);
+        assert(convertedFpbin->nresults() == 1);
+        assert(convertedFpbin->narguments() == 2);
+      }
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)
