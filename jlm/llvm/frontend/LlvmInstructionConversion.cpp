@@ -7,6 +7,7 @@
 #include <jlm/llvm/frontend/LlvmInstructionConversion.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Constants.h>
@@ -595,6 +596,14 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   return tacs.back()->result(0);
 }
 
+static const variable *
+AddIOBarrier(tacsvector_t & tacs, const variable * operand, const context & ctx)
+{
+  const auto ioBarrierOperation = std::make_unique<IOBarrierOperation>(operand->Type());
+  tacs.push_back(tac::create(*ioBarrierOperation, { operand, ctx.iostate() }));
+  return tacs.back()->result(0);
+}
+
 static inline const variable *
 convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
@@ -624,6 +633,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   }
   else
   {
+    address = AddIOBarrier(tacs, address, ctx);
     auto loadTac =
         LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
     tacs.push_back(std::move(loadTac));
@@ -666,6 +676,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   }
   else
   {
+    address = AddIOBarrier(tacs, address, ctx);
     auto storeTac =
         StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
     tacs.push_back(std::move(storeTac));
@@ -1057,6 +1068,14 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
   const auto jlmType = typeConverter.ConvertLlvmType(*llvmType);
   auto operand1 = ConvertValue(instruction->getOperand(0), tacs, ctx);
   auto operand2 = ConvertValue(instruction->getOperand(1), tacs, ctx);
+
+  if (instruction->getOpcode() == ::llvm::Instruction::SDiv
+      || instruction->getOpcode() == ::llvm::Instruction::UDiv
+      || instruction->getOpcode() == ::llvm::Instruction::SRem
+      || instruction->getOpcode() == ::llvm::Instruction::URem)
+  {
+    operand1 = AddIOBarrier(tacs, operand1, ctx);
+  }
 
   if (llvmType->isVectorTy())
   {
