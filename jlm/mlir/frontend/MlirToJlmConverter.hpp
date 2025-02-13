@@ -130,7 +130,7 @@ private:
       size_t nbits);
 
   /**
-   * Converts an MLIR fp binary operation into an RVSDG node.
+   * Converts an MLIR floating point binary operation into an RVSDG node.
    * \param mlirOperation The MLIR operation to be converted.
    * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
    * \param inputs The inputs for the RVSDG node.

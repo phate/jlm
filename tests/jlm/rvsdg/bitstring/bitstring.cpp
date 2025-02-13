@@ -1231,7 +1231,7 @@ types_bitstring_test_normalize()
   // Act
   ReduceNode<bitadd_op>(FlattenAssociativeBinaryOperation, sum1);
   auto & flattenedBinaryNode = *output::GetNode(*ex.origin());
-  ReduceNode<flattened_binary_op>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
+  ReduceNode<FlattenedBinaryOperation>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);

@@ -26,7 +26,7 @@ jobs:
         uses: ./.github/actions/BuildMlirDialect
 
       - name: "Configure jlm with HLS and MLIR enabled"
-        run: ./configure.sh --enable-mlir=${{ github.workspace }}/lib/mlir-rvsdg --enable-hls=${{ github.workspace }}/build-circt/circt
+        run: ./configure.sh --enable-mlir=${{ github.workspace }}/build-mlir/usr --enable-hls=${{ github.workspace }}/build-circt/circt
 
       - name: "Run clang tidy"
         run: make tidy
