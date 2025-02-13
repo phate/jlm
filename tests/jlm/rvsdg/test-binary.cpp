@@ -98,14 +98,14 @@ ReduceFlattenedBinaryReductionParallel()
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
 
-  auto & node = CreateOpNode<flattened_binary_op>({ i0, i1, i2, i3 }, binaryOperation, 4);
+  auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
   auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
   // Act
-  flattened_binary_op::reduce(&graph, flattened_binary_op::reduction::parallel);
+  FlattenedBinaryOperation::reduce(&graph, FlattenedBinaryOperation::reduction::parallel);
   graph.PruneNodes();
   view(graph, stdout);
 
@@ -146,14 +146,14 @@ ReduceFlattenedBinaryReductionLinear()
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
 
-  auto & node = CreateOpNode<flattened_binary_op>({ i0, i1, i2, i3 }, binaryOperation, 4);
+  auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
   auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
   // Act
-  flattened_binary_op::reduce(&graph, flattened_binary_op::reduction::linear);
+  FlattenedBinaryOperation::reduce(&graph, FlattenedBinaryOperation::reduction::linear);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -294,7 +294,7 @@ FlattenAssociativeBinaryOperation_Success()
   // Assert
   assert(success);
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(is<flattened_binary_op>(flattenedBinaryNode));
+  assert(is<FlattenedBinaryOperation>(flattenedBinaryNode));
   assert(flattenedBinaryNode->ninputs() == 3);
 
   return 0;

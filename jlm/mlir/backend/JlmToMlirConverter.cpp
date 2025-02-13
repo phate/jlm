@@ -16,6 +16,12 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/IR/Verifier.h>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <mlir/Dialect/Arith/IR/Arith.h>
+
 namespace jlm::mlir
 {
 
@@ -346,6 +352,46 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         ConvertType(undefOp->GetType()));
   }
+  else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Alloca>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*alloca_op->result(0)),                               // ptr
+        ConvertType(*alloca_op->result(1)),                               // memstate
+        ConvertType(alloca_op->value_type()),                             // value type
+        inputs[0],                                                        // size
+        alloca_op->alignment(),                                           // alignment
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
+  }
+  else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Load>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*load_op->result(0)),                               // ptr
+        ConvertType(*load_op->result(1)),                               // memstate
+        inputs[0],                                                      // pointer
+        Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
+    );
+  }
+  else if (auto store_op = dynamic_cast<const jlm::llvm::StoreOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Store>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*store_op->result(0)),                                         // memstate
+        inputs[0],                                                                 // ptr
+        inputs[1],                                                                 // value
+        Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
+        ::mlir::ValueRange({ std::next(std::next(inputs.begin())), inputs.end() }) // inputMemStates
+    );
+  }
+  else if (rvsdg::is<jlm::llvm::MemoryStateMergeOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::rvsdg::MemStateMerge>(
+        Builder_->getUnknownLoc(),
+        ConvertType(node.output(0)->type()),
+        inputs);
+  }
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
@@ -529,6 +575,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else if (auto clt = dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
+  }
+  else if (rvsdg::is<llvm::PointerType>(type))
+  {
+    return Builder_->getType<::mlir::rvsdg::RVSDGPointerType>(::mlir::Type());
   }
   else
   {

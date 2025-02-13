@@ -97,7 +97,7 @@ NormalizeBinaryOperation(
     const BinaryOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
-class flattened_binary_op final : public SimpleOperation
+class FlattenedBinaryOperation final : public SimpleOperation
 {
 public:
   enum class reduction
@@ -106,16 +106,16 @@ public:
     parallel
   };
 
-  virtual ~flattened_binary_op() noexcept;
+  ~FlattenedBinaryOperation() noexcept override;
 
-  inline flattened_binary_op(std::unique_ptr<BinaryOperation> op, size_t narguments) noexcept
+  FlattenedBinaryOperation(std::unique_ptr<BinaryOperation> op, size_t narguments) noexcept
       : SimpleOperation({ narguments, op->argument(0) }, { op->result(0) }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
-  flattened_binary_op(const BinaryOperation & op, size_t narguments)
+  FlattenedBinaryOperation(const BinaryOperation & op, size_t narguments)
       : SimpleOperation({ narguments, op.argument(0) }, { op.result(0) }),
         op_(std::unique_ptr<BinaryOperation>(static_cast<BinaryOperation *>(op.copy().release())))
   {
@@ -139,14 +139,14 @@ public:
 
   jlm::rvsdg::output *
   reduce(
-      const flattened_binary_op::reduction & reduction,
+      const FlattenedBinaryOperation::reduction & reduction,
       const std::vector<jlm::rvsdg::output *> & operands) const;
 
   static void
-  reduce(rvsdg::Region * region, const flattened_binary_op::reduction & reduction);
+  reduce(rvsdg::Region * region, const FlattenedBinaryOperation::reduction & reduction);
 
   static inline void
-  reduce(Graph * graph, const flattened_binary_op::reduction & reduction)
+  reduce(Graph * graph, const FlattenedBinaryOperation::reduction & reduction)
   {
     reduce(&graph->GetRootRegion(), reduction);
   }
@@ -169,7 +169,7 @@ private:
  */
 std::optional<std::vector<rvsdg::output *>>
 NormalizeFlattenedBinaryOperation(
-    const flattened_binary_op & operation,
+    const FlattenedBinaryOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
 /* binary flags operators */
