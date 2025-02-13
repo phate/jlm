@@ -115,9 +115,9 @@ private:
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
-   * Converts an fpbin_op to an MLIR operation.
-   * \param op The fpbin_op to be converted
-   * \param inputs The inputs to the fpbin_op .
+   * Converts a floating point binary operation to an MLIR operation.
+   * \param op The jlm::llvm::fpbin_op to be converted
+   * \param inputs The inputs to the jlm::llvm::fpbin_op.
    * \return The converted MLIR operation.
    */
   ::mlir::Operation *
@@ -185,9 +185,9 @@ private:
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
-   * Converts an RVSDG FP size to an MLIR FP type.
-   * \param size The RVSDG FP size to be converted.
-   * \result The corresponding MLIR FP type.
+   * Converts an RVSDG floating point size to an MLIR floating point type.
+   * \param size The jlm::llvm::fpsize to be converted.
+   * \result The corresponding mlir::FloatType.
    */
   ::mlir::FloatType
   ConvertFPType(const llvm::fpsize size);
