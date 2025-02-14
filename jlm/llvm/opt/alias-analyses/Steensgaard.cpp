@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
@@ -1069,6 +1070,10 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeFunctionToPointer(node);
   }
+  else if (is<IOBarrierOperation>(&node))
+  {
+    AnalyzeIOBarrier(node);
+  }
   else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
   {
     // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
@@ -1489,6 +1494,21 @@ Steensgaard::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
   auto & outputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   auto & originLocation = Context_->GetOrInsertRegisterLocation(*node.input(0)->origin());
   Context_->Join(outputLocation, originLocation);
+}
+
+void
+Steensgaard::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<IOBarrierOperation>(&node));
+  const auto & origin = *node.input(0)->origin();
+  const auto & output = *node.output(0);
+
+  if (!HasOrContainsPointerType(origin))
+    return;
+
+  auto & originLocation = Context_->GetOrInsertRegisterLocation(origin);
+  auto & outputLocation = Context_->GetOrInsertRegisterLocation(output);
+  Context_->Join(originLocation, outputLocation);
 }
 
 void

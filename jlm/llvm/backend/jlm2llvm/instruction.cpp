@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
@@ -1145,6 +1146,10 @@ convert_operation(
   if (is<rvsdg::bitsle_op>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLE, arguments, builder, ctx);
+  }
+  if (is<IOBarrierOperation>(op))
+  {
+    return ctx.value(arguments[0]);
   }
 
   static std::unordered_map<
