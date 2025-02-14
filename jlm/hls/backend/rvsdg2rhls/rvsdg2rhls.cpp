@@ -47,6 +47,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
+#include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <regex>
 
 namespace jlm::hls
@@ -426,6 +427,10 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
+
+  IOBarrierRemoval ioBarrierRemoval;
+  ioBarrierRemoval.Run(rhls, collector);
+
   merge_gamma(rhls);
 
   llvm::DeadNodeElimination llvmDne;

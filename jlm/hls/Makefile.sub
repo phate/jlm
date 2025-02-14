@@ -37,6 +37,7 @@ libhls_SOURCES = \
     jlm/hls/ir/hls.cpp \
     \
     jlm/hls/opt/cne.cpp \
+    jlm/hls/opt/IOBarrierRemoval.cpp \
     \
     jlm/hls/util/view.cpp \
 
@@ -76,6 +77,7 @@ libhls_HEADERS = \
 	jlm/hls/ir/hls.hpp \
 	\
 	jlm/hls/opt/cne.hpp \
+	jlm/hls/opt/IOBarrierRemoval.hpp \
 	\
 	jlm/hls/util/view.hpp \
 
@@ -88,6 +90,7 @@ libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
 	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
+	tests/jlm/hls/opt/IOBarrierRemovalTests \
 	tests/jlm/hls/util/ViewTests \
 
 libhls_TEST_LIBS += \
